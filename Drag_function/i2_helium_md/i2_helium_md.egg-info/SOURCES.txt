@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+i2_helium_md/__init__.py
+i2_helium_md/config.py
+i2_helium_md/presets.py
+i2_helium_md.egg-info/PKG-INFO
+i2_helium_md.egg-info/SOURCES.txt
+i2_helium_md.egg-info/dependency_links.txt
+i2_helium_md.egg-info/requires.txt
+i2_helium_md.egg-info/top_level.txt
+i2_helium_md/physics/constants.py
+tests/test_foundations.py
