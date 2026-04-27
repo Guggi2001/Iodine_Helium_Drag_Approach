@@ -1,4 +1,4 @@
-# iodine_he_sim
+# i2_helium_md
 
 Modern Python port of Michael Stadlhofer's MATLAB molecular-dynamics code
 for simulating iodine in helium nanodroplets (single-pulse, HeDFT-comparison
@@ -11,9 +11,9 @@ scope).
 | 1 | `physics/constants.py` | `physical_constants.m` | ✅ done |
 | 2 | `config.py` (SimConfig) | ~36 MATLAB globals | ✅ done |
 | 3 | `presets.py` | `inputfiles_dft_comparison/single_pulse_N2000.m` | ✅ done |
-| 4 | `physics/potentials.py` | `droplet_potential.m`, `get_morse_potential_X.m`, `get_morse_potential_I2plus.m` | ⏳ next |
-| 5 | `physics/interactions.py` | `add_partner_interaction.m`, `add_partner_interaction_ion.m` | ⏳ |
-| 6 | `physics/leapfrog.py` | `frog_step_neutral.m`, `frog_step_ion.m` | ⏳ |
+| 4 | `physics/potentials.py` | `droplet_potential.m`, `get_morse_potential_X.m`, `get_morse_potential_I2plus.m`, `morse_potential_I2plus_state_select.m` | ✅ done |
+| 5 | `physics/interactions.py` | `atom_interaction_potential.m`, `ion_interaction_potential.m`, `add_partner_interaction.m`, `add_partner_interaction_ion.m` | ✅ done |
+| 6 | `physics/leapfrog.py` | `frog_step_neutral.m`, `frog_step_ion.m` | ✅ done |
 | 7 | `sampling/droplet_sizes.py` | `generate_droplet_sizes.m`, `get_dropletsize.m` | ⏳ |
 | 8 | `sampling/radial_positions.py` | `generate_radial_samples_3d.m` | ⏳ |
 | 9 | `simulation/checkpoint.py` | `save('neutral_propagation_checkpoint', ...)` | ⏳ |
@@ -22,15 +22,23 @@ scope).
 | 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | ⏳ |
 | 13 | `postprocess/hedft_loader.py` + `compare_trajectories.py` | `simulation_image_only_trajectories.m` | ⏳ |
 
+## Documentation
+
+- `docs/physics_background.md` — physical model, potentials, and design rationale
+- `docs/interactions_module.md` — walkthrough of the `interactions.py` module
+- `docs/leapfrog_module.md` — walkthrough of the `leapfrog.py` integrator
+- `docs/migration_log.md` — chronological record of decisions, deviations, and open questions
+
 ## Project layout
 
 ```
-iodine_he_sim_py/
+i2_helium_md_py/
 ├── data/reference/              data files copied from legacy repo (see below)
-├── iodine_he_sim/               Python package
+├── docs/                        physics background + migration log
+├── i2_helium_md/                Python package
 │   ├── config.py                SimConfig dataclass
 │   ├── presets.py               preset builders
-│   ├── physics/                 constants, potentials, integrators
+│   ├── physics/                 constants, potentials, interactions, integrators
 │   ├── sampling/                random samplers
 │   ├── simulation/              neutral + ion propagation
 │   └── postprocess/             HeDFT comparison plots
@@ -55,8 +63,8 @@ anywhere in the code.
 ## Quickstart (after all steps done)
 
 ```python
-from iodine_he_sim import single_pulse_N2000
-from iodine_he_sim.simulation import run_neutral, run_ion
+from i2_helium_md import single_pulse_N2000
+from i2_helium_md.simulation import run_neutral, run_ion
 
 cfg = single_pulse_N2000(num_molecules=500, seed=123)
 neutral_result = run_neutral(cfg)
