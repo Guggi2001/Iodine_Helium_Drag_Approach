@@ -168,15 +168,22 @@ Computes the force from the droplet solvation potential and converts it to
 acceleration. This is the same computation for both neutral and ion runs
 — only the binding energy differs.
 
-Force chain:
+Force chain (conceptual):
 ```
    r      = |(x, y, z)|                                             (Angstrom)
    depth  = r - droplet_radii                                       (Angstrom)
    dU/dr  = droplet_force(depth, steepness, binding_energy)         (eV/A)
    F      = -dU/dr  * r_hat                                         (eV/A, radial)
-   F[N]   = F * 1.602e-9                                            (Newtons)
-   a[m/s²]= F / mass                                                (m/s²)
-   a[A/ps²] = a * 1e-14                                             (A/ps²)
+   F[N]   = F * EV / 1e-10                                          (Newtons)
+   a[m/s²]= F[N] / mass                                             (m/s²)
+   a[A/ps²] = a[m/s²] * 1e10 * (1e-12)^2                            (A/ps²)
+```
+
+In practice the three unit conversions collapse into a single multiplication
+by the shared constant `EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = EV * 1e-4 ≈ 1.602e-23`:
+
+```python
+a_mag = -dU_dr / mass * EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2   # A/ps^2
 ```
 
 The result is projected onto the radial unit vector and returned as 3
@@ -225,21 +232,17 @@ explicitly:
 | Force      | dU/dr         | eV/Angstrom |
 | Potential  | U             | eV          |
 
-**Conversion factor used in droplet acceleration:**
+**Conversion factor used everywhere:**
 ```
-a[A/ps²] = (dU/dr)[eV/A] / mass[kg] · 1.602e-9 · 1e-14
-```
-
-**Conversion factor used in pair-interaction acceleration** (in
-`interactions.py`):
-```
-a[A/ps²] = F[eV/A] / (mass/u) · 9648.533
+a[A/ps²] = F[eV/A] / mass[kg] * EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
+                                = 1.602e-23
 ```
 
-These are **the same conversion** — `1.602e-9 × 1e-14 × u/kg ≈ 9648.5`
-— just expressed differently. Keeping them in separate forms because
-that's how each source file handled it in MATLAB; we could unify them
-in a future refactor.
+Defined once in `physics/constants.py` and imported by both `leapfrog.py`
+(droplet acceleration) and `interactions.py` (pair force acceleration).
+Previously these two files had two slightly different numerical
+implementations of the same conversion — see `migration_log.md` for the
+audit.
 
 ## Features intentionally skipped
 

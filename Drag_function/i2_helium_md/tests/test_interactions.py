@@ -6,7 +6,6 @@ import pytest
 from i2_helium_md import SimConfig, single_pulse_N2000
 from i2_helium_md.physics.constants import MASS_I_AMU, U
 from i2_helium_md.physics.interactions import (
-    _EV_PER_ANGSTROM_PER_U_TO_A_PER_PS2,
     _pair_geometry,
     _split_pair_coordinates,
     atom_interaction_potential,
@@ -14,6 +13,7 @@ from i2_helium_md.physics.interactions import (
     partner_interaction_ion,
     partner_interaction_neutral,
 )
+from i2_helium_md.physics.constants import EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
 from i2_helium_md.physics.potentials import I2_X_STATE, morse_X
 
 
@@ -21,15 +21,20 @@ from i2_helium_md.physics.potentials import I2_X_STATE, morse_X
 # Conversion factor (derivation cross-check)
 # ---------------------------------------------------------------------------
 class TestConversionFactor:
-    def test_factor_derivation(self):
-        """1 eV / (A u) in Angstrom/ps^2 should be ~9648.5."""
-        # F in eV/A -> N (J/m):
-        eV = 1.602e-19
-        expected = eV / 1e-10 / 1.66054e-27 * 1e10 * 1e-24
-        # = eV * 1e10 * 1e-24 / (1e-10 * 1.66054e-27)
-        # = 1.602e-19 / 1.66054e-27 / 1 * 1e-14 (A/ps^2 conversion)
-        # but easier: just spot check vs MATLAB's number
-        assert _EV_PER_ANGSTROM_PER_U_TO_A_PER_PS2 == pytest.approx(9648.533, rel=1e-4)
+    def test_factor_value(self):
+        """Force-to-acceleration factor for kg masses: 1.602e-23.
+
+        Derivation:
+            a [A/ps^2] = F [eV/A] / m [kg] * EV * 1e-4
+                       = F [eV/A] / m [kg] * 1.602e-23
+        """
+        assert EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 == pytest.approx(1.602e-23, rel=1e-4)
+
+    def test_factor_matches_alternative_form(self):
+        """Cross-check vs the equivalent 'eV/(A*u)' formulation: u * 9648.5."""
+        from i2_helium_md.physics.constants import U
+        alt = U * 9648.533
+        assert EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 == pytest.approx(alt, rel=1e-3)
 
 
 # ---------------------------------------------------------------------------

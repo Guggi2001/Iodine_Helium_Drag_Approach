@@ -40,7 +40,7 @@ from typing import Callable
 import numpy as np
 
 from ..config import SimConfig
-from .constants import U
+from .constants import EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
 from .interactions import (
     partner_interaction_ion,
     partner_interaction_neutral,
@@ -61,15 +61,11 @@ AccelFn = Callable[[Positions], tuple[Accelerations, np.ndarray]]
 
 
 # ===========================================================================
-# Conversion factors derived once and memoized as module constants
+# Note: the unit conversion factor for force-to-acceleration lives in
+# physics/constants.py as EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = 1.602e-23.
+# Keeping it there ensures interactions.py and leapfrog.py use the same
+# numerical value -- previously they had two slightly different forms.
 # ===========================================================================
-#   droplet_force returns dU/dr in eV/Angstrom.
-#   To get acceleration in Angstrom/ps^2 from mass in kg:
-#       a[m/s^2]   = F[N] / m[kg]      with  F[N] = F[eV/A] * 1.602e-9
-#       a[A/ps^2] = a[m/s^2] * 1e-14   (since 1 m/s^2 = 1e10 A/m * (1e-12 s/ps)^2)
-#   Combined: a[A/ps^2] = F[eV/A] / m[kg] * 1.602e-9 * 1e-14
-_DROPLET_FORCE_NEWTON_PER_EV_PER_ANGSTROM: float = 1.602e-9
-_MPS2_TO_A_PER_PS2: float = 1e-14
 
 
 # ===========================================================================
@@ -188,15 +184,13 @@ def _droplet_acceleration(
         binding_energy=binding,
     )
 
-    # F = -dU/dr acts radially. In MATLAB the sign was absorbed by
-    # multiplying acceleration by the *negated* radial unit vector.
-    # We do the same explicitly:
-    #   F[eV/A] * 1.602e-9 = F[N];  a[m/s^2] = F/m;  a[A/ps^2] = a * 1e-14
+    # F = -dU/dr acts radially. The combined unit-conversion factor
+    # EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = EV * 1e-4 = 1.602e-23
+    # turns F[eV/A] / mass[kg] into a[A/ps^2] in one multiplication.
     a_mag = (
         -dU_dr
-        * _DROPLET_FORCE_NEWTON_PER_EV_PER_ANGSTROM
         / mass
-        * _MPS2_TO_A_PER_PS2
+        * EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
     )  # (2N,), Angstrom/ps^2
 
     # project along the radial unit vector

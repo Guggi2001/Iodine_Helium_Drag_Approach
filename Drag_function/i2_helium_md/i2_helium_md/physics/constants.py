@@ -57,3 +57,26 @@ def coulomb_velocity(
 ) -> np.ndarray | float:
     """Velocity equivalent of Coulomb energy, sqrt(E/m), for mass in kg."""
     return np.sqrt(coulomb_energy(r_angstrom) / mass_kg)
+
+
+# ---------------------------------------------------------------------------
+# Force-to-acceleration unit conversion
+# ---------------------------------------------------------------------------
+# Given a force in eV/Angstrom and a mass in kg, the acceleration in
+# Angstrom/picosecond^2 is:
+#
+#     a[A/ps^2] = F[eV/A] / mass[kg] * EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
+#
+# Derivation:
+#     F [N]       = F [eV/A] * EV [J/eV] / 1e-10 [m/A]
+#     a [m/s^2]   = F [N] / m [kg]
+#     a [A/ps^2]  = a [m/s^2] * 1e10 [A/m] * (1e-12 [s/ps])^2
+#                 = a [m/s^2] * 1e-14
+#     => a [A/ps^2] = F [eV/A] / m [kg] * EV * 1e10 * 1e-14
+#                   = F [eV/A] / m [kg] * EV * 1e-4
+#
+# Numerical value: 1.602e-19 * 1e-4 = 1.602e-23.
+# This is the unique source of truth for the conversion -- both the
+# droplet_force code in leapfrog.py and the partner_interaction code in
+# interactions.py should use this constant.
+EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2: float = EV * 1e-4    # = 1.602e-23

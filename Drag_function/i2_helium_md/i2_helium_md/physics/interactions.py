@@ -29,21 +29,16 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import SimConfig
-from .constants import U
+from .constants import EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
 from .potentials import morse_I2plus_state_select, morse_X
 
 
 # ---------------------------------------------------------------------------
-# Physical conversion factor
-#
-# Derivation:
-#     F [eV/A] / (m / u)   -> a [eV / (A u)]
-#     1 eV / (A u) = 1.602e-19 J / (1e-10 m * 1.66054e-27 kg)
-#                  = 9.648e17 m/s^2
-#                  = 9.648e17 m/s^2 * (1e10 A/m) * (1e-12 s/ps)^2
-#                  = 9648.533 A/ps^2
+# The unit-conversion factor for "force in eV/A on a mass in kg
+# -> acceleration in A/ps^2" lives in physics/constants.py as
+# EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2. We import and use it here so
+# this module and leapfrog.py share a single source of truth.
 # ---------------------------------------------------------------------------
-_EV_PER_ANGSTROM_PER_U_TO_A_PER_PS2: float = 9648.53322
 
 
 # ---------------------------------------------------------------------------
@@ -235,9 +230,9 @@ def _acceleration_from_force(
     # Duplicate scalar force for atom-2 (same magnitude) -> (2N,)
     F_full = np.concatenate([F, F])
 
-    # Convert eV/Angstrom -> (Angstrom/ps^2) * u
-    # a_mag_in_A_per_ps2 = F [eV/A] * (u/mass_kg) * 9648.53322
-    a_magnitude = F_full / (mass / U) * _EV_PER_ANGSTROM_PER_U_TO_A_PER_PS2
+    # Convert F [eV/A] / mass [kg] -> a [A/ps^2] using the shared constant.
+    # See physics/constants.py for the derivation.
+    a_magnitude = F_full / mass * EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2
 
     # Direction: +dr_unit for atom 1, -dr_unit for atom 2
     dr_unit_full = np.concatenate([dr_unit, -dr_unit], axis=0)  # (2N, 3)

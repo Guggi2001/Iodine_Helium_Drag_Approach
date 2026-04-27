@@ -216,14 +216,23 @@ The physics:
 - Atom 2 gets force `−F · dr_unit` (Newton's 3rd law).
 - Acceleration = force / mass, with unit conversion `eV/(Å·u) → Å/ps²`.
 
-The unit conversion factor `9648.533` was derived in a comment at the top
-of the module. It comes from:
+The unit conversion uses the shared constant `EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2`
+defined in `physics/constants.py`. Numerically:
 
 ```
-1 eV/Å / 1 u = 1.602e-19 J/m / 1.66054e-27 kg = 9.648e17 m/s²
-             = 9.648e17 × 1e10 Å/m × (1e-12 s/ps)²
-             = 9648.5 Å/ps²
+a [A/ps²] = F [eV/A] / mass [kg] * 1.602e-23
 ```
+
+Derivation:
+```
+F [N]      = F [eV/A] * EV [J/eV] / 1e-10 [m/A]
+a [m/s²]   = F [N] / m [kg]
+a [A/ps²]  = a [m/s²] * 1e10 [A/m] * (1e-12 [s/ps])²
+           = F [eV/A] / m [kg] * EV * 1e-4
+```
+
+This is the only place the conversion is computed; both `interactions.py`
+and `leapfrog.py` import it from `constants.py`.
 
 ## Example usage
 
