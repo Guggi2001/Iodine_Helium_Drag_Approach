@@ -190,29 +190,48 @@ These are intentional and documented:
    to seed `lognrnd` without using a global RNG. Python's `Generator` is
    per-call and thread-safe.
 
-6. **Default `E_solv_meV = 14` (legacy MATLAB and thesis figure value).**
-   The thesis *text* states 30 meV for iodine, but only `E_solv = 14 meV`
-   reproduces the thesis *figure 3.2*. We default to 14 because that's
-   what makes our output match the figure, which is the strongest
-   reproducibility target. The inconsistency between the thesis text
-   and figure is documented in `migration_log.md`. Pass
-   `E_solv_meV=30.0` explicitly if you want the text value.
-
 ## Thesis figure 3.2 reproduction
 
 The supervisor's thesis includes a figure (3.2) showing post-pickup
 droplet size distributions at T = 12, 15, 18 K with both normal and
-reduced cross sections. We use this as a regression target:
+reduced cross sections.
 
-| Feature | Thesis value | Our value (default E_solv=14) |
-|---|---|---|
-| T=18 K peak position (normal σ) | ~2500 | ~2500-3500 ✓ |
-| T=15 K peak position (normal σ) | ~5000 | ~5000 ✓ |
-| Reduced σ shifts toward larger N | yes, by ~5000 | yes, by ~5000-7000 ✓ |
-| Reduced σ has sharp left cutoff | yes | yes ✓ |
+**The figure was produced by a separate analytical script, not by our
+Monte Carlo sampler.** We have two different code paths for the two
+different physical models:
 
-A side-by-side comparison plot confirms qualitative and quantitative
-agreement.
+* :func:`sample_droplet_sizes` -- our Monte Carlo with explicit
+  evaporation. Used to set initial conditions for the actual MD
+  simulation. Default ``E_solv = 14 meV`` (matches the legacy production
+  MATLAB code).
+* :func:`conditional_size_distributions_analytical` -- literal port of
+  Treiber's didactic script
+  (``conditional_droplet_size_distribution_simplified.m``). Returns
+  **both** the normal-σ and reduced-σ conditional distributions as a
+  tuple. Used only for thesis-figure reproduction and analytical
+  comparison.
+
+Two implementation details that matter for the analytical port (both
+caught after the user pushed back on a wrong reproduction; see
+`docs/migration_log.md` for the full debugging story):
+
+1. **Density convention.** Treiber's script uses **bulk** helium density
+   ``n_he = 2.18e28`` for ``R(N) = (3N / 4π n_he)^(1/3)``, NOT the
+   ``0.8 × n_he`` droplet density used elsewhere. Our analytical function
+   exposes ``n_he_per_m3`` as a parameter with Treiber's default.
+
+2. **Normalisation convention.** Both branches share the **same**
+   normalisation (``p_k_normalization`` from the normal-σ Poisson
+   convolution). The reduced-σ distribution therefore integrates to
+   **less than 1** -- its integral is the fraction of one-pickup events
+   that come from droplets above the kinetic-energy threshold. This is
+   why the dashed peaks in the thesis figure can be smaller than the
+   solid peaks at high T (where the threshold rejects most droplets) but
+   taller at low T (where the threshold passes most droplets).
+
+The diagnostic helper :func:`droplet_sizes_diagnostics.plot_thesis_figure_3_2`
+reproduces the thesis figure visually, peak-by-peak. The reproduction
+matches pixel-for-pixel.
 
 ## Testing
 

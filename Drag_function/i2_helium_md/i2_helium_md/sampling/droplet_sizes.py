@@ -136,7 +136,7 @@ def sample_droplet_sizes(
     E_solv_meV: float = _DEFAULT_E_SOLV_meV,
     rng: np.random.Generator | None = None,
     oversample_factor: int = 10,
-    max_retries: int = 5,
+    max_retries: int = 3,
 ) -> np.ndarray:
     """Sample helium-droplet sizes for ``cfg.num_molecules`` simulated molecules.
 
@@ -221,7 +221,7 @@ def sample_droplet_sizes(
     if mode == "post_pickup":
         factor = oversample_factor
         for attempt in range(max_retries + 1):
-            oversample = max(cfg.num_molecules * factor, 10000)
+            oversample = max(cfg.num_molecules * factor, 10_000)
             N_raw = rng.lognormal(mean=mu, sigma=delta, size=oversample)
             try:
                 return _simulate_pickup(
@@ -237,6 +237,122 @@ def sample_droplet_sizes(
                 factor *= 4   # try harder on the next round
 
     raise ValueError(f"unknown mode {mode!r}; expected 'raw' or 'post_pickup'")
+
+
+# ===========================================================================
+# Analytical Poisson convolution (Treiber's didactic formula)
+# ===========================================================================
+def conditional_size_distributions_analytical(
+    N_grid: np.ndarray,
+    *,
+    p_source_mbar: float,
+    T_source_K: float,
+    nozzle_diameter_um: float = _DEFAULT_NOZZLE_DIAMETER_UM,
+    k: int = 1,
+    # Treiber-script parameter values:
+    p_pickup_gas_mbar: float = 8.70e-5,
+    T_pickup_gas_K: float = 293.0,
+    E_solv_meV: float = 30.0,
+    E_kin_thermal_meV: float = 38.78,
+    n_he_per_m3: float = 2.18e28,        # Treiber uses bulk He density, NOT 0.8 x n_he
+    mean_free_path_m: float = 4.0e-10,
+    rel_energy_loss: float = 0.04,
+    pickup_region_length_m: float = 2.0e-2,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Closed-form conditional droplet-size distributions from Treiber's script.
+
+    Direct port of ``conditional_droplet_size_distribution_simplified.m`` --
+    the didactic script that produced thesis figure 3.2. Returns BOTH the
+    normal-σ and reduced-σ conditional distributions on ``N_grid``,
+    using Treiber's normalization convention.
+
+    Critical implementation details (verified by line-by-line comparison
+    with the MATLAB script):
+
+    * The droplet radius uses **bulk** helium density ``n_he = 2.18e28``,
+      NOT the 0.8x droplet density used elsewhere in this codebase. This
+      single 1.077x scaling on R has a 1.16x effect on σ and dramatically
+      changes the threshold cutoff in the reduced-σ branch.
+    * The reduced-σ conditional uses the **normal-σ** normalization
+      (``p_k_normalization``) in its denominator, NOT a separate
+      reduced-σ normalization. The reduced-σ distribution therefore does
+      not integrate to 1; its integral is the fraction of one-pickup
+      events that came from droplets above the kinetic-energy threshold.
+      This is what the thesis figure shows -- dashed lines have **smaller**
+      peaks than solid lines, not equal-area peaks.
+
+    Use this function only for reproducing the thesis figure or for
+    analytical comparison. It is a simpler physical model than our
+    Monte-Carlo sampler -- no evaporation, no destroyed droplets.
+
+    Parameters match the MATLAB script's variable names; defaults are
+    the values used to produce the thesis figure exactly.
+
+    Returns
+    -------
+    p_normal : np.ndarray
+        Conditional p(N | k pickups) using the geometric cross section.
+        Integrates to 1.
+    p_reduced : np.ndarray
+        Conditional p(N | k pickups) using the kinetic-energy-reduced
+        cross section, normalised by the SAME factor as ``p_normal``
+        (so its integral is < 1, as in the thesis figure).
+    """
+    from math import factorial
+
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got {k}")
+
+    N = np.asarray(N_grid, dtype=float)
+
+    # ---- log-normal of source droplets ----
+    N_mean, _ = mean_droplet_size(p_source_mbar, T_source_K, nozzle_diameter_um)
+    mu = np.log(N_mean) - _LOGNORMAL_DELTA ** 2 / 2.0
+    lognpdf = (
+        1.0 / (N * _LOGNORMAL_DELTA * np.sqrt(2.0 * np.pi))
+        * np.exp(-(np.log(N) - mu) ** 2 / (2.0 * _LOGNORMAL_DELTA ** 2))
+    )
+
+    # ---- droplet radius (Treiber: uses BULK He density) ----
+    R = (3.0 * N / (4.0 * np.pi * n_he_per_m3)) ** (1.0 / 3.0)
+
+    # ---- pickup-cell gas density ----
+    # MATLAB: n_gas = p_gas[mbar] * 100[Pa/mbar] / (T_gas * kb)
+    n_gas = p_pickup_gas_mbar * 100.0 / (T_pickup_gas_K * _K_B)
+    a = pickup_region_length_m
+
+    # ---- cross sections ----
+    sigma_normal_m2 = np.pi * R ** 2
+
+    E_kin_0 = E_kin_thermal_meV + E_solv_meV
+    log_ratio_sq = np.log(E_solv_meV / E_kin_0) ** 2
+    b_thresh_sq = R ** 2 - mean_free_path_m ** 2 / (4.0 * rel_energy_loss ** 2) * log_ratio_sq
+    sigma_reduced_m2 = np.pi * np.maximum(b_thresh_sq, 0.0)
+
+    # ---- Poisson PMF P(k | N) = lambda^k exp(-lambda) / k! ----
+    lam_normal = a * n_gas * sigma_normal_m2
+    lam_reduced = a * n_gas * sigma_reduced_m2
+
+    # ---- normalised P(k | N) along N axis (lines 71, 75 of MATLAB) ----
+    Z_normal = np.trapezoid(
+        lam_normal ** k / factorial(k) * np.exp(-lam_normal), N
+    )
+    Z_reduced = np.trapezoid(
+        lam_reduced ** k / factorial(k) * np.exp(-lam_reduced), N
+    )
+    p_k_normal = lam_normal ** k / factorial(k) * np.exp(-lam_normal) / Z_normal
+    p_k_reduced = lam_reduced ** k / factorial(k) * np.exp(-lam_reduced) / Z_reduced
+
+    # ---- conditional distributions, BOTH normalised by p_k_normalization ----
+    # MATLAB lines 89-95 (the key normalisation choice):
+    #   p_k_normalization = trapz(N, p_k(N) .* lognpdf(...))
+    #   p_conditional = p_k_reduced(N) .* lognpdf(...) / p_k_normalization
+    #   p_normal      = p_k(N)         .* lognpdf(...) / p_k_normalization
+    p_k_normalization = np.trapezoid(p_k_normal * lognpdf, N)
+    p_normal = p_k_normal * lognpdf / p_k_normalization
+    p_reduced = p_k_reduced * lognpdf / p_k_normalization
+
+    return p_normal, p_reduced
 
 
 # ===========================================================================
@@ -323,7 +439,8 @@ def _simulate_pickup(
     reduced_crosssection: bool,
     rng: np.random.Generator,
     E_solv_meV: float = _DEFAULT_E_SOLV_meV,
-) -> np.ndarray:
+    return_diagnostics: bool = False,
+) -> np.ndarray | tuple[np.ndarray, dict]:
     """Run the pickup-cell simulation on raw log-normal samples.
 
     Each iteration represents one "round trip" through a portion of the
@@ -331,8 +448,35 @@ def _simulate_pickup(
     moved to the "completed" list; droplets that get destroyed (N<=0
     after evaporation) are dropped; the rest continue to the next round.
 
-    Returns the first ``num_target`` droplets that ended up with exactly
-    one I2 pickup.
+    Parameters
+    ----------
+    N_raw : np.ndarray
+        Raw log-normal samples to feed into the pickup-cell simulation.
+    num_target : int
+        Number of one-pickup droplets to return.
+    reduced_crosssection : bool
+        Use kinetic-energy-dissipation-reduced cross section.
+    rng : np.random.Generator
+        Reproducible RNG.
+    E_solv_meV : float, optional
+        Dopant solvation energy in meV. Default 14.
+    return_diagnostics : bool, optional
+        If True, return a tuple ``(samples, diagnostics)`` where diagnostics
+        is a dict with per-round statistics + raw + post-pickup arrays.
+        Used by :func:`diagnose_pickup` for plotting and debugging.
+        Default False (returns only the samples array, like before).
+
+    Returns
+    -------
+    np.ndarray
+        ``num_target`` one-pickup droplet sizes.
+    diagnostics : dict (only if return_diagnostics=True)
+        Keys:
+        - ``"N_raw"`` -- input array
+        - ``"N_one_pickup"`` -- all single-pickup droplets (not just first num_target)
+        - ``"N_no_pickup"`` -- all droplets that never picked anything up
+        - ``"per_round"`` -- list of dicts with keys "iter", "n_alive",
+          "mean_p_pickup", "mean_evap", "n_picked_up", "n_destroyed".
     """
     n_gas = _PICKUP_GAS_PRESSURE_MBAR * 100.0 / (_PICKUP_GAS_TEMP_K * _K_B)
     a = _PICKUP_REGION_LENGTH_M
@@ -343,6 +487,8 @@ def _simulate_pickup(
 
     completed_samples: list[np.ndarray] = []
     completed_pickups: list[np.ndarray] = []
+
+    per_round: list[dict] = []
 
     iter_id = 1
     max_pickup = 1
@@ -365,13 +511,25 @@ def _simulate_pickup(
         delta_N = _evaporation_per_pickup(total_pickup, samples) * pickup_event
         new_samples = samples + delta_N
 
+        # Diagnostic capture (cheap; happens before mutation)
+        if return_diagnostics:
+            per_round.append({
+                "iter": iter_id,
+                "n_alive_before": int(samples.size),
+                "mean_p_pickup": float(p_pickup.mean()),
+                "mean_evap": float(delta_N[pickup_event].mean()) if pickup_event.any() else 0.0,
+                "n_picked_up": int(pickup_event.sum()),
+            })
+
         # 3. Drop droplets that got destroyed (N <= 0)
         alive = new_samples > 0
+        n_destroyed = int((~alive).sum())
+        if return_diagnostics and per_round:
+            per_round[-1]["n_destroyed"] = n_destroyed
         new_samples = new_samples[alive]
         total_pickup = total_pickup[alive]
 
         # 4. Move droplets that did *not* pick up this round to "completed"
-        # (they've passed the pickup region with their previous count)
         no_pickup_this_round = total_pickup == iter_id - 1
         completed_samples.append(new_samples[no_pickup_this_round])
         completed_pickups.append(total_pickup[no_pickup_this_round])
@@ -379,6 +537,13 @@ def _simulate_pickup(
         # 5. Carry the rest forward
         new_samples = new_samples[~no_pickup_this_round]
         total_pickup = total_pickup[~no_pickup_this_round]
+
+        # Diagnostic capture of per-round new_samples distribution
+        # (matches MATLAB's debug_pickup_plot: plotted AFTER destroyed and
+        # no-pickup droplets are removed -- it's the droplets that just
+        # picked up at least one molecule this round, after evaporation)
+        if return_diagnostics:
+            per_round[-1]["new_samples"] = new_samples.copy()
 
         samples = new_samples
         iter_id += 1
@@ -391,11 +556,27 @@ def _simulate_pickup(
     all_pickups = np.concatenate(completed_pickups)
 
     one_pickup = all_samples[all_pickups == 1]
-    if one_pickup.size < num_target:
+    no_pickup = all_samples[all_pickups == 0]
+
+    if one_pickup.size < num_target and not return_diagnostics:
+        # Production mode: refuse to silently truncate.
         raise ValueError(
             f"only {one_pickup.size} droplets picked up exactly one molecule "
             f"out of {N_raw.size} initial samples (target {num_target}); "
             "increase oversampling factor or use mode='raw'."
         )
 
-    return one_pickup[:num_target]
+    # In diagnostics mode we may return fewer than num_target samples; the
+    # caller is investigating *why* yield is low, not consuming the samples.
+    result = one_pickup[: min(num_target, one_pickup.size)]
+
+    if return_diagnostics:
+        diagnostics = {
+            "N_raw": np.asarray(N_raw),
+            "N_one_pickup": one_pickup,
+            "N_no_pickup": no_pickup,
+            "per_round": per_round,
+        }
+        return result, diagnostics
+
+    return result

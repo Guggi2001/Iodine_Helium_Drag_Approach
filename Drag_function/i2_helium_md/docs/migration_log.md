@@ -48,6 +48,18 @@ These guide every porting decision and code review:
    real issues (the `U` import in `leapfrog.py`; the misleading
    "all forces analytical" claim in the migration log).
 
+9. **Literal transliteration before clean refactor for any reference reproduction.**
+   When porting code that produces a known reference output (a thesis
+   figure, an experimental dataset, a published table), write the most
+   literal possible line-by-line transliteration FIRST and verify against
+   the target. Only then refactor for clarity. Going straight to a
+   "clean" version skips the verification step that would catch subtle
+   convention mismatches (density factors, normalisation choices,
+   off-by-one indexing) immediately. The transliteration can be deleted
+   once the clean version produces an identical numerical result. This
+   principle was added after the thesis figure 3.2 reproduction took
+   four wrong attempts because we kept refactoring before verifying.
+
 Departures from these principles are documented as "open items" with a
 plan to resolve.
 
@@ -332,52 +344,236 @@ the sampler isn't actually invoked for our target scope. We port and test
 it anyway because (a) the config exposes the realistic mode and (b) it's
 a clean entry point into the sampling layer.
 
-### Step 8 audit: thesis-text vs thesis-figure E_solv inconsistency
+### Step 9 — checkpoint I/O
 
-When verifying our pickup simulation against the supervisor's thesis
-figure 3.2 (post-pickup droplet size distributions), an audit revealed
-**an inconsistency within the thesis itself**:
+Replaces MATLAB's bare `save('neutral_propagation_checkpoint', 'var1', 'var2', ...)`
+calls with two clean dataclasses (`NeutralCheckpoint`, `IonCheckpoint`) plus
+matching `save_*` / `load_*` helpers, persisting to `.npz` files. A second
+module `run_directory.py` adds a `RunDirectory` convenience layer on top
+that gives each simulation run a self-describing folder containing
+`cfg.json`, `neutral.npz`, `ion.npz`.
 
-- **Thesis text** explicitly states `E_solv = 30 meV` for iodine.
-- **Thesis figure 3.2** can only be reproduced with `E_solv = 14 meV`.
-  At 30 meV, the reduced-σ correction is so weak that reduced and
-  normal distributions overlap; at 14 meV they separate as the figure
-  shows.
-- **Legacy MATLAB code** uses `E_solv = 14 meV` (matches the figure).
+**Key design choices:**
 
-The first instinct was "trust the text, it must be the right value."
-That gave a default of 30 meV, but a side-by-side comparison (which the
-user pushed for) showed the resulting plot looks nothing like the
-thesis figure. **The figure is the ground truth, not the text** -- the
-figure was actually produced with the same code we have, while the
-text was either revised later, copied from a different paper, or
-referred to a different physical context.
+- **Two clean dataclasses** -- explicit field list, units in field names
+  (`mass_kg`, `time_ps`, `E_kin_eV`), shape documented in the docstring.
+
+- **Schema versioning.** Every checkpoint carries a `schema_version: int`.
+  Loader refuses to load incompatible versions. Adding fields is
+  backward-compatible; removing or renaming bumps the version.
+
+- **No constants saved.** MATLAB save dumped `eV`, `u`, `mass`, etc. -- all
+  recoverable from `constants.py`. Saving them creates drift risk.
+
+- **No config flags saved.** MATLAB saved `effusive_dynamics`, mode flags,
+  binding energies, ... -- these belong to `cfg`. The loader takes an
+  optional `cfg` argument to validate shape consistency.
+
+- **`.npz` instead of `.mat`.** No `scipy.io` dependency. Native to NumPy.
+  `savez_compressed` gives 30-60% size reduction on smooth physical
+  trajectories.
+
+- **`allow_pickle=False` on load** -- refuses to load files containing
+  pickled Python objects (security hygiene).
+
+- **Path discipline.** Caller specifies the output path; the function
+  creates parent directories as needed and adds `.npz` extension if
+  missing. No `cd()` calls or hardcoded paths.
+
+**Validation behaviour:**
+- Missing file -> `FileNotFoundError`
+- Wrong/missing `schema_version` -> `ValueError`
+- Missing required fields -> `ValueError` with field list
+- `cfg.num_molecules` mismatch -> `ValueError`
+
+This is the first I/O module, and it sets the pattern for any future
+disk-backed state in the codebase: explicit dataclass + schema version
++ shape validation.
+
+**The `RunDirectory` convenience layer (`simulation/run_directory.py`):**
+
+A second module adds a thin convenience class on top of the raw save/load
+functions. The user picks one path -- the run directory -- and never types
+filenames again:
+
+```python
+run = RunDirectory("data/runs/test01")
+run.save_cfg(cfg)
+run.save_neutral(neutral_ckpt)
+# later, possibly different process:
+run = RunDirectory("data/runs/test01")
+cfg = run.load_cfg()
+neutral = run.load_neutral()    # auto-validates against cfg.json
+```
+
+Why this layer:
+
+- **Eliminates filename invention.** Every script uses `neutral.npz`,
+  `ion.npz` -- always. No risk of typos like `Neutral.npz` vs `neutral.npz`.
+- **Self-describing runs.** The cfg that produced a run lives next to the
+  data as `cfg.json`. The legacy MATLAB code had no equivalent and that was
+  a known pain point ("which inputfile produced this checkpoint?").
+- **Two-script handoff is just a string.** Neutral-stage and ion-stage
+  scripts agree on a directory path, not a set of filenames.
+- **Forward-compatible.** Adding `pump.npz`, `probe.npz`, or
+  `figures/` later doesn't change existing call sites.
+- **No cwd dependency.** The legacy code used `cd()` to switch directories
+  and relied on relative paths; we always use explicit absolute or
+  relative paths.
+
+Validation behaviours added:
+- `cfg.json` with unknown fields -> `ValueError` (catches version skew).
+- `cfg.json` is **never** silently overwritten by `save_neutral(cfg=...)`
+  if it already exists -- this prevents a re-run with a different cfg from
+  silently corrupting the run's record of what produced it.
+- Loading a checkpoint with no explicit cfg auto-loads `cfg.json` for
+  shape validation.
+
+### Step 8 audit: thesis-figure 3.2 reproduction -- the full story
+
+The thesis figure 3.2 reproduction took multiple rounds and several wrong
+attempts. The final understanding:
+
+1. The figure was produced by a separate didactic script in Treiber's
+   thesis-writing workflow (file:
+   ``conditional_droplet_size_distribution_simplified.m``), NOT by the
+   production simulation code in this repo.
+
+2. That didactic script uses a closed-form Poisson-convolution formula
+
+       p_conditional(N) = P(k=1 | N) * p_lognormal(N) / Z
+
+   where ``P(k | N)`` is the Poisson PMF with rate ``a * n_gas * sigma(N)``.
+   No evaporation, no Monte-Carlo, no destroyed droplets -- a much simpler
+   physical model than our ``_simulate_pickup``.
+
+3. Two **subtle but critical** details in that script that I initially
+   missed and only caught after the user explicitly disagreed with my
+   first reproduction attempt:
+
+   * **Density convention.** The script's ``R(N) = (3N/(4*pi*n_he))^(1/3)``
+     uses the **bulk** helium density ``n_he = 2.18e28``, NOT the
+     ``0.8 * n_he`` droplet density used elsewhere in the production
+     codebase. The 1.077x scaling on R has a 1.16x effect on the cross
+     section and dramatically shifts the threshold cutoff.
+
+   * **Normalisation convention.** Both the normal-sigma and reduced-sigma
+     conditional distributions are normalised by the **same**
+     ``p_k_normalization`` (the normal-sigma value). The reduced-sigma
+     distribution therefore does NOT integrate to 1; its integral is the
+     fraction of one-pickup events that come from droplets above the
+     kinetic-energy threshold. This is why in the thesis figure the
+     dashed peaks at T=18 K are tiny (~0.3e-4) and at T=12 K are
+     **taller than the solid peaks** (~1.45e-4 vs ~0.85e-4).
+
+   I had originally re-normalised both branches to integrate to 1
+   independently, which produced a plot that looked qualitatively similar
+   but was quantitatively wrong on every peak height.
 
 **Resolution:**
-- `E_solv_meV` is a kwarg on `sample_droplet_sizes()` and helpers.
-- **Default = 14 meV** (matches both the figure and the legacy MATLAB).
-  Pass `E_solv_meV=30.0` explicitly if you want the thesis-text value.
-- Two regression tests lock in the figure-matching behaviour:
-  - peak position at T=18 K should be ~2500-3500 atoms
-  - reduced-σ distribution should shift right of normal-σ by >30%
-- Inconsistency is documented prominently in the source comments.
 
-**Quantitative verification (E_solv = 14, p = 25 mbar, d = 5 µm):**
+- Added :func:`conditional_size_distributions_analytical` to
+  ``droplet_sizes.py``: literal port of the MATLAB script, returning
+  BOTH p_normal and p_reduced as a tuple, with Treiber's exact density
+  and normalisation conventions.
+- Added :func:`plot_thesis_figure_3_2` to the diagnostics module:
+  reproduces the thesis figure visually using the public function.
+  Side-by-side comparison now matches pixel-for-pixel on every peak
+  position, height, and width.
+- Production sampler ``_simulate_pickup`` and its default
+  ``E_solv = 14 meV`` are **unchanged**. The Monte-Carlo simulator is what
+  feeds the actual initial conditions for our MD runs.
+- Regression tests lock in the **specific** thesis-figure signatures, not
+  just qualitative shape:
+  - normal-sigma integrates to 1
+  - reduced-sigma integrates to <1 (Treiber convention)
+  - T=12: reduced peak HIGHER than normal peak
+  - T=18: reduced peak much LOWER than normal peak (< 40%)
+  - T=18: normal peak position in [1500, 4000]
 
-| Feature | Thesis fig | Our reproduction |
-|---|---|---|
-| T=18 K normal peak | ~2500 | ~2500 ✓ |
-| T=15 K normal peak | ~5000 | ~5000 ✓ |
-| Reduced σ shifts right | yes, by ~5000 | yes, by ~5000-7000 ✓ |
-| Reduced σ has sharp left cutoff | yes | yes ✓ |
-| Means in panel (a) | normal/reduced split | reproduced ✓ |
+**Lessons learned (this audit alone, in order):**
 
-**Lessons:**
-1. Legacy code can disagree with the published paper that documents it.
-2. **Within** a paper, the text and figures can disagree. Visual
-   regression against figures beats following text quotations.
-3. When the user pushes back on a "fix", verify with a side-by-side
-   comparison rather than defending the change.
+1. *First attempt:* read the thesis text, defaulted ``E_solv=30`` -- the
+   user pushed back with a side-by-side comparison showing the dashed
+   lines weren't separated.
+
+2. *Second attempt:* reverted to ``E_solv=14``, declared "match" based on
+   eyeballing solid lines only, ignored the dashed lines.
+
+3. *Third attempt:* the user uploaded the actual Treiber script. I claimed
+   to port it but missed the density and normalisation details. Generated
+   another "match" that the user correctly identified as wrong.
+
+4. *Fourth attempt:* after the user said "this doesn't match at all", I
+   wrote a literal line-by-line MATLAB transliteration as a sanity check.
+   The transliteration matched the thesis. Comparing it to my "clean"
+   port revealed the two missed details. **Final fix gives pixel-perfect
+   reproduction.**
+
+**The lesson:** before claiming to reproduce a reference figure, write
+the most literal possible transliteration first and verify against the
+target. Only then refactor for clarity. Going straight to a "clean"
+version skipped the verification step that would have caught the bugs
+immediately. This is now reflected in the project quality principles
+above.
+
+### Step 8 audit follow-up: diagnostic plot count vs density
+
+A second issue with the diagnostic plot was caught by the user comparing
+it side-by-side with the MATLAB ``histogram()`` output: my Panel 2 (the
+"raw vs one-pickup overlay") used ``density=True``, which renormalises
+each histogram independently to integrate to 1. That made the one-pickup
+histogram look like a peak shifted to N~16500, because that's where the
+*conditional density* peaks.
+
+MATLAB's ``histogram()`` defaults to **raw counts**, which is what the
+reference image (``generate_droplet_sizes.m`` lines 226-229) shows. Raw
+counts make the one-pickup histogram appear visibly smaller (because
+most droplets don't end up with exactly one pickup) and at a peak only
+slightly shifted right of the initial distribution.
+
+**Fix:** Panel 2 now uses ``density=False`` and labels the y-axis
+"count", matching MATLAB exactly. Side-by-side comparison with the
+MATLAB plot confirms identical shape and ratio.
+
+**Lesson:** when reproducing a reference plot, match the y-axis
+convention (counts vs density vs probability mass) -- it's not just
+visual styling, it changes which feature is at the peak. Always
+side-by-side compare before declaring "looks right".
+
+### Step 8 audit follow-up: diagnostics module
+
+The legacy MATLAB `generate_droplet_sizes.m` has a `debug_pickup_plot=true`
+flag that interleaves histograms and per-round `fprintf` reports into the
+production sampler. To preserve that capability without polluting the
+clean Python sampler, we added a new file
+`i2_helium_md/sampling/droplet_sizes_diagnostics.py` with one public
+function `diagnose_pickup(cfg, ...)` that:
+
+- Re-runs `_simulate_pickup` with `return_diagnostics=True` (a new flag
+  added to the production function -- when False, behaviour is byte-
+  identical to before).
+- Returns a `(diagnostics_dict, matplotlib_figure)` tuple.
+- Prints a per-round physics report to stdout (suppressible).
+
+The figure is a 4-panel layout including the **raw vs one-pickup overlay**
+that MATLAB lines 226-229 produced, plus per-round yield bars and physics
+diagnostics not in the MATLAB.
+
+**Design choices:**
+- Diagnostic mode skips the "too few singles" `ValueError` so users can
+  diagnose *why* yield is low, instead of being blocked by the failure.
+- `matplotlib.pyplot` is imported inside the figure-building function,
+  not at module load. This keeps the module importable in headless
+  environments.
+- Production sampler's count check is preserved (still raises in
+  `mode='post_pickup'`); only the diagnostics path is permissive.
+
+**Use case verified:** the thesis figure 3.2 reproduction
+(`thesis_comparison_corrected.png`) was generated using `diagnose_pickup`
+with `oversample_factor=20`, allowing both normal and reduced-σ
+distributions at all three temperatures (T=12, 15, 18 K) without
+hitting the production count-check failure.
 
 ### Step 8 — radial position sampling
 
