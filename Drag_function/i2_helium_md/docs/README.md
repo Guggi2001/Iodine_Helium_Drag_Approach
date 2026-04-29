@@ -16,8 +16,8 @@ scope).
 | 6 | `physics/leapfrog.py` | `frog_step_neutral.m`, `frog_step_ion.m` | ✅ done |
 | 7 | `sampling/droplet_sizes.py` | `generate_droplet_sizes.m`, `get_dropletsize.m` | ✅ done |
 | 8 | `sampling/radial_positions.py` | `generate_radial_samples_3d.m` | ✅ done |
-| 9 | `simulation/checkpoint.py` | `save('neutral_propagation_checkpoint', ...)` | ⏳ |
-| 10 | `simulation/neutral.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` | ⏳ |
+| 9 | `simulation/checkpoint.py`, `simulation/run_directory.py` | `save('neutral_propagation_checkpoint', ...)` | ✅ done |
+| 10 | `simulation/neutral.py`, `sampling/orientations.py`, `physics/collisions.py`, `simulation/initial_state.py`, `simulation/propagation_step.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` | ✅ done |
 | 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | ⏳ |
 | 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | ⏳ |
 | 13 | `postprocess/hedft_loader.py` + `compare_trajectories.py` | `simulation_image_only_trajectories.m` | ⏳ |
@@ -29,7 +29,15 @@ scope).
 - `docs/interactions_module.md` — walkthrough of the `interactions.py` module
 - `docs/leapfrog_module.md` — walkthrough of the `leapfrog.py` integrator
 - `docs/droplet_sizes_module.md` — walkthrough of the `droplet_sizes.py` sampler
+- `docs/droplet_sizes_diagnostics_module.md` — debugging plots for the pickup simulation
 - `docs/radial_positions_module.md` — walkthrough of the `radial_positions.py` sampler
+- `docs/checkpoint_module.md` — walkthrough of the `checkpoint.py` I/O module
+- `docs/run_directory_module.md` — walkthrough of the `RunDirectory` convention layer
+- `docs/orientations_module.md` — walkthrough of the `orientations.py` angular sampler
+- `docs/initial_state_module.md` — walkthrough of `build_initial_state` (Step 10c-i)
+- `docs/propagation_step_module.md` — walkthrough of `neutral_propagation_step` (Step 10c-ii)
+- `docs/neutral_module.md` — walkthrough of `run_neutral_propagation` driver (Step 10c-iii)
+- `docs/collisions_module.md` — walkthrough of the `collisions.py` hard-sphere physics
 - `docs/migration_log.md` — chronological record of decisions, deviations, and open questions
 
 ## Project layout

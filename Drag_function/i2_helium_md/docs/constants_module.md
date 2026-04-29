@@ -23,20 +23,33 @@ small, well-documented, and free of any logic.
 
 ## What's inside
 
-### 1. Universal physics (port of `physical_constants.m`)
+### 1. Universal physics (modernised from `physical_constants.m`)
 
 ```python
-E_CHARGE: float = -1.602e-19          # C
-EPSILON_0: float = 8.85418781e-12     # F/m
-U: float = 1.66053907e-27             # kg
-EV: float = 1.602e-19                 # J
-K_B: float = 1.380649e-23             # J/K
-HC: float = 1240.0                    # eV*nm
-EV_PER_WAVENUMBER: float = 1.0 / 8065.54429
+E_CHARGE: float = -1.602176634e-19    # C  (exact, 2019 SI redefinition)
+EPSILON_0: float = 8.8541878188e-12   # F/m (CODATA 2022)
+U: float = 1.66053906892e-27          # kg (CODATA 2022)
+EV: float = 1.602176634e-19           # J  (exact, 2019 SI)
+K_B: float = 1.380649e-23             # J/K (exact, 2019 SI)
+HC: float = 1239.841984               # eV*nm
+EV_PER_WAVENUMBER: float = 1.0 / 8065.543937
 ```
 
-Each maps one-to-one to a line in the MATLAB source. The `ALL_CAPS` naming
-convention is Python's standard signal for "fixed value, don't reassign."
+These are CODATA 2022 / SI 2019 values rather than the legacy MATLAB
+4-significant-figure approximations (`eV = 1.602e-19` etc). The legacy
+values were wrong by ~100 ppm and quietly biased every energy
+calculation. We accept a small (~10 ppm) drift in regression tests
+against the literal MATLAB output in exchange for physical accuracy.
+
+If you need to reproduce a legacy MATLAB run bit-for-bit (e.g. to
+compare against an old saved checkpoint), override these by importing
+and reassigning before any other module loads:
+
+```python
+from i2_helium_md.physics import constants
+constants.EV = 1.602e-19              # legacy MATLAB
+constants.U  = 1.66053907e-27         # legacy MATLAB
+```
 
 ### 2. Iodine-specific constant
 
@@ -52,6 +65,8 @@ constant makes the species explicit at every call site.
 ```python
 BULK_DENSITY_HELIUM: float = 0.0219            # atoms / A^3
 DENSITY_DROPLET: float = 0.8 * BULK_DENSITY_HELIUM
+
+def droplet_radius_bulk_angstrom(N): ...
 ```
 
 The 0.8 factor accounts for surface effects and is a standard assumption
@@ -59,6 +74,18 @@ in helium-droplet literature (Phys. Rev. B 58, 3341).
 
 `DENSITY_DROPLET` is automatically recomputed if you ever change
 `BULK_DENSITY_HELIUM`. A small thing MATLAB couldn't easily express.
+
+`droplet_radius_bulk_angstrom(N)` returns the droplet radius in Å
+computed from the **bulk** helium density (not 0.8x). This is the
+formula used in the production neutral-propagation code, where the
+radius defines the boundary of the solvation potential. The legacy
+MATLAB hardcodes the rounded prefactor `2.22 * N^(1/3)`; we use the
+exact value `(3 N / (4 pi 0.0219))^(1/3) = 2.2173 * N^(1/3)` per the
+"don't preserve legacy approximations" principle.
+
+The two density conventions used in the legacy code (bulk in
+propagation, 0.8x in pickup-cell sampling) are documented in the
+function docstring.
 
 ### 4. Coulomb helpers
 
@@ -80,7 +107,7 @@ simulation units), but the output is in SI Joules — convert with
 ### 5. The unit-conversion constant (added during a post-Step-7 refactor)
 
 ```python
-EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2: float = EV * 1e-4    # = 1.602e-23
+EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2: float = EV * 1e-4    # ≈ 1.602176634e-23
 ```
 
 This is the **single source of truth** for converting
@@ -116,7 +143,7 @@ Step 3: Convert acceleration to A/ps².
 Combined:
         a[A/ps²] = F[eV/A] / m[kg] * EV * 1e10 * 1e-14
                  = F[eV/A] / m[kg] * EV * 1e-4
-                 = F[eV/A] / m[kg] * 1.602e-23
+                 ≈ F[eV/A] / m[kg] * 1.602176634e-23
 ```
 
 ## Departures from MATLAB

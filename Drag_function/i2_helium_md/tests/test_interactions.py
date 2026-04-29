@@ -22,13 +22,15 @@ from i2_helium_md.physics.potentials import I2_X_STATE, morse_X
 # ---------------------------------------------------------------------------
 class TestConversionFactor:
     def test_factor_value(self):
-        """Force-to-acceleration factor for kg masses: 1.602e-23.
+        """Force-to-acceleration factor for kg masses: ≈ 1.602176634e-23.
 
         Derivation:
             a [A/ps^2] = F [eV/A] / m [kg] * EV * 1e-4
-                       = F [eV/A] / m [kg] * 1.602e-23
+                       = F [eV/A] / m [kg] * 1.602176634e-23
         """
-        assert EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 == pytest.approx(1.602e-23, rel=1e-4)
+        assert EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 == pytest.approx(
+            1.602176634e-23, rel=1e-9,
+        )
 
     def test_factor_matches_alternative_form(self):
         """Cross-check vs the equivalent 'eV/(A*u)' formulation: u * 9648.5."""

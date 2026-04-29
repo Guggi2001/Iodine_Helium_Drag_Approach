@@ -220,7 +220,7 @@ The unit conversion uses the shared constant `EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS
 defined in `physics/constants.py`. Numerically:
 
 ```
-a [A/ps²] = F [eV/A] / mass [kg] * 1.602e-23
+a [A/ps²] = F [eV/A] / mass [kg] × 1.602176634e-23
 ```
 
 Derivation:

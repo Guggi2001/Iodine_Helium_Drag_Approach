@@ -36,11 +36,11 @@ def _make_neutral_checkpoint(num_molecules: int = 5,
         mass_kg=np.full(2 * N, 127 * 1.66e-27),
         droplet_radii=np.full(2 * N, 30.0),
         r0=np.full(N, 5.0),
-        E_kin_eV=rng.standard_normal((N, T)),
-        E_pot_eV=rng.standard_normal((N, T)),
+        E_kin_eV=rng.standard_normal((2 * N, T)),
+        E_pot_eV=rng.standard_normal((2 * N, T)),
         E_initial_eV=rng.standard_normal(N),
-        E_dissip_eV=rng.standard_normal((N, T)),
-        L_droplet_eV_ps=rng.standard_normal((N, T)),
+        E_dissip_eV=rng.standard_normal((2 * N, T)),
+        L_droplet_eV_ps=rng.standard_normal((2 * N, T)),
     )
 
 
@@ -66,11 +66,11 @@ def _make_ion_checkpoint(num_molecules: int = 5, num_steps: int = 10) -> IonChec
         velocities_final_z=rng.standard_normal(2 * N),
         mass_kg=np.full(2 * N, 127 * 1.66e-27),
         mass_final_kg=np.full(2 * N, 127 * 1.66e-27),
-        E_kin_eV=rng.standard_normal((N, T)),
-        E_pot_eV=rng.standard_normal((N, T)),
+        E_kin_eV=rng.standard_normal((2 * N, T)),
+        E_pot_eV=rng.standard_normal((2 * N, T)),
         b_ion_outside=np.zeros(N, dtype=bool),
-        relative_loss_per_ps=rng.standard_normal((N, T)),
-        number_of_collisions=np.zeros((N, T), dtype=int),
+        relative_loss_per_ps=rng.standard_normal((2 * N, T)),
+        number_of_collisions=np.zeros((2 * N, T), dtype=int),
     )
 
 
@@ -154,10 +154,38 @@ class TestValidation:
 
     def test_missing_field_raises(self, tmp_path):
         """An npz that has the version but is missing required fields must fail."""
+        from i2_helium_md.simulation.checkpoint import _NEUTRAL_SCHEMA_VERSION
         path = tmp_path / "incomplete.npz"
-        np.savez_compressed(path, schema_version=1, num_molecules=1)
+        np.savez_compressed(
+            path,
+            schema_version=_NEUTRAL_SCHEMA_VERSION,
+            num_molecules=1,
+        )
         with pytest.raises(ValueError, match="missing fields"):
             load_neutral_checkpoint(path)
+
+    def test_validator_catches_wrong_2N_T_shape(self, tmp_path):
+        """If E_kin_eV has shape (N, T) instead of (2N, T), reject with a clear error.
+
+        Regression guard for the schema-v1 -> v2 transition.
+        """
+        ckpt = _make_neutral_checkpoint(num_molecules=4, num_steps=5)
+        # Forcibly corrupt one field to the old (N, T) shape
+        ckpt.E_kin_eV = np.zeros((ckpt.num_molecules, ckpt.time_ps.size))
+        save_neutral_checkpoint(ckpt, tmp_path / "wrong.npz")
+        cfg = single_pulse_N2000(num_molecules=4)
+        with pytest.raises(ValueError, match="E_kin_eV"):
+            load_neutral_checkpoint(tmp_path / "wrong.npz", cfg=cfg)
+
+    def test_validator_catches_inconsistent_num_steps(self, tmp_path):
+        """All trajectory arrays must agree on num_steps."""
+        ckpt = _make_neutral_checkpoint(num_molecules=4, num_steps=5)
+        # Make E_pot_eV's num_steps inconsistent
+        ckpt.E_pot_eV = np.zeros((2 * ckpt.num_molecules, 7))
+        save_neutral_checkpoint(ckpt, tmp_path / "wrong.npz")
+        cfg = single_pulse_N2000(num_molecules=4)
+        with pytest.raises(ValueError, match="num_steps"):
+            load_neutral_checkpoint(tmp_path / "wrong.npz", cfg=cfg)
 
 
 # ===========================================================================

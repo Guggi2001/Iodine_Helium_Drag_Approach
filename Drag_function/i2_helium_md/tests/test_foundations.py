@@ -5,7 +5,7 @@ import math
 import pytest
 
 from i2_helium_md import SimConfig, single_pulse_N2000
-from i2_helium_md.physics.constants import EV, K_B, MASS_I_AMU, U
+from i2_helium_md.physics import EV, K_B, MASS_I_AMU, U
 
 
 # ---------------------------------------------------------------------------
@@ -13,8 +13,8 @@ from i2_helium_md.physics.constants import EV, K_B, MASS_I_AMU, U
 # ---------------------------------------------------------------------------
 class TestConstants:
     def test_elementary_values(self):
-        assert U == pytest.approx(1.66053907e-27)
-        assert EV == pytest.approx(1.602e-19)
+        assert U == pytest.approx(1.66053906892e-27)
+        assert EV == pytest.approx(1.602176634e-19)
         assert K_B == pytest.approx(1.380649e-23)
         assert MASS_I_AMU == 127.0
 
@@ -29,6 +29,45 @@ class TestConstants:
         expected = 573.3 * K_B / EV * 1000.0
         cfg = SimConfig()
         assert cfg.binding_energy_molecule_meV == pytest.approx(expected)
+
+
+class TestDropletRadiusUtility:
+    """The droplet_radius_bulk_angstrom helper used by the propagation."""
+
+    def test_scalar_input(self):
+        from i2_helium_md.physics.constants import droplet_radius_bulk_angstrom
+        # Derived value: (3 / (4 pi 0.0219))^(1/3) = 2.2173
+        # So R(N=2000) = 2.2173 * 2000^(1/3) = 27.94 A
+        R = droplet_radius_bulk_angstrom(2000)
+        assert R == pytest.approx(27.94, abs=0.01)
+
+    def test_vector_input(self):
+        import numpy as np
+        from i2_helium_md.physics.constants import droplet_radius_bulk_angstrom
+        Ns = np.array([1000, 2000, 5000])
+        Rs = droplet_radius_bulk_angstrom(Ns)
+        assert Rs.shape == (3,)
+        # monotonically increasing
+        assert Rs[0] < Rs[1] < Rs[2]
+
+    def test_cube_law(self):
+        """R^3 should be linear in N (constant density implication)."""
+        from i2_helium_md.physics.constants import droplet_radius_bulk_angstrom
+        R1 = droplet_radius_bulk_angstrom(1000)
+        R8 = droplet_radius_bulk_angstrom(8000)
+        # R(8N)/R(N) = 8^(1/3) = 2 exactly
+        assert R8 / R1 == pytest.approx(2.0, rel=1e-12)
+
+    def test_legacy_matlab_difference(self):
+        """The legacy MATLAB hardcoded 2.22 * N^(1/3); we use the precise
+        derived value. Document the ~1200 ppm offset at N=2000.
+        """
+        from i2_helium_md.physics.constants import droplet_radius_bulk_angstrom
+        N = 2000
+        R_ours = droplet_radius_bulk_angstrom(N)
+        R_legacy = 2.22 * N ** (1.0 / 3.0)
+        rel_diff = abs(R_ours - R_legacy) / R_legacy
+        assert rel_diff < 0.002  # <0.2%, the legacy was rounded
 
 
 # ---------------------------------------------------------------------------

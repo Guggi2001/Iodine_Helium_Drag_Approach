@@ -43,10 +43,16 @@ from ..config import SimConfig
 
 
 # ===========================================================================
-# Schema versions: bump when removing/renaming fields
+# Schema versions: bump when removing/renaming fields, OR when shapes change
+# in a backward-incompatible way.
+#
+# Version history:
+#   1 -- initial; energy/L_droplet diagnostics had per-molecule shape (N, T).
+#   2 -- energy/L_droplet diagnostics moved to per-atom shape (2N, T)
+#        to match the legacy MATLAB code and allow per-atom debugging.
 # ===========================================================================
-_NEUTRAL_SCHEMA_VERSION: int = 1
-_ION_SCHEMA_VERSION: int = 1
+_NEUTRAL_SCHEMA_VERSION: int = 2
+_ION_SCHEMA_VERSION: int = 2
 
 
 # ===========================================================================
@@ -69,15 +75,20 @@ class NeutralCheckpoint:
     * ``mass_kg``            : (2 * num_molecules,)            kg
     * ``droplet_radii``      : (2 * num_molecules,)            Angstrom
     * ``r0``                 : (num_molecules,)                Angstrom (initial radial distance)
-    * ``E_kin_eV``           : (num_molecules, num_steps)      eV
-    * ``E_pot_eV``           : (num_molecules, num_steps)      eV
+    * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
+    * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom; pair energy split 50/50)
     * ``E_initial_eV``       : (num_molecules,)                eV (per-molecule total at t=0)
-    * ``E_dissip_eV``        : (num_molecules, num_steps)      eV (cumulative)
-    * ``L_droplet_eV_ps``    : (num_molecules, num_steps)      eV*ps (droplet potential work)
+    * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (cumulative, per-atom)
+    * ``L_droplet_eV_ps``    : (2 * num_molecules, num_steps)  eV*ps (droplet potential work, per-atom)
 
     Two-atom layout convention: indices [0, num_molecules) are the first
     atom of each molecule; indices [num_molecules, 2*num_molecules) are
     the second atom. Same convention as the rest of the codebase.
+
+    Per-atom vs per-molecule: ``E_initial_eV`` is per-molecule because
+    it represents the photon energy delivered to the molecule as a whole.
+    All other energy/dissipation arrays are per-atom, matching MATLAB.
+    Per-molecule values are recovered by summing atom 1 + atom 2 entries.
     """
 
     num_molecules: int
@@ -124,11 +135,11 @@ class IonCheckpoint:
     * ``velocities_final_z`` : (2 * num_molecules,)            Angstrom/ps
     * ``mass_kg``            : (2 * num_molecules,)            kg
     * ``mass_final_kg``      : (2 * num_molecules,)            kg (after possible mass attachment)
-    * ``E_kin_eV``           : (num_molecules, num_steps)      eV
-    * ``E_pot_eV``           : (num_molecules, num_steps)      eV
+    * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
+    * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
-    * ``relative_loss_per_ps``: (num_molecules, num_steps)     1/ps (energy loss rate)
-    * ``number_of_collisions``: (num_molecules, num_steps)     int (cumulative)
+    * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
+    * ``number_of_collisions``: (2 * num_molecules, num_steps) int (cumulative, per-atom)
     """
 
     num_molecules: int
@@ -313,8 +324,9 @@ def _validate_against_cfg(
 ) -> None:
     """Cross-check checkpoint against a SimConfig.
 
-    Currently checks ``num_molecules``. Add more invariants here as the
-    pipeline matures (e.g. dt consistency, num_steps bounds).
+    Currently checks ``num_molecules`` and array shapes. Add more
+    invariants here as the pipeline matures (e.g. dt consistency,
+    num_steps bounds).
     """
     if checkpoint.num_molecules != cfg.num_molecules:
         raise ValueError(
@@ -324,8 +336,14 @@ def _validate_against_cfg(
         )
 
     N = cfg.num_molecules
+
+    # (2N,) static per-atom arrays.
     expected_2N_shape = (2 * N,)
-    for fname in ("mass_kg", "droplet_radii"):
+    static_2N_fields = ("mass_kg", "droplet_radii", "mass_final_kg",
+                        "positions_final_x", "positions_final_y",
+                        "positions_final_z", "velocities_final_x",
+                        "velocities_final_y", "velocities_final_z")
+    for fname in static_2N_fields:
         if hasattr(checkpoint, fname):
             arr = getattr(checkpoint, fname)
             if arr.shape != expected_2N_shape:
@@ -333,3 +351,50 @@ def _validate_against_cfg(
                     f"checkpoint field {fname!r} has shape {arr.shape}, "
                     f"expected {expected_2N_shape}"
                 )
+
+    # (N,) per-molecule arrays.
+    expected_N_shape = (N,)
+    static_N_fields = ("r0", "E_initial_eV", "b_ion_outside")
+    for fname in static_N_fields:
+        if hasattr(checkpoint, fname):
+            arr = getattr(checkpoint, fname)
+            if arr.shape != expected_N_shape:
+                raise ValueError(
+                    f"checkpoint field {fname!r} has shape {arr.shape}, "
+                    f"expected {expected_N_shape}"
+                )
+
+    # (2N, num_steps) trajectory and per-atom diagnostic arrays.
+    # We don't pin num_steps because it depends on the run, but we
+    # check the leading dimension and that all such fields agree.
+    trajectory_2N_T_fields = (
+        "positions_x", "positions_y", "positions_z",
+        "velocities_x", "velocities_y", "velocities_z",
+        "E_kin_eV", "E_pot_eV", "E_dissip_eV", "L_droplet_eV_ps",
+        "relative_loss_per_ps", "number_of_collisions",
+    )
+    num_steps_seen: int | None = None
+    for fname in trajectory_2N_T_fields:
+        if hasattr(checkpoint, fname):
+            arr = getattr(checkpoint, fname)
+            if arr.ndim != 2 or arr.shape[0] != 2 * N:
+                raise ValueError(
+                    f"checkpoint field {fname!r} has shape {arr.shape}, "
+                    f"expected ({2*N}, num_steps)"
+                )
+            if num_steps_seen is None:
+                num_steps_seen = arr.shape[1]
+            elif arr.shape[1] != num_steps_seen:
+                raise ValueError(
+                    f"checkpoint field {fname!r} has num_steps={arr.shape[1]}, "
+                    f"but earlier fields had num_steps={num_steps_seen}"
+                )
+
+    # time_ps must agree with the trajectory length.
+    if hasattr(checkpoint, "time_ps") and num_steps_seen is not None:
+        ts = checkpoint.time_ps
+        if ts.shape != (num_steps_seen,):
+            raise ValueError(
+                f"checkpoint time_ps has shape {ts.shape}, "
+                f"expected ({num_steps_seen},)"
+            )

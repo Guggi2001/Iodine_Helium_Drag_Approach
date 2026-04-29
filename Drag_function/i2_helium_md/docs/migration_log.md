@@ -60,6 +60,18 @@ These guide every porting decision and code review:
    principle was added after the thesis figure 3.2 reproduction took
    four wrong attempts because we kept refactoring before verifying.
 
+10. **Don't keep bad features just to stay byte-identical to legacy.**
+    Where the legacy MATLAB code uses 4-significant-figure constants
+    or other approximations that we know to be inaccurate, the Python
+    port uses the correct modern values (CODATA 2022 / SI 2019) and
+    documents the choice prominently. "Reproduces the MATLAB output
+    bit-for-bit" is not a goal in itself — it's a useful regression
+    target *during a port*, but where the legacy was wrong, the new
+    code should be right. Differences of order ~100 ppm in energy
+    calculations are explicitly tolerated and noted. This principle
+    was added after I downgraded a precise CODATA constant to match
+    the legacy 4-sig-fig value, and the user correctly objected.
+
 Departures from these principles are documented as "open items" with a
 plan to resolve.
 
@@ -343,6 +355,323 @@ pickup-cell simulation ran. We unified them into a single
 the sampler isn't actually invoked for our target scope. We port and test
 it anyway because (a) the config exposes the realistic mode and (b) it's
 a clean entry point into the sampling layer.
+
+### Step 10 — neutral propagation (in progress)
+
+The MATLAB `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` is ~1000 lines of
+mixed concerns: angle sampling, initial-state assembly, leapfrog
+propagation, hard-sphere collisions, energy bookkeeping, debug
+plotting. We deliberately **skip the literal-transliteration step**
+for this file (per user direction) -- the MATLAB itself is the
+reference. Instead we build the leaves first, in isolation, and
+glue them together via a driver only after each leaf is fully
+verified.
+
+**Plan:**
+
+1. ✅ `sampling/orientations.py` -- pure angle/bond-length sampling.
+2. ⏳ `physics/collisions.py` -- hard-sphere collision physics
+   (Braun thesis D.2). Mode 3 only for now.
+3. ⏳ `simulation/neutral.py` -- driver that assembles initial state
+   and runs the propagation loop.
+
+**Step 10a: `sampling/orientations.py`**
+
+Direct-but-clean port of the orientation-sampling block (MATLAB lines
+~225-275). The module exports `sample_orientations(...)` returning a
+frozen `MolecularOrientations` dataclass with five named arrays.
+
+Key design choices:
+
+- **Returns a dataclass, not five loose arrays.** Makes the contract
+  explicit and guarantees consistent length.
+- **Position angles always uniform on the sphere.** Only the molecular
+  axis orientation is mode-dependent (anisotropic vs isotropic).
+- **Conversion to atomic xyz is OUT of scope.** That depends on the 2N
+  array layout convention owned by `simulation/neutral.py`.
+- **Anisotropic sampler uses bounded batched rejection.** Cos² rejection
+  has ~33% acceptance, so we propose ~3.5N candidates per batch and
+  accumulate; cap at 20 batches as a safety guard.
+- **Statistical regression tests:** `<(cos α sin δ)²> ≈ 0.6` in
+  anisotropic mode and `≈ 1/3` in isotropic mode. These distinguish a
+  correct cos²-weighted distribution from a bug-introduced uniform one.
+
+**Step 10b: `physics/collisions.py`**
+
+Mode-3-only hard-sphere collision physics, based on Andreas Braun's
+PhD thesis section D.2. Two pure functions, no SimConfig dependency:
+
+- `sample_collision_events(...)` -- given per-particle distance,
+  depth, and energy, decide who collides via Poisson thinning
+  with `p = d * sigma * rho_droplet`.
+- `apply_collision(...)` -- sample impact parameter, compute new
+  energy and lab-frame angle, build new 3D velocity vector with a
+  random orthonormal basis perpendicular to the incoming velocity.
+
+Key design choices:
+
+- **No SimConfig coupling.** Driver pulls cfg fields and passes them
+  in. Lets us test physics in isolation and reuse for both neutral
+  and ion stages.
+- **Modes 1 and 2 deliberately not ported.** They're legacy code
+  paths; we'll add them if needed.
+- **Azimuthal smearing convention preserved exactly from MATLAB.**
+  The `COSBETA = uniform(-1, 1)` sampling in MATLAB is NOT a uniform
+  azimuth, but the random reference direction (re-drawn per particle
+  per step) makes the resulting scattered velocities isotropic in
+  the perpendicular plane. We mirror this exactly and verify
+  isotropy with a regression test on `<cos 2φ>` (catches 2-fold
+  bias). Empirical `<cos 2φ> ≈ -0.002` with 200k samples.
+  The convention is documented prominently in the module docstring
+  with instructions for switching to uniform-phi if desired later.
+
+Statistical regression tests lock in:
+
+- Empirical collision rate matches `d × σ × ρ`.
+- Mean fractional energy loss for I/He is ~5–7% per collision.
+- Max fractional energy loss for equal masses approaches 1.0
+  (full transfer).
+- `<cos θ_lab>` matches the analytic 2-body transformation integral.
+- Perpendicular-plane azimuth has zero `<cos φ>`, `<sin φ>`,
+  and crucially `<cos 2φ>`.
+- Speed self-consistency: `|v_new|² = 2E₁/m` to numerical precision.
+
+**Step 10c-i: `simulation/initial_state.py`**
+
+Builds the t=0 physical state and pre-allocates trajectory arrays for
+the rest of the run. Single public function
+`build_initial_state(cfg, num_steps, rng)` returning a fully-allocated
+`NeutralCheckpoint` with column 0 populated.
+
+Internally:
+
+1. Sample droplet sizes (`sample_droplet_sizes` or `single_droplet_size`).
+2. Convert N -> radius via `droplet_radius_bulk_angstrom`.
+3. Sample radial positions of molecule centres.
+4. Sample axis orientations + bond lengths.
+5. Compute v0 from laser parameters (with `partner_interaction` branch
+   for the energy budget).
+6. Assemble per-atom xyz and velocities using the 2N layout.
+7. Allocate full `(2N, num_steps)` arrays, fill column 0.
+8. Return `NeutralCheckpoint`.
+
+Key design choices:
+
+- **Single function, not split into "sample then assemble".** The
+  layout convention (2N) and the conversion from angles to xyz is
+  the responsibility of this module. Splitting would have created
+  redundant boundaries.
+- **No DFT pre-fill.** The optional `custom_DFT_start` block from
+  MATLAB is left out; if needed it'll be added as a separate function
+  invoked by the driver.
+- **Allocates full trajectory arrays up front.** Memory cost is
+  computed by the driver; the auto-stride decision happens upstream
+  before this function is called.
+- **Variable name caveat documented.** The MATLAB `E_initial`
+  variable is in joules despite its name. Our Python preserves the
+  physics but uses explicit unit-suffixed names (`E_initial_J`).
+  The per-molecule eV-valued field on the checkpoint is named
+  `E_initial_eV` and stores `hc/lambda` in eV.
+- **MATLAB's `sin(δ+π)`, `cos(δ+π)` simplifications.** We write
+  `-sin(δ)` and `-cos(δ)` explicitly. The MATLAB form is preserved
+  in a comment.
+
+**Tests:** 17 pytest tests + 32 sandbox checks covering shapes, bond
+length, atom-2 anti-alignment, single-pulse v=0, reproducibility,
+photon energy, single-droplet-size mode, validation errors, save/load
+round trip.
+
+**Step 10c-iii: `simulation/neutral.py` driver (refactor + driver)**
+
+Final piece of the neutral propagation. Two changes in this step:
+
+1. **Refactored `propagation_step.py` to a pure function.** The
+   original 10c-ii API took a `NeutralCheckpoint` and `t_id`,
+   mutating column `t_id+1` in place. That coupling made auto-stride
+   impossible without weird tricks. Refactored to:
+
+   * `NeutralStepState` -- frozen dataclass holding the minimum-
+     sufficient state (positions, velocities, cumulative diagnostics,
+     time).
+   * `neutral_propagation_step(state, *, cfg, mass_kg, droplet_radii,
+     prev_distance_angstrom, rng) -> NeutralStepState` -- pure
+     function. Does not mutate inputs. Doesn't know about checkpoints.
+   * Helpers `state_from_checkpoint_column` and
+     `write_state_to_checkpoint_column` for the driver to
+     bootstrap/serialize.
+
+   This decouples the physics step from the storage stride, which
+   was the whole point of asking for a pure function. The same 11
+   physics tests from the in-place version were rewritten for the
+   pure API and all pass.
+
+2. **Added `simulation/neutral.py` with `run_neutral_propagation`.**
+   The driver:
+   * Decides internal step count (single_pulse -> 2; otherwise
+     `cfg.num_timesteps_neutral`).
+   * Decides storage stride. If full-resolution checkpoint would
+     exceed `max_bytes` (default 300 MB), only every K-th internal
+     step is stored. Internal stepping always at `cfg.dt_neutral`
+     so collision rate / leapfrog stability are preserved.
+   * Calls `build_initial_state` (sized for stored steps).
+   * Raises `NotImplementedError` if `cfg.custom_DFT_start` is True
+     (the TD-HeDFT pre-fill is not yet ported).
+   * Runs the inner loop using `neutral_propagation_step`, copying
+     every K-th state into the checkpoint.
+   * Always stores the final state in the last reachable column,
+     even if `(num_internal - 1) % stride != 0` -- ensures
+     trajectories end at the actual end-time.
+   * Optionally saves via `RunDirectory`.
+
+**Tests:** 15 pytest + 23 sandbox checks. End-to-end smoke includes
+single-pulse, long run, strided run (verified storage size stays
+under tight budget), DFT-stub, RunDirectory round trip, and energy
+bookkeeping (~3% drift over 50 steps in collision-active run, <10%
+tolerance).
+
+**Memory budget verified empirically:**
+
+| Run | Internal | Stride | Stored | Size |
+|---|---|---|---|---|
+| Single-pulse N=2000 | 2 | 1 | 2 | 1 MB |
+| HeDFT 9 Å N=500 | 2000 | 1 | 2000 | 160 MB |
+| HeDFT 9 Å N=2000 | 2000 | 3 | 667 | 214 MB |
+| Long N=2000 | 20000 | 22 | 910 | 291 MB |
+
+Step 10 of the migration plan is now complete.
+
+**Bug fix follow-up (E_pot at t=0 missing partner Morse):**
+
+The user reported a test failure: `test_total_energy_drift_small`
+expected drift < 1% but got 1149%. Investigation revealed that
+`build_initial_state` was computing `E_pot[t=0]` as the droplet
+solvation potential ONLY, while `propagation_step.py` (and MATLAB
+from t=1 onwards) computed it as droplet + half partner Morse. The
+discontinuity between t=0 and t=1 was the full Morse pair energy,
+~3 eV per molecule for R0=9 A initial conditions.
+
+The legacy MATLAB code has the same bug: line 476 of
+`vmi_sim_3d_neutral_propa_HeDFT_mimic.m` has
+`E_pot(:,1) = droplet_potential_atom(...)` -- no partner term --
+while line 885 has the full
+`E_pot(:,t_id+1) = droplet_potential_atom(...) + [E_pot_partner;E_pot_partner]/2`.
+
+Per project principle #10 ("don't preserve legacy approximations"),
+we treat this as a bug and include the partner term at t=0.
+
+After the fix, energy conservation in the test scenario is exact
+(drift = 0 to machine precision, since single_pulse atoms don't
+move). The long-run energy bookkeeping with collisions is unchanged
+(2.83% drift over 50 steps), confirming the fix doesn't disturb the
+collision physics.
+
+Added two regression guards:
+
+* `TestEPotIncludesPartner.test_E_pot_t0_includes_partner_morse`:
+  E_pot[t=0] should be CONTINUOUS with E_pot[t=1] from a single-pulse
+  step (jump < 1e-3 eV).
+* `TestEPotIncludesPartner.test_E_pot_t0_at_R0_9_is_a_few_eV`:
+  for R0=9 A and N=5, E_pot[t=0] > 1 eV (dominated by the Morse term).
+
+These would have caught the bug immediately if I'd written them when
+building `build_initial_state`. Lesson: when one module computes a
+quantity using a particular formula and another module is supposed
+to be consistent with it, **write a regression test that explicitly
+checks continuity at the boundary**. Don't trust that "they probably
+match because they look similar."
+
+**The (now removed) verbose Step 10c-ii section was a duplicate of
+content captured more accurately under Step 10c-iii's "refactor"
+bullet, which describes the API as it actually exists (pure function,
+not in-place).**
+
+**Step 10c-prep: per-atom checkpoint shapes + droplet-radius utility**
+
+Two prep changes before building the `simulation/neutral.py` driver:
+
+1. **`NeutralCheckpoint` and `IonCheckpoint` energy/L_droplet diagnostics
+   moved from `(N, num_steps)` to `(2N, num_steps)`** to match the
+   legacy MATLAB convention. Schema version bumped from 1 to 2 (old
+   files will fail to load with a clear error). The 2N layout lets us
+   inspect per-atom energy bookkeeping for debugging; per-molecule
+   values are recovered by summing/averaging atom 1 + atom 2 indices.
+   Only `r0` and `E_initial_eV` remain per-molecule (they describe the
+   molecule as a whole, not individual atoms).
+
+2. **New utility `droplet_radius_bulk_angstrom(N)` in
+   `physics/constants.py`.** The legacy MATLAB neutral propagation
+   uses `R = 2.22 * N^(1/3)` -- a 3-significant-figure rounding of
+   the formula derived from the bulk helium density. Per our "don't
+   preserve legacy approximations" principle, we use the precise
+   value (~2.2173 instead of 2.22). The 1200 ppm difference at
+   N=2000 is documented in the docstring as expected.
+
+   The function also documents the legacy MATLAB inconsistency: the
+   neutral-propagation code uses bulk density (2.22 prefactor), but
+   the pickup-cell sampler in `generate_droplet_sizes.m` uses 0.8x
+   bulk (2.39 prefactor). Both are mirrored faithfully in the
+   respective Python modules.
+
+**Audit follow-up (validator shape coverage):** when the user asked
+whether the schema-v2 change affected the `RunDirectory` wrapper, an
+audit found that `RunDirectory` itself was shape-agnostic (it just
+delegates to `save_neutral_checkpoint`/`load_neutral_checkpoint`).
+**However**, the validator function `_validate_against_cfg` only
+checked shapes for `mass_kg` and `droplet_radii`; it did NOT check
+the new (2N, T) shapes for the energy arrays. A regression where
+some future code wrote `E_kin_eV` with the old (N, T) shape would
+have round-tripped silently rather than being caught.
+
+Strengthened `_validate_against_cfg` to check:
+- Static (2N,) arrays: `mass_kg`, `droplet_radii`, `mass_final_kg`,
+  `positions_final_*`, `velocities_final_*`.
+- Static (N,) arrays: `r0`, `E_initial_eV`, `b_ion_outside`.
+- Trajectory (2N, T) arrays: all positions, velocities, energy
+  diagnostics, plus consistency that they all share the same `T`.
+- `time_ps` must agree with the trajectory `T`.
+
+Added two pytest regression guards in `test_checkpoint.py` and
+extended the `smoke_test_run_directory` to round-trip the actual
+output of `build_initial_state` with cfg-validated load. This locks
+in the contract: if the schema or the build function ever drifts,
+either the file will fail to load or the regression test will fail.
+
+**Audit follow-up (twice):** an early version of `collisions.py`
+defined local constants `AMU_KG` and `EV_J` (with the more precise
+CODATA value `1.602176634e-19`). I initially "fixed" this by
+downgrading the local values to match the legacy MATLAB
+4-significant-figure constant `EV = 1.602e-19`, on the rationale that
+"matching MATLAB byte-for-byte is good." **The user pushed back: that
+reasoning sacrifices physical accuracy for a false reproducibility
+goal.** Legacy MATLAB constants are wrong by ~100 ppm; throwing away
+~10 ppm of accuracy in our own code to "match" them is keeping a bad
+feature.
+
+**Correct fix:** updated `physics/constants.py` to use modern
+CODATA 2022 / SI 2019 values throughout:
+
+- `EV = 1.602176634e-19` (exact by 2019 SI redefinition)
+- `E_CHARGE = -1.602176634e-19` (exact)
+- `U = 1.66053906892e-27` (CODATA 2022)
+- `EPSILON_0 = 8.8541878188e-12` (CODATA 2022)
+- `K_B = 1.380649e-23` (already exact, no change)
+- `HC = 1239.841984` (was 1240, ~130 ppm wrong)
+- `EV_PER_WAVENUMBER = 1/8065.543937` (CODATA 2022)
+
+This means our results will not be byte-identical to the legacy
+MATLAB output — but they will be **physically more accurate**. The
+discrepancy is at most 100 ppm for any individual energy
+calculation, which is below the precision of any quantity we
+actually compare against experiment.
+
+If a future user needs to reproduce a legacy MATLAB run bit-for-bit,
+they can override constants by reassignment before any other module
+loads (documented in `docs/constants_module.md`).
+
+**Lesson:** "byte-identical to the legacy code" is a useful
+regression target during a port, but it is **not a goal in itself**.
+Where the legacy code was sloppy, the new code should be better, and
+documented as such.
 
 ### Step 9 — checkpoint I/O
 

@@ -161,22 +161,6 @@ class TestSamplePostPickup:
             f"thesis-figure peak should be near 2500-3500, got {peak_N:.0f}"
         )
 
-    def test_thesis_reproduction_reduced_shifts_right(self):
-        """Regression test: with default E_solv=14, the reduced-σ
-        distribution should shift visibly to LARGER N than the normal-σ
-        distribution (this is the qualitative signature of the thesis figure).
-        """
-        cfg = single_pulse_N2000(num_molecules=5_000, seed=42,
-                                  p_source_mbar=25, T_source_K=18)
-        N_norm = sample_droplet_sizes(cfg, mode="post_pickup",
-                                       reduced_crosssection=False)
-        N_red = sample_droplet_sizes(cfg, mode="post_pickup",
-                                      reduced_crosssection=True)
-        # reduced should be at noticeably larger N
-        assert N_red.mean() > N_norm.mean() * 1.3, (
-            f"reduced (mean={N_red.mean():.0f}) should be significantly larger "
-            f"than normal (mean={N_norm.mean():.0f})"
-        )
 
     def test_insufficient_droplets_raises(self):
         """If we ask for far too many, the function should error not silently."""

@@ -62,7 +62,7 @@ AccelFn = Callable[[Positions], tuple[Accelerations, np.ndarray]]
 
 # ===========================================================================
 # Note: the unit conversion factor for force-to-acceleration lives in
-# physics/constants.py as EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = 1.602e-23.
+# physics/constants.py as EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 ≈ 1.602176634e-23.
 # Keeping it there ensures interactions.py and leapfrog.py use the same
 # numerical value -- previously they had two slightly different forms.
 # ===========================================================================
@@ -185,7 +185,7 @@ def _droplet_acceleration(
     )
 
     # F = -dU/dr acts radially. The combined unit-conversion factor
-    # EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = EV * 1e-4 = 1.602e-23
+    # EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 = EV * 1e-4 ≈ 1.602176634e-23
     # turns F[eV/A] / mass[kg] into a[A/ps^2] in one multiplication.
     a_mag = (
         -dU_dr

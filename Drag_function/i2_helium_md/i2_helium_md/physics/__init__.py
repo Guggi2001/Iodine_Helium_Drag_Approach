@@ -12,6 +12,7 @@ from .constants import (
     K_B,
     MASS_I_AMU,
     U,
+    droplet_radius_bulk_angstrom,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "K_B",
     "MASS_I_AMU",
     "U",
+    "droplet_radius_bulk_angstrom",
 ]

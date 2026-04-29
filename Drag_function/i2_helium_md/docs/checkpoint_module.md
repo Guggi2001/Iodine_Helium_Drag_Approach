@@ -78,6 +78,24 @@ The minimum sufficient set to:
 - Reproduce energy diagnostics (E_kin, E_pot, E_initial, E_dissip, L_droplet)
 - Run postprocess on the neutral trajectory alone (time axis, r0)
 
+**Per-atom vs per-molecule arrays.** All trajectory arrays
+(`positions_*`, `velocities_*`, `mass_kg`, `droplet_radii`) and all
+energy arrays (`E_kin_eV`, `E_pot_eV`, `E_dissip_eV`, `L_droplet_eV_ps`)
+are **per-atom** with leading dimension `2 * num_molecules`. The 2N
+layout convention (atom 1 at indices `[0, N)`, atom 2 at indices
+`[N, 2N)`) is used throughout. Only `r0` (initial radial distance)
+and `E_initial_eV` (laser photon energy delivered to each molecule)
+are per-molecule with leading dimension `N`.
+
+This matches the legacy MATLAB code exactly. To recover per-molecule
+energy values, sum or average over the two atoms:
+
+```python
+ckpt = run.load_neutral()
+N = ckpt.num_molecules
+E_kin_per_molecule = ckpt.E_kin_eV[:N] + ckpt.E_kin_eV[N:]
+```
+
 ### `IonCheckpoint`
 
 The minimum sufficient set to:
@@ -122,7 +140,16 @@ on read and refuses to load incompatible versions.
 **Rule for bumping the version:**
 - Adding a field: backward-compatible — bump *not required*.
 - Removing or renaming a field: bump version.
+- Changing the **shape** of an existing field: bump version.
 - Changing the meaning or units of an existing field: bump version.
+
+**Version history (both `NeutralCheckpoint` and `IonCheckpoint`):**
+- `1` -- initial release. Energy/L_droplet diagnostics had per-molecule
+  shape `(N, num_steps)`.
+- `2` -- energy/L_droplet diagnostics moved to per-atom shape
+  `(2N, num_steps)` to match the legacy MATLAB code and allow
+  per-atom debugging. **Old v1 files cannot be loaded by current code**;
+  they would need to be re-run or migrated.
 
 When bumping, update `_NEUTRAL_SCHEMA_VERSION` or `_ION_SCHEMA_VERSION` in
 `checkpoint.py` and document the change in `migration_log.md`.
