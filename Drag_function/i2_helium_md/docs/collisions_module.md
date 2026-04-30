@@ -36,6 +36,7 @@ config-coupled state.
 from i2_helium_md.physics.collisions import (
     sample_collision_events,
     apply_collision,
+    velocity_dependent_cross_section,
 )
 ```
 
@@ -54,6 +55,25 @@ For colliders, samples `b/R = sqrt(uniform)`, computes COM angle from
 hard-sphere geometry, transforms to lab frame, optionally smears
 Gaussian, and assembles a new 3D velocity vector. Non-colliders are
 returned with their incoming velocity exactly (and `delta_E = 0`).
+
+### `velocity_dependent_cross_section(...)` — for ions
+
+Helper for the ion-stage v-dependent model:
+
+```
+sigma_per_particle = sigma_0 * v ** exponent
+```
+
+Production setting is `exponent = -2` (so `sigma ~ 1/v²`). Pass the
+result as the `sigma_angstrom_sq` argument to `sample_collision_events`.
+
+**Edge case at v=0**: with negative exponent this returns `+inf`, not
+NaN. That propagates cleanly through `sample_collision_events` because
+`trial < +inf` is always True — i.e. an infinitely-slow ion always
+collides in any finite step. This is mathematically defensible (an
+infinitely-slow particle has infinite mean collision time) and avoids
+the need for an arbitrary clamp. The Landau cutoff (`E0 < E_min`) in
+`sample_collision_events` provides the physical low-velocity floor.
 
 ## Physics details (the parts worth understanding)
 

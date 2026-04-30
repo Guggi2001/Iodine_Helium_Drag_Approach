@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/Drag_function/i2_helium_md/docs" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.14 (Iodine_Helium_Drag_Approach)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

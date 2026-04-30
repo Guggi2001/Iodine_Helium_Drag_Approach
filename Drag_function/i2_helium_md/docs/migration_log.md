@@ -963,6 +963,187 @@ density to within Monte Carlo noise.
 
 ---
 
+## Step 11a — Velocity-dependent cross section helper
+
+Both production input scripts (`single_pulse_N2000.m` and
+`single_pulse_droplet_distribution.m`) set `sigma_dependent_on_v = true`,
+so the ion stage needs `sigma = sigma_0 * v ** sigma_ion_exponent` with
+`sigma_ion_exponent = -2`.
+
+Rather than entangling this in the collision sampler itself, I added a
+small standalone helper `velocity_dependent_cross_section()` to
+`physics/collisions.py`. The driver computes per-particle σ from
+current speeds, then passes the array to the existing
+`sample_collision_events()` (which already accepted a per-particle
+σ array — that part of the API was forward-compatible from Step 10).
+
+**Edge case at `v = 0`:** with negative exponent this yields `+inf`, not
+NaN. After consideration we deliberately do NOT clamp, because:
+
+1. `inf` propagates cleanly through `p_scatter = dist · σ · ρ_droplet`
+   to give `p = +inf`.
+2. The downstream check `trial < p_scatter` evaluates True for any
+   finite `trial`, i.e. the ion always collides — physically correct
+   for an "infinitely-slow" particle.
+3. The Landau cutoff (`E0 < E_min`) provides the actual physical
+   low-velocity floor; clamping σ would conflate the two mechanisms.
+
+**Verification (sandbox, 10000-trial collision frequencies):**
+
+| v [Å/ps] | predicted | observed |
+|----------|-----------|----------|
+| 0.0      | 100.00 %  | 100.00 % |
+| 0.5      |  87.50 %  |  87.19 % |
+| 5.0      |   8.75 %  |   8.62 % |
+| 50.0     |   0.88 %  |   0.93 % |
+
+Helper is covered by 7 unit tests in `test_collisions.py
+::TestVelocityDependentCrossSection` and 4 sandbox checks in
+`smoke_test_collisions.py`.
+
+---
+
+## Step 11b — Ion initial-state builder + IonCheckpoint v3 schema
+
+### Schema bump v2 → v3
+
+Added three fields to `IonCheckpoint` so postprocess and energy-
+conservation diagnostics have everything they need:
+
+- **`droplet_radii_angstrom: (2N,)`** — per atom, mirrors NeutralCheckpoint.
+- **`mass_history_kg: (2N, T)`** — mass over time, since helium
+  attachment changes mass during the run.
+- **`E_dissip_eV: (2N, T)`** — cumulative energy dissipated per atom
+  (matches NeutralCheckpoint convention).
+
+Old v2 ion checkpoints cannot be loaded; the loader raises
+`ValueError` with a clear message. Schema-version checks in
+`tests/test_checkpoint.py` and `smoke_test_checkpoint.py` updated to
+verify v3 fields round-trip correctly.
+
+### `build_initial_ion_state` function
+
+Takes a `NeutralCheckpoint` and produces an `IonCheckpoint` with
+column 0 populated (positions, velocities, masses, energies) and
+columns 1..T-1 zero-allocated for the driver to fill.
+
+Reads from the neutral checkpoint:
+- positions and velocities at column `start_id` (default -1 = last)
+- `mass_kg` and `droplet_radii`
+
+Computes at t=0:
+- `E_kin = ½ m v²` (per atom, eV)
+- `E_pot = ion-droplet + half-pair Coulomb` (per atom, eV)
+
+### Bugs found in legacy MATLAB and fixed in Python
+
+While porting, two t=0 bookkeeping bugs were found in
+`vmi_sim_3d_ion_propa.m`:
+
+**Line 289** -- E_kin formula:
+```matlab
+E_kin_ion(:,1) = mass_i.*(vx² + vy²)²/2/eV;
+```
+- Missing `vz`
+- `(vx² + vy²)²` squares v² → produces `m * v⁴ / 2 / eV`
+
+**Line 291** -- E_pot formula:
+```matlab
+E_pot_ion(:,1) = droplet_potential(sqrt(x² + y²) - R);
+```
+- Missing `z²` in the radial coordinate
+- Missing the partner Coulomb term entirely (subsequent steps DO
+  include it via `frog_step_ion`)
+
+Both are "silent" because `E_pot_ion(:,1)` is only ever read for
+diagnostic plotting at the end of the run -- the same pattern as
+the t=0 E_pot bug we found in the neutral stage in Step 10. Python
+port fixes both per principle #10. Regression tests in
+`test_ion_initial_state.py::TestInitialEnergies` would catch either
+bug if it returned (they verify v² and inclusion of vz, of z, and of
+the Coulomb term).
+
+### Out-of-scope features
+
+`build_initial_ion_state` raises `NotImplementedError` at build time
+if cfg requests any of:
+- `effusive_dynamics`
+- `single_charge_ionization_allowed`
+- `additional_droplet_charges > 0`
+- `highly_charged_iodine`
+
+Both production input scripts (`single_pulse_N2000.m` and
+`single_pulse_droplet_distribution.m`) leave all of these at their
+default-disabled values. The early failure prevents silent wrong
+physics if someone ever flips one of these on.
+
+### Test coverage
+
+- `test_ion_initial_state.py` -- 22 unit tests across 5 classes:
+  TestApi (6), TestInheritance (5), TestInitialColumnsAreEmpty (3),
+  TestInitialEnergies (4), TestScopeChecks (4), TestValidation (2)
+- `smoke_test_ion_initial_state.py` -- 41 sandbox checks
+- All 15 smoke test suites pass after the schema bump.
+
+---
+
+## Step 11c — Ion propagation step (pure function)
+
+Mirrors the design pattern of Step 10c-ii (`propagation_step.py`):
+
+- `IonStepState` frozen dataclass holds per-atom dynamic quantities
+- `ion_propagation_step(state, *, cfg, droplet_radii, charge,
+  prev_distance, rng) → IonStepState` is pure (no mutation, no I/O)
+
+### Key design decision: mass carried in state (Option C)
+
+Unlike neutral, ion mass changes per atom over time as helium attaches.
+The cleanest approach is to make `mass_kg` part of `IonStepState` and
+rebuild the `make_ion_step` closure inside the pure step function each
+iteration. This keeps the leapfrog API unchanged and adds only one
+function-construction per step (no per-atom Python loops).
+
+### Step sequence
+
+1. Leapfrog (rebuilds closure with current mass)
+2. Depth into droplet
+3. Per-atom cross section: v-dependent (`σ_0 · v^exponent`) if
+   `cfg.sigma_dependent_on_v` (production default), else constant
+4. Mode-3 collision sampling using previous step's distance
+5. Apply elastic collisions (`apply_collision`)
+6. Mass attachment: `rng.uniform < p_attach` AND `b_collision`
+   → mass += 4 amu
+7. Energy bookkeeping with **new** (post-attachment) mass
+8. Return new state with `time_ps += dt_ion`
+
+### Energy conservation result
+
+Without mass attachment, `E_kin + E_pot + E_dissip` drift over 50
+steps is **0.0022%** — at the leapfrog symplectic-error limit
+(~ppm/step). With attachment enabled (production setting), drift is
+~0.1% over 50 steps because attached helium kinetic energy is not
+tracked (a known approximation; legacy MATLAB has an
+`E_mass_attach_defect` diagnostic for this which we omit).
+
+### RNG draw pattern matches MATLAB
+
+The mass-attachment trial is drawn for ALL atoms (not just colliders)
+on every step, matching MATLAB line 727. This keeps the rng stream
+deterministic in case anyone uses it for reproducibility checks
+between Python and MATLAB later.
+
+### Test coverage
+
+- `test_ion_propagation_step.py` -- 24 unit tests across 8 classes
+  (TestApi, TestFirstStep, TestReproducibility, TestEnergyBookkeeping,
+   TestMassAttachment, TestEnergyConservation, TestScopeChecks,
+   TestVelocityDependentSigma)
+- `smoke_test_ion_propagation_step.py` -- 30 sandbox checks (all pass,
+  including v-dependent σ behavior: slow atom 50/50, fast atom 1/50)
+- All 16 smoke test suites pass
+
+---
+
 ## Migration progress
 
 See `README.md` for the live progress table.

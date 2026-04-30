@@ -6,6 +6,7 @@ import pytest
 from i2_helium_md.physics.collisions import (
     apply_collision,
     sample_collision_events,
+    velocity_dependent_cross_section,
 )
 from i2_helium_md.physics.constants import EV, U
 
@@ -20,6 +21,94 @@ def _energy_eV(m_amu: np.ndarray, vx: np.ndarray, vy: np.ndarray, vz: np.ndarray
     """Helper: compute kinetic energy in eV from (m_amu, v in Å/ps)."""
     v2 = vx**2 + vy**2 + vz**2
     return 0.5 * (m_amu * AMU_KG) * (v2 * A_PER_PS_TO_M_PER_S**2) / EV_J
+
+
+# ===========================================================================
+# velocity_dependent_cross_section
+# ===========================================================================
+class TestVelocityDependentCrossSection:
+    def test_zero_velocity_gives_inf(self):
+        """v=0 with negative exponent gives sigma=inf (no exception)."""
+        sigma = velocity_dependent_cross_section(
+            np.array([0.0]),
+            sigma_0_angstrom_sq=2500.0,
+            exponent=-2.0,
+        )
+        assert np.isinf(sigma[0])
+        assert sigma[0] > 0  # +inf, not -inf
+
+    def test_known_values_v_minus_2(self):
+        """Spot-check the formula at production parameters."""
+        v = np.array([0.5, 1.0, 5.0, 50.0])
+        sigma = velocity_dependent_cross_section(
+            v, sigma_0_angstrom_sq=2500.0, exponent=-2.0,
+        )
+        expected = np.array([1.0e4, 2500.0, 100.0, 1.0])
+        np.testing.assert_allclose(sigma, expected, rtol=1e-12)
+
+    def test_positive_exponent(self):
+        """sigma scales correctly for positive exponents too."""
+        v = np.array([1.0, 2.0, 4.0])
+        sigma = velocity_dependent_cross_section(
+            v, sigma_0_angstrom_sq=10.0, exponent=1.5,
+        )
+        # 10 * v^1.5
+        np.testing.assert_allclose(sigma, 10.0 * v ** 1.5, rtol=1e-12)
+
+    def test_zero_exponent_constant(self):
+        """With exponent=0, output is a constant array equal to sigma_0."""
+        v = np.array([1.0, 5.0, 100.0])
+        sigma = velocity_dependent_cross_section(
+            v, sigma_0_angstrom_sq=42.0, exponent=0.0,
+        )
+        np.testing.assert_allclose(sigma, 42.0)
+
+    def test_negative_velocity_raises(self):
+        """Negative speed is invalid input."""
+        with pytest.raises(ValueError, match="non-negative"):
+            velocity_dependent_cross_section(
+                np.array([1.0, -0.5]),
+                sigma_0_angstrom_sq=2500.0,
+                exponent=-2.0,
+            )
+
+    def test_shape_preserved(self):
+        """Output shape matches input shape."""
+        v = np.linspace(0.1, 10.0, 17)
+        sigma = velocity_dependent_cross_section(
+            v, sigma_0_angstrom_sq=2500.0, exponent=-2.0,
+        )
+        assert sigma.shape == v.shape
+
+    def test_inf_propagates_through_sample_collision(self):
+        """An atom at v=0 (sigma=inf) should ALWAYS collide.
+
+        This is the contract that downstream ion code relies on: when
+        an ion's velocity is zero (or near-zero with v^-2), the
+        cross section diverges, p_scatter > 1, and the trial < p_scatter
+        check is True regardless of the trial value.
+        """
+        # 100 trials with the same configuration
+        counts = 0
+        for seed in range(100):
+            rng = np.random.default_rng(seed)
+            sigma = velocity_dependent_cross_section(
+                np.array([0.0]),
+                sigma_0_angstrom_sq=2500.0,
+                exponent=-2.0,
+            )
+            b = sample_collision_events(
+                distance_travelled_angstrom=np.array([0.05]),
+                depth_angstrom=np.array([-10.0]),  # inside droplet
+                E0_eV=np.array([1.0]),
+                sigma_angstrom_sq=sigma,
+                E_min_eV=0.0,
+                rng=rng,
+            )
+            counts += int(b[0])
+        assert counts == 100, (
+            f"expected 100/100 collisions at v=0 (sigma=inf), got {counts}"
+        )
 
 
 # ===========================================================================

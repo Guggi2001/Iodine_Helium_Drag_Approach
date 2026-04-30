@@ -49,6 +49,61 @@ from .constants import DENSITY_DROPLET, EV, U
 
 
 # ===========================================================================
+# Public: velocity-dependent cross section helper
+# ===========================================================================
+def velocity_dependent_cross_section(
+    v_angstrom_per_ps: np.ndarray,
+    *,
+    sigma_0_angstrom_sq: float,
+    exponent: float,
+) -> np.ndarray:
+    """Compute per-particle cross section for the v-dependent ion model.
+
+    The legacy MATLAB code (lines ~440-466 of
+    ``vmi_sim_3d_ion_propa.m``) uses
+
+        sigma = sigma_0 * v ** exponent
+
+    where ``v`` is the per-particle speed in Å/ps. With the production
+    setting ``exponent = -2``, slow ions get arbitrarily large cross
+    sections; combined with the Landau cutoff in
+    :func:`sample_collision_events` (``E0 < E_min`` blocks collisions),
+    this gives the empirically-tuned behaviour of strongly-coupled
+    slow ions and weakly-coupled fast ions.
+
+    At ``v = 0`` exactly, this returns ``+inf`` (when ``exponent < 0``).
+    That is mathematically reasonable: an infinitely-slow ion has an
+    infinite mean collision time so any nonzero step gives p > 1 →
+    "always collides". The downstream ``trial < p_scatter`` check in
+    :func:`sample_collision_events` then evaluates True regardless of
+    the trial value, so a ``+inf`` propagates cleanly.
+
+    Parameters
+    ----------
+    v_angstrom_per_ps : np.ndarray
+        Per-particle speed in Å/ps. Shape ``(n_particles,)``.
+    sigma_0_angstrom_sq : float
+        Reference cross section ``sigma_0`` in Å² (e.g.
+        ``cfg.geometric_scattering_crosssection_Iplus``).
+    exponent : float
+        Power-law exponent (``cfg.sigma_ion_exponent``, typically -2).
+
+    Returns
+    -------
+    np.ndarray
+        Per-particle cross section in Å², same shape as ``v``.
+    """
+    v = np.asarray(v_angstrom_per_ps, dtype=float)
+    if np.any(v < 0):
+        raise ValueError("speed must be non-negative")
+
+    # Numpy's float power handles 0**(-2) = inf with a warning.
+    # We suppress the warning since inf is the intended result.
+    with np.errstate(divide="ignore"):
+        return sigma_0_angstrom_sq * v ** exponent
+
+
+# ===========================================================================
 # Public: collision-event sampling (Mode 3)
 # ===========================================================================
 def sample_collision_events(

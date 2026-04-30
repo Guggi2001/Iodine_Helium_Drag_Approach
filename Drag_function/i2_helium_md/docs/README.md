@@ -18,7 +18,7 @@ scope).
 | 8 | `sampling/radial_positions.py` | `generate_radial_samples_3d.m` | ✅ done |
 | 9 | `simulation/checkpoint.py`, `simulation/run_directory.py` | `save('neutral_propagation_checkpoint', ...)` | ✅ done |
 | 10 | `simulation/neutral.py`, `sampling/orientations.py`, `physics/collisions.py`, `simulation/initial_state.py`, `simulation/propagation_step.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` | ✅ done |
-| 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | ⏳ |
+| 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | 🚧 11a + 11b + 11c done; 11d pending |
 | 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | ⏳ |
 | 13 | `postprocess/hedft_loader.py` + `compare_trajectories.py` | `simulation_image_only_trajectories.m` | ⏳ |
 
@@ -37,6 +37,8 @@ scope).
 - `docs/initial_state_module.md` — walkthrough of `build_initial_state` (Step 10c-i)
 - `docs/propagation_step_module.md` — walkthrough of `neutral_propagation_step` (Step 10c-ii)
 - `docs/neutral_module.md` — walkthrough of `run_neutral_propagation` driver (Step 10c-iii)
+- `docs/ion_initial_state_module.md` — walkthrough of `build_initial_ion_state` (Step 11b)
+- `docs/ion_propagation_step_module.md` — walkthrough of `ion_propagation_step` (Step 11c)
 - `docs/collisions_module.md` — walkthrough of the `collisions.py` hard-sphere physics
 - `docs/migration_log.md` — chronological record of decisions, deviations, and open questions
 

@@ -50,9 +50,18 @@ from ..config import SimConfig
 #   1 -- initial; energy/L_droplet diagnostics had per-molecule shape (N, T).
 #   2 -- energy/L_droplet diagnostics moved to per-atom shape (2N, T)
 #        to match the legacy MATLAB code and allow per-atom debugging.
+#
+# Ion-specific history:
+#   2 -- initial ion checkpoint shape, matching neutral v2.
+#   3 -- adds three fields needed for postprocess and diagnostics:
+#          * droplet_radii_angstrom (2N,)   -- droplet radius per atom
+#          * mass_history_kg        (2N, T) -- mass over time (changes
+#                                              as helium attaches)
+#          * E_dissip_eV            (2N, T) -- cumulative energy dissipated
+#                                              per atom (matches neutral)
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 2
+_ION_SCHEMA_VERSION: int = 3
 
 
 # ===========================================================================
@@ -127,19 +136,26 @@ class IonCheckpoint:
     * ``velocities_x``       : (2 * num_molecules, num_steps)  Angstrom/ps
     * ``velocities_y``       : (2 * num_molecules, num_steps)  Angstrom/ps
     * ``velocities_z``       : (2 * num_molecules, num_steps)  Angstrom/ps
-    * ``positions_final_x``  : (2 * num_molecules,)            Angstrom (asymptotic, after free flight)
+    * ``positions_final_x``  : (2 * num_molecules,)            Angstrom (asymptotic)
     * ``positions_final_y``  : (2 * num_molecules,)            Angstrom
     * ``positions_final_z``  : (2 * num_molecules,)            Angstrom
     * ``velocities_final_x`` : (2 * num_molecules,)            Angstrom/ps (used by VMI postprocess)
     * ``velocities_final_y`` : (2 * num_molecules,)            Angstrom/ps
     * ``velocities_final_z`` : (2 * num_molecules,)            Angstrom/ps
-    * ``mass_kg``            : (2 * num_molecules,)            kg
+    * ``mass_kg``            : (2 * num_molecules,)            kg (initial mass)
     * ``mass_final_kg``      : (2 * num_molecules,)            kg (after possible mass attachment)
+    * ``mass_history_kg``    : (2 * num_molecules, num_steps)  kg (mass over time)
+    * ``droplet_radii_angstrom``: (2 * num_molecules,)         Angstrom (per atom; same value for the two atoms of a molecule)
     * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
+    * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
     * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
     * ``number_of_collisions``: (2 * num_molecules, num_steps) int (cumulative, per-atom)
+
+    Schema v3 (the current version) differs from v2 by adding
+    ``droplet_radii_angstrom``, ``mass_history_kg``, and ``E_dissip_eV``.
+    Older v2 files cannot be loaded; rerun the ion stage to upgrade.
     """
 
     num_molecules: int
@@ -158,8 +174,11 @@ class IonCheckpoint:
     velocities_final_z: np.ndarray
     mass_kg: np.ndarray
     mass_final_kg: np.ndarray
+    mass_history_kg: np.ndarray
+    droplet_radii_angstrom: np.ndarray
     E_kin_eV: np.ndarray
     E_pot_eV: np.ndarray
+    E_dissip_eV: np.ndarray
     b_ion_outside: np.ndarray
     relative_loss_per_ps: np.ndarray
     number_of_collisions: np.ndarray
@@ -339,7 +358,8 @@ def _validate_against_cfg(
 
     # (2N,) static per-atom arrays.
     expected_2N_shape = (2 * N,)
-    static_2N_fields = ("mass_kg", "droplet_radii", "mass_final_kg",
+    static_2N_fields = ("mass_kg", "droplet_radii", "droplet_radii_angstrom",
+                        "mass_final_kg",
                         "positions_final_x", "positions_final_y",
                         "positions_final_z", "velocities_final_x",
                         "velocities_final_y", "velocities_final_z")
@@ -372,6 +392,7 @@ def _validate_against_cfg(
         "velocities_x", "velocities_y", "velocities_z",
         "E_kin_eV", "E_pot_eV", "E_dissip_eV", "L_droplet_eV_ps",
         "relative_loss_per_ps", "number_of_collisions",
+        "mass_history_kg",
     )
     num_steps_seen: int | None = None
     for fname in trajectory_2N_T_fields:
