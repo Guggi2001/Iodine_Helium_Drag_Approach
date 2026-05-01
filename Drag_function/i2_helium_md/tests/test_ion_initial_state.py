@@ -143,6 +143,25 @@ class TestInitialColumnsAreEmpty:
         assert not ion.b_ion_outside.any()
 
 
+def _deep_copy_neutral(neutral):
+    """Return a NeutralCheckpoint with all numpy arrays deep-copied.
+
+    ``dataclasses.replace`` only does a shallow copy: array fields are
+    shared between the new and original instances. Tests that mutate
+    arrays must deep-copy first or they corrupt the shared fixture.
+    """
+    from i2_helium_md.simulation.checkpoint import NeutralCheckpoint
+    from dataclasses import fields
+    kwargs = {}
+    for f in fields(NeutralCheckpoint):
+        v = getattr(neutral, f.name)
+        if isinstance(v, np.ndarray):
+            kwargs[f.name] = v.copy()
+        else:
+            kwargs[f.name] = v
+    return NeutralCheckpoint(**kwargs)
+
+
 # ===========================================================================
 # Initial energies: the bug-fix tests
 # ===========================================================================
@@ -169,10 +188,9 @@ class TestInitialEnergies:
         ours always includes it by constructing a state with vx=vy=0
         but vz != 0 -- a buggy E_kin would be zero, ours should be nonzero."""
         cfg, neutral = small_neutral_run
-        N = cfg.num_molecules
 
-        # Inject a vz-only state into the last neutral column.
-        nc_modified = replace(neutral)
+        # Deep-copy before mutating so we don't pollute the module-scoped fixture.
+        nc_modified = _deep_copy_neutral(neutral)
         nc_modified.velocities_x[:, -1] = 0.0
         nc_modified.velocities_y[:, -1] = 0.0
         nc_modified.velocities_z[:, -1] = 3.0  # 3 Å/ps
@@ -185,31 +203,25 @@ class TestInitialEnergies:
         """Legacy ion script line 291 used sqrt(x²+y²) instead of
         sqrt(x²+y²+z²). Verify ours uses the 3D radius."""
         cfg, neutral = small_neutral_run
-
-        # Modify the last column so atoms are far in z but x=y=0
-        nc_modified = replace(neutral)
         N = cfg.num_molecules
-        # Place all atoms at z = +50 Å (well outside any droplet of radius ~28 Å)
+
+        # Deep-copy before mutating so we don't pollute the module-scoped fixture.
+        nc_modified = _deep_copy_neutral(neutral)
+        # Atom-1 of each molecule at z=+50 (outside droplet); atom-2 at z=-50
+        # so the pair Coulomb energy is finite (not r=0 -> inf).
         nc_modified.positions_x[:, -1] = 0.0
         nc_modified.positions_y[:, -1] = 0.0
-        nc_modified.positions_z[:, -1] = 50.0
+        nc_modified.positions_z[:N, -1] = 50.0
+        nc_modified.positions_z[N:, -1] = -50.0
         nc_modified.velocities_x[:, -1] = 0.0
         nc_modified.velocities_y[:, -1] = 0.0
         nc_modified.velocities_z[:, -1] = 0.0
 
         ion = build_initial_ion_state(cfg, nc_modified, num_steps_ion=10)
-        # Atoms outside the droplet should see binding_energy_I_ion ~ 0.3 eV
-        # plus a Coulomb partner term (since both atoms of each molecule
-        # are at the same point, we'd get inf -- avoid that).
-        # Instead, check that the droplet term alone gives a value
-        # close to binding_energy_I_ion (the asymptote).
-        # Place atom-2 of each molecule far from atom-1 to avoid Coulomb singularity.
-        nc_modified.positions_z[N:, -1] = -50.0  # atom-2 of each at z=-50
-
-        ion = build_initial_ion_state(cfg, nc_modified, num_steps_ion=10)
-        # Now the droplet term per atom = binding_energy_I_ion ≈ 0.3 eV
-        # and Coulomb pair term = 14.4/100 = 0.144 eV per pair, half per atom = 0.072
-        # Total per atom: ~ 0.3 + 0.072 = 0.372 eV
+        # Atom outside droplet -> droplet term ≈ binding_energy_I_ion ≈ 0.3 eV
+        # Pair separation = 100 Å -> Coulomb pair = 14.4/100 = 0.144 eV
+        # Half per atom = 0.072 eV
+        # Total per atom: ≈ 0.372 eV
         for i in range(2 * N):
             assert 0.30 < ion.E_pot_eV[i, 0] < 0.40, (
                 f"atom {i} E_pot = {ion.E_pot_eV[i, 0]}, expected ~0.37 eV"

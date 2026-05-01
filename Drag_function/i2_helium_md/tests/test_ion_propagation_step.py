@@ -48,6 +48,45 @@ def setup_ion_state():
     return cfg, state, charge, droplet_radii, ion
 
 
+@pytest.fixture(scope="module")
+def warm_state(setup_ion_state):
+    """A state whose atoms have enough kinetic energy to actually collide.
+
+    The single-pulse neutral run leaves atoms essentially at rest
+    (E_kin ~ nano-eV, well below the Landau cutoff of ~1 meV). Tests
+    that need the collision sampler to produce events have to start
+    from a "warmer" configuration. We build one by giving each atom a
+    moderate velocity (5 Å/ps -- about 0.3 eV per iodine) along the x
+    axis. Position-wise we keep them inside the droplet so they're
+    collision-eligible.
+    """
+    cfg, state, charge, droplet_radii, ion = setup_ion_state
+    n = state.x.shape[0]
+
+    # Place atoms randomly inside the droplet with deterministic offsets
+    # (reproducible). Use a Halton-like sequence for variety.
+    rng_setup = np.random.default_rng(123)
+    pos_seed = rng_setup.uniform(-10.0, 10.0, size=(3, n))
+    # Speeds along x: alternate ±5 Å/ps so atoms move outward in pairs
+    speed = 5.0  # Å/ps -> ~0.27 eV per iodine, comfortably above E_min ~ 1 meV
+    sign = np.where(np.arange(n) < n // 2, +1.0, -1.0)
+    vx = sign * speed
+    vy = np.zeros(n)
+    vz = np.zeros(n)
+
+    warm = IonStepState(
+        x=pos_seed[0].copy(), y=pos_seed[1].copy(), z=pos_seed[2].copy(),
+        vx=vx.copy(), vy=vy.copy(), vz=vz.copy(),
+        mass_kg=state.mass_kg.copy(),
+        E_kin_eV=state.E_kin_eV.copy(),    # don't matter for stepping
+        E_pot_eV=state.E_pot_eV.copy(),
+        E_dissip_eV=np.zeros(n),
+        number_of_collisions=np.zeros(n, dtype=int),
+        time_ps=0.0,
+    )
+    return cfg, warm, charge, droplet_radii
+
+
 # ===========================================================================
 # Basic shapes and types
 # ===========================================================================
@@ -130,8 +169,13 @@ class TestFirstStep:
 # Reproducibility
 # ===========================================================================
 class TestReproducibility:
-    def test_same_seed_same_result(self, setup_ion_state):
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+    def test_same_seed_same_result(self, warm_state):
+        """Same seed -> bit-exact same trajectory.
+
+        Uses warm_state so collisions actually happen; otherwise the
+        leapfrog determinism alone makes this trivial.
+        """
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.05)  # enough to allow collisions
         s1 = ion_propagation_step(
             state, cfg=cfg, droplet_radii=droplet_radii, charge=charge,
@@ -150,8 +194,15 @@ class TestReproducibility:
             s1.number_of_collisions, s2.number_of_collisions
         )
 
-    def test_different_seed_different_result(self, setup_ion_state):
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+    def test_different_seed_different_result(self, warm_state):
+        """RNG-dependent divergence in collision sampling.
+
+        Uses the ``warm_state`` fixture (atoms with enough kinetic
+        energy to actually collide). The single-pulse fixture used
+        elsewhere has E_kin << E_min so the Landau cutoff blocks all
+        collisions and this test would be vacuous.
+        """
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.05)
         s1 = ion_propagation_step(
             state, cfg=cfg, droplet_radii=droplet_radii, charge=charge,
@@ -163,6 +214,16 @@ class TestReproducibility:
             prev_distance_angstrom=prev_distance,
             rng=np.random.default_rng(2),
         )
+        # Sanity check: at least some collisions should occur in at least
+        # one of the runs (otherwise we're testing nothing).
+        total_collisions = (
+            s1.number_of_collisions.sum() + s2.number_of_collisions.sum()
+        )
+        assert total_collisions > 0, (
+            "warm_state failed to produce any collisions; the fixture "
+            "may need higher velocity"
+        )
+
         # With collisions sampled differently, at least one of these
         # should differ. (The leapfrog itself is deterministic given
         # the same state; only collision/attachment depend on rng.)
@@ -179,19 +240,27 @@ class TestReproducibility:
 # Energy bookkeeping
 # ===========================================================================
 class TestEnergyBookkeeping:
-    def test_E_kin_uses_post_attachment_mass(self, setup_ion_state):
+    def test_E_kin_uses_post_attachment_mass(self, warm_state):
         """E_kin = ½ * m_new * v² (with NEW mass after attachment).
 
         Match MATLAB line 761 which uses ``mass_i(:, t_id+1)``.
+
+        Uses ``warm_state`` so collisions actually happen and mass can
+        change via attachment.
         """
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
-        # Mass attachment requires collisions, which require prev_distance.
+        cfg, state, charge, droplet_radii = warm_state
         # Use a generous prev_distance so most atoms collide.
         prev_distance = np.full(state.x.shape[0], 0.5)
         rng = np.random.default_rng(7)
         new_state = ion_propagation_step(
             state, cfg=cfg, droplet_radii=droplet_radii, charge=charge,
             prev_distance_angstrom=prev_distance, rng=rng,
+        )
+        # Sanity: confirm at least some attachments happened, otherwise
+        # the test is vacuous (E_kin = ½ m v² regardless of which mass
+        # we use if mass didn't change).
+        assert (new_state.mass_kg != state.mass_kg).any(), (
+            "no mass attachments occurred -- test is vacuous"
         )
         # Manually recompute E_kin with the NEW mass
         v_sq = new_state.vx ** 2 + new_state.vy ** 2 + new_state.vz ** 2
@@ -200,13 +269,14 @@ class TestEnergyBookkeeping:
             new_state.E_kin_eV, E_kin_expected, rtol=1e-12
         )
 
-    def test_E_dissip_is_cumulative(self, setup_ion_state):
+    def test_E_dissip_is_cumulative(self, warm_state):
         """E_dissip should monotonically grow when collisions occur."""
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.1)
         rng = np.random.default_rng(0)
         s = state
         prev_E_dissip = state.E_dissip_eV.copy()
+        any_collision = False
         for _ in range(10):
             s = ion_propagation_step(
                 s, cfg=cfg, droplet_radii=droplet_radii, charge=charge,
@@ -216,14 +286,18 @@ class TestEnergyBookkeeping:
                 "E_dissip decreased -- it should be monotonically cumulative"
             )
             prev_E_dissip = s.E_dissip_eV.copy()
+            if s.number_of_collisions.sum() > 0:
+                any_collision = True
+        assert any_collision, "no collisions occurred -- test is vacuous"
 
-    def test_n_collisions_is_cumulative(self, setup_ion_state):
+    def test_n_collisions_is_cumulative(self, warm_state):
         """number_of_collisions should monotonically grow."""
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.1)
         rng = np.random.default_rng(0)
         s = state
         prev_n = state.number_of_collisions.copy()
+        any_collision = False
         for _ in range(10):
             s = ion_propagation_step(
                 s, cfg=cfg, droplet_radii=droplet_radii, charge=charge,
@@ -231,15 +305,18 @@ class TestEnergyBookkeeping:
             )
             assert np.all(s.number_of_collisions >= prev_n)
             prev_n = s.number_of_collisions.copy()
+            if s.number_of_collisions.sum() > 0:
+                any_collision = True
+        assert any_collision, "no collisions occurred -- test is vacuous"
 
 
 # ===========================================================================
 # Mass attachment dynamics
 # ===========================================================================
 class TestMassAttachment:
-    def test_mass_only_increases(self, setup_ion_state):
+    def test_mass_only_increases(self, warm_state):
         """Mass is only ever added (4 amu per attachment), never removed."""
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.1)
         rng = np.random.default_rng(0)
         s = state
@@ -252,9 +329,9 @@ class TestMassAttachment:
             assert np.all(s.mass_kg >= prev_mass), "mass decreased"
             prev_mass = s.mass_kg.copy()
 
-    def test_mass_change_is_multiple_of_4u(self, setup_ion_state):
+    def test_mass_change_is_multiple_of_4u(self, warm_state):
         """Each attachment adds exactly 4 amu (one He atom)."""
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+        cfg, state, charge, droplet_radii = warm_state
         prev_distance = np.full(state.x.shape[0], 0.1)
         rng = np.random.default_rng(0)
         s = state
@@ -269,9 +346,9 @@ class TestMassAttachment:
         np.testing.assert_allclose(n_attach, np.round(n_attach), atol=1e-9)
         assert np.all(n_attach >= 0)
 
-    def test_mass_attach_probability_zero_no_attachment(self, setup_ion_state):
+    def test_mass_attach_probability_zero_no_attachment(self, warm_state):
         """With p=0, mass should never change even with many collisions."""
-        cfg, state, charge, droplet_radii, _ = setup_ion_state
+        cfg, state, charge, droplet_radii = warm_state
         cfg2 = replace(cfg, mass_attach_probability=0.0)
         prev_distance = np.full(state.x.shape[0], 0.5)
         rng = np.random.default_rng(0)
