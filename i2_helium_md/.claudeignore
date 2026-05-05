@@ -1,0 +1,67 @@
+# .claudeignore
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git internals
+.git/
+
+# Generated simulation outputs
+data/runs/
+data/output/
+data/tmp/
+data/temp/
+
+# Large generated arrays and checkpoints
+*.npz
+*.npy
+*.h5
+*.hdf5
+
+# MATLAB binary files are usually large.
+# Keep MATLAB source visible; do not ignore *.m files.
+*.mat
+
+# Generated figures and images
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
+# Logs
+*.log
+logs/
+
+# Temporary notebooks/checkpoints
+.ipynb_checkpoints/
+
+# Keep source code and documentation visible.
+# Keep legacy_matlab_repository/ visible because it is the reference implementation.
+# Do not ignore *.m files.
+# Do not ignore *.csv globally because small reference CSV files may be needed.
