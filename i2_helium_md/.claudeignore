@@ -65,3 +65,5 @@ logs/
 # Keep legacy_matlab_repository/ visible because it is the reference implementation.
 # Do not ignore *.m files.
 # Do not ignore *.csv globally because small reference CSV files may be needed.
+
+claude_code_terminal_basics.md
