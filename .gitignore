@@ -1,0 +1,15 @@
+
+neutral_propagation_checkpoint.mat
+ion_propagation_checkpoint.mat
+/result images
+single_pulse_simulation/neutral_propagation_checkpoint_single_pulse.mat
+/result images
+/single_pulse_simulation/result images
+/single_pulse_simulation/result images
+single_pulse_simulation/ion_propagation_checkpoint_gas.mat
+single_pulse_simulation/ion_propagation_checkpoint_hedft.mat
+post_process_checkpoint.mat
+ion_propagation_checkpoint_gas.mat
+I+He crosssection calculation/born_approximation_integral/Quantum Mechanics, Volume 2 Angular Momentum, Spin, and Approximation Methods (Claude Cohen-Tannoudji, Bernard Diu etc.) (Z-Library).pdf
+I+He crosssection calculation/born_approximation_integral.zip
+/Drag_function/drag_function/log.lammps
