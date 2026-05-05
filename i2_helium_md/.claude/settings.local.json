@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(python -m pytest tests/test_ion.py -v)",
+      "Bash(python -m pytest)"
     ]
   }
 }

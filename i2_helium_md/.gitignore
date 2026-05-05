@@ -1,10 +1,10 @@
 .venv/
-__pycache__/
-*.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
 /legacy_matlab_repository
 .idea/
-
+/i2_helium_md/__pycache__/
+__pycache__/
+*.py[cod]

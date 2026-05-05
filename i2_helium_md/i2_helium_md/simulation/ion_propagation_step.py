@@ -293,3 +293,53 @@ def _check_scope(cfg: SimConfig) -> None:
             + ". The two production input scripts leave all of these "
             "at their default-disabled values."
         )
+
+
+# ===========================================================================
+# Convenience helpers for checkpoint I/O
+# ===========================================================================
+def ion_state_from_checkpoint_column(ckpt, t_id: int) -> IonStepState:
+    """Extract an ``IonStepState`` from column ``t_id`` of an IonCheckpoint.
+
+    Used by the driver to bootstrap the inner loop after
+    :func:`build_initial_ion_state`. Copies the underlying arrays so the
+    state is independent of the checkpoint's storage. Mirrors the
+    neutral helper in ``propagation_step.py``; the only ion-specific
+    differences are that ``mass_kg`` lives in the state (sourced from
+    ``mass_history_kg[:, t_id]`` because mass changes via attachment)
+    and that ``number_of_collisions`` is tracked.
+    """
+    return IonStepState(
+        x=ckpt.positions_x[:, t_id].copy(),
+        y=ckpt.positions_y[:, t_id].copy(),
+        z=ckpt.positions_z[:, t_id].copy(),
+        vx=ckpt.velocities_x[:, t_id].copy(),
+        vy=ckpt.velocities_y[:, t_id].copy(),
+        vz=ckpt.velocities_z[:, t_id].copy(),
+        mass_kg=ckpt.mass_history_kg[:, t_id].copy(),
+        E_kin_eV=ckpt.E_kin_eV[:, t_id].copy(),
+        E_pot_eV=ckpt.E_pot_eV[:, t_id].copy(),
+        E_dissip_eV=ckpt.E_dissip_eV[:, t_id].copy(),
+        number_of_collisions=ckpt.number_of_collisions[:, t_id].copy(),
+        time_ps=float(ckpt.time_ps[t_id]),
+    )
+
+
+def write_ion_state_to_checkpoint_column(
+    state: IonStepState,
+    ckpt,
+    t_id: int,
+) -> None:
+    """Write an ``IonStepState`` into column ``t_id`` of an IonCheckpoint."""
+    ckpt.positions_x[:, t_id] = state.x
+    ckpt.positions_y[:, t_id] = state.y
+    ckpt.positions_z[:, t_id] = state.z
+    ckpt.velocities_x[:, t_id] = state.vx
+    ckpt.velocities_y[:, t_id] = state.vy
+    ckpt.velocities_z[:, t_id] = state.vz
+    ckpt.mass_history_kg[:, t_id] = state.mass_kg
+    ckpt.E_kin_eV[:, t_id] = state.E_kin_eV
+    ckpt.E_pot_eV[:, t_id] = state.E_pot_eV
+    ckpt.E_dissip_eV[:, t_id] = state.E_dissip_eV
+    ckpt.number_of_collisions[:, t_id] = state.number_of_collisions
+    ckpt.time_ps[t_id] = state.time_ps
