@@ -264,7 +264,7 @@ def _check_scope(cfg: SimConfig) -> None:
             + ". The two production input scripts (single_pulse_N2000.m and "
             "single_pulse_droplet_distribution.m) leave all of these at "
             "their default disabled values. To re-enable, see the design "
-            "discussion in docs/migration_log.md."
+            "discussion in migration_log.md."
         )
 
 

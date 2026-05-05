@@ -201,7 +201,7 @@ We kept the MATLAB formula verbatim for byte-for-byte compatibility.
 truncation error proportional to h × U''(r). At a minimum of U (where
 U' = 0), the FD method returns a tiny-but-nonzero force — `~0.04 Å/ps²`
 for I2 X state at R_e. This isn't a bug, it's a known artifact of FD. See
-`docs/migration_log.md` for the discussion.
+`migration_log.md` for the discussion.
 
 A future improvement is to replace FD with analytical derivatives (like
 we already did for `droplet_force`). This is worth doing if energy

@@ -163,7 +163,7 @@ respective contexts:
 * The analytical reproduction is a closed-form didactic formula with no
   evaporation, used only for thesis-figure regression testing.
 
-See ``docs/migration_log.md`` for the full debugging story (this took
+See ``migration_log.md`` for the full debugging story (this took
 four wrong attempts before settling on a literal MATLAB transliteration
 that matches the figure pixel-for-pixel).
 

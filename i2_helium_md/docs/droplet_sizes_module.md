@@ -213,7 +213,7 @@ different physical models:
 
 Two implementation details that matter for the analytical port (both
 caught after the user pushed back on a wrong reproduction; see
-`docs/migration_log.md` for the full debugging story):
+`migration_log.md` for the full debugging story):
 
 1. **Density convention.** Treiber's script uses **bulk** helium density
    ``n_he = 2.18e28`` for ``R(N) = (3N / 4π n_he)^(1/3)``, NOT the

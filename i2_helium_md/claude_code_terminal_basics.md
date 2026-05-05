@@ -389,7 +389,7 @@ Do not use broad auto-approval behavior for physics code unless the change is ve
 Use this when starting a new session in this project:
 
 ```text
-Read CLAUDE.md, README.md, current_state.md, next_tasks.md, docs/testing.md, and migration_log.md.
+Read CLAUDE.md, README.md, current_state.md, next_tasks.md, testing.md, and migration_log.md.
 
 Do not edit files.
 
@@ -413,7 +413,7 @@ Use this before implementing anything:
 ```text
 Audit the repository against the documentation.
 
-Read CLAUDE.md, README.md, current_state.md, next_tasks.md, docs/testing.md, and migration_log.md.
+Read CLAUDE.md, README.md, current_state.md, next_tasks.md, testing.md, and migration_log.md.
 
 Inspect the relevant source files, but do not edit anything.
 
@@ -515,7 +515,7 @@ Keep paths simple with forward slashes:
 ```text
 i2_helium_md/simulation/ion.py
 legacy_matlab_repository/
-docs/testing.md
+testing.md
 ```
 
 Avoid Windows backslashes in prompts unless necessary.

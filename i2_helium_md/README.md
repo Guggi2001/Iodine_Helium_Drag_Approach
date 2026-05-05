@@ -40,7 +40,11 @@ scope).
 * `docs/ion\_initial\_state\_module.md` — walkthrough of `build\_initial\_ion\_state` (Step 11b)
 * `docs/ion\_propagation\_step\_module.md` — walkthrough of `ion\_propagation\_step` (Step 11c)
 * `docs/collisions\_module.md` — walkthrough of the `collisions.py` hard-sphere physics
-* `docs/migration\_log.md` — chronological record of decisions, deviations, and open questions
+* `migration\_log.md` — chronological record of decisions, deviations, and open questions
+* `current\_state.md` — completed modules and next pending step
+* `next\_tasks.md` — task list and acceptance criteria for upcoming work
+* `testing.md` — testing conventions, tolerances, and MATLAB cross-reference rules
+* `agent\_protocol.md` — investigation vs. edit-mode rules for collaborators
 
 ## Project layout
 
@@ -73,15 +77,19 @@ Copy these three files from the legacy MATLAB repo:
 Once copied they're referenced via `SimConfig.data\_dir`, no hardcoded paths
 anywhere in the code.
 
-## Quickstart (after all steps done)
+## Quickstart
+
+The neutral stage is callable today via `run\_neutral\_propagation`. The ion
+driver (Step 11d) is not yet implemented; the ion-stage building blocks
+exist but no top-level `run\_ion` exists yet.
 
 ```python
-from i2\_helium\_md import single\_pulse\_N2000
-from i2\_helium\_md.simulation import run\_neutral, run\_ion
+from i2_helium_md import single_pulse_N2000
+from i2_helium_md.simulation.neutral import run_neutral_propagation
 
-cfg = single\_pulse\_N2000(num\_molecules=500, seed=123)
-neutral\_result = run\_neutral(cfg)
-ion\_result = run\_ion(cfg, neutral\_result)
+cfg = single_pulse_N2000(num_molecules=500, seed=123)
+neutral_result = run_neutral_propagation(cfg)
+# Ion driver pending — see next_tasks.md (Step 11d).
 ```
 
 ## Scope decisions (agreed with user)

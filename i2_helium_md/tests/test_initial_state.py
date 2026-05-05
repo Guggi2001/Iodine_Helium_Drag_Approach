@@ -244,7 +244,7 @@ class TestEPotIncludesPartner:
     """Regression test for the legacy MATLAB bug where E_pot at t=0
     omitted the partner Morse term. This caused a ~3 eV discontinuity
     between t=0 and t=1 for R=9 A initial conditions, breaking energy
-    conservation tests. See docs/migration_log.md for the full story.
+    conservation tests. See migration_log.md for the full story.
     """
 
     def test_E_pot_t0_includes_partner_morse(self):

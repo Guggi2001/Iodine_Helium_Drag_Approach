@@ -1,7 +1,5 @@
 # Current migration state
 
-Last updated: YYYY-MM-DD
-
 ## Completed
 
 - `physics/constants.py`

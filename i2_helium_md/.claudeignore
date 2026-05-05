@@ -67,3 +67,4 @@ logs/
 # Do not ignore *.csv globally because small reference CSV files may be needed.
 
 claude_code_terminal_basics.md
+/claude_code_terminal_basics.md

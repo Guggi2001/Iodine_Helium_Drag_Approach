@@ -5,6 +5,6 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
-/legacy_matlab_pository
+/legacy_matlab_repository
 .idea/
 

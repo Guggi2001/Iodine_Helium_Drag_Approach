@@ -177,7 +177,7 @@ def sample_droplet_sizes(
         section threshold). Default 14 meV (matches legacy MATLAB and
         thesis figure 3.2). The thesis *text* says 30 meV for iodine but
         that value does not reproduce the thesis *figure* -- the inconsistency
-        is documented in `docs/migration_log.md`. Pass `E_solv_meV=30.0`
+        is documented in `migration_log.md`. Pass `E_solv_meV=30.0`
         explicitly if you want to follow the thesis text instead.
     rng : np.random.Generator, optional
         Provide a numpy RNG for reproducibility. If None, build one from
