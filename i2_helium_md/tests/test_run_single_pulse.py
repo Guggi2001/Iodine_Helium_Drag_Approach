@@ -4,27 +4,21 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.run_single_pulse import main
+import scripts.run_single_pulse as script
 from i2_helium_md.simulation.run_directory import RunDirectory
 
 
-def test_tiny_single_pulse_run_writes_run_directory(tmp_path):
-    run_path = tmp_path / "single_pulse"
+def test_smoke_settings_write_run_directory(tmp_path, monkeypatch):
+    run_path = tmp_path / "smoke"
+    monkeypatch.setattr(script, "RUN_SIZE", "smoke")
+    monkeypatch.setattr(script, "RUN_DIR", run_path)
+    monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
+    monkeypatch.setattr(script, "NUM_MOLECULES", 2)
+    monkeypatch.setattr(script, "SEED", 123)
+    monkeypatch.setattr(script, "ION_TIME_PS", 0.02)
+    monkeypatch.setattr(script, "VERBOSE", False)
 
-    exit_code = main(
-        [
-            "--run-dir",
-            str(run_path),
-            "--num-molecules",
-            "2",
-            "--seed",
-            "123",
-            "--ion-simulation-time",
-            "0.02",
-        ]
-    )
-
-    assert exit_code == 0
+    assert script.main() == 0
 
     run = RunDirectory(run_path)
     assert run.has_cfg()
@@ -44,49 +38,55 @@ def test_tiny_single_pulse_run_writes_run_directory(tmp_path):
     assert ion.time_ps.size == 2
 
 
-def test_existing_outputs_require_force(tmp_path):
+def test_existing_outputs_require_explicit_overwrite(tmp_path, monkeypatch):
     run_path = tmp_path / "existing"
-    assert main(
-        [
-            "--run-dir",
-            str(run_path),
-            "--num-molecules",
-            "2",
-            "--seed",
-            "1",
-            "--ion-simulation-time",
-            "0.02",
-        ]
-    ) == 0
+    monkeypatch.setattr(script, "RUN_SIZE", "smoke")
+    monkeypatch.setattr(script, "RUN_DIR", run_path)
+    monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
+    monkeypatch.setattr(script, "NUM_MOLECULES", 2)
+    monkeypatch.setattr(script, "SEED", 1)
+    monkeypatch.setattr(script, "ION_TIME_PS", 0.02)
+    monkeypatch.setattr(script, "VERBOSE", False)
+    assert script.main() == 0
 
-    with pytest.raises(SystemExit, match="--force"):
-        main(
-            [
-                "--run-dir",
-                str(run_path),
-                "--num-molecules",
-                "2",
-                "--seed",
-                "2",
-                "--ion-simulation-time",
-                "0.02",
-            ]
-        )
+    monkeypatch.setattr(script, "SEED", 2)
+    with pytest.raises(SystemExit, match="OVERWRITE_EXISTING_RUN"):
+        script.main()
 
 
-def test_force_allows_existing_outputs(tmp_path):
-    run_path = tmp_path / "force"
-    base_args = [
-        "--run-dir",
-        str(run_path),
-        "--num-molecules",
-        "2",
-        "--ion-simulation-time",
-        "0.02",
-    ]
+def test_overwrite_setting_allows_rerun(tmp_path, monkeypatch):
+    run_path = tmp_path / "overwrite"
+    monkeypatch.setattr(script, "RUN_SIZE", "smoke")
+    monkeypatch.setattr(script, "RUN_DIR", run_path)
+    monkeypatch.setattr(script, "NUM_MOLECULES", 2)
+    monkeypatch.setattr(script, "ION_TIME_PS", 0.02)
+    monkeypatch.setattr(script, "VERBOSE", False)
 
-    assert main([*base_args, "--seed", "1"]) == 0
-    assert main([*base_args, "--seed", "2", "--force"]) == 0
+    monkeypatch.setattr(script, "SEED", 1)
+    monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
+    assert script.main() == 0
+
+    monkeypatch.setattr(script, "SEED", 2)
+    monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", True)
+    assert script.main() == 0
 
     cfg = RunDirectory(run_path).load_cfg()
     assert cfg.seed == 2
+
+
+def test_production_settings_keep_preset_defaults(monkeypatch):
+    monkeypatch.setattr(script, "RUN_SIZE", "production")
+    monkeypatch.setattr(script, "PRODUCTION_NUM_MOLECULES", None)
+    monkeypatch.setattr(script, "PRODUCTION_SEED", None)
+    monkeypatch.setattr(script, "PRODUCTION_ION_TIME_PS", None)
+
+    cfg = script.build_config()
+    assert cfg.num_molecules == 2000
+    assert cfg.seed is None
+    assert cfg.ion_simulation_time == pytest.approx(20.0)
+
+
+def test_unknown_run_size_raises(monkeypatch):
+    monkeypatch.setattr(script, "RUN_SIZE", "bad")
+    with pytest.raises(ValueError, match="RUN_SIZE"):
+        script.build_config()

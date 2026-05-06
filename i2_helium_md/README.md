@@ -53,6 +53,7 @@ Completed ion cross-reference artifacts:
 - `docs/neutral_module.md` — walkthrough of `run_neutral_propagation` driver (Step 10c-iii)
 - `docs/ion_initial_state_module.md` — walkthrough of `build_initial_ion_state` (Step 11b)
 - `docs/ion_propagation_step_module.md` — walkthrough of `ion_propagation_step` (Step 11c)
+- `docs/run_single_pulse_script.md` — usage guide for the public single-pulse script
 - `docs/collisions_module.md` — walkthrough of the `collisions.py` hard-sphere physics
 - `migration_log.md` — chronological record of decisions, deviations, and open questions
 - `current_state.md` — completed modules and current validation phase
@@ -94,14 +95,18 @@ should be used.
 
 ## Quickstart
 
-Run a small single-pulse pipeline from the repository root:
+Run the default smoke pipeline from the repository root:
 
 ```bash
-python scripts/run_single_pulse.py --run-dir results/single_pulse_test --num-molecules 10 --seed 123
+python scripts/run_single_pulse.py
 ```
 
-This writes `cfg.json`, `neutral.npz`, and `ion.npz` into the run directory.
-Use `--force` to intentionally overwrite an existing run directory.
+Edit the `USER SETTINGS` section at the top of
+`scripts/run_single_pulse.py` to choose `RUN_DIR`, `RUN_SIZE`,
+`NUM_MOLECULES`, `SEED`, and `ION_TIME_PS`. The script writes `cfg.json`,
+`neutral.npz`, and `ion.npz` into the run directory.
+
+See `docs/run_single_pulse_script.md` for the full usage workflow.
 
 Direct function calls are also supported:
 
