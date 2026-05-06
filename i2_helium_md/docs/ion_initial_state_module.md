@@ -64,8 +64,9 @@ We don't read the energy columns from neutral; ion E_kin/E_pot use
      splits the pair Coulomb energy as half-per-atom in 2N layout.
 - **`mass_history_kg[:, 0]`** — initial mass (no attachment yet).
 
-All other trajectory arrays start at zero (E_dissip, n_collisions,
-relative_loss_per_ps).
+All other trajectory arrays start at zero: `E_dissip_eV`,
+`E_mass_attach_defect_eV`, `number_of_collisions`, and
+`relative_loss_per_ps`.
 
 ## Bug fixes vs. legacy MATLAB
 

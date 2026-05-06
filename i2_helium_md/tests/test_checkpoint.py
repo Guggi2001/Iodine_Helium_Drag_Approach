@@ -71,6 +71,7 @@ def _make_ion_checkpoint(num_molecules: int = 5, num_steps: int = 10) -> IonChec
         E_kin_eV=rng.standard_normal((2 * N, T)),
         E_pot_eV=rng.standard_normal((2 * N, T)),
         E_dissip_eV=rng.standard_normal((2 * N, T)),
+        E_mass_attach_defect_eV=rng.standard_normal((2 * N, T)),
         b_ion_outside=np.zeros(N, dtype=bool),
         relative_loss_per_ps=rng.standard_normal((2 * N, T)),
         number_of_collisions=np.zeros((2 * N, T), dtype=int),

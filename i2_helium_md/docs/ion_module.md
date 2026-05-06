@@ -135,15 +135,16 @@ arrays.
 ### Memory estimates
 
 Per-step bytes are higher than neutral because `IonCheckpoint` carries
-12 `(2N, T)` arrays vs. 10 for neutral (`mass_history_kg`,
-`relative_loss_per_ps`, `number_of_collisions` are ion-only).
+13 `(2N, T)` arrays vs. 10 for neutral (`mass_history_kg`,
+`relative_loss_per_ps`, `number_of_collisions`, and the schema-v4
+`E_mass_attach_defect_eV` diagnostic are ion-only).
 
 | Run | N | t_ion | Internal steps | Full size | Stride | Stored | Saved size |
 |---|---|---|---|---|---|---|---|
 | Single-pulse demo | 4 | 0.1 ps | 10 | <0.1 MB | 1 | 10 | <0.1 MB |
-| HeDFT 9 Å | 500 | 20 ps | 2000 | ~190 MB | 1 | 2000 | ~190 MB |
-| HeDFT 9 Å | 2000 | 20 ps | 2000 | ~770 MB | 3 | 667 | ~256 MB |
-| Long single-pulse | 2000 | 50 ps | 5000 | ~1920 MB | 7 | 715 | ~275 MB |
+| HeDFT 9 Å | 500 | 20 ps | 2000 | ~206 MB | 1 | 2000 | ~206 MB |
+| HeDFT 9 Å | 2000 | 20 ps | 2000 | ~833 MB | 3 | 667 | ~277 MB |
+| Long single-pulse | 2000 | 50 ps | 5000 | ~2080 MB | 7 | 715 | ~298 MB |
 
 ## Final-state fields
 

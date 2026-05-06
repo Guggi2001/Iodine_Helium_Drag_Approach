@@ -1,0 +1,58 @@
+{
+    "_doc": [
+        "Hand-crafted minimal neutral-stage end-state for the first ion-driver",
+        "cross-reference between Python and legacy MATLAB.",
+        "",
+        "Layout: 1 molecule -> 2 atoms in the standard 2N convention",
+        "(atom 1 of molecule i at index i; atom 2 at index num_molecules+i).",
+        "With N=1 that means atom 1 at row 0, atom 2 at row 1.",
+        "",
+        "All values are plain IEEE 754 doubles, parsed identically by",
+        "Python json.load and MATLAB jsondecode. Positions in Angstrom,",
+        "velocities in Angstrom/ps, mass in atomic mass units, time in ps.",
+        "",
+        "Choices:",
+        " - non-zero z and vz on each atom -> exposes the legacy 2D-radial",
+        "   E_pot bug and the legacy missing-vz E_kin bug.",
+        " - asymmetric per-atom velocities -> any per-atom bookkeeping bug",
+        "   shows up immediately.",
+        " - droplet_radius = 4.0 A with atoms at r ~ 3.6-3.7 A so the atoms",
+        "   sit near the erf transition and the 3D-vs-2D radial difference",
+        "   is numerically visible.",
+        " - pair separation ~7.48 A with q=q=+1 -> partner Coulomb energy",
+        "   ~1.92 eV per pair, of which the legacy t=0 bookkeeping drops half.",
+        "",
+        "All stochastic ion physics is disabled in both scripts (no",
+        "collisions, no mass attachment, no v-dependent sigma). No",
+        "propagation step is taken on either side."
+    ],
+
+    "num_molecules": 1,
+    "num_steps_ion": 1,
+    "time_ps_at_t0": 0.0,
+    "droplet_radius_A": 4.0,
+    "mass_amu": 127.0,
+
+    "atom_0": {
+        "x_A":  3.0, "y_A":  2.0, "z_A":  1.0,
+        "vx_Aps":  0.5, "vy_Aps":  0.3, "vz_Aps":  0.2
+    },
+    "atom_1": {
+        "x_A": -3.0, "y_A": -2.0, "z_A": -1.0,
+        "vx_Aps": -0.4, "vy_Aps":  0.1, "vz_Aps": -0.3
+    },
+
+    "cfg_flags": {
+        "binding_energy_I_ion_eV": 0.3,
+        "potential_steepness": 14.2,
+        "E_coulomb_scale": 1.0,
+        "single_charge_ionization_allowed": false,
+        "additional_droplet_charges": 0,
+        "highly_charged_iodine": false,
+        "effusive_dynamics": false,
+        "hard_sphere_collisions_ion": 0,
+        "mass_attach_probability": 0.0,
+        "sigma_dependent_on_v": false,
+        "he_direction_scattering": false
+    }
+}

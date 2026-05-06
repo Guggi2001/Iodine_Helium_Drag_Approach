@@ -1120,10 +1120,18 @@ function-construction per step (no per-atom Python loops).
 
 Without mass attachment, `E_kin + E_pot + E_dissip` drift over 50
 steps is **0.0022%** — at the leapfrog symplectic-error limit
-(~ppm/step). With attachment enabled (production setting), drift is
-~0.1% over 50 steps because attached helium kinetic energy is not
-tracked (a known approximation; legacy MATLAB has an
-`E_mass_attach_defect` diagnostic for this which we omit).
+(~ppm/step). With attachment enabled (production setting), recomputing
+`E_kin = ½ m_new v²` after a 4-amu helium atom attaches at the atom's
+current velocity overstates the true post-attachment kinetic energy by
+`½ Δm v²`. The legacy MATLAB tracks this as a per-atom diagnostic
+``E_mass_attach_defect`` (`vmi_sim_3d_ion_propa.m:762`).
+
+The initial Step 11c port omitted that diagnostic. The omission was
+re-evaluated during Step 11 cross-reference work and reversed in
+**Step 11e** (see below): the field is now part of `IonStepState` and
+`IonCheckpoint` (schema v4), and the conserved invariant is
+`E_kin + E_pot + E_dissip + E_mass_attach_defect ≈ const` modulo
+Verlet drift on each side.
 
 ### RNG draw pattern matches MATLAB
 
@@ -1147,3 +1155,122 @@ between Python and MATLAB later.
 ## Migration progress
 
 See `README.md` for the live progress table.
+
+---
+
+## Step 11d — Full ion propagation driver
+
+The full ion-stage driver has now been implemented in `simulation/ion.py`.
+
+This completes the first functional Python ion-propagation path by connecting
+the pieces introduced in Steps 11a–11c:
+
+- velocity-dependent cross-section helper,
+- `build_initial_ion_state`,
+- pure `ion_propagation_step`,
+- `IonCheckpoint`,
+- `RunDirectory`.
+
+The driver follows the same orchestration pattern as `run_neutral_propagation`
+where appropriate:
+
+1. build the initial ion checkpoint from the final or selected neutral state,
+2. decide internal ion timestep count,
+3. decide storage stride when needed,
+4. propagate internally at the configured ion timestep,
+5. write stored states into the checkpoint,
+6. preserve the final state even when it does not align exactly with the
+   storage stride,
+7. optionally save through `RunDirectory`.
+
+The implementation is intended to preserve existing Python corrections to
+known MATLAB bookkeeping bugs rather than reintroducing them for byte-identical
+legacy output.
+
+Known corrections that remain relevant:
+
+- ion-stage `E_kin` at `t=0` uses the full velocity vector,
+- ion-stage `E_pot` at `t=0` uses the full radial coordinate,
+- ion-stage `E_pot` at `t=0` includes the partner Coulomb contribution,
+- Python uses the updated physical constants defined in `constants.py`.
+
+The project is now in the ion-stage MATLAB/Python cross-reference phase.
+The next goal is to validate the completed Python ion driver against small,
+deterministic MATLAB reference cases before moving on to the public
+single-pulse run script.
+
+Recommended validation order:
+
+1. ion `t=0` state copied from a tiny neutral checkpoint,
+2. deterministic one-step ion propagation with collisions disabled,
+3. deterministic multi-step ion propagation with collisions disabled,
+4. energy-bookkeeping sanity in deterministic mode,
+5. collision/statistical checks only after deterministic tests are stable.
+
+Do not start with a full stochastic trajectory comparison, because collision
+sampling, mass attachment, velocity-dependent cross sections, and RNG-stream
+differences make such a comparison too entangled for a first reference test.
+
+---
+
+## Step 11e — `E_mass_attach_defect_eV` diagnostic ported (schema v3 → v4)
+
+While planning the stochastic forced-event cross-reference (validation
+target 5), the per-side conservation invariant
+`E_kin + E_pot + E_dissip ≈ const` was found to be incorrect once
+helium mass attachment is enabled: when 4 amu attaches to an atom
+moving at `v`, recomputing `E_kin = ½ m_new v²` overstates the true
+post-attachment kinetic energy by `½ Δm v²`. The legacy MATLAB tracks
+the negative of this overstatement as a per-atom diagnostic
+``E_mass_attach_defect`` at `vmi_sim_3d_ion_propa.m:762`, which makes
+`E_kin + E_pot + E_dissip + E_mass_attach_defect` conserved up to
+Verlet drift. The original Step 11c port omitted this term and
+documented the omission as a "known approximation"; per project
+principle #10 we reversed that omission so the conservation invariant
+holds exactly on each side, which is a prerequisite for using the
+invariant as a cross-language sanity check during the stochastic
+comparison.
+
+Changes:
+
+- `IonCheckpoint` schema bumped v3 → v4. New field
+  `E_mass_attach_defect_eV: (2N, T)` (per-atom, cumulative, eV).
+- `IonStepState` gains the matching scalar-per-atom `(2N,)` field.
+- `ion_propagation_step` accumulates the per-step increment
+
+  ```
+  dE_defect = -½ (m_new − m_old) · v_post² · 100²/eV
+  ```
+
+  using the post-collision, post-attachment velocity (verbatim from
+  the legacy MATLAB).
+- `build_initial_ion_state` allocates the array and seeds it with
+  zeros at t=0.
+- `_NUM_2N_T_ARRAYS_ION` bumped 12 → 13 in the storage-stride budget.
+- Documentation updated in `docs/checkpoint_module.md`,
+  `docs/ion_propagation_step_module.md`,
+  `docs/ion_initial_state_module.md`, and `docs/ion_module.md`.
+
+Verification:
+
+- Full pytest suite (325 tests) passes after the change.
+- The two existing deterministic cross-reference scripts
+  (`scripts/cross_reference/ion_t0_state/` and
+  `scripts/cross_reference/ion_multistep_no_collision/`) re-run to
+  byte-identical output: their scenarios run with
+  `mass_attach_probability = 0`, so the new field stays zero
+  throughout. This confirms the diagnostic is purely additive when
+  attachment is disabled.
+- Forced-event smoke test (1 molecule, σ inflated, p_attach = 1)
+  shows the defect accumulating negatively as expected with each
+  attachment, partially compensating the spurious E_kin gain.
+
+Old `IonCheckpoint` `.npz` files on disk become unreadable; the loader
+reports `schema_version=3, this code expects 4. Re-run the simulation`,
+which is the documented behaviour for schema bumps. No checkpoints are
+present in `data/` — only in test scratch directories.
+
+The stochastic forced-event cross-reference itself (validation target
+5) is the next planned task; it will use the new field as a per-side
+gated invariant.
+

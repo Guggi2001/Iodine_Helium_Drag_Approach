@@ -95,6 +95,15 @@ class IonStepState:
         Per-atom potential energy in eV (ion-droplet + half partner Coulomb).
     E_dissip_eV : np.ndarray, shape (2N,)
         Cumulative energy dissipated per atom up to this state's time.
+    E_mass_attach_defect_eV : np.ndarray, shape (2N,)
+        Cumulative kinetic-energy defect introduced by helium mass
+        attachment, in eV. When 4 amu attaches at the atom's current
+        velocity, the recomputed E_kin is spuriously larger by
+        ``1/2 * dm * v^2``; this field accumulates the negative of
+        that increment so that
+        ``E_kin + E_pot + E_dissip + E_mass_attach_defect`` is
+        conserved (modulo Verlet drift). Mirrors MATLAB
+        ``E_mass_attach_defect`` at vmi_sim_3d_ion_propa.m:762.
     number_of_collisions : np.ndarray, shape (2N,)
         Cumulative number of hard-sphere collisions per atom.
     time_ps : float
@@ -110,6 +119,7 @@ class IonStepState:
     E_kin_eV: np.ndarray
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
+    E_mass_attach_defect_eV: np.ndarray
     number_of_collisions: np.ndarray
     time_ps: float
 
@@ -251,6 +261,18 @@ def ion_propagation_step(
     E_dissip_new = state.E_dissip_eV + dE_eV
     n_coll_new = state.number_of_collisions + b_collision.astype(state.number_of_collisions.dtype)
 
+    # Kinetic-energy defect from mass attachment. MATLAB
+    # vmi_sim_3d_ion_propa.m:762 computes
+    #   E_defect[t+1] = E_defect[t] - (m_new - m_old) * (v*100)^2 / 2 / eV
+    # using the post-collision, post-attachment velocity. The sign is
+    # negative because attaching mass at velocity v adds ``1/2 dm v^2``
+    # of fictitious E_kin; the defect compensates so that the system
+    # invariant E_kin + E_pot + E_dissip + E_mass_attach_defect is
+    # conserved up to Verlet drift.
+    mass_diff_kg = new_mass_kg - state.mass_kg
+    dE_defect_eV = -0.5 * mass_diff_kg * (v_post_sq * 100.0 ** 2) / EV
+    E_mass_attach_defect_new = state.E_mass_attach_defect_eV + dE_defect_eV
+
     return IonStepState(
         x=x1, y=y1, z=z1,
         vx=vx_after, vy=vy_after, vz=vz_after,
@@ -258,6 +280,7 @@ def ion_propagation_step(
         E_kin_eV=E_kin_new_eV,
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
+        E_mass_attach_defect_eV=E_mass_attach_defect_new,
         number_of_collisions=n_coll_new,
         time_ps=state.time_ps + dt,
     )
@@ -320,6 +343,7 @@ def ion_state_from_checkpoint_column(ckpt, t_id: int) -> IonStepState:
         E_kin_eV=ckpt.E_kin_eV[:, t_id].copy(),
         E_pot_eV=ckpt.E_pot_eV[:, t_id].copy(),
         E_dissip_eV=ckpt.E_dissip_eV[:, t_id].copy(),
+        E_mass_attach_defect_eV=ckpt.E_mass_attach_defect_eV[:, t_id].copy(),
         number_of_collisions=ckpt.number_of_collisions[:, t_id].copy(),
         time_ps=float(ckpt.time_ps[t_id]),
     )
@@ -341,5 +365,6 @@ def write_ion_state_to_checkpoint_column(
     ckpt.E_kin_eV[:, t_id] = state.E_kin_eV
     ckpt.E_pot_eV[:, t_id] = state.E_pot_eV
     ckpt.E_dissip_eV[:, t_id] = state.E_dissip_eV
+    ckpt.E_mass_attach_defect_eV[:, t_id] = state.E_mass_attach_defect_eV
     ckpt.number_of_collisions[:, t_id] = state.number_of_collisions
     ckpt.time_ps[t_id] = state.time_ps

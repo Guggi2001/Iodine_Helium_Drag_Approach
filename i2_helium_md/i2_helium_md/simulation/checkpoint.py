@@ -59,9 +59,18 @@ from ..config import SimConfig
 #                                              as helium attaches)
 #          * E_dissip_eV            (2N, T) -- cumulative energy dissipated
 #                                              per atom (matches neutral)
+#   4 -- adds the mass-attachment kinetic-energy defect diagnostic that
+#        the legacy MATLAB code tracks (vmi_sim_3d_ion_propa.m:762).
+#        When 4 amu of helium attaches at the atom's current velocity,
+#        the recomputed E_kin = 1/2 m_new v^2 is spuriously larger than
+#        the pre-attachment E_kin by 1/2 (m_new - m_old) v^2. The defect
+#        is the negative of that running sum, so that
+#        E_kin + E_pot + E_dissip + E_mass_attach_defect is conserved
+#        modulo Verlet drift on each side.
+#          * E_mass_attach_defect_eV (2N, T) -- cumulative attach defect
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 3
+_ION_SCHEMA_VERSION: int = 4
 
 
 # ===========================================================================
@@ -149,13 +158,15 @@ class IonCheckpoint:
     * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
+    * ``E_mass_attach_defect_eV``: (2 * num_molecules, num_steps) eV (per-atom, cumulative)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
     * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
     * ``number_of_collisions``: (2 * num_molecules, num_steps) int (cumulative, per-atom)
 
-    Schema v3 (the current version) differs from v2 by adding
-    ``droplet_radii_angstrom``, ``mass_history_kg``, and ``E_dissip_eV``.
-    Older v2 files cannot be loaded; rerun the ion stage to upgrade.
+    Schema v4 (the current version) differs from v3 by adding
+    ``E_mass_attach_defect_eV`` (the legacy MATLAB
+    ``E_mass_attach_defect`` diagnostic; see the schema-version block
+    above). Older files cannot be loaded; rerun the ion stage to upgrade.
     """
 
     num_molecules: int
@@ -179,6 +190,7 @@ class IonCheckpoint:
     E_kin_eV: np.ndarray
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
+    E_mass_attach_defect_eV: np.ndarray
     b_ion_outside: np.ndarray
     relative_loss_per_ps: np.ndarray
     number_of_collisions: np.ndarray
@@ -391,6 +403,7 @@ def _validate_against_cfg(
         "positions_x", "positions_y", "positions_z",
         "velocities_x", "velocities_y", "velocities_z",
         "E_kin_eV", "E_pot_eV", "E_dissip_eV", "L_droplet_eV_ps",
+        "E_mass_attach_defect_eV",
         "relative_loss_per_ps", "number_of_collisions",
         "mass_history_kg",
     )

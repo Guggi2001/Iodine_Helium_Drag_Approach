@@ -1,0 +1,57 @@
+{
+    "_doc": [
+        "Hand-crafted minimal initial state for the multi-step deterministic",
+        "ion-driver cross-reference between Python and legacy MATLAB.",
+        "",
+        "Same 1-molecule, 2-atom geometry as the t=0 task, but now we",
+        "advance several leapfrog (velocity-Verlet) steps with all",
+        "stochastic ion physics disabled and compare per-step trajectory",
+        "and energy bookkeeping.",
+        "",
+        "All physics flags are disabled by setting cross-sections and",
+        "probabilities to 0 -- no implementation hacks. The deterministic",
+        "force model is droplet potential + partner Coulomb only.",
+        "",
+        "Choices:",
+        " - num_steps = 10 ion propagation steps (dt_ion = 0.01 ps -> 0.1 ps total)",
+        "   gives time for the strong intra-pair Coulomb force (~1.9 eV at 7.5 A)",
+        "   to noticeably modify the velocities (delta_v ~ 1 A/ps).",
+        " - droplet_radius = 4 A keeps the atoms near the surface so the",
+        "   droplet contribution is non-trivial.",
+        " - non-zero z and vz so a missing-vz bug would be visible if it",
+        "   were reintroduced anywhere along the path."
+    ],
+
+    "num_molecules": 1,
+    "num_steps": 100,
+    "dt_ion_ps": 0.01,
+    "time_ps_at_t0": 0.0,
+    "droplet_radius_A": 4.0,
+    "mass_amu": 127.0,
+
+    "atom_0": {
+        "x_A":  3.0, "y_A":  2.0, "z_A":  1.0,
+        "vx_Aps":  0.5, "vy_Aps":  0.3, "vz_Aps":  0.2
+    },
+    "atom_1": {
+        "x_A": -3.0, "y_A": -2.0, "z_A": -1.0,
+        "vx_Aps": -0.4, "vy_Aps":  0.1, "vz_Aps": -0.3
+    },
+
+    "cfg_flags": {
+        "binding_energy_I_ion_eV": 0.3,
+        "potential_steepness": 14.2,
+        "E_coulomb_scale": 1.0,
+
+        "geometric_scattering_crosssection_Iplus": 0.0,
+        "sigma_dependent_on_v": false,
+        "mass_attach_probability": 0.0,
+        "ion_scatter_angle_std_deg": 0.0,
+        "he_direction_scattering": false,
+        "additional_droplet_charges": 0,
+
+        "single_charge_ionization_allowed": false,
+        "highly_charged_iodine": false,
+        "effusive_dynamics": false
+    }
+}

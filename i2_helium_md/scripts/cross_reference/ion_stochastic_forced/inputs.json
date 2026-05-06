@@ -1,0 +1,74 @@
+{
+    "_doc": [
+        "Hand-crafted minimal initial state for the stochastic forced-event",
+        "ion-driver cross-reference (CLAUDE.md validation target 5).",
+        "",
+        "The collision KERNEL (impact-parameter sampling, scattering",
+        "kinematics, dE/E_0 distribution) is already covered statistically",
+        "by scripts/collision_comparison_test/. This task tests the DRIVER",
+        "PLUMBING around the kernel:",
+        "",
+        "  - probability calculation receives correct per-step inputs,",
+        "  - velocity-dependent cross section is integrated correctly,",
+        "  - mass attachment fires after collisions in the right order,",
+        "  - mass history and energy bookkeeping stay consistent,",
+        "  - per-step storage records collision/attachment events.",
+        "",
+        "Approach: forced events. Inflated sigma_0 so the per-step Mode-3",
+        "probability dr * sigma * rho_droplet is well above 1 every step;",
+        "every random draw therefore satisfies trial < p_scatter and a",
+        "collision fires. mass_attach_probability = 1 makes every collision",
+        "an attachment. Event counts and mass history are therefore",
+        "deterministic and identical on both sides without requiring",
+        "cross-language RNG identity. Post-collision velocities, energies,",
+        "and the mass-attach defect are RNG-dependent and only checked as",
+        "PER_SIDE_INVARIANTS, not cross-language.",
+        "",
+        "Initial-state choices:",
+        " - atoms deep inside a R = 10 A droplet (depth ~ -7.5 A), so the",
+        "   atoms remain at depth < 0 for all 5 steps even after Coulomb",
+        "   acceleration",
+        " - moderate v = 3 A/ps so E_kin/atom ~ 0.16 eV stays well above",
+        "   the Landau cutoff E_min ~ 1 meV throughout (each He collision",
+        "   removes at most ~12% of E_kin)",
+        " - sigma_0 = 1e6 A^2 with exponent -2: sigma(v) = 1e6 / v^2.",
+        "   At v ~ 3 A/ps -> sigma ~ 1.1e5 A^2; with dr ~ 0.03 A and",
+        "   rho_droplet = 0.01752 /A^3, p_scatter ~ 58 -- safely above 1."
+    ],
+
+    "num_molecules": 1,
+    "num_steps": 5,
+    "dt_ion_ps": 0.01,
+    "time_ps_at_t0": 0.0,
+    "droplet_radius_A": 10.0,
+    "mass_amu": 127.0,
+
+    "atom_0": {
+        "x_A":  1.5, "y_A":  1.0, "z_A":  0.5,
+        "vx_Aps":  3.0, "vy_Aps":  0.0, "vz_Aps":  0.0
+    },
+    "atom_1": {
+        "x_A": -1.5, "y_A": -1.0, "z_A": -0.5,
+        "vx_Aps": -3.0, "vy_Aps":  0.0, "vz_Aps":  0.0
+    },
+
+    "cfg_flags": {
+        "binding_energy_I_ion_eV": 0.3,
+        "potential_steepness": 14.2,
+        "E_coulomb_scale": 1.0,
+
+        "geometric_scattering_crosssection_Iplus": 1.0e6,
+        "sigma_dependent_on_v": true,
+        "sigma_ion_exponent": -2.0,
+        "mass_attach_probability": 1.0,
+        "scatter_mass_ion_amu": 4.0,
+        "ion_scatter_angle_std_deg": 0.0,
+        "v_limit_m_per_s": 40.0,
+
+        "additional_droplet_charges": 0,
+        "single_charge_ionization_allowed": false,
+        "highly_charged_iodine": false,
+        "effusive_dynamics": false,
+        "hard_sphere_collision_mode": 3
+    }
+}

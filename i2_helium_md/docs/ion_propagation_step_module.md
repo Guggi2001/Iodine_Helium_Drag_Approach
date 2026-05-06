@@ -107,11 +107,32 @@ A regression test in `test_ion_propagation_step.py
 Without attachment we observe ~0.002% drift over 50 steps — at the
 leapfrog symplectic-error limit (~ppm per step).
 
-**With** mass attachment, drift is non-zero by design: when a
-helium atom attaches, its kinetic energy isn't tracked
-(approximation). The legacy MATLAB has an `E_mass_attach_defect`
-diagnostic for this; we omit it for now since it's purely a
-diagnostic and not used in the final output.
+**With** mass attachment, recomputing
+``E_kin = ½ m_new v²`` after a 4-amu helium atom attaches at the
+atom's current velocity overstates the true kinetic energy of the
+ion+helium system by ``½ Δm v²``: the helium contribution to mass
+is added but the corresponding kinetic-energy bookkeeping isn't
+provided by the model. Mirroring the legacy MATLAB diagnostic at
+``vmi_sim_3d_ion_propa.m:762``, the step function now accumulates a
+correction term per atom
+
+```
+E_mass_attach_defect[t+1] = E_mass_attach_defect[t]
+                          - ½ (m_new − m_old) · v_post² · 100²/eV
+```
+
+(``v_post`` in Å/ps, mass in kg, factor ``100²/eV`` for the unit
+conversion). Adding this term to the per-side total gives the
+conservation invariant
+
+```
+E_kin + E_pot + E_dissip + E_mass_attach_defect ≈ const
+```
+
+modulo Verlet symplectic drift. The diagnostic is exposed as
+``IonStepState.E_mass_attach_defect_eV`` (shape ``(2N,)``) and
+persisted in ``IonCheckpoint.E_mass_attach_defect_eV`` (shape
+``(2N, T)``) in schema v4.
 
 ## Out-of-scope branches
 

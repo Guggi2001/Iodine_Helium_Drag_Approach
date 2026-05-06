@@ -40,6 +40,7 @@ def setup_ion_state():
         E_kin_eV=ion.E_kin_eV[:, 0].copy(),
         E_pot_eV=ion.E_pot_eV[:, 0].copy(),
         E_dissip_eV=np.zeros(two_N),
+        E_mass_attach_defect_eV=np.zeros(two_N),
         number_of_collisions=np.zeros(two_N, dtype=int),
         time_ps=0.0,
     )
@@ -81,6 +82,7 @@ def warm_state(setup_ion_state):
         E_kin_eV=state.E_kin_eV.copy(),    # don't matter for stepping
         E_pot_eV=state.E_pot_eV.copy(),
         E_dissip_eV=np.zeros(n),
+        E_mass_attach_defect_eV=np.zeros(n),
         number_of_collisions=np.zeros(n, dtype=int),
         time_ps=0.0,
     )
@@ -135,6 +137,7 @@ class TestApi:
                     new_state.vx, new_state.vy, new_state.vz,
                     new_state.mass_kg,
                     new_state.E_kin_eV, new_state.E_pot_eV, new_state.E_dissip_eV,
+                    new_state.E_mass_attach_defect_eV,
                     new_state.number_of_collisions):
             assert arr.shape == (two_N,), f"got shape {arr.shape}"
 
@@ -475,6 +478,7 @@ class TestVelocityDependentSigma:
             E_kin_eV=state.E_kin_eV.copy(),
             E_pot_eV=state.E_pot_eV.copy(),
             E_dissip_eV=state.E_dissip_eV.copy(),
+            E_mass_attach_defect_eV=state.E_mass_attach_defect_eV.copy(),
             number_of_collisions=state.number_of_collisions.copy(),
             time_ps=state.time_ps,
         )

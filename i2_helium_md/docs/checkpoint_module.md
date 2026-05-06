@@ -101,9 +101,13 @@ E_kin_per_molecule = ckpt.E_kin_eV[:N] + ckpt.E_kin_eV[N:]
 The minimum sufficient set to:
 - Generate VMI images and momentum spectra (`positions_final_*`,
   `velocities_final_*`, `mass_final_kg`)
-- Reproduce ion-stage energy diagnostics
+- Reproduce ion-stage energy diagnostics, including the
+  `E_mass_attach_defect_eV` correction term that closes the
+  energy-conservation invariant when helium attaches
 - Track collisional history (`number_of_collisions`,
   `relative_loss_per_ps`, `b_ion_outside`)
+- Track per-atom mass over time (`mass_history_kg`) since helium
+  attachment changes per-atom mass during the run
 
 ## What is **not** saved
 
@@ -143,13 +147,29 @@ on read and refuses to load incompatible versions.
 - Changing the **shape** of an existing field: bump version.
 - Changing the meaning or units of an existing field: bump version.
 
-**Version history (both `NeutralCheckpoint` and `IonCheckpoint`):**
+**Version history:**
+
+`NeutralCheckpoint`:
 - `1` -- initial release. Energy/L_droplet diagnostics had per-molecule
   shape `(N, num_steps)`.
 - `2` -- energy/L_droplet diagnostics moved to per-atom shape
   `(2N, num_steps)` to match the legacy MATLAB code and allow
   per-atom debugging. **Old v1 files cannot be loaded by current code**;
   they would need to be re-run or migrated.
+
+`IonCheckpoint`:
+- `2` -- initial ion checkpoint shape, matching neutral v2.
+- `3` -- adds `droplet_radii_angstrom`, `mass_history_kg`, and
+  `E_dissip_eV` for postprocess and energy-conservation diagnostics.
+- `4` -- adds `E_mass_attach_defect_eV: (2N, T)` (per-atom, cumulative,
+  eV). Mirrors the legacy MATLAB `E_mass_attach_defect` diagnostic
+  (`vmi_sim_3d_ion_propa.m:762`). When 4 amu of helium attaches at the
+  atom's current velocity, recomputing E_kin = ½ m_new v² overstates
+  the true post-attachment kinetic energy by ½ Δm v²; this field
+  accumulates the negative of that overstatement so that
+  `E_kin + E_pot + E_dissip + E_mass_attach_defect` is conserved
+  (modulo Verlet drift) on each side. Older v3 files cannot be loaded
+  by current code; rerun the ion stage to upgrade.
 
 When bumping, update `_NEUTRAL_SCHEMA_VERSION` or `_ION_SCHEMA_VERSION` in
 `checkpoint.py` and document the change in `migration_log.md`.
