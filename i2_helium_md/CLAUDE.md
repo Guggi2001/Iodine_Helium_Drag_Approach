@@ -16,135 +16,130 @@ legacy_matlab_repository/
 
 ## Current task
 
-The neutral and ion propagation drivers are implemented.
+The neutral and ion propagation drivers are implemented, ion-stage
+MATLAB/Python cross-reference validation is complete, and the public
+single-pulse run script is implemented:
 
-The current task is **MATLAB/Python cross-reference validation of the ion driver**.
+```text
+scripts/run_single_pulse.py
+```
 
-Do not continue with broad migration work, plotting, HeDFT loading, full single-pulse scripts, analytical-force cleanup, or refactors unless the user explicitly asks.
+The current task is **Step 13: HeDFT loading and trajectory comparison in
+`postprocess/`**.
+
+Do not continue with plotting-heavy workflows, Abel inversion, experimental VMI
+comparison, pump-probe support, 18 Å HeDFT support, analytical-force cleanup,
+broad refactors, or out-of-scope MATLAB branches unless the user explicitly
+asks.
 
 ## Main working mode
 
-Work script-first.
-
-The goal is to produce small, deterministic comparison results between MATLAB and Python.
+Work data-contract first.
 
 Prefer this workflow:
 
-1. Inspect the relevant MATLAB ion code.
-2. Inspect the relevant Python ion code.
-3. Identify the smallest deterministic comparison case.
-4. Write a minimal MATLAB script that exports reference values.
-5. Write a minimal Python script that produces the corresponding values.
-6. Write a comparison script that loads both outputs and reports differences.
-7. Only after the comparison is clear, decide whether a formal pytest regression test is useful.
+1. Inventory the available reference data under `data/reference/` and the
+   legacy 9 Å HeDFT files under
+   `legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/`.
+2. Inspect the MATLAB comparison script only for the numerical comparison
+   contract:
+   - `legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m`
+   - `legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_v2.m`
+   - `legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_R1_R2.m`
+3. Implement the smallest loader for the 9 Å trajectory reference files.
+4. Implement a numerical comparison against an existing `RunDirectory` ion
+   checkpoint.
+5. Add focused pytest coverage with tiny synthetic CSV/checkpoint data.
+6. Only after the numerical comparison is clear, decide whether plotting or a
+   public command-line wrapper is useful.
 
-Do not start by adding large test infrastructure.
+Keep this step narrow. The goal is reliable loading and explicit numerical
+comparison values, not final publication plots.
 
-Do not start with a full stochastic trajectory comparison.
+## Expected Step 13 outputs
 
-## First validation targets
+Preferred new files:
 
-Validate in this order:
+```text
+i2_helium_md/postprocess/hedft_loader.py
+i2_helium_md/postprocess/compare_trajectories.py
+tests/test_hedft_loader.py
+tests/test_compare_trajectories.py
+docs/hedft_loader_module.md
+docs/compare_trajectories_module.md
+```
 
-1. Ion `t=0` state copied from a tiny neutral checkpoint.
-2. One deterministic ion step with collisions disabled.
-3. Several deterministic ion steps with collisions disabled.
-4. Energy bookkeeping in deterministic mode.
-5. Collision/statistical behavior only after deterministic comparisons are stable.
+Only create `i2_helium_md/postprocess/__init__.py` if the package directory
+does not already exist.
+
+The first comparison should compute, at minimum:
+
+- mean MD I-I distance vs. time from the ion checkpoint,
+- interpolation of MD distance onto the HeDFT `R1-R2.csv` time grid,
+- overlap interval,
+- RMSE in Å,
+- mean MD/HeDFT distance ratio.
+
+This mirrors the numerical block in `simulation_image_only_trajectories.m`:
+
+```text
+dR_mean = mean(sqrt(dx^2 + dy^2 + dz^2), axis=particles)
+tmax = min(max(tR), max(time_i))
+dR_mean_on_tR = interp1(t_md, d_md, tR_use)
+rmse = sqrt(mean((dR_mean_on_tR - R_use)^2))
+ratio = mean(dR_mean_on_tR / R_use)
+```
+
+## Data policy
+
+Do not use hardcoded absolute MATLAB paths.
+
+Expected 9 Å reference inputs are:
+
+```text
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/data_vabs2.csv
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/R1-R2.csv
+```
+
+If corresponding normalized copies are missing under `data/reference/`, add
+small documented copies there using stable ASCII filenames, for example:
+
+```text
+data/reference/hedft_9A_velocity.csv
+data/reference/hedft_9A_distance.csv
+```
+
+Before adding data files, verify whether existing `data/reference/*.csv` files
+are experimental VMI data or HeDFT trajectory data. Do not silently repurpose
+files with ambiguous names.
 
 ## Relevant files
 
 Start with these Python files:
 
 ```text
-i2_helium_md/simulation/ion.py
-i2_helium_md/simulation/ion_initial_state.py
-i2_helium_md/simulation/ion_propagation_step.py
+scripts/run_single_pulse.py
+i2_helium_md/simulation/run_directory.py
 i2_helium_md/simulation/checkpoint.py
+i2_helium_md/config.py
 ```
 
-Start with these MATLAB files or search for them under `legacy_matlab_repository/`:
+Then inspect or create:
 
 ```text
-vmi_sim_3d_ion_propa.m
-frog_step_ion.m
-ion_interaction_potential.m
-add_partner_interaction_ion.m
-droplet_potential.m
+i2_helium_md/postprocess/
 ```
 
-Useful search terms:
+Relevant MATLAB files:
 
 ```text
-E_kin_ion
-E_pot_ion
-E_dissip
-mass_i
-p_attach
-sigma_dependent_on_v
-ion_propagation_checkpoint
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_v2.m
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_R1_R2.m
 ```
 
-Read other files only if they are needed for the current comparison.
-
-Do not read the full `migration_log.md` unless a documented deviation or historical decision is needed.
-
-## MATLAB/Python deviation policy
-
-MATLAB is the legacy reference, but known MATLAB bugs should not be reproduced blindly.
-
-Known intentional Python corrections:
-
-- neutral-stage `E_pot` at `t=0` includes the partner Morse contribution,
-- ion-stage `E_kin` at `t=0` fixes the MATLAB velocity-expression bug,
-- ion-stage `E_pot` at `t=0` fixes the MATLAB radial-coordinate bug,
-- ion-stage `E_pot` at `t=0` includes the partner Coulomb contribution,
-- Python uses more accurate physical constants than rounded MATLAB constants.
-
-Every comparison result must state whether Python is expected to:
-
-1. match MATLAB,
-2. intentionally differ because Python fixes a MATLAB bug,
-3. differ slightly because constants differ,
-4. differ statistically because stochastic streams differ.
-
-## Script rules
-
-Comparison scripts should be small, readable, and disposable if needed.
-
-Preferred locations:
-
-```text
-scripts/cross_reference/
-tests/reference/
-```
-
-Preferred outputs:
-
-```text
-small .csv
-small .json
-small .npz
-```
-
-Avoid:
-
-```text
-large .mat files
-large .npz checkpoints
-generated figures
-full simulation-output directories
-temporary debug dumps
-```
-
-Each reference script should document:
-
-- command used to run it,
-- number of molecules,
-- number of timesteps,
-- random seed if applicable,
-- enabled/disabled physics features,
-- whether known MATLAB bugs are present in the exported data.
+Do not read the full legacy plotting stack unless a numerical comparison
+depends on it.
 
 ## Editing limits
 
@@ -154,32 +149,46 @@ Before editing, run:
 git status
 ```
 
-If the working tree is not clean, stop and ask.
+If the working tree is dirty, do not revert or overwrite unrelated changes.
+Proceed only if the user explicitly scopes the edit or the dirty files are your
+own current work. Otherwise stop and ask.
 
-During this phase, do not change unless a comparison reveals a real bug:
+During Step 13, do not change unless a focused comparison test reveals a real
+bug:
 
 ```text
 checkpoint schema
 physical constants
-neutral propagation
-plotting or postprocessing
-single-pulse public script
-HeDFT loader
+neutral propagation physics
+ion propagation physics
+collision physics
+single-pulse run script behavior
 ```
 
-Keep changes local to the comparison scripts or the smallest required ion-driver fix.
+Keep code changes local to `postprocess/`, focused tests, small reference CSV
+copies if needed, and status documentation.
+
+## Testing expectations
+
+At minimum:
+
+- loader tests for the 9 Å velocity and distance CSV formats,
+- comparison tests using a tiny synthetic `IonCheckpoint`,
+- validation for missing files and non-overlapping time axes,
+- relevant existing checkpoint/run-directory tests if loader code uses them.
+
+Do not generate figures or production-sized checkpoints in tests.
 
 ## Reporting format
 
-For each cross-reference attempt, report:
+For Step 13 work, report:
 
-1. MATLAB files inspected,
-2. Python files inspected,
-3. scripts written or changed,
-4. comparison case,
-5. expected match or intentional deviation,
-6. numerical comparison result,
-7. files changed,
-8. remaining risks.
+1. data files inspected or copied,
+2. MATLAB files inspected,
+3. Python files written or changed,
+4. numerical comparison API,
+5. tests run and results,
+6. remaining risks or deferred behavior.
 
-After one comparison task is complete, stop and report. Do not automatically move to the next migration step.
+After the first numerical comparison path is complete, stop and report. Do not
+automatically move to plotting or experimental VMI comparison.

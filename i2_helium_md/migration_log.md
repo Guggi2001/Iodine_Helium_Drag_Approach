@@ -1270,7 +1270,70 @@ reports `schema_version=3, this code expects 4. Re-run the simulation`,
 which is the documented behaviour for schema bumps. No checkpoints are
 present in `data/` — only in test scratch directories.
 
-The stochastic forced-event cross-reference itself (validation target
-5) is the next planned task; it will use the new field as a per-side
-gated invariant.
+---
 
+## Step 11f — Ion-driver MATLAB/Python cross-reference complete
+
+The ion-stage MATLAB/Python cross-reference phase described in
+`CLAUDE.md` is now complete.
+
+Completed validation targets:
+
+1. Ion `t=0` state copied from a tiny neutral checkpoint.
+2. One deterministic ion step with collisions disabled.
+3. Several deterministic ion steps with collisions disabled.
+4. Energy bookkeeping in deterministic mode.
+5. Collision/statistical behavior after the deterministic comparisons
+   were stable.
+
+Reference artifacts live under:
+
+- `scripts/cross_reference/ion_t0_state/`
+- `scripts/cross_reference/ion_multistep_no_collision/`
+- `scripts/cross_reference/ion_stochastic_forced/`
+
+The deterministic checks cover targets 1 through 4. The forced stochastic
+case covers target 5 with collision and mass-attachment behavior isolated
+enough to compare bookkeeping and event effects without starting from a
+full production stochastic trajectory.
+
+---
+
+## Step 12 — Public single-pulse run script
+
+Implemented `scripts/run_single_pulse.py` as the first user-facing entry point
+for the validated neutral + ion pipeline.
+
+The script:
+
+- builds the canonical config from `single_pulse_N2000`,
+- accepts small-run overrides (`--num-molecules`, `--seed`, and
+  `--ion-simulation-time`),
+- creates a `RunDirectory`,
+- runs `run_neutral_propagation`,
+- runs `run_ion_propagation` from the neutral checkpoint,
+- writes `cfg.json`, `neutral.npz`, and `ion.npz` through the existing
+  run-directory conventions,
+- refuses to overwrite existing run artifacts unless `--force` is passed,
+- prints concise progress and output paths.
+
+The saved `cfg.json` keeps the preset's ion-stage
+`sigma_dependent_on_v=True`. This is acceptable because the Python neutral
+driver uses the neutral cross-section field directly, while the ion driver is
+the stage that reads `cfg.sigma_dependent_on_v`. No stage-specific physics
+config mutation is needed for the current Python APIs.
+
+Usage example:
+
+```bash
+python scripts/run_single_pulse.py --run-dir results/single_pulse_test --num-molecules 10 --seed 123
+```
+
+Tests:
+
+- Added `tests/test_run_single_pulse.py`.
+- `pytest tests/test_run_single_pulse.py -q` passes: 3 tests.
+- `pytest tests/test_run_directory.py tests/test_neutral.py tests/test_ion.py tests/test_run_single_pulse.py -q` passes: 63 tests.
+
+Step 13 is now the next migration phase: HeDFT loading and trajectory
+comparison in `postprocess/`.

@@ -26,67 +26,62 @@
     v3 → v4); closes the per-side conservation invariant
     `E_kin + E_pot + E_dissip + E_mass_attach_defect ≈ const` when
     helium attachment is enabled.
+- Ion-stage MATLAB/Python cross-reference validation:
+  - target 1: ion `t=0` state from a tiny neutral checkpoint
+  - targets 2-4: deterministic one-step, multi-step, and energy
+    bookkeeping checks with collisions disabled
+  - target 5: forced stochastic collision/mass-attachment behavior
+- `scripts/run_single_pulse.py`:
+  - public single-pulse neutral + ion pipeline entry point
+  - writes `cfg.json`, `neutral.npz`, and `ion.npz` through `RunDirectory`
+  - includes clobber protection unless `--force` is used
 
 ## Current phase
 
-The ion driver is implemented. The project is now in the MATLAB/Python
-cross-reference phase for the ion stage.
+The neutral and ion propagation drivers are implemented and the ion-stage
+MATLAB/Python cross-reference validation is complete. The public single-pulse
+run script is implemented.
 
-The immediate goal is not to implement a new simulation feature. The immediate
-goal is to validate the completed Python ion driver against the corresponding
-legacy MATLAB ion-propagation behavior using the smallest useful deterministic
-reference case first.
+The next migration phase is Step 13: HeDFT loading and trajectory comparison in
+`postprocess/`.
 
 ## Currently pending
 
-1. Ion-stage MATLAB/Python cross-reference validation. Targets 1–4
-   (deterministic) are done in
-   `scripts/cross_reference/ion_t0_state/` and
-   `scripts/cross_reference/ion_multistep_no_collision/`. Target 5
-   (stochastic forced-event driver-level comparison) is planned but
-   not yet implemented.
-2. Step 12: `scripts/run_single_pulse.py`
-3. Step 13: HeDFT loading and trajectory comparison in `postprocess/`
+1. Step 13: HeDFT loading and trajectory comparison in `postprocess/`
 
 ## Recommended next task
 
-Design and implement the first focused MATLAB/Python cross-reference test for
-the ion stage.
+Design the first HeDFT loading and trajectory-comparison path in
+`postprocess/`, starting with an inventory of the available reference data.
+The legacy 9 Å files are present under
+`legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/`;
+verify whether normalized copies already exist under `data/reference/` before
+adding or using them.
 
-The first validation should be small and deterministic. Prefer, in order:
-
-- ion `t=0` state copied from a tiny neutral checkpoint,
-- deterministic one-step ion propagation with collisions disabled,
-- deterministic multi-step ion propagation with collisions disabled,
-- energy-bookkeeping sanity in a controlled deterministic case.
-
-Do not start with a full stochastic simulation comparison. Too many effects are
-entangled at once.
+Keep the first comparison narrow: load the reference data, load an existing
+single-pulse run directory, and compute explicit numerical comparison values.
+Avoid plotting-heavy workflows until the data-loading and numerical comparison
+contracts are clear.
 
 ## Files to inspect for the current phase
 
 Start with only the directly relevant Python files:
 
-- `i2_helium_md/simulation/ion.py`
-- `i2_helium_md/simulation/ion_initial_state.py`
-- `i2_helium_md/simulation/ion_propagation_step.py`
+- `scripts/run_single_pulse.py`
+- `i2_helium_md/presets.py`
+- `i2_helium_md/simulation/run_directory.py`
 - `i2_helium_md/simulation/checkpoint.py`
-- `tests/test_ion.py`
-- `tests/test_ion_initial_state.py`
-- `tests/test_ion_propagation_step.py`
+- `i2_helium_md/config.py`
 
-Then inspect the relevant MATLAB ion-stage files in
+Then inspect the relevant MATLAB orchestration files in
 `legacy_matlab_repository/`, especially:
 
-- `vmi_sim_3d_ion_propa.m`
-- `frog_step_ion.m`
-- `ion_interaction_potential.m`
-- `add_partner_interaction_ion.m`
-- `droplet_potential.m`
+- `simulation_image_only_trajectories.m`
+- files under `single_pulse_simulation/HeDFT_comparison/9Angström/`
 
 ## Known MATLAB bugs not to reproduce
 
-The cross-reference phase must not force Python to match known MATLAB
+Future MATLAB/Python checks must not force Python to match known MATLAB
 bookkeeping bugs.
 
 Known intentional Python corrections include:
@@ -102,10 +97,7 @@ intentionally differ.
 
 ## Do not do yet
 
-- Do not implement `scripts/run_single_pulse.py` before the first ion-stage
-  MATLAB/Python cross-reference is planned or completed.
-- Do not implement HeDFT comparison before the ion stage has been validated.
-- Do not implement plotting before the full simulation path is executable and
-  validated.
+- Do not implement plotting before the HeDFT data-loading and numerical
+  comparison path is clear.
 - Do not refactor the neutral or ion drivers unless a test reveals a real bug.
 - Do not implement out-of-scope MATLAB features.

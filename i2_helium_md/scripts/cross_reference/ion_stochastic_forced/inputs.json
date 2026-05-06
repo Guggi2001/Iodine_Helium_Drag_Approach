@@ -37,7 +37,7 @@
     ],
 
     "num_molecules": 1,
-    "num_steps": 5,
+    "num_steps": 15,
     "dt_ion_ps": 0.01,
     "time_ps_at_t0": 0.0,
     "droplet_radius_A": 10.0,

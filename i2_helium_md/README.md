@@ -18,17 +18,23 @@ HeDFT-comparison scope).
 | 8 | `sampling/radial_positions.py` | `generate_radial_samples_3d.m` | done |
 | 9 | `simulation/checkpoint.py`, `simulation/run_directory.py` | `save('neutral_propagation_checkpoint', ...)` | done |
 | 10 | `simulation/neutral.py`, `sampling/orientations.py`, `physics/collisions.py`, `simulation/initial_state.py`, `simulation/propagation_step.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` | done |
-| 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | done; currently in MATLAB/Python cross-reference validation |
-| 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | pending |
+| 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | done; MATLAB/Python cross-reference complete |
+| 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | done |
 | 13 | `postprocess/hedft_loader.py` + `compare_trajectories.py` | `simulation_image_only_trajectories.m` | pending |
 
 ## Current phase
 
-The neutral and ion propagation drivers are implemented. The current focus is
-MATLAB/Python cross-reference validation for the ion stage.
+The neutral and ion propagation drivers are implemented. Ion-stage
+MATLAB/Python cross-reference validation is complete.
 
-The first validation target should be a small deterministic reference case,
-not a full stochastic trajectory comparison.
+The public single-pulse run script is implemented. The current focus is Step
+13: HeDFT loading and trajectory comparison in `postprocess/`.
+
+Completed ion cross-reference artifacts:
+
+- `scripts/cross_reference/ion_t0_state/`
+- `scripts/cross_reference/ion_multistep_no_collision/`
+- `scripts/cross_reference/ion_stochastic_forced/`
 
 ## Documentation
 
@@ -88,9 +94,16 @@ should be used.
 
 ## Quickstart
 
-Neutral and ion drivers now exist. The full user-facing single-pulse script is
-still pending, so direct function calls are currently the preferred entry
-point.
+Run a small single-pulse pipeline from the repository root:
+
+```bash
+python scripts/run_single_pulse.py --run-dir results/single_pulse_test --num-molecules 10 --seed 123
+```
+
+This writes `cfg.json`, `neutral.npz`, and `ion.npz` into the run directory.
+Use `--force` to intentionally overwrite an existing run directory.
+
+Direct function calls are also supported:
 
 ```python
 from i2_helium_md import single_pulse_N2000
