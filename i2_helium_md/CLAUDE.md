@@ -27,6 +27,18 @@ scripts/run_single_pulse.py
 The current task is **Step 13: HeDFT loading and trajectory comparison in
 `postprocess/`**.
 
+Some post-processing comparison code has already been imported in:
+
+```text
+scripts/post_processing_comparison/compare.py
+```
+
+That script currently verifies the exported VMI reference CSVs in
+`data/reference/` (`vmi_iplus_he.csv` and `vmi_iplus_gas.csv`) by recreating a
+comparison plot. Treat it as existing context for post-processing work, but do
+not confuse it with the pending HeDFT trajectory loader/comparison API for
+Step 13.
+
 Do not continue with plotting-heavy workflows, Abel inversion, experimental VMI
 comparison, pump-probe support, 18 Å HeDFT support, analytical-force cleanup,
 broad refactors, or out-of-scope MATLAB branches unless the user explicitly
@@ -128,6 +140,13 @@ Then inspect or create:
 
 ```text
 i2_helium_md/postprocess/
+```
+
+Also inspect the existing imported post-processing comparison context if the
+work touches VMI reference-data verification:
+
+```text
+scripts/post_processing_comparison/compare.py
 ```
 
 Relevant MATLAB files:
