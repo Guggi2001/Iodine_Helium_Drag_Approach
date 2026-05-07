@@ -112,12 +112,14 @@ Every function that needs a parameter takes `cfg: SimConfig` explicitly.
 
 ### 2. Presets as functions, not scripts
 
-MATLAB input files (`single_pulse_N2000.m`) were scripts that mutated
-globals. We replace each with a **function** (`single_pulse_N2000()`) that
-returns a fully-configured `SimConfig`. Users override fields via keyword
-arguments:
+MATLAB input files (`single_pulse_N2000.m`,
+`single_pulse_droplet_distribution.m`) were scripts that mutated globals. We
+replace each with a **function** (`single_pulse_N2000()`,
+`single_pulse_droplet_distribution()`) that returns a fully-configured
+`SimConfig`. Users override fields via keyword arguments:
 
     cfg = single_pulse_N2000(num_molecules=500, seed=42)
+    cfg = single_pulse_droplet_distribution(num_molecules=500, seed=42)
 
 **Rationale:**
 - Explicit output (no hidden global state)
@@ -1314,7 +1316,8 @@ The script:
 - runs `run_ion_propagation` from the neutral checkpoint,
 - writes `cfg.json`, `neutral.npz`, and `ion.npz` through the existing
   run-directory conventions,
-- refuses to overwrite existing run artifacts unless `--force` is passed,
+- refuses to overwrite existing run artifacts unless
+  `OVERWRITE_EXISTING_RUN = True`,
 - prints concise progress and output paths.
 
 The saved `cfg.json` keeps the preset's ion-stage
@@ -1335,5 +1338,116 @@ Tests:
 - `pytest tests/test_run_single_pulse.py -q` passes: 3 tests.
 - `pytest tests/test_run_directory.py tests/test_neutral.py tests/test_ion.py tests/test_run_single_pulse.py -q` passes: 63 tests.
 
-Step 13 is now the next migration phase: HeDFT loading and trajectory
-comparison in `postprocess/`.
+Step 13 followed this by adding the first HeDFT loading and trajectory
+comparison path in `postprocess/`.
+
+---
+
+## Step 13 — Post-processing comparison path
+
+The first Python post-processing path is now implemented. The new code imports
+the useful numerical and plotting pieces from the legacy HeDFT comparison
+workflow without expanding into Abel inversion or full experimental VMI
+analysis.
+
+Implemented package modules:
+
+- `i2_helium_md/postprocess/hedft_loader.py`
+  - loads normalized 8-column HeDFT/TDDFT reference CSVs with header
+    `Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance`,
+  - infers the droplet radius from filenames such as `9A_All_Data.csv` and
+    `18A_All_Data.csv`,
+  - supersedes the split legacy 9 A import helpers for the current Python
+    comparison contract.
+- `i2_helium_md/postprocess/compare_trajectories.py`
+  - computes mean MD I-I distance vs. time from an `IonCheckpoint`,
+  - interpolates MD data onto the HeDFT time grid over the overlap interval,
+  - reports RMSE and mean MD/HeDFT ratio,
+  - applies the same overlap/interpolation contract to I1 and I2 velocity
+    magnitudes.
+- `i2_helium_md/postprocess/velocity_distribution.py`
+  - loads exported VMI reference CSVs (`vmi_iplus_he.csv`,
+    `vmi_iplus_gas.csv`),
+  - computes final-velocity histograms from mass-selected, outside-filtered
+    ion checkpoint atoms for simple simulation overlays.
+- `i2_helium_md/postprocess/__init__.py`
+  - exposes the post-processing dataclasses and helper functions as the public
+    package API.
+
+Implemented scripts:
+
+- `scripts/plot_hedft_comparison.py`
+  - loads an existing `RunDirectory` ion checkpoint,
+  - loads the normalized HeDFT reference,
+  - recreates the distance-trajectory figure,
+  - recreates the velocity-vs-time figure,
+  - optionally adds the VMI/reference velocity-distribution tile.
+- `scripts/post_processing_comparison/compare.py`
+  - remains as imported VMI-reference verification context for
+    `vmi_iplus_he.csv` and `vmi_iplus_gas.csv`.
+
+Reference data currently expected under `data/reference/`:
+
+- `9A_All_Data.csv`
+- `18A_All_Data.csv`
+- `vmi_iplus_gas.csv`
+- `vmi_iplus_he.csv`
+
+Documentation added for the new modules and script:
+
+- `docs/hedft_loader_module.md`
+- `docs/compare_trajectories_module.md`
+- `docs/velocity_distribution_module.md`
+- `docs/plot_hedft_comparison_script.md`
+
+Tests:
+
+- `tests/test_hedft_loader.py`
+- `tests/test_compare_trajectories.py`
+- `tests/test_velocity_distribution.py`
+- `tests/test_plot_hedft_comparison_smoke.py`
+
+Verification in this documentation-update pass:
+
+```bash
+python -m pytest tests/test_compare_trajectories.py tests/test_hedft_loader.py tests/test_velocity_distribution.py tests/test_plot_hedft_comparison_smoke.py -q
+```
+
+Result: 36 tests passed.
+
+Remaining work is no longer the first implementation of Step 13, but rather
+post-processing validation and interpretation: run the numerical comparison
+API on the current production run, record the RMSE/ratio values that matter,
+and decide whether any outputs should become stable reference diagnostics.
+Keep further work focused; do not expand into Abel inversion, pump-probe, or
+full experimental VMI analysis without an explicit request.
+
+---
+
+## Run script generalized across input presets
+
+`scripts/run_single_pulse.py` now supports a named `INPUT_PRESET` setting
+instead of being hardwired to `single_pulse_N2000()`.
+
+Supported presets:
+
+- `single_pulse_N2000`
+- `single_pulse_droplet_distribution`
+
+`RUN_SIZE` keeps its previous meaning:
+
+- `smoke` and `custom` apply `NUM_MOLECULES`, `SEED`, and `ION_TIME_PS` as
+  overrides on top of the selected preset,
+- `production` uses the selected preset exactly, except for explicit
+  `PRODUCTION_*` overrides.
+
+This keeps the editable-script workflow intact while letting the same public
+pipeline run either migrated MATLAB input file.
+
+Verification:
+
+```bash
+python -m pytest tests/test_run_single_pulse.py -q
+```
+
+Result: 8 tests passed.

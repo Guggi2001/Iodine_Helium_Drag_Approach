@@ -14,7 +14,8 @@ The script writes one self-contained run directory containing:
     ion.npz
 
 Start with the small smoke settings below. Once that works, switch
-RUN_SIZE to "production" or set your own NUM_MOLECULES and ION_TIME_PS.
+RUN_SIZE to "production", choose the input preset you want, or set your own
+NUM_MOLECULES and ION_TIME_PS.
 """
 
 from __future__ import annotations
@@ -35,18 +36,27 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # This is the section you should edit for normal use. You do not need command
 # line arguments.
 
+# Choose which migrated MATLAB input file to use as the base configuration.
+#
+# "single_pulse_N2000"
+#     mirrors inputfiles_dft_comparison/single_pulse_N2000.m
+# "single_pulse_droplet_distribution"
+#     mirrors inputfiles_dft_comparison/single_pulse_droplet_distribution.m
+#INPUT_PRESET = "single_pulse_N2000"
+INPUT_PRESET = "single_pulse_droplet_distribution"
+
 # Choose "smoke", "custom", or "production".
 #
 # "smoke"      quick check that the full pipeline works
 # "custom"     uses NUM_MOLECULES, SEED, and ION_TIME_PS below
-# "production" uses the full single_pulse_N2000 preset, unless you override
+# "production" uses the selected INPUT_PRESET exactly, unless you override
 #              values in the PRODUCTION OVERRIDES section
 RUN_SIZE = "production"
 
 # Where the output files are written. Change the final folder name for each run
 # you want to keep. This intentionally points to the project-level data/runs
 # folder, not to scripts/data/runs and not to a top-level results folder.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_N_2000"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
@@ -66,9 +76,15 @@ VERBOSE = True
 # =============================================================================
 # PRODUCTION OVERRIDES
 # =============================================================================
-# Leave these as None to use the full single_pulse_N2000 preset:
+# Leave these as None to use the selected INPUT_PRESET exactly.
 #
+# For single_pulse_N2000:
 #   num_molecules = 2000
+#   seed = None
+#   ion_simulation_time = 20 ps
+#
+# For single_pulse_droplet_distribution:
+#   num_molecules = 8000
 #   seed = None
 #   ion_simulation_time = 20 ps
 #
@@ -96,10 +112,19 @@ ION_MAX_BYTES = 1_000_000_000
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from i2_helium_md import single_pulse_N2000  # noqa: E402
+from i2_helium_md import (  # noqa: E402
+    single_pulse_N2000,
+    single_pulse_droplet_distribution,
+)
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
 from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+
+
+PRESET_BUILDERS = {
+    "single_pulse_N2000": single_pulse_N2000,
+    "single_pulse_droplet_distribution": single_pulse_droplet_distribution,
+}
 
 
 def main() -> int:
@@ -141,16 +166,18 @@ def main() -> int:
 
 
 def build_config():
-    """Create the SimConfig for the selected RUN_SIZE."""
+    """Create the SimConfig for the selected input preset and RUN_SIZE."""
+    preset_builder = get_preset_builder(INPUT_PRESET)
+
     if RUN_SIZE == "smoke":
-        return single_pulse_N2000(
+        return preset_builder(
             num_molecules=NUM_MOLECULES,
             seed=SEED,
             ion_simulation_time=ION_TIME_PS,
         )
 
     if RUN_SIZE == "custom":
-        return single_pulse_N2000(
+        return preset_builder(
             num_molecules=NUM_MOLECULES,
             seed=SEED,
             ion_simulation_time=ION_TIME_PS,
@@ -164,11 +191,22 @@ def build_config():
             overrides["seed"] = PRODUCTION_SEED
         if PRODUCTION_ION_TIME_PS is not None:
             overrides["ion_simulation_time"] = PRODUCTION_ION_TIME_PS
-        return single_pulse_N2000(**overrides)
+        return preset_builder(**overrides)
 
     raise ValueError(
         f"unknown RUN_SIZE {RUN_SIZE!r}; use 'smoke', 'custom', or 'production'"
     )
+
+
+def get_preset_builder(name: str):
+    """Return the preset builder for a migrated MATLAB input file name."""
+    try:
+        return PRESET_BUILDERS[name]
+    except KeyError as exc:
+        choices = ", ".join(sorted(PRESET_BUILDERS))
+        raise ValueError(
+            f"unknown INPUT_PRESET {name!r}; use one of: {choices}"
+        ) from exc
 
 
 def refuse_accidental_overwrite(run: RunDirectory) -> None:
@@ -195,6 +233,7 @@ def print_run_header(cfg, run: RunDirectory) -> None:
     print("")
     print("Single-pulse iodine/helium simulation")
     print("=====================================")
+    print(f"input preset:  {INPUT_PRESET}")
     print(f"run size:      {RUN_SIZE}")
     print(f"run directory: {run.root}")
     print(f"molecules:     {cfg.num_molecules}")

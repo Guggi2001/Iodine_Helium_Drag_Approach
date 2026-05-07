@@ -34,7 +34,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # USER SETTINGS
 # =============================================================================
 # Inputs
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_N_2000"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
 VMI_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
 VMI_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"

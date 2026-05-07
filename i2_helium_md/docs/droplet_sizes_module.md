@@ -32,9 +32,14 @@ we want?") and simulation ("what is each droplet's size?").
 
 ## When this is actually used
 
-For the **`single_pulse_N2000` preset** (our default scope), the simulation
-sets `use_single_droplet_size = True` and assigns every molecule the same
-droplet size (2000 atoms). The full sampler is bypassed.
+For the **`single_pulse_N2000` preset** (our default fixed-droplet scope), the
+simulation sets `use_single_droplet_size = True` and assigns every molecule the
+same droplet size (2000 atoms). The full sampler is bypassed.
+
+For the **`single_pulse_droplet_distribution` preset**, the simulation sets
+`use_single_droplet_size = False`, uses the source conditions from the legacy
+MATLAB input file (`p_source = 40 mbar`, `T_source = 14 K`), and samples a
+post-pickup droplet-size distribution.
 
 We port the sampler anyway because:
 
@@ -55,10 +60,10 @@ from i2_helium_md.sampling.droplet_sizes import (
 Typical use:
 
 ```python
-from i2_helium_md import single_pulse_N2000
+from i2_helium_md import single_pulse_droplet_distribution
 from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes
 
-cfg = single_pulse_N2000(num_molecules=500, seed=42, use_single_droplet_size=False)
+cfg = single_pulse_droplet_distribution(num_molecules=500, seed=42)
 
 N = sample_droplet_sizes(cfg, mode="post_pickup")    # shape (500,)
 # N now contains 500 droplet sizes drawn from a realistic post-pickup distribution.

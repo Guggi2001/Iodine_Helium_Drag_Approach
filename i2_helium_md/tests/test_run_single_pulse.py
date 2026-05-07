@@ -10,6 +10,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory
 
 def test_smoke_settings_write_run_directory(tmp_path, monkeypatch):
     run_path = tmp_path / "smoke"
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000")
     monkeypatch.setattr(script, "RUN_SIZE", "smoke")
     monkeypatch.setattr(script, "RUN_DIR", run_path)
     monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
@@ -40,6 +41,7 @@ def test_smoke_settings_write_run_directory(tmp_path, monkeypatch):
 
 def test_existing_outputs_require_explicit_overwrite(tmp_path, monkeypatch):
     run_path = tmp_path / "existing"
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000")
     monkeypatch.setattr(script, "RUN_SIZE", "smoke")
     monkeypatch.setattr(script, "RUN_DIR", run_path)
     monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
@@ -56,6 +58,7 @@ def test_existing_outputs_require_explicit_overwrite(tmp_path, monkeypatch):
 
 def test_overwrite_setting_allows_rerun(tmp_path, monkeypatch):
     run_path = tmp_path / "overwrite"
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000")
     monkeypatch.setattr(script, "RUN_SIZE", "smoke")
     monkeypatch.setattr(script, "RUN_DIR", run_path)
     monkeypatch.setattr(script, "NUM_MOLECULES", 2)
@@ -75,6 +78,7 @@ def test_overwrite_setting_allows_rerun(tmp_path, monkeypatch):
 
 
 def test_production_settings_keep_preset_defaults(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000")
     monkeypatch.setattr(script, "RUN_SIZE", "production")
     monkeypatch.setattr(script, "PRODUCTION_NUM_MOLECULES", None)
     monkeypatch.setattr(script, "PRODUCTION_SEED", None)
@@ -86,7 +90,45 @@ def test_production_settings_keep_preset_defaults(monkeypatch):
     assert cfg.ion_simulation_time == pytest.approx(20.0)
 
 
+def test_production_can_use_droplet_distribution_preset(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_droplet_distribution")
+    monkeypatch.setattr(script, "RUN_SIZE", "production")
+    monkeypatch.setattr(script, "PRODUCTION_NUM_MOLECULES", None)
+    monkeypatch.setattr(script, "PRODUCTION_SEED", None)
+    monkeypatch.setattr(script, "PRODUCTION_ION_TIME_PS", None)
+
+    cfg = script.build_config()
+    assert cfg.num_molecules == 8000
+    assert cfg.R0_GS_angstrom == pytest.approx(2.666)
+    assert cfg.E_coulomb_scale == pytest.approx(0.8)
+    assert cfg.single_initial_position is False
+    assert cfg.use_single_droplet_size is False
+
+
+def test_custom_uses_selected_preset_with_overrides(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_droplet_distribution")
+    monkeypatch.setattr(script, "RUN_SIZE", "custom")
+    monkeypatch.setattr(script, "NUM_MOLECULES", 12)
+    monkeypatch.setattr(script, "SEED", 321)
+    monkeypatch.setattr(script, "ION_TIME_PS", 0.5)
+
+    cfg = script.build_config()
+    assert cfg.num_molecules == 12
+    assert cfg.seed == 321
+    assert cfg.ion_simulation_time == pytest.approx(0.5)
+    assert cfg.R0_GS_angstrom == pytest.approx(2.666)
+    assert cfg.use_single_droplet_size is False
+
+
 def test_unknown_run_size_raises(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000")
     monkeypatch.setattr(script, "RUN_SIZE", "bad")
     with pytest.raises(ValueError, match="RUN_SIZE"):
+        script.build_config()
+
+
+def test_unknown_input_preset_raises(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "bad")
+    monkeypatch.setattr(script, "RUN_SIZE", "production")
+    with pytest.raises(ValueError, match="INPUT_PRESET"):
         script.build_config()

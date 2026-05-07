@@ -4,6 +4,7 @@ Each preset corresponds to one of the old ``inputfiles_*/*.m`` scripts.
 Start from a preset and override whichever fields you need:
 
     >>> cfg = single_pulse_N2000(num_molecules=500, seed=123)
+    >>> cfg = single_pulse_droplet_distribution(seed=123)
 """
 
 from __future__ import annotations
@@ -61,5 +62,30 @@ def single_pulse_N2000(**overrides) -> SimConfig:
         sigma_ion_exponent=-2.0,
         lambda_pump_nm=630.0,
         E_diss_eV=1.556,
+    )
+    return replace(cfg, **overrides)
+
+
+def single_pulse_droplet_distribution(**overrides) -> SimConfig:
+    """Reproduces ``inputfiles_dft_comparison/single_pulse_droplet_distribution.m``.
+
+    This preset keeps the same single-pulse ion/neutral physics as
+    :func:`single_pulse_N2000`, but switches from the fixed 2000-atom
+    droplet to the source-condition droplet-size sampler. It also uses
+    the ground-state I2 equilibrium distance and a larger ensemble,
+    matching the active assignments in the MATLAB input file.
+
+    Parameters
+    ----------
+    **overrides
+        Any ``SimConfig`` field to override from the preset default.
+    """
+    cfg = single_pulse_N2000(
+        # --- active differences from single_pulse_droplet_distribution.m ---
+        R0_GS_angstrom=2.666,
+        E_coulomb_scale=0.8,
+        single_initial_position=False,
+        num_molecules=8000,
+        use_single_droplet_size=False,
     )
     return replace(cfg, **overrides)

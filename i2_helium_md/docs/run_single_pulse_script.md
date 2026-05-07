@@ -25,9 +25,10 @@ From the repository root:
 python scripts/run_single_pulse.py
 ```
 
-The default settings are a small smoke run:
+For a first run, use a small smoke configuration:
 
 ```text
+INPUT_PRESET = "single_pulse_N2000"
 RUN_SIZE = "smoke"
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_smoke"
 NUM_MOLECULES = 10
@@ -52,6 +53,32 @@ i2_helium_md/data/runs/single_pulse_smoke/
 Open `scripts/run_single_pulse.py` and edit only the `USER SETTINGS` section
 for normal use.
 
+### `INPUT_PRESET`
+
+Choose which migrated MATLAB input file should provide the base configuration:
+
+```python
+INPUT_PRESET = "single_pulse_N2000"
+INPUT_PRESET = "single_pulse_droplet_distribution"
+```
+
+`single_pulse_N2000` mirrors:
+
+```text
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000.m
+```
+
+It uses the fixed 2000-atom droplet setup with `R0_GS = 9 A`.
+
+`single_pulse_droplet_distribution` mirrors:
+
+```text
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_droplet_distribution.m
+```
+
+It uses the droplet-size sampler (`use_single_droplet_size = False`), starts
+from `R0_GS = 2.666 A`, and uses `num_molecules = 8000` in production mode.
+
 ### `RUN_SIZE`
 
 Choose one of:
@@ -67,7 +94,8 @@ Use `smoke` for checking that the pipeline works.
 Use `custom` when you want to control molecule count, seed, and ion simulation
 time yourself.
 
-Use `production` for the full `single_pulse_N2000` preset.
+Use `production` for the selected `INPUT_PRESET` exactly, except for any values
+you set in the production override section.
 
 ### `RUN_DIR`
 
@@ -121,9 +149,10 @@ ION_TIME_PS = 20.0
 
 ### Production Runs
 
-For the full preset:
+For the full fixed-N HeDFT preset:
 
 ```python
+INPUT_PRESET = "single_pulse_N2000"
 RUN_SIZE = "production"
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_N2000"
 ```
@@ -132,6 +161,24 @@ Production mode uses:
 
 ```text
 num_molecules = 2000
+ion_simulation_time = 20 ps
+seed = None
+```
+
+For the full droplet-distribution preset:
+
+```python
+INPUT_PRESET = "single_pulse_droplet_distribution"
+RUN_SIZE = "production"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_distribution"
+```
+
+Production mode then uses:
+
+```text
+num_molecules = 8000
+R0_GS_angstrom = 2.666
+use_single_droplet_size = False
 ion_simulation_time = 20 ps
 seed = None
 ```
