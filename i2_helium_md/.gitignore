@@ -8,5 +8,5 @@
 /i2_helium_md/__pycache__/
 __pycache__/
 *.py[cod]
-.claude
+.claude/
 data/runs/
