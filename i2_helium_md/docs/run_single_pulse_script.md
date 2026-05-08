@@ -59,6 +59,7 @@ Choose which migrated MATLAB input file should provide the base configuration:
 
 ```python
 INPUT_PRESET = "single_pulse_N2000"
+INPUT_PRESET = "single_pulse_N2000_18Angst"
 INPUT_PRESET = "single_pulse_droplet_distribution"
 ```
 
@@ -69,6 +70,17 @@ legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000.m
 ```
 
 It uses the fixed 2000-atom droplet setup with `R0_GS = 9 A`.
+
+`single_pulse_N2000_18Angst` mirrors:
+
+```text
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000_18Angst.m
+```
+
+It uses the fixed 2000-atom droplet setup with `R0_GS = 18 A`,
+`num_molecules = 200`, `geometric_scattering_crosssection_Iplus = 200 A^2`,
+`binding_energy_I_ion = 0.05 eV`, and
+`mass_attach_probability = 0.005`.
 
 `single_pulse_droplet_distribution` mirrors:
 

@@ -4,6 +4,7 @@ Each preset corresponds to one of the old ``inputfiles_*/*.m`` scripts.
 Start from a preset and override whichever fields you need:
 
     >>> cfg = single_pulse_N2000(num_molecules=500, seed=123)
+    >>> cfg = single_pulse_N2000_18Angst(seed=123)
     >>> cfg = single_pulse_droplet_distribution(seed=123)
 """
 
@@ -62,6 +63,31 @@ def single_pulse_N2000(**overrides) -> SimConfig:
         sigma_ion_exponent=-2.0,
         lambda_pump_nm=630.0,
         E_diss_eV=1.556,
+    )
+    return replace(cfg, **overrides)
+
+
+def single_pulse_N2000_18Angst(**overrides) -> SimConfig:
+    """Reproduces ``inputfiles_dft_comparison/single_pulse_N2000_18Angst.m``.
+
+    This is the fixed-droplet 18 A He-DFT comparison input file. It shares
+    most settings with :func:`single_pulse_N2000`, but the MATLAB file has
+    active assignments for the larger initial I-I distance, smaller ensemble,
+    weaker I+ hard-sphere cross section, weaker ion binding, and lower helium
+    attachment probability.
+
+    Parameters
+    ----------
+    **overrides
+        Any ``SimConfig`` field to override from the preset default.
+    """
+    cfg = single_pulse_N2000(
+        # --- active differences from single_pulse_N2000_18Angst.m ---
+        R0_GS_angstrom=18.0,
+        num_molecules=2000,
+        geometric_scattering_crosssection_Iplus= 1600.0,
+        binding_energy_I_ion_eV=0.05,
+        mass_attach_probability=0.005,
     )
     return replace(cfg, **overrides)
 

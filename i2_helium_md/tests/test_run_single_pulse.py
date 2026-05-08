@@ -105,6 +105,21 @@ def test_production_can_use_droplet_distribution_preset(monkeypatch):
     assert cfg.use_single_droplet_size is False
 
 
+def test_production_can_use_18_angst_preset(monkeypatch):
+    monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_N2000_18Angst")
+    monkeypatch.setattr(script, "RUN_SIZE", "production")
+    monkeypatch.setattr(script, "PRODUCTION_NUM_MOLECULES", None)
+    monkeypatch.setattr(script, "PRODUCTION_SEED", None)
+    monkeypatch.setattr(script, "PRODUCTION_ION_TIME_PS", None)
+
+    cfg = script.build_config()
+    assert cfg.num_molecules == 200
+    assert cfg.R0_GS_angstrom == pytest.approx(18.0)
+    assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(200.0)
+    assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
+    assert cfg.mass_attach_probability == pytest.approx(0.005)
+
+
 def test_custom_uses_selected_preset_with_overrides(monkeypatch):
     monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_droplet_distribution")
     monkeypatch.setattr(script, "RUN_SIZE", "custom")

@@ -7,6 +7,7 @@ import pytest
 from i2_helium_md import (
     SimConfig,
     single_pulse_N2000,
+    single_pulse_N2000_18Angst,
     single_pulse_droplet_distribution,
 )
 from i2_helium_md.physics import EV, K_B, MASS_I_AMU, U
@@ -189,3 +190,44 @@ class TestSinglePulseDropletDistributionPreset:
 
     def test_validate_passes_for_preset(self):
         single_pulse_droplet_distribution().validate()
+
+
+class TestSinglePulseN200018AngstPreset:
+    def test_preset_reproduces_matlab_inputfile(self):
+        cfg = single_pulse_N2000_18Angst()
+        # Spot-check every active assignment in
+        # inputfiles_dft_comparison/single_pulse_N2000_18Angst.m.
+        assert cfg.R0_GS_angstrom == pytest.approx(18.0)
+        assert cfg.E_coulomb_scale == pytest.approx(1.0)
+        assert cfg.single_initial_position is True
+        assert cfg.custom_DFT_start is False
+        assert cfg.deltaR0_angstrom == pytest.approx(0.0)
+        assert cfg.T_particles_K == pytest.approx(0.4)
+        assert cfg.sigma_dependent_on_v is True
+        assert cfg.single_pulse is True
+        assert cfg.partner_interaction is True
+        assert cfg.additional_droplet_charges == 0
+        assert cfg.highly_charged_iodine is False
+        assert cfg.num_molecules == 200
+        assert cfg.effusive_dynamics is False
+        assert cfg.hard_sphere_collision_mode == 3
+        assert cfg.scattering_probability == pytest.approx(0.004)
+        assert cfg.geometric_scattering_crosssection_I == pytest.approx(30.0)
+        assert cfg.scatter_mass_neutral_amu == pytest.approx(4.0)
+        assert cfg.scatter_mass_ion_amu == pytest.approx(4.0)
+        assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(200.0)
+        assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
+        assert cfg.neutral_scatter_angle_std_deg == pytest.approx(0.0)
+        assert cfg.ion_scatter_angle_std_deg == pytest.approx(0.0)
+        assert cfg.mass_attach_probability == pytest.approx(0.005)
+        assert cfg.single_charge_ionization_allowed is False
+        assert cfg.use_single_droplet_size is True
+        assert cfg.single_droplet_size == 2000
+        assert cfg.p_source_mbar == pytest.approx(40.0)
+        assert cfg.T_source_K == pytest.approx(14.0)
+
+    def test_preset_overrides_work(self):
+        cfg = single_pulse_N2000_18Angst(num_molecules=500, seed=42)
+        assert cfg.num_molecules == 500
+        assert cfg.seed == 42
+        assert cfg.R0_GS_angstrom == pytest.approx(18.0)

@@ -38,11 +38,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # Choose which migrated MATLAB input file to use as the base configuration.
 #
-# "single_pulse_N2000"
-#     mirrors inputfiles_dft_comparison/single_pulse_N2000.m
-# "single_pulse_droplet_distribution"
-#     mirrors inputfiles_dft_comparison/single_pulse_droplet_distribution.m
+# "single_pulse_N2000" ---> HEDFT comparison 9A case
+# "single_pulse_N2000_18Angst" ---> HEDFT comparison 18A case
+
+# "single_pulse_droplet_distribution"   ---> Realistic droplet size distribution to compare to experiment
+
+
 #INPUT_PRESET = "single_pulse_N2000"
+#INPUT_PRESET = "single_pulse_N2000_18Angst"
 INPUT_PRESET = "single_pulse_droplet_distribution"
 
 # Choose "smoke", "custom", or "production".
@@ -56,7 +59,7 @@ RUN_SIZE = "production"
 # Where the output files are written. Change the final folder name for each run
 # you want to keep. This intentionally points to the project-level data/runs
 # folder, not to scripts/data/runs and not to a top-level results folder.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_distribution_18A"
 
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
@@ -77,22 +80,16 @@ VERBOSE = True
 # PRODUCTION OVERRIDES
 # =============================================================================
 # Leave these as None to use the selected INPUT_PRESET exactly.
-#
-# For single_pulse_N2000:
-#   num_molecules = 2000
-#   seed = None
-#   ion_simulation_time = 20 ps
-#
-# For single_pulse_droplet_distribution:
-#   num_molecules = 8000
-#   seed = None
-#   ion_simulation_time = 20 ps
-#
+
 # Set one of these values only if you want a production-like run with a specific
 # override.
 PRODUCTION_NUM_MOLECULES = None
 PRODUCTION_SEED = None
 PRODUCTION_ION_TIME_PS = None
+
+PRODUCTION_CROSSSECTION = None
+PRODUCTION_BINDING_ENERGY = None
+PRODUCTION_MASS_ATTACH_PROBABILITY = None
 
 
 # =============================================================================
@@ -114,6 +111,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from i2_helium_md import (  # noqa: E402
     single_pulse_N2000,
+    single_pulse_N2000_18Angst,
     single_pulse_droplet_distribution,
 )
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
@@ -123,6 +121,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 PRESET_BUILDERS = {
     "single_pulse_N2000": single_pulse_N2000,
+    "single_pulse_N2000_18Angst": single_pulse_N2000_18Angst,
     "single_pulse_droplet_distribution": single_pulse_droplet_distribution,
 }
 
@@ -191,6 +190,12 @@ def build_config():
             overrides["seed"] = PRODUCTION_SEED
         if PRODUCTION_ION_TIME_PS is not None:
             overrides["ion_simulation_time"] = PRODUCTION_ION_TIME_PS
+        if PRODUCTION_CROSSSECTION is not None:
+            overrides["geometric_scattering_crosssection_Iplus"] = PRODUCTION_CROSSSECTION
+        if PRODUCTION_BINDING_ENERGY is not None:
+            overrides["binding_energy_I_ion_eV"] = PRODUCTION_BINDING_ENERGY
+        if PRODUCTION_MASS_ATTACH_PROBABILITY is not None:
+            overrides["mass_attach_probability"] = PRODUCTION_MASS_ATTACH_PROBABILITY
         return preset_builder(**overrides)
 
     raise ValueError(
