@@ -43,9 +43,104 @@ a uniform-phi alternative, see the docstring of
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 
 from .constants import DENSITY_DROPLET, EV, U
+
+
+class CollisionDiagnostics(NamedTuple):
+    """Per-step internals exposed by ``apply_collision`` when
+    ``return_diagnostics=True``.
+
+    Attributes
+    ----------
+    b_collision : np.ndarray, shape (n,)
+        Boolean mask: True where the atom collided this step.
+    COSTHETA : np.ndarray, shape (n,)
+        Centre-of-mass scattering ``cos(theta)``. ``1.0`` for non-colliders.
+    COStheta_lab : np.ndarray, shape (n,)
+        **Lab-frame** scattering ``cos(theta_lab)`` after the optional
+        Gaussian smearing has been applied. ``1.0`` for non-colliders.
+        For heavy projectile on light target (e.g. I+ on He, rho ~ 32)
+        this is always close to 1, with max scattering angle ~ asin(1/rho)
+        ~ 1.81 deg. The legacy MATLAB temperature-diagnostic third column
+        is the mean of ``arccos`` of this quantity (``vmi_sim_3d_ion_propa.m:683``).
+    rho : np.ndarray, shape (n,)
+        Mass ratio ``m_atom / m_scatterer``.
+    E0_eV : np.ndarray, shape (n,)
+        Pre-collision kinetic energy per atom in eV.
+    E1_eV : np.ndarray, shape (n,)
+        Post-collision kinetic energy per atom in eV.
+
+    The legacy MATLAB temperature diagnostic
+    (``vmi_sim_3d_ion_propa.m:683``) is built from
+    ``mean(E1[b]/E0[b])``, ``mean((1+rho[b]**2)/(1+rho[b])**2)`` and
+    ``mean(arccos(clip(COStheta_lab[b], -1, 1)))``.
+    """
+    b_collision: np.ndarray
+    COSTHETA: np.ndarray
+    COStheta_lab: np.ndarray
+    rho: np.ndarray
+    E0_eV: np.ndarray
+    E1_eV: np.ndarray
+
+
+def temperature_diagnostic_from_collision(
+    diag: CollisionDiagnostics,
+) -> np.ndarray:
+    """Compute the legacy MATLAB temperature diagnostic for one step.
+
+    Mirrors the per-step accumulator at ``vmi_sim_3d_ion_propa.m:683``::
+
+        diagnostic_values = [
+            mean(E1[b]/E0[b]),
+            mean((1 + rho[b]**2) / (1 + rho[b])**2),
+            mean(theta_lab[b]),
+        ]
+
+    where ``theta_lab`` is the **lab-frame** scattering angle in radians
+    (post-Gaussian-smearing if smearing is enabled) and the means are
+    taken only over atoms with ``b_collision == True``. The MATLAB
+    code's ``theta`` variable on line 561 is the lab-frame angle, not
+    the COM-frame angle -- a heavy ion on light helium target has a
+    very narrow lab-frame scattering cone (max ~ asin(1/rho) which is
+    ~ 1.81 deg for I+ on He).
+
+    Parameters
+    ----------
+    diag : CollisionDiagnostics
+        Output of ``apply_collision(..., return_diagnostics=True)``.
+
+    Returns
+    -------
+    np.ndarray, shape (3,)
+        ``[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]``.
+        All ``np.nan`` if no atom collided.
+    """
+    b = np.asarray(diag.b_collision, dtype=bool)
+    if not b.any():
+        return np.full(3, np.nan, dtype=float)
+
+    E0 = np.asarray(diag.E0_eV, dtype=float)[b]
+    E1 = np.asarray(diag.E1_eV, dtype=float)[b]
+    rho = np.asarray(diag.rho, dtype=float)[b]
+    cos_theta_lab = np.clip(
+        np.asarray(diag.COStheta_lab, dtype=float)[b], -1.0, 1.0,
+    )
+
+    # Guard E0 = 0 (would only happen below the Landau cutoff which the
+    # sampler already screens out, but be defensive).
+    safe_E0 = np.where(E0 > 0.0, E0, 1.0)
+    t_ratio_actual = float(np.mean(np.where(E0 > 0.0, E1 / safe_E0, 1.0)))
+    t_ratio_mass = float(np.mean((1.0 + rho ** 2) / (1.0 + rho) ** 2))
+    theta_mean = float(np.mean(np.arccos(cos_theta_lab)))
+
+    return np.array(
+        [t_ratio_actual, t_ratio_mass, theta_mean],
+        dtype=float,
+    )
 
 
 # ===========================================================================
@@ -217,7 +312,11 @@ def apply_collision(
     scatter_mass_amu: float,
     neutral_scatter_angle_std_deg: float = 0.0,
     rng: np.random.Generator | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    return_diagnostics: bool = False,
+) -> (
+    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, CollisionDiagnostics]
+):
     """Apply hard-sphere scattering to colliding particles.
 
     For each particle marked True in ``b_collision``:
@@ -253,6 +352,14 @@ def apply_collision(
         Applied only to colliding particles.
     rng : np.random.Generator, optional
         Reproducible RNG. If None, a fresh default RNG is constructed.
+    return_diagnostics : bool, optional
+        If True, return a 5-tuple appending a
+        :class:`CollisionDiagnostics` namedtuple
+        ``(b_collision, COSTHETA, rho, E0_eV, E1_eV)``. The
+        ion-propagation driver uses this to record the legacy MATLAB
+        temperature-diagnostic accumulator from
+        ``vmi_sim_3d_ion_propa.m:683``. Default ``False`` keeps the
+        4-tuple shape so existing neutral-side callers are unaffected.
 
     Returns
     -------
@@ -261,6 +368,8 @@ def apply_collision(
     delta_E_eV : np.ndarray
         ``E0 - E1`` per particle in eV (positive = energy lost). Zero
         for non-colliding particles.
+    diagnostics : CollisionDiagnostics, optional
+        Only present when ``return_diagnostics=True``.
 
     Notes
     -----
@@ -414,4 +523,16 @@ def apply_collision(
     vy_new = new_v[:, 1]
     vz_new = new_v[:, 2]
 
+    if return_diagnostics:
+        return (
+            vx_new, vy_new, vz_new, delta_E_eV,
+            CollisionDiagnostics(
+                b_collision=b_collision,
+                COSTHETA=COSTHETA,
+                COStheta_lab=COStheta_lab,
+                rho=rho,
+                E0_eV=E0_eV,
+                E1_eV=E1_eV,
+            ),
+        )
     return vx_new, vy_new, vz_new, delta_E_eV

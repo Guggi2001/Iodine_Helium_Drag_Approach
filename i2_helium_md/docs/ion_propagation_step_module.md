@@ -13,6 +13,10 @@ including:
 - Mass attachment (helium atoms occasionally stick to ions)
 - Energy bookkeeping (E_kin, E_pot, cumulative E_dissip,
   cumulative collision count)
+- Per-step temperature diagnostic
+  ``[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]``
+  averaged over the colliding atoms (legacy MATLAB
+  ``diagnostic_array``, ``vmi_sim_3d_ion_propa.m:683``)
 
 It is the analogue of `propagation_step.py` for the ion stage. Both
 share the design principle that the step function is **pure** — no
@@ -69,8 +73,18 @@ passed to the function as separate arguments.
 4. **Collision sampling**: Mode 3, using the **previous step's**
    distance traveled (passed by the driver). On the first step,
    `prev_distance=None` and no collisions can occur.
-5. **Collision kinematics**: `apply_collision` updates velocities
-   for colliding atoms and returns ΔE per atom.
+5. **Collision kinematics**: `apply_collision(..., return_diagnostics=True)`
+   updates velocities for colliding atoms, returns ΔE per atom, and
+   exposes the COM-frame and lab-frame (post-smearing) cosines, mass
+   ratio, and pre/post-collision energies needed to build the legacy
+   temperature diagnostic. The recipe
+   ``temperature_diagnostic_from_collision`` uses the lab-frame cosine
+   for the angle column (matches MATLAB
+   ``vmi_sim_3d_ion_propa.m:561`` where ``theta = acos(COStheta(b))``
+   is built from the lab cosine, not the COM cosine) and reduces to a
+   3-element row written into the new ``IonStepState`` field
+   ``temperature_diagnostic`` (and later into
+   ``IonCheckpoint.temperature_diagnostic`` -- see schema v5).
 6. **Mass attachment**: `mass_attach_trial < p_attach` AND
    `b_collision` → mass += 4 amu (one He atom).  Random number
    drawn for ALL atoms (matches MATLAB rng pattern).
@@ -133,6 +147,29 @@ modulo Verlet symplectic drift. The diagnostic is exposed as
 ``IonStepState.E_mass_attach_defect_eV`` (shape ``(2N,)``) and
 persisted in ``IonCheckpoint.E_mass_attach_defect_eV`` (shape
 ``(2N, T)``) in schema v4.
+
+## Temperature-diagnostic capture
+
+``IonStepState`` carries an optional field
+``temperature_diagnostic: np.ndarray | None`` of shape ``(3,)``:
+
+```
+[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]
+```
+
+It is set from the ``CollisionDiagnostics`` returned by
+``apply_collision`` via ``temperature_diagnostic_from_collision``.
+On steps where no atom collided, the value is an all-NaN ``(3,)``
+array. On states reconstructed from a checkpoint column (e.g. via
+``ion_state_from_checkpoint_column``), the field is ``None`` because
+the per-step measurement is not stored per atom.
+
+The driver (``simulation/ion.py``) writes the row into
+``IonCheckpoint.temperature_diagnostic[stored_step_idx, :]`` only when
+that step is stored, so the array shape matches ``(num_stored_steps, 3)``
+-- the same downsampling as MATLAB's
+``diagnostic_array(1:reduction_timesteps:end, :)`` in
+``vmi_sim_3d_ion_propa.m:883``.
 
 ## Out-of-scope branches
 

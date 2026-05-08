@@ -50,6 +50,29 @@
     plotting workflow from an existing `RunDirectory`
   - `scripts/post_processing_comparison/compare.py` remains as imported
     VMI-reference verification context
+- Legacy MATLAB live-debug and paper post-processing reproduction:
+  - `i2_helium_md/postprocess/energy_balance.py` -- recipe helpers for
+    sum-over-atoms neutral / per-molecule ion energy traces, simulated
+    azimuthal phi histogram, and final ion mass spectrum.
+  - `i2_helium_md/postprocess/_smoothing.py` -- shared MATLAB-style
+    `movmean` and trace normaliser, reused by both
+    `plot_experimental_comparison.py` and the new paper figure script.
+  - `IonCheckpoint` schema bumped v4 -> v5: adds
+    `temperature_diagnostic: (num_steps, 3)` capturing the per-step
+    legacy MATLAB `[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>]`
+    accumulator from `vmi_sim_3d_ion_propa.m:683`. Older v4 files must
+    be regenerated.
+  - `physics/collisions.py` exposes `CollisionDiagnostics` and
+    `temperature_diagnostic_from_collision`; `apply_collision`
+    accepts a `return_diagnostics=False` keyword for opt-in capture
+    without changing existing call sites.
+  - Four new post-processing scripts under `scripts/post_processing/`:
+    `plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
+    `plot_ion_temperature_diagnostic.py`, `plot_paper_figure.py`.
+  - `tests/test_energy_balance.py` covers the recipe helpers, the
+    schema-v5 round trip, and the v4-reject path.
+  - `tests/test_plot_legacy_debug_smoke.py` runs each new script in
+    non-interactive mode against an existing run directory.
 
 ## Current phase
 
@@ -70,6 +93,14 @@ keep any further plotting or analysis changes narrowly scoped.
 2. Keep post-processing tests focused on loader contracts, overlap
    interpolation, VMI reference loading, final-velocity histogram filters, and
    plotting smoke coverage.
+3. Regenerate existing ion checkpoints at schema v5 so the new
+   temperature-diagnostic figures and the data-gated tests
+   (`test_compare_trajectories::TestEndToEndReal`,
+   `test_plot_*_smoke`) can run without manual deselection.
+4. Polar-VMI panels of `post_process_single_pulse_paper_v3.m`
+   (cos^2 angular anisotropy fit, beta(v) function, 3-D surf of
+   polar VMI image) remain deferred. They require a 2-D polar VMI
+   image not currently in `data/reference/`.
 
 ## Recommended next task
 

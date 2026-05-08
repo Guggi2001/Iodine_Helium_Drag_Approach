@@ -1451,3 +1451,101 @@ python -m pytest tests/test_run_single_pulse.py -q
 ```
 
 Result: 8 tests passed.
+
+---
+
+## Legacy MATLAB live-debug and paper post-processing reproduction
+
+Reproduces three classes of legacy MATLAB output that the Python port had
+not yet covered:
+
+1. **Neutral energy-balance debug figure**
+   (`vmi_sim_3d_neutral_propa_HeDFT_mimic.m:965`) -- sum-over-atoms
+   `E_kin`, `E_pot`, `E_dissip`, total `E_system` over the neutral time
+   axis. All inputs were already in the existing `NeutralCheckpoint`,
+   no physics changes required.
+2. **Ion energy-balance debug figure**
+   (`vmi_sim_3d_ion_propa.m:898`) -- per-molecule `E_kin`, `E_pot`,
+   `E_dissip`, `E_mass_attach_defect`, `E_system`. All inputs already
+   in `IonCheckpoint`, no physics changes required.
+3. **Ion temperature-diagnostic figure**
+   (`vmi_sim_3d_ion_propa.m:683` / `:883`) -- per-step
+   `[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>]` averaged over
+   the colliding atoms. Required adding a new ion-checkpoint field.
+4. **Minimal `post_process_single_pulse_paper_v3.m` reproduction**
+   -- radial velocity comparison (already covered by
+   `plot_experimental_comparison.py`), simulated azimuthal phi
+   histogram, final ion mass spectrum, combined PDF export named
+   `compare_simulation_and_measurement.pdf` to match legacy filename.
+
+### IonCheckpoint schema v4 -> v5
+
+Added `temperature_diagnostic: (num_steps, 3)` to `IonCheckpoint` -- the
+only ion-checkpoint array whose leading dimension is `num_steps` rather
+than `2N`. NaN where no atom collided in a stored step. Validation lives
+outside the `(2N, num_steps)` loop in `_validate_against_cfg`.
+
+`_load_checkpoint` already enforces the field set, so any pre-v5 file
+fails at load time with the standard "schema_version=4, this code
+expects 5; rerun the simulation" error. Existing `data/runs/*/ion.npz`
+files must be regenerated.
+
+### Capture path
+
+`physics/collisions.py` now exposes a `CollisionDiagnostics` namedtuple
+plus the recipe helper `temperature_diagnostic_from_collision`.
+`apply_collision` accepts a keyword-only `return_diagnostics: bool =
+False`; the default keeps the 4-tuple shape so all existing neutral-side
+callers and tests remain unaffected. `IonStepState` carries an optional
+`temperature_diagnostic` field set by `ion_propagation_step` from the
+returned `CollisionDiagnostics`. `simulation/ion.py` writes the row into
+`IonCheckpoint.temperature_diagnostic[stored_step_idx, :]` for every
+stored step, mirroring the MATLAB
+`diagnostic_array(1:reduction_timesteps:end, :)` downsampling.
+
+### New post-processing modules
+
+- `i2_helium_md/postprocess/energy_balance.py` -- pure recipe helpers:
+  `neutral_energy_totals`, `ion_energy_totals`, `phi_histogram`,
+  `mass_spectrum`. `mass_spectrum` uses bin edges at half-integer amu
+  so 127.0 lands in the bin centred on 127 rather than on a bin edge.
+- `i2_helium_md/postprocess/_smoothing.py` -- shared
+  MATLAB-style `movmean` and trace normaliser; both
+  `plot_experimental_comparison.py` and the new paper-figure script
+  import from here instead of duplicating the helpers.
+
+### New scripts (manual invocation)
+
+Under `scripts/post_processing/`:
+
+- `plot_neutral_energy_balance.py`
+- `plot_ion_energy_balance.py`
+- `plot_ion_temperature_diagnostic.py`
+- `plot_paper_figure.py`
+
+Each loads from a `RunDirectory` and writes under
+`<run>/figures/`. None of them auto-run from
+`scripts/run_single_pulse.py` -- the run script remains untouched.
+
+### Out of scope (deferred)
+
+The polar-VMI panels of `post_process_single_pulse_paper_v3.m` (cos^2
+angular anisotropy fit, beta(v) function, 3-D `surf` of polar VMI image)
+require a 2-D polar VMI image not present in `data/reference/`.
+CLAUDE.md flags "full experimental VMI interpretation" as out of default
+scope, so these panels are intentionally skipped pending an explicit
+request and additional reference data.
+
+### Verification
+
+```bash
+python -m pytest tests/test_energy_balance.py tests/test_collisions.py \
+    tests/test_ion_propagation_step.py tests/test_ion.py \
+    tests/test_ion_initial_state.py -q
+```
+
+Result: 106 tests passed. The schema bump was also smoke-tested with a
+small end-to-end run (`N=50`, 2 ps ion stage): 197/200 stored steps
+recorded a non-NaN diagnostic; `<T'/T>_from_mass_ratio` clusters at
+~0.943, exactly the analytical asymptote `(1 + rho^2) / (1 + rho)^2`
+for `rho = 127/4` (iodine on helium).

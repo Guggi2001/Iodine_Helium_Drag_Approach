@@ -68,9 +68,15 @@ from ..config import SimConfig
 #        E_kin + E_pot + E_dissip + E_mass_attach_defect is conserved
 #        modulo Verlet drift on each side.
 #          * E_mass_attach_defect_eV (2N, T) -- cumulative attach defect
+#   5 -- adds the per-step legacy MATLAB temperature diagnostic from
+#        vmi_sim_3d_ion_propa.m:683:
+#          [<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>]
+#        averaged over the colliding atoms in each stored step. NaN
+#        in any row where no collision happened in that stored step.
+#          * temperature_diagnostic (T, 3)
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 4
+_ION_SCHEMA_VERSION: int = 5
 
 
 # ===========================================================================
@@ -162,11 +168,17 @@ class IonCheckpoint:
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
     * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
     * ``number_of_collisions``: (2 * num_molecules, num_steps) int (cumulative, per-atom)
+    * ``temperature_diagnostic``: (num_steps, 3)               eV-ratio, mass-ratio, rad
+        Per-stored-step legacy MATLAB temperature diagnostic
+        ``[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>]``
+        averaged over the atoms that collided in that step. ``NaN``
+        in every column when no collision occurred. Mirrors the
+        ``diagnostic_array`` accumulator in
+        ``vmi_sim_3d_ion_propa.m:683``.
 
-    Schema v4 (the current version) differs from v3 by adding
-    ``E_mass_attach_defect_eV`` (the legacy MATLAB
-    ``E_mass_attach_defect`` diagnostic; see the schema-version block
-    above). Older files cannot be loaded; rerun the ion stage to upgrade.
+    Schema v5 (the current version) differs from v4 by adding
+    ``temperature_diagnostic``. Older files cannot be loaded; rerun
+    the ion stage to upgrade.
     """
 
     num_molecules: int
@@ -194,6 +206,7 @@ class IonCheckpoint:
     b_ion_outside: np.ndarray
     relative_loss_per_ps: np.ndarray
     number_of_collisions: np.ndarray
+    temperature_diagnostic: np.ndarray
     schema_version: int = _ION_SCHEMA_VERSION
 
 
@@ -431,4 +444,19 @@ def _validate_against_cfg(
             raise ValueError(
                 f"checkpoint time_ps has shape {ts.shape}, "
                 f"expected ({num_steps_seen},)"
+            )
+
+    # temperature_diagnostic is (num_steps, 3) -- different leading dim
+    # than the (2N, num_steps) trajectory arrays, so it's checked here.
+    if hasattr(checkpoint, "temperature_diagnostic"):
+        td = checkpoint.temperature_diagnostic
+        if td.ndim != 2 or td.shape[1] != 3:
+            raise ValueError(
+                f"checkpoint temperature_diagnostic has shape {td.shape}, "
+                f"expected (num_steps, 3)"
+            )
+        if num_steps_seen is not None and td.shape[0] != num_steps_seen:
+            raise ValueError(
+                f"checkpoint temperature_diagnostic has num_steps={td.shape[0]}, "
+                f"but trajectory arrays had num_steps={num_steps_seen}"
             )

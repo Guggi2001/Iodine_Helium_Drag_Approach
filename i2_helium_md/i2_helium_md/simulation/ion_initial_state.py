@@ -194,6 +194,13 @@ def build_initial_ion_state(
     number_of_collisions = np.zeros((two_N, T), dtype=int)
     mass_history_kg = np.zeros((two_N, T))
 
+    # Legacy MATLAB per-step temperature diagnostic. NaN means "no
+    # collision in this stored step" (matches the "blank rows" we get
+    # in MATLAB when an outer step has no colliders -- diagnostic_array
+    # in vmi_sim_3d_ion_propa.m:683 is only appended when collisions
+    # occurred). The driver overwrites rows where collisions happened.
+    temperature_diagnostic = np.full((T, 3), np.nan, dtype=float)
+
     E_kin_eV[:, 0] = E_kin_t0
     E_pot_eV[:, 0] = E_pot_t0
     # E_dissip, E_mass_attach_defect, relative_loss, n_collisions all
@@ -239,6 +246,7 @@ def build_initial_ion_state(
         b_ion_outside=b_ion_outside,
         relative_loss_per_ps=relative_loss_per_ps,
         number_of_collisions=number_of_collisions,
+        temperature_diagnostic=temperature_diagnostic,
         schema_version=_ION_SCHEMA_VERSION,
     )
 

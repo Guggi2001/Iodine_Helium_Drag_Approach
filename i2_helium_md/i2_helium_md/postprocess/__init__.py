@@ -11,6 +11,15 @@ from .compare_trajectories import (
     compare_distance,
     compare_velocity_magnitude,
 )
+from .energy_balance import (
+    EnergyTotals,
+    MassSpectrum,
+    PhiHistogram,
+    ion_energy_totals,
+    mass_spectrum,
+    neutral_energy_totals,
+    phi_histogram,
+)
 from .hedft_loader import HedftTrajectory, load_hedft_trajectory
 from .velocity_distribution import (
     FinalVelocityHistogram,
@@ -29,4 +38,11 @@ __all__ = [
     "load_vmi_reference",
     "FinalVelocityHistogram",
     "compute_final_velocity_histogram",
+    "EnergyTotals",
+    "neutral_energy_totals",
+    "ion_energy_totals",
+    "PhiHistogram",
+    "phi_histogram",
+    "MassSpectrum",
+    "mass_spectrum",
 ]

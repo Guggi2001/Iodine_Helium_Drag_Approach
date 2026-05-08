@@ -113,9 +113,9 @@ def test_production_can_use_18_angst_preset(monkeypatch):
     monkeypatch.setattr(script, "PRODUCTION_ION_TIME_PS", None)
 
     cfg = script.build_config()
-    assert cfg.num_molecules == 200
+    assert cfg.num_molecules == 2000
     assert cfg.R0_GS_angstrom == pytest.approx(18.0)
-    assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(200.0)
+    assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(1600.0)
     assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
     assert cfg.mass_attach_probability == pytest.approx(0.005)
 

@@ -66,7 +66,9 @@ We don't read the energy columns from neutral; ion E_kin/E_pot use
 
 All other trajectory arrays start at zero: `E_dissip_eV`,
 `E_mass_attach_defect_eV`, `number_of_collisions`, and
-`relative_loss_per_ps`.
+`relative_loss_per_ps`. The schema-v5 `temperature_diagnostic`
+field is allocated as a `(num_steps, 3)` array of NaN; only rows
+where the driver actually observes a collision are overwritten.
 
 ## Bug fixes vs. legacy MATLAB
 

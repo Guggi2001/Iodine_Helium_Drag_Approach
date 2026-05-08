@@ -208,14 +208,14 @@ class TestSinglePulseN200018AngstPreset:
         assert cfg.partner_interaction is True
         assert cfg.additional_droplet_charges == 0
         assert cfg.highly_charged_iodine is False
-        assert cfg.num_molecules == 200
+        assert cfg.num_molecules == 2000
         assert cfg.effusive_dynamics is False
         assert cfg.hard_sphere_collision_mode == 3
         assert cfg.scattering_probability == pytest.approx(0.004)
         assert cfg.geometric_scattering_crosssection_I == pytest.approx(30.0)
         assert cfg.scatter_mass_neutral_amu == pytest.approx(4.0)
         assert cfg.scatter_mass_ion_amu == pytest.approx(4.0)
-        assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(200.0)
+        assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(1600.0)
         assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
         assert cfg.neutral_scatter_angle_std_deg == pytest.approx(0.0)
         assert cfg.ion_scatter_angle_std_deg == pytest.approx(0.0)

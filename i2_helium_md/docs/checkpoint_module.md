@@ -108,6 +108,14 @@ The minimum sufficient set to:
   `relative_loss_per_ps`, `b_ion_outside`)
 - Track per-atom mass over time (`mass_history_kg`) since helium
   attachment changes per-atom mass during the run
+- Reproduce the legacy MATLAB temperature-diagnostic figure via
+  `temperature_diagnostic: (num_steps, 3)` -- columns
+  `[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]`
+  averaged over the colliding atoms in each stored step. NaN in
+  every column when no collision occurred. Mirrors the
+  `diagnostic_array` accumulator at `vmi_sim_3d_ion_propa.m:683`.
+  Note that the leading dimension is `num_steps`, not `2N` --
+  this is per-step (not per-atom) data.
 
 ## What is **not** saved
 
@@ -170,6 +178,14 @@ on read and refuses to load incompatible versions.
   `E_kin + E_pot + E_dissip + E_mass_attach_defect` is conserved
   (modulo Verlet drift) on each side. Older v3 files cannot be loaded
   by current code; rerun the ion stage to upgrade.
+- `5` -- adds `temperature_diagnostic: (T, 3)` carrying the per-step
+  legacy MATLAB temperature accumulator
+  `[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]`,
+  averaged over the colliding atoms in each stored step. NaN where
+  no collision occurred. Mirrors `diagnostic_array` at
+  `vmi_sim_3d_ion_propa.m:683`. Note this is the only ion-checkpoint
+  array whose leading dimension is `num_steps` rather than `2N`.
+  Older v4 files cannot be loaded; rerun the ion stage to upgrade.
 
 When bumping, update `_NEUTRAL_SCHEMA_VERSION` or `_ION_SCHEMA_VERSION` in
 `checkpoint.py` and document the change in `migration_log.md`.

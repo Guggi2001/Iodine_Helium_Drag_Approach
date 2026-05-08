@@ -33,8 +33,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # USER SETTINGS
 # =============================================================================
 # Inputs
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "18A_hedft_comparison"
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
+HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
 
 # Subset stride for the individual MD trajectories overlaid on Figure 1.
 # With the default 2000-molecule production run this gives ~40 distance

@@ -37,6 +37,8 @@ from i2_helium_md.physics.collisions import (
     sample_collision_events,
     apply_collision,
     velocity_dependent_cross_section,
+    CollisionDiagnostics,
+    temperature_diagnostic_from_collision,
 )
 ```
 
@@ -55,6 +57,36 @@ For colliders, samples `b/R = sqrt(uniform)`, computes COM angle from
 hard-sphere geometry, transforms to lab frame, optionally smears
 Gaussian, and assembles a new 3D velocity vector. Non-colliders are
 returned with their incoming velocity exactly (and `delta_E = 0`).
+
+By default returns the 4-tuple `(vx_new, vy_new, vz_new, delta_E_eV)`.
+Pass `return_diagnostics=True` to additionally get a
+`CollisionDiagnostics` namedtuple
+`(b_collision, COSTHETA, COStheta_lab, rho, E0_eV, E1_eV)` -- the
+per-atom internals the ion-propagation driver needs to record the
+legacy MATLAB temperature-diagnostic accumulator
+(`vmi_sim_3d_ion_propa.m:683`). `COStheta_lab` is the **lab-frame**
+post-smearing cosine, which is what the MATLAB diagnostic uses;
+`COSTHETA` is kept alongside for completeness. The default keeps the
+4-tuple shape so existing neutral-side callers are unaffected.
+
+### `temperature_diagnostic_from_collision(diag)` — recipe helper
+
+Reduces a `CollisionDiagnostics` to the three-element legacy MATLAB
+``diagnostic_array`` row::
+
+    [ mean(E1[b]/E0[b]),
+      mean((1 + rho[b]**2) / (1 + rho[b])**2),
+      mean(arccos(clip(COStheta_lab[b], -1, 1))) ]
+
+where ``b = diag.b_collision``. The third entry uses the **lab-frame**
+scattering angle (matching MATLAB ``vmi_sim_3d_ion_propa.m:561``,
+where ``theta = acos(COStheta(b_collision)) + smearing``). For heavy
+projectile on light target the lab-frame cone is very narrow
+(max ``asin(1/rho) ~ 1.81 deg`` for I+ on He), so the angle trace
+sits near 0-2 deg rather than spanning the full 0-180 deg COM range.
+Returns all-NaN when no atom collided in the step. Used by
+``ion_propagation_step`` to write each step's diagnostic row into the
+v5 ion checkpoint's ``temperature_diagnostic`` field.
 
 ### `velocity_dependent_cross_section(...)` — for ions
 

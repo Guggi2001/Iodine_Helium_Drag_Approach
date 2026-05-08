@@ -84,6 +84,7 @@ def _make_ion(
         b_ion_outside=np.asarray(b_outside, dtype=bool),
         relative_loss_per_ps=diag_zero,
         number_of_collisions=np.zeros((2 * n, num_steps), dtype=int),
+        temperature_diagnostic=np.full((num_steps, 3), np.nan, dtype=float),
     )
 
 

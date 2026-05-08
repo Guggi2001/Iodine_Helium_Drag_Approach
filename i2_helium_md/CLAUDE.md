@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-This project is a Python port of a legacy MATLAB molecular-dynamics codebase for iodine / iodine-ion dynamics in helium nanodroplets.
+This project is a Python port of a legacy MATLAB molecular-dynamics codebase
+for iodine / iodine-ion dynamics in helium nanodroplets.
 
 Python package:
 
@@ -14,106 +15,112 @@ Legacy MATLAB reference:
 legacy_matlab_repository/
 ```
 
-## Current task
+## Current State
 
-The neutral and ion propagation drivers are implemented, ion-stage
-MATLAB/Python cross-reference validation is complete, and the public
-single-pulse run script is implemented:
+The transfer of the legacy MATLAB simulation code is mainly completed. The
+neutral and ion propagation drivers are implemented, the main single-pulse
+input presets are migrated, and MATLAB/Python cross-reference validation has
+covered the important propagation and bookkeeping paths.
+
+The remaining work is mainly post-processing plot recreation and refinement:
+matching legacy MATLAB figures, separating plots that use different simulation
+settings, and keeping those plotting scripts connected to the correct run
+directories and reference data.
+
+Do not broaden into new physics, pump-probe support, effusive dynamics, Abel
+inversion, or full experimental VMI interpretation unless the user explicitly
+asks.
+
+## Implemented Core Path
+
+Main public run script:
 
 ```text
 scripts/run_single_pulse.py
 ```
 
-Step 13 now has a first implemented post-processing path in `postprocess/`.
-The current task is to validate, document, and carefully extend that path only
-where needed.
-
-Implemented Step 13 files:
+Available input presets:
 
 ```text
-i2_helium_md/postprocess/hedft_loader.py
-i2_helium_md/postprocess/compare_trajectories.py
-i2_helium_md/postprocess/velocity_distribution.py
-scripts/plot_hedft_comparison.py
-scripts/post_processing_comparison/compare.py
+single_pulse_N2000              # 9 A HeDFT comparison case
+single_pulse_N2000_18Angst      # 18 A HeDFT comparison case
+single_pulse_droplet_distribution
 ```
 
-`scripts/post_processing_comparison/compare.py` is imported VMI-reference
-verification context. The package-level APIs in `i2_helium_md/postprocess/`
-are the main code path for HeDFT loading, trajectory comparison, VMI reference
-loading, and final-velocity histogram calculations.
-
-Do not continue with Abel inversion, full experimental VMI interpretation,
-pump-probe support, effusive dynamics, analytical-force cleanup, broad
-refactors, or out-of-scope MATLAB branches unless the user explicitly asks.
-
-## Main working mode
-
-Work data-contract first, and keep post-processing changes narrow.
-
-Prefer this workflow when continuing from the current state:
-
-1. Load the existing production run through `RunDirectory`.
-2. Load `data/reference/9A_All_Data.csv` with `load_hedft_trajectory`.
-3. Compute explicit numerical diagnostics with `compare_distance` and
-   `compare_velocity_magnitude`.
-4. Use `velocity_distribution.py` only for the current VMI reference overlay
-   and mass-selected final-velocity histograms.
-5. Add or update focused pytest coverage before changing public behavior.
-6. Only then adjust `scripts/plot_hedft_comparison.py` if the numerical API
-   proves the plot needs a change.
-
-The goal is reliable loading, numerical comparison, and a reproducible first
-plotting path. Avoid turning this into final publication plotting or full VMI
-analysis unless requested.
-
-## Expected Step 13 outputs
-
-Implemented files:
+The run script writes self-contained run directories through `RunDirectory`:
 
 ```text
-i2_helium_md/postprocess/hedft_loader.py
-i2_helium_md/postprocess/compare_trajectories.py
-i2_helium_md/postprocess/velocity_distribution.py
-i2_helium_md/postprocess/__init__.py
-scripts/plot_hedft_comparison.py
-tests/test_hedft_loader.py
-tests/test_compare_trajectories.py
-tests/test_velocity_distribution.py
-tests/test_plot_hedft_comparison_smoke.py
-docs/hedft_loader_module.md
-docs/compare_trajectories_module.md
-docs/velocity_distribution_module.md
-docs/plot_hedft_comparison_script.md
+cfg.json
+neutral.npz
+ion.npz
 ```
 
-The trajectory comparison computes:
-
-- mean MD I-I distance vs. time from the ion checkpoint,
-- interpolation of MD distance onto the normalized HeDFT time grid,
-- overlap interval,
-- RMSE in Å,
-- mean MD/HeDFT distance ratio.
-
-It also computes analogous I1/I2 velocity-magnitude comparisons. The VMI
-helper currently loads `vmi_iplus_he.csv` and `vmi_iplus_gas.csv` and computes
-plain mass-selected final-velocity histograms for simulation overlays.
-
-This mirrors the numerical block in `simulation_image_only_trajectories.m`:
+Core implemented modules include:
 
 ```text
-dR_mean = mean(sqrt(dx^2 + dy^2 + dz^2), axis=particles)
-tmax = min(max(tR), max(time_i))
-dR_mean_on_tR = interp1(t_md, d_md, tR_use)
-rmse = sqrt(mean((dR_mean_on_tR - R_use)^2))
-ratio = mean(dR_mean_on_tR / R_use)
+i2_helium_md/config.py
+i2_helium_md/presets.py
+i2_helium_md/physics/
+i2_helium_md/sampling/
+i2_helium_md/simulation/
+i2_helium_md/postprocess/
 ```
 
-## Data policy
+## Current Plotting Scripts
 
-Do not use hardcoded absolute MATLAB paths.
+The post-processing plots are now intentionally split because the legacy
+combined MATLAB figure mixed outputs from different run settings.
 
-Expected normalized reference inputs are:
+HeDFT trajectory comparison:
+
+```text
+scripts/post_processing/plot_hedft_comparison.py
+```
+
+This script uses the HeDFT-comparison run and produces:
+
+- I-I distance trajectory comparison,
+- velocity-vs-time trajectory comparison.
+
+Experimental velocity-distribution comparison:
+
+```text
+scripts/post_processing/plot_experimental_comparison.py
+```
+
+This script uses the realistic experimental-condition run and produces:
+
+- gas-phase experimental VMI reference,
+- droplet experimental VMI reference,
+- simulated mass-selected final-velocity histograms for `I+He` and `I+He2`.
+
+Keep these workflows separate. The top velocity-vs-time HeDFT comparison should
+not be plotted from the experimental-condition run, and the experimental VMI
+distribution should not be plotted from the HeDFT-comparison run.
+
+Legacy MATLAB live-debug + paper figure reproduction:
+
+```text
+scripts/post_processing/plot_neutral_energy_balance.py
+scripts/post_processing/plot_ion_energy_balance.py
+scripts/post_processing/plot_ion_temperature_diagnostic.py
+scripts/post_processing/plot_paper_figure.py
+```
+
+These run post-hoc from a finished `RunDirectory` and reproduce the
+legacy figures from `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` (energy
+balance), `vmi_sim_3d_ion_propa.m` (energy balance + temperature
+diagnostic), and the simulation-side panels of
+`post_process_single_pulse_paper_v3.m` (radial v + phi histogram +
+mass spectrum, exported as `compare_simulation_and_measurement.pdf`).
+The polar-VMI panels (cos^2 anisotropy fit, beta(v), 3-D surf of
+polar VMI image) are intentionally deferred -- the polar VMI image
+data is not in `data/reference/` and CLAUDE.md scopes "full
+experimental VMI interpretation" out by default.
+
+## Post-Processing Data Contracts
+
+Expected normalized reference inputs:
 
 ```text
 data/reference/9A_All_Data.csv
@@ -122,47 +129,105 @@ data/reference/vmi_iplus_he.csv
 data/reference/vmi_iplus_gas.csv
 ```
 
-`9A_All_Data.csv` and `18A_All_Data.csv` use the 8-column header
-`Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance`. The earlier split
-legacy 9 Å files (`data_vabs2.csv`, `R1-R2.csv`) are provenance, not the
-current Python loader contract.
+`9A_All_Data.csv` and `18A_All_Data.csv` use the 8-column header:
 
-Before adding data files, verify whether existing `data/reference/*.csv` files
-are experimental VMI data or HeDFT trajectory data. Do not silently repurpose
-files with ambiguous names.
+```text
+Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance
+```
 
-## Relevant files
+The earlier split legacy 9 A files (`data_vabs2.csv`, `R1-R2.csv`) are
+provenance, not the current Python loader contract.
 
-Start with these Python files:
+Do not use hardcoded absolute MATLAB paths. Before adding or repurposing data
+files, verify whether existing `data/reference/*.csv` files are experimental
+VMI data or HeDFT trajectory data.
+
+## Main Working Mode
+
+Use the current Python package and run-directory APIs first. Prefer this
+workflow:
+
+1. Load an existing run with `RunDirectory`.
+2. Load HeDFT references with `load_hedft_trajectory`.
+3. Compute numerical diagnostics with `compare_distance` and
+   `compare_velocity_magnitude` before changing trajectory plots.
+4. Use `velocity_distribution.py` for VMI reference loading and mass-selected
+   final-velocity histograms.
+5. Keep plot changes local to `scripts/post_processing/` unless a package API
+   change is actually needed.
+6. Add or update focused pytest coverage when changing behavior.
+
+The goal now is reliable reproduction of the legacy post-processing figures,
+not broad refactoring or new simulation features.
+
+## Relevant Files
+
+Post-processing Python:
 
 ```text
 i2_helium_md/postprocess/hedft_loader.py
 i2_helium_md/postprocess/compare_trajectories.py
 i2_helium_md/postprocess/velocity_distribution.py
-scripts/plot_hedft_comparison.py
-scripts/post_processing_comparison/compare.py
+i2_helium_md/postprocess/energy_balance.py
+i2_helium_md/postprocess/_smoothing.py
+i2_helium_md/postprocess/__init__.py
+scripts/post_processing/plot_hedft_comparison.py
+scripts/post_processing/plot_experimental_comparison.py
+scripts/post_processing/plot_neutral_energy_balance.py
+scripts/post_processing/plot_ion_energy_balance.py
+scripts/post_processing/plot_ion_temperature_diagnostic.py
+scripts/post_processing/plot_paper_figure.py
 ```
 
-Then inspect simulation I/O only as needed:
+Simulation I/O:
 
 ```text
 i2_helium_md/simulation/run_directory.py
 i2_helium_md/simulation/checkpoint.py
 ```
 
-Relevant MATLAB files:
+Preset/run configuration:
 
 ```text
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image.m
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_v2.m
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/9Angström/importfile_R1_R2.m
+i2_helium_md/presets.py
+scripts/run_single_pulse.py
 ```
 
-Do not read the full legacy plotting stack unless a numerical comparison
-depends on it.
+Relevant MATLAB provenance:
 
-## Editing limits
+```text
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000.m
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000_18Angst.m
+legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_droplet_distribution.m
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m
+legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image.m
+legacy_matlab_repository/vmi_sim_3d_neutral_propa_HeDFT_mimic.m
+legacy_matlab_repository/vmi_sim_3d_ion_propa.m
+legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v3.m
+```
+
+Do not read the full legacy plotting stack unless a specific numerical or
+visual discrepancy requires it.
+
+## Known Plotting Details
+
+For the velocity-vs-time HeDFT panel, the MATLAB code sampled roughly 15
+molecules and plotted both iodine atoms, so Python caps the overlay near 30
+velocity traces.
+
+For the experimental velocity-distribution panel, MATLAB used:
+
+```text
+edges_velocity = 0:0.04:26
+vd_ion = movmean(h, 15)
+xlim([0, 28])
+```
+
+Python should preserve that scale when matching the legacy figure: fine
+`0.04 A/ps` bins, 15-bin moving mean on simulation histograms, and a displayed
+velocity range out to `28 A/ps`.
+
+## Editing Limits
 
 Before editing, run:
 
@@ -172,10 +237,9 @@ git status
 
 If the working tree is dirty, do not revert or overwrite unrelated changes.
 Proceed only if the user explicitly scopes the edit or the dirty files are your
-own current work. Otherwise stop and ask.
+own current work.
 
-During post-processing work, do not change unless a focused comparison test
-reveals a real bug:
+Avoid changing these unless a focused test reveals a real bug:
 
 ```text
 checkpoint schema
@@ -186,30 +250,37 @@ collision physics
 single-pulse run script behavior
 ```
 
-Keep code changes local to `postprocess/`, `scripts/plot_hedft_comparison.py`,
-focused tests, small reference CSV copies if needed, and status documentation.
+For current work, prefer changes in:
 
-## Testing expectations
+```text
+scripts/post_processing/
+i2_helium_md/postprocess/
+focused tests
+status/docs files
+```
 
-At minimum:
+## Testing Expectations
 
-- loader tests for the normalized HeDFT CSV format,
-- comparison tests using a tiny synthetic `IonCheckpoint`,
+At minimum for post-processing changes:
+
+- loader tests for normalized HeDFT CSV format,
+- comparison tests using tiny synthetic `IonCheckpoint` objects,
 - validation for missing files and non-overlapping time axes,
 - VMI reference loader and mass-filtered histogram tests,
-- plotting smoke coverage with `matplotlib` in non-interactive mode,
-- relevant existing checkpoint/run-directory tests if loader code uses them.
+- plotting smoke coverage with `matplotlib` in non-interactive mode.
+
+For preset/run-script changes, run the focused preset and run-script tests.
 
 Do not generate figures or production-sized checkpoints in tests.
 
-## Reporting format
+## Reporting Format
 
-For Step 13 work, report:
+For post-processing work, report:
 
-1. data files inspected or copied,
-2. MATLAB files inspected,
-3. Python files written or changed,
-4. numerical comparison API,
+1. MATLAB files inspected,
+2. Python files changed,
+3. data files or run directories used,
+4. numerical or plotting behavior changed,
 5. tests run and results,
 6. remaining risks or deferred behavior.
 

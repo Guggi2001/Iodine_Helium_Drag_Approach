@@ -185,6 +185,10 @@ def run_ion_propagation(
         # Store every stride-th internal step.
         if internal_id % stride == 0 and next_storage_idx < num_stored_steps:
             write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+            if state.temperature_diagnostic is not None:
+                ckpt.temperature_diagnostic[next_storage_idx, :] = (
+                    state.temperature_diagnostic
+                )
             next_storage_idx += 1
 
     # If we ended up with fewer stored steps than allocated (rare; happens
@@ -193,6 +197,10 @@ def run_ion_propagation(
     # ending at the actual end-time rather than at a pre-stride snapshot.
     if next_storage_idx < num_stored_steps:
         write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+        if state.temperature_diagnostic is not None:
+            ckpt.temperature_diagnostic[next_storage_idx, :] = (
+                state.temperature_diagnostic
+            )
 
     # 6. Final-state fields, taken from the actual last internal step.
     _write_final_state(state, ckpt, cfg)

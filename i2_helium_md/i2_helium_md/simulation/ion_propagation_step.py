@@ -59,6 +59,7 @@ from ..config import SimConfig
 from ..physics.collisions import (
     apply_collision,
     sample_collision_events,
+    temperature_diagnostic_from_collision,
     velocity_dependent_cross_section,
 )
 from ..physics.constants import EV, U
@@ -108,6 +109,15 @@ class IonStepState:
         Cumulative number of hard-sphere collisions per atom.
     time_ps : float
         Time at this state, in picoseconds.
+    temperature_diagnostic : np.ndarray, shape (3,) or None
+        Legacy MATLAB per-step temperature diagnostic
+        ``[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]``
+        averaged over the atoms that collided in the transition that
+        produced this state. ``None`` when this state was reconstructed
+        from a checkpoint column (no per-step measurement available)
+        and an all-NaN ``(3,)`` array when no atom collided in the
+        step that produced this state. Mirrors ``diagnostic_array`` at
+        ``vmi_sim_3d_ion_propa.m:683``.
     """
     x: np.ndarray
     y: np.ndarray
@@ -122,6 +132,7 @@ class IonStepState:
     E_mass_attach_defect_eV: np.ndarray
     number_of_collisions: np.ndarray
     time_ps: float
+    temperature_diagnostic: np.ndarray | None = None
 
 
 # ===========================================================================
@@ -220,16 +231,20 @@ def ion_propagation_step(
             rng=rng,
         )
 
-    # 6. Apply collisions to flagged atoms.
+    # 6. Apply collisions to flagged atoms. Capture diagnostics so we
+    #    can record the legacy MATLAB per-step temperature accumulator
+    #    ([<T'/T>_actual, <T'/T>_mass, <theta>_rad]).
     masses_amu = state.mass_kg / U
-    vx_after, vy_after, vz_after, dE_eV = apply_collision(
+    vx_after, vy_after, vz_after, dE_eV, coll_diag = apply_collision(
         vx=vx1, vy=vy1, vz=vz1,
         masses_amu=masses_amu,
         b_collision=b_collision,
         scatter_mass_amu=cfg.scatter_mass_ion_amu,
         neutral_scatter_angle_std_deg=cfg.ion_scatter_angle_std_deg,
         rng=rng,
+        return_diagnostics=True,
     )
+    temperature_diagnostic_step = temperature_diagnostic_from_collision(coll_diag)
 
     # 7. Mass attachment. Each collider has independent probability
     #    cfg.mass_attach_probability to gain 4 amu (one He atom).
@@ -283,6 +298,7 @@ def ion_propagation_step(
         E_mass_attach_defect_eV=E_mass_attach_defect_new,
         number_of_collisions=n_coll_new,
         time_ps=state.time_ps + dt,
+        temperature_diagnostic=temperature_diagnostic_step,
     )
 
 

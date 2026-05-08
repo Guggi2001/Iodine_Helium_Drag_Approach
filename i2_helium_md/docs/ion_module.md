@@ -137,7 +137,9 @@ arrays.
 Per-step bytes are higher than neutral because `IonCheckpoint` carries
 13 `(2N, T)` arrays vs. 10 for neutral (`mass_history_kg`,
 `relative_loss_per_ps`, `number_of_collisions`, and the schema-v4
-`E_mass_attach_defect_eV` diagnostic are ion-only).
+`E_mass_attach_defect_eV` diagnostic are ion-only). Schema v5 adds a
+single `(T, 3)` `temperature_diagnostic` row per stored step -- this
+is per-step (not per-atom) so it does not scale with `N`.
 
 | Run | N | t_ion | Internal steps | Full size | Stride | Stored | Saved size |
 |---|---|---|---|---|---|---|---|
@@ -221,10 +223,13 @@ run_ion_propagation(cfg, neutral_ckpt, *, rng, run_dir, max_bytes, verbose)
 │        new = ion_propagation_step(state, ..., prev_distance, rng)
 │        prev_distance = |new - state|
 │        if internal_id % stride == 0:
-│            write_ion_state_to_checkpoint_column(new, ckpt, next_storage_idx++)
+│            write_ion_state_to_checkpoint_column(new, ckpt, next_storage_idx)
+│            ckpt.temperature_diagnostic[next_storage_idx] = new.temperature_diagnostic
+│            next_storage_idx += 1
 │        state = new
 │    if next_storage_idx < num_stored_steps:    -- defensive; unreachable
 │        write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+│        ckpt.temperature_diagnostic[next_storage_idx] = state.temperature_diagnostic
 ├─ _write_final_state(state, ckpt, cfg)
 │    ├─ positions_final_*, velocities_final_*, mass_final_kg <- state
 │    └─ b_ion_outside <- (atom1_outside | atom2_outside)

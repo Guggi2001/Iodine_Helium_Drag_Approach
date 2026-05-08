@@ -55,6 +55,10 @@ from i2_helium_md.postprocess import (  # noqa: E402
     compute_final_velocity_histogram,
     load_vmi_reference,
 )
+from i2_helium_md.postprocess._smoothing import (  # noqa: E402
+    moving_mean,
+    normalise_trace,
+)
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
@@ -131,11 +135,11 @@ def _draw_velocity_distribution_tile(
     mask_gas = vmi_gas.velocity_Aps > 4.0
     max_gas = float(vmi_gas.signal_arb[mask_gas].max())
     max_he = float(vmi_he.signal_arb.max())
-    sim_he_density = _normalise_trace(
-        _moving_mean(sim_he.density, sim_smoothing_window)
+    sim_he_density = normalise_trace(
+        moving_mean(sim_he.density, sim_smoothing_window)
     )
-    sim_he2_density = _normalise_trace(
-        _moving_mean(sim_he2.density, sim_smoothing_window)
+    sim_he2_density = normalise_trace(
+        moving_mean(sim_he2.density, sim_smoothing_window)
     )
 
     ax.plot(
@@ -177,32 +181,6 @@ def _draw_velocity_distribution_tile(
     ax.legend(frameon=False)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-
-def _moving_mean(values, window: int) -> np.ndarray:
-    """Centered moving mean with shortened endpoint windows, like MATLAB movmean."""
-    data = np.asarray(values, dtype=float)
-    if window <= 1 or data.size == 0:
-        return data.copy()
-
-    half_left = (window - 1) // 2
-    half_right = window // 2
-    result = np.empty_like(data, dtype=float)
-    for idx in range(data.size):
-        start = max(0, idx - half_left)
-        stop = min(data.size, idx + half_right + 1)
-        result[idx] = data[start:stop].mean()
-    return result
-
-
-def _normalise_trace(values) -> np.ndarray:
-    """Baseline-subtract and scale a trace to unit maximum for plotting."""
-    data = np.asarray(values, dtype=float)
-    shifted = data - data.min()
-    scale = shifted.max()
-    if scale <= 0.0:
-        return np.zeros_like(shifted)
-    return shifted / scale
 
 
 if __name__ == "__main__":
