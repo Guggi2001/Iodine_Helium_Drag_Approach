@@ -1,3 +1,4 @@
+
 # CLAUDE.md
 
 This project is a Python port of a legacy MATLAB molecular-dynamics codebase
@@ -22,10 +23,17 @@ neutral and ion propagation drivers are implemented, the main single-pulse
 input presets are migrated, and MATLAB/Python cross-reference validation has
 covered the important propagation and bookkeeping paths.
 
-The remaining work is mainly post-processing plot recreation and refinement:
-matching legacy MATLAB figures, separating plots that use different simulation
-settings, and keeping those plotting scripts connected to the correct run
-directories and reference data.
+Post-processing port has reached parity with the in-scope legacy MATLAB
+diagnostics. Every legacy script that still belongs in scope has either
+been ported to a focused single-figure script in `scripts/post_processing/`
+or has its unique numerical operation rolled into the consolidated
+`scripts/post_processing/plot_run_summary.py` driver, which produces a
+single multi-page PDF per run. See `docs/post_processing_port_plan.md`
+for the per-script inventory.
+
+Remaining work is now mainly visual / numerical refinement of those
+figures against the legacy MATLAB output, plus any focused fixes that
+human review of `data/runs/*/figures/run_summary.pdf` turns up.
 
 Do not broaden into new physics, pump-probe support, effusive dynamics, Abel
 inversion, or full experimental VMI interpretation unless the user explicitly
@@ -113,10 +121,38 @@ balance), `vmi_sim_3d_ion_propa.m` (energy balance + temperature
 diagnostic), and the simulation-side panels of
 `post_process_single_pulse_paper_v3.m` (radial v + phi histogram +
 mass spectrum, exported as `compare_simulation_and_measurement.pdf`).
-The polar-VMI panels (cos^2 anisotropy fit, beta(v), 3-D surf of
-polar VMI image) are intentionally deferred -- the polar VMI image
-data is not in `data/reference/` and CLAUDE.md scopes "full
-experimental VMI interpretation" out by default.
+
+Consolidated post-processing summary:
+
+```text
+scripts/post_processing/plot_run_summary.py
+```
+
+CLI driver that loads one `RunDirectory` and produces a single
+multi-page PDF (`<run>/figures/run_summary.pdf`) plus per-figure PNGs
+covering every legacy MATLAB diagnostic in scope. Sections that need
+optional reference data (HeDFT trajectory CSV, experimental VMI CSVs)
+are gated on `--hedft-ref`, `--vmi-ref-he`, `--vmi-ref-gas`. This
+keeps the "different runs need different references" rule from this
+file working: pass only the references appropriate to the run.
+
+Sections produced (in PDF order): metadata, neutral energy balance,
+ion energy balance + temperature diagnostic, mass spectrum, 1D radial
+velocity (with optional VMI overlay and bimodal Gaussian fit), 1D phi
+histogram, 2D polar (|v|, phi) histogram, cos^2 anisotropy fit + beta(v),
+2D (v_x, v_y) density, mass-resolved final-velocity histograms, time-
+resolved radial heatmap |r|(t), final inter-particle distance histogram,
+angular pair covariance theta1 x theta2, neutral and ion HeDFT
+comparison (when `--hedft-ref` given), Boltzmann reference overlay on
+the initial r0 distribution.
+
+The cos^2 anisotropy fit and beta(v) panels operate on the simulation
+3-D velocities directly (no Abel inversion). The 2-D polar
+*experimental* VMI image is still out of scope -- only the simulation
+side is rendered.
+
+See `docs/post_processing_port_plan.md` for the legacy-script
+inventory and porting verdicts.
 
 ## Post-Processing Data Contracts
 
@@ -153,9 +189,16 @@ workflow:
    `compare_velocity_magnitude` before changing trajectory plots.
 4. Use `velocity_distribution.py` for VMI reference loading and mass-selected
    final-velocity histograms.
-5. Keep plot changes local to `scripts/post_processing/` unless a package API
-   change is actually needed.
-6. Add or update focused pytest coverage when changing behavior.
+5. For 2D polar / anisotropy / pair-correlation / time-resolved /
+   Boltzmann diagnostics, prefer the focused helpers in `polar_velocity.py`,
+   `velocity_2d.py`, `pair_correlation.py`, `time_resolved.py`,
+   `boltzmann_overlay.py` rather than rolling new histograms.
+6. To produce *every* in-scope diagnostic from a finished run in one
+   PDF, use `scripts/post_processing/plot_run_summary.py` with the
+   reference flags appropriate to the run.
+7. Keep plot changes local to `scripts/post_processing/` unless a package
+   API change is actually needed.
+8. Add or update focused pytest coverage when changing behavior.
 
 The goal now is reliable reproduction of the legacy post-processing figures,
 not broad refactoring or new simulation features.
@@ -169,6 +212,11 @@ i2_helium_md/postprocess/hedft_loader.py
 i2_helium_md/postprocess/compare_trajectories.py
 i2_helium_md/postprocess/velocity_distribution.py
 i2_helium_md/postprocess/energy_balance.py
+i2_helium_md/postprocess/polar_velocity.py
+i2_helium_md/postprocess/velocity_2d.py
+i2_helium_md/postprocess/pair_correlation.py
+i2_helium_md/postprocess/time_resolved.py
+i2_helium_md/postprocess/boltzmann_overlay.py
 i2_helium_md/postprocess/_smoothing.py
 i2_helium_md/postprocess/__init__.py
 scripts/post_processing/plot_hedft_comparison.py
@@ -177,6 +225,8 @@ scripts/post_processing/plot_neutral_energy_balance.py
 scripts/post_processing/plot_ion_energy_balance.py
 scripts/post_processing/plot_ion_temperature_diagnostic.py
 scripts/post_processing/plot_paper_figure.py
+scripts/post_processing/plot_run_summary.py
+docs/post_processing_port_plan.md
 ```
 
 Simulation I/O:
@@ -204,6 +254,11 @@ legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_ima
 legacy_matlab_repository/vmi_sim_3d_neutral_propa_HeDFT_mimic.m
 legacy_matlab_repository/vmi_sim_3d_ion_propa.m
 legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v3.m
+legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v4.m
+legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper.m
+legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse.m
+legacy_matlab_repository/post_process_compare_radial_distributions.m
+legacy_matlab_repository/HeDFT_MD_comparison_neutral/compare_neutral_dynamics_to_HeDFT.m
 ```
 
 Do not read the full legacy plotting stack unless a specific numerical or
@@ -226,6 +281,26 @@ xlim([0, 28])
 Python should preserve that scale when matching the legacy figure: fine
 `0.04 A/ps` bins, 15-bin moving mean on simulation histograms, and a displayed
 velocity range out to `28 A/ps`.
+
+For the polar (|v|, phi) histogram and cos^2 anisotropy fit
+(`postprocess.polar_velocity`), the fit model is
+`f(phi) = a + b * cos(phi - phi0)^2`. The conventional photodissociation
+anisotropy parameter is recovered as `beta = 2*b / (2*a + b)`, range
+`[-1, 2]`. `beta(v)` skips bins with fewer than 50 counts by default.
+
+For the angular pair covariance (`postprocess.pair_correlation`),
+`theta = arctan2(vx, vy) + pi` matches the convention used in
+`energy_balance.phi_histogram`, and the diagonal of the covariance
+matrix is zeroed out by default to mirror the legacy
+`cov_angular - diag(...)` step in
+`post_process_single_pulse_paper_v4.m`.
+
+For the Boltzmann overlay (`postprocess.boltzmann_overlay`), the
+analytic curve uses the package's existing `physics.droplet_potential`
+with `cfg.potential_steepness_molecule` and the K-to-eV converted
+`cfg.binding_energy_molecule_K`. It is normalised by trapezoidal
+integration on the chosen radial grid; pass an explicit `r_grid_A` if
+you want a non-default sampling.
 
 ## Editing Limits
 

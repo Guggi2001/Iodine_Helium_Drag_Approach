@@ -19,6 +19,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.optimize import curve_fit
 
 from ..physics.constants import U as U_KG
 from ..simulation.checkpoint import IonCheckpoint
@@ -217,4 +218,120 @@ def compute_final_velocity_histogram(
         density=density,
         mass_amu=float(mass_amu),
         num_atoms_used=num_used,
+    )
+
+
+@dataclass(frozen=True)
+class BimodalGaussianFit:
+    """Sum-of-two-Gaussians decomposition of a 1-D velocity histogram.
+
+    Reproduces the high-velocity tail decomposition of
+    ``legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper.m``
+    (``nlinfit(v, y, fun, [814, 1000, 1, 2000, 100, 1])`` style six-
+    parameter fit reduced here to two centred Gaussians).
+
+    Model: ``f(v) = A1 * exp(-(v - mu1)^2 / (2 sig1^2))
+                  + A2 * exp(-(v - mu2)^2 / (2 sig2^2))``.
+
+    All parameters are ``np.nan`` and ``success`` is ``False`` when the
+    fit does not converge or the input has fewer non-zero bins than
+    parameters.
+    """
+
+    amplitude_1: float
+    mean_1_Aps: float
+    sigma_1_Aps: float
+    amplitude_2: float
+    mean_2_Aps: float
+    sigma_2_Aps: float
+    fitted_curve: np.ndarray
+    residual: float
+    success: bool
+
+
+def _double_gaussian(
+    v: np.ndarray,
+    a1: float, mu1: float, s1: float,
+    a2: float, mu2: float, s2: float,
+) -> np.ndarray:
+    return (
+        a1 * np.exp(-((v - mu1) ** 2) / (2.0 * s1 * s1))
+        + a2 * np.exp(-((v - mu2) ** 2) / (2.0 * s2 * s2))
+    )
+
+
+def bimodal_gaussian_fit(
+    histogram: FinalVelocityHistogram,
+) -> BimodalGaussianFit:
+    """Fit two Gaussians to the histogram density.
+
+    Initial guesses pick the two largest local maxima as ``mu1, mu2`` and
+    use one quarter of the histogram support as both ``sigma`` seeds.
+    Bounds keep the means inside the bin range and sigmas positive.
+    """
+    v = np.asarray(histogram.bin_centers_Aps, dtype=float)
+    y = np.asarray(histogram.density, dtype=float)
+    nan_curve = np.full_like(y, np.nan)
+
+    if v.size < 6 or np.count_nonzero(y > 0.0) < 6:
+        return BimodalGaussianFit(
+            amplitude_1=float("nan"), mean_1_Aps=float("nan"),
+            sigma_1_Aps=float("nan"),
+            amplitude_2=float("nan"), mean_2_Aps=float("nan"),
+            sigma_2_Aps=float("nan"),
+            fitted_curve=nan_curve, residual=float("nan"), success=False,
+        )
+
+    v_min = float(v[0])
+    v_max = float(v[-1])
+    span = v_max - v_min
+    sigma_seed = max(span / 8.0, (v[1] - v[0]) if v.size > 1 else 1.0)
+
+    # Two seeded peaks: weighted mean of the lower and upper halves.
+    weights = np.clip(y, 0.0, None)
+    mid = v_min + 0.5 * span
+    lower = v <= mid
+    upper = ~lower
+    w_low = weights[lower].sum()
+    w_up = weights[upper].sum()
+    mu1_seed = (
+        float(np.average(v[lower], weights=weights[lower]))
+        if w_low > 0 else v_min + 0.25 * span
+    )
+    mu2_seed = (
+        float(np.average(v[upper], weights=weights[upper]))
+        if w_up > 0 else v_min + 0.75 * span
+    )
+    a_seed = float(y.max())
+
+    p0 = (a_seed, mu1_seed, sigma_seed, a_seed, mu2_seed, sigma_seed)
+    bounds = (
+        (0.0, v_min, 1e-3, 0.0, v_min, 1e-3),
+        (np.inf, v_max, span, np.inf, v_max, span),
+    )
+
+    try:
+        popt, _pcov = curve_fit(
+            _double_gaussian, v, y,
+            p0=p0, bounds=bounds, maxfev=10_000,
+        )
+    except (RuntimeError, ValueError):
+        return BimodalGaussianFit(
+            amplitude_1=float("nan"), mean_1_Aps=float("nan"),
+            sigma_1_Aps=float("nan"),
+            amplitude_2=float("nan"), mean_2_Aps=float("nan"),
+            sigma_2_Aps=float("nan"),
+            fitted_curve=nan_curve, residual=float("nan"), success=False,
+        )
+
+    fit_curve = _double_gaussian(v, *popt)
+    residual = float(np.sqrt(np.mean((fit_curve - y) ** 2)))
+    a1, mu1, s1, a2, mu2, s2 = (float(p) for p in popt)
+    # Order so that amplitude_1 is always the dominant peak.
+    if a2 > a1:
+        a1, mu1, s1, a2, mu2, s2 = a2, mu2, s2, a1, mu1, s1
+    return BimodalGaussianFit(
+        amplitude_1=a1, mean_1_Aps=mu1, sigma_1_Aps=s1,
+        amplitude_2=a2, mean_2_Aps=mu2, sigma_2_Aps=s2,
+        fitted_curve=fit_curve, residual=residual, success=True,
     )

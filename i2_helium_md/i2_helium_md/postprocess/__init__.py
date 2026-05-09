@@ -6,9 +6,12 @@ Step 13: HeDFT/TDDFT reference loading and numerical comparison against
 simulation_image_only_trajectories.m``.
 """
 
+from .boltzmann_overlay import BoltzmannCurve, boltzmann_population
 from .compare_trajectories import (
+    NeutralComparison,
     TrajectoryComparison,
     compare_distance,
+    compare_neutral_to_hedft,
     compare_velocity_magnitude,
 )
 from .energy_balance import (
@@ -21,9 +24,27 @@ from .energy_balance import (
     phi_histogram,
 )
 from .hedft_loader import HedftTrajectory, load_hedft_trajectory
+from .pair_correlation import (
+    CovarianceMatrix,
+    DistanceHistogram,
+    angular_pair_covariance,
+    interparticle_distance_histogram,
+)
+from .polar_velocity import (
+    AnisotropyFit,
+    BetaCurve,
+    PolarHistogram,
+    anisotropy_fit,
+    beta_of_velocity,
+    polar_velocity_histogram,
+)
+from .time_resolved import RadialEvolution, radial_distribution_evolution
+from .velocity_2d import Velocity2DHistogram, velocity_density_2d
 from .velocity_distribution import (
+    BimodalGaussianFit,
     FinalVelocityHistogram,
     VmiReference,
+    bimodal_gaussian_fit,
     compute_final_velocity_histogram,
     load_vmi_reference,
 )
@@ -34,10 +55,14 @@ __all__ = [
     "TrajectoryComparison",
     "compare_distance",
     "compare_velocity_magnitude",
+    "NeutralComparison",
+    "compare_neutral_to_hedft",
     "VmiReference",
     "load_vmi_reference",
     "FinalVelocityHistogram",
     "compute_final_velocity_histogram",
+    "BimodalGaussianFit",
+    "bimodal_gaussian_fit",
     "EnergyTotals",
     "neutral_energy_totals",
     "ion_energy_totals",
@@ -45,4 +70,20 @@ __all__ = [
     "phi_histogram",
     "MassSpectrum",
     "mass_spectrum",
+    "PolarHistogram",
+    "polar_velocity_histogram",
+    "AnisotropyFit",
+    "anisotropy_fit",
+    "BetaCurve",
+    "beta_of_velocity",
+    "Velocity2DHistogram",
+    "velocity_density_2d",
+    "DistanceHistogram",
+    "interparticle_distance_histogram",
+    "CovarianceMatrix",
+    "angular_pair_covariance",
+    "RadialEvolution",
+    "radial_distribution_evolution",
+    "BoltzmannCurve",
+    "boltzmann_population",
 ]

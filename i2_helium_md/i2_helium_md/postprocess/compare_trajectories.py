@@ -29,7 +29,7 @@ from typing import Literal
 
 import numpy as np
 
-from ..simulation.checkpoint import IonCheckpoint
+from ..simulation.checkpoint import IonCheckpoint, NeutralCheckpoint
 from .hedft_loader import HedftTrajectory
 
 
@@ -245,4 +245,116 @@ def _compare_series(
         t_overlap_ps=t_overlap,
         md_on_hedft_grid=md_on_grid,
         hedft_on_overlap=ref_on_overlap,
+    )
+
+
+@dataclass(frozen=True)
+class NeutralComparison:
+    """MD vs HeDFT comparison for the neutral stage.
+
+    Reproduces the cumulative-integral trajectory reconstruction of
+    ``legacy_matlab_repository/HeDFT_MD_comparison_neutral/
+    compare_neutral_dynamics_to_HeDFT.m`` (``r_from_integral =
+    2 * cumtrapz(t, vz) + r0``). Given that v(t) is what HeDFT exports
+    and position is rarely written out, integrating the velocity is the
+    reliable cross-check.
+
+    Attributes
+    ----------
+    atom
+        ``"I1"`` or ``"I2"``.
+    t_overlap_ps
+        HeDFT time samples inside the overlap window.
+    v_md_z_Aps, v_hedft_z_Aps
+        Signed z-velocity of MD (ensemble mean) and HeDFT, both on
+        ``t_overlap_ps``. Angstrom/ps.
+    z_md_A, z_hedft_A
+        Trapezoidal integral of the corresponding velocity, starting at
+        the same ``z0_A`` so any drift is purely from velocity-shape
+        difference. Angstrom.
+    z0_A
+        Common start position used for both integrations.
+    rmse_velocity_Aps, rmse_position_A
+        Root-mean-square errors over the overlap.
+    """
+
+    atom: str
+    t_overlap_ps: np.ndarray
+    v_md_z_Aps: np.ndarray
+    v_hedft_z_Aps: np.ndarray
+    z_md_A: np.ndarray
+    z_hedft_A: np.ndarray
+    z0_A: float
+    rmse_velocity_Aps: float
+    rmse_position_A: float
+
+
+def compare_neutral_to_hedft(
+    neutral: NeutralCheckpoint,
+    hedft: HedftTrajectory,
+    *,
+    atom: Literal["I1", "I2"],
+) -> NeutralComparison:
+    """Compare ensemble-mean MD ``v_z(t)`` of one I atom to the HeDFT reference.
+
+    Both series are integrated trapezoidally from the same starting
+    z0 (the MD ensemble-mean ``positions_z`` at the overlap start) so
+    the position panels share an origin. Mirrors the cumtrapz-based
+    cross-check used by the legacy MATLAB script.
+    """
+    n = neutral.num_molecules
+    if atom == "I1":
+        slc = slice(0, n)
+        vref_z = hedft.v1_z_Aps
+    elif atom == "I2":
+        slc = slice(n, 2 * n)
+        vref_z = hedft.v2_z_Aps
+    else:
+        raise ValueError(f"atom must be 'I1' or 'I2', got {atom!r}")
+
+    vz_md = np.mean(np.asarray(neutral.velocities_z[slc]), axis=0)
+    z_md_full = np.mean(np.asarray(neutral.positions_z[slc]), axis=0)
+    t_md = np.asarray(neutral.time_ps, dtype=float)
+    t_ref = np.asarray(hedft.time_ps, dtype=float)
+    vref_z = np.asarray(vref_z, dtype=float)
+
+    t_min = float(max(t_md[0], t_ref[0]))
+    t_max = float(min(t_md[-1], t_ref[-1]))
+    mask = (t_ref >= t_min) & (t_ref <= t_max)
+    t_overlap = t_ref[mask]
+    if t_overlap.size < 2:
+        raise ValueError(
+            "neutral and hedft time axes do not overlap on >= 2 samples: "
+            f"neutral=[{t_md[0]}, {t_md[-1]}] ps, "
+            f"hedft=[{t_ref[0]}, {t_ref[-1]}] ps"
+        )
+
+    v_md_on_grid = np.interp(t_overlap, t_md, vz_md)
+    z_md_start = float(np.interp(t_overlap[0], t_md, z_md_full))
+    v_ref_on_overlap = vref_z[mask]
+
+    z_md_int = z_md_start + np.concatenate(
+        ([0.0], np.cumsum(0.5 * (v_md_on_grid[1:] + v_md_on_grid[:-1])
+                          * np.diff(t_overlap)))
+    )
+    z_ref_int = z_md_start + np.concatenate(
+        ([0.0], np.cumsum(0.5 * (v_ref_on_overlap[1:] + v_ref_on_overlap[:-1])
+                          * np.diff(t_overlap)))
+    )
+
+    diff_v = v_md_on_grid - v_ref_on_overlap
+    rmse_v = float(np.sqrt(np.mean(diff_v * diff_v)))
+    diff_z = z_md_int - z_ref_int
+    rmse_z = float(np.sqrt(np.mean(diff_z * diff_z)))
+
+    return NeutralComparison(
+        atom=atom,
+        t_overlap_ps=t_overlap,
+        v_md_z_Aps=v_md_on_grid,
+        v_hedft_z_Aps=v_ref_on_overlap,
+        z_md_A=z_md_int,
+        z_hedft_A=z_ref_int,
+        z0_A=z_md_start,
+        rmse_velocity_Aps=rmse_v,
+        rmse_position_A=rmse_z,
     )
