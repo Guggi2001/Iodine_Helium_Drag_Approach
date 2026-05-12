@@ -7,7 +7,11 @@ suite (422 tests) passes. End-to-end PDFs are produced from
 `data/runs/single_pulse_droplet` (experimental-conditions run, 15
 sections). Visual comparison vs. the legacy MATLAB figures is the only
 remaining verification step and is left to human review of
-`data/runs/*/figures/run_summary.pdf`.
+`data/runs/*/figures/run_summary.pdf`. The next work is more authentic
+post-processing porting: use the generated Python panels as a comparison
+surface, inspect the matching MATLAB recipes for any discrepancies, and bring
+the Python binning, smoothing, normalization, filtering, and fitting behavior
+closer to the legacy figures before making cosmetic refinements.
 
 ## Context
 
@@ -44,7 +48,7 @@ Status legend: **DONE** = already ported · **PORT** = port useful pieces ·
 | `vmi_sim_3d_ion_propa.m` (energy + temperature panels) | `plot_ion_energy_balance.py`, `plot_ion_temperature_diagnostic.py` | DONE |
 | `single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m` | `plot_hedft_comparison.py` + `compare_trajectories.py` | DONE |
 | `single_pulse_simulation/HeDFT_comparison/simulation_image.m` (velocity-overlay panel) | `plot_experimental_comparison.py` + `velocity_distribution.py` | DONE |
-| `single_pulse_simulation/post_process_single_pulse_paper_v3.m` (radial v + phi + mass spectrum) | `plot_paper_figure.py` | DONE (1D panels only) |
+| `single_pulse_simulation/post_process_single_pulse_paper_v3.m` (active droplet branch radial v + phi + mass spectrum) | `plot_paper_figure.py` + `paper_v3.py` + `export_paper_v3_reference_data.m` | DONE for selected-run Python checkpoints; MATLAB multi-start matrix and effusive branch deferred |
 
 ### Useful — port unique operations into the consolidated script
 
@@ -166,7 +170,10 @@ End-to-end manual checks before reporting complete:
    `..._v4.m`,
    `post_process_compare_radial_distributions.m`,
    `HeDFT_MD_comparison_neutral/compare_neutral_dynamics_to_HeDFT.m`
-   for qualitative agreement (peak positions, overall shape). **Pending human review.**
+   for qualitative agreement (peak positions, overall shape). When panels
+   differ, port the MATLAB post-processing recipe more literally first, then
+   refactor the Python helper once the numerical behavior matches.
+   **Pending human review.**
 
 ## Deferred / Explicitly Out of Scope
 
@@ -239,4 +246,4 @@ Update this table as items are implemented. Status values: **TODO**, **WIP**, **
 | `pytest tests/` all green | DONE | 422 passed |
 | Run on `data/runs/9A_hedft_comparison` with HeDFT ref | DONE | 17 sections incl. HeDFT, VMI overlay skipped |
 | Run on `data/runs/single_pulse_droplet` with VMI refs | DONE | 15 sections incl. VMI, HeDFT comparison skipped |
-| Visual comparison vs. legacy MATLAB figures | TODO | Awaiting human review of `data/runs/*/figures/run_summary.pdf` |
+| Authentic comparison vs. legacy MATLAB figures | TODO | Review `data/runs/*/figures/run_summary.pdf`; for mismatches, literal-port the relevant MATLAB binning/smoothing/normalization/filtering recipe before cosmetic cleanup |

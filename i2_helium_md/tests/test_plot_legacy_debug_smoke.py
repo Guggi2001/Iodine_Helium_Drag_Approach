@@ -129,7 +129,7 @@ def test_paper_figure_smoke(monkeypatch):
     _patch_io(monkeypatch)
     _override_run_dir(module)
 
-    rc = module.main()
+    rc = module.main(["--no-show"])
     assert rc == 0
-    assert len(plt.get_fignums()) == 1
+    assert len(plt.get_fignums()) == 2
     plt.close("all")

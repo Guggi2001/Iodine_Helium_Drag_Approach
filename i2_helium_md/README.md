@@ -20,17 +20,24 @@ HeDFT-comparison scope).
 | 10 | `simulation/neutral.py`, `sampling/orientations.py`, `physics/collisions.py`, `simulation/initial_state.py`, `simulation/propagation_step.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` | done |
 | 11 | `simulation/ion.py` | `vmi_sim_3d_ion_propa.m` | done; MATLAB/Python cross-reference complete |
 | 12 | `scripts/run_single_pulse.py` | `run_simulation.m` | done |
-| 13 | `postprocess/hedft_loader.py`, `postprocess/compare_trajectories.py`, `postprocess/velocity_distribution.py`, `scripts/plot_hedft_comparison.py` | `simulation_image_only_trajectories.m`, parts of `simulation_image.m` | done; first plotting path and VMI helpers present |
+| 13 | `postprocess/hedft_loader.py`, `postprocess/compare_trajectories.py`, `postprocess/velocity_distribution.py`, `postprocess/energy_balance.py`, `postprocess/polar_velocity.py`, `postprocess/velocity_2d.py`, `postprocess/pair_correlation.py`, `postprocess/time_resolved.py`, `postprocess/boltzmann_overlay.py`, `scripts/post_processing/plot_run_summary.py` | `simulation_image_only_trajectories.m`, parts of `simulation_image.m`, legacy live-debug and in-scope paper post-processing scripts | done; consolidated post-processing summary and helper APIs present |
 
 ## Current phase
 
 The neutral and ion propagation drivers are implemented. Ion-stage
 MATLAB/Python cross-reference validation is complete.
 
-The public single-pulse run script is implemented. Step 13 now has a first
-post-processing path: normalized HeDFT trajectory loading, numerical
-distance/velocity comparison against an ion checkpoint, final-velocity
-histogram helpers, and a plotting script for the HeDFT comparison figures.
+The public single-pulse run script is implemented. Step 13 has grown from the
+first HeDFT comparison path into a consolidated post-processing layer:
+normalized HeDFT trajectory loading, numerical distance/velocity comparison,
+VMI reference loading, final-velocity histograms, energy-balance diagnostics,
+polar and 2D velocity panels, pair-correlation plots, time-resolved radial
+diagnostics, Boltzmann overlays, and a multi-page run-summary driver.
+
+The next step is more authentic post-processing porting: compare the generated
+Python summary PDFs against the legacy MATLAB figures, tighten conventions
+where the visual or numerical behavior still differs, and keep those changes
+focused on faithful reproduction rather than new analysis scope.
 
 Completed ion cross-reference artifacts:
 
@@ -60,10 +67,10 @@ Completed ion cross-reference artifacts:
 - `docs/hedft_loader_module.md` — walkthrough of normalized HeDFT reference loading
 - `docs/compare_trajectories_module.md` — walkthrough of numerical MD/HeDFT trajectory comparison
 - `docs/velocity_distribution_module.md` — walkthrough of VMI reference and final-velocity histogram helpers
-- `docs/plot_hedft_comparison_script.md` — usage guide for the HeDFT comparison plotting script
+- `docs/plot_hedft_comparison_script.md` — usage guide for the focused HeDFT comparison plotting script
+- `docs/post_processing_port_plan.md` — current inventory for the consolidated post-processing port
 - `migration_log.md` — chronological record of decisions, deviations, and open questions
 - `current_state.md` — completed modules and current validation phase
-- `next_tasks.md` — task list and acceptance criteria for upcoming work
 - `testing.md` — testing conventions, tolerances, and MATLAB cross-reference rules
 - `agent_protocol.md` — investigation vs. edit-mode rules for collaborators
 
@@ -79,7 +86,7 @@ i2_helium_md_py/
 │   ├── physics/                 constants, potentials, interactions, integrators
 │   ├── sampling/                random samplers
 │   ├── simulation/              neutral and ion propagation
-│   └── postprocess/             HeDFT comparison utilities
+│   └── postprocess/             HeDFT, VMI, energy, and summary diagnostics
 ├── legacy_matlab_repository/    original MATLAB reference implementation
 ├── scripts/                     entry points
 ├── tests/                       smoke tests and pytest suite
@@ -133,10 +140,16 @@ neutral_result = run_neutral_propagation(cfg)
 ion_result = run_ion_propagation(cfg, neutral_result)
 ```
 
-Plot an existing production run against the default 9 A HeDFT reference:
+Build the consolidated post-processing PDF for the 9 A HeDFT comparison run:
 
 ```bash
-python scripts/plot_hedft_comparison.py
+python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison --hedft-ref data/reference/9A_All_Data.csv --no-show
+```
+
+Build the consolidated PDF for the experimental-condition droplet run:
+
+```bash
+python scripts/post_processing/plot_run_summary.py data/runs/single_pulse_droplet --vmi-ref-he data/reference/vmi_iplus_he.csv --vmi-ref-gas data/reference/vmi_iplus_gas.csv --no-show
 ```
 
 Or use the numerical comparison API directly:
@@ -145,7 +158,7 @@ Or use the numerical comparison API directly:
 from i2_helium_md.postprocess import compare_distance, load_hedft_trajectory
 from i2_helium_md.simulation.run_directory import RunDirectory
 
-run = RunDirectory("data/runs/single_pulse_N_2000")
+run = RunDirectory("data/runs/9A_hedft_comparison")
 ion = run.load_ion()
 hedft = load_hedft_trajectory("data/reference/9A_All_Data.csv")
 distance_result = compare_distance(ion, hedft)
@@ -159,8 +172,11 @@ In scope:
 - single-pulse neutral and ion dynamics,
 - 9 Å HeDFT comparison,
 - normalized 18 Å HeDFT reference loading and smoke coverage,
-- first VMI reference-data loading and final-velocity histogram helpers,
-- MATLAB/Python reference validation.
+- VMI reference-data loading and final-velocity histogram helpers,
+- consolidated in-scope post-processing diagnostics,
+- MATLAB/Python reference validation,
+- authentic post-processing reproduction of legacy figures where reference
+  data and run outputs are available.
 
 Out of scope:
 

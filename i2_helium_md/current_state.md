@@ -46,10 +46,8 @@
     MD/HeDFT distance and velocity-magnitude comparisons on the overlap grid
   - `i2_helium_md/postprocess/velocity_distribution.py` loads VMI reference
     CSVs and computes mass-selected final-velocity histograms
-  - `scripts/plot_hedft_comparison.py` recreates the first HeDFT comparison
-    plotting workflow from an existing `RunDirectory`
-  - `scripts/post_processing_comparison/compare.py` remains as imported
-    VMI-reference verification context
+  - `scripts/post_processing/plot_hedft_comparison.py` recreates the focused
+    HeDFT comparison plotting workflow from an existing `RunDirectory`
 - Legacy MATLAB live-debug and paper post-processing reproduction:
   - `i2_helium_md/postprocess/energy_balance.py` -- recipe helpers for
     sum-over-atoms neutral / per-molecule ion energy traces, simulated
@@ -69,48 +67,57 @@
   - Four new post-processing scripts under `scripts/post_processing/`:
     `plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
     `plot_ion_temperature_diagnostic.py`, `plot_paper_figure.py`.
+  - `scripts/post_processing/plot_run_summary.py` consolidates the in-scope
+    diagnostics into one multi-page PDF plus per-panel PNGs.
+  - Additional post-processing helpers cover polar velocity histograms,
+    cos^2 anisotropy fits, beta(v), 2D velocity density, pair correlation,
+    time-resolved radial distributions, Boltzmann overlays, bimodal Gaussian
+    fits, and neutral-side HeDFT comparison.
   - `tests/test_energy_balance.py` covers the recipe helpers, the
     schema-v5 round trip, and the v4-reject path.
   - `tests/test_plot_legacy_debug_smoke.py` runs each new script in
     non-interactive mode against an existing run directory.
+  - `tests/test_plot_run_summary_smoke.py` covers the consolidated summary
+    driver with non-interactive matplotlib.
 
 ## Current phase
 
 The neutral and ion propagation drivers are implemented and the ion-stage
 MATLAB/Python cross-reference validation is complete. The public single-pulse
-run script is implemented. A first post-processing comparison path is also
-implemented.
+run script is implemented. The in-scope post-processing port now includes both
+focused plotting scripts and the consolidated `plot_run_summary.py` driver.
 
-The current phase is post-processing validation and cleanup: use the new
-comparison API on real run directories, document the numerical outputs, and
-keep any further plotting or analysis changes narrowly scoped.
+The current phase is authentic post-processing porting and cleanup: compare
+the generated Python PDFs against the legacy MATLAB figures, tighten visual
+and numerical conventions where behavior still differs, and keep changes
+narrowly focused on faithful reproduction rather than new analysis scope.
 
 ## Currently pending
 
-1. Record numerical MD/HeDFT comparison values for the current production run
-   (`data/runs/single_pulse_N_2000`) and decide which outputs should be kept
+1. Review `data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
+   `data/runs/single_pulse_droplet/figures/run_summary.pdf` against the
+   corresponding legacy MATLAB post-processing figures.
+2. When mismatches are found, port the relevant MATLAB post-processing recipe
+   more authentically before refactoring the Python version for clarity.
+3. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
+   (`data/runs/9A_hedft_comparison`) and decide which outputs should be kept
    as documented reference diagnostics.
-2. Keep post-processing tests focused on loader contracts, overlap
+4. Keep post-processing tests focused on loader contracts, overlap
    interpolation, VMI reference loading, final-velocity histogram filters, and
    plotting smoke coverage.
-3. Regenerate existing ion checkpoints at schema v5 so the new
-   temperature-diagnostic figures and the data-gated tests
-   (`test_compare_trajectories::TestEndToEndReal`,
-   `test_plot_*_smoke`) can run without manual deselection.
-4. Polar-VMI panels of `post_process_single_pulse_paper_v3.m`
-   (cos^2 angular anisotropy fit, beta(v) function, 3-D surf of
-   polar VMI image) remain deferred. They require a 2-D polar VMI
-   image not currently in `data/reference/`.
+5. Keep Abel inversion, pump-probe, effusive dynamics, and full experimental
+   VMI image interpretation out of scope unless explicitly requested.
 
 ## Recommended next task
 
-Run the implemented post-processing path on the existing production run and
-write down explicit numerical diagnostics:
+Perform an authentic post-processing pass on the generated summary PDFs:
 
-- `compare_distance(ion, hedft_9A)` RMSE and mean ratio,
-- `compare_velocity_magnitude(..., atom="I1")` and `"I2"` RMSE/ratio,
-- any mass-selected histogram caveats, especially if no atoms pass a target
-  mass/outside filter.
+- inspect the legacy MATLAB recipe for any panel whose Python output differs,
+- port the MATLAB normalization, binning, smoothing, filtering, or fit recipe
+  literally enough to reproduce the intended behavior,
+- then document the resulting numerical diagnostics, especially
+  `compare_distance(ion, hedft_9A)` RMSE/ratio and
+  `compare_velocity_magnitude(..., atom="I1"|"I2")` RMSE/ratio.
 
 Do not broaden into Abel inversion or full experimental VMI interpretation
 unless explicitly requested.
@@ -122,8 +129,15 @@ Start with the directly relevant Python files:
 - `i2_helium_md/postprocess/hedft_loader.py`
 - `i2_helium_md/postprocess/compare_trajectories.py`
 - `i2_helium_md/postprocess/velocity_distribution.py`
-- `scripts/plot_hedft_comparison.py`
-- `scripts/post_processing_comparison/compare.py`
+- `i2_helium_md/postprocess/energy_balance.py`
+- `i2_helium_md/postprocess/polar_velocity.py`
+- `i2_helium_md/postprocess/velocity_2d.py`
+- `i2_helium_md/postprocess/pair_correlation.py`
+- `i2_helium_md/postprocess/time_resolved.py`
+- `i2_helium_md/postprocess/boltzmann_overlay.py`
+- `scripts/post_processing/plot_run_summary.py`
+- `scripts/post_processing/plot_hedft_comparison.py`
+- `scripts/post_processing/plot_experimental_comparison.py`
 
 Relevant tests:
 
@@ -131,6 +145,12 @@ Relevant tests:
 - `tests/test_compare_trajectories.py`
 - `tests/test_velocity_distribution.py`
 - `tests/test_plot_hedft_comparison_smoke.py`
+- `tests/test_plot_run_summary_smoke.py`
+- `tests/test_polar_velocity.py`
+- `tests/test_velocity_2d.py`
+- `tests/test_pair_correlation.py`
+- `tests/test_time_resolved.py`
+- `tests/test_boltzmann_overlay.py`
 
 Relevant MATLAB provenance files:
 

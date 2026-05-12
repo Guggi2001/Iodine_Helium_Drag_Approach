@@ -10,13 +10,13 @@ finished `RunDirectory`; none of them touch the simulation modules.
 | `plot_neutral_energy_balance.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m:965` | `<run>/figures/neutral_energy_balance.png` |
 | `plot_ion_energy_balance.py` | `vmi_sim_3d_ion_propa.m:898` | `<run>/figures/ion_energy_balance.png` |
 | `plot_ion_temperature_diagnostic.py` | `vmi_sim_3d_ion_propa.m:683` / `:883` | `<run>/figures/ion_temperature_diagnostic.png` |
-| `plot_paper_figure.py` | `post_process_single_pulse_paper_v3.m` (minimal) | `<run>/figures/compare_simulation_and_measurement.{pdf,png}` |
+| `plot_paper_figure.py` | `post_process_single_pulse_paper_v3.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement.{pdf,png}`, `<run>/figures/ion_mass_histogram.{pdf,png}` |
 
 ## Common conventions
 
 - Each script has a USER SETTINGS block at the top: edit `RUN_DIR` to
-  point at a different run directory and rerun. There is no argparse
-  front-end on purpose.
+  point at a different run directory and rerun. `plot_paper_figure.py`
+  also accepts CLI path overrides and `--no-show` for headless checks.
 - Output is interactive (`plt.show()`); a copy is also written under
   `<run>/figures/`. The directory is created on demand.
 - All scripts load via `RunDirectory(...).load_neutral()` /
@@ -68,26 +68,32 @@ checkpoints or runs with no collisions.
 
 ## `plot_paper_figure.py`
 
-1×3 figure saved as `compare_simulation_and_measurement.pdf` (the
-filename matches the legacy MATLAB `print()` target on line 391):
+Two-panel figure saved as `compare_simulation_and_measurement.pdf`,
+matching the active non-effusive branch of
+`post_process_single_pulse_paper_v3.m`:
 
-- **Tile A** -- experimental I+ gas / I+He droplet 1-D references
-  overlaid with simulated mass-selected final-velocity histograms
-  (I+He = 131 amu, I+He2 = 135 amu). Reuses
-  `compute_final_velocity_histogram` and the smoothing helpers from
-  `postprocess._smoothing` (15-bin moving mean, unit-max
-  normalisation, `xlim=(0, 28) Å/ps`, `0:0.04:26` bin edges -- all
-  matching the MATLAB).
-- **Tile B** -- simulated azimuthal phi histogram from
-  `phi_histogram(ion, mass_amu=131.0)`, smoothed and normalised to
-  unit max, `xlim=(0, 2*pi)`.
-- **Tile C** -- final ion mass spectrum from
-  `mass_spectrum(ion, bin_width_amu=1.0)` plotted as a bar histogram.
+- **Tile A** -- optional v3 experimental radial references exported
+  from MATLAB (`paper_v3_iplus_he_radial.csv` and
+  `paper_v3_timescan_radial.csv`) overlaid with simulated
+  mass-selected projected-velocity histograms for masses 127, 131,
+  and 135 amu. The simulation recipe follows MATLAB v3 literally:
+  `round(mass/u) == mass_select`, require `b_ion_outside`, use
+  `sqrt(vx^2 + vy^2)`, bin edges `0:0.05:35` A/ps, plot centers in
+  m/s via `*100`, `movmean(..., 20)`, and max-only normalisation.
+- **Tile B** -- optional v3 experimental I+He phi reference exported
+  from MATLAB (`paper_v3_iplus_he_phi.csv`) overlaid with simulated
+  phi curves for the same mass selections. The simulation recipe uses
+  `atan2(vy, vx) + pi`, bin edges `0:0.05:2*pi`,
+  `movmean(..., 15)`, and max-only normalisation.
 
-Out of scope: the polar-VMI panels of the legacy figure (cos^2
-angular anisotropy fit on `Tile 2`, `beta(v)` function, 3-D `surf`
-of polar VMI image) require a 2-D polar VMI image not present in
-`data/reference/`. They remain deferred per CLAUDE.md scope.
+The final ion mass histogram from MATLAB line 397 is preserved as a
+separate `ion_mass_histogram.{pdf,png}` output because the legacy script
+opens it after exporting the main paper figure.
+
+Out of scope: the `effusive_dynamics` branch, raw experimental VMI
+interpretation, Abel/image-processing expansion, and MATLAB's full
+multi-start `vx_total(:, start_id)` matrix behavior. Python uses the
+existing final-state checkpoint vector for the selected run.
 
 ## Tests
 

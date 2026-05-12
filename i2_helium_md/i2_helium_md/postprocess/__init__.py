@@ -30,6 +30,17 @@ from .pair_correlation import (
     angular_pair_covariance,
     interparticle_distance_histogram,
 )
+from .paper_v3 import (
+    PaperV3PhiCurve,
+    PaperV3PhiReference,
+    PaperV3RadialReference,
+    PaperV3VelocityCurve,
+    load_paper_v3_phi_reference,
+    load_paper_v3_radial_reference,
+    matlab_max_normalise,
+    paper_v3_phi_curve,
+    paper_v3_velocity_curve,
+)
 from .polar_velocity import (
     AnisotropyFit,
     BetaCurve,
@@ -82,6 +93,15 @@ __all__ = [
     "interparticle_distance_histogram",
     "CovarianceMatrix",
     "angular_pair_covariance",
+    "PaperV3RadialReference",
+    "PaperV3PhiReference",
+    "PaperV3VelocityCurve",
+    "PaperV3PhiCurve",
+    "load_paper_v3_radial_reference",
+    "load_paper_v3_phi_reference",
+    "paper_v3_velocity_curve",
+    "paper_v3_phi_curve",
+    "matlab_max_normalise",
     "RadialEvolution",
     "radial_distribution_evolution",
     "BoltzmannCurve",
