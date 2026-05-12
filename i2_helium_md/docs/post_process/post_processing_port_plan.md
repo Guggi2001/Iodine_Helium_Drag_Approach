@@ -49,13 +49,14 @@ Status legend: **DONE** = already ported · **PORT** = port useful pieces ·
 | `single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m` | `plot_hedft_comparison.py` + `compare_trajectories.py` | DONE |
 | `single_pulse_simulation/HeDFT_comparison/simulation_image.m` (velocity-overlay panel) | `plot_experimental_comparison.py` + `velocity_distribution.py` | DONE |
 | `single_pulse_simulation/post_process_single_pulse_paper_v3.m` (active droplet branch radial v + phi + mass spectrum) | `plot_paper_figure.py` + `paper_v3.py` + `export_paper_v3_reference_data.m` | DONE for selected-run Python checkpoints; MATLAB multi-start matrix and effusive branch deferred |
+| `single_pulse_simulation/post_process_single_pulse_paper_v4.m` (active droplet branch radial v + angular pair covariance + mass spectrum) | `plot_paper_v4_figure.py` + `paper_v4.py` + `export_paper_v4_reference_data.m` | DONE for selected-run Python checkpoints; effusive branch and experimental covariance export deferred |
 
 ### Useful — port unique operations into the consolidated script
 
 | MATLAB | Unique post-processing operation | Notes |
 | ------ | -------------------------------- | ----- |
 | `post_process_single_pulse_paper_v3.m` (deferred panels) | 2D polar VMI histogram (v, phi); cos² anisotropy fit; β(v); 3D polar surface | Doable from existing 3D velocities — **no Abel inversion needed**; we have full velocity vectors, not a projected experimental image. Was deferred only because the polar 2D *experimental* image is missing; the simulation side does not require Abel. |
-| `post_process_single_pulse_paper_v4.m` | Angular pair covariance matrix θ₁ × θ₂ | Pair correlation of I-I ion-pair angles. |
+| `post_process_single_pulse_paper_v4.m` (additional/deferred) | Experimental covariance matrix variants | Active simulated covariance is ported in the focused v4 script; experimental covariance export remains out of scope. |
 | `post_process_single_pulse_paper.m` (older) | Bimodal Gaussian fit to radial velocity distribution | Two-population decomposition (high-v tail vs. main peak). |
 | `post_process_single_pulse.m` | 2D velocity density (vₓ, vᵧ) | Pure rebin of existing 3D velocities. |
 | `post_process_compare_radial_distributions.m` | Time-resolved radial distribution heatmap; final inter-particle distance histogram; Boltzmann reference overlay on initial r₀ distribution | Boltzmann curve uses the *existing* `droplet_potential` already in the package — analytic overlay only, no new physics. |

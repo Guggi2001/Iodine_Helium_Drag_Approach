@@ -1,9 +1,9 @@
 # `scripts/post_processing/plot_*` — legacy-debug walkthrough
 
-Four scripts under `scripts/post_processing/` reproduce the legacy
+Five scripts under `scripts/post_processing/` reproduce the legacy
 MATLAB live-debug figures and the simulation-side panels of
-`post_process_single_pulse_paper_v3.m`. All run post-hoc from a
-finished `RunDirectory`; none of them touch the simulation modules.
+`post_process_single_pulse_paper_v3.m` / `v4.m`. All run post-hoc
+from a finished `RunDirectory`; none of them touch the simulation modules.
 
 | Script | Reproduces (legacy MATLAB) | Output |
 |---|---|---|
@@ -11,12 +11,14 @@ finished `RunDirectory`; none of them touch the simulation modules.
 | `plot_ion_energy_balance.py` | `vmi_sim_3d_ion_propa.m:898` | `<run>/figures/ion_energy_balance.png` |
 | `plot_ion_temperature_diagnostic.py` | `vmi_sim_3d_ion_propa.m:683` / `:883` | `<run>/figures/ion_temperature_diagnostic.png` |
 | `plot_paper_figure.py` | `post_process_single_pulse_paper_v3.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement.{pdf,png}`, `<run>/figures/ion_mass_histogram.{pdf,png}` |
+| `plot_paper_v4_figure.py` | `post_process_single_pulse_paper_v4.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement_simpler.{pdf,png}`, `<run>/figures/paper_v4_angular_pair_covariance.{pdf,png}`, `<run>/figures/paper_v4_ion_mass_histogram.{pdf,png}` |
 
 ## Common conventions
 
 - Each script has a USER SETTINGS block at the top: edit `RUN_DIR` to
   point at a different run directory and rerun. `plot_paper_figure.py`
-  also accepts CLI path overrides and `--no-show` for headless checks.
+  and `plot_paper_v4_figure.py` also accept CLI path overrides and
+  `--no-show` for headless checks.
 - Output is interactive (`plt.show()`); a copy is also written under
   `<run>/figures/`. The directory is created on demand.
 - All scripts load via `RunDirectory(...).load_neutral()` /
@@ -70,30 +72,30 @@ checkpoints or runs with no collisions.
 
 Two-panel figure saved as `compare_simulation_and_measurement.pdf`,
 matching the active non-effusive branch of
-`post_process_single_pulse_paper_v3.m`:
-
-- **Tile A** -- optional v3 experimental radial references exported
-  from MATLAB (`paper_v3_iplus_he_radial.csv` and
-  `paper_v3_timescan_radial.csv`) overlaid with simulated
-  mass-selected projected-velocity histograms for masses 127, 131,
-  and 135 amu. The simulation recipe follows MATLAB v3 literally:
-  `round(mass/u) == mass_select`, require `b_ion_outside`, use
-  `sqrt(vx^2 + vy^2)`, bin edges `0:0.05:35` A/ps, plot centers in
-  m/s via `*100`, `movmean(..., 20)`, and max-only normalisation.
-- **Tile B** -- optional v3 experimental I+He phi reference exported
-  from MATLAB (`paper_v3_iplus_he_phi.csv`) overlaid with simulated
-  phi curves for the same mass selections. The simulation recipe uses
-  `atan2(vy, vx) + pi`, bin edges `0:0.05:2*pi`,
-  `movmean(..., 15)`, and max-only normalisation.
+`post_process_single_pulse_paper_v3.m`. The top panel overlays v3
+experimental radial VMI references with simulated mass-selected
+detector-plane projected-velocity curves for 127, 131, and 135 amu.
+The bottom panel overlays the v3 experimental phi reference with
+simulation phi histograms for the same mass channels.
 
 The final ion mass histogram from MATLAB line 397 is preserved as a
 separate `ion_mass_histogram.{pdf,png}` output because the legacy script
 opens it after exporting the main paper figure.
 
-Out of scope: the `effusive_dynamics` branch, raw experimental VMI
-interpretation, Abel/image-processing expansion, and MATLAB's full
-multi-start `vx_total(:, start_id)` matrix behavior. Python uses the
-existing final-state checkpoint vector for the selected run.
+Detailed curve-by-curve explanation:
+[`docs/post_process/scripts/plot_paper_figure_paper_v3.md`](scripts/plot_paper_figure_paper_v3.md).
+
+## `plot_paper_v4_figure.py`
+
+One-panel radial velocity comparison saved as
+`compare_simulation_and_measurement_simpler.pdf`, plus separate
+`paper_v4_angular_pair_covariance.{pdf,png}` and
+`paper_v4_ion_mass_histogram.{pdf,png}` outputs. The radial panel loads all
+available v4 experimental radial CSVs from `data/reference/paper_v4/` and
+overlays simulated projected-velocity curves for masses 127 and 131 amu.
+
+Detailed curve-by-curve explanation:
+[`docs/post_process/scripts/plot_paper_v4_figure.md`](scripts/plot_paper_v4_figure.md).
 
 ## Tests
 

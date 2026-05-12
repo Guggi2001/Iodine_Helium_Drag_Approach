@@ -31,6 +31,7 @@ NEUTRAL_SCRIPT = SCRIPT_DIR / "plot_neutral_energy_balance.py"
 ION_ENERGY_SCRIPT = SCRIPT_DIR / "plot_ion_energy_balance.py"
 ION_TEMP_SCRIPT = SCRIPT_DIR / "plot_ion_temperature_diagnostic.py"
 PAPER_SCRIPT = SCRIPT_DIR / "plot_paper_figure.py"
+PAPER_V4_SCRIPT = SCRIPT_DIR / "plot_paper_v4_figure.py"
 
 EXPERIMENTAL_RUN = (
     PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_log_droplet"
@@ -132,4 +133,16 @@ def test_paper_figure_smoke(monkeypatch):
     rc = module.main(["--no-show"])
     assert rc == 0
     assert len(plt.get_fignums()) == 2
+    plt.close("all")
+
+
+def test_paper_v4_figure_smoke(monkeypatch, tmp_path):
+    plt.close("all")
+    module = _import_script(PAPER_V4_SCRIPT, "plot_paper_v4_figure_under_test")
+    _patch_io(monkeypatch)
+    _override_run_dir(module)
+
+    rc = module.main(["--no-show", "--reference-dir", str(tmp_path)])
+    assert rc == 0
+    assert len(plt.get_fignums()) == 3
     plt.close("all")

@@ -41,6 +41,15 @@ from .paper_v3 import (
     paper_v3_phi_curve,
     paper_v3_velocity_curve,
 )
+from .paper_v4 import (
+    PaperV4AngularCovariance,
+    PaperV4RadialReference,
+    PaperV4VelocityCurve,
+    load_paper_v4_radial_reference,
+    load_paper_v4_radial_references,
+    paper_v4_angular_pair_covariance,
+    paper_v4_velocity_curve,
+)
 from .polar_velocity import (
     AnisotropyFit,
     BetaCurve,
@@ -102,6 +111,13 @@ __all__ = [
     "paper_v3_velocity_curve",
     "paper_v3_phi_curve",
     "matlab_max_normalise",
+    "PaperV4RadialReference",
+    "PaperV4VelocityCurve",
+    "PaperV4AngularCovariance",
+    "load_paper_v4_radial_reference",
+    "load_paper_v4_radial_references",
+    "paper_v4_velocity_curve",
+    "paper_v4_angular_pair_covariance",
     "RadialEvolution",
     "radial_distribution_evolution",
     "BoltzmannCurve",
