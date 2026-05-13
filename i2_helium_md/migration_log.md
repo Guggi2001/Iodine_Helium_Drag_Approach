@@ -1472,11 +1472,13 @@ not yet covered:
    (`vmi_sim_3d_ion_propa.m:683` / `:883`) -- per-step
    `[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>]` averaged over
    the colliding atoms. Required adding a new ion-checkpoint field.
-4. **Minimal `post_process_single_pulse_paper_v3.m` reproduction**
-   -- radial velocity comparison (already covered by
-   `plot_experimental_comparison.py`), simulated azimuthal phi
-   histogram, final ion mass spectrum, combined PDF export named
-   `compare_simulation_and_measurement.pdf` to match legacy filename.
+4. **Focused paper-figure post-processing ports**
+   -- the active non-effusive branches of
+   `post_process_single_pulse_paper_IplusHe_comparison.m`
+   (`plot_paper_v2.py`), `post_process_single_pulse_paper_v3.m`
+   (`plot_paper_v3.py`), and `post_process_single_pulse_paper_v4.m`
+   (`plot_paper_v4.py`) are ported as standalone scripts with focused
+   helpers and MATLAB reference exporters.
 
 ### IonCheckpoint schema v4 -> v5
 
@@ -1521,20 +1523,53 @@ Under `scripts/post_processing/`:
 - `plot_neutral_energy_balance.py`
 - `plot_ion_energy_balance.py`
 - `plot_ion_temperature_diagnostic.py`
-- `plot_paper_figure.py`
+- `plot_paper_v2.py`
+- `plot_paper_v3.py`
+- `plot_paper_v4.py`
 
 Each loads from a `RunDirectory` and writes under
 `<run>/figures/`. None of them auto-run from
 `scripts/run_single_pulse.py` -- the run script remains untouched.
 
+### Fully ported focused paper scripts
+
+- `plot_paper_v2.py` ports the active droplet branch of
+  `post_process_single_pulse_paper_IplusHe_comparison.m`: processed
+  experimental 2-D VMI image reference, simulated `v_x/v_y` VMI map,
+  radial comparison, and separate phi comparison. Experimental graph
+  references are exported by `export_paper_v2_reference_data.m`; the
+  high-SNR `res_sum` I+He curve is the MATLAB graph curve, while the
+  160 mW and 600 mW I+He radial references are kept as optional
+  comparison curves.
+- `plot_paper_v3.py` ports the active droplet branch of
+  `post_process_single_pulse_paper_v3.m`: two-panel radial/phi
+  comparison, mass channels 127/131/135, MATLAB-style projected-speed
+  and phi histograms, and the separate ion mass histogram. Experimental
+  references live under `data/reference/paper_v3/`.
+- `plot_paper_v4.py` ports the active droplet branch of
+  `post_process_single_pulse_paper_v4.m`: radial comparison, simulated
+  angular pair covariance, and mass histogram. Experimental radial
+  references live under `data/reference/paper_v4/`.
+
+### Not ported (superseded ancestor scripts)
+
+- `post_process_single_pulse.m` and `post_process_single_pulse_paper.m`
+  are the pre-version-tagged ancestors of the paper_v2 / v3 / v4
+  scripts. Their in-scope simulation-side panels are fully covered by
+  the existing Python ports; the remaining panels are out of scope per
+  `CLAUDE.md` (effusive branch, 3-D `surf(rr, phiphi,
+  image_polar_select)` legacy visualisation of an experimental polar
+  image, `cos(phi)^n + offset` fits on the experimental quadrant
+  slice). Decision notes:
+  `i2_helium_md/docs/post_process/scripts/post_process_single_pulse_paper_base.md`,
+  `i2_helium_md/docs/post_process/scripts/post_process_single_pulse_base.md`.
+
 ### Out of scope (deferred)
 
-The polar-VMI panels of `post_process_single_pulse_paper_v3.m` (cos^2
-angular anisotropy fit, beta(v) function, 3-D `surf` of polar VMI image)
-require a 2-D polar VMI image not present in `data/reference/`.
-CLAUDE.md flags "full experimental VMI interpretation" as out of default
-scope, so these panels are intentionally skipped pending an explicit
-request and additional reference data.
+Raw VMI extraction, Abel inversion, full experimental image interpretation,
+effusive/gas-phase branches, pump-probe variants, MATLAB multi-start matrix
+behavior, and experimental covariance export remain deferred unless explicitly
+requested.
 
 ### Verification
 

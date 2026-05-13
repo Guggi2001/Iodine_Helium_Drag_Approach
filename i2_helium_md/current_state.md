@@ -68,6 +68,19 @@
     `plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
     `plot_ion_temperature_diagnostic.py`, `plot_paper_v2.py`,
     `plot_paper_v3.py`, `plot_paper_v4.py`.
+    - `plot_paper_v2.py` fully ports the active non-effusive
+      `post_process_single_pulse_paper_IplusHe_comparison.m` branch for
+      selected-run Python checkpoints, including processed experimental 2-D
+      VMI reference loading, simulated physical `v_x/v_y` VMI map, radial
+      comparison, and separate phi comparison. MATLAB exports are under
+      `data/reference/scripts/export_paper_v2_reference_data.m`.
+    - `plot_paper_v3.py` fully ports the active non-effusive
+      `post_process_single_pulse_paper_v3.m` branch for selected-run Python
+      checkpoints: radial and phi comparison plus separate ion mass histogram.
+    - `plot_paper_v4.py` fully ports the active non-effusive
+      `post_process_single_pulse_paper_v4.m` branch for selected-run Python
+      checkpoints: radial comparison, simulated angular pair covariance, and
+      separate ion mass histogram.
   - `scripts/post_processing/plot_run_summary.py` consolidates the in-scope
     diagnostics into one multi-page PDF plus per-panel PNGs.
   - Additional post-processing helpers cover polar velocity histograms,
@@ -88,26 +101,29 @@ MATLAB/Python cross-reference validation is complete. The public single-pulse
 run script is implemented. The in-scope post-processing port now includes both
 focused plotting scripts and the consolidated `plot_run_summary.py` driver.
 
-The current phase is authentic post-processing porting and cleanup: compare
-the generated Python PDFs against the legacy MATLAB figures, tighten visual
-and numerical conventions where behavior still differs, and keep changes
-narrowly focused on faithful reproduction rather than new analysis scope.
+The current phase is authentic post-processing cleanup and review: the focused
+v2/v3/v4 paper scripts are ported for the active droplet branches, but visual
+comparison against regenerated MATLAB references should continue to catch
+remaining convention mismatches. Keep changes narrowly focused on faithful
+reproduction rather than new analysis scope.
 
 ## Currently pending
 
 1. Review `data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
    `data/runs/single_pulse_droplet/figures/run_summary.pdf` against the
    corresponding legacy MATLAB post-processing figures.
-2. When mismatches are found, port the relevant MATLAB post-processing recipe
-   more authentically before refactoring the Python version for clarity.
+2. When mismatches are found in already-ported scripts, correct the relevant
+   MATLAB post-processing recipe detail before refactoring the Python version
+   for clarity.
 3. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
    (`data/runs/9A_hedft_comparison`) and decide which outputs should be kept
    as documented reference diagnostics.
 4. Keep post-processing tests focused on loader contracts, overlap
    interpolation, VMI reference loading, final-velocity histogram filters, and
    plotting smoke coverage.
-5. Keep Abel inversion, pump-probe, effusive dynamics, and full experimental
-   VMI image interpretation out of scope unless explicitly requested.
+5. Keep Abel inversion, pump-probe, effusive dynamics, MATLAB multi-start
+   matrix behavior, experimental covariance export, and full experimental VMI
+   image interpretation out of scope unless explicitly requested.
 
 ## Recommended next task
 
