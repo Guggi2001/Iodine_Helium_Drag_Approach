@@ -1,8 +1,8 @@
 # `scripts/post_processing/plot_*` — legacy-debug walkthrough
 
-Five scripts under `scripts/post_processing/` reproduce the legacy
+Six scripts under `scripts/post_processing/` reproduce the legacy
 MATLAB live-debug figures and the simulation-side panels of
-`post_process_single_pulse_paper_v3.m` / `v4.m`. All run post-hoc
+`post_process_single_pulse_paper_IplusHe_comparison.m` / `v3.m` / `v4.m`. All run post-hoc
 from a finished `RunDirectory`; none of them touch the simulation modules.
 
 | Script | Reproduces (legacy MATLAB) | Output |
@@ -10,14 +10,15 @@ from a finished `RunDirectory`; none of them touch the simulation modules.
 | `plot_neutral_energy_balance.py` | `vmi_sim_3d_neutral_propa_HeDFT_mimic.m:965` | `<run>/figures/neutral_energy_balance.png` |
 | `plot_ion_energy_balance.py` | `vmi_sim_3d_ion_propa.m:898` | `<run>/figures/ion_energy_balance.png` |
 | `plot_ion_temperature_diagnostic.py` | `vmi_sim_3d_ion_propa.m:683` / `:883` | `<run>/figures/ion_temperature_diagnostic.png` |
-| `plot_paper_figure.py` | `post_process_single_pulse_paper_v3.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement.{pdf,png}`, `<run>/figures/ion_mass_histogram.{pdf,png}` |
-| `plot_paper_v4_figure.py` | `post_process_single_pulse_paper_v4.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement_simpler.{pdf,png}`, `<run>/figures/paper_v4_angular_pair_covariance.{pdf,png}`, `<run>/figures/paper_v4_ion_mass_histogram.{pdf,png}` |
+| `plot_paper_v2.py` | `post_process_single_pulse_paper_IplusHe_comparison.m` active droplet branch | `<run>/figures/paper_v2_compare_simulation_and_measurement.png`, `<run>/figures/paper_v2_phi_comparison.png` |
+| `plot_paper_v3.py` | `post_process_single_pulse_paper_v3.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement.{pdf,png}`, `<run>/figures/ion_mass_histogram.{pdf,png}` |
+| `plot_paper_v4.py` | `post_process_single_pulse_paper_v4.m` active droplet branch | `<run>/figures/compare_simulation_and_measurement_simpler.png`, `<run>/figures/paper_v4_angular_pair_covariance.png`, `<run>/figures/paper_v4_ion_mass_histogram.png` |
 
 ## Common conventions
 
 - Each script has a USER SETTINGS block at the top: edit `RUN_DIR` to
-  point at a different run directory and rerun. `plot_paper_figure.py`
-  and `plot_paper_v4_figure.py` also accept CLI path overrides and
+  point at a different run directory and rerun. `plot_paper_v2.py`,
+  `plot_paper_v3.py`, and `plot_paper_v4.py` also accept CLI path overrides and
   `--no-show` for headless checks.
 - Output is interactive (`plt.show()`); a copy is also written under
   `<run>/figures/`. The directory is created on demand.
@@ -68,7 +69,23 @@ If the loaded checkpoint has no valid (non-NaN) rows the script
 prints a warning and exits with code 1; this happens on pre-v5
 checkpoints or runs with no collisions.
 
-## `plot_paper_figure.py`
+## `plot_paper_v2.py`
+
+Main 2x2 I+He comparison figure saved as
+`paper_v2_compare_simulation_and_measurement.png`, plus a separate
+`paper_v2_phi_comparison.png`. This port is named paper v2 for Python
+consistency, but its legacy source is
+`post_process_single_pulse_paper_IplusHe_comparison.m`.
+
+The top row compares the MATLAB-exported processed 2-D experimental VMI image
+against a simulated nearest-bin `vx/vy` map for mass 131 amu. The bottom row
+overlays all available paper-v2 radial CSV references with the simulated
+projected-speed curve.
+
+Detailed explanation:
+[`docs/post_process/scripts/plot_paper_v2.md`](scripts/plot_paper_v2.md).
+
+## `plot_paper_v3.py`
 
 Two-panel figure saved as `compare_simulation_and_measurement.pdf`,
 matching the active non-effusive branch of
@@ -83,19 +100,19 @@ separate `ion_mass_histogram.{pdf,png}` output because the legacy script
 opens it after exporting the main paper figure.
 
 Detailed curve-by-curve explanation:
-[`docs/post_process/scripts/plot_paper_figure_paper_v3.md`](scripts/plot_paper_figure_paper_v3.md).
+[`docs/post_process/scripts/plot_paper_v3.md`](scripts/plot_paper_v3.md).
 
-## `plot_paper_v4_figure.py`
+## `plot_paper_v4.py`
 
 One-panel radial velocity comparison saved as
-`compare_simulation_and_measurement_simpler.pdf`, plus separate
-`paper_v4_angular_pair_covariance.{pdf,png}` and
-`paper_v4_ion_mass_histogram.{pdf,png}` outputs. The radial panel loads all
-available v4 experimental radial CSVs from `data/reference/paper_v4/` and
+`compare_simulation_and_measurement_simpler.png`, plus separate
+`paper_v4_angular_pair_covariance.png` and
+`paper_v4_ion_mass_histogram.png` outputs. The radial panel loads available
+v4 experimental I+He radial CSVs from `data/reference/paper_v4/` and
 overlays simulated projected-velocity curves for masses 127 and 131 amu.
 
 Detailed curve-by-curve explanation:
-[`docs/post_process/scripts/plot_paper_v4_figure.md`](scripts/plot_paper_v4_figure.md).
+[`docs/post_process/scripts/plot_paper_v4.md`](scripts/plot_paper_v4.md).
 
 ## Tests
 

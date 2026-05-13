@@ -48,8 +48,9 @@ Status legend: **DONE** = already ported · **PORT** = port useful pieces ·
 | `vmi_sim_3d_ion_propa.m` (energy + temperature panels) | `plot_ion_energy_balance.py`, `plot_ion_temperature_diagnostic.py` | DONE |
 | `single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m` | `plot_hedft_comparison.py` + `compare_trajectories.py` | DONE |
 | `single_pulse_simulation/HeDFT_comparison/simulation_image.m` (velocity-overlay panel) | `plot_experimental_comparison.py` + `velocity_distribution.py` | DONE |
-| `single_pulse_simulation/post_process_single_pulse_paper_v3.m` (active droplet branch radial v + phi + mass spectrum) | `plot_paper_figure.py` + `paper_v3.py` + `export_paper_v3_reference_data.m` | DONE for selected-run Python checkpoints; MATLAB multi-start matrix and effusive branch deferred |
-| `single_pulse_simulation/post_process_single_pulse_paper_v4.m` (active droplet branch radial v + angular pair covariance + mass spectrum) | `plot_paper_v4_figure.py` + `paper_v4.py` + `export_paper_v4_reference_data.m` | DONE for selected-run Python checkpoints; effusive branch and experimental covariance export deferred |
+| `single_pulse_simulation/post_process_single_pulse_paper_IplusHe_comparison.m` (active droplet branch 2-D VMI image + simulated vx/vy map + radial/phi comparison) | `plot_paper_v2.py` + `paper_v2.py` + `export_paper_v2_reference_data.m` | DONE for selected-run Python checkpoints; raw VMI extraction, Abel inversion, and effusive branch deferred |
+| `single_pulse_simulation/post_process_single_pulse_paper_v3.m` (active droplet branch radial v + phi + mass spectrum) | `plot_paper_v3.py` + `paper_v3.py` + `export_paper_v3_reference_data.m` | DONE for selected-run Python checkpoints; MATLAB multi-start matrix and effusive branch deferred |
+| `single_pulse_simulation/post_process_single_pulse_paper_v4.m` (active droplet branch radial v + angular pair covariance + mass spectrum) | `plot_paper_v4.py` + `paper_v4.py` + `export_paper_v4_reference_data.m` | DONE for selected-run Python checkpoints; effusive branch and experimental covariance export deferred |
 
 ### Useful — port unique operations into the consolidated script
 
@@ -61,7 +62,7 @@ Status legend: **DONE** = already ported · **PORT** = port useful pieces ·
 | `post_process_single_pulse.m` | 2D velocity density (vₓ, vᵧ) | Pure rebin of existing 3D velocities. |
 | `post_process_compare_radial_distributions.m` | Time-resolved radial distribution heatmap; final inter-particle distance histogram; Boltzmann reference overlay on initial r₀ distribution | Boltzmann curve uses the *existing* `droplet_potential` already in the package — analytic overlay only, no new physics. |
 | `HeDFT_MD_comparison_neutral/compare_neutral_dynamics_to_HeDFT.m` | Cumulative-integral trajectory reconstruction (`cumtrapz(v) → r`) overlaying HeDFT v(t) reference; total-energy conservation check across MD vs HeDFT grids | Neutral-side counterpart to existing ion HeDFT comparison. |
-| `post_process_single_pulse_paper_IplusHe_comparison.m` | Multi-reference comparative overlay (I⁺ gas vs I⁺He droplet vs simulation) | The existing `plot_paper_figure.py` already does the equivalent overlay; only the explicit "comparison filtering" (`v_proj > VMIN`) is novel — fold as an option. |
+| `post_process_single_pulse_paper_IplusHe_comparison.m` | Multi-reference comparative overlay plus 2-D VMI image/map comparison | Ported as `plot_paper_v2.py`; future work may add experimental phi export or additional MATLAB annotation details if needed. |
 
 ### Skip — out of scope or duplicate
 
@@ -84,7 +85,7 @@ Status legend: **DONE** = already ported · **PORT** = port useful pieces ·
 - CLI: `python plot_run_summary.py <run_dir> [--hedft-ref PATH] [--vmi-ref-he PATH] [--vmi-ref-gas PATH] [--out-dir PATH] [--no-show]`.
 - Loads `RunDirectory(run_dir)`; uses `has_neutral()` / `has_ion()` to gate sections.
 - References are optional; sections that need a missing reference are skipped with a log line, preserving the "keep different runs separate" rule from `CLAUDE.md` (the user passes only the references appropriate to that run).
-- Output: one multi-page PDF `<run_dir>/figures/run_summary.pdf` plus per-figure PNGs alongside it. Existing single-figure scripts (`plot_*_energy_balance.py`, `plot_paper_figure.py`, etc.) stay as-is for focused workflows; the new script just consolidates them and adds the new panels.
+- Output: one multi-page PDF `<run_dir>/figures/run_summary.pdf` plus per-figure PNGs alongside it. Existing single-figure scripts (`plot_*_energy_balance.py`, `plot_paper_v3.py`, etc.) stay as-is for focused workflows; the new script just consolidates them and adds the new panels.
 - `main(argv=...)` is callable from tests so smoke coverage can drive the
   whole pipeline without touching the CLI parser.
 

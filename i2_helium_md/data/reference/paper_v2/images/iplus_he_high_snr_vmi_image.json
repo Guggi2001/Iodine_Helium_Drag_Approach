@@ -1,0 +1,15 @@
+{
+  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison.m",
+  "source_mat_file": "T:\\github synchronized\\VMI_matlab\\matfile_data_scripts\\A_state_paper_figures_single_pulse\\high_snr\\ressumI2HeNI^+He.mat",
+  "channel": "I+He high-SNR processed VMI",
+  "vf_single": 10.0995,
+  "units": "A/ps",
+  "axis_equations": {
+    "vx_Aps": "(res.X - res.image_center_x) * vf_single / 100",
+    "vy_Aps": "(res.Y - res.image_center_y) * vf_single / 100"
+  },
+  "image_center_x": 366.1433,
+  "image_center_y": 366.4826,
+  "output_fields": ["vx_Aps", "vy_Aps", "intensity"],
+  "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]
+}

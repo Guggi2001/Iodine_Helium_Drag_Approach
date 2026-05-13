@@ -1,0 +1,286 @@
+"""Tests for the paper-v2 I+He comparison post-processing helpers."""
+
+from __future__ import annotations
+
+import json
+import importlib.util
+from pathlib import Path
+import sys
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np
+import pytest
+from scipy.io import savemat
+
+from i2_helium_md.physics.constants import U as U_KG
+from i2_helium_md.postprocess.paper_v2 import (
+    PAPER_V2_IMAGE_BINS_APS,
+    PaperV2VelocityMap,
+    PaperV2VMIImageReference,
+    load_paper_v2_phi_reference,
+    load_paper_v2_radial_references,
+    load_paper_v2_vmi_image_reference,
+    paper_v2_velocity_map,
+)
+from i2_helium_md.simulation.checkpoint import IonCheckpoint
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PAPER_V2_SCRIPT = PROJECT_ROOT / "scripts" / "post_processing" / "plot_paper_v2.py"
+
+
+def _import_paper_v2_script():
+    spec = importlib.util.spec_from_file_location("plot_paper_v2_orientation_test", PAPER_V2_SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _make_ion(
+    *,
+    vx: np.ndarray,
+    vy: np.ndarray,
+    vz: np.ndarray,
+    masses_amu: np.ndarray,
+    b_outside: np.ndarray | None = None,
+) -> IonCheckpoint:
+    n2 = vx.size
+    if n2 % 2:
+        raise AssertionError("Need 2N atoms")
+    n = n2 // 2
+    if b_outside is None:
+        b_outside = np.ones(n, dtype=bool)
+    masses_kg = masses_amu.astype(float) * U_KG
+    steps = 3
+    zeros = np.zeros((n2, steps))
+    return IonCheckpoint(
+        num_molecules=n,
+        time_ps=np.linspace(0.0, 1.0, steps),
+        positions_x=zeros.copy(),
+        positions_y=zeros.copy(),
+        positions_z=zeros.copy(),
+        velocities_x=zeros.copy(),
+        velocities_y=zeros.copy(),
+        velocities_z=zeros.copy(),
+        positions_final_x=np.zeros(n2),
+        positions_final_y=np.zeros(n2),
+        positions_final_z=np.zeros(n2),
+        velocities_final_x=vx.astype(float),
+        velocities_final_y=vy.astype(float),
+        velocities_final_z=vz.astype(float),
+        mass_kg=masses_kg.copy(),
+        mass_final_kg=masses_kg,
+        mass_history_kg=np.broadcast_to(masses_kg[:, None], (n2, steps)).copy(),
+        droplet_radii_angstrom=np.full(n2, 30.0),
+        E_kin_eV=zeros.copy(),
+        E_pot_eV=zeros.copy(),
+        E_dissip_eV=zeros.copy(),
+        E_mass_attach_defect_eV=zeros.copy(),
+        b_ion_outside=np.asarray(b_outside, dtype=bool),
+        relative_loss_per_ps=zeros.copy(),
+        number_of_collisions=np.zeros((n2, steps), dtype=int),
+        temperature_diagnostic=np.full((steps, 3), np.nan),
+    )
+
+
+def test_vmi_image_reference_loader_validates_npz_fields_and_shapes(tmp_path):
+    path = tmp_path / "iplus_he_600mw_43569_vmi_image.npz"
+    np.savez(
+        path,
+        vx_Aps=np.array([-1.0, 0.0, 1.0]),
+        vy_Aps=np.array([-2.0, 2.0]),
+        intensity=np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
+    )
+    (tmp_path / "iplus_he_600mw_43569_vmi_image.json").write_text(
+        json.dumps({"measurement_id": 43569, "power_mw": 600}),
+        encoding="ascii",
+    )
+
+    ref = load_paper_v2_vmi_image_reference(path)
+
+    assert isinstance(ref, PaperV2VMIImageReference)
+    np.testing.assert_allclose(ref.vx_Aps, [-1.0, 0.0, 1.0])
+    np.testing.assert_allclose(ref.vy_Aps, [-2.0, 2.0])
+    np.testing.assert_allclose(ref.intensity, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    assert ref.metadata["measurement_id"] == 43569
+
+    missing = tmp_path / "missing_field.npz"
+    np.savez(missing, vx_Aps=np.array([0.0]), intensity=np.array([[1.0]]))
+    with pytest.raises(ValueError, match="vx_Aps, vy_Aps, intensity"):
+        load_paper_v2_vmi_image_reference(missing)
+
+    bad_shape = tmp_path / "bad_shape.npz"
+    np.savez(
+        bad_shape,
+        vx_Aps=np.array([0.0, 1.0]),
+        vy_Aps=np.array([0.0]),
+        intensity=np.array([[1.0], [2.0]]),
+    )
+    with pytest.raises(ValueError, match="intensity shape"):
+        load_paper_v2_vmi_image_reference(bad_shape)
+
+    constant_axis = tmp_path / "constant_axis.npz"
+    np.savez(
+        constant_axis,
+        vx_Aps=np.zeros(3),
+        vy_Aps=np.array([-1.0, 1.0]),
+        intensity=np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
+    )
+    with pytest.raises(ValueError, match="zero range"):
+        load_paper_v2_vmi_image_reference(constant_axis)
+
+
+def test_vmi_image_reference_loader_accepts_matlab_mat_exports(tmp_path):
+    path = tmp_path / "iplus_he_high_snr_vmi_image.mat"
+    vx_grid, vy_grid = np.meshgrid(
+        np.array([-1.0, 0.0, 1.0]),
+        np.array([-2.0, 2.0]),
+    )
+    savemat(
+        path,
+        {
+            "vx_Aps": vx_grid,
+            "vy_Aps": vy_grid,
+            "intensity": np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
+        },
+    )
+
+    ref = load_paper_v2_vmi_image_reference(path)
+
+    np.testing.assert_allclose(ref.vx_Aps, vx_grid)
+    np.testing.assert_allclose(ref.vy_Aps, vy_grid)
+    np.testing.assert_allclose(ref.intensity, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+
+
+def test_experimental_image_plot_passes_matplotlib_ready_grids_unchanged(monkeypatch):
+    module = _import_paper_v2_script()
+    vx_grid, vy_grid = np.meshgrid(
+        np.array([-1.0, 0.0, 1.0]),
+        np.array([-2.0, 2.0]),
+    )
+    intensity = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    ref = PaperV2VMIImageReference(
+        vx_Aps=vx_grid,
+        vy_Aps=vy_grid,
+        intensity=intensity,
+        metadata={},
+        source_path=Path("synthetic.mat"),
+    )
+    fig, ax = plt.subplots()
+    captured = {}
+    original_pcolormesh = ax.pcolormesh
+
+    def capture_pcolormesh(x, y, c, *args, **kwargs):
+        captured["x"] = x
+        captured["y"] = y
+        captured["c"] = c
+        return original_pcolormesh(x, y, c, *args, **kwargs)
+
+    monkeypatch.setattr(ax, "pcolormesh", capture_pcolormesh)
+    monkeypatch.setattr(plt, "colorbar", lambda *args, **kwargs: None)
+
+    module._draw_experimental_image(ax, ref)
+
+    np.testing.assert_allclose(captured["x"], vx_grid)
+    np.testing.assert_allclose(captured["y"], vy_grid)
+    np.testing.assert_allclose(captured["c"], intensity)
+    assert ax.get_xlabel() == "v_x / A/ps"
+    assert ax.get_ylabel() == "v_y / A/ps"
+    plt.close(fig)
+
+
+def test_radial_reference_loader_reads_directory_and_labels(tmp_path):
+    ref_dir = tmp_path / "paper_v2"
+    ref_dir.mkdir()
+    (ref_dir / "iplus_he_160mw_43556_radial.csv").write_text(
+        "v_Aps,signal_arb\n0.0,9.0\n1.0,9.0\n",
+        encoding="ascii",
+    )
+    (ref_dir / "iplus_he_600mw_43569_radial.csv").write_text(
+        "v_Aps,signal_arb\n0.0,8.0\n1.0,8.0\n",
+        encoding="ascii",
+    )
+    (ref_dir / "iplus_gas_300mw_43562_radial.csv").write_text(
+        "v_Aps,signal_arb\n0.0,1.0\n1.0,0.5\n",
+        encoding="ascii",
+    )
+    (ref_dir / "iplus_he_high_snr_radial.csv").write_text(
+        "v_Aps,signal_arb\n0.0,2.0\n1.0,1.0\n",
+        encoding="ascii",
+    )
+
+    refs = load_paper_v2_radial_references(ref_dir)
+
+    assert [ref.label for ref in refs] == [
+        "I+ gas 300 mW (43562)",
+        "I+He high-SNR",
+        "I+He 160 mW (43556)",
+        "I+He 600 mW (43569)",
+    ]
+    np.testing.assert_allclose(refs[1].velocity_Aps, [0.0, 1.0])
+    np.testing.assert_allclose(refs[1].signal_arb, [2.0, 1.0])
+
+
+def test_phi_reference_loader_enforces_columns(tmp_path):
+    path = tmp_path / "iplus_he_high_snr_phi.csv"
+    path.write_text("phi_rad,signal_arb\n0.0,1.0\n3.14,0.5\n", encoding="ascii")
+
+    ref = load_paper_v2_phi_reference(path)
+
+    np.testing.assert_allclose(ref.phi_rad, [0.0, 3.14])
+    np.testing.assert_allclose(ref.signal_arb, [1.0, 0.5])
+
+    bad = tmp_path / "bad_phi.csv"
+    bad.write_text("angle,signal\n0.0,1.0\n", encoding="ascii")
+    with pytest.raises(ValueError, match="phi_rad.*signal_arb"):
+        load_paper_v2_phi_reference(bad)
+
+
+def test_velocity_map_matches_matlab_nearest_bin_selection():
+    ion = _make_ion(
+        vx=np.array([-35.0, 0.09, 3.0, 5.0]),
+        vy=np.array([-35.0, 0.09, 4.0, 12.0]),
+        vz=np.array([999.0, 999.0, 999.0, 999.0]),
+        masses_amu=np.array([131.0, 131.0, 127.0, 127.0]),
+        b_outside=np.array([True, True]),
+    )
+
+    image = paper_v2_velocity_map(ion, mass_amu=131.0)
+
+    np.testing.assert_allclose(image.velocity_bins_Aps, PAPER_V2_IMAGE_BINS_APS)
+    assert image.counts.shape == (PAPER_V2_IMAGE_BINS_APS.size, PAPER_V2_IMAGE_BINS_APS.size)
+    assert image.num_atoms_used == 2
+    assert image.counts.sum() == 2
+    idx_neg = int(np.where(np.isclose(PAPER_V2_IMAGE_BINS_APS, -35.0))[0][0])
+    idx_zero = int(np.where(np.isclose(PAPER_V2_IMAGE_BINS_APS, 0.0))[0][0])
+    assert image.counts[idx_neg, idx_neg] == 1
+    assert image.counts[idx_zero, idx_zero] == 1
+
+
+def test_simulated_map_plot_transposes_internal_storage_for_physical_axes():
+    module = _import_paper_v2_script()
+    bins = np.array([-1.0, 0.0, 1.0])
+    counts = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    velocity_map = PaperV2VelocityMap(
+        velocity_bins_Aps=bins,
+        counts=counts,
+        mass_amu=131.0,
+        num_atoms_used=9,
+    )
+    fig, ax = plt.subplots()
+
+    module._draw_simulated_map(ax, velocity_map)
+
+    plotted = ax.collections[0].get_array()
+    np.testing.assert_allclose(np.asarray(plotted).reshape(counts.shape), counts.T)
+    plt.close(fig)

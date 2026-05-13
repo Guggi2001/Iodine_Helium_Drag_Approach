@@ -22,10 +22,10 @@
 % - The legacy VMI MATLAB toolbox must be on the MATLAB path.
 % - The high-SNR MAT file path above must exist on the MATLAB machine.
 %
-% Outputs, written to data/reference/ when this script is run from this folder:
-% - paper_v3_iplus_he_radial.csv: v_mps,signal_arb
-% - paper_v3_timescan_radial.csv: v_mps,signal_t_001,...
-% - paper_v3_iplus_he_phi.csv: phi_rad,signal_arb
+% Outputs, written under data/reference/paper_v3/:
+% - iplus_he_300mw_43563_radial.csv: v_mps,signal_arb
+% - timescan_296_297_radial.csv: v_mps,signal_296,signal_297
+% - iplus_he_300mw_43563_phi.csv: phi_rad,signal_arb
 
 clear; close all;
 
@@ -59,31 +59,35 @@ global GS_bleach_correction
 GS_bleach_correction = 1;
 res2 = mean_timescan_2d_VMI([296:297], false, VM_center_shared, false);
 
-out_dir = fileparts(mfilename('fullpath'));
-out_dir = fullfile(out_dir, '..');
+script_dir = fileparts(mfilename('fullpath'));
+out_dir = fullfile(script_dir, '..', 'paper_v3');
+if ~exist(out_dir, 'dir')
+    mkdir(out_dir);
+end
 
 % Top panel I+He radial trace: v3 line 178.
 v_he_mps = res_Iplus_He.r(:) * vf;
 signal_he = res_Iplus_He.radial_distribution(:);
 T_he = table(v_he_mps, signal_he, ...
     'VariableNames', {'v_mps', 'signal_arb'});
-writetable(T_he, fullfile(out_dir, 'paper_v3_iplus_he_radial.csv'));
-fprintf('Saved paper_v3_iplus_he_radial.csv\n');
+writetable(T_he, fullfile(out_dir, 'iplus_he_300mw_43563_radial.csv'));
+fprintf('Saved iplus_he_300mw_43563_radial.csv\n');
 
 % Top panel timescan traces: v3 lines 169-173.
 timescan_mask = res2.t > 150;
 timescan_signal = res2.data(:, timescan_mask);
 v_timescan_mps = res2.r(:) * vf_timescan;
 T_ts = array2table([v_timescan_mps, timescan_signal]);
-signal_names = compose("signal_t_%03d", 1:size(timescan_signal, 2));
+timescan_measurements = 296:297;
+signal_names = compose("signal_%d", timescan_measurements(1:size(timescan_signal, 2)));
 T_ts.Properties.VariableNames = [{'v_mps'}, cellstr(signal_names)];
-writetable(T_ts, fullfile(out_dir, 'paper_v3_timescan_radial.csv'));
-fprintf('Saved paper_v3_timescan_radial.csv\n');
+writetable(T_ts, fullfile(out_dir, 'timescan_296_297_radial.csv'));
+fprintf('Saved timescan_296_297_radial.csv\n');
 
 % Bottom panel angular trace: v3 lines 195-201.
 b_r = res_Iplus_He.r * vf > VMIN_ANGULAR_DISTR;
 y_phi = mean(res_Iplus_He.image_polar(:, b_r), 2);
 T_phi = table(res_Iplus_He.phi(:), y_phi(:), ...
     'VariableNames', {'phi_rad', 'signal_arb'});
-writetable(T_phi, fullfile(out_dir, 'paper_v3_iplus_he_phi.csv'));
-fprintf('Saved paper_v3_iplus_he_phi.csv\n');
+writetable(T_phi, fullfile(out_dir, 'iplus_he_300mw_43563_phi.csv'));
+fprintf('Saved iplus_he_300mw_43563_phi.csv\n');

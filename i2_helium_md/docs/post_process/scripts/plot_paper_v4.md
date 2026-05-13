@@ -1,4 +1,4 @@
-# `plot_paper_v4_figure.py` paper-v4 VMI comparison
+# `plot_paper_v4.py` paper-v4 VMI comparison
 
 This script ports the active non-effusive droplet branch of
 `legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v4.m`.
@@ -7,18 +7,18 @@ from the consolidated run-summary diagnostics.
 
 ## Outputs
 
-`plot_paper_v4_figure.py` writes three figures under `<run>/figures/`:
+`plot_paper_v4.py` writes three figures under `<run>/figures/`:
 
 | Output | Purpose |
 |---|---|
-| `compare_simulation_and_measurement_simpler.pdf` / `.png` | One-panel radial VMI comparison. |
-| `paper_v4_angular_pair_covariance.pdf` / `.png` | Simulated I+He angular pair-covariance heatmap with scatter overlay. |
-| `paper_v4_ion_mass_histogram.pdf` / `.png` | Final ion mass diagnostic. |
+| `compare_simulation_and_measurement_simpler.png` | One-panel radial VMI comparison. |
+| `paper_v4_angular_pair_covariance.png` | Simulated I+He angular pair-covariance heatmap with scatter overlay. |
+| `paper_v4_ion_mass_histogram.png` | Final ion mass diagnostic. |
 
 ## Experimental radial references
 
-The experimental curves are loaded from `data/reference/paper_v4/`. They are
-created by `data/reference/scripts/export_paper_v4_reference_data.m`, which
+The experimental I+He curves are loaded from `data/reference/paper_v4/`. They
+are created by `data/reference/scripts/export_paper_v4_reference_data.m`, which
 uses the legacy MATLAB VMI processing path as the source of truth.
 
 The exporter writes one radial CSV for each measurement declared in v4 lines
@@ -39,7 +39,7 @@ Each CSV has columns:
 v_mps,signal_arb
 ```
 
-Python normalizes each experimental signal by its maximum for plotting.
+Python normalizes each plotted experimental signal by its maximum for plotting.
 
 ## Simulated radial curves
 

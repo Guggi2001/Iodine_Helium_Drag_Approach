@@ -1,10 +1,15 @@
-
 # CLAUDE.md
 
-This project is a Python port of a legacy MATLAB molecular-dynamics codebase
-for iodine / iodine-ion dynamics in helium nanodroplets.
+This file bundles the project guidance that Claude-style agents need before
+editing or reviewing this repository. It intentionally mirrors `agent.md` so
+both agent entry points carry the same live rules.
 
-Python package:
+## Project Snapshot
+
+This repository is a Python port of a legacy MATLAB molecular-dynamics
+codebase for iodine / iodine-ion dynamics in helium nanodroplets.
+
+Main package:
 
 ```text
 i2_helium_md
@@ -16,261 +21,277 @@ Legacy MATLAB reference:
 legacy_matlab_repository/
 ```
 
-## Current State
+The core MATLAB-to-Python simulation transfer is mainly complete:
 
-The transfer of the legacy MATLAB simulation code is mainly completed. The
-neutral and ion propagation drivers are implemented, the main single-pulse
-input presets are migrated, and MATLAB/Python cross-reference validation has
-covered the important propagation and bookkeeping paths.
+- neutral propagation is implemented,
+- ion propagation is implemented,
+- the main single-pulse presets are migrated,
+- run directories write `cfg.json`, `neutral.npz`, and `ion.npz`,
+- important MATLAB/Python propagation and bookkeeping paths have been
+  cross-reference validated,
+- in-scope post-processing helpers and scripts are implemented.
 
-Post-processing port has reached parity with the in-scope legacy MATLAB
-diagnostics. Every legacy script that still belongs in scope has either
-been ported to a focused single-figure script in `scripts/post_processing/`
-or has its unique numerical operation rolled into the consolidated
-`scripts/post_processing/plot_run_summary.py` driver, which produces a
-single multi-page PDF per run. See `docs/post_processing_port_plan.md`
-for the per-script inventory.
+The current phase is authentic post-processing porting and cleanup. Compare
+the generated Python figures against the legacy MATLAB figures, then tighten
+binning, smoothing, normalization, filtering, fitting, and plotting
+conventions where behavior still differs. Keep the goal faithful reproduction
+of in-scope legacy diagnostics, not new analysis scope.
 
-Remaining work is now mainly visual / numerical refinement of those
-figures against the legacy MATLAB output, plus any focused fixes that
-human review of `data/runs/*/figures/run_summary.pdf` turns up.
+## Current Scope
 
-Do not broaden into new physics, pump-probe support, effusive dynamics, Abel
-inversion, or full experimental VMI interpretation unless the user explicitly
-asks.
+In scope:
 
-## Implemented Core Path
+- single-pulse neutral and ion dynamics,
+- 9 A and normalized 18 A HeDFT comparison inputs already present in
+  `data/reference/`,
+- VMI reference loading and final-velocity histogram helpers,
+- consolidated post-processing diagnostics from finished run directories,
+- authentic reproduction of legacy post-processing figures where reference
+  data and run outputs are available,
+- focused MATLAB/Python reference validation.
 
-Main public run script:
+Out of scope unless the user explicitly asks:
 
-```text
-scripts/run_single_pulse.py
+- pump-probe support,
+- effusive / gas-phase dynamics,
+- Abel inversion,
+- full experimental VMI image interpretation,
+- broad experimental VMI analysis beyond current overlays,
+- new physics branches,
+- broad refactors,
+- live-debug 3D animations and visualization-only MATLAB utilities.
+
+## Project Quality Principles
+
+Use these principles for every porting decision, code review, and cleanup:
+
+1. No duplicate implementations of the same physics. Shared conversions,
+   formulas, and constants belong in `constants.py` or the appropriate shared
+   module.
+2. No dead code. Remove unused imports, commented-out blocks, and speculative
+   branches.
+3. Encode units and conventions in names: `mass_kg`, `time_ps`,
+   `T_particles_K`, `R0_GS_angstrom`, etc.
+4. Validate early and fail loudly. Wrong shape, unsupported collision mode,
+   invalid type, or non-overlapping time axes should raise clear errors.
+5. Public functions need docstrings with units, shapes, edge cases, inputs,
+   and outputs.
+6. Organize modules by concern: `physics/` is science, `sampling/` is
+   randomness, `simulation/` is orchestration, `postprocess/` is analysis of
+   finished runs.
+7. Tests document intended behavior, units, tolerances, and known
+   MATLAB/Python deviations.
+8. Audit after refactors for dead imports, duplicate physics, and drift
+   between docs and code.
+9. For any known reference output, literal transliteration comes before clean
+   refactor. First reproduce the MATLAB behavior, then refactor once the
+   numerical result is verified.
+10. Do not preserve bad legacy behavior merely for byte identity. Python uses
+    corrected modern constants and fixes known MATLAB bookkeeping bugs unless
+    the user explicitly asks for legacy behavior.
+
+## Architecture Rules
+
+Use `SimConfig` instead of globals. MATLAB global settings were consolidated
+into `i2_helium_md/config.py`; functions that need parameters should receive
+`cfg: SimConfig` explicitly.
+
+Use preset functions instead of scripts:
+
+```python
+from i2_helium_md import (
+    single_pulse_N2000,
+    single_pulse_N2000_18Angst,
+    single_pulse_droplet_distribution,
+)
 ```
 
-Available input presets:
-
-```text
-single_pulse_N2000              # 9 A HeDFT comparison case
-single_pulse_N2000_18Angst      # 18 A HeDFT comparison case
-single_pulse_droplet_distribution
-```
-
-The run script writes self-contained run directories through `RunDirectory`:
+Use `RunDirectory` for simulation artifacts. A run directory is
+self-describing and should contain:
 
 ```text
 cfg.json
 neutral.npz
 ion.npz
+figures/      optional post-processing outputs
 ```
 
-Core implemented modules include:
+Checkpoint I/O rules:
 
-```text
-i2_helium_md/config.py
-i2_helium_md/presets.py
-i2_helium_md/physics/
-i2_helium_md/sampling/
-i2_helium_md/simulation/
-i2_helium_md/postprocess/
-```
+- checkpoints are explicit dataclasses,
+- every checkpoint has `schema_version`,
+- incompatible versions fail at load time,
+- no constants are saved in checkpoints,
+- config belongs in `cfg.json`,
+- load with `allow_pickle=False`,
+- shape validation should use `cfg` when available.
 
-## Current Plotting Scripts
+Avoid changing checkpoint schema, physical constants, neutral propagation,
+ion propagation, collision physics, or `scripts/run_single_pulse.py` behavior
+unless a focused test reveals a real bug or the user explicitly asks.
 
-The post-processing plots are now intentionally split because the legacy
-combined MATLAB figure mixed outputs from different run settings.
+## Current Working Mode
 
-HeDFT trajectory comparison:
+Prefer current Python APIs over ad hoc scripts:
 
-```text
-scripts/post_processing/plot_hedft_comparison.py
-```
-
-This script uses the HeDFT-comparison run and produces:
-
-- I-I distance trajectory comparison,
-- velocity-vs-time trajectory comparison.
-
-Experimental velocity-distribution comparison:
-
-```text
-scripts/post_processing/plot_experimental_comparison.py
-```
-
-This script uses the realistic experimental-condition run and produces:
-
-- gas-phase experimental VMI reference,
-- droplet experimental VMI reference,
-- simulated mass-selected final-velocity histograms for `I+He` and `I+He2`.
-
-Keep these workflows separate. The top velocity-vs-time HeDFT comparison should
-not be plotted from the experimental-condition run, and the experimental VMI
-distribution should not be plotted from the HeDFT-comparison run.
-
-Legacy MATLAB live-debug + paper figure reproduction:
-
-```text
-scripts/post_processing/plot_neutral_energy_balance.py
-scripts/post_processing/plot_ion_energy_balance.py
-scripts/post_processing/plot_ion_temperature_diagnostic.py
-scripts/post_processing/plot_paper_figure.py
-```
-
-These run post-hoc from a finished `RunDirectory` and reproduce the
-legacy figures from `vmi_sim_3d_neutral_propa_HeDFT_mimic.m` (energy
-balance), `vmi_sim_3d_ion_propa.m` (energy balance + temperature
-diagnostic), and the simulation-side panels of
-`post_process_single_pulse_paper_v3.m` (radial v + phi histogram +
-mass spectrum, exported as `compare_simulation_and_measurement.pdf`).
-
-Consolidated post-processing summary:
-
-```text
-scripts/post_processing/plot_run_summary.py
-```
-
-CLI driver that loads one `RunDirectory` and produces a single
-multi-page PDF (`<run>/figures/run_summary.pdf`) plus per-figure PNGs
-covering every legacy MATLAB diagnostic in scope. Sections that need
-optional reference data (HeDFT trajectory CSV, experimental VMI CSVs)
-are gated on `--hedft-ref`, `--vmi-ref-he`, `--vmi-ref-gas`. This
-keeps the "different runs need different references" rule from this
-file working: pass only the references appropriate to the run.
-
-Sections produced (in PDF order): metadata, neutral energy balance,
-ion energy balance + temperature diagnostic, mass spectrum, 1D radial
-velocity (with optional VMI overlay and bimodal Gaussian fit), 1D phi
-histogram, 2D polar (|v|, phi) histogram, cos^2 anisotropy fit + beta(v),
-2D (v_x, v_y) density, mass-resolved final-velocity histograms, time-
-resolved radial heatmap |r|(t), final inter-particle distance histogram,
-angular pair covariance theta1 x theta2, neutral and ion HeDFT
-comparison (when `--hedft-ref` given), Boltzmann reference overlay on
-the initial r0 distribution.
-
-The cos^2 anisotropy fit and beta(v) panels operate on the simulation
-3-D velocities directly (no Abel inversion). The 2-D polar
-*experimental* VMI image is still out of scope -- only the simulation
-side is rendered.
-
-See `docs/post_processing_port_plan.md` for the legacy-script
-inventory and porting verdicts.
-
-## Post-Processing Data Contracts
-
-Expected normalized reference inputs:
-
-```text
-data/reference/9A_All_Data.csv
-data/reference/18A_All_Data.csv
-data/reference/vmi_iplus_he.csv
-data/reference/vmi_iplus_gas.csv
-```
-
-`9A_All_Data.csv` and `18A_All_Data.csv` use the 8-column header:
-
-```text
-Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance
-```
-
-The earlier split legacy 9 A files (`data_vabs2.csv`, `R1-R2.csv`) are
-provenance, not the current Python loader contract.
-
-Do not use hardcoded absolute MATLAB paths. Before adding or repurposing data
-files, verify whether existing `data/reference/*.csv` files are experimental
-VMI data or HeDFT trajectory data.
-
-## Main Working Mode
-
-Use the current Python package and run-directory APIs first. Prefer this
-workflow:
-
-1. Load an existing run with `RunDirectory`.
+1. Load a finished run with `RunDirectory`.
 2. Load HeDFT references with `load_hedft_trajectory`.
 3. Compute numerical diagnostics with `compare_distance` and
    `compare_velocity_magnitude` before changing trajectory plots.
 4. Use `velocity_distribution.py` for VMI reference loading and mass-selected
    final-velocity histograms.
-5. For 2D polar / anisotropy / pair-correlation / time-resolved /
-   Boltzmann diagnostics, prefer the focused helpers in `polar_velocity.py`,
-   `velocity_2d.py`, `pair_correlation.py`, `time_resolved.py`,
-   `boltzmann_overlay.py` rather than rolling new histograms.
-6. To produce *every* in-scope diagnostic from a finished run in one
-   PDF, use `scripts/post_processing/plot_run_summary.py` with the
-   reference flags appropriate to the run.
-7. Keep plot changes local to `scripts/post_processing/` unless a package
-   API change is actually needed.
-8. Add or update focused pytest coverage when changing behavior.
+5. Use focused post-processing helpers instead of rolling new histograms:
+   `energy_balance.py`, `polar_velocity.py`, `velocity_2d.py`,
+   `pair_correlation.py`, `time_resolved.py`, `boltzmann_overlay.py`.
+6. Use `scripts/post_processing/plot_run_summary.py` for every in-scope
+   diagnostic from a finished run.
+7. Keep plot changes local to `scripts/post_processing/` unless a package API
+   change is actually needed.
+8. Add or update focused pytest coverage when behavior changes.
 
-The goal now is reliable reproduction of the legacy post-processing figures,
-not broad refactoring or new simulation features.
+For investigation, audit, inspect, compare, or explain requests:
 
-## Relevant Files
+- do not edit files,
+- read relevant docs and tests,
+- report files inspected,
+- report conclusions and uncertainties,
+- suggest the smallest safe next edit.
 
-Post-processing Python:
+For implementation or fix requests:
+
+- run `git status` first,
+- preserve unrelated user changes,
+- make the smallest coherent change,
+- do not touch unrelated files,
+- add or update tests when behavior changes,
+- run relevant tests,
+- show changed files and remaining risks.
+
+## Post-Processing Workflow
+
+The legacy combined MATLAB figure mixed outputs from different run settings.
+Keep these workflows separate:
+
+- HeDFT trajectory comparison uses a HeDFT-comparison run.
+- Experimental VMI distribution comparison uses the realistic
+  experimental-condition run.
+- Do not plot the HeDFT velocity-vs-time panel from an experimental-condition
+  run.
+- Do not plot experimental VMI distributions from a HeDFT-comparison run.
+
+Current script entry points:
 
 ```text
-i2_helium_md/postprocess/hedft_loader.py
-i2_helium_md/postprocess/compare_trajectories.py
-i2_helium_md/postprocess/velocity_distribution.py
-i2_helium_md/postprocess/energy_balance.py
-i2_helium_md/postprocess/polar_velocity.py
-i2_helium_md/postprocess/velocity_2d.py
-i2_helium_md/postprocess/pair_correlation.py
-i2_helium_md/postprocess/time_resolved.py
-i2_helium_md/postprocess/boltzmann_overlay.py
-i2_helium_md/postprocess/_smoothing.py
-i2_helium_md/postprocess/__init__.py
 scripts/post_processing/plot_hedft_comparison.py
 scripts/post_processing/plot_experimental_comparison.py
 scripts/post_processing/plot_neutral_energy_balance.py
 scripts/post_processing/plot_ion_energy_balance.py
 scripts/post_processing/plot_ion_temperature_diagnostic.py
-scripts/post_processing/plot_paper_figure.py
+scripts/post_processing/plot_paper_v2.py
+scripts/post_processing/plot_paper_v3.py
+scripts/post_processing/plot_paper_v4.py
 scripts/post_processing/plot_run_summary.py
-docs/post_processing_port_plan.md
 ```
 
-Simulation I/O:
+Build the 9 A HeDFT summary:
 
-```text
-i2_helium_md/simulation/run_directory.py
-i2_helium_md/simulation/checkpoint.py
+```bash
+python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison --hedft-ref data/reference/9A_All_Data.csv --no-show
 ```
 
-Preset/run configuration:
+Build the experimental-condition droplet summary:
 
-```text
-i2_helium_md/presets.py
-scripts/run_single_pulse.py
+```bash
+python scripts/post_processing/plot_run_summary.py data/runs/single_pulse_droplet --vmi-ref-he data/reference/vmi_iplus_he.csv --vmi-ref-gas data/reference/vmi_iplus_gas.csv --no-show
 ```
 
-Relevant MATLAB provenance:
+The next post-processing work is authentic comparison against legacy MATLAB
+figures. For any mismatch:
 
-```text
-legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000.m
-legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_N2000_18Angst.m
-legacy_matlab_repository/inputfiles_dft_comparison/single_pulse_droplet_distribution.m
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image_only_trajectories.m
-legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image.m
-legacy_matlab_repository/vmi_sim_3d_neutral_propa_HeDFT_mimic.m
-legacy_matlab_repository/vmi_sim_3d_ion_propa.m
-legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v3.m
-legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v4.m
-legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper.m
-legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse.m
-legacy_matlab_repository/post_process_compare_radial_distributions.m
-legacy_matlab_repository/HeDFT_MD_comparison_neutral/compare_neutral_dynamics_to_HeDFT.m
-```
+1. inspect the exact MATLAB recipe,
+2. literal-port the normalization, binning, smoothing, filtering, or fit
+   behavior,
+3. verify numerically or visually,
+4. only then refactor the Python helper for clarity.
 
 Do not read the full legacy plotting stack unless a specific numerical or
 visual discrepancy requires it.
 
-## Known Plotting Details
+## Data Contracts
 
-For the velocity-vs-time HeDFT panel, the MATLAB code sampled roughly 15
-molecules and plotted both iodine atoms, so Python caps the overlay near 30
-velocity traces.
+Normalized reference data lives in `data/reference/`.
 
-For the experimental velocity-distribution panel, MATLAB used:
+Expected files:
+
+```text
+9A_All_Data.csv
+18A_All_Data.csv
+vmi_iplus_he.csv
+vmi_iplus_gas.csv
+```
+
+HeDFT trajectory CSVs use this header:
+
+```text
+Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance
+```
+
+The earlier split 9 A files (`data_vabs2.csv`, `R1-R2.csv`) are provenance,
+not the current loader contract.
+
+Do not use hardcoded absolute MATLAB paths. Before adding or repurposing data,
+verify whether existing `data/reference/*.csv` files are experimental VMI data
+or HeDFT trajectory data.
+
+When a legacy MATLAB post-processing script loads or processes experimental
+data, treat that MATLAB path as the legacy source of truth for the data
+processing recipe. First run or adapt the MATLAB processing path to export the
+processed experimental result into a small, inspectable reference format,
+preferably CSV. Save the exported file under `data/reference/`, and add or keep
+the MATLAB export script under `data/reference/scripts/`, following the
+existing `data/reference/scripts/export_vmi_reference_data.m` precedent.
+
+For processed 2-D VMI image references, use matrix data plus a JSON sidecar
+when CSV would make the artifact large or awkward. MATLAB exporters should
+prefer `.mat` files so they do not depend on MATLAB's Python bridge; Python may
+also accept `.npz` with the same fields for manually converted references. The
+matrix file should store calibrated axis arrays and intensity separately, for
+example `vx_Aps`, `vy_Aps`, and `intensity`. Normalize exported image grids for
+Matplotlib `pcolormesh(X, Y, C)`: `vx_Aps` should be the plot x-grid, `vy_Aps`
+the plot y-grid, and `intensity` the color array. If the MATLAB source plots
+full coordinate matrices, export full 2-D coordinate grids rather than slicing
+constant-looking row or column vectors. The sidecar should document the MATLAB
+source, measurement or MAT-file source, center, velocity factor, axis
+equations, units, and external toolbox requirement. Keep 1-D radial or angular
+curves as CSV whenever practical.
+
+For these experimental-data exports, document the provenance: original MATLAB
+script or function, measurement IDs or input files, processing steps,
+calibration and scaling factors, output columns and units, and any external
+toolbox requirement. Python should load the exported reference data and
+reproduce or compare against it rather than reimplementing opaque extraction
+from raw lab/toolbox inputs. Full experimental VMI interpretation and
+Abel/image-processing expansion remain out of scope unless explicitly
+requested.
+
+Reference data should be small, inspectable, and reproducible. Prefer small
+CSV, JSON, NPZ, or text files. Avoid committing large checkpoints, large MAT
+files, generated figures, temporary debugging outputs, or full simulation
+output directories.
+
+If MATLAB reference data is generated, document the MATLAB script/command,
+input parameters, random seed, molecule count, timestep count, enabled or
+disabled physics features, and whether the data contains a known MATLAB bug or
+an intentional Python correction.
+
+## Known Plotting Conventions
+
+Velocity-vs-time HeDFT panel:
+
+- MATLAB sampled roughly 15 molecules and plotted both iodine atoms.
+- Python should cap the overlay near 30 velocity traces.
+
+Experimental velocity distribution:
 
 ```text
 edges_velocity = 0:0.04:26
@@ -278,77 +299,140 @@ vd_ion = movmean(h, 15)
 xlim([0, 28])
 ```
 
-Python should preserve that scale when matching the legacy figure: fine
-`0.04 A/ps` bins, 15-bin moving mean on simulation histograms, and a displayed
-velocity range out to `28 A/ps`.
+Preserve the fine `0.04 A/ps` bins, 15-bin moving mean, and displayed range to
+`28 A/ps` when matching the legacy figure.
 
-For the polar (|v|, phi) histogram and cos^2 anisotropy fit
-(`postprocess.polar_velocity`), the fit model is
-`f(phi) = a + b * cos(phi - phi0)^2`. The conventional photodissociation
-anisotropy parameter is recovered as `beta = 2*b / (2*a + b)`, range
-`[-1, 2]`. `beta(v)` skips bins with fewer than 50 counts by default.
+Polar histogram and anisotropy:
 
-For the angular pair covariance (`postprocess.pair_correlation`),
-`theta = arctan2(vx, vy) + pi` matches the convention used in
-`energy_balance.phi_histogram`, and the diagonal of the covariance
-matrix is zeroed out by default to mirror the legacy
-`cov_angular - diag(...)` step in
-`post_process_single_pulse_paper_v4.m`.
+- fit model: `f(phi) = a + b * cos(phi - phi0)^2`,
+- beta recovery: `beta = 2*b / (2*a + b)`,
+- beta range: `[-1, 2]`,
+- `beta(v)` skips bins with fewer than 50 counts by default.
 
-For the Boltzmann overlay (`postprocess.boltzmann_overlay`), the
-analytic curve uses the package's existing `physics.droplet_potential`
-with `cfg.potential_steepness_molecule` and the K-to-eV converted
-`cfg.binding_energy_molecule_K`. It is normalised by trapezoidal
-integration on the chosen radial grid; pass an explicit `r_grid_A` if
-you want a non-default sampling.
+Angular pair covariance:
 
-## Editing Limits
+- `theta = arctan2(vx, vy) + pi`,
+- zero the covariance diagonal by default to mirror
+  `cov_angular - diag(...)`.
 
-Before editing, run:
+Boltzmann overlay:
+
+- use `physics.droplet_potential`,
+- use `cfg.potential_steepness_molecule`,
+- convert `cfg.binding_energy_molecule_K` to eV,
+- normalize by trapezoidal integration on the chosen radial grid.
+
+## Scientific-Code Caution
+
+Clean code is not automatically correct physics.
+
+Before changing a formula, unit conversion, force sign, random sampler,
+normalization convention, indexing convention, or draw order:
+
+1. locate the corresponding MATLAB source or previous Python test,
+2. explain the convention,
+3. add a regression test or focused numerical check,
+4. then edit.
+
+Do not start validation with a full stochastic trajectory comparison. Too many
+effects are entangled. Validate in this order:
+
+1. direct formula comparison,
+2. shape and unit checks,
+3. one-step deterministic comparison,
+4. multi-step deterministic comparison,
+5. energy bookkeeping comparison,
+6. stochastic statistical comparison,
+7. full driver smoke test.
+
+For deterministic tests, disable stochastic features when possible:
+
+- collisions disabled,
+- mass attachment disabled,
+- fixed initial state,
+- fixed molecule count,
+- few timesteps,
+- fixed droplet radius,
+- fixed random seed.
+
+For stochastic tests, prefer distribution and moment checks over exact
+trajectory matching unless RNG identity is guaranteed.
+
+## Known MATLAB Bugs Not To Reproduce
+
+Do not force Python to match these known MATLAB bookkeeping bugs:
+
+- neutral-stage `E_pot` at `t=0` omitted partner Morse contribution,
+- ion-stage `E_kin` at `t=0` used an incorrect velocity expression,
+- ion-stage `E_kin` at `t=0` omitted `vz`,
+- ion-stage `E_pot` at `t=0` omitted the `z` coordinate,
+- ion-stage `E_pot` at `t=0` omitted the partner Coulomb term.
+
+Tests should state whether Python is expected to match MATLAB, match within
+known constant/unit differences, statistically match, or intentionally differ
+because a MATLAB bug was corrected.
+
+## Testing
+
+Default test command:
 
 ```bash
-git status
+pytest
 ```
 
-If the working tree is dirty, do not revert or overwrite unrelated changes.
-Proceed only if the user explicitly scopes the edit or the dirty files are your
-own current work.
+In this environment, Python may not be on PATH. The absolute interpreter that
+has been used successfully is:
 
-Avoid changing these unless a focused test reveals a real bug:
-
-```text
-checkpoint schema
-physical constants
-neutral propagation physics
-ion propagation physics
-collision physics
-single-pulse run script behavior
+```powershell
+& 'C:\Users\user\AppData\Local\Programs\Python\Python314\python.exe' -m pytest -q
 ```
 
-For current work, prefer changes in:
+After editing code:
 
-```text
-scripts/post_processing/
-i2_helium_md/postprocess/
-focused tests
-status/docs files
-```
+1. run the narrowest relevant test first,
+2. run broader tests if multiple modules are affected,
+3. report exactly which tests were run,
+4. report failures honestly,
+5. do not claim correctness without tests or a focused numerical check.
 
-## Testing Expectations
-
-At minimum for post-processing changes:
+For post-processing changes, minimum coverage should include whichever apply:
 
 - loader tests for normalized HeDFT CSV format,
-- comparison tests using tiny synthetic `IonCheckpoint` objects,
+- comparison tests using tiny synthetic checkpoints,
 - validation for missing files and non-overlapping time axes,
-- VMI reference loader and mass-filtered histogram tests,
-- plotting smoke coverage with `matplotlib` in non-interactive mode.
-
-For preset/run-script changes, run the focused preset and run-script tests.
+- VMI reference loader tests,
+- mass-filtered final-velocity histogram tests,
+- plotting smoke coverage with non-interactive matplotlib.
 
 Do not generate figures or production-sized checkpoints in tests.
 
-## Reporting Format
+Numerical tolerances must be justified:
+
+- analytical formula ports should use tight tolerances,
+- finite-difference forces need tolerances consistent with the FD step,
+- Monte Carlo samplers need statistical tolerances based on sample size,
+- MATLAB/Python comparisons may need tolerances for known constant updates,
+- loose tolerances need an explanatory test comment.
+
+Do not update expected values blindly. First determine whether the code is
+wrong, the test encoded a legacy bug, the tolerance is unreasonable, the model
+changed, a constant difference is expected, the stochastic test is
+under-sampled, or the reference data came from the wrong MATLAB path.
+
+## Forbidden Without Explicit User Approval
+
+- deleting reference data,
+- changing physical constants,
+- changing checkpoint schema,
+- changing random-number draw order,
+- changing default simulation scope,
+- changing neutral or ion propagation physics without a focused bug,
+- changing collision physics without a focused bug,
+- broad refactors,
+- optimizing performance by changing numerical behavior,
+- implementing out-of-scope MATLAB paths.
+
+## Reporting
 
 For post-processing work, report:
 
@@ -359,6 +443,6 @@ For post-processing work, report:
 5. tests run and results,
 6. remaining risks or deferred behavior.
 
-After a focused post-processing change is complete, stop and report. Do not
-automatically move to Abel inversion, full experimental VMI interpretation, or
-new physics branches.
+After a focused post-processing change, stop and report. Do not automatically
+continue into Abel inversion, full experimental VMI interpretation, new
+physics branches, or broad cleanup.

@@ -1,6 +1,6 @@
 """Internal smoothing helpers shared by post-processing scripts.
 
-Both ``plot_experimental_comparison.py`` and ``plot_paper_figure.py``
+Both ``plot_experimental_comparison.py`` and ``plot_paper_v3.py``
 need MATLAB-style ``movmean`` (centred moving mean with shortened
 endpoint windows) plus a baseline-subtract / unit-max trace
 normaliser. Keeping them here avoids the script-to-script imports

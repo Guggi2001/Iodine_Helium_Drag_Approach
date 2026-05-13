@@ -30,8 +30,9 @@ SCRIPT_DIR = PROJECT_ROOT / "scripts" / "post_processing"
 NEUTRAL_SCRIPT = SCRIPT_DIR / "plot_neutral_energy_balance.py"
 ION_ENERGY_SCRIPT = SCRIPT_DIR / "plot_ion_energy_balance.py"
 ION_TEMP_SCRIPT = SCRIPT_DIR / "plot_ion_temperature_diagnostic.py"
-PAPER_SCRIPT = SCRIPT_DIR / "plot_paper_figure.py"
-PAPER_V4_SCRIPT = SCRIPT_DIR / "plot_paper_v4_figure.py"
+PAPER_SCRIPT = SCRIPT_DIR / "plot_paper_v3.py"
+PAPER_V2_SCRIPT = SCRIPT_DIR / "plot_paper_v2.py"
+PAPER_V4_SCRIPT = SCRIPT_DIR / "plot_paper_v4.py"
 
 EXPERIMENTAL_RUN = (
     PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_log_droplet"
@@ -126,11 +127,32 @@ def test_ion_temperature_diagnostic_smoke(monkeypatch):
 
 def test_paper_figure_smoke(monkeypatch):
     plt.close("all")
-    module = _import_script(PAPER_SCRIPT, "plot_paper_figure_under_test")
+    module = _import_script(PAPER_SCRIPT, "plot_paper_v3_under_test")
     _patch_io(monkeypatch)
     _override_run_dir(module)
 
     rc = module.main(["--no-show"])
+    assert rc == 0
+    assert len(plt.get_fignums()) == 2
+    legend_labels = [
+        text.get_text()
+        for fig_num in plt.get_fignums()
+        for ax in plt.figure(fig_num).axes
+        if ax.get_legend() is not None
+        for text in ax.get_legend().get_texts()
+    ]
+    assert any("(43563)" in label for label in legend_labels)
+    assert any("(296:297)" in label for label in legend_labels)
+    plt.close("all")
+
+
+def test_paper_v2_figure_smoke(monkeypatch, tmp_path):
+    plt.close("all")
+    module = _import_script(PAPER_V2_SCRIPT, "plot_paper_v2_under_test")
+    _patch_io(monkeypatch)
+    _override_run_dir(module)
+
+    rc = module.main(["--no-show", "--reference-dir", str(tmp_path)])
     assert rc == 0
     assert len(plt.get_fignums()) == 2
     plt.close("all")
@@ -138,7 +160,7 @@ def test_paper_figure_smoke(monkeypatch):
 
 def test_paper_v4_figure_smoke(monkeypatch, tmp_path):
     plt.close("all")
-    module = _import_script(PAPER_V4_SCRIPT, "plot_paper_v4_figure_under_test")
+    module = _import_script(PAPER_V4_SCRIPT, "plot_paper_v4_under_test")
     _patch_io(monkeypatch)
     _override_run_dir(module)
 

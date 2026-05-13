@@ -1,4 +1,4 @@
-# `plot_paper_figure.py` paper-v3 VMI comparison
+# `plot_paper_v3.py` paper-v3 VMI comparison
 
 This script ports the active non-effusive droplet branch of
 `legacy_matlab_repository/single_pulse_simulation/post_process_single_pulse_paper_v3.m`.
@@ -14,7 +14,7 @@ legacy MATLAB paper script:
 
 ## Outputs
 
-`plot_paper_figure.py` writes two groups of files under
+`plot_paper_v3.py` writes two groups of files under
 `<run>/figures/`:
 
 | Output | Purpose |
@@ -39,8 +39,8 @@ Curves:
 
 | Curve | Meaning |
 |---|---|
-| `I2:I+He TS` | Experimental timescan radial VMI reference from MATLAB `mean_timescan_2d_VMI([296:297], false, [524.5297 380.8430], false)`. |
-| `I2:I+He` | Experimental high-SNR processed I+He radial VMI reference from the MATLAB `res_sum` path. |
+| `I2:I+He TS (296:297)` | Experimental timescan radial VMI reference from MATLAB `mean_timescan_2d_VMI([296:297], false, [524.5297 380.8430], false)`. |
+| `I2:I+He (43563)` | Experimental high-SNR processed I+He radial VMI reference from the MATLAB `res_sum` path; 43563 is the I+He measurement assignment kept in the v3 provenance. |
 | `simulated v.distr. m=127` | Simulated bare iodine ion channel, approximately `I+`. |
 | `simulated v.distr. m=131` | Simulated `I+He` channel. |
 | `simulated v.distr. m=135` | Simulated `I+He2` channel. |
@@ -77,7 +77,7 @@ Curves:
 
 | Curve | Meaning |
 |---|---|
-| `I2:I+He` | Experimental angular distribution from the processed polar VMI image. MATLAB averages `res.image_polar` over the selected radial range and normalizes the result. |
+| `I2:I+He (43563)` | Experimental angular distribution from the processed polar VMI image. MATLAB averages `res.image_polar` over the selected radial range and normalizes the result. |
 | `simulation m=127` | Simulated phi histogram for the `I+` mass channel. |
 | `simulation m=131` | Simulated phi histogram for the `I+He` mass channel. |
 | `simulation m=135` | Simulated phi histogram for the `I+He2` mass channel. |
@@ -98,14 +98,14 @@ distribution.
 
 ## Why this differs from `plot_experimental_comparison.py`
 
-`plot_paper_figure.py` and `plot_experimental_comparison.py` both compare
+`plot_paper_v3.py` and `plot_experimental_comparison.py` both compare
 simulation to experimental VMI-derived references, but they do not compare the
 same observable.
 
-| Detail | `plot_experimental_comparison.py` | `plot_paper_figure.py` |
+| Detail | `plot_experimental_comparison.py` | `plot_paper_v3.py` |
 |---|---|---|
 | MATLAB source | `simulation_image.m`-style comparison | `post_process_single_pulse_paper_v3.m` active droplet branch |
-| Experimental CSVs | `data/reference/vmi_iplus_*.csv` | `data/reference/paper_v3_*.csv` |
+| Experimental CSVs | `data/reference/vmi_iplus_*.csv` | `data/reference/paper_v3/*.csv` |
 | Velocity units | `A/ps` | `m/s` |
 | Simulation speed | Full 3D `sqrt(vx^2 + vy^2 + vz^2)` | Detector-plane `sqrt(vx^2 + vy^2)` |
 | Mass channels | `131`, `135` | `127`, `131`, `135` |
@@ -116,7 +116,7 @@ includes motion along `vz`, while the paper-v3 plot compares the detector-plane
 projection. The reference data also comes from different MATLAB processing
 recipes.
 
-Use `plot_paper_figure.py` when reproducing the paper-v3 MATLAB figure. Use
+Use `plot_paper_v3.py` when reproducing the paper-v3 MATLAB figure. Use
 `plot_experimental_comparison.py` when reproducing the older 1-D experimental
 velocity overlay from the `simulation_image.m` workflow.
 
@@ -128,9 +128,9 @@ reference files:
 
 | CSV | Role |
 |---|---|
-| `data/reference/paper_v3_iplus_he_radial.csv` | High-SNR I+He radial reference. |
-| `data/reference/paper_v3_timescan_radial.csv` | Timescan radial reference. |
-| `data/reference/paper_v3_iplus_he_phi.csv` | I+He angular reference. |
+| `data/reference/paper_v3/iplus_he_300mw_43563_radial.csv` | High-SNR I+He radial reference. |
+| `data/reference/paper_v3/timescan_296_297_radial.csv` | Timescan radial reference. |
+| `data/reference/paper_v3/iplus_he_300mw_43563_phi.csv` | I+He angular reference. |
 
 The MATLAB exporter precedent is
 `data/reference/scripts/export_paper_v3_reference_data.m`. It documents the

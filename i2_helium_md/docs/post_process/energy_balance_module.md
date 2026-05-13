@@ -25,7 +25,7 @@ scripts/post_processing/
     plot_neutral_energy_balance.py
     plot_ion_energy_balance.py
     plot_ion_temperature_diagnostic.py
-    plot_paper_figure.py
+    plot_paper_v3.py
 ```
 
 ## Public API
@@ -77,7 +77,7 @@ Mirrors `post_process_single_pulse_paper_v3.m` line 397
   maximum.
 
 Both `scripts/post_processing/plot_experimental_comparison.py` and
-`scripts/post_processing/plot_paper_figure.py` import from here so
+`scripts/post_processing/plot_paper_v3.py` import from here so
 the smoothing convention has a single source of truth.
 
 ## Why post-hoc rather than live mid-run

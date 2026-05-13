@@ -21,9 +21,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # USER SETTINGS / DEFAULTS
 # =============================================================================
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
-V3_IHE_RADIAL_PATH = PROJECT_ROOT / "data" / "reference" / "paper_v3_iplus_he_radial.csv"
-V3_TIMESCAN_RADIAL_PATH = PROJECT_ROOT / "data" / "reference" / "paper_v3_timescan_radial.csv"
-V3_IHE_PHI_PATH = PROJECT_ROOT / "data" / "reference" / "paper_v3_iplus_he_phi.csv"
+V3_REFERENCE_DIR = PROJECT_ROOT / "data" / "reference" / "paper_v3"
+V3_IHE_RADIAL_PATH = V3_REFERENCE_DIR / "iplus_he_300mw_43563_radial.csv"
+V3_TIMESCAN_RADIAL_PATH = V3_REFERENCE_DIR / "timescan_296_297_radial.csv"
+V3_IHE_PHI_PATH = V3_REFERENCE_DIR / "iplus_he_300mw_43563_phi.csv"
 
 MASS_SELECTIONS_AMU = (127.0, 131.0, 135.0)
 VMIN_ANGULAR_DISTR_MPS = 0.0
@@ -97,12 +98,10 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir = run.root / "figures"
     out_dir.mkdir(exist_ok=True)
-    fig_main.savefig(out_dir / "compare_simulation_and_measurement.pdf")
     fig_main.savefig(out_dir / "compare_simulation_and_measurement.png", dpi=150)
-    fig_mass.savefig(out_dir / "ion_mass_histogram.pdf")
     fig_mass.savefig(out_dir / "ion_mass_histogram.png", dpi=150)
-    print(f"Saved figure to {out_dir / 'compare_simulation_and_measurement.pdf'}")
-    print(f"Saved mass histogram to {out_dir / 'ion_mass_histogram.pdf'}")
+    print(f"Saved figure to {out_dir / 'compare_simulation_and_measurement.png'}")
+    print(f"Saved mass histogram to {out_dir / 'ion_mass_histogram.png'}")
 
     if not args.no_show:
         plt.show()
@@ -139,9 +138,9 @@ def _build_main_figure(
 
 def _draw_velocity_panel(ax, ihe_radial, timescan_radial, velocity_curves) -> None:
     if timescan_radial is not None:
-        _plot_radial_reference(ax, timescan_radial, "I2:I+He TS", linestyle="-", alpha=0.65)
+        _plot_radial_reference(ax, timescan_radial, "I2:I+He TS (296:297)", linestyle="-", alpha=0.65)
     if ihe_radial is not None:
-        _plot_radial_reference(ax, ihe_radial, "I2:I+He", linestyle=":", alpha=1.0)
+        _plot_radial_reference(ax, ihe_radial, "I2:I+He (43563)", linestyle=":", alpha=1.0)
 
     styles = {
         127.0: ("--", "simulated v.distr. m=127"),
@@ -179,7 +178,7 @@ def _draw_phi_panel(ax, ihe_phi, phi_curves) -> None:
             ihe_phi.phi_rad,
             matlab_max_normalise(ihe_phi.signal_arb),
             linewidth=1.5,
-            label="I2:I+He",
+            label="I2:I+He (43563)",
         )
 
     styles = {

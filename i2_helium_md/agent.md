@@ -189,7 +189,9 @@ scripts/post_processing/plot_experimental_comparison.py
 scripts/post_processing/plot_neutral_energy_balance.py
 scripts/post_processing/plot_ion_energy_balance.py
 scripts/post_processing/plot_ion_temperature_diagnostic.py
-scripts/post_processing/plot_paper_figure.py
+scripts/post_processing/plot_paper_v2.py
+scripts/post_processing/plot_paper_v3.py
+scripts/post_processing/plot_paper_v4.py
 scripts/post_processing/plot_run_summary.py
 ```
 
@@ -250,6 +252,20 @@ processed experimental result into a small, inspectable reference format,
 preferably CSV. Save the exported file under `data/reference/`, and add or keep
 the MATLAB export script under `data/reference/scripts/`, following the
 existing `data/reference/scripts/export_vmi_reference_data.m` precedent.
+
+For processed 2-D VMI image references, use matrix data plus a JSON sidecar
+when CSV would make the artifact large or awkward. MATLAB exporters should
+prefer `.mat` files so they do not depend on MATLAB's Python bridge; Python may
+also accept `.npz` with the same fields for manually converted references. The
+matrix file should store calibrated axis arrays and intensity separately, for
+example `vx_Aps`, `vy_Aps`, and `intensity`. Normalize exported image grids for
+Matplotlib `pcolormesh(X, Y, C)`: `vx_Aps` should be the plot x-grid, `vy_Aps`
+the plot y-grid, and `intensity` the color array. If the MATLAB source plots
+full coordinate matrices, export full 2-D coordinate grids rather than slicing
+constant-looking row or column vectors. The sidecar should document the MATLAB
+source, measurement or MAT-file source, center, velocity factor, axis
+equations, units, and external toolbox requirement. Keep 1-D radial or angular
+curves as CSV whenever practical.
 
 For these experimental-data exports, document the provenance: original MATLAB
 script or function, measurement IDs or input files, processing steps,

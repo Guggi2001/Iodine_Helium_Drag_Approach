@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     run = RunDirectory(args.run_dir)
     ion = run.load_ion()
 
-    references = load_paper_v4_radial_references(args.reference_dir, only_include_iplus_he = True)
+    references = load_paper_v4_radial_references(args.reference_dir, only_include_iplus_he=True)
     if not references:
         print(f"[paper_v4] no optional radial references found in {args.reference_dir}")
 

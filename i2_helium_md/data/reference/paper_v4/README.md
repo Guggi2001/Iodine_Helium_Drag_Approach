@@ -4,7 +4,7 @@ This directory is the target for
 `data/reference/scripts/export_paper_v4_reference_data.m`.
 
 Generated files are small MATLAB-exported radial VMI references used by
-`scripts/post_processing/plot_paper_v4_figure.py`. They are named by channel,
+`scripts/post_processing/plot_paper_v4.py`. They are named by channel,
 probe power, measurement ID, and observable, for example:
 
 ```text

@@ -64,9 +64,10 @@
     `temperature_diagnostic_from_collision`; `apply_collision`
     accepts a `return_diagnostics=False` keyword for opt-in capture
     without changing existing call sites.
-  - Four new post-processing scripts under `scripts/post_processing/`:
+  - Focused post-processing scripts under `scripts/post_processing/`:
     `plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
-    `plot_ion_temperature_diagnostic.py`, `plot_paper_figure.py`.
+    `plot_ion_temperature_diagnostic.py`, `plot_paper_v2.py`,
+    `plot_paper_v3.py`, `plot_paper_v4.py`.
   - `scripts/post_processing/plot_run_summary.py` consolidates the in-scope
     diagnostics into one multi-page PDF plus per-panel PNGs.
   - Additional post-processing helpers cover polar velocity histograms,
