@@ -120,6 +120,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
                    help="Optional experimental I+He VMI reference CSV.")
     p.add_argument("--vmi-ref-gas", type=Path, default=None,
                    help="Optional experimental I+ gas-phase VMI reference CSV.")
+    p.add_argument("--vmi-ref-he-high-snr", type=Path, default=None,
+                   help=("Optional Abel-inverted high-SNR I+He VMI reference "
+                         "CSV (vmi_iplus_he_high_snr.csv)."))
     p.add_argument("--out-dir", type=Path, default=None,
                    help="Output directory; default is <run_dir>/figures.")
     p.add_argument("--no-show", action="store_true",
@@ -142,6 +145,10 @@ def main(argv: list[str] | None = None) -> int:
     hedft = load_hedft_trajectory(args.hedft_ref) if args.hedft_ref else None
     vmi_he = load_vmi_reference(args.vmi_ref_he) if args.vmi_ref_he else None
     vmi_gas = load_vmi_reference(args.vmi_ref_gas) if args.vmi_ref_gas else None
+    vmi_he_high_snr = (
+        load_vmi_reference(args.vmi_ref_he_high_snr)
+        if args.vmi_ref_he_high_snr else None
+    )
 
     print(f"[run_summary] writing {pdf_path}")
     with PdfPages(pdf_path) as pdf:
@@ -162,7 +169,8 @@ def main(argv: list[str] | None = None) -> int:
                 ("mass_spectrum",
                  lambda: _section_mass_spectrum(ion)),
                 ("radial_velocity_with_vmi",
-                 lambda: _section_radial_velocity(ion, vmi_he, vmi_gas)),
+                 lambda: _section_radial_velocity(
+                     ion, vmi_he, vmi_gas, vmi_he_high_snr)),
                 ("phi_histogram",
                  lambda: _section_phi(ion)),
                 ("polar_v_phi_histogram",
@@ -258,6 +266,8 @@ def _section_metadata(cfg, ion, neutral, args) -> plt.Figure:
         refs.append(f"VMI(I+He): {args.vmi_ref_he}")
     if args.vmi_ref_gas:
         refs.append(f"VMI(gas): {args.vmi_ref_gas}")
+    if args.vmi_ref_he_high_snr:
+        refs.append(f"VMI(I+He, high SNR): {args.vmi_ref_he_high_snr}")
     if refs:
         lines.append("references:")
         lines.extend(f"  {r}" for r in refs)
@@ -331,7 +341,9 @@ def _section_mass_spectrum(ion) -> plt.Figure:
     return fig
 
 
-def _section_radial_velocity(ion, vmi_he, vmi_gas) -> plt.Figure:
+def _section_radial_velocity(
+    ion, vmi_he, vmi_gas, vmi_he_high_snr=None,
+) -> plt.Figure:
     try:
         sim_he = compute_final_velocity_histogram(
             ion, mass_amu=MASS_I_HE_AMU,
@@ -357,6 +369,12 @@ def _section_radial_velocity(ion, vmi_he, vmi_gas) -> plt.Figure:
         max_he = float(vmi_he.signal_arb.max())
         ax.plot(vmi_he.velocity_Aps, vmi_he.signal_arb / max_he,
                 ":", label=r"exp. $I_2 He_N$:$I^+ He$")
+    if vmi_he_high_snr is not None:
+        max_he_hs = float(vmi_he_high_snr.signal_arb.max())
+        ax.plot(vmi_he_high_snr.velocity_Aps,
+                vmi_he_high_snr.signal_arb / max_he_hs,
+                linestyle=(0, (3, 1, 1, 1)),
+                label=r"exp. $I_2 He_N$:$I^+ He$ (high SNR)")
     sim_he_smooth = normalise_trace(
         moving_mean(sim_he.density, HIST_SMOOTHING_WINDOW)
     )

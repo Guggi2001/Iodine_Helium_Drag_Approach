@@ -12,8 +12,9 @@ pipeline is documented below.
 ## Files
 
 ```text
-vmi_iplus_he.csv   columns: v_mps,signal_arb
-vmi_iplus_gas.csv  columns: v_mps,signal_arb
+vmi_iplus_he.csv           columns: v_mps,signal_arb
+vmi_iplus_gas.csv          columns: v_mps,signal_arb
+vmi_iplus_he_high_snr.csv  columns: v_mps,signal_arb
 ```
 
 Velocity is stored in m/s on disk. Python loaders convert to Å/ps
@@ -43,6 +44,24 @@ Gas channel:
 3. Run `abel_invert_processed_VMI()`.
 4. Velocity axis: `r * vf_single` with `vf_single = 8.6178` (no mass correction).
 5. Radial signal: `radial_distribution` directly.
+
+High-SNR I+He channel:
+
+1. Load the pre-averaged `res_sum` struct from the same MAT file used by
+   `data/reference/scripts/export_paper_v2_reference_data.m`
+   (`...\high_snr\ressumI2HeNI^+He[.mat]` on the legacy MATLAB share).
+2. Floor negative pixels to zero.
+3. Apply `movmean(image, 3, 1)` then `movmean(image, 3, 2)` to smooth the
+   2-D image.
+4. Run `abel_invert_processed_VMI()` on the smoothed image.
+5. Velocity axis: `r * vf_single * sqrt(127/131)` with `vf_single = 8.6178`.
+6. Radial signal: `movmean(radial_distribution, 1)` (window size 1, effectively
+   no-op; preserved for parity with the averaged channel).
+
+The high-SNR file shares its source MAT with the paper-v2 high-SNR radial
+export but applies a different pipeline: the paper-v2 export reads
+`res.radial_distribution` raw (2-D projection), while this file is the
+Abel-inverted, image-smoothed 3-D velocity distribution.
 
 ## Why this is different from paper_v2/v3/v4
 

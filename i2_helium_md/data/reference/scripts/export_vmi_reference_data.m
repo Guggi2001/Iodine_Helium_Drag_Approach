@@ -11,8 +11,16 @@
 % comparable to the paper_v2/v3/v4 radial exports.
 %
 % Outputs, written under data/reference/vmi_summary/:
-% - vmi_iplus_he.csv:  v_mps,signal_arb
-% - vmi_iplus_gas.csv: v_mps,signal_arb
+% - vmi_iplus_he.csv:          v_mps,signal_arb
+% - vmi_iplus_gas.csv:         v_mps,signal_arb
+% - vmi_iplus_he_high_snr.csv: v_mps,signal_arb
+%
+% The high-SNR I+He output loads the pre-averaged res_sum struct from the
+% same MAT file used by export_paper_v2_reference_data.m and runs it through
+% the same zero-clip + 3x3 movmean + Abel inversion + sqrt(127/131) mass
+% correction pipeline as the 4-measurement average. The paper_v2 high-SNR
+% radial export uses the raw res.radial_distribution directly and is a
+% distinct artefact.
 clear; close all;
 
 % NOTE: Ensure your VMI toolbox is on the MATLAB path before running this!
@@ -69,4 +77,38 @@ signal_gas = res_Iplus_gas.radial_distribution;
 % Export
 T_gas = table(v_gas_mps(:), signal_gas(:), 'VariableNames', {'v_mps', 'signal_arb'});
 writetable(T_gas, fullfile(out_dir, 'vmi_iplus_gas.csv'));
-fprintf('Saved vmi_iplus_gas.csv\n');
+fprintf('Saved vmi_iplus_gas.csv\n\n');
+
+
+fprintf('Processing high-SNR I+He data...\n');
+%% 3. Process high-SNR I+He res_sum
+% Same MAT file as used by export_paper_v2_reference_data.m; here we run the
+% averaged image through the same Abel-inversion pipeline as the 4-measurement
+% I+He channel above so the resulting radial curve is directly comparable to
+% vmi_iplus_he.csv (rather than to the raw paper_v2 high-SNR radial export).
+high_snr_path = ['T:\github synchronized\VMI_matlab\matfile_data_scripts\', ...
+    'A_state_paper_figures_single_pulse\high_snr\ressumI2HeNI^+He'];
+high_snr_load_path = high_snr_path;
+if exist(high_snr_load_path, 'file') ~= 2 && exist([high_snr_path, '.mat'], 'file') == 2
+    high_snr_load_path = [high_snr_path, '.mat'];
+end
+if exist(high_snr_load_path, 'file') ~= 2
+    error('High-SNR MAT file not found: %s', high_snr_path);
+end
+data_in = load(high_snr_load_path);
+if ~isfield(data_in, 'res_sum')
+    error('High-SNR MAT file does not contain expected variable res_sum: %s', ...
+        high_snr_load_path);
+end
+res_Iplus_He_high_snr = data_in.res_sum;
+res_Iplus_He_high_snr.image(res_Iplus_He_high_snr.image < 0) = 0;
+res_Iplus_He_high_snr.image = movmean(res_Iplus_He_high_snr.image, 3, 1);
+res_Iplus_He_high_snr.image = movmean(res_Iplus_He_high_snr.image, 3, 2);
+res_Iplus_He_high_snr = abel_invert_processed_VMI(res_Iplus_He_high_snr);
+
+v_he_hs_mps = res_Iplus_He_high_snr.r * vf_single * mass_correction_factor;
+signal_he_hs = movmean(res_Iplus_He_high_snr.radial_distribution, 1);
+
+T_he_hs = table(v_he_hs_mps(:), signal_he_hs(:), 'VariableNames', {'v_mps', 'signal_arb'});
+writetable(T_he_hs, fullfile(out_dir, 'vmi_iplus_he_high_snr.csv'));
+fprintf('Saved vmi_iplus_he_high_snr.csv\n');

@@ -26,6 +26,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 VMI_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
 VMI_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
+VMI_HE_HIGH_SNR_PATH = (
+    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he_high_snr.csv"
+)
 
 # Mass selection (amu) for the simulation curves.
 MASS_I_HE_AMU = 131.0      # I + 1 He
@@ -69,6 +72,11 @@ def main() -> int:
     ion = RunDirectory(RUN_DIR).load_ion()
     vmi_he = load_vmi_reference(VMI_HE_PATH)
     vmi_gas = load_vmi_reference(VMI_GAS_PATH)
+    vmi_he_high_snr = (
+        load_vmi_reference(VMI_HE_HIGH_SNR_PATH)
+        if VMI_HE_HIGH_SNR_PATH.exists()
+        else None
+    )
 
     print(
         f"Loaded experimental-condition ion checkpoint: N={ion.num_molecules}, "
@@ -92,6 +100,7 @@ def main() -> int:
     _build_experimental_velocity_figure(
         vmi_gas=vmi_gas,
         vmi_he=vmi_he,
+        vmi_he_high_snr=vmi_he_high_snr,
         sim_he=hist_he,
         sim_he2=hist_he2,
         sim_smoothing_window=HIST_SMOOTHING_WINDOW,
@@ -105,6 +114,7 @@ def _build_experimental_velocity_figure(
     *,
     vmi_gas: VmiReference,
     vmi_he: VmiReference,
+    vmi_he_high_snr: VmiReference | None,
     sim_he,
     sim_he2,
     sim_smoothing_window: int = HIST_SMOOTHING_WINDOW,
@@ -114,6 +124,7 @@ def _build_experimental_velocity_figure(
         ax,
         vmi_gas=vmi_gas,
         vmi_he=vmi_he,
+        vmi_he_high_snr=vmi_he_high_snr,
         sim_he=sim_he,
         sim_he2=sim_he2,
         sim_smoothing_window=sim_smoothing_window,
@@ -126,6 +137,7 @@ def _draw_velocity_distribution_tile(
     *,
     vmi_gas: VmiReference,
     vmi_he: VmiReference,
+    vmi_he_high_snr: VmiReference | None,
     sim_he,
     sim_he2,
     sim_smoothing_window: int,
@@ -133,7 +145,7 @@ def _draw_velocity_distribution_tile(
     """Experimental I+ gas, I+He droplet, simulation I+He, I+He2."""
     # 5-element discrete colormap that approximates colorcet('L08','N',5).
     palette = plt.colormaps["plasma"](np.linspace(0.05, 0.85, 5))
-    c_gas, c_he, c_sim_he, c_sim_he2, _ = palette
+    c_gas, c_he, c_sim_he, c_sim_he2, c_he_hs = palette
 
     # Gas-phase background mask: > 400 m/s (was > 4 A/ps in MATLAB).
     mask_gas = vmi_gas.velocity_mps > 400.0
@@ -161,6 +173,16 @@ def _draw_velocity_distribution_tile(
         linewidth=2.0,
         label=r"$I_2 He_N$:$I^+ He$",
     )
+    if vmi_he_high_snr is not None:
+        max_he_hs = float(vmi_he_high_snr.signal_arb.max())
+        ax.plot(
+            vmi_he_high_snr.velocity_mps,
+            vmi_he_high_snr.signal_arb / max_he_hs,
+            linestyle=(0, (3, 1, 1, 1)),
+            color=c_he_hs,
+            linewidth=2.0,
+            label=r"$I_2 He_N$:$I^+ He$ (high SNR)",
+        )
     ax.plot(
         sim_he.bin_centers_mps,
         sim_he_density,
