@@ -18,6 +18,8 @@ from scipy.io import savemat
 from i2_helium_md.physics.constants import U as U_KG
 from i2_helium_md.postprocess.paper_v2 import (
     PAPER_V2_IMAGE_BINS_APS,
+    PaperV2RadialReference,
+    PaperV2VelocityCurve,
     PaperV2VelocityMap,
     PaperV2VMIImageReference,
     PaperV2VMIPolarImageReference,
@@ -27,6 +29,7 @@ from i2_helium_md.postprocess.paper_v2 import (
     load_paper_v2_vmi_polar_image_reference,
     paper_v2_velocity_map,
 )
+from i2_helium_md.postprocess.paper_v2_plotting import build_radial_figure
 from i2_helium_md.simulation.checkpoint import IonCheckpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -227,6 +230,36 @@ def test_radial_reference_loader_reads_directory_and_labels(tmp_path):
     ]
     np.testing.assert_allclose(refs[1].velocity_Aps, [0.0, 1.0])
     np.testing.assert_allclose(refs[1].signal_arb, [2.0, 1.0])
+
+
+def test_radial_figure_title_identifies_raw_2d_vmi_comparison():
+    radial_ref = PaperV2RadialReference(
+        velocity_Aps=np.array([0.0, 1.0]),
+        velocity_mps=np.array([0.0, 100.0]),
+        signal_arb=np.array([0.0, 1.0]),
+        label="raw VMI reference",
+        source_path=Path("synthetic_radial.csv"),
+    )
+    velocity_curve = PaperV2VelocityCurve(
+        mass_amu=131.0,
+        bin_centers_Aps=np.array([0.0, 1.0]),
+        bin_centers_mps=np.array([0.0, 100.0]),
+        bin_edges_Aps=np.array([0.0, 0.5, 1.5]),
+        bin_edges_mps=np.array([0.0, 50.0, 150.0]),
+        counts=np.array([0.0, 1.0]),
+        smoothed=np.array([0.0, 1.0]),
+        normalised=np.array([0.0, 1.0]),
+        num_atoms_used=2,
+        smoothing_window=15,
+    )
+
+    fig = build_radial_figure([radial_ref], velocity_curve)
+    try:
+        assert fig.axes[0].get_title() == (
+            "2-D detector-plane speed vs raw VMI radial profile"
+        )
+    finally:
+        plt.close(fig)
 
 
 def test_phi_reference_loader_enforces_columns(tmp_path):

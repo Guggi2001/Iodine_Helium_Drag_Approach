@@ -1,8 +1,9 @@
 """Smoke test for scripts/post_processing/plot_run_summary.py.
 
 Imports the script as a module, monkey-patches ``plt.show`` and
-``Figure.savefig``, and runs ``main(argv=[...])`` on each available
-real run directory. Skipped when no usable run is present.
+``Figure.savefig``, overrides the module-level ``USER SETTINGS``
+constants for the run under test, and calls ``module.main()``. Skipped
+when no usable run is present.
 """
 
 from __future__ import annotations
@@ -45,9 +46,37 @@ def _import_script():
 
 
 def _patch_io(monkeypatch):
+    saved_titles = []
+
+    def capture_pdf_figure(self, fig, *args, **kwargs):
+        saved_titles.append([ax.get_title() for ax in fig.axes])
+
     monkeypatch.setattr(plt, "show", lambda *a, **k: None)
     monkeypatch.setattr(plt.Figure, "savefig", lambda *a, **k: None)
-    monkeypatch.setattr(PdfPages, "savefig", lambda self, *a, **k: None)
+    monkeypatch.setattr(PdfPages, "savefig", capture_pdf_figure)
+    return saved_titles
+
+
+def _set_user_settings(
+    monkeypatch,
+    module,
+    *,
+    run_dir,
+    out_dir,
+    hedft_ref=None,
+    vmi_ref_he=None,
+    vmi_ref_gas=None,
+    vmi_ref_he_high_snr=None,
+    paper_v2_ref_dir=None,
+):
+    monkeypatch.setattr(module, "RUN_DIR", run_dir)
+    monkeypatch.setattr(module, "OUT_DIR", out_dir)
+    monkeypatch.setattr(module, "HEDFT_REF_PATH", hedft_ref)
+    monkeypatch.setattr(module, "VMI_REF_HE_PATH", vmi_ref_he)
+    monkeypatch.setattr(module, "VMI_REF_GAS_PATH", vmi_ref_gas)
+    monkeypatch.setattr(module, "VMI_REF_HE_HIGH_SNR_PATH", vmi_ref_he_high_snr)
+    monkeypatch.setattr(module, "PAPER_V2_REFERENCE_DIR", paper_v2_ref_dir)
+    monkeypatch.setattr(module, "SHOW_FIGURES", False)
 
 
 @pytest.mark.skipif(
@@ -58,12 +87,14 @@ def test_run_summary_on_hedft_9a(monkeypatch, tmp_path):
     plt.close("all")
     module = _import_script()
     _patch_io(monkeypatch)
-    rc = module.main(argv=[
-        str(HEDFT_RUN_9A),
-        "--hedft-ref", str(REF_9A),
-        "--out-dir", str(tmp_path),
-        "--no-show",
-    ])
+    _set_user_settings(
+        monkeypatch, module,
+        run_dir=HEDFT_RUN_9A,
+        out_dir=tmp_path,
+        hedft_ref=REF_9A,
+        paper_v2_ref_dir=tmp_path,
+    )
+    rc = module.main()
     assert rc == 0
     plt.close("all")
 
@@ -76,13 +107,19 @@ def test_run_summary_on_hedft_9a(monkeypatch, tmp_path):
 def test_run_summary_on_experimental(monkeypatch, tmp_path):
     plt.close("all")
     module = _import_script()
-    _patch_io(monkeypatch)
-    rc = module.main(argv=[
-        str(EXPERIMENTAL_RUN),
-        "--vmi-ref-he", str(VMI_HE),
-        "--vmi-ref-gas", str(VMI_GAS),
-        "--out-dir", str(tmp_path),
-        "--no-show",
-    ])
+    saved_titles = _patch_io(monkeypatch)
+    _set_user_settings(
+        monkeypatch, module,
+        run_dir=EXPERIMENTAL_RUN,
+        out_dir=tmp_path,
+        vmi_ref_he=VMI_HE,
+        vmi_ref_gas=VMI_GAS,
+        paper_v2_ref_dir=tmp_path,
+    )
+    rc = module.main()
     assert rc == 0
+    assert any(
+        "3-D speed vs Abel-inverted VMI radial distribution" in titles
+        for titles in saved_titles
+    )
     plt.close("all")

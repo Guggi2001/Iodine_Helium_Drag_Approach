@@ -4,7 +4,7 @@ Produces every numerical diagnostic the legacy MATLAB post-processing
 scripts produced *that is in scope per CLAUDE.md*, in a single
 multi-page PDF plus per-figure PNGs. Sections that need optional
 reference data (HeDFT trajectory, experimental VMI) are gated on the
-corresponding ``--*-ref`` arguments so each run type stays separable
+matching ``*_REF_PATH`` user setting so each run type stays separable
 (per CLAUDE.md "Keep these workflows separate.").
 
 The following legacy scripts are consolidated here:
@@ -24,19 +24,18 @@ The following legacy scripts are consolidated here:
 Out of scope (deferred per CLAUDE.md): Abel inversion, pump-probe,
 effusive / gas-phase comparison, live-debug 3D animations.
 
-Usage::
+Edit the ``USER SETTINGS`` block below and run the script (e.g. from
+PyCharm)::
 
-    python scripts/post_processing/plot_run_summary.py <run_dir> \
-        [--hedft-ref PATH] [--vmi-ref-he PATH] [--vmi-ref-gas PATH] \
-        [--out-dir PATH] [--no-show]
+    python scripts/post_processing/plot_run_summary.py
 """
 
 from __future__ import annotations
 
-import argparse
 from dataclasses import asdict
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -55,9 +54,6 @@ from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
 from i2_helium_md.postprocess import (  # noqa: E402
     angular_pair_covariance,
-    anisotropy_fit,
-    beta_of_velocity,
-    bimodal_gaussian_fit,
     boltzmann_population,
     compare_distance,
     compare_neutral_to_hedft,
@@ -66,17 +62,28 @@ from i2_helium_md.postprocess import (  # noqa: E402
     interparticle_distance_histogram,
     ion_energy_totals,
     load_hedft_trajectory,
+    load_paper_v2_radial_references,
     load_vmi_reference,
     mass_spectrum,
     neutral_energy_totals,
-    phi_histogram,
-    polar_velocity_histogram,
+    paper_v2_phi_curve,
+    paper_v2_velocity_curve,
+    paper_v2_velocity_map,
     radial_distribution_evolution,
-    velocity_density_2d,
 )
 from i2_helium_md.postprocess._smoothing import (  # noqa: E402
     moving_mean,
     normalise_trace,
+)
+from i2_helium_md.postprocess.paper_v2_plotting import (  # noqa: E402
+    build_phi_figure,
+    build_polar_image_figure,
+    build_radial_figure,
+    build_vmi_figure,
+    load_optional_image,
+    load_optional_phi,
+    load_optional_polar_image,
+    polar_histogram_matched_to_reference,
 )
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
@@ -92,15 +99,7 @@ HIST_EDGE_MAX_APS = 26.0
 HIST_NUM_BINS = int(round(HIST_EDGE_MAX_APS / HIST_BIN_WIDTH_APS))
 HIST_SMOOTHING_WINDOW = 15
 VELOCITY_PLOT_V_MAX_APS = 28.0
-
-PHI_BIN_WIDTH_RAD = 0.05
-PHI_SMOOTHING_WINDOW = 15
-
-POLAR_N_V_BINS = 80
-POLAR_N_PHI_BINS = 72
-
-VEL2D_N_BINS = 200
-VEL2D_V_MAX_APS = 22.0
+VELOCITY_PLOT_V_MAX_MPS = 2800.0
 
 PAIR_DIST_NUM_BINS = 100
 PAIR_COV_N_THETA_BINS = 50
@@ -109,32 +108,77 @@ TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
 
 
-def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="Build a consolidated post-processing PDF for one run."
+# =============================================================================
+# USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
+# =============================================================================
+# Path to the run directory holding cfg.json + neutral.npz + ion.npz.
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+
+# Optional reference CSVs. Set to ``None`` to skip the matching section.
+# Typical experimental-droplet configuration:
+HEDFT_REF_PATH: Path | None = None
+VMI_REF_HE_PATH: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+)
+VMI_REF_GAS_PATH: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
+)
+VMI_REF_HE_HIGH_SNR_PATH: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he_high_snr.csv"
+)
+
+# Directory holding paper-v2 reference CSVs and images/. Set to ``None`` to
+# skip all four paper-v2 sections.
+PAPER_V2_REFERENCE_DIR: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "paper_v2"
+)
+
+# Fraction of experimental panel max intensity below which pixels clip to
+# background. Raise to suppress more low-level noise; 0 disables. Only
+# experimental panels use this; simulated panels are unaffected.
+EXPERIMENTAL_NOISE_FLOOR: float = 0.20
+
+# Mass channel used for the paper-v2 simulated curves.
+PAPER_V2_MASS_AMU: float = 131.0
+
+# Typical 9 A HeDFT comparison configuration (uncomment and comment out the
+# experimental block above to switch):
+# RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
+# HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+# VMI_REF_HE_PATH = None
+# VMI_REF_GAS_PATH = None
+
+# Output directory for the PDF and per-panel PNGs. ``None`` -> <RUN_DIR>/figures.
+OUT_DIR: Path | None = None
+
+# Show figures interactively after writing them. False is the right setting
+# for PyCharm / headless / smoke-test runs.
+SHOW_FIGURES: bool = False
+
+
+def main() -> int:
+    run_dir = Path(RUN_DIR)
+    hedft_ref = Path(HEDFT_REF_PATH) if HEDFT_REF_PATH else None
+    vmi_ref_he = Path(VMI_REF_HE_PATH) if VMI_REF_HE_PATH else None
+    vmi_ref_gas = Path(VMI_REF_GAS_PATH) if VMI_REF_GAS_PATH else None
+    vmi_ref_he_high_snr = (
+        Path(VMI_REF_HE_HIGH_SNR_PATH) if VMI_REF_HE_HIGH_SNR_PATH else None
     )
-    p.add_argument("run_dir", type=Path, help="Path to a run directory.")
-    p.add_argument("--hedft-ref", type=Path, default=None,
-                   help="Optional HeDFT reference CSV (e.g. 9A_All_Data.csv).")
-    p.add_argument("--vmi-ref-he", type=Path, default=None,
-                   help="Optional experimental I+He VMI reference CSV.")
-    p.add_argument("--vmi-ref-gas", type=Path, default=None,
-                   help="Optional experimental I+ gas-phase VMI reference CSV.")
-    p.add_argument("--vmi-ref-he-high-snr", type=Path, default=None,
-                   help=("Optional Abel-inverted high-SNR I+He VMI reference "
-                         "CSV (vmi_iplus_he_high_snr.csv)."))
-    p.add_argument("--out-dir", type=Path, default=None,
-                   help="Output directory; default is <run_dir>/figures.")
-    p.add_argument("--no-show", action="store_true",
-                   help="Skip plt.show() (useful in headless smoke tests).")
-    return p.parse_args(argv)
+    paper_v2_ref_dir = (
+        Path(PAPER_V2_REFERENCE_DIR) if PAPER_V2_REFERENCE_DIR else None
+    )
+    args = SimpleNamespace(
+        run_dir=run_dir,
+        hedft_ref=hedft_ref,
+        vmi_ref_he=vmi_ref_he,
+        vmi_ref_gas=vmi_ref_gas,
+        vmi_ref_he_high_snr=vmi_ref_he_high_snr,
+        paper_v2_ref_dir=paper_v2_ref_dir,
+    )
 
+    run = RunDirectory(run_dir)
 
-def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(argv)
-    run = RunDirectory(args.run_dir)
-
-    out_dir = args.out_dir or (run.root / "figures")
+    out_dir = Path(OUT_DIR) if OUT_DIR else (run.root / "figures")
     out_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = out_dir / "run_summary.pdf"
 
@@ -142,12 +186,11 @@ def main(argv: list[str] | None = None) -> int:
     neutral = run.load_neutral() if run.has_neutral() else None
     ion = run.load_ion() if run.has_ion() else None
 
-    hedft = load_hedft_trajectory(args.hedft_ref) if args.hedft_ref else None
-    vmi_he = load_vmi_reference(args.vmi_ref_he) if args.vmi_ref_he else None
-    vmi_gas = load_vmi_reference(args.vmi_ref_gas) if args.vmi_ref_gas else None
+    hedft = load_hedft_trajectory(hedft_ref) if hedft_ref else None
+    vmi_he = load_vmi_reference(vmi_ref_he) if vmi_ref_he else None
+    vmi_gas = load_vmi_reference(vmi_ref_gas) if vmi_ref_gas else None
     vmi_he_high_snr = (
-        load_vmi_reference(args.vmi_ref_he_high_snr)
-        if args.vmi_ref_he_high_snr else None
+        load_vmi_reference(vmi_ref_he_high_snr) if vmi_ref_he_high_snr else None
     )
 
     print(f"[run_summary] writing {pdf_path}")
@@ -171,14 +214,16 @@ def main(argv: list[str] | None = None) -> int:
                 ("radial_velocity_with_vmi",
                  lambda: _section_radial_velocity(
                      ion, vmi_he, vmi_gas, vmi_he_high_snr)),
-                ("phi_histogram",
-                 lambda: _section_phi(ion)),
-                ("polar_v_phi_histogram",
-                 lambda: _section_polar(ion)),
-                ("anisotropy_fit",
-                 lambda: _section_anisotropy(ion)),
-                ("velocity_density_2d",
-                 lambda: _section_velocity_2d(ion)),
+                ("paper_v2_vmi_comparison",
+                 lambda: _section_paper_v2_vmi(
+                     ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR)),
+                ("paper_v2_radial_comparison",
+                 lambda: _section_paper_v2_radial(ion, paper_v2_ref_dir)),
+                ("paper_v2_phi_comparison",
+                 lambda: _section_paper_v2_phi(ion, paper_v2_ref_dir)),
+                ("paper_v2_polar_image_comparison",
+                 lambda: _section_paper_v2_polar(
+                     ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR)),
                 ("mass_resolved_velocities",
                  lambda: _section_mass_resolved(ion)),
                 ("radial_evolution_heatmap",
@@ -217,7 +262,7 @@ def main(argv: list[str] | None = None) -> int:
             plt.close(fig)
             print(f"[run_summary] wrote {label}")
 
-    if not args.no_show:
+    if SHOW_FIGURES:
         plt.show()
     return 0
 
@@ -268,6 +313,8 @@ def _section_metadata(cfg, ion, neutral, args) -> plt.Figure:
         refs.append(f"VMI(gas): {args.vmi_ref_gas}")
     if args.vmi_ref_he_high_snr:
         refs.append(f"VMI(I+He, high SNR): {args.vmi_ref_he_high_snr}")
+    if args.paper_v2_ref_dir:
+        refs.append(f"paper-v2 ref dir: {args.paper_v2_ref_dir}")
     if refs:
         lines.append("references:")
         lines.extend(f"  {r}" for r in refs)
@@ -304,7 +351,7 @@ def _section_ion_energy(ion) -> plt.Figure:
     ax.plot(totals.time_ps, totals.E_system_eV, "k", label=r"$E_{system}$")
     ax.set(title="Ion energy balance (per molecule)",
            xlabel="t / ps", ylabel="E / eV")
-    ax.legend(frameon=False)
+    ax.legend(frameon=False, loc="best")
     return fig
 
 
@@ -327,7 +374,8 @@ def _section_temperature(ion) -> plt.Figure:
     ax_right.set_ylabel(r"$\theta_{lab}$ / deg")
     h1, l1 = ax_left.get_legend_handles_labels()
     h2, l2 = ax_right.get_legend_handles_labels()
-    ax_left.legend(h1 + h2, l1 + l2, frameon=False)
+    ax_left.legend(h1 + h2, l1 + l2, loc="center left",
+                   bbox_to_anchor=(0.0, 0.5), frameon=False)
     return fig
 
 
@@ -344,164 +392,139 @@ def _section_mass_spectrum(ion) -> plt.Figure:
 def _section_radial_velocity(
     ion, vmi_he, vmi_gas, vmi_he_high_snr=None,
 ) -> plt.Figure:
+    """Radial velocity with experimental VMI overlay.
+
+    Matches ``_draw_velocity_distribution_tile`` in
+    ``plot_experimental_comparison.py``: same 5-color plasma palette, same
+    gas-phase v > 400 m/s normalisation mask, same MATLAB-equivalent
+    smoothing, m/s on the x-axis. No bimodal fit overlay.
+    """
+    if vmi_he is None or vmi_gas is None:
+        raise _SectionSkipped(
+            "experimental VMI references (He + gas) required"
+        )
     try:
         sim_he = compute_final_velocity_histogram(
             ion, mass_amu=MASS_I_HE_AMU,
             num_bins=HIST_NUM_BINS, v_max_Aps=HIST_EDGE_MAX_APS,
         )
-    except ValueError as exc:
-        raise _SectionSkipped(str(exc))
-    try:
         sim_he2 = compute_final_velocity_histogram(
             ion, mass_amu=MASS_I_HE2_AMU,
             num_bins=HIST_NUM_BINS, v_max_Aps=HIST_EDGE_MAX_APS,
         )
-    except ValueError:
-        sim_he2 = None
-
-    fig, ax = plt.subplots(figsize=(9.0, 4.5), constrained_layout=True)
-    if vmi_gas is not None:
-        mask = vmi_gas.velocity_Aps > 4.0
-        max_gas = float(vmi_gas.signal_arb[mask].max())
-        ax.plot(vmi_gas.velocity_Aps, vmi_gas.signal_arb / max_gas,
-                label=r"exp. $I_2$:$I^+$")
-    if vmi_he is not None:
-        max_he = float(vmi_he.signal_arb.max())
-        ax.plot(vmi_he.velocity_Aps, vmi_he.signal_arb / max_he,
-                ":", label=r"exp. $I_2 He_N$:$I^+ He$")
-    if vmi_he_high_snr is not None:
-        max_he_hs = float(vmi_he_high_snr.signal_arb.max())
-        ax.plot(vmi_he_high_snr.velocity_Aps,
-                vmi_he_high_snr.signal_arb / max_he_hs,
-                linestyle=(0, (3, 1, 1, 1)),
-                label=r"exp. $I_2 He_N$:$I^+ He$ (high SNR)")
-    sim_he_smooth = normalise_trace(
-        moving_mean(sim_he.density, HIST_SMOOTHING_WINDOW)
-    )
-    ax.plot(sim_he.bin_centers_Aps, sim_he_smooth, "--",
-            label=r"sim. $I^+ He$")
-    if sim_he2 is not None:
-        sim_he2_smooth = normalise_trace(
-            moving_mean(sim_he2.density, HIST_SMOOTHING_WINDOW)
-        )
-        ax.plot(sim_he2.bin_centers_Aps, sim_he2_smooth, "-.",
-                label=r"sim. $I^+ He_2$")
-
-    bim = bimodal_gaussian_fit(sim_he)
-    if bim.success:
-        norm = sim_he_smooth.max() / max(sim_he.density.max(), 1e-12)
-        ax.plot(sim_he.bin_centers_Aps, bim.fitted_curve * norm,
-                color="tab:gray", linewidth=1.0,
-                label=(f"bimodal fit "
-                       f"(mu1={bim.mean_1_Aps:.1f}, mu2={bim.mean_2_Aps:.1f})"))
-
-    ax.set(title="(a) radial velocity with experimental VMI overlay",
-           xlim=(0.0, VELOCITY_PLOT_V_MAX_APS), ylim=(0.0, 1.1),
-           xlabel=r"v / $\mathrm{\AA}/\mathrm{ps}$",
-           ylabel="signal / arb. units")
-    ax.legend(frameon=False, fontsize=9)
-    return fig
-
-
-def _section_phi(ion) -> plt.Figure:
-    try:
-        ph = phi_histogram(
-            ion, bin_width_rad=PHI_BIN_WIDTH_RAD, mass_amu=MASS_I_HE_AMU,
-        )
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
-    fig, ax = plt.subplots(figsize=(8.0, 4.0), constrained_layout=True)
-    if ph.density.sum() > 0:
-        smoothed = normalise_trace(
-            moving_mean(ph.density, PHI_SMOOTHING_WINDOW)
+
+    palette = plt.colormaps["plasma"](np.linspace(0.05, 0.85, 5))
+    c_gas, c_he, c_sim_he, c_sim_he2, c_he_hs = palette
+
+    mask_gas = vmi_gas.velocity_mps > 400.0
+    max_gas = float(vmi_gas.signal_arb[mask_gas].max())
+    max_he = float(vmi_he.signal_arb.max())
+    sim_he_density = normalise_trace(
+        moving_mean(sim_he.density, HIST_SMOOTHING_WINDOW)
+    )
+    sim_he2_density = normalise_trace(
+        moving_mean(sim_he2.density, HIST_SMOOTHING_WINDOW)
+    )
+
+    fig, ax = plt.subplots(figsize=(9.5, 4.0), constrained_layout=True)
+    ax.plot(
+        vmi_gas.velocity_mps,
+        vmi_gas.signal_arb / max_gas,
+        color=c_gas,
+        linewidth=2.0,
+        label=r"$I_2$:$I^+$",
+    )
+    ax.plot(
+        vmi_he.velocity_mps,
+        vmi_he.signal_arb / max_he,
+        linestyle=":",
+        color=c_he,
+        linewidth=2.0,
+        label=r"$I_2 He_N$:$I^+ He$",
+    )
+    if vmi_he_high_snr is not None:
+        max_he_hs = float(vmi_he_high_snr.signal_arb.max())
+        ax.plot(
+            vmi_he_high_snr.velocity_mps,
+            vmi_he_high_snr.signal_arb / max_he_hs,
+            linestyle=(0, (3, 1, 1, 1)),
+            color=c_he_hs,
+            linewidth=2.0,
+            label=r"$I_2 He_N$:$I^+ He$ (high SNR)",
         )
-    else:
-        smoothed = np.zeros_like(ph.density, dtype=float)
-    ax.plot(ph.bin_centers_rad, smoothed)
-    ax.set(title=f"Azimuthal phi distribution, m={MASS_I_HE_AMU:.0f} u "
-                 f"(n={ph.num_atoms_used})",
-           xlabel=r"$\varphi$ / rad", ylabel="signal / arb. units",
-           xlim=(0.0, 2.0 * np.pi), ylim=(0.0, 1.1))
+    ax.plot(
+        sim_he.bin_centers_mps,
+        sim_he_density,
+        linestyle="--",
+        color=c_sim_he,
+        linewidth=2.0,
+        label=r"simulation $I^+ He$",
+    )
+    ax.plot(
+        sim_he2.bin_centers_mps,
+        sim_he2_density,
+        linestyle="-.",
+        color=c_sim_he2,
+        linewidth=2.0,
+        label=r"simulation $I^+ He_2$",
+    )
+
+    ax.set_xlim(0.0, VELOCITY_PLOT_V_MAX_MPS)
+    ax.set_ylim(0.0, 1.1)
+    ax.set_xlabel("v / m/s")
+    ax.set_ylabel("signal / arb. units")
+    ax.set_title("3-D speed vs Abel-inverted VMI radial distribution")
+    ax.legend(frameon=False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     return fig
 
 
-def _section_polar(ion) -> plt.Figure:
-    pol = polar_velocity_histogram(
-        ion, n_v_bins=POLAR_N_V_BINS, n_phi_bins=POLAR_N_PHI_BINS,
-        v_max_Aps=VELOCITY_PLOT_V_MAX_APS, mass_amu=MASS_I_HE_AMU,
+def _section_paper_v2_vmi(ion, reference_dir, noise_floor) -> plt.Figure:
+    if reference_dir is None:
+        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
+    image_ref = load_optional_image(reference_dir, log_prefix="[run_summary]")
+    velocity_map = paper_v2_velocity_map(ion, mass_amu=PAPER_V2_MASS_AMU)
+    return build_vmi_figure(
+        image_ref=image_ref,
+        velocity_map=velocity_map,
+        experimental_noise_floor=noise_floor,
     )
-    if pol.num_atoms_used == 0:
-        raise _SectionSkipped("no atoms passed mass+outside filter")
-    fig, ax = plt.subplots(figsize=(8.5, 4.5), constrained_layout=True)
-    pcm = ax.pcolormesh(
-        pol.phi_edges_rad, pol.v_edges_Aps, pol.counts,
-        shading="auto", cmap="magma",
-    )
-    ax.set(title=f"Polar velocity histogram, m={MASS_I_HE_AMU:.0f} u "
-                 f"(n={pol.num_atoms_used})",
-           xlabel=r"$\varphi$ / rad",
-           ylabel=r"|v| / $\mathrm{\AA}/\mathrm{ps}$")
-    fig.colorbar(pcm, ax=ax, label="count")
-    return fig
 
 
-def _section_anisotropy(ion) -> plt.Figure:
-    pol = polar_velocity_histogram(
-        ion, n_v_bins=POLAR_N_V_BINS, n_phi_bins=POLAR_N_PHI_BINS,
-        v_max_Aps=VELOCITY_PLOT_V_MAX_APS, mass_amu=MASS_I_HE_AMU,
-    )
-    if pol.num_atoms_used == 0:
-        raise _SectionSkipped("no atoms passed mass+outside filter")
-    fit = anisotropy_fit(pol)
-    curve = beta_of_velocity(pol, min_counts_per_v_bin=50)
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.5),
-                             constrained_layout=True)
-    ax_phi, ax_beta = axes
-    phi_marg = pol.counts.sum(axis=0)
-    ax_phi.plot(pol.phi_centers_rad, phi_marg, label="counts")
-    if fit.success:
-        from i2_helium_md.postprocess.polar_velocity import _cos2_model
-        ax_phi.plot(
-            pol.phi_centers_rad,
-            _cos2_model(pol.phi_centers_rad, fit.a, fit.b, fit.phi0_rad),
-            "--", label=fr"cos$^2$ fit, $\beta=${fit.beta:.2f}",
-        )
-    ax_phi.set(
-        title="Marginal phi + cos^2 fit",
-        xlabel=r"$\varphi$ / rad", ylabel="count",
-        xlim=(0.0, 2.0 * np.pi),
-    )
-    ax_phi.legend(frameon=False)
-
-    ax_beta.plot(curve.v_centers_Aps[curve.valid],
-                 curve.beta[curve.valid], "o-")
-    ax_beta.axhline(0.0, color="grey", linewidth=0.5)
-    ax_beta.set(
-        title=r"$\beta(v)$",
-        xlabel=r"v / $\mathrm{\AA}/\mathrm{ps}$",
-        ylabel=r"$\beta$",
-    )
-    return fig
+def _section_paper_v2_radial(ion, reference_dir) -> plt.Figure:
+    if reference_dir is None:
+        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
+    refs = load_paper_v2_radial_references(reference_dir)
+    curve = paper_v2_velocity_curve(ion, mass_amu=PAPER_V2_MASS_AMU)
+    return build_radial_figure(refs, curve)
 
 
-def _section_velocity_2d(ion) -> plt.Figure:
-    h = velocity_density_2d(
-        ion, axes=("x", "y"), n_bins=VEL2D_N_BINS, v_max_Aps=VEL2D_V_MAX_APS,
-        mass_amu=MASS_I_HE_AMU,
+def _section_paper_v2_phi(ion, reference_dir) -> plt.Figure:
+    if reference_dir is None:
+        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
+    phi_ref = load_optional_phi(reference_dir, log_prefix="[run_summary]")
+    curve = paper_v2_phi_curve(ion, mass_amu=PAPER_V2_MASS_AMU)
+    return build_phi_figure(curve, phi_ref=phi_ref)
+
+
+def _section_paper_v2_polar(ion, reference_dir, noise_floor) -> plt.Figure:
+    if reference_dir is None:
+        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
+    polar_ref = load_optional_polar_image(
+        reference_dir, log_prefix="[run_summary]"
     )
-    fig, ax = plt.subplots(figsize=(6.5, 5.5), constrained_layout=True)
-    pcm = ax.pcolormesh(
-        h.bin_edges_a_Aps, h.bin_edges_b_Aps, h.counts.T,
-        shading="auto", cmap="magma",
+    if polar_ref is None:
+        raise _SectionSkipped("no polar VMI image reference found")
+    polar_hist = polar_histogram_matched_to_reference(
+        ion, polar_ref, mass_amu=PAPER_V2_MASS_AMU,
     )
-    ax.set_aspect("equal")
-    ax.set(title=f"2D velocity density, axes=({h.axis_a},{h.axis_b}), "
-                 f"m={MASS_I_HE_AMU:.0f} u (n={h.num_atoms_used})",
-           xlabel=fr"$v_{h.axis_a}$ / $\mathrm{{\AA}}/\mathrm{{ps}}$",
-           ylabel=fr"$v_{h.axis_b}$ / $\mathrm{{\AA}}/\mathrm{{ps}}$")
-    fig.colorbar(pcm, ax=ax, label="count")
-    return fig
+    return build_polar_image_figure(
+        polar_ref, polar_hist,
+        experimental_noise_floor=noise_floor,
+    )
 
 
 def _section_mass_resolved(ion) -> plt.Figure:

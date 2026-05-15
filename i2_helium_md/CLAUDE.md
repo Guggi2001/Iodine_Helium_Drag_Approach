@@ -193,16 +193,31 @@ scripts/post_processing/plot_paper_v4.py
 scripts/post_processing/plot_run_summary.py
 ```
 
-Build the 9 A HeDFT summary:
+`plot_run_summary.py` is configured through a `# USER SETTINGS` block at the
+top of the script (the same pattern as the focused scripts). Edit the
+constants and run the script — either from PyCharm's run button or from a
+shell:
 
 ```bash
-python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison --hedft-ref data/reference/9A_All_Data.csv --no-show
+python scripts/post_processing/plot_run_summary.py
 ```
 
-Build the experimental-condition droplet summary:
+For the 9 A HeDFT summary, set:
 
-```bash
-python scripts/post_processing/plot_run_summary.py data/runs/single_pulse_droplet --vmi-ref-he data/reference/vmi_summary/vmi_iplus_he.csv --vmi-ref-gas data/reference/vmi_summary/vmi_iplus_gas.csv --no-show
+```python
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
+HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+VMI_REF_HE_PATH = None
+VMI_REF_GAS_PATH = None
+```
+
+For the experimental-condition droplet summary, set:
+
+```python
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+HEDFT_REF_PATH = None
+VMI_REF_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+VMI_REF_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 ```
 
 The next post-processing work is authentic comparison against legacy MATLAB

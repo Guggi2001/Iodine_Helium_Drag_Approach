@@ -255,7 +255,7 @@ def _draw_experimental_image(
             ),
         )
         plt.colorbar(mesh, ax=ax, label="signal / arb. units")
-    ax.set_title("(a) experimental VMI image")
+    ax.set_title("(a) experimental high-SNR VMI image")
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
