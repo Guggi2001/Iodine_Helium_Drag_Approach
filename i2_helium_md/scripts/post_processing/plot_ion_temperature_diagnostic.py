@@ -102,9 +102,14 @@ def _build_figure(time_ps: np.ndarray, td: np.ndarray) -> plt.Figure:
 
     lines_left, labels_left = ax_left.get_legend_handles_labels()
     lines_right, labels_right = ax_right.get_legend_handles_labels()
+    # Place legend at the vertical center on the left side of the axes.
+    # Using bbox_to_anchor=(0.0, 0.5) with loc="center left" anchors the
+    # legend's left-center point to the axes' left-center (in axes coords).
     ax_left.legend(
         lines_left + lines_right,
         labels_left + labels_right,
+        loc="center left",
+        bbox_to_anchor=(0.0, 0.5),
         frameon=False,
     )
 

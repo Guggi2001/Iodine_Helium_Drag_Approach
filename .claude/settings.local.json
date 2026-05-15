@@ -7,7 +7,8 @@
       "mcp__plugin_context-mode_context-mode__ctx_execute",
       "Bash(git *)",
       "Bash(python *)",
-      "Bash('C:/Users/user/AppData/Local/Programs/Python/Python314/python.exe' -m pytest tests/test_plot_run_summary_smoke.py tests/test_velocity_distribution.py tests/test_plot_legacy_debug_smoke.py -q)"
+      "Bash('C:/Users/user/AppData/Local/Programs/Python/Python314/python.exe' -m pytest tests/test_plot_run_summary_smoke.py tests/test_velocity_distribution.py tests/test_plot_legacy_debug_smoke.py -q)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
     ]
   }
 }

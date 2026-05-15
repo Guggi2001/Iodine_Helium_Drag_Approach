@@ -20,9 +20,11 @@ from i2_helium_md.postprocess.paper_v2 import (
     PAPER_V2_IMAGE_BINS_APS,
     PaperV2VelocityMap,
     PaperV2VMIImageReference,
+    PaperV2VMIPolarImageReference,
     load_paper_v2_phi_reference,
     load_paper_v2_radial_references,
     load_paper_v2_vmi_image_reference,
+    load_paper_v2_vmi_polar_image_reference,
     paper_v2_velocity_map,
 )
 from i2_helium_md.simulation.checkpoint import IonCheckpoint
@@ -261,6 +263,181 @@ def test_velocity_map_matches_matlab_nearest_bin_selection():
     idx_zero = int(np.where(np.isclose(PAPER_V2_IMAGE_BINS_APS, 0.0))[0][0])
     assert image.counts[idx_neg, idx_neg] == 1
     assert image.counts[idx_zero, idx_zero] == 1
+
+
+def test_color_norm_floor_clips_below_fraction_of_max():
+    module = _import_paper_v2_script()
+
+    legacy = module._color_norm(np.array([1.0, 10.0, 100.0]))
+    assert legacy.vmin == pytest.approx(0.0)
+    assert legacy.vmax == pytest.approx(80.0)
+
+    floored = module._color_norm(
+        np.array([1.0, 10.0, 100.0]), noise_floor_fraction=0.2
+    )
+    assert floored.vmin == pytest.approx(20.0)
+    assert floored.vmax == pytest.approx(100.0)
+
+    assert module._color_norm(np.array([]), noise_floor_fraction=0.2) is None
+    assert module._color_norm(np.array([0.0, 0.0])) is None
+
+
+def test_polar_image_reference_loader_validates_npz_fields_and_shapes(tmp_path):
+    path = tmp_path / "iplus_he_high_snr_vmi_polar_image.npz"
+    phi = np.linspace(0.0, 2.0 * np.pi, 6, endpoint=False)
+    v_radius_mps = np.array([0.0, 100.0, 200.0, 300.0])
+    intensity = np.arange(phi.size * v_radius_mps.size, dtype=float).reshape(
+        (phi.size, v_radius_mps.size)
+    )
+    np.savez(
+        path,
+        phi_rad=phi,
+        v_radius_mps=v_radius_mps,
+        intensity_polar=intensity,
+    )
+    (tmp_path / "iplus_he_high_snr_vmi_polar_image.json").write_text(
+        json.dumps({"channel": "I+He high-SNR processed VMI (polar)"}),
+        encoding="ascii",
+    )
+
+    ref = load_paper_v2_vmi_polar_image_reference(path)
+
+    assert isinstance(ref, PaperV2VMIPolarImageReference)
+    np.testing.assert_allclose(ref.phi_rad, phi)
+    np.testing.assert_allclose(ref.v_radius_mps, v_radius_mps)
+    np.testing.assert_allclose(ref.v_radius_Aps, v_radius_mps / 100.0)
+    np.testing.assert_allclose(ref.intensity, intensity)
+    assert ref.metadata["channel"] == "I+He high-SNR processed VMI (polar)"
+
+    missing_phi = tmp_path / "missing_phi.npz"
+    np.savez(missing_phi, v_radius_mps=v_radius_mps, intensity_polar=intensity)
+    with pytest.raises(ValueError, match="phi_rad"):
+        load_paper_v2_vmi_polar_image_reference(missing_phi)
+
+    missing_v = tmp_path / "missing_v.npz"
+    np.savez(missing_v, phi_rad=phi, intensity_polar=intensity)
+    with pytest.raises(ValueError, match="v_radius_mps"):
+        load_paper_v2_vmi_polar_image_reference(missing_v)
+
+    bad_shape = tmp_path / "bad_shape.npz"
+    np.savez(
+        bad_shape,
+        phi_rad=phi,
+        v_radius_mps=v_radius_mps,
+        intensity_polar=intensity.T,
+    )
+    with pytest.raises(ValueError, match="intensity_polar shape"):
+        load_paper_v2_vmi_polar_image_reference(bad_shape)
+
+    constant_v = tmp_path / "constant_v.npz"
+    np.savez(
+        constant_v,
+        phi_rad=phi,
+        v_radius_mps=np.zeros_like(v_radius_mps),
+        intensity_polar=intensity,
+    )
+    with pytest.raises(ValueError, match="zero range"):
+        load_paper_v2_vmi_polar_image_reference(constant_v)
+
+
+def test_polar_image_reference_loader_accepts_matlab_mat_exports(tmp_path):
+    path = tmp_path / "iplus_he_high_snr_vmi_polar_image.mat"
+    phi = np.linspace(0.0, 2.0 * np.pi, 8, endpoint=False)
+    v_radius_mps = np.linspace(0.0, 350.0, 5)
+    intensity = np.outer(np.cos(phi) ** 2 + 1.0, v_radius_mps + 1.0)
+    savemat(
+        path,
+        {
+            "phi_rad": phi,
+            "v_radius_mps": v_radius_mps,
+            "intensity_polar": intensity,
+        },
+    )
+
+    ref = load_paper_v2_vmi_polar_image_reference(path)
+
+    np.testing.assert_allclose(ref.phi_rad, phi)
+    np.testing.assert_allclose(ref.v_radius_Aps, v_radius_mps / 100.0)
+    np.testing.assert_allclose(ref.intensity, intensity)
+
+
+def test_polar_histogram_helper_matches_reference_axes():
+    module = _import_paper_v2_script()
+    rng = np.random.default_rng(20260515)
+    n_atoms = 200
+    speed = rng.uniform(0.0, 2.0, size=n_atoms)
+    phi = rng.uniform(0.0, 2.0 * np.pi, size=n_atoms)
+    vx = speed * np.cos(phi)
+    vy = speed * np.sin(phi)
+    vz = np.zeros(n_atoms)
+    masses_amu = np.full(n_atoms, 131.0)
+    ion = _make_ion(
+        vx=np.concatenate([vx, vx]),
+        vy=np.concatenate([vy, vy]),
+        vz=np.concatenate([vz, vz]),
+        masses_amu=np.concatenate([masses_amu, masses_amu]),
+        b_outside=np.ones(n_atoms, dtype=bool),
+    )
+    phi_rad = np.linspace(0.0, 2.0 * np.pi, 12, endpoint=False)
+    v_radius_Aps = np.linspace(0.0, 1.8, 9)
+    polar_ref = PaperV2VMIPolarImageReference(
+        phi_rad=phi_rad,
+        v_radius_Aps=v_radius_Aps,
+        v_radius_mps=v_radius_Aps * 100.0,
+        intensity=np.zeros((phi_rad.size, v_radius_Aps.size)),
+        metadata={},
+        source_path=Path("synthetic_polar.npz"),
+    )
+
+    polar_hist = module._polar_histogram_matched_to_reference(ion, polar_ref)
+
+    assert polar_hist.phi_centers_rad.size == phi_rad.size
+    assert polar_hist.v_centers_Aps.size == v_radius_Aps.size
+    expected_v_max = float(v_radius_Aps[-1] + (v_radius_Aps[1] - v_radius_Aps[0]))
+    assert polar_hist.v_edges_Aps[-1] == pytest.approx(expected_v_max)
+    assert polar_hist.counts.shape == (v_radius_Aps.size, phi_rad.size)
+
+
+def test_polar_image_figure_renders_two_panels_with_aligned_axes():
+    module = _import_paper_v2_script()
+    phi = np.linspace(0.0, 2.0 * np.pi, 6, endpoint=False)
+    v_radius_Aps = np.linspace(0.0, 1.0, 5)
+    intensity = np.outer(np.cos(phi) ** 2, v_radius_Aps + 0.5)
+    polar_ref = PaperV2VMIPolarImageReference(
+        phi_rad=phi,
+        v_radius_Aps=v_radius_Aps,
+        v_radius_mps=v_radius_Aps * 100.0,
+        intensity=intensity,
+        metadata={},
+        source_path=Path("synthetic_polar.npz"),
+    )
+
+    rng = np.random.default_rng(0)
+    n_atoms = 80
+    speed = rng.uniform(0.0, 0.9, size=n_atoms)
+    angle = rng.uniform(0.0, 2.0 * np.pi, size=n_atoms)
+    ion = _make_ion(
+        vx=np.concatenate([speed * np.cos(angle), speed * np.cos(angle)]),
+        vy=np.concatenate([speed * np.sin(angle), speed * np.sin(angle)]),
+        vz=np.zeros(2 * n_atoms),
+        masses_amu=np.full(2 * n_atoms, 131.0),
+        b_outside=np.ones(n_atoms, dtype=bool),
+    )
+    polar_hist = module._polar_histogram_matched_to_reference(ion, polar_ref)
+
+    fig = module._build_polar_image_figure(polar_ref, polar_hist)
+    try:
+        ax_exp, ax_sim = fig.axes[:2]
+        assert ax_exp.get_xlim() == pytest.approx((0.0, 2.0 * np.pi))
+        assert ax_sim.get_xlim() == pytest.approx((0.0, 2.0 * np.pi))
+        assert ax_exp.get_ylim() == pytest.approx((0.0, polar_ref.v_radius_mps[-1]))
+        assert ax_sim.get_ylim() == pytest.approx((0.0, polar_ref.v_radius_mps[-1]))
+        assert "experimental polar VMI" in ax_exp.get_title()
+        assert "simulated polar histogram" in ax_sim.get_title()
+        assert ax_exp.collections, "experimental panel should plot a pcolormesh"
+        assert ax_sim.collections, "simulated panel should plot a pcolormesh"
+    finally:
+        plt.close(fig)
 
 
 def test_simulated_map_plot_transposes_internal_storage_for_physical_axes():

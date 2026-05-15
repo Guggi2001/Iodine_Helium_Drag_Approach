@@ -61,6 +61,22 @@ class PaperV2VMIImageReference:
 
 
 @dataclass(frozen=True)
+class PaperV2VMIPolarImageReference:
+    """Processed experimental 2-D polar VMI image (phi rows, v_radius cols).
+
+    Mirrors the MATLAB ``res.image_polar`` matrix exported by
+    ``data/reference/scripts/export_paper_v2_reference_data.m``.
+    """
+
+    phi_rad: np.ndarray
+    v_radius_Aps: np.ndarray
+    v_radius_mps: np.ndarray
+    intensity: np.ndarray
+    metadata: dict[str, Any]
+    source_path: Path
+
+
+@dataclass(frozen=True)
 class PaperV2PhiReference:
     """One paper-v2 experimental phi reference exported from MATLAB."""
 
@@ -222,6 +238,86 @@ def load_paper_v2_vmi_image_reference(path: str | Path) -> PaperV2VMIImageRefere
         vy_Aps=vy,
         vx_mps=vx * 100.0,
         vy_mps=vy * 100.0,
+        intensity=intensity,
+        metadata=metadata,
+        source_path=p.resolve(),
+    )
+
+
+def load_paper_v2_vmi_polar_image_reference(
+    path: str | Path,
+) -> PaperV2VMIPolarImageReference:
+    """Load a paper-v2 processed polar VMI image from ``.mat`` or ``.npz``.
+
+    Required fields are ``intensity_polar``, ``phi_rad``, and one of
+    ``v_radius_mps`` (canonical, m/s on disk) or legacy ``v_radius_Aps``
+    (A/ps). The loader converts to A/ps either way and validates that
+    ``intensity_polar.shape == (phi_rad.size, v_radius.size)``.
+    """
+
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(
+            f"paper-v2 polar VMI image reference not found: {p.resolve()}"
+        )
+
+    def _pick_v(container, has_key) -> np.ndarray:
+        if has_key("v_radius_mps"):
+            return (
+                np.atleast_1d(np.squeeze(np.asarray(container["v_radius_mps"], dtype=float)))
+                / 100.0
+            )
+        if has_key("v_radius_Aps"):
+            return np.atleast_1d(
+                np.squeeze(np.asarray(container["v_radius_Aps"], dtype=float))
+            )
+        raise ValueError(
+            f"{p.name} must contain v_radius_mps (or legacy v_radius_Aps)"
+        )
+
+    if p.suffix.lower() == ".mat":
+        z = loadmat(p)
+        if "intensity_polar" not in z:
+            raise ValueError(f"{p.name} must contain an intensity_polar field")
+        if "phi_rad" not in z:
+            raise ValueError(f"{p.name} must contain a phi_rad field")
+        phi = np.atleast_1d(np.squeeze(np.asarray(z["phi_rad"], dtype=float)))
+        v_radius_Aps = _pick_v(z, lambda k: k in z)
+        intensity = np.asarray(z["intensity_polar"], dtype=float)
+    else:
+        with np.load(p, allow_pickle=False) as z:
+            if "intensity_polar" not in z.files:
+                raise ValueError(f"{p.name} must contain an intensity_polar field")
+            if "phi_rad" not in z.files:
+                raise ValueError(f"{p.name} must contain a phi_rad field")
+            phi = np.atleast_1d(np.squeeze(np.asarray(z["phi_rad"], dtype=float)))
+            v_radius_Aps = _pick_v(z, lambda k: k in z.files)
+            intensity = np.asarray(z["intensity_polar"], dtype=float)
+
+    if intensity.ndim != 2:
+        raise ValueError(f"{p.name} intensity_polar must be a 2-D array")
+    if phi.ndim != 1 or v_radius_Aps.ndim != 1:
+        raise ValueError(
+            f"{p.name} phi_rad and v_radius axis must be 1-D vectors"
+        )
+    expected_shape = (phi.size, v_radius_Aps.size)
+    if intensity.shape != expected_shape:
+        raise ValueError(
+            f"{p.name} intensity_polar shape {intensity.shape} must match "
+            f"(len(phi_rad), len(v_radius)) = {expected_shape}"
+        )
+    _validate_axis_range(p, "phi_rad", phi)
+    _validate_axis_range(p, "v_radius_Aps", v_radius_Aps)
+
+    metadata_path = p.with_suffix(".json")
+    metadata: dict[str, Any] = {}
+    if metadata_path.exists():
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+    return PaperV2VMIPolarImageReference(
+        phi_rad=phi,
+        v_radius_Aps=v_radius_Aps,
+        v_radius_mps=v_radius_Aps * 100.0,
         intensity=intensity,
         metadata=metadata,
         source_path=p.resolve(),

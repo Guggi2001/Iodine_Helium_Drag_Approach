@@ -30,12 +30,13 @@
 %   plot y-grid for pcolormesh(vx_Aps, vy_Aps, intensity).
 %
 % Output conventions:
-%   Radial CSV columns: v_mps,signal_arb
-%   Phi CSV columns:    phi_rad,signal_arb
-%   Image MAT fields:  vx_mps, vy_mps, intensity
-%                      vx_mps and vy_mps are full calibrated coordinate grids,
-%                      normalized for Matplotlib pcolormesh axes.
-%   Image metadata:    JSON sidecar with source, units, center, and scaling
+%   Radial CSV columns:       v_mps,signal_arb
+%   Phi CSV columns:          phi_rad,signal_arb
+%   Cartesian image MAT:      vx_mps, vy_mps, intensity (Matplotlib pcolormesh layout)
+%   Polar image MAT:          phi_rad, v_radius_mps, intensity_polar
+%                             (rows = phi, cols = v_radius; mirrors res.image_polar)
+%   Image metadata:           JSON sidecar per image with source, units, center,
+%                             and scaling
 %
 % Velocity unit: m/s (canonical on-disk format for all reference CSVs).
 % The Python loaders convert to A/ps internally so the documented
@@ -137,6 +138,48 @@ signal_arb = signal_arb(:) / max(signal_arb(:));
 writetable( ...
     table(phi_rad, signal_arb, 'VariableNames', {'phi_rad', 'signal_arb'}), ...
     fullfile(out_dir, 'iplus_he_high_snr_phi.csv'));
+
+% Full 2-D polar image (phi rows, v_radius cols) used for the side-by-side
+% polar comparison figure in plot_paper_v2.py. Keeps the existing 1-D phi
+% CSV intact; the polar image is a separate, richer reference.
+v_radius_mps = res.r(:) * vf_single;
+phi_rad = res.phi(:);
+intensity_polar = res.image_polar;
+save(fullfile(image_dir, 'iplus_he_high_snr_vmi_polar_image.mat'), ...
+    'phi_rad', 'v_radius_mps', 'intensity_polar');
+
+fid = fopen(fullfile(image_dir, 'iplus_he_high_snr_vmi_polar_image.json'), 'w');
+if fid < 0
+    error('Could not open polar metadata JSON for writing.');
+end
+fprintf(fid, '{\n');
+fprintf(fid, '  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison.m",\n');
+fprintf(fid, '  "source_mat_file": "%s",\n', strrep(high_snr_load_path, '\', '\\'));
+fprintf(fid, '  "channel": "I+He high-SNR processed VMI (polar)",\n');
+fprintf(fid, '  "vf_single": %.15g,\n', vf_single);
+fprintf(fid, '  "units": "m/s",\n');
+fprintf(fid, '  "axis_equations": {\n');
+fprintf(fid, '    "phi_rad": "res.phi",\n');
+fprintf(fid, '    "v_radius_mps": "res.r * vf_single"\n');
+fprintf(fid, '  },\n');
+fprintf(fid, '  "image_center_x": %.15g,\n', res.image_center_x);
+fprintf(fid, '  "image_center_y": %.15g,\n', res.image_center_y);
+fprintf(fid, '  "matrix_layout": "rows=phi, cols=v_radius",\n');
+fprintf(fid, '  "output_fields": ["phi_rad", "v_radius_mps", "intensity_polar"],\n');
+fprintf(fid, '  "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]\n');
+fprintf(fid, '}\n');
+fclose(fid);
+
+preview_polar = figure('Visible', 'off');
+pcolor(phi_rad, v_radius_mps, intensity_polar.');
+shading flat;
+xlabel('phi / rad');
+ylabel('v / m/s');
+xlim([0, 2 * pi]);
+ylim([0, max(v_radius_mps)]);
+colorbar;
+print(preview_polar, fullfile(image_dir, 'iplus_he_high_snr_vmi_polar_image_preview.png'), '-dpng', '-r150');
+close(preview_polar);
 
 save(fullfile(image_dir, 'iplus_he_high_snr_vmi_image.mat'), ...
     'vx_mps', 'vy_mps', 'intensity');

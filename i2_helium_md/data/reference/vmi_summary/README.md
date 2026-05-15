@@ -79,3 +79,15 @@ If you want to compare these curves against any paper-era export, you
 must keep the pipeline differences in mind. They are not the same
 observable computed at a different time; they are a different physical
 quantity (Abel-inverted 3-D distribution vs raw 2-D projection).
+
+## See also
+
+The high-SNR `res_sum` struct also carries the full 2-D polar VMI image
+`res.image_polar`. The polar image is exported separately by the
+paper-v2 pipeline as
+`data/reference/paper_v2/images/iplus_he_high_snr_vmi_polar_image.mat`
+(fields `phi_rad`, `v_radius_mps`, `intensity_polar`) for the
+`(phi, v)` side-by-side comparison panel in `plot_paper_v2.py`. It is
+intentionally kept under `paper_v2/` rather than here because, like the
+other paper-v2 outputs, it is the raw 2-D projection rather than an
+Abel-inverted distribution.
