@@ -24,18 +24,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # USER SETTINGS
 # =============================================================================
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
-VMI_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
-VMI_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"
+VMI_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+VMI_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 
 # Mass selection (amu) for the simulation curves.
 MASS_I_HE_AMU = 131.0      # I + 1 He
 MASS_I_HE2_AMU = 135.0     # I + 2 He
 
-# MATLAB used ``edges_velocity = 0:0.04:26`` and displayed xlim([0, 28]).
+# MATLAB used ``edges_velocity = 0:0.04:26`` (A/ps) and displayed
+# ``xlim([0, 28])`` (A/ps). Plotting now happens in m/s, so the displayed
+# range is 0..2800 m/s, but the underlying bin grid stays equivalent
+# (bin width 4 m/s, max 2600 m/s = 0.04 A/ps * 100, 26 A/ps * 100).
 HIST_BIN_WIDTH_APS = 0.04
 HIST_EDGE_MAX_APS = 26.0
 HIST_NUM_BINS = int(round(HIST_EDGE_MAX_APS / HIST_BIN_WIDTH_APS))
-VELOCITY_PLOT_V_MAX_APS = 28.0
+VELOCITY_PLOT_V_MAX_MPS = 2800.0
 
 # MATLAB used ``movmean(h, 15)`` on the simulation histogram.
 HIST_SMOOTHING_WINDOW = 15
@@ -132,7 +135,8 @@ def _draw_velocity_distribution_tile(
     palette = plt.colormaps["plasma"](np.linspace(0.05, 0.85, 5))
     c_gas, c_he, c_sim_he, c_sim_he2, _ = palette
 
-    mask_gas = vmi_gas.velocity_Aps > 4.0
+    # Gas-phase background mask: > 400 m/s (was > 4 A/ps in MATLAB).
+    mask_gas = vmi_gas.velocity_mps > 400.0
     max_gas = float(vmi_gas.signal_arb[mask_gas].max())
     max_he = float(vmi_he.signal_arb.max())
     sim_he_density = normalise_trace(
@@ -143,14 +147,14 @@ def _draw_velocity_distribution_tile(
     )
 
     ax.plot(
-        vmi_gas.velocity_Aps,
+        vmi_gas.velocity_mps,
         vmi_gas.signal_arb / max_gas,
         color=c_gas,
         linewidth=2.0,
         label=r"$I_2$:$I^+$",
     )
     ax.plot(
-        vmi_he.velocity_Aps,
+        vmi_he.velocity_mps,
         vmi_he.signal_arb / max_he,
         linestyle=":",
         color=c_he,
@@ -158,7 +162,7 @@ def _draw_velocity_distribution_tile(
         label=r"$I_2 He_N$:$I^+ He$",
     )
     ax.plot(
-        sim_he.bin_centers_Aps,
+        sim_he.bin_centers_mps,
         sim_he_density,
         linestyle="--",
         color=c_sim_he,
@@ -166,7 +170,7 @@ def _draw_velocity_distribution_tile(
         label=r"simulation $I^+ He$",
     )
     ax.plot(
-        sim_he2.bin_centers_Aps,
+        sim_he2.bin_centers_mps,
         sim_he2_density,
         linestyle="-.",
         color=c_sim_he2,
@@ -174,9 +178,9 @@ def _draw_velocity_distribution_tile(
         label=r"simulation $I^+ He_2$",
     )
 
-    ax.set_xlim(0.0, VELOCITY_PLOT_V_MAX_APS)
+    ax.set_xlim(0.0, VELOCITY_PLOT_V_MAX_MPS)
     ax.set_ylim(0.0, 1.1)
-    ax.set_xlabel(r"v / $\mathrm{\AA}/\mathrm{ps}$")
+    ax.set_xlabel("v / m/s")
     ax.set_ylabel("signal / arb. units")
     ax.legend(frameon=False)
     ax.spines["top"].set_visible(False)

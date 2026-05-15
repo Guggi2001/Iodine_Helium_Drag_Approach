@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
-def verify_vmi_data(data_dir: str = "data/reference"):
+def verify_vmi_data(data_dir: str = "data/reference/vmi_summary"):
     """Loads and plots the exported VMI reference data to ensure parity with MATLAB."""
     base_path = Path(data_dir)
 
@@ -13,18 +13,27 @@ def verify_vmi_data(data_dir: str = "data/reference"):
         df_gas = pd.read_csv(base_path / "vmi_iplus_gas.csv")
     except FileNotFoundError as e:
         print(f"Error: {e}")
-        print("Make sure you moved the CSVs into the data/reference/ folder.")
+        print("Make sure the CSVs are in data/reference/vmi_summary/.")
         return
+
+    # Accept either the canonical v_mps column or the legacy v_Aps column.
+    def _velocity_Aps(df):
+        if "v_mps" in df.columns:
+            return df["v_mps"] / 100.0
+        return df["v_Aps"]
+
+    v_he_Aps = _velocity_Aps(df_he)
+    v_gas_Aps = _velocity_Aps(df_gas)
 
     # 2. Recreate the MATLAB plot
     fig, ax = plt.subplots(figsize=(8, 5))
 
     # Gas phase normalization (MATLAB: b_v = res_Iplus_gas.r*vf_single/100>4)
-    mask_gas = df_gas['v_Aps'] > 4.0
+    mask_gas = v_gas_Aps > 4.0
     max_gas_signal = df_gas.loc[mask_gas, 'signal_arb'].max()
 
     ax.plot(
-        df_gas['v_Aps'],
+        v_gas_Aps,
         df_gas['signal_arb'] / max_gas_signal,
         label="I$_2$:I$^+$ (Gas Phase)",
         color="#2c7fb8",  # Using a nice blue
@@ -35,7 +44,7 @@ def verify_vmi_data(data_dir: str = "data/reference"):
     max_he_signal = df_he['signal_arb'].max()
 
     ax.plot(
-        df_he['v_Aps'],
+        v_he_Aps,
         df_he['signal_arb'] / max_he_signal,
         label="I$_2$He$_N$:I$^+$He (Droplet)",
         linestyle=":",
@@ -67,6 +76,6 @@ if __name__ == "__main__":
     PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
     # 2. Build the absolute path to the reference data
-    DATA_REF_DIR = PROJECT_ROOT / "data" / "reference"
+    DATA_REF_DIR = PROJECT_ROOT / "data" / "reference" / "vmi_summary"
 
     verify_vmi_data(data_dir=DATA_REF_DIR)

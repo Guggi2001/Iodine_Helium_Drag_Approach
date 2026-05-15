@@ -16,7 +16,9 @@ def _hist_from_density(v: np.ndarray, density: np.ndarray) -> FinalVelocityHisto
                              [v[-1] + 0.5 * (v[-1] - v[-2])]))
     return FinalVelocityHistogram(
         bin_centers_Aps=v,
+        bin_centers_mps=v * 100.0,
         bin_edges_Aps=edges,
+        bin_edges_mps=edges * 100.0,
         counts=density.astype(int),
         density=density,
         mass_amu=131.0,

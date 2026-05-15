@@ -131,13 +131,13 @@ def _build_main_figure(*, image_ref, velocity_map, radial_refs, velocity_curve) 
 def _draw_experimental_image(ax, image_ref) -> None:
     if image_ref is None:
         ax.text(0.5, 0.5, "experimental VMI image not exported", ha="center", va="center")
-        ax.set_xlim(-35.0, 35.0)
-        ax.set_ylim(-35.0, 35.0)
+        ax.set_xlim(-3500.0, 3500.0)
+        ax.set_ylim(-3500.0, 3500.0)
     else:
         vmax = float(np.nanmax(image_ref.intensity)) * 0.8
         mesh = ax.pcolormesh(
-            image_ref.vx_Aps,
-            image_ref.vy_Aps,
+            image_ref.vx_mps,
+            image_ref.vy_mps,
             image_ref.intensity,
             shading="auto",
             cmap="magma",
@@ -146,18 +146,19 @@ def _draw_experimental_image(ax, image_ref) -> None:
         )
         plt.colorbar(mesh, ax=ax, label="signal / arb. units")
     ax.set_title("(a) experimental VMI image")
-    ax.set_xlabel("v_x / A/ps")
-    ax.set_ylabel("v_y / A/ps")
+    ax.set_xlabel("v_x / m/s")
+    ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
-    ax.set_xlim(-35.0, 35.0)
-    ax.set_ylim(-35.0, 35.0)
+    ax.set_xlim(-3500.0, 3500.0)
+    ax.set_ylim(-3500.0, 3500.0)
 
 
 def _draw_simulated_map(ax, velocity_map) -> None:
     vmax = float(np.nanmax(velocity_map.counts)) * 0.8
+    bins_mps = velocity_map.velocity_bins_Aps * 100.0
     mesh = ax.pcolormesh(
-        velocity_map.velocity_bins_Aps,
-        velocity_map.velocity_bins_Aps,
+        bins_mps,
+        bins_mps,
         velocity_map.counts.T,
         shading="auto",
         cmap="magma",
@@ -166,23 +167,23 @@ def _draw_simulated_map(ax, velocity_map) -> None:
     )
     plt.colorbar(mesh, ax=ax, label="counts")
     ax.set_title(f"(b) simulated VMI map, {velocity_map.mass_amu:.0f} u")
-    ax.set_xlabel("v_x / A/ps")
-    ax.set_ylabel("v_y / A/ps")
+    ax.set_xlabel("v_x / m/s")
+    ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
-    ax.set_xlim(-35.0, 35.0)
-    ax.set_ylim(-35.0, 35.0)
+    ax.set_xlim(-3500.0, 3500.0)
+    ax.set_ylim(-3500.0, 3500.0)
 
 
 def _draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
     for ref in radial_refs:
         ax.plot(
-            ref.velocity_Aps,
+            ref.velocity_mps,
             max_normalise(ref.signal_arb),
             linewidth=1.4,
             label=ref.label,
         )
     ax.plot(
-        velocity_curve.bin_centers_Aps,
+        velocity_curve.bin_centers_mps,
         velocity_curve.normalised,
         "--",
         color="black",
@@ -190,9 +191,9 @@ def _draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
         label=f"simulation I+He {velocity_curve.mass_amu:.0f} u",
     )
     ax.set_title("(c) radial velocity distribution")
-    ax.set_xlabel("v / A/ps")
+    ax.set_xlabel("v / m/s")
     ax.set_ylabel("signal / arb. units")
-    ax.set_xlim(0.0, 35.0)
+    ax.set_xlim(0.0, 3500.0)
     ax.set_ylim(0.0, 1.1)
     ax.legend(frameon=False, fontsize=8)
 

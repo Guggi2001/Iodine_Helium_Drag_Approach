@@ -25,7 +25,7 @@ from ..physics.constants import U as U_KG
 from ..simulation.checkpoint import IonCheckpoint
 
 
-_VMI_EXPECTED_COLUMNS: tuple[str, ...] = ("v_Aps", "signal_arb")
+_VMI_VELOCITY_COLUMNS: tuple[str, ...] = ("v_mps", "v_Aps")
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,11 @@ class VmiReference:
     Attributes
     ----------
     velocity_Aps : np.ndarray, shape (M,)
-        Velocity bins in angstrom/ps (the ``v_Aps`` column).
+        Velocity bins in angstrom/ps. The internal canonical unit used
+        by the simulation pipeline.
+    velocity_mps : np.ndarray, shape (M,)
+        Same velocities expressed in m/s (``velocity_Aps * 100``). Plot
+        layers display m/s.
     signal_arb : np.ndarray, shape (M,)
         Signal in arbitrary units (the ``signal_arb`` column). Raw
         unnormalised values; the plotting layer applies its own scaling.
@@ -44,26 +48,33 @@ class VmiReference:
     """
 
     velocity_Aps: np.ndarray
+    velocity_mps: np.ndarray
     signal_arb: np.ndarray
     source_path: Path
 
 
 def load_vmi_reference(path: str | Path) -> VmiReference:
-    """Read a 2-column ``v_Aps,signal_arb`` VMI reference CSV.
+    """Read a 2-column VMI reference CSV.
+
+    The canonical column header is ``v_mps,signal_arb`` (velocity in m/s).
+    For backwards compatibility, files exported before the unit
+    normalisation use ``v_Aps,signal_arb`` (velocity in A/ps); those are
+    also accepted and converted by a factor of 100.
 
     Parameters
     ----------
     path
-        Path to the CSV. Both ``data/reference/vmi_iplus_he.csv`` and
-        ``data/reference/vmi_iplus_gas.csv`` follow this format.
+        Path to the CSV. Both ``data/reference/vmi_summary/vmi_iplus_he.csv``
+        and ``data/reference/vmi_summary/vmi_iplus_gas.csv`` follow this
+        format.
 
     Raises
     ------
     FileNotFoundError
         If ``path`` does not exist.
     ValueError
-        If the header is missing or the columns differ from
-        ``("v_Aps", "signal_arb")``.
+        If the header is missing ``signal_arb`` or neither ``v_mps`` nor
+        ``v_Aps``.
     """
     p = Path(path)
     if not p.exists():
@@ -72,15 +83,24 @@ def load_vmi_reference(path: str | Path) -> VmiReference:
         )
 
     frame = pd.read_csv(p)
-    actual = tuple(frame.columns)
-    if actual != _VMI_EXPECTED_COLUMNS:
+    if "signal_arb" not in frame.columns:
         raise ValueError(
-            f"VMI reference {p.name} has columns {list(actual)}; "
-            f"expected {list(_VMI_EXPECTED_COLUMNS)}"
+            f"VMI reference {p.name} has columns {list(frame.columns)}; "
+            f"expected signal_arb plus v_mps (or legacy v_Aps)"
+        )
+    if "v_mps" in frame.columns:
+        velocity_Aps = np.asarray(frame["v_mps"].to_numpy(), dtype=float) / 100.0
+    elif "v_Aps" in frame.columns:
+        velocity_Aps = np.asarray(frame["v_Aps"].to_numpy(), dtype=float)
+    else:
+        raise ValueError(
+            f"VMI reference {p.name} has columns {list(frame.columns)}; "
+            f"expected v_mps (or legacy v_Aps)"
         )
 
     return VmiReference(
-        velocity_Aps=np.asarray(frame["v_Aps"].to_numpy(), dtype=float),
+        velocity_Aps=velocity_Aps,
+        velocity_mps=velocity_Aps * 100.0,
         signal_arb=np.asarray(frame["signal_arb"].to_numpy(), dtype=float),
         source_path=p.resolve(),
     )
@@ -93,9 +113,14 @@ class FinalVelocityHistogram:
     Attributes
     ----------
     bin_centers_Aps : np.ndarray, shape (B,)
-        Bin centers in angstrom/ps.
+        Bin centers in angstrom/ps (internal canonical unit).
+    bin_centers_mps : np.ndarray, shape (B,)
+        Bin centers in m/s (``bin_centers_Aps * 100``). Plot layers
+        display m/s.
     bin_edges_Aps : np.ndarray, shape (B + 1,)
         Bin edges in angstrom/ps.
+    bin_edges_mps : np.ndarray, shape (B + 1,)
+        Bin edges in m/s.
     counts : np.ndarray, shape (B,)
         Raw count per bin.
     density : np.ndarray, shape (B,)
@@ -108,7 +133,9 @@ class FinalVelocityHistogram:
     """
 
     bin_centers_Aps: np.ndarray
+    bin_centers_mps: np.ndarray
     bin_edges_Aps: np.ndarray
+    bin_edges_mps: np.ndarray
     counts: np.ndarray
     density: np.ndarray
     mass_amu: float
@@ -213,7 +240,9 @@ def compute_final_velocity_histogram(
 
     return FinalVelocityHistogram(
         bin_centers_Aps=centers,
+        bin_centers_mps=centers * 100.0,
         bin_edges_Aps=edges,
+        bin_edges_mps=edges * 100.0,
         counts=counts,
         density=density,
         mass_amu=float(mass_amu),

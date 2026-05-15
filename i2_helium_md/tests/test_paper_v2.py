@@ -110,7 +110,7 @@ def test_vmi_image_reference_loader_validates_npz_fields_and_shapes(tmp_path):
 
     missing = tmp_path / "missing_field.npz"
     np.savez(missing, vx_Aps=np.array([0.0]), intensity=np.array([[1.0]]))
-    with pytest.raises(ValueError, match="vx_Aps, vy_Aps, intensity"):
+    with pytest.raises(ValueError, match="vy_Aps"):
         load_paper_v2_vmi_image_reference(missing)
 
     bad_shape = tmp_path / "bad_shape.npz"
@@ -166,6 +166,8 @@ def test_experimental_image_plot_passes_matplotlib_ready_grids_unchanged(monkeyp
     ref = PaperV2VMIImageReference(
         vx_Aps=vx_grid,
         vy_Aps=vy_grid,
+        vx_mps=vx_grid * 100.0,
+        vy_mps=vy_grid * 100.0,
         intensity=intensity,
         metadata={},
         source_path=Path("synthetic.mat"),
@@ -185,11 +187,11 @@ def test_experimental_image_plot_passes_matplotlib_ready_grids_unchanged(monkeyp
 
     module._draw_experimental_image(ax, ref)
 
-    np.testing.assert_allclose(captured["x"], vx_grid)
-    np.testing.assert_allclose(captured["y"], vy_grid)
+    np.testing.assert_allclose(captured["x"], vx_grid * 100.0)
+    np.testing.assert_allclose(captured["y"], vy_grid * 100.0)
     np.testing.assert_allclose(captured["c"], intensity)
-    assert ax.get_xlabel() == "v_x / A/ps"
-    assert ax.get_ylabel() == "v_y / A/ps"
+    assert ax.get_xlabel() == "v_x / m/s"
+    assert ax.get_ylabel() == "v_y / m/s"
     plt.close(fig)
 
 

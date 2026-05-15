@@ -258,8 +258,9 @@ when CSV would make the artifact large or awkward. MATLAB exporters should
 prefer `.mat` files so they do not depend on MATLAB's Python bridge; Python may
 also accept `.npz` with the same fields for manually converted references. The
 matrix file should store calibrated axis arrays and intensity separately, for
-example `vx_Aps`, `vy_Aps`, and `intensity`. Normalize exported image grids for
-Matplotlib `pcolormesh(X, Y, C)`: `vx_Aps` should be the plot x-grid, `vy_Aps`
+example `vx_mps`, `vy_mps`, and `intensity` (m/s on disk; Python loaders convert
+to A/ps internally). Normalize exported image grids for Matplotlib
+`pcolormesh(X, Y, C)`: `vx_mps` should be the plot x-grid, `vy_mps`
 the plot y-grid, and `intensity` the color array. If the MATLAB source plots
 full coordinate matrices, export full 2-D coordinate grids rather than slicing
 constant-looking row or column vectors. The sidecar should document the MATLAB

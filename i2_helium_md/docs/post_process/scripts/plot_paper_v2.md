@@ -25,8 +25,10 @@ new figure for the angular distribution.
 ## Experimental references
 
 Radial experimental references live in `data/reference/paper_v2/` as CSV files
-with columns `v_Aps,signal_arb`. The first two are the curves actually plotted
-in MATLAB's radial panel:
+with columns `v_mps,signal_arb` (velocity in m/s; the Python loader converts
+to A/ps internally). Legacy files with `v_Aps,signal_arb` are also accepted
+during the transition. The first two are the curves actually plotted in
+MATLAB's radial panel:
 
 - `iplus_gas_300mw_43562_radial.csv`: `res_Iplus_gas`, measurement 43562,
   center `[482.9299 392.4866]`.
@@ -48,14 +50,15 @@ The processed 2-D VMI image reference lives under
 also accepts `.npz` files with the same fields for manually converted
 references. The image fields are:
 
-- `vx_Aps`
-- `vy_Aps`
+- `vx_mps`
+- `vy_mps`
 - `intensity`
 
-For MATLAB exports, `vx_Aps` and `vy_Aps` are full 2-D coordinate grids
-matching `intensity`, normalized for Matplotlib's `pcolormesh(X, Y, C)`:
-`vx_Aps` is the plot x-grid, `vy_Aps` is the plot y-grid, and `intensity` is
-the color array.
+For MATLAB exports, `vx_mps` and `vy_mps` are full 2-D coordinate grids
+matching `intensity`, normalized for Matplotlib's `pcolormesh(X, Y, C)`. The
+Python loader divides them by 100 at load time so the resulting axes
+(`PaperV2VMIImageReference.vx_Aps`, `.vy_Aps`) are in A/ps. Legacy files using
+`vx_Aps,vy_Aps,intensity` axes are also accepted unchanged.
 
 This is intentionally not raw detector data. The MATLAB exporter writes the
 processed image that the legacy script plots after the VMI toolbox and

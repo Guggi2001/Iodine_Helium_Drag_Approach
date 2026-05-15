@@ -202,7 +202,7 @@ python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison
 Build the experimental-condition droplet summary:
 
 ```bash
-python scripts/post_processing/plot_run_summary.py data/runs/single_pulse_droplet --vmi-ref-he data/reference/vmi_iplus_he.csv --vmi-ref-gas data/reference/vmi_iplus_gas.csv --no-show
+python scripts/post_processing/plot_run_summary.py data/runs/single_pulse_droplet --vmi-ref-he data/reference/vmi_summary/vmi_iplus_he.csv --vmi-ref-gas data/reference/vmi_summary/vmi_iplus_gas.csv --no-show
 ```
 
 The next post-processing work is authentic comparison against legacy MATLAB
@@ -256,10 +256,11 @@ when CSV would make the artifact large or awkward. MATLAB exporters should
 prefer `.mat` files so they do not depend on MATLAB's Python bridge; Python may
 also accept `.npz` with the same fields for manually converted references. The
 matrix file should store calibrated axis arrays and intensity separately, for
-example `vx_Aps`, `vy_Aps`, and `intensity`. Normalize exported image grids for
-Matplotlib `pcolormesh(X, Y, C)`: `vx_Aps` should be the plot x-grid, `vy_Aps`
-the plot y-grid, and `intensity` the color array. If the MATLAB source plots
-full coordinate matrices, export full 2-D coordinate grids rather than slicing
+example `vx_mps`, `vy_mps`, and `intensity` (m/s on disk; Python loaders convert
+to A/ps internally). Normalize exported image grids for Matplotlib
+`pcolormesh(X, Y, C)`: `vx_mps` should be the plot x-grid, `vy_mps` the plot
+y-grid, and `intensity` the color array. If the MATLAB source plots full
+coordinate matrices, export full 2-D coordinate grids rather than slicing
 constant-looking row or column vectors. The sidecar should document the MATLAB
 source, measurement or MAT-file source, center, velocity factor, axis
 equations, units, and external toolbox requirement. Keep 1-D radial or angular
@@ -294,13 +295,16 @@ Velocity-vs-time HeDFT panel:
 Experimental velocity distribution:
 
 ```text
-edges_velocity = 0:0.04:26
+edges_velocity = 0:0.04:26  (A/ps internally; 0:4:2600 m/s on display)
 vd_ion = movmean(h, 15)
-xlim([0, 28])
+xlim([0, 2800])  m/s on display (= 28 A/ps in the legacy MATLAB figure)
 ```
 
-Preserve the fine `0.04 A/ps` bins, 15-bin moving mean, and displayed range to
-`28 A/ps` when matching the legacy figure.
+Preserve the fine `0.04 A/ps` (4 m/s) bins, 15-bin moving mean, and displayed
+range to `2800 m/s` when matching the legacy figure. The Python plotting
+scripts (`plot_experimental_comparison.py`, `plot_paper_v2.py`) display m/s on
+the axis; simulation histograms still bin in A/ps internally and expose a
+`bin_centers_mps` field for plotting (multiply by 100).
 
 Polar histogram and anisotropy:
 

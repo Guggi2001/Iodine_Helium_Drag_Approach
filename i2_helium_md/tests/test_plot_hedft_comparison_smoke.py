@@ -41,8 +41,8 @@ EXPERIMENTAL_ION_NPZ = (
     / "ion.npz"
 )
 HEDFT = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
-VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
-VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"
+VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 
 
 pytestmark = pytest.mark.skipif(

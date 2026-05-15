@@ -35,12 +35,12 @@ PAPER_V2_SCRIPT = SCRIPT_DIR / "plot_paper_v2.py"
 PAPER_V4_SCRIPT = SCRIPT_DIR / "plot_paper_v4.py"
 
 EXPERIMENTAL_RUN = (
-    PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_log_droplet"
+    PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 )
 EXPERIMENTAL_NEUTRAL = EXPERIMENTAL_RUN / "neutral.npz"
 EXPERIMENTAL_ION = EXPERIMENTAL_RUN / "ion.npz"
-VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
-VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"
+VMI_HE = PROJECT_ROOT / "data" / "reference" /  "vmi_summary" / "vmi_iplus_he.csv"
+VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 
 
 pytestmark = pytest.mark.skipif(
@@ -141,7 +141,6 @@ def test_paper_figure_smoke(monkeypatch):
         if ax.get_legend() is not None
         for text in ax.get_legend().get_texts()
     ]
-    assert any("(43563)" in label for label in legend_labels)
     assert any("(296:297)" in label for label in legend_labels)
     plt.close("all")
 

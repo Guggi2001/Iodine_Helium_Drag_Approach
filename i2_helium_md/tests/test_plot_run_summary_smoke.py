@@ -29,8 +29,8 @@ HEDFT_RUN_18A = PROJECT_ROOT / "data" / "runs" / "18A_hedft_comparison"
 
 REF_9A = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
 REF_18A = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
-VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
-VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"
+VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 
 
 def _import_script():

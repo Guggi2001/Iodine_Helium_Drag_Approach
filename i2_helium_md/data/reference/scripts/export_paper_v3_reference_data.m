@@ -23,9 +23,15 @@
 % - The high-SNR MAT file path above must exist on the MATLAB machine.
 %
 % Outputs, written under data/reference/paper_v3/:
-% - iplus_he_300mw_43563_radial.csv: v_mps,signal_arb
+% - iplus_he_high_snr_radial.csv: v_mps,signal_arb
 % - timescan_296_297_radial.csv: v_mps,signal_296,signal_297
-% - iplus_he_300mw_43563_phi.csv: phi_rad,signal_arb
+% - iplus_he_high_snr_phi.csv: phi_rad,signal_arb
+%
+% Naming note: the I+He radial/phi outputs are *not* the standalone 43563
+% measurement. Lines 47-50 below load 43563 into res_Iplus_He, but the
+% high-SNR MAT load on line 52 overwrites res_Iplus_He with the co-added
+% res_sum dataset before export. Output filenames reflect that actual
+% data source.
 
 clear; close all;
 
@@ -49,6 +55,9 @@ res_Iplus_gas = plot_processed_VMI(gas_phase_reference_measurement, true, VM_cen
 res_Iplus_from_He = subtract_processed_data(res_Iplus_from_He, res_Iplus_gas); %#ok<NASGU>
 res_Iplus_He = plot_processed_VMI(I_plus_He_from_drop_reference_measurement, true, VM_center_Iplus_He, true); %#ok<NASGU>
 
+% Overwrite res_Iplus_He with the high-SNR co-added res_sum. Subsequent
+% exports labelled "iplus_he_high_snr_*" reflect this co-add, not the
+% standalone 43563 measurement loaded above.
 data_in = load('T:\github synchronized\VMI_matlab\matfile_data_scripts\A_state_paper_figures_single_pulse\high_snr\ressumI2HeNI^+He');
 res_Iplus_He = data_in.res_sum;
 
@@ -70,8 +79,8 @@ v_he_mps = res_Iplus_He.r(:) * vf;
 signal_he = res_Iplus_He.radial_distribution(:);
 T_he = table(v_he_mps, signal_he, ...
     'VariableNames', {'v_mps', 'signal_arb'});
-writetable(T_he, fullfile(out_dir, 'iplus_he_300mw_43563_radial.csv'));
-fprintf('Saved iplus_he_300mw_43563_radial.csv\n');
+writetable(T_he, fullfile(out_dir, 'iplus_he_high_snr_radial.csv'));
+fprintf('Saved iplus_he_high_snr_radial.csv\n');
 
 % Top panel timescan traces: v3 lines 169-173.
 timescan_mask = res2.t > 150;
@@ -89,5 +98,5 @@ b_r = res_Iplus_He.r * vf > VMIN_ANGULAR_DISTR;
 y_phi = mean(res_Iplus_He.image_polar(:, b_r), 2);
 T_phi = table(res_Iplus_He.phi(:), y_phi(:), ...
     'VariableNames', {'phi_rad', 'signal_arb'});
-writetable(T_phi, fullfile(out_dir, 'iplus_he_300mw_43563_phi.csv'));
-fprintf('Saved iplus_he_300mw_43563_phi.csv\n');
+writetable(T_phi, fullfile(out_dir, 'iplus_he_high_snr_phi.csv'));
+fprintf('Saved iplus_he_high_snr_phi.csv\n');

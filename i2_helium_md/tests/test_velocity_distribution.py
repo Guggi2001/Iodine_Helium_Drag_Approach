@@ -18,8 +18,8 @@ from i2_helium_md.simulation.checkpoint import IonCheckpoint
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_he.csv"
-VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_iplus_gas.csv"
+VMI_HE = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+VMI_GAS = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 
 
 # ===========================================================================
@@ -92,7 +92,21 @@ def _make_ion(
 # VMI loader
 # ===========================================================================
 class TestLoadVmiReference:
-    def test_round_trip_synthetic(self, tmp_path):
+    def test_round_trip_canonical_mps(self, tmp_path):
+        path = tmp_path / "vmi.csv"
+        path.write_text(
+            "v_mps,signal_arb\n50,1.2\n100,2.4\n150,3.6\n",
+            encoding="ascii",
+        )
+        ref = load_vmi_reference(path)
+
+        assert isinstance(ref, VmiReference)
+        # m/s on disk -> A/ps internally (factor of 100).
+        np.testing.assert_array_equal(ref.velocity_Aps, [0.5, 1.0, 1.5])
+        np.testing.assert_array_equal(ref.signal_arb, [1.2, 2.4, 3.6])
+        assert ref.source_path == path.resolve()
+
+    def test_round_trip_legacy_Aps(self, tmp_path):
         path = tmp_path / "vmi.csv"
         path.write_text(
             "v_Aps,signal_arb\n0.5,1.2\n1.0,2.4\n1.5,3.6\n",
@@ -100,10 +114,9 @@ class TestLoadVmiReference:
         )
         ref = load_vmi_reference(path)
 
-        assert isinstance(ref, VmiReference)
+        # Legacy A/ps column should pass through unchanged.
         np.testing.assert_array_equal(ref.velocity_Aps, [0.5, 1.0, 1.5])
         np.testing.assert_array_equal(ref.signal_arb, [1.2, 2.4, 3.6])
-        assert ref.source_path == path.resolve()
 
     def test_missing_file_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError, match="VMI reference"):
@@ -112,7 +125,7 @@ class TestLoadVmiReference:
     def test_bad_header_raises(self, tmp_path):
         path = tmp_path / "vmi.csv"
         path.write_text("velocity,intensity\n0.5,1.0\n", encoding="ascii")
-        with pytest.raises(ValueError, match="expected.*v_Aps.*signal_arb"):
+        with pytest.raises(ValueError, match="signal_arb"):
             load_vmi_reference(path)
 
 

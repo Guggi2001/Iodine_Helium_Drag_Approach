@@ -41,6 +41,7 @@ class PaperV2RadialReference:
     """One paper-v2 experimental radial reference exported from MATLAB."""
 
     velocity_Aps: np.ndarray
+    velocity_mps: np.ndarray
     signal_arb: np.ndarray
     label: str
     source_path: Path
@@ -52,6 +53,8 @@ class PaperV2VMIImageReference:
 
     vx_Aps: np.ndarray
     vy_Aps: np.ndarray
+    vx_mps: np.ndarray
+    vy_mps: np.ndarray
     intensity: np.ndarray
     metadata: dict[str, Any]
     source_path: Path
@@ -88,7 +91,9 @@ class PaperV2VelocityCurve:
 
     mass_amu: float
     bin_centers_Aps: np.ndarray
+    bin_centers_mps: np.ndarray
     bin_edges_Aps: np.ndarray
+    bin_edges_mps: np.ndarray
     counts: np.ndarray
     smoothed: np.ndarray
     normalised: np.ndarray
@@ -124,15 +129,26 @@ def load_paper_v2_radial_references(directory: str | Path) -> list[PaperV2Radial
 
 
 def load_paper_v2_radial_reference(path: str | Path) -> PaperV2RadialReference:
-    """Load a paper-v2 radial reference CSV with ``v_Aps,signal_arb`` columns."""
+    """Load a paper-v2 radial reference CSV.
+
+    Canonical columns are ``v_mps,signal_arb``. Legacy files written with
+    ``v_Aps,signal_arb`` are accepted and converted by a factor of 100.
+    """
 
     p = Path(path)
     data = _load_named_csv(p)
     names = data.dtype.names or ()
-    if not all(name in names for name in ("v_Aps", "signal_arb")):
-        raise ValueError(f"{p.name} must contain columns v_Aps and signal_arb")
+    if "signal_arb" not in names:
+        raise ValueError(f"{p.name} must contain a signal_arb column")
+    if "v_mps" in names:
+        velocity_Aps = np.asarray(data["v_mps"], dtype=float) / 100.0
+    elif "v_Aps" in names:
+        velocity_Aps = np.asarray(data["v_Aps"], dtype=float)
+    else:
+        raise ValueError(f"{p.name} must contain a v_mps (or legacy v_Aps) column")
     return PaperV2RadialReference(
-        velocity_Aps=np.asarray(data["v_Aps"], dtype=float),
+        velocity_Aps=velocity_Aps,
+        velocity_mps=velocity_Aps * 100.0,
         signal_arb=np.asarray(data["signal_arb"], dtype=float),
         label=_label_from_reference_name(p),
         source_path=p.resolve(),
@@ -140,25 +156,41 @@ def load_paper_v2_radial_reference(path: str | Path) -> PaperV2RadialReference:
 
 
 def load_paper_v2_vmi_image_reference(path: str | Path) -> PaperV2VMIImageReference:
-    """Load a paper-v2 processed VMI image reference from ``.npz``."""
+    """Load a paper-v2 processed VMI image reference from ``.mat`` or ``.npz``.
+
+    Canonical axis fields are ``vx_mps,vy_mps,intensity``. Legacy files
+    using ``vx_Aps,vy_Aps,intensity`` (A/ps) are accepted; the loader
+    converts the axes to A/ps either way (m/s axes are divided by 100).
+    """
 
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"paper-v2 VMI image reference not found: {p.resolve()}")
-    required = ("vx_Aps", "vy_Aps", "intensity")
+
+    def _pick(container, has_key) -> tuple[np.ndarray, np.ndarray]:
+        if has_key("vx_mps") and has_key("vy_mps"):
+            vx = np.atleast_1d(np.squeeze(np.asarray(container["vx_mps"], dtype=float))) / 100.0
+            vy = np.atleast_1d(np.squeeze(np.asarray(container["vy_mps"], dtype=float))) / 100.0
+            return vx, vy
+        if has_key("vx_Aps") and has_key("vy_Aps"):
+            vx = np.atleast_1d(np.squeeze(np.asarray(container["vx_Aps"], dtype=float)))
+            vy = np.atleast_1d(np.squeeze(np.asarray(container["vy_Aps"], dtype=float)))
+            return vx, vy
+        raise ValueError(
+            f"{p.name} must contain (vx_mps, vy_mps) or legacy (vx_Aps, vy_Aps) axes"
+        )
+
     if p.suffix.lower() == ".mat":
         z = loadmat(p)
-        if not all(name in z for name in required):
-            raise ValueError(f"{p.name} must contain fields vx_Aps, vy_Aps, intensity")
-        vx = np.atleast_1d(np.squeeze(np.asarray(z["vx_Aps"], dtype=float)))
-        vy = np.atleast_1d(np.squeeze(np.asarray(z["vy_Aps"], dtype=float)))
+        if "intensity" not in z:
+            raise ValueError(f"{p.name} must contain an intensity field")
+        vx, vy = _pick(z, lambda k: k in z)
         intensity = np.asarray(z["intensity"], dtype=float)
     else:
         with np.load(p, allow_pickle=False) as z:
-            if not all(name in z.files for name in required):
-                raise ValueError(f"{p.name} must contain fields vx_Aps, vy_Aps, intensity")
-            vx = np.atleast_1d(np.squeeze(np.asarray(z["vx_Aps"], dtype=float)))
-            vy = np.atleast_1d(np.squeeze(np.asarray(z["vy_Aps"], dtype=float)))
+            if "intensity" not in z.files:
+                raise ValueError(f"{p.name} must contain an intensity field")
+            vx, vy = _pick(z, lambda k: k in z.files)
             intensity = np.asarray(z["intensity"], dtype=float)
 
     if intensity.ndim != 2:
@@ -188,6 +220,8 @@ def load_paper_v2_vmi_image_reference(path: str | Path) -> PaperV2VMIImageRefere
     return PaperV2VMIImageReference(
         vx_Aps=vx,
         vy_Aps=vy,
+        vx_mps=vx * 100.0,
+        vy_mps=vy * 100.0,
         intensity=intensity,
         metadata=metadata,
         source_path=p.resolve(),
@@ -253,7 +287,9 @@ def paper_v2_velocity_curve(
     return PaperV2VelocityCurve(
         mass_amu=float(mass_amu),
         bin_centers_Aps=centers,
+        bin_centers_mps=centers * 100.0,
         bin_edges_Aps=edges,
+        bin_edges_mps=edges * 100.0,
         counts=counts.astype(int),
         smoothed=smoothed,
         normalised=max_normalise(smoothed),
@@ -306,7 +342,7 @@ def _validate_axis_range(path: Path, axis_name: str, axis: np.ndarray) -> None:
     finite = finite[np.isfinite(finite)]
     if finite.size and float(np.nanmax(finite) - np.nanmin(finite)) <= 0.0:
         raise ValueError(
-            f"{path.name} {axis_name} has zero range. This usually means the "
+            f"{path.name} {axis_name} axis has zero range. This usually means the "
             "2-D VMI reference was exported with a constant row/column slice; "
             "rerun data/reference/scripts/export_paper_v2_reference_data.m "
             "after the full-grid axis export fix."
