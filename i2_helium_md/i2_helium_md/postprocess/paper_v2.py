@@ -34,6 +34,9 @@ PAPER_V2_RADIAL_REFERENCE_ORDER = (
     "iplus_he_160mw_43556_radial.csv",
     "iplus_he_600mw_43569_radial.csv",
 )
+PAPER_V2_HE2_RADIAL_REFERENCE_ORDER = (
+    "iplus_he2_high_snr_radial.csv",
+)
 
 
 @dataclass(frozen=True)
@@ -140,6 +143,19 @@ def load_paper_v2_radial_references(directory: str | Path) -> list[PaperV2Radial
     return [
         load_paper_v2_radial_reference(root / filename)
         for filename in PAPER_V2_RADIAL_REFERENCE_ORDER
+        if (root / filename).exists()
+    ]
+
+
+def load_paper_v2_he2_radial_references(directory: str | Path) -> list[PaperV2RadialReference]:
+    """Load optional high-SNR I+He2 radial references for separate panels."""
+
+    root = Path(directory)
+    if not root.exists():
+        return []
+    return [
+        load_paper_v2_radial_reference(root / filename)
+        for filename in PAPER_V2_HE2_RADIAL_REFERENCE_ORDER
         if (root / filename).exists()
     ]
 
@@ -478,6 +494,7 @@ def _load_named_csv(path: Path) -> np.ndarray:
 def _label_from_reference_name(path: Path) -> str:
     special = {
         "iplus_he_high_snr_radial": "I+He high-SNR",
+        "iplus_he2_high_snr_radial": "I+He2 high-SNR",
     }
     if path.stem in special:
         return special[path.stem]

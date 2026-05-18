@@ -53,34 +53,105 @@ def color_norm(values, *, noise_floor_fraction: float = 0.0):
     return mcolors.Normalize(vmin=0.0, vmax=0.8 * vmax)
 
 
-def load_optional_image(reference_dir: Path, *, log_prefix: str = "[paper_v2]"):
+def _load_optional_image_stem(
+    reference_dir: Path,
+    stem: str,
+    description: str,
+    loader,
+    *,
+    log_prefix: str,
+):
     image_dir = reference_dir / "images"
-    image_paths = []
-    if image_dir.exists():
-        image_paths = sorted(image_dir.glob("*_vmi_image.npz"))
-        image_paths.extend(sorted(image_dir.glob("*_vmi_image.mat")))
-    if not image_paths:
-        print(f"{log_prefix} no optional 2-D VMI image references found in {image_dir}")
-        return None
-    if len(image_paths) > 1:
-        print(f"{log_prefix} using first 2-D VMI image reference: {image_paths[0].name}")
-    return load_paper_v2_vmi_image_reference(image_paths[0])
+    image_paths = [image_dir / f"{stem}.npz", image_dir / f"{stem}.mat"]
+    for path in image_paths:
+        if path.exists():
+            return loader(path)
+    print(f"{log_prefix} optional {description} reference not found in {image_dir}")
+    return None
+
+
+def load_optional_image(reference_dir: Path, *, log_prefix: str = "[paper_v2]"):
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he_high_snr_vmi_image",
+        "I+He 2-D VMI image",
+        load_paper_v2_vmi_image_reference,
+        log_prefix=log_prefix,
+    )
+
+
+def load_optional_he2_image(reference_dir: Path, *, log_prefix: str = "[paper_v2]"):
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he2_high_snr_vmi_image",
+        "I+He2 2-D VMI image",
+        load_paper_v2_vmi_image_reference,
+        log_prefix=log_prefix,
+    )
 
 
 def load_optional_polar_image(
     reference_dir: Path, *, log_prefix: str = "[paper_v2]",
 ):
-    image_dir = reference_dir / "images"
-    image_paths = []
-    if image_dir.exists():
-        image_paths = sorted(image_dir.glob("*_vmi_polar_image.npz"))
-        image_paths.extend(sorted(image_dir.glob("*_vmi_polar_image.mat")))
-    if not image_paths:
-        print(f"{log_prefix} no optional polar VMI image references found in {image_dir}")
-        return None
-    if len(image_paths) > 1:
-        print(f"{log_prefix} using first polar VMI image reference: {image_paths[0].name}")
-    return load_paper_v2_vmi_polar_image_reference(image_paths[0])
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he_high_snr_vmi_polar_image",
+        "I+He polar VMI image",
+        load_paper_v2_vmi_polar_image_reference,
+        log_prefix=log_prefix,
+    )
+
+
+def load_optional_he2_polar_image(
+    reference_dir: Path, *, log_prefix: str = "[paper_v2]",
+):
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he2_high_snr_vmi_polar_image",
+        "I+He2 polar VMI image",
+        load_paper_v2_vmi_polar_image_reference,
+        log_prefix=log_prefix,
+    )
+
+
+def simulation_channel_label(mass_amu: float) -> str:
+    if np.isclose(mass_amu, 135.0):
+        return "I+He2"
+    if np.isclose(mass_amu, 131.0):
+        return "I+He"
+    return f"{mass_amu:.0f} u"
+
+
+def draw_simulated_map(ax, velocity_map) -> None:
+    bins_mps = velocity_map.velocity_bins_Aps * 100.0
+    mesh = ax.pcolormesh(
+        bins_mps,
+        bins_mps,
+        velocity_map.counts.T,
+        shading="auto",
+        cmap="magma",
+        norm=color_norm(velocity_map.counts),
+    )
+    plt.colorbar(mesh, ax=ax, label="counts")
+    label = simulation_channel_label(velocity_map.mass_amu)
+    if label.endswith(" u"):
+        title = f"(b) simulated VMI map, {label}"
+    else:
+        title = f"(b) simulated {label} VMI map, {velocity_map.mass_amu:.0f} u"
+    ax.set_title(title)
+    ax.set_xlabel("v_x / m/s")
+    ax.set_ylabel("v_y / m/s")
+    ax.set_aspect("equal")
+    ax.set_xlim(-3500.0, 3500.0)
+    ax.set_ylim(-3500.0, 3500.0)
+    ax.set_facecolor(plt.get_cmap("magma")(0.0))
+
+
+def simulation_curve_label(mass_amu: float) -> str:
+    label = simulation_channel_label(mass_amu)
+    if label.endswith(" u"):
+        return f"simulation {label}"
+    return f"simulation {label} {mass_amu:.0f} u"
 
 
 def polar_histogram_matched_to_reference(ion, polar_ref, *, mass_amu: float = 131.0):
@@ -153,33 +224,13 @@ def draw_experimental_image(
             ),
         )
         plt.colorbar(mesh, ax=ax, label="signal / arb. units")
-    ax.set_title("(a) experimental high-SNR VMI image")
+    ax.set_title(experimental_image_title(image_ref))
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
     ax.set_xlim(-3500.0, 3500.0)
     ax.set_ylim(-3500.0, 3500.0)
     ax.set_facecolor(cmap_floor)
-
-
-def draw_simulated_map(ax, velocity_map) -> None:
-    bins_mps = velocity_map.velocity_bins_Aps * 100.0
-    mesh = ax.pcolormesh(
-        bins_mps,
-        bins_mps,
-        velocity_map.counts.T,
-        shading="auto",
-        cmap="magma",
-        norm=color_norm(velocity_map.counts),
-    )
-    plt.colorbar(mesh, ax=ax, label="counts")
-    ax.set_title(f"(b) simulated VMI map, {velocity_map.mass_amu:.0f} u")
-    ax.set_xlabel("v_x / m/s")
-    ax.set_ylabel("v_y / m/s")
-    ax.set_aspect("equal")
-    ax.set_xlim(-3500.0, 3500.0)
-    ax.set_ylim(-3500.0, 3500.0)
-    ax.set_facecolor(plt.get_cmap("magma")(0.0))
 
 
 def draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
@@ -196,7 +247,7 @@ def draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
         "--",
         color="black",
         linewidth=1.5,
-        label=f"simulation I+He {velocity_curve.mass_amu:.0f} u",
+        label=simulation_curve_label(velocity_curve.mass_amu),
     )
     ax.set_title("2-D detector-plane speed vs raw VMI radial profile")
     ax.set_xlabel("v / m/s")
@@ -204,6 +255,16 @@ def draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
     ax.set_xlim(0.0, 3500.0)
     ax.set_ylim(0.0, 1.1)
     ax.legend(frameon=False, fontsize=8)
+
+
+def experimental_image_title(image_ref) -> str:
+    if image_ref is not None:
+        name = image_ref.source_path.name.lower()
+        if "he2" in name:
+            return "(a) experimental I+He2 high-SNR VMI image"
+        if "he_high" in name:
+            return "(a) experimental I+He high-SNR VMI image"
+    return "(a) experimental high-SNR VMI image"
 
 
 def build_phi_figure(phi_curve, *, phi_ref) -> plt.Figure:

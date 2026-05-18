@@ -1,0 +1,16 @@
+{
+  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison.m",
+  "source_mat_file": "T:\\github synchronized\\VMI_matlab\\matfile_data_scripts\\A_state_paper_figures_single_pulse\\high_snr\\ressumI2HeNI^+He2.mat",
+  "channel": "I+He2 high-SNR processed VMI (polar)",
+  "vf_single": 8.6178,
+  "units": "m/s",
+  "axis_equations": {
+    "phi_rad": "res.phi",
+    "v_radius_mps": "res.r * vf_single"
+  },
+  "image_center_x": 366.7952,
+  "image_center_y": 366.3288,
+  "matrix_layout": "rows=phi, cols=v_radius",
+  "output_fields": ["phi_rad", "v_radius_mps", "intensity_polar"],
+  "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]
+}

@@ -24,16 +24,25 @@ from i2_helium_md.postprocess.paper_v2 import (
     PaperV2VMIImageReference,
     PaperV2VMIPolarImageReference,
     load_paper_v2_phi_reference,
+    load_paper_v2_he2_radial_references,
     load_paper_v2_radial_references,
     load_paper_v2_vmi_image_reference,
     load_paper_v2_vmi_polar_image_reference,
     paper_v2_velocity_map,
 )
-from i2_helium_md.postprocess.paper_v2_plotting import build_radial_figure
+from i2_helium_md.postprocess.paper_v2_plotting import (
+    build_radial_figure,
+    load_optional_he2_image,
+    load_optional_image,
+)
 from i2_helium_md.simulation.checkpoint import IonCheckpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PAPER_V2_SCRIPT = PROJECT_ROOT / "scripts" / "post_processing" / "plot_paper_v2.py"
+PAPER_V2_EXPORTER = (
+    PROJECT_ROOT / "data" / "reference" / "scripts"
+    / "export_paper_v2_reference_data.m"
+)
 
 
 def _import_paper_v2_script():
@@ -219,8 +228,13 @@ def test_radial_reference_loader_reads_directory_and_labels(tmp_path):
         "v_Aps,signal_arb\n0.0,2.0\n1.0,1.0\n",
         encoding="ascii",
     )
+    (ref_dir / "iplus_he2_high_snr_radial.csv").write_text(
+        "v_Aps,signal_arb\n0.0,3.0\n1.0,1.5\n",
+        encoding="ascii",
+    )
 
     refs = load_paper_v2_radial_references(ref_dir)
+    he2_refs = load_paper_v2_he2_radial_references(ref_dir)
 
     assert [ref.label for ref in refs] == [
         "I+ gas 300 mW (43562)",
@@ -228,8 +242,55 @@ def test_radial_reference_loader_reads_directory_and_labels(tmp_path):
         "I+He 160 mW (43556)",
         "I+He 600 mW (43569)",
     ]
+    assert [ref.label for ref in he2_refs] == ["I+He2 high-SNR"]
     np.testing.assert_allclose(refs[1].velocity_Aps, [0.0, 1.0])
     np.testing.assert_allclose(refs[1].signal_arb, [2.0, 1.0])
+    np.testing.assert_allclose(he2_refs[0].signal_arb, [3.0, 1.5])
+
+
+def test_optional_vmi_image_loaders_choose_ihe_and_ihe2_explicitly(tmp_path):
+    image_dir = tmp_path / "images"
+    image_dir.mkdir()
+    vx_grid, vy_grid = np.meshgrid(
+        np.array([-1.0, 0.0, 1.0]),
+        np.array([-2.0, 2.0]),
+    )
+    savemat(
+        image_dir / "iplus_he_high_snr_vmi_image.mat",
+        {
+            "vx_mps": vx_grid * 100.0,
+            "vy_mps": vy_grid * 100.0,
+            "intensity": np.ones_like(vx_grid),
+        },
+    )
+    savemat(
+        image_dir / "iplus_he2_high_snr_vmi_image.mat",
+        {
+            "vx_mps": vx_grid * 100.0,
+            "vy_mps": vy_grid * 100.0,
+            "intensity": np.full_like(vx_grid, 2.0),
+        },
+    )
+
+    ihe = load_optional_image(tmp_path, log_prefix="[test]")
+    ihe2 = load_optional_he2_image(tmp_path, log_prefix="[test]")
+
+    assert ihe is not None
+    assert ihe2 is not None
+    assert ihe.source_path.name == "iplus_he_high_snr_vmi_image.mat"
+    assert ihe2.source_path.name == "iplus_he2_high_snr_vmi_image.mat"
+    np.testing.assert_allclose(ihe.intensity, np.ones_like(vx_grid))
+    np.testing.assert_allclose(ihe2.intensity, np.full_like(vx_grid, 2.0))
+
+
+def test_exporter_declares_ihe2_high_snr_outputs():
+    source = PAPER_V2_EXPORTER.read_text(encoding="utf-8")
+
+    assert "ressumI2HeNI^+He2" in source
+    assert "iplus_he2_high_snr_radial.csv" in source
+    assert "iplus_he2_high_snr_phi.csv" in source
+    assert "iplus_he2_high_snr_vmi_image.mat" in source
+    assert "iplus_he2_high_snr_vmi_polar_image.mat" in source
 
 
 def test_radial_figure_title_identifies_raw_2d_vmi_comparison():

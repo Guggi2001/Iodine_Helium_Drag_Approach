@@ -6,6 +6,8 @@ diagnostic so each can be inspected independently:
 
 - ``paper_v2_vmi_comparison.png``        experimental + simulated 2-D VMI
 - ``paper_v2_radial_comparison.png``     radial velocity distribution
+- ``paper_v2_he2_vmi_comparison.png``    experimental + simulated I+He2 VMI
+- ``paper_v2_he2_radial_comparison.png`` I+He2 radial velocity distribution
 - ``paper_v2_phi_comparison.png``        azimuthal phi distribution
 - ``paper_v2_polar_image_comparison.png``  experimental + simulated polar VMI
                                           (only when a polar reference exists)
@@ -32,6 +34,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 REFERENCE_DIR = PROJECT_ROOT / "data" / "reference" / "paper_v2"
 MASS_SELECTION_AMU = 131.0
+MASS_SELECTION_AMU_2 = 135.0
 # Fraction of the experimental panel's max intensity below which pixels
 # collapse to the bottom (background) colormap entry. Raise to suppress
 # more of the noise band; lower (or set to 0.0) to show more of the dim
@@ -52,6 +55,7 @@ import numpy as np  # noqa: E402
 
 from i2_helium_md.postprocess import (  # noqa: E402
     load_paper_v2_phi_reference,
+    load_paper_v2_he2_radial_references,
     load_paper_v2_radial_references,
     load_paper_v2_vmi_image_reference,
     load_paper_v2_vmi_polar_image_reference,
@@ -118,12 +122,18 @@ def main(argv: list[str] | None = None) -> int:
     radial_refs = load_paper_v2_radial_references(args.reference_dir)
     if not radial_refs:
         print(f"[paper_v2] no optional radial references found in {args.reference_dir}")
+    he2_radial_refs = load_paper_v2_he2_radial_references(args.reference_dir)
+    if not he2_radial_refs:
+        print(f"[paper_v2] no optional I+He2 radial references found in {args.reference_dir}")
 
     image_ref = _load_optional_image(args.reference_dir)
+    he2_image_ref = _load_optional_he2_image(args.reference_dir)
     polar_ref = _load_optional_polar_image(args.reference_dir)
     phi_ref = _load_optional_phi(args.reference_dir)
     velocity_map = paper_v2_velocity_map(ion, mass_amu=MASS_SELECTION_AMU)
+    velocity_map_2 = paper_v2_velocity_map(ion, mass_amu=MASS_SELECTION_AMU_2)
     velocity_curve = paper_v2_velocity_curve(ion, mass_amu=MASS_SELECTION_AMU)
+    velocity_curve_2 = paper_v2_velocity_curve(ion, mass_amu=MASS_SELECTION_AMU_2)
     phi_curve = paper_v2_phi_curve(ion, mass_amu=MASS_SELECTION_AMU)
 
     fig_vmi = _build_vmi_figure(
@@ -131,7 +141,13 @@ def main(argv: list[str] | None = None) -> int:
         velocity_map=velocity_map,
         experimental_noise_floor=args.noise_floor,
     )
+    fig_vmi_2 = _build_vmi_figure(
+        image_ref=he2_image_ref,
+        velocity_map=velocity_map_2,
+        experimental_noise_floor=args.noise_floor,
+    )
     fig_radial = _build_radial_figure(radial_refs, velocity_curve)
+    fig_radial_2 = _build_radial_figure(he2_radial_refs, velocity_curve_2)
     fig_phi = _build_phi_figure(phi_curve, phi_ref=phi_ref)
     fig_polar = None
     if polar_ref is not None:
@@ -143,10 +159,14 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = run.root / "figures"
     out_dir.mkdir(exist_ok=True)
     fig_vmi.savefig(out_dir / "paper_v2_vmi_comparison.png", dpi=150)
+    fig_vmi_2.savefig(out_dir / "paper_v2_he2_vmi_comparison.png", dpi=150)
     fig_radial.savefig(out_dir / "paper_v2_radial_comparison.png", dpi=150)
+    fig_radial_2.savefig(out_dir / "paper_v2_he2_radial_comparison.png", dpi=150)
     fig_phi.savefig(out_dir / "paper_v2_phi_comparison.png", dpi=150)
     print(f"Saved VMI comparison to {out_dir / 'paper_v2_vmi_comparison.png'}")
+    print(f"Saved I+He2 VMI comparison to {out_dir / 'paper_v2_he2_vmi_comparison.png'}")
     print(f"Saved radial comparison to {out_dir / 'paper_v2_radial_comparison.png'}")
+    print(f"Saved I+He2 radial comparison to {out_dir / 'paper_v2_he2_radial_comparison.png'}")
     print(f"Saved phi comparison to {out_dir / 'paper_v2_phi_comparison.png'}")
     if fig_polar is not None:
         fig_polar.savefig(out_dir / "paper_v2_polar_image_comparison.png", dpi=150)
@@ -158,31 +178,40 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _load_optional_image(reference_dir: Path):
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he_high_snr_vmi_image",
+        "I+He 2-D VMI image",
+        load_paper_v2_vmi_image_reference,
+    )
+
+
+def _load_optional_he2_image(reference_dir: Path):
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he2_high_snr_vmi_image",
+        "I+He2 2-D VMI image",
+        load_paper_v2_vmi_image_reference,
+    )
+
+
+def _load_optional_image_stem(reference_dir: Path, stem: str, description: str, loader):
     image_dir = reference_dir / "images"
-    image_paths = []
-    if image_dir.exists():
-        image_paths = sorted(image_dir.glob("*_vmi_image.npz"))
-        image_paths.extend(sorted(image_dir.glob("*_vmi_image.mat")))
-    if not image_paths:
-        print(f"[paper_v2] no optional 2-D VMI image references found in {image_dir}")
-        return None
-    if len(image_paths) > 1:
-        print(f"[paper_v2] using first 2-D VMI image reference: {image_paths[0].name}")
-    return load_paper_v2_vmi_image_reference(image_paths[0])
+    image_paths = [image_dir / f"{stem}.npz", image_dir / f"{stem}.mat"]
+    for path in image_paths:
+        if path.exists():
+            return loader(path)
+    print(f"[paper_v2] optional {description} reference not found in {image_dir}")
+    return None
 
 
 def _load_optional_polar_image(reference_dir: Path):
-    image_dir = reference_dir / "images"
-    image_paths = []
-    if image_dir.exists():
-        image_paths = sorted(image_dir.glob("*_vmi_polar_image.npz"))
-        image_paths.extend(sorted(image_dir.glob("*_vmi_polar_image.mat")))
-    if not image_paths:
-        print(f"[paper_v2] no optional polar VMI image references found in {image_dir}")
-        return None
-    if len(image_paths) > 1:
-        print(f"[paper_v2] using first polar VMI image reference: {image_paths[0].name}")
-    return load_paper_v2_vmi_polar_image_reference(image_paths[0])
+    return _load_optional_image_stem(
+        reference_dir,
+        "iplus_he_high_snr_vmi_polar_image",
+        "I+He polar VMI image",
+        load_paper_v2_vmi_polar_image_reference,
+    )
 
 
 def _polar_histogram_matched_to_reference(ion, polar_ref):
@@ -255,7 +284,7 @@ def _draw_experimental_image(
             ),
         )
         plt.colorbar(mesh, ax=ax, label="signal / arb. units")
-    ax.set_title("(a) experimental high-SNR VMI image")
+    ax.set_title(_experimental_image_title(image_ref))
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
@@ -275,7 +304,12 @@ def _draw_simulated_map(ax, velocity_map) -> None:
         norm=_color_norm(velocity_map.counts),
     )
     plt.colorbar(mesh, ax=ax, label="counts")
-    ax.set_title(f"(b) simulated VMI map, {velocity_map.mass_amu:.0f} u")
+    label = _simulation_channel_label(velocity_map.mass_amu)
+    if label.endswith(" u"):
+        title = f"(b) simulated VMI map, {label}"
+    else:
+        title = f"(b) simulated {label} VMI map, {velocity_map.mass_amu:.0f} u"
+    ax.set_title(title)
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
@@ -298,14 +332,39 @@ def _draw_radial_panel(ax, radial_refs, velocity_curve) -> None:
         "--",
         color="black",
         linewidth=1.5,
-        label=f"simulation I+He {velocity_curve.mass_amu:.0f} u",
+        label=_simulation_curve_label(velocity_curve.mass_amu),
     )
-    ax.set_title("paper v2 radial velocity distribution")
+    ax.set_title("2-D detector-plane speed vs raw VMI radial profile")
     ax.set_xlabel("v / m/s")
     ax.set_ylabel("signal / arb. units")
     ax.set_xlim(0.0, 3500.0)
     ax.set_ylim(0.0, 1.1)
     ax.legend(frameon=False, fontsize=8)
+
+
+def _experimental_image_title(image_ref) -> str:
+    if image_ref is not None:
+        name = image_ref.source_path.name.lower()
+        if "he2" in name:
+            return "(a) experimental I+He2 high-SNR VMI image"
+        if "he_high" in name:
+            return "(a) experimental I+He high-SNR VMI image"
+    return "(a) experimental high-SNR VMI image"
+
+
+def _simulation_channel_label(mass_amu: float) -> str:
+    if np.isclose(mass_amu, 135.0):
+        return "I+He2"
+    if np.isclose(mass_amu, 131.0):
+        return "I+He"
+    return f"{mass_amu:.0f} u"
+
+
+def _simulation_curve_label(mass_amu: float) -> str:
+    label = _simulation_channel_label(mass_amu)
+    if label.endswith(" u"):
+        return f"simulation {label}"
+    return f"simulation {label} {mass_amu:.0f} u"
 
 
 def _build_phi_figure(phi_curve, *, phi_ref) -> plt.Figure:

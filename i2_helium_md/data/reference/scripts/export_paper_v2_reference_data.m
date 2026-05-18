@@ -22,6 +22,8 @@
 %   high-SNR res_sum loaded from:
 %     T:\github synchronized\VMI_matlab\matfile_data_scripts\
 %       A_state_paper_figures_single_pulse\high_snr\ressumI2HeNI^+He
+%   The same high-SNR directory also provides a separate I+He2 res_sum:
+%       A_state_paper_figures_single_pulse\high_snr\ressumI2HeNI^+He2
 %   and plots:
 %     surf((res.Y-res.image_center_y)*vf_single/100, ...
 %          (res.X-res.image_center_x)*vf_single/100, res.image)
@@ -216,5 +218,116 @@ ylabel('v_y / m/s');
 colorbar;
 print(preview, fullfile(image_dir, 'iplus_he_high_snr_vmi_image_preview.png'), '-dpng', '-r150');
 close(preview);
+
+% Export the analogous high-SNR I+He2 data for separate Mass 135 comparisons.
+high_snr_he2_path = ['T:\github synchronized\VMI_matlab\matfile_data_scripts\', ...
+    'A_state_paper_figures_single_pulse\high_snr\ressumI2HeNI^+He2'];
+high_snr_he2_load_path = high_snr_he2_path;
+if exist(high_snr_he2_load_path, 'file') ~= 2 && exist([high_snr_he2_path, '.mat'], 'file') == 2
+    high_snr_he2_load_path = [high_snr_he2_path, '.mat'];
+end
+if exist(high_snr_he2_load_path, 'file') ~= 2
+    error('High-SNR I+He2 MAT file not found: %s', high_snr_he2_path);
+end
+data_in = load(high_snr_he2_load_path);
+if ~isfield(data_in, 'res_sum')
+    error('High-SNR I+He2 MAT file does not contain expected variable res_sum: %s', high_snr_he2_load_path);
+end
+res = data_in.res_sum;
+
+v_mps = res.r(:) * vf_single;
+signal_arb = res.radial_distribution(:);
+writetable( ...
+    table(v_mps, signal_arb, 'VariableNames', {'v_mps', 'signal_arb'}), ...
+    fullfile(out_dir, 'iplus_he2_high_snr_radial.csv'));
+fprintf('Exported high-SNR I+He2 radial graph curve.\n');
+
+b_r = res.r * vf_single > 0;
+phi_rad = res.phi(:);
+signal_arb = mean(res.image_polar(:, b_r), 2);
+signal_arb = signal_arb(:) / max(signal_arb(:));
+writetable( ...
+    table(phi_rad, signal_arb, 'VariableNames', {'phi_rad', 'signal_arb'}), ...
+    fullfile(out_dir, 'iplus_he2_high_snr_phi.csv'));
+
+v_radius_mps = res.r(:) * vf_single;
+phi_rad = res.phi(:);
+intensity_polar = res.image_polar;
+save(fullfile(image_dir, 'iplus_he2_high_snr_vmi_polar_image.mat'), ...
+    'phi_rad', 'v_radius_mps', 'intensity_polar');
+
+fid = fopen(fullfile(image_dir, 'iplus_he2_high_snr_vmi_polar_image.json'), 'w');
+if fid < 0
+    error('Could not open I+He2 polar metadata JSON for writing.');
+end
+fprintf(fid, '{\n');
+fprintf(fid, '  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison.m",\n');
+fprintf(fid, '  "source_mat_file": "%s",\n', strrep(high_snr_he2_load_path, '\', '\\'));
+fprintf(fid, '  "channel": "I+He2 high-SNR processed VMI (polar)",\n');
+fprintf(fid, '  "vf_single": %.15g,\n', vf_single);
+fprintf(fid, '  "units": "m/s",\n');
+fprintf(fid, '  "axis_equations": {\n');
+fprintf(fid, '    "phi_rad": "res.phi",\n');
+fprintf(fid, '    "v_radius_mps": "res.r * vf_single"\n');
+fprintf(fid, '  },\n');
+fprintf(fid, '  "image_center_x": %.15g,\n', res.image_center_x);
+fprintf(fid, '  "image_center_y": %.15g,\n', res.image_center_y);
+fprintf(fid, '  "matrix_layout": "rows=phi, cols=v_radius",\n');
+fprintf(fid, '  "output_fields": ["phi_rad", "v_radius_mps", "intensity_polar"],\n');
+fprintf(fid, '  "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]\n');
+fprintf(fid, '}\n');
+fclose(fid);
+
+preview_polar = figure('Visible', 'off');
+pcolor(phi_rad, v_radius_mps, intensity_polar.');
+shading flat;
+xlabel('phi / rad');
+ylabel('v / m/s');
+xlim([0, 2 * pi]);
+ylim([0, max(v_radius_mps)]);
+colorbar;
+print(preview_polar, fullfile(image_dir, 'iplus_he2_high_snr_vmi_polar_image_preview.png'), '-dpng', '-r150');
+close(preview_polar);
+
+vx_mps = (res.X - res.image_center_x) * vf_single;
+vy_mps = (res.Y - res.image_center_y) * vf_single;
+intensity = res.image;
+save(fullfile(image_dir, 'iplus_he2_high_snr_vmi_image.mat'), ...
+    'vx_mps', 'vy_mps', 'intensity');
+
+fid = fopen(fullfile(image_dir, 'iplus_he2_high_snr_vmi_image.json'), 'w');
+if fid < 0
+    error('Could not open I+He2 metadata JSON for writing.');
+end
+fprintf(fid, '{\n');
+fprintf(fid, '  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison.m",\n');
+fprintf(fid, '  "source_mat_file": "%s",\n', strrep(high_snr_he2_load_path, '\', '\\'));
+fprintf(fid, '  "channel": "I+He2 high-SNR processed VMI",\n');
+fprintf(fid, '  "vf_single": %.15g,\n', vf_single);
+fprintf(fid, '  "units": "m/s",\n');
+fprintf(fid, '  "axis_equations": {\n');
+fprintf(fid, '    "vx_mps": "(res.X - res.image_center_x) * vf_single",\n');
+fprintf(fid, '    "vy_mps": "(res.Y - res.image_center_y) * vf_single"\n');
+fprintf(fid, '  },\n');
+fprintf(fid, '  "image_center_x": %.15g,\n', res.image_center_x);
+fprintf(fid, '  "image_center_y": %.15g,\n', res.image_center_y);
+fprintf(fid, '  "output_fields": ["vx_mps", "vy_mps", "intensity"],\n');
+fprintf(fid, '  "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]\n');
+fprintf(fid, '}\n');
+fclose(fid);
+
+preview = figure('Visible', 'off');
+surf(vx_mps, vy_mps, intensity, 'EdgeColor', 'none');
+view(90, 90);
+pbaspect([1, 1, 1]);
+xlim([-3500, 3500]);
+ylim([-3500, 3500]);
+xlabel('v_x / m/s');
+ylabel('v_y / m/s');
+colorbar;
+print(preview, fullfile(image_dir, 'iplus_he2_high_snr_vmi_image_preview.png'), '-dpng', '-r150');
+close(preview);
+
+fprintf('Exported paper-v2 high-SNR I+He2 2-D VMI image reference.\n');
 
 fprintf('Exported paper-v2 high-SNR 2-D VMI image reference.\n');

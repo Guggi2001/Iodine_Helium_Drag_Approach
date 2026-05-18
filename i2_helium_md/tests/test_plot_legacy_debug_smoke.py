@@ -153,7 +153,7 @@ def test_paper_v2_figure_smoke(monkeypatch, tmp_path):
 
     rc = module.main(["--no-show", "--reference-dir", str(tmp_path)])
     assert rc == 0
-    assert len(plt.get_fignums()) == 3
+    assert len(plt.get_fignums()) == 5
     plt.close("all")
 
 
