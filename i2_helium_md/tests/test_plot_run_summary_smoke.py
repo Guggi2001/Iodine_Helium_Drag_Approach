@@ -46,15 +46,18 @@ def _import_script():
 
 
 def _patch_io(monkeypatch):
-    saved_titles = []
+    saved_figures = []
 
     def capture_pdf_figure(self, fig, *args, **kwargs):
-        saved_titles.append([ax.get_title() for ax in fig.axes])
+        saved_figures.append([
+            {"title": ax.get_title(), "xlim": ax.get_xlim()}
+            for ax in fig.axes
+        ])
 
     monkeypatch.setattr(plt, "show", lambda *a, **k: None)
     monkeypatch.setattr(plt.Figure, "savefig", lambda *a, **k: None)
     monkeypatch.setattr(PdfPages, "savefig", capture_pdf_figure)
-    return saved_titles
+    return saved_figures
 
 
 def _set_user_settings(
@@ -107,7 +110,7 @@ def test_run_summary_on_hedft_9a(monkeypatch, tmp_path):
 def test_run_summary_on_experimental(monkeypatch, tmp_path):
     plt.close("all")
     module = _import_script()
-    saved_titles = _patch_io(monkeypatch)
+    saved_figures = _patch_io(monkeypatch)
     _set_user_settings(
         monkeypatch, module,
         run_dir=EXPERIMENTAL_RUN,
@@ -119,7 +122,17 @@ def test_run_summary_on_experimental(monkeypatch, tmp_path):
     rc = module.main()
     assert rc == 0
     assert any(
-        "3-D speed vs Abel-inverted VMI radial distribution" in titles
-        for titles in saved_titles
+        any(
+            ax["title"] == "3-D speed vs Abel-inverted VMI radial distribution"
+            for ax in figure
+        )
+        for figure in saved_figures
+    )
+    assert any(
+        any(
+            ax["title"] == "Final ion mass spectrum"
+            for ax in figure
+        )
+        for figure in saved_figures
     )
     plt.close("all")

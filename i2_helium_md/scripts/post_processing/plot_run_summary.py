@@ -91,8 +91,10 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 # Plot-tuning constants (kept aligned with the existing focused scripts)
 # =============================================================================
+MASS_I = 127.0
 MASS_I_HE_AMU = 131.0
 MASS_I_HE2_AMU = 135.0
+MASS_SPECTRUM_MAX_AMU = 127.0 + 5.0 * 4.0
 
 HIST_BIN_WIDTH_APS = 0.04
 HIST_EDGE_MAX_APS = 26.0
@@ -386,6 +388,10 @@ def _section_mass_spectrum(ion) -> plt.Figure:
            edgecolor="black", linewidth=0.5)
     ax.set(title="Final ion mass spectrum",
            xlabel="m / u", ylabel="count")
+    ax.set_xlim(left = MASS_I-1, right=MASS_SPECTRUM_MAX_AMU+1)
+    # Set x-ticks in steps of 4 from MASS_I_HE_AMU to MASS_SPECTRUM_MAX_AMU
+    xticks = np.arange(MASS_I, MASS_SPECTRUM_MAX_AMU + 1, 4)
+    ax.set_xticks(xticks)
     return fig
 
 
