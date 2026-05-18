@@ -12,7 +12,11 @@
       "PowerShell(& 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\python.exe' -m pytest -q i2_helium_md/tests/test_plot_run_summary_smoke.py)",
       "PowerShell(& 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\python.exe' i2_helium_md/scripts/post_processing/plot_run_summary.py)",
       "PowerShell(& 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\python.exe' -m pytest -q i2_helium_md/tests)",
-      "PowerShell(& 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\python.exe' -m pytest -q i2_helium_md/tests/test_plot_run_summary_smoke.py i2_helium_md/tests/test_plot_legacy_debug_smoke.py)"
+      "PowerShell(& 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\python.exe' -m pytest -q i2_helium_md/tests/test_plot_run_summary_smoke.py i2_helium_md/tests/test_plot_legacy_debug_smoke.py)",
+      "Bash(xargs grep -l \"function.*generate_VMI_covariance_matrices\")",
+      "Bash('C:/Users/user/AppData/Local/Programs/Python/Python314/python.exe' -m pytest -q tests/test_paper_cov.py)",
+      "Bash(C:/Users/user/AppData/Local/Programs/Python/Python314/python.exe -c ' *)",
+      "Bash(xargs grep -l \"image_polar\\\\|phi.*angle\")"
     ]
   }
 }

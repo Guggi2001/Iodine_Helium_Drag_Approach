@@ -68,6 +68,16 @@ from .paper_v4 import (
     paper_v4_angular_pair_covariance,
     paper_v4_velocity_curve,
 )
+from .paper_cov import (
+    PaperCovExperimentalReference,
+    PhiAngularDistribution,
+    RadialPairCovariance,
+    covariance_axis_sum_normalised,
+    load_paper_cov_experimental_reference,
+    radial_covariance_trace,
+    radial_pair_speed_covariance,
+    simulated_phi_distribution,
+)
 from .polar_velocity import (
     AnisotropyFit,
     BetaCurve,
@@ -152,6 +162,14 @@ __all__ = [
     "load_paper_v4_radial_references",
     "paper_v4_velocity_curve",
     "paper_v4_angular_pair_covariance",
+    "PaperCovExperimentalReference",
+    "PhiAngularDistribution",
+    "RadialPairCovariance",
+    "covariance_axis_sum_normalised",
+    "load_paper_cov_experimental_reference",
+    "radial_covariance_trace",
+    "radial_pair_speed_covariance",
+    "simulated_phi_distribution",
     "RadialEvolution",
     "radial_distribution_evolution",
     "BoltzmannCurve",

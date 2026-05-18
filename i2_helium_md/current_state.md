@@ -81,6 +81,38 @@
       `post_process_single_pulse_paper_v4.m` branch for selected-run Python
       checkpoints: radial comparison, simulated angular pair covariance, and
       separate ion mass histogram.
+    - `plot_paper_cov.py` ports the active non-effusive
+      `post_process_single_pulse_paper_IplusHe_comparison_cov.m` branch as
+      six split figures: VMI comparison (exp + sim), 1-D velocity
+      distribution comparison (exp I+ gas, exp I+He, exp v-cov trace from
+      cov_radial diagonal, sim v-cov trace), 1-D phi(angle) distribution
+      overlay (exp from precomputed MATLAB CSV
+      `data/reference/paper_cov/iplus_he_phi.csv` -- literal MATLAB
+      `mean(res_Iplus_He.image_polar(:, b_r), 2) / max(...)` for the same
+      three measurement IDs as the covariance reference. The phi pipeline
+      uses the HARDCODED `plot_processed_VMI` center `[524.5297, 380.8430]`
+      from `_cov.m` line 100 (the covariance pipeline still uses the
+      auto-detected center per `_cov.m` line 356); these two centers
+      differ and reusing the auto-detected center for the phi pipeline
+      rotates the resulting angular distribution out of phase with the
+      live MATLAB figure. Sim phi from
+      `atan2(vy, vx) + pi`), angular pair covariance (exp + sim
+      side-by-side), radial pair-speed covariance (exp + sim side-by-side),
+      and a 1-D pair-cov axis-sum trace figure (angular + radial traces,
+      sim vs exp overlaid; `movmean(., 3)` -> `- min` -> `/ max`
+      normalisation per the legacy recipe). The experimental covariance
+      matrices and phi CSV live as frozen MATLAB-exported reference data
+      under `data/reference/paper_cov/` (`iplus_he_covariance.mat` + JSON
+      sidecar + `iplus_he_phi.csv`); the exporter is
+      `data/reference/scripts/export_paper_cov_reference_data.m`. Python
+      helpers in `i2_helium_md/postprocess/paper_cov.py`:
+      `radial_pair_speed_covariance` (sim radial-speed pair covariance with
+      MATLAB-style diag-zero and 2x2 movmean), `radial_covariance_trace`
+      (1-D trace from cov_radial over the [4, 22] A/ps band),
+      `load_paper_cov_experimental_reference`,
+      `simulated_phi_distribution`, and
+      `covariance_axis_sum_normalised`. The phi CSV reuses the generic
+      `load_paper_v2_phi_reference` loader.
   - `scripts/post_processing/plot_run_summary.py` consolidates the in-scope
     diagnostics into one multi-page PDF plus per-panel PNGs.
   - Additional post-processing helpers cover polar velocity histograms,
@@ -93,6 +125,13 @@
     non-interactive mode against an existing run directory.
   - `tests/test_plot_run_summary_smoke.py` covers the consolidated summary
     driver with non-interactive matplotlib.
+  - `tests/test_paper_cov.py` covers the `paper_cov` postprocess helpers
+    (radial pair-speed covariance binning, mass + outside filters, 2x2
+    movmean smoothing, the legacy `[4, 22] A/ps` v-cov trace recipe, and
+    the `.mat` / `.npz` reference round-trip).
+  - `tests/test_plot_paper_cov_smoke.py` covers the `plot_paper_cov.py`
+    driver with and without the experimental covariance reference
+    available (4 figures vs 2 figures fallback path).
 
 ## Current phase
 
@@ -109,21 +148,38 @@ reproduction rather than new analysis scope.
 
 ## Currently pending
 
-1. Review `data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
+1. Re-run `data/reference/scripts/export_paper_cov_reference_data.m`
+   once in MATLAB (with the legacy VMI toolbox on the path) to
+   regenerate `data/reference/paper_cov/iplus_he_covariance.mat` +
+   JSON sidecar AND `data/reference/paper_cov/iplus_he_phi.csv`. The
+   exporter was recently corrected to use the hardcoded
+   `plot_processed_VMI` center `[524.5297, 380.8430]` for the phi
+   pipeline (matching `_cov.m` line 100); the previous version reused
+   the auto-detected covariance center and produced a phi curve out of
+   phase with the live MATLAB figure. The CSV must be regenerated so
+   `plot_paper_cov.py` produces the two side-by-side covariance
+   figures, the 1-D pair-cov trace figure, and the experimental
+   overlay on the phi distribution. Without the covariance reference,
+   the three cov-derived figures are skipped (with a warning). Without
+   the phi CSV the phi figure draws the simulated curve alone (with a
+   warning).
+2. Review `data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
    `data/runs/single_pulse_droplet/figures/run_summary.pdf` against the
    corresponding legacy MATLAB post-processing figures.
-2. When mismatches are found in already-ported scripts, correct the relevant
+3. When mismatches are found in already-ported scripts, correct the relevant
    MATLAB post-processing recipe detail before refactoring the Python version
    for clarity.
-3. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
+4. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
    (`data/runs/9A_hedft_comparison`) and decide which outputs should be kept
    as documented reference diagnostics.
-4. Keep post-processing tests focused on loader contracts, overlap
+5. Keep post-processing tests focused on loader contracts, overlap
    interpolation, VMI reference loading, final-velocity histogram filters, and
    plotting smoke coverage.
-5. Keep Abel inversion, pump-probe, effusive dynamics, MATLAB multi-start
-   matrix behavior, experimental covariance export, and full experimental VMI
-   image interpretation out of scope unless explicitly requested.
+6. Keep Abel inversion, pump-probe, effusive dynamics, MATLAB multi-start
+   matrix behavior, and full experimental VMI image interpretation out of
+   scope unless explicitly requested. (Note: paper-cov experimental
+   pair-covariance is now in scope via the frozen MATLAB-exported reference
+   under `data/reference/paper_cov/`.)
 
 ## Recommended next task
 

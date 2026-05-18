@@ -59,7 +59,7 @@ RUN_SIZE = "production"
 # Where the output files are written. Change the final folder name for each run
 # you want to keep. This intentionally points to the project-level data/runs
 # folder, not to scripts/data/runs and not to a top-level results folder.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
 
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
@@ -83,7 +83,7 @@ VERBOSE = True
 
 # Set one of these values only if you want a production-like run with a specific
 # override.
-PRODUCTION_NUM_MOLECULES = None
+PRODUCTION_NUM_MOLECULES = 20000
 PRODUCTION_SEED = None
 PRODUCTION_ION_TIME_PS = None
 

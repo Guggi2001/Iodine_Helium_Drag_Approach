@@ -1,0 +1,47 @@
+{
+  "legacy_script": "post_process_single_pulse_paper_IplusHe_comparison_cov.m",
+  "exporter": "data/reference/scripts/export_paper_cov_reference_data.m",
+  "channel": "I+He droplet pair covariance",
+  "measurement_ids": [45668, 45662, 45667],
+  "doping": "low",
+  "probe_power_mW": 300,
+  "measurement_date": "2024-12-03",
+  "center_pixels_covariance": [500.978490382865, 348.182118803471],
+  "center_pixels_phi": [524.5297, 380.843],
+  "velocity_factor": 8.6178,
+  "mass_correction_factor": 0.984614467116425,
+  "covariance_arguments": {
+    "velocity_range_px": [0, 600],
+    "bins": [90, 90],
+    "apply_angular_filter": false,
+    "event_filter": true,
+    "theta_target_rad": 3.14159265358979,
+    "theta_range_rad": 0.698131700797732
+  },
+  "processing_steps": [
+    "cov_angular -= diag(diag(cov_angular))",
+    "cov_radial -= diag(diag(cov_radial))",
+    "cov_radial = movmean(cov_radial, 2, 1)",
+    "cov_radial = movmean(cov_radial, 2, 2)",
+    "res_Iplus_He = mean(plot_processed_VMI(ids, true, [524.5297 380.8430], true))",
+    "phi_signal = mean(res_Iplus_He.image_polar(:, res_Iplus_He.r * vf > 0), 2) / max(...)"
+  ],
+  "companion_files": [
+    {
+      "filename": "iplus_he_phi.csv",
+      "purpose": "experimental I+He phi(angle) distribution overlay for paper_cov_phi_distribution.png",
+      "columns": ["phi_rad", "signal_arb"],
+      "source": "mean of plot_processed_VMI for the same 3 measurement IDs at hardcoded center [524.5297, 380.8430] (matches _cov.m line 100), polar mean over all radii"
+    }
+  ],
+  "axis_units": {
+    "theta_centers_rad": "radian (range [-pi, pi])",
+    "velocity_centers_mps": "m/s, mass-corrected by mass_correction_factor"
+  },
+  "axis_equations": {
+    "theta_centers_rad": "result.theta",
+    "velocity_centers_mps": "result.r * velocity_factor * mass_correction_factor"
+  },
+  "external_requirements": ["legacy VMI MATLAB toolbox"],
+  "export_timestamp_utc": "2026-05-18T14:29:23Z"
+}

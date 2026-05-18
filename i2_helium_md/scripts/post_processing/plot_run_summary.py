@@ -114,7 +114,7 @@ TIME_HEATMAP_N_R_BINS = 100
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
 # =============================================================================
 # Path to the run directory holding cfg.json + neutral.npz + ion.npz.
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
 
 # Optional reference CSVs. Set to ``None`` to skip the matching section.
 # Typical experimental-droplet configuration:
