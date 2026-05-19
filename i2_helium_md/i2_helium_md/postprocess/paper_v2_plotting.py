@@ -135,9 +135,9 @@ def draw_simulated_map(ax, velocity_map) -> None:
     plt.colorbar(mesh, ax=ax, label="counts")
     label = simulation_channel_label(velocity_map.mass_amu)
     if label.endswith(" u"):
-        title = f"(b) simulated VMI map, {label}"
+        title = f"(b) Simulated VMI map, {label}"
     else:
-        title = f"(b) simulated {label} VMI map, {velocity_map.mass_amu:.0f} u"
+        title = f"(b) Simulated {label} VMI map, {velocity_map.mass_amu:.0f} u"
     ax.set_title(title)
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
@@ -261,9 +261,9 @@ def experimental_image_title(image_ref) -> str:
     if image_ref is not None:
         name = image_ref.source_path.name.lower()
         if "he2" in name:
-            return "(a) experimental I+He2 high-SNR VMI image"
+            return "(a) Experimental I+He2 high-SNR VMI image"
         if "he_high" in name:
-            return "(a) experimental I+He high-SNR VMI image"
+            return "(a) Experimental I+He high-SNR VMI image"
     return "(a) experimental high-SNR VMI image"
 
 
@@ -322,10 +322,10 @@ def build_polar_image_figure(
 
     v_max_mps = float(polar_ref.v_radius_mps[-1])
     panels = (
-        (ax_exp, "(a) experimental polar VMI"),
+        (ax_exp, "(a) Experimental polar VMI"),
         (
             ax_sim,
-            f"(b) simulated polar histogram, "
+            f"(b) Simulated polar histogram, "
             f"{polar_hist.mass_amu:.0f} u (3-D |v|)",
         ),
     )

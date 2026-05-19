@@ -465,14 +465,14 @@ def _section_radial_velocity(
         linewidth=2.0,
         label=r"$I_2$:$I^+$",
     )
-    ax.plot(
-        vmi_he.velocity_mps,
-        vmi_he.signal_arb / max_he,
-        linestyle=":",
-        color=c_he,
-        linewidth=2.0,
-        label=r"$I_2 He_N$:$I^+ He$",
-    )
+    # ax.plot(
+    #     vmi_he.velocity_mps,
+    #     vmi_he.signal_arb / max_he,
+    #     linestyle=":",
+    #     color=c_he,
+    #     linewidth=2.0,
+    #     label=r"$I_2 He_N$:$I^+ He$",
+    # )
     if vmi_he_high_snr is not None:
         max_he_hs = float(vmi_he_high_snr.signal_arb.max())
         ax.plot(

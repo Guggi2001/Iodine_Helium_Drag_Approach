@@ -43,5 +43,5 @@
     "velocity_centers_mps": "result.r * velocity_factor * mass_correction_factor"
   },
   "external_requirements": ["legacy VMI MATLAB toolbox"],
-  "export_timestamp_utc": "2026-05-18T14:29:23Z"
+  "export_timestamp_utc": "2026-05-19T12:52:48Z"
 }

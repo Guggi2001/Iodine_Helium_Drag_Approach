@@ -222,7 +222,7 @@ def build_phi_distribution_figure(*, phi_ref, ion, mass_amu: float) -> plt.Figur
             color="tab:blue",
         )
         handles.append(line)
-        labels.append("I+He (exp)")
+        labels.append("I+He high SNR")
 
     sim_phi = simulated_phi_distribution(ion, mass_amu=mass_amu)
     (line,) = ax.plot(
@@ -322,7 +322,7 @@ def draw_experimental_vmi(ax, image_ref, *, noise_floor_fraction: float) -> None
             ),
         )
         plt.colorbar(mesh, ax=ax, label="signal / arb. units")
-    ax.set_title("(a) experimental I+He VMI")
+    ax.set_title("(a) Experimental I+He VMI")
     ax.set_xlabel("v_x / m/s")
     ax.set_ylabel("v_y / m/s")
     ax.set_aspect("equal")
@@ -343,7 +343,7 @@ def draw_simulated_vmi(ax, velocity_map) -> None:
     )
     plt.colorbar(mesh, ax=ax, label="counts")
     ax.set_title(
-        f"(b) simulated I+He VMI, {velocity_map.mass_amu:.0f} u, "
+        f"(b) Simulated I+He VMI, {velocity_map.mass_amu:.0f} u, "
         f"{velocity_map.num_atoms_used} atoms"
     )
     ax.set_xlabel("v_x / m/s")
