@@ -28,6 +28,31 @@ are full 2-D coordinate grids matching `intensity`, normalized for Matplotlib
 y-grid. These image references are not raw detector data; they are the
 processed MATLAB/VMI-toolbox result that the legacy script plotted.
 
+## Provenance: I+He high-SNR (`iplus_he_high_snr_*`)
+
+The high-SNR I+He radial CSV, phi CSV, and 2-D VMI image MAT all derive
+from a single averaged `res_sum` produced by
+`data/reference/scripts/generate_high_snr_iplus_he_mat.m` and saved to
+`i2_helium_md/old_data/ressumI2HeNI^+He.mat`. The averaging recipe is:
+
+- measurement IDs: `[45668, 45662, 45667, 45686]` (I+He droplet, low doping,
+  300 mW, 03.12.24) — same set as `legacy_matlab_repository/single_pulse_simulation/HeDFT_comparison/simulation_image.m:153`,
+  and a superset of the `paper_cov` triplet by the addition of 45686
+- center: `[524.5297, 380.8430]` (hardcoded; matches `simulation_image.m:159`
+  and the `paper_cov` phi pipeline)
+- velocity factor: `vf_single = 8.6178`
+- global background subtraction: OFF by default (the previous 17.10.24
+  bg frame 43655 is from a different session; a 03.12.24 bg frame has
+  not been identified)
+
+To regenerate, open `generate_high_snr_iplus_he_mat.m` in MATLAB, run once
+with `INSPECT_CENTERS_ONLY = true` to verify the per-file centers, then
+flip the flag to `false` and rerun.
+
+The I+He2 high-SNR exports (`iplus_he2_high_snr_*`) still derive from the
+external VMI_matlab high-SNR directory until a corresponding generator is
+written.
+
 ## Known issues
 
 - **43556 image center disagrees with `paper_v4`.** This folder's

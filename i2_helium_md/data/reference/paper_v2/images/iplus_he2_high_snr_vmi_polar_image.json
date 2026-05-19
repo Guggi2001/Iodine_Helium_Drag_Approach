@@ -8,8 +8,8 @@
     "phi_rad": "res.phi",
     "v_radius_mps": "res.r * vf_single"
   },
-  "image_center_x": 366.7952,
-  "image_center_y": 366.3288,
+  "image_center_x": 366.1433,
+  "image_center_y": 366.4826,
   "matrix_layout": "rows=phi, cols=v_radius",
   "output_fields": ["phi_rad", "v_radius_mps", "intensity_polar"],
   "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]

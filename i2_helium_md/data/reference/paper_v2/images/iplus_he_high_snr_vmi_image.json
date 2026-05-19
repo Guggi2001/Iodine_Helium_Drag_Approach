@@ -8,8 +8,8 @@
     "vx_mps": "(res.X - res.image_center_x) * vf_single",
     "vy_mps": "(res.Y - res.image_center_y) * vf_single"
   },
-  "image_center_x": 366.1433,
-  "image_center_y": 366.4826,
+  "image_center_x": 366.5297,
+  "image_center_y": 366.843,
   "output_fields": ["vx_mps", "vy_mps", "intensity"],
   "external_requirements": ["legacy VMI MATLAB toolbox", "high-SNR res_sum MAT file"]
 }

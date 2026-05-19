@@ -22,6 +22,9 @@
 % radial export uses the raw res.radial_distribution directly and is a
 % distinct artefact.
 clear; close all;
+setup_VMI_path_office_flir
+global abel_inv_post
+abel_inv_post = true;
 
 % NOTE: Ensure your VMI toolbox is on the MATLAB path before running this!
 
