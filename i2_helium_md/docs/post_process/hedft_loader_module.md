@@ -80,4 +80,5 @@ No conversion happens at load time. The downstream
 
 The loader does I/O only. It does not smooth, interpolate, plot, or
 derive quantities beyond what is in the file. Comparison logic lives in
-:mod:`i2_helium_md.postprocess.compare_trajectories`.
+:mod:`i2_helium_md.postprocess.compare_trajectories`. Project-wide scope
+rules live in `CLAUDE.md`.

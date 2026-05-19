@@ -1560,9 +1560,8 @@ Each loads from a `RunDirectory` and writes under
   `CLAUDE.md` (effusive branch, 3-D `surf(rr, phiphi,
   image_polar_select)` legacy visualisation of an experimental polar
   image, `cos(phi)^n + offset` fits on the experimental quadrant
-  slice). Decision notes:
-  `i2_helium_md/docs/post_process/scripts/post_process_single_pulse_paper_base.md`,
-  `i2_helium_md/docs/post_process/scripts/post_process_single_pulse_base.md`.
+  slice). Decision notes consolidated under
+  `i2_helium_md/docs/post_process/scripts/ancestor_script_decisions.md`.
 
 ### Out of scope (deferred)
 
@@ -1584,3 +1583,117 @@ small end-to-end run (`N=50`, 2 ps ion stage): 197/200 stored steps
 recorded a non-NaN diagnostic; `<T'/T>_from_mass_ratio` clusters at
 ~0.943, exactly the analytical asymptote `(1 + rho^2) / (1 + rho)^2`
 for `rho = 127/4` (iodine on helium).
+
+---
+
+## Step 14 — Post-processing port complete; next phase = drag model
+
+The MATLAB → Python post-processing port is complete as of 2026-05-19
+(commit `dc26b1f` "finished post processing for porting scope"). This
+entry records the closing state of that work and announces the next
+project phase.
+
+### Post-processing surface implemented
+
+Helpers under `i2_helium_md/postprocess/`:
+
+- `_smoothing.py` -- shared MATLAB `movmean` and trace-normaliser,
+  reused by every focused paper script and `plot_run_summary.py`.
+- `energy_balance.py` -- neutral / ion energy traces, phi histogram,
+  ion mass spectrum.
+- `hedft_loader.py`, `compare_trajectories.py`,
+  `velocity_distribution.py` -- normalized HeDFT loading, numerical
+  comparison, VMI reference + final-velocity histograms.
+- `polar_velocity.py`, `velocity_2d.py`, `pair_correlation.py`,
+  `time_resolved.py`, `boltzmann_overlay.py` -- consolidated
+  diagnostics from `post_process_compare_radial_distributions.m` and
+  the deferred polar / cos² panels of `post_process_single_pulse_paper_v3.m`.
+- `paper_v2.py` + `paper_v2_plotting.py` -- literal port helpers
+  for the active droplet branch of
+  `post_process_single_pulse_paper_IplusHe_comparison.m`.
+- `paper_v3.py` -- literal port helpers for the active droplet branch
+  of `post_process_single_pulse_paper_v3.m`.
+- `paper_v4.py` -- literal port helpers for the active droplet branch
+  of `post_process_single_pulse_paper_v4.m`.
+- `paper_cov.py` + `paper_cov_plotting.py` -- literal port helpers
+  for the active non-effusive branch of
+  `post_process_single_pulse_paper_IplusHe_comparison_cov.m`,
+  including the radial pair-speed covariance, the `[4, 22] A/ps`
+  1-D v-cov trace, the simulated phi distribution, and the
+  axis-sum normalised pair-cov trace.
+
+Scripts under `scripts/post_processing/`:
+
+- `plot_hedft_comparison.py`, `plot_experimental_comparison.py`,
+- `plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
+  `plot_ion_temperature_diagnostic.py`,
+- `plot_paper_v2.py`, `plot_paper_v3.py`, `plot_paper_v4.py`,
+  `plot_paper_cov.py`,
+- `plot_run_summary.py` (consolidated multi-page PDF driver).
+
+### Experimental reference exports
+
+Under `data/reference/` and frozen:
+
+- `9A_All_Data.csv`, `18A_All_Data.csv` (HeDFT trajectory references),
+- `vmi_summary/vmi_iplus_he.csv`, `vmi_iplus_gas.csv`,
+  `vmi_iplus_he_high_snr.csv` (1-D VMI velocity-distribution
+  references),
+- `paper_v2/*` -- high-SNR + 160/300/600 mW droplet radial and phi
+  curves, four processed 2-D VMI image MAT files with JSON sidecars,
+- `paper_v3/*` -- high-SNR + timescan radial / phi curves,
+- `paper_v4/*` -- droplet + gas radial curves at multiple powers,
+- `paper_cov/iplus_he_covariance.mat` + JSON sidecar, and
+  `paper_cov/iplus_he_phi.csv` -- regenerated 2026-05-19 with the
+  corrected `plot_processed_VMI` center `[524.5297, 380.8430]` for
+  the phi pipeline (matches `_cov.m` line 100; the earlier auto-detected
+  center produced a phi curve out of phase with the live MATLAB
+  figure).
+
+The corresponding MATLAB exporters live under
+`data/reference/scripts/` (`export_vmi_reference_data.m`,
+`export_paper_v2_reference_data.m`, `export_paper_v3_reference_data.m`,
+`export_paper_v4_reference_data.m`,
+`export_paper_cov_reference_data.m`, plus the
+`generate_high_snr_iplus_he_mat.m` helper).
+
+### Authentic visual comparison pass
+
+The two consolidated outputs
+(`data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
+`data/runs/single_pulse_droplet/figures/run_summary.pdf`) and the
+focused paper figures were reviewed against the legacy MATLAB
+counterparts. Recipe mismatches identified during the review were
+literal-ported into the active Python helpers before any cosmetic
+cleanup. The `Authentic comparison vs. legacy MATLAB figures` row in
+`docs/post_process/post_processing_port_plan.md` is now `DONE`.
+
+### Out of scope (still deferred)
+
+Abel inversion, full experimental VMI image interpretation, pump-probe
+variants, effusive / gas-phase MD comparison, MATLAB multi-start matrix
+behavior, and live-debug 3D visualizers remain blocked behind explicit
+user request, consistent with `CLAUDE.md`.
+
+### Next phase: drag model
+
+The next project phase replaces the hard-sphere collision model with a
+**TDDFT-calibrated drag-force model** for I⁺ in the helium bubble.
+Concretely:
+
+- `i2_helium_md/physics/collisions.py:apply_collision` is the current
+  per-step momentum-transfer mechanism between I⁺ and helium. The new
+  drag model will be introduced as a parallel `physics/drag.py` module
+  so the two can be A/B compared against the existing post-processing
+  surface before the collision module is retired.
+- the drag coefficient (or equivalent velocity-dependent friction
+  γ(v)) will be calibrated against TDDFT data; the exact reference
+  dataset is to be identified during the survey step.
+- this is the first scope item that explicitly overrides the
+  `CLAUDE.md` "do not change collision physics" forbidden-list rule.
+  The exception is scoped to the drag-model work only. The neutral
+  driver, checkpoint schema, RNG draw order, default simulation scope,
+  and physical-constants table remain off-limits.
+
+The post-processing surface (this Step 14) is treated as the
+comparison layer for the new physics and stays stable.

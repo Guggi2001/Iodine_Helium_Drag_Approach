@@ -51,14 +51,18 @@ round(mass / u) == mass_select
 b_ion_outside == true
 v_projected = sqrt(vx^2 + vy^2)
 edges_velocity = 0:0.05:35  A/ps
-smooth = movmean(histogram_counts, 40)
+smooth = movmean(histogram_counts, 15)
 shifted = smooth - min(smooth)
 y_plot = shifted / max(shifted)
 x_plot = centers_velocity * 100  m/s
 ```
 
-As in the MATLAB paper script, this is a detector-plane projected-speed
-comparison, not a full 3D speed distribution.
+The 15-bin smoothing window is unified across `plot_paper_v2/v3/v4.py`
+(`PAPER_V4_VELOCITY_SMOOTHING_WINDOW`); the distinguishing v4 step is
+the `shifted = smooth - min(smooth)` baseline subtraction before
+max-normalisation. This is a detector-plane projected-speed comparison,
+not a full 3-D speed distribution — see `post_processing_strategy.md`
+§3 (Strategy A) and §5 (cross-script recipe table).
 
 ## Angular pair covariance
 
@@ -79,6 +83,8 @@ plot does not remove diagonal counts. It also overlays the selected
 
 ## Limits
 
-Only the active non-effusive branch is in scope. The effusive branch, raw VMI
-interpretation, Abel inversion, and experimental covariance-matrix generation
-remain deferred unless explicitly requested.
+Only the active non-effusive branch is in scope. For the project-wide
+scope rules (effusive / Abel / raw VMI interpretation / experimental
+covariance-matrix generation) see `CLAUDE.md` §"Current Scope".
+Experimental pair-covariance is now in-scope via the frozen reference
+under `data/reference/paper_cov/`, used by `plot_paper_cov.py`.

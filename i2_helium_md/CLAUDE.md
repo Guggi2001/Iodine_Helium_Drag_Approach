@@ -21,7 +21,7 @@ Legacy MATLAB reference:
 legacy_matlab_repository/
 ```
 
-The core MATLAB-to-Python simulation transfer is mainly complete:
+The MATLAB-to-Python transfer is complete:
 
 - neutral propagation is implemented,
 - ion propagation is implemented,
@@ -29,13 +29,23 @@ The core MATLAB-to-Python simulation transfer is mainly complete:
 - run directories write `cfg.json`, `neutral.npz`, and `ion.npz`,
 - important MATLAB/Python propagation and bookkeeping paths have been
   cross-reference validated,
-- in-scope post-processing helpers and scripts are implemented.
+- the full in-scope post-processing surface is implemented: focused
+  legacy-debug and paper scripts (`plot_neutral_energy_balance.py`,
+  `plot_ion_energy_balance.py`, `plot_ion_temperature_diagnostic.py`,
+  `plot_paper_v2.py`, `plot_paper_v3.py`, `plot_paper_v4.py`,
+  `plot_paper_cov.py`), the consolidated `plot_run_summary.py` driver,
+  and the supporting helpers under `i2_helium_md/postprocess/`,
+- the experimental reference exports under `data/reference/paper_v2/`,
+  `paper_v3/`, `paper_v4/`, `paper_cov/`, and `vmi_summary/` are
+  populated and frozen.
 
-The current phase is authentic post-processing porting and cleanup. Compare
-the generated Python figures against the legacy MATLAB figures, then tighten
-binning, smoothing, normalization, filtering, fitting, and plotting
-conventions where behavior still differs. Keep the goal faithful reproduction
-of in-scope legacy diagnostics, not new analysis scope.
+The current phase is **drag-model physics**: deprecate the hard-sphere
+collision model in `physics/collisions.py` and replace it with a
+TDDFT-calibrated drag-force model for I⁺ in a helium bubble. The
+post-processing surface is the comparison layer for the new physics and
+must stay stable. This is the first scope item that explicitly overrides
+the "do not change collision physics" forbidden-list rule below; the
+exception is scoped to the drag-model port only.
 
 ## Current Scope
 
@@ -48,7 +58,9 @@ In scope:
 - consolidated post-processing diagnostics from finished run directories,
 - authentic reproduction of legacy post-processing figures where reference
   data and run outputs are available,
-- focused MATLAB/Python reference validation.
+- focused MATLAB/Python reference validation,
+- drag-model physics calibrated against TDDFT for I⁺ in the helium
+  bubble (replacing the hard-sphere collision model).
 
 Out of scope unless the user explicitly asks:
 
@@ -190,6 +202,7 @@ scripts/post_processing/plot_ion_temperature_diagnostic.py
 scripts/post_processing/plot_paper_v2.py
 scripts/post_processing/plot_paper_v3.py
 scripts/post_processing/plot_paper_v4.py
+scripts/post_processing/plot_paper_cov.py
 scripts/post_processing/plot_run_summary.py
 ```
 
@@ -220,8 +233,9 @@ VMI_REF_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_ipl
 VMI_REF_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 ```
 
-The next post-processing work is authentic comparison against legacy MATLAB
-figures. For any mismatch:
+The post-processing port is complete. Further changes are bug-fix-only:
+if a panel's numerical or visual behavior disagrees with the legacy
+MATLAB figure, follow the legacy-first rule:
 
 1. inspect the exact MATLAB recipe,
 2. literal-port the normalization, binning, smoothing, filtering, or fit
@@ -230,7 +244,9 @@ figures. For any mismatch:
 4. only then refactor the Python helper for clarity.
 
 Do not read the full legacy plotting stack unless a specific numerical or
-visual discrepancy requires it.
+visual discrepancy requires it. Do not add new post-processing analysis
+scope (Abel inversion, pump-probe, effusive comparison, full experimental
+VMI image interpretation remain out of scope unless explicitly requested).
 
 ## Data Contracts
 
@@ -450,6 +466,13 @@ under-sampled, or the reference data came from the wrong MATLAB path.
 - broad refactors,
 - optimizing performance by changing numerical behavior,
 - implementing out-of-scope MATLAB paths.
+
+Active exception (scoped, time-limited): the user has explicitly
+approved replacing the hard-sphere collision model with a
+TDDFT-calibrated drag model for I⁺ in the helium bubble. This relaxes
+the "changing collision physics" rule only for that work. The neutral
+driver, checkpoint schema, RNG draw order, default simulation scope,
+and physical-constants table remain off-limits.
 
 ## Reporting
 

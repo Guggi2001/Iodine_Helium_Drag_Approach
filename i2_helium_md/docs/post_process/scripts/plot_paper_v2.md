@@ -80,14 +80,17 @@ The simulated image panel is a literal port of the MATLAB block:
   the Python figure transposes for Matplotlib so `v_x` is horizontal and `v_y`
   is vertical.
 
-The radial simulation curve uses projected detector speed
-`sqrt(vx^2 + vy^2)`, velocity edges `0:0.05:35` A/ps, moving mean window `10`,
-and max normalization. The phi curve uses `atan2(vy, vx) + pi`, edges
-`0:0.05:2*pi`, moving mean window `15`, and max normalization.
+The radial and phi simulation curves follow the Strategy A recipe shared
+across `plot_paper_v2/v3/v4.py`: projected detector speed
+`sqrt(vx² + vy²)`, velocity edges `0:0.05:35` A/ps, phi via
+`atan2(vy, vx) + pi` on `0:0.05:2π`, MATLAB `movmean` window 15 for
+both axes (`PAPER_V2_VELOCITY_SMOOTHING_WINDOW`,
+`PAPER_V2_PHI_SMOOTHING_WINDOW`), max-normalisation. See
+`post_processing_strategy.md` §5 Table for the full cross-script
+comparison.
 
 ## Limits
 
-Python does not perform raw VMI extraction, Abel inversion, or full image
-interpretation. The experimental image is a processed MATLAB reference artifact
-used for comparison. Experimental covariance images and effusive/gas-phase
-branches remain out of scope unless explicitly requested.
+Python does not perform raw VMI extraction or Abel inversion. The
+experimental image is a processed MATLAB reference artifact. For
+project-wide scope rules see `CLAUDE.md` §"Current Scope".

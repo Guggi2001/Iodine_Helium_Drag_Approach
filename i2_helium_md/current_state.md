@@ -135,101 +135,120 @@
 
 ## Current phase
 
-The neutral and ion propagation drivers are implemented and the ion-stage
-MATLAB/Python cross-reference validation is complete. The public single-pulse
-run script is implemented. The in-scope post-processing port now includes both
-focused plotting scripts and the consolidated `plot_run_summary.py` driver.
+The MATLAB → Python port is complete:
 
-The current phase is authentic post-processing cleanup and review: the focused
-v2/v3/v4 paper scripts are ported for the active droplet branches, but visual
-comparison against regenerated MATLAB references should continue to catch
-remaining convention mismatches. Keep changes narrowly focused on faithful
-reproduction rather than new analysis scope.
+- neutral and ion propagation drivers,
+- ion-stage MATLAB/Python cross-reference validation,
+- public single-pulse run script,
+- focused legacy-debug and paper post-processing scripts
+  (`plot_neutral_energy_balance.py`, `plot_ion_energy_balance.py`,
+  `plot_ion_temperature_diagnostic.py`, `plot_paper_v2.py`,
+  `plot_paper_v3.py`, `plot_paper_v4.py`, `plot_paper_cov.py`),
+- the consolidated `plot_run_summary.py` driver,
+- experimental reference exports under `data/reference/paper_v2/`,
+  `paper_v3/`, `paper_v4/`, `paper_cov/`, and `vmi_summary/`,
+- visual comparison of the generated Python figures against the legacy
+  MATLAB figures, with any recipe mismatches literal-ported.
+
+The current phase is **drag-model physics**: deprecate the hard-sphere
+collision model in `physics/collisions.py` and replace it with a
+TDDFT-calibrated drag-force model for I⁺ in a helium bubble. Treat the
+post-processing surface as the comparison layer for the new physics --
+keep it stable. This is the first scope item that explicitly overrides
+the `CLAUDE.md` "do not change collision physics" rule; the exception is
+scoped to the drag-model port only.
 
 ## Currently pending
 
-1. Re-run `data/reference/scripts/export_paper_cov_reference_data.m`
-   once in MATLAB (with the legacy VMI toolbox on the path) to
-   regenerate `data/reference/paper_cov/iplus_he_covariance.mat` +
-   JSON sidecar AND `data/reference/paper_cov/iplus_he_phi.csv`. The
-   exporter was recently corrected to use the hardcoded
-   `plot_processed_VMI` center `[524.5297, 380.8430]` for the phi
-   pipeline (matching `_cov.m` line 100); the previous version reused
-   the auto-detected covariance center and produced a phi curve out of
-   phase with the live MATLAB figure. The CSV must be regenerated so
-   `plot_paper_cov.py` produces the two side-by-side covariance
-   figures, the 1-D pair-cov trace figure, and the experimental
-   overlay on the phi distribution. Without the covariance reference,
-   the three cov-derived figures are skipped (with a warning). Without
-   the phi CSV the phi figure draws the simulated curve alone (with a
-   warning).
-2. Review `data/runs/9A_hedft_comparison/figures/run_summary.pdf` and
-   `data/runs/single_pulse_droplet/figures/run_summary.pdf` against the
-   corresponding legacy MATLAB post-processing figures.
-3. When mismatches are found in already-ported scripts, correct the relevant
-   MATLAB post-processing recipe detail before refactoring the Python version
-   for clarity.
-4. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
+1. Record numerical MD/HeDFT comparison values for the 9 A HeDFT run
    (`data/runs/9A_hedft_comparison`) and decide which outputs should be kept
    as documented reference diagnostics.
-5. Keep post-processing tests focused on loader contracts, overlap
+2. Keep post-processing tests focused on loader contracts, overlap
    interpolation, VMI reference loading, final-velocity histogram filters, and
    plotting smoke coverage.
-6. Keep Abel inversion, pump-probe, effusive dynamics, MATLAB multi-start
+3. Keep Abel inversion, pump-probe, effusive dynamics, MATLAB multi-start
    matrix behavior, and full experimental VMI image interpretation out of
    scope unless explicitly requested. (Note: paper-cov experimental
-   pair-covariance is now in scope via the frozen MATLAB-exported reference
+   pair-covariance is in scope via the frozen MATLAB-exported reference
    under `data/reference/paper_cov/`.)
+
+Items previously listed here that are now complete:
+
+- `data/reference/scripts/export_paper_cov_reference_data.m` was re-run
+  with the corrected `plot_processed_VMI` center `[524.5297, 380.8430]`
+  for the phi pipeline; `data/reference/paper_cov/iplus_he_covariance.mat`,
+  `iplus_he_covariance.json`, and `iplus_he_phi.csv` are regenerated and
+  frozen (dated 2026-05-19). `plot_paper_cov.py` now produces all four
+  comparison figures.
+- The two `run_summary.pdf` outputs (`data/runs/9A_hedft_comparison/figures/`
+  and `data/runs/single_pulse_droplet/figures/`) were visually reviewed
+  against the legacy MATLAB figures.
+- Recipe mismatches found during the review were literal-ported into the
+  active Python helpers before any cosmetic cleanup.
 
 ## Recommended next task
 
-Perform an authentic post-processing pass on the generated summary PDFs:
+Begin the drag-model port. As a first step, *survey* before editing:
 
-- inspect the legacy MATLAB recipe for any panel whose Python output differs,
-- port the MATLAB normalization, binning, smoothing, filtering, or fit recipe
-  literally enough to reproduce the intended behavior,
-- then document the resulting numerical diagnostics, especially
-  `compare_distance(ion, hedft_9A)` RMSE/ratio and
-  `compare_velocity_magnitude(..., atom="I1"|"I2")` RMSE/ratio.
+1. enumerate every active call site of `apply_collision` in
+   `physics/collisions.py`, `simulation/propagation_step.py`, and
+   `simulation/ion.py`, including the `IonStepState` /
+   `IonCheckpoint.temperature_diagnostic` data path that consumes the
+   collision diagnostic;
+2. identify which TDDFT reference dataset will calibrate the I⁺ /
+   helium-bubble drag coefficient (velocity-dependent friction γ(v) or
+   equivalent), and whether the existing 9 A / 18 A HeDFT trajectories
+   under `data/reference/` are reusable or whether a new export is
+   required;
+3. design the new module as `physics/drag.py` parallel to
+   `physics/collisions.py` rather than mutating the existing collision
+   code; keep the collision module importable until the drag model is
+   validated, so the two can be A/B compared against the same
+   post-processing surface;
+4. plan the deterministic / stochastic validation order matching
+   `CLAUDE.md` "Scientific-Code Caution": formula check first, then
+   one-step deterministic, then multi-step, then energy bookkeeping,
+   then stochastic statistics, then full driver smoke test.
 
 Do not broaden into Abel inversion or full experimental VMI interpretation
 unless explicitly requested.
 
 ## Files to inspect for the current phase
 
-Start with the directly relevant Python files:
+Drag-model survey scope. Start with the directly relevant Python files:
 
-- `i2_helium_md/postprocess/hedft_loader.py`
-- `i2_helium_md/postprocess/compare_trajectories.py`
-- `i2_helium_md/postprocess/velocity_distribution.py`
-- `i2_helium_md/postprocess/energy_balance.py`
-- `i2_helium_md/postprocess/polar_velocity.py`
-- `i2_helium_md/postprocess/velocity_2d.py`
-- `i2_helium_md/postprocess/pair_correlation.py`
-- `i2_helium_md/postprocess/time_resolved.py`
-- `i2_helium_md/postprocess/boltzmann_overlay.py`
-- `scripts/post_processing/plot_run_summary.py`
-- `scripts/post_processing/plot_hedft_comparison.py`
-- `scripts/post_processing/plot_experimental_comparison.py`
+- `i2_helium_md/physics/collisions.py` (existing hard-sphere model;
+  source of the per-step `CollisionDiagnostics` and
+  `temperature_diagnostic_from_collision` helpers — the contract the
+  drag model must replace)
+- `i2_helium_md/physics/interactions.py` (where ion / atom interaction
+  potentials live; check whether the drag force should plug in here or
+  in a new module)
+- `i2_helium_md/simulation/propagation_step.py`
+- `i2_helium_md/simulation/ion.py` (consumes the collision return value
+  and writes `IonCheckpoint.temperature_diagnostic`)
+- `i2_helium_md/config.py` (collision-related flags such as
+  `collision_mode`, `mass_attach_enabled`)
+- `i2_helium_md/physics/constants.py` (helium / I⁺ masses, accommodation
+  / cross-section constants that may be replaced or retained)
 
 Relevant tests:
 
-- `tests/test_hedft_loader.py`
-- `tests/test_compare_trajectories.py`
-- `tests/test_velocity_distribution.py`
-- `tests/test_plot_hedft_comparison_smoke.py`
-- `tests/test_plot_run_summary_smoke.py`
-- `tests/test_polar_velocity.py`
-- `tests/test_velocity_2d.py`
-- `tests/test_pair_correlation.py`
-- `tests/test_time_resolved.py`
-- `tests/test_boltzmann_overlay.py`
+- `tests/test_collisions.py`
+- `tests/test_ion_propagation_step.py`
+- `tests/test_ion.py`
 
-Relevant MATLAB provenance files:
+Relevant MATLAB provenance:
 
-- `simulation_image_only_trajectories.m`
-- `simulation_image.m`
-- files under `single_pulse_simulation/HeDFT_comparison/9Angström/`
+- `legacy_matlab_repository/.../vmi_sim_3d_ion_propa.m` (current collision
+  call sites, for reference only)
+- whatever TDDFT-output files (forces, friction vs. velocity, or
+  equivalent) end up being designated as the drag-calibration source —
+  to be identified during the survey step.
+
+The post-processing surface stays untouched in this phase; its files are
+inspected only when validating the drag model output against existing
+HeDFT / VMI references.
 
 ## Known MATLAB bugs not to reproduce
 
@@ -253,3 +272,10 @@ intentionally differ.
 - Do not implement out-of-scope MATLAB features.
 - Do not expand the VMI plotting helpers into Abel inversion or full
   experimental analysis without an explicit request.
+
+Drag-model exception: the user has explicitly approved replacing the
+hard-sphere collision model with a TDDFT-calibrated drag model. This
+is the one scoped exception to the `CLAUDE.md` forbidden-list item on
+collision physics; it applies only to the drag-model work. The neutral
+driver, the propagation cadence, the checkpoint schema, the RNG draw
+order, and the physical-constants table remain off-limits.

@@ -125,10 +125,8 @@ within roughly 5-15% of unity over the same window.
 
 ## Out of scope
 
-- No plotting helper.
-- No Abel inversion / VMI image processing / Bayesian histogramming
-  (these belong to a future step that ports the rest of
-  `simulation_image.m`).
-- No CLI wrapper script — the API is small enough to call from a
-  notebook or one-liner; a script can be added once the API stabilises.
-- No mass filtering or pump-probe comparison.
+This module is numerical comparison only: no plotting, no CLI, no mass
+filtering, no Bayesian histogramming. Plotting is done by
+`scripts/post_processing/plot_hedft_comparison.py`. For project-wide
+scope rules (Abel inversion, pump-probe, experimental VMI image
+interpretation) see `CLAUDE.md` §"Current Scope".

@@ -159,9 +159,12 @@ error.**
 
 ## 5 — Recipe differences across the four scripts
 
-Even within Strategy A, the three paper scripts use different
-smoothing windows and one of them (v4) baseline-subtracts. Strategy B
-uses its own bins and window. All four recipes are MATLAB-faithful.
+Within Strategy A, the three paper scripts share the same bins and the
+same smoothing window (15 bins, unified in the Python port after the
+legacy MATLAB v2 / v3 / v4 sources were found to vary inconsequentially).
+The only intentional within-strategy difference is mass filter and
+baseline rule (v4 baseline-subtracts and admits the bare-iodine 127 amu
+channel; v2 and v3 do not). Strategy B uses its own bins and window.
 
 | Step | `plot_paper_v2.py` | `plot_paper_v3.py` | `plot_paper_v4.py` | `plot_experimental_comparison.py` |
 |---|---|---|---|---|
@@ -169,15 +172,19 @@ uses its own bins and window. All four recipes are MATLAB-faithful.
 | Module called | `postprocess/paper_v2.py` | `postprocess/paper_v3.py` | `postprocess/paper_v4.py` | `postprocess/velocity_distribution.py` |
 | Source checkpoint | `ion.npz` of selected run | `ion.npz` of selected run | `ion.npz` of selected run | `ion.npz` of `single_pulse_droplet` |
 | Outside-droplet filter | `b_ion_outside == 1` | `b_ion_outside == 1` | `b_ion_outside == 1` | `require_outside=True` (default) |
-| Mass filter | `round(mass) == 131` (IHe⁺) | `round(mass) == 131` (IHe⁺) | `round(mass) ∈ {127, 131}` (I⁺ + IHe⁺) | per `velocity_distribution.py` defaults |
+| Mass filter | `round(mass) == 131` (IHe⁺) | `round(mass) ∈ {127, 131, 135}` (I⁺ + IHe⁺ + IHe₂⁺) | `round(mass) ∈ {127, 131}` (I⁺ + IHe⁺) | per `velocity_distribution.py` defaults |
 | Speed formula | `sqrt(vx² + vy²)` (2-D) | `sqrt(vx² + vy²)` (2-D) | `sqrt(vx² + vy²)` (2-D) | **`sqrt(vx² + vy² + vz²)` (3-D)** |
 | Bin edges (A/ps) | `np.arange(0, 35.05, 0.05)` → 700 bins | `np.arange(0, 35.05, 0.05)` → 700 bins | `np.arange(0, 35.05, 0.05)` → 700 bins | **`0:0.04:26`** → 650 bins |
-| `movmean` window | **10** bins | **20** bins | **40** bins | **15** bins |
+| `movmean` window | **15** bins | **15** bins | **15** bins | **15** bins |
 | Baseline subtraction | none | none | **`smoothed − min(smoothed)`** | **`smoothed − min(smoothed)`** (via `normalise_trace`) |
 | Final normalisation | `y / max(y)` | `y / max(y)` | `y / max(y)` after baseline shift | `y / max(y)` after baseline shift |
 | x-axis range plotted | 0–3500 m/s | 0–3500 m/s | 0–3500 m/s | **0–2800 m/s** |
-| Experimental overlay CSVs | `data/reference/paper_v2/*_radial.csv` (4 traces) | `data/reference/paper_v3/*_radial.csv` (2 traces incl. timescan) | `data/reference/paper_v4/*_radial.csv` (1 trace) | `data/reference/vmi_summary/vmi_iplus_he.csv`, `vmi_iplus_gas.csv` |
-| MATLAB provenance | `post_process_single_pulse_paper_IplusHe_comparison.m` (`movmean` 10) | `post_process_single_pulse_paper_v3.m` (`movmean` 20) | `post_process_single_pulse_paper_v4.m` (`movmean` 40, baseline shift) | `simulation_image.m` velocity overlay, see `CLAUDE.md` §"Known Plotting Conventions" |
+| Experimental overlay CSVs | `data/reference/paper_v2/*_radial.csv` (4 traces) | `data/reference/paper_v3/*_radial.csv` (2 traces incl. timescan) | `data/reference/paper_v4/*_radial.csv` (multiple droplet + gas traces) | `data/reference/vmi_summary/vmi_iplus_he.csv`, `vmi_iplus_gas.csv` |
+| MATLAB provenance | `post_process_single_pulse_paper_IplusHe_comparison.m` | `post_process_single_pulse_paper_v3.m` | `post_process_single_pulse_paper_v4.m` (also baseline shift) | `simulation_image.m` velocity overlay, see `CLAUDE.md` §"Known Plotting Conventions" |
+
+The constants `PAPER_V{2,3,4}_VELOCITY_SMOOTHING_WINDOW = 15` and
+`PAPER_V{2,3}_PHI_SMOOTHING_WINDOW = 15` are the single source of
+truth — see the module headers.
 
 ### Ranked impact on the simulation curve shape
 
@@ -188,23 +195,22 @@ look different across these four scripts, in order of visual impact:
    speeds than Strategy B because the 2-D projection systematically
    removes `vz` contributions. This is the single largest difference
    between a paper panel and the experimental-comparison panel.
-2. **`movmean` window (10 → 15 → 20 → 40 bins).** With 0.05 A/ps bins
-   the windows are 0.5 / 0.75 / 1.0 / 2.0 A/ps respectively; v4 is
-   ~4× more smoothed than v2 and loses most sub-peak structure.
-3. **Baseline subtraction.** v4 and `plot_experimental_comparison`
+2. **Baseline subtraction.** v4 and `plot_experimental_comparison`
    subtract `min(smoothed)` before max-normalising, which lifts the
    floor and stretches the peak relative to v2 and v3.
-4. **Mass filter.** v4 admits both `127` (I⁺) and `131` (IHe⁺); v2
-   and v3 admit only `131`. The two ion populations have different
-   speed distributions — this is real physics, not smoothing.
-5. **Bin width and range.** 0.04 vs 0.05 A/ps, range 26 vs 35 A/ps.
+3. **Mass filter.** v4 admits both `127` (I⁺) and `131` (IHe⁺); v3
+   adds the `135` (IHe₂⁺) channel; v2 admits only `131`. The
+   different ion populations have different speed distributions —
+   this is real physics, not smoothing.
+4. **Bin width and range.** 0.04 vs 0.05 A/ps, range 26 vs 35 A/ps.
    Small effect on resolution and high-velocity tail.
-6. **Reference CSVs and plotted x-range.** Affect only the
+5. **Reference CSVs and plotted x-range.** Affect only the
    *experimental* overlay, not the simulation curve.
 
-Within a single strategy, comparing across scripts is therefore a
-comparison of smoothing/baseline conventions, not of physics. Across
-strategies, the projection-vs-inversion choice dominates.
+Within Strategy A, the smoothing window is no longer a differentiator;
+comparing across paper scripts is a comparison of mass-filter and
+baseline choices. Across strategies, the projection-vs-inversion
+choice dominates.
 
 ## 6 — Assumptions baked into the comparison
 

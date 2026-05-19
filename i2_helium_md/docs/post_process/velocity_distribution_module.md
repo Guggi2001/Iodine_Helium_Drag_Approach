@@ -98,8 +98,8 @@ overlay against the unit-normalised experimental curves.
 
 ## Out of scope
 
-- VMI image processing (Abel inversion, mass spectrometry, raw image
-  averaging) — the experimental references already arrive as
-  Abel-inverted 1-D spectra.
-- Pump-probe analysis.
-- Plotting (lives in `scripts/plot_hedft_comparison.py`).
+Experimental references already arrive Abel-inverted (see
+`post_processing_strategy.md` §4 Strategy B). Plotting lives in
+`scripts/post_processing/plot_hedft_comparison.py` and
+`plot_experimental_comparison.py`. Project-wide scope rules live in
+`CLAUDE.md`.
