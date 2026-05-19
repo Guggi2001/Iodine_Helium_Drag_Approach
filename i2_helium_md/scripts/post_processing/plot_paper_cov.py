@@ -91,6 +91,7 @@ from i2_helium_md.postprocess import (  # noqa: E402
 from i2_helium_md.postprocess.paper_cov import (  # noqa: E402
     PAPER_COV_COLOR_CLIP_FRACTION,
 )
+from i2_helium_md.postprocess import paper_cov_plotting as covplot  # noqa: E402
 from i2_helium_md.postprocess.paper_v2 import max_normalise  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
@@ -121,10 +122,10 @@ def main(argv: list[str] | None = None) -> int:
     ion = run.load_ion()
 
     # ----- references -----
-    high_snr_ref = _load_optional_high_snr_radial(args.paper_v2_reference_dir)
-    image_ref = _load_optional_vmi_image(args.paper_v2_reference_dir)
-    cov_ref = _load_optional_cov_reference(args.reference_dir)
-    phi_ref = _load_optional_paper_cov_phi_reference(args.reference_dir)
+    high_snr_ref = covplot.load_optional_high_snr_radial(args.paper_v2_reference_dir)
+    image_ref = covplot.load_optional_vmi_image(args.paper_v2_reference_dir)
+    cov_ref = covplot.load_optional_cov_reference(args.reference_dir)
+    phi_ref = covplot.load_optional_phi_reference(args.reference_dir)
 
     # ----- simulated diagnostics -----
     velocity_map = paper_v2_velocity_map(ion, mass_amu=MASS_SELECTION_AMU)
@@ -135,28 +136,28 @@ def main(argv: list[str] | None = None) -> int:
     # ----- figures -----
     figures: dict[str, plt.Figure] = {}
 
-    figures["paper_cov_vmi_comparison.png"] = _build_vmi_figure(
+    figures["paper_cov_vmi_comparison.png"] = covplot.build_vmi_figure(
         image_ref=image_ref,
         velocity_map=velocity_map,
         experimental_noise_floor=args.noise_floor,
     )
-    figures["paper_cov_radial_distribution.png"] = _build_radial_distribution_figure(
+    figures["paper_cov_radial_distribution.png"] = covplot.build_radial_distribution_figure(
         high_snr_ref=high_snr_ref,
         sim_radial_curve=sim_radial_curve,
         sim_radial=sim_radial,
         cov_ref=cov_ref,
     )
-    figures["paper_cov_phi_distribution.png"] = _build_phi_distribution_figure(
-        phi_ref=phi_ref, ion=ion
+    figures["paper_cov_phi_distribution.png"] = covplot.build_phi_distribution_figure(
+        phi_ref=phi_ref, ion=ion, mass_amu=MASS_SELECTION_AMU,
     )
     if cov_ref is not None:
-        figures["paper_cov_angular_pair_cov.png"] = _build_angular_cov_figure(
+        figures["paper_cov_angular_pair_cov.png"] = covplot.build_angular_cov_figure(
             cov_ref=cov_ref, sim_angular=sim_angular
         )
-        figures["paper_cov_radial_pair_cov.png"] = _build_radial_cov_figure(
+        figures["paper_cov_radial_pair_cov.png"] = covplot.build_radial_cov_figure(
             cov_ref=cov_ref, sim_radial=sim_radial
         )
-        figures["paper_cov_pair_cov_traces.png"] = _build_pair_cov_traces_figure(
+        figures["paper_cov_pair_cov_traces.png"] = covplot.build_pair_cov_traces_figure(
             cov_ref=cov_ref,
             sim_angular=sim_angular,
             sim_radial=sim_radial,

@@ -13,7 +13,8 @@ The following legacy scripts are consolidated here:
 * ``vmi_sim_3d_ion_propa.m``                   -> ion energy balance + temperature
 * ``simulation_image_only_trajectories.m``     -> HeDFT R(t), v(t)
 * ``post_process_single_pulse_paper_v3.m``     -> 1D and 2D polar VMI panels
-* ``post_process_single_pulse_paper_v4.m``     -> angular pair covariance
+* ``post_process_single_pulse_paper_IplusHe_comparison_cov.m``
+                                                 -> covariance-paper overlays
 * ``post_process_single_pulse_paper.m``        -> bimodal Gaussian fit
 * ``post_process_single_pulse.m``              -> 2D (vx, vy) histogram
 * ``post_process_compare_radial_distributions.m`` -> time-resolved radial,
@@ -53,7 +54,6 @@ import numpy as np  # noqa: E402
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
 from i2_helium_md.postprocess import (  # noqa: E402
-    angular_pair_covariance,
     boltzmann_population,
     compare_distance,
     compare_neutral_to_hedft,
@@ -62,28 +62,35 @@ from i2_helium_md.postprocess import (  # noqa: E402
     interparticle_distance_histogram,
     ion_energy_totals,
     load_hedft_trajectory,
-    load_paper_v2_radial_references,
     load_vmi_reference,
     mass_spectrum,
     neutral_energy_totals,
-    paper_v2_phi_curve,
     paper_v2_velocity_curve,
     paper_v2_velocity_map,
+    paper_v4_angular_pair_covariance,
     radial_distribution_evolution,
+    radial_pair_speed_covariance,
 )
 from i2_helium_md.postprocess._smoothing import (  # noqa: E402
     moving_mean,
     normalise_trace,
 )
 from i2_helium_md.postprocess.paper_v2_plotting import (  # noqa: E402
-    build_phi_figure,
     build_polar_image_figure,
-    build_radial_figure,
     build_vmi_figure,
     load_optional_image,
-    load_optional_phi,
     load_optional_polar_image,
     polar_histogram_matched_to_reference,
+)
+from i2_helium_md.postprocess.paper_cov_plotting import (  # noqa: E402
+    build_angular_cov_figure as build_paper_cov_angular_cov_figure,
+    build_pair_cov_traces_figure as build_paper_cov_pair_cov_traces_figure,
+    build_phi_distribution_figure as build_paper_cov_phi_distribution_figure,
+    build_radial_cov_figure as build_paper_cov_radial_cov_figure,
+    build_radial_distribution_figure as build_paper_cov_radial_distribution_figure,
+    load_optional_cov_reference,
+    load_optional_high_snr_radial,
+    load_optional_phi_reference as load_optional_paper_cov_phi_reference,
 )
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
@@ -104,8 +111,6 @@ VELOCITY_PLOT_V_MAX_APS = 28.0
 VELOCITY_PLOT_V_MAX_MPS = 2800.0
 
 PAIR_DIST_NUM_BINS = 100
-PAIR_COV_N_THETA_BINS = 50
-
 TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
 
@@ -130,9 +135,15 @@ VMI_REF_HE_HIGH_SNR_PATH: Path | None = (
 )
 
 # Directory holding paper-v2 reference CSVs and images/. Set to ``None`` to
-# skip all four paper-v2 sections.
+# skip the paper-v2 VMI and polar sections.
 PAPER_V2_REFERENCE_DIR: Path | None = (
     PROJECT_ROOT / "data" / "reference" / "paper_v2"
+)
+
+# Directory holding paper-cov covariance references. Set to ``None`` to skip
+# the covariance-paper radial, phi, and pair-covariance replacement sections.
+PAPER_COV_REFERENCE_DIR: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "paper_cov"
 )
 
 # Fraction of experimental panel max intensity below which pixels clip to
@@ -169,6 +180,9 @@ def main() -> int:
     paper_v2_ref_dir = (
         Path(PAPER_V2_REFERENCE_DIR) if PAPER_V2_REFERENCE_DIR else None
     )
+    paper_cov_ref_dir = (
+        Path(PAPER_COV_REFERENCE_DIR) if PAPER_COV_REFERENCE_DIR else None
+    )
     args = SimpleNamespace(
         run_dir=run_dir,
         hedft_ref=hedft_ref,
@@ -176,6 +190,7 @@ def main() -> int:
         vmi_ref_gas=vmi_ref_gas,
         vmi_ref_he_high_snr=vmi_ref_he_high_snr,
         paper_v2_ref_dir=paper_v2_ref_dir,
+        paper_cov_ref_dir=paper_cov_ref_dir,
     )
 
     run = RunDirectory(run_dir)
@@ -219,10 +234,12 @@ def main() -> int:
                 ("paper_v2_vmi_comparison",
                  lambda: _section_paper_v2_vmi(
                      ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR)),
-                ("paper_v2_radial_comparison",
-                 lambda: _section_paper_v2_radial(ion, paper_v2_ref_dir)),
-                ("paper_v2_phi_comparison",
-                 lambda: _section_paper_v2_phi(ion, paper_v2_ref_dir)),
+                ("paper_cov_radial_distribution",
+                 lambda: _section_paper_cov_radial_distribution(
+                     ion, paper_cov_ref_dir, paper_v2_ref_dir)),
+                ("paper_cov_phi_distribution",
+                 lambda: _section_paper_cov_phi_distribution(
+                     ion, paper_cov_ref_dir)),
                 ("paper_v2_polar_image_comparison",
                  lambda: _section_paper_v2_polar(
                      ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR)),
@@ -232,8 +249,12 @@ def main() -> int:
                  lambda: _section_radial_evolution(ion)),
                 ("interparticle_distance_histogram",
                  lambda: _section_pair_distance(ion)),
-                ("angular_pair_covariance",
-                 lambda: _section_pair_covariance(ion)),
+                ("paper_cov_angular_pair_cov",
+                 lambda: _section_paper_cov_angular(ion, paper_cov_ref_dir)),
+                ("paper_cov_radial_pair_cov",
+                 lambda: _section_paper_cov_radial(ion, paper_cov_ref_dir)),
+                ("paper_cov_pair_cov_traces",
+                 lambda: _section_paper_cov_traces(ion, paper_cov_ref_dir)),
             ]
         if neutral is not None and hedft is not None:
             sections += [
@@ -317,6 +338,8 @@ def _section_metadata(cfg, ion, neutral, args) -> plt.Figure:
         refs.append(f"VMI(I+He, high SNR): {args.vmi_ref_he_high_snr}")
     if args.paper_v2_ref_dir:
         refs.append(f"paper-v2 ref dir: {args.paper_v2_ref_dir}")
+    if args.paper_cov_ref_dir:
+        refs.append(f"paper-cov ref dir: {args.paper_cov_ref_dir}")
     if refs:
         lines.append("references:")
         lines.extend(f"  {r}" for r in refs)
@@ -500,20 +523,102 @@ def _section_paper_v2_vmi(ion, reference_dir, noise_floor) -> plt.Figure:
     )
 
 
-def _section_paper_v2_radial(ion, reference_dir) -> plt.Figure:
+def _section_paper_cov_radial_distribution(
+    ion, reference_dir, paper_v2_reference_dir,
+) -> plt.Figure:
     if reference_dir is None:
-        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
-    refs = load_paper_v2_radial_references(reference_dir)
-    curve = paper_v2_velocity_curve(ion, mass_amu=PAPER_V2_MASS_AMU)
-    return build_radial_figure(refs, curve)
+        raise _SectionSkipped("PAPER_COV_REFERENCE_DIR is None")
+    high_snr_ref = None
+    if paper_v2_reference_dir is not None:
+        high_snr_ref = load_optional_high_snr_radial(
+            paper_v2_reference_dir, log_prefix="[run_summary]",
+        )
+    cov_ref = load_optional_cov_reference(reference_dir, log_prefix="[run_summary]")
+    try:
+        sim_radial_curve = paper_v2_velocity_curve(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+        sim_radial = radial_pair_speed_covariance(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+    except ValueError as exc:
+        raise _SectionSkipped(str(exc))
+    return build_paper_cov_radial_distribution_figure(
+        high_snr_ref=high_snr_ref,
+        sim_radial_curve=sim_radial_curve,
+        sim_radial=sim_radial,
+        cov_ref=cov_ref,
+        title = 'run_summary'
+    )
 
 
-def _section_paper_v2_phi(ion, reference_dir) -> plt.Figure:
+def _section_paper_cov_phi_distribution(ion, reference_dir) -> plt.Figure:
     if reference_dir is None:
-        raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
-    phi_ref = load_optional_phi(reference_dir, log_prefix="[run_summary]")
-    curve = paper_v2_phi_curve(ion, mass_amu=PAPER_V2_MASS_AMU)
-    return build_phi_figure(curve, phi_ref=phi_ref)
+        raise _SectionSkipped("PAPER_COV_REFERENCE_DIR is None")
+    phi_ref = load_optional_paper_cov_phi_reference(
+        reference_dir, log_prefix="[run_summary]",
+    )
+    try:
+        return build_paper_cov_phi_distribution_figure(
+            phi_ref=phi_ref,
+            ion=ion,
+            mass_amu=PAPER_V2_MASS_AMU,
+        )
+    except ValueError as exc:
+        raise _SectionSkipped(str(exc))
+
+
+def _section_paper_cov_angular(ion, reference_dir) -> plt.Figure:
+    cov_ref = _required_paper_cov_reference(reference_dir)
+    try:
+        sim_angular = paper_v4_angular_pair_covariance(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+    except ValueError as exc:
+        raise _SectionSkipped(str(exc))
+    return build_paper_cov_angular_cov_figure(
+        cov_ref=cov_ref, sim_angular=sim_angular,
+    )
+
+
+def _section_paper_cov_radial(ion, reference_dir) -> plt.Figure:
+    cov_ref = _required_paper_cov_reference(reference_dir)
+    try:
+        sim_radial = radial_pair_speed_covariance(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+    except ValueError as exc:
+        raise _SectionSkipped(str(exc))
+    return build_paper_cov_radial_cov_figure(
+        cov_ref=cov_ref, sim_radial=sim_radial,
+    )
+
+
+def _section_paper_cov_traces(ion, reference_dir) -> plt.Figure:
+    cov_ref = _required_paper_cov_reference(reference_dir)
+    try:
+        sim_angular = paper_v4_angular_pair_covariance(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+        sim_radial = radial_pair_speed_covariance(
+            ion, mass_amu=PAPER_V2_MASS_AMU,
+        )
+    except ValueError as exc:
+        raise _SectionSkipped(str(exc))
+    return build_paper_cov_pair_cov_traces_figure(
+        cov_ref=cov_ref,
+        sim_angular=sim_angular,
+        sim_radial=sim_radial,
+    )
+
+
+def _required_paper_cov_reference(reference_dir):
+    if reference_dir is None:
+        raise _SectionSkipped("PAPER_COV_REFERENCE_DIR is None")
+    cov_ref = load_optional_cov_reference(reference_dir, log_prefix="[run_summary]")
+    if cov_ref is None:
+        raise _SectionSkipped("no paper-cov experimental covariance reference found")
+    return cov_ref
 
 
 def _section_paper_v2_polar(ion, reference_dir, noise_floor) -> plt.Figure:
@@ -597,27 +702,6 @@ def _section_pair_distance(ion) -> plt.Figure:
     ax.set(title="Final per-molecule I-I separation",
            xlabel=r"|r$_a$ - r$_b$| / $\mathrm{\AA}$",
            ylabel="count")
-    return fig
-
-
-def _section_pair_covariance(ion) -> plt.Figure:
-    cov = angular_pair_covariance(
-        ion, n_theta_bins=PAIR_COV_N_THETA_BINS, mass_amu=MASS_I_HE_AMU,
-    )
-    if cov.num_pairs_used == 0:
-        raise _SectionSkipped("no pairs passed mass+outside filter")
-    fig, ax = plt.subplots(figsize=(6.5, 5.5), constrained_layout=True)
-    pcm = ax.pcolormesh(
-        cov.theta_edges_rad, cov.theta_edges_rad, cov.counts.T,
-        shading="auto", cmap="magma",
-    )
-    ax.set_aspect("equal")
-    ax.set(
-        title=f"Angular pair covariance (n_pairs={cov.num_pairs_used})",
-        xlabel=r"$\theta_a$ / rad",
-        ylabel=r"$\theta_b$ / rad",
-    )
-    fig.colorbar(pcm, ax=ax, label="count")
     return fig
 
 

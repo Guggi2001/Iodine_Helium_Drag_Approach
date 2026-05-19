@@ -19,6 +19,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
 import pytest  # noqa: E402
+import numpy as np  # noqa: E402
+from scipy.io import savemat  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -71,6 +73,7 @@ def _set_user_settings(
     vmi_ref_gas=None,
     vmi_ref_he_high_snr=None,
     paper_v2_ref_dir=None,
+    paper_cov_ref_dir=None,
 ):
     monkeypatch.setattr(module, "RUN_DIR", run_dir)
     monkeypatch.setattr(module, "OUT_DIR", out_dir)
@@ -79,7 +82,29 @@ def _set_user_settings(
     monkeypatch.setattr(module, "VMI_REF_GAS_PATH", vmi_ref_gas)
     monkeypatch.setattr(module, "VMI_REF_HE_HIGH_SNR_PATH", vmi_ref_he_high_snr)
     monkeypatch.setattr(module, "PAPER_V2_REFERENCE_DIR", paper_v2_ref_dir)
+    monkeypatch.setattr(module, "PAPER_COV_REFERENCE_DIR", paper_cov_ref_dir)
     monkeypatch.setattr(module, "SHOW_FIGURES", False)
+
+
+def _write_synthetic_paper_cov_reference(reference_dir: Path) -> Path:
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    n_theta = 16
+    n_v = 20
+    cov_angular = np.zeros((n_theta, n_theta), dtype=float)
+    cov_radial = np.zeros((n_v, n_v), dtype=float)
+    cov_angular[3, 11] = cov_angular[11, 3] = 1.0
+    cov_radial[5, 7] = cov_radial[7, 5] = 1.0
+    path = reference_dir / "iplus_he_covariance.mat"
+    savemat(
+        path,
+        {
+            "cov_angular": cov_angular,
+            "cov_radial": cov_radial,
+            "theta_centers_rad": np.linspace(-np.pi, np.pi, n_theta, endpoint=False),
+            "velocity_centers_mps": np.linspace(0.0, 2500.0, n_v),
+        },
+    )
+    return path
 
 
 @pytest.mark.skipif(
@@ -111,6 +136,8 @@ def test_run_summary_on_experimental(monkeypatch, tmp_path):
     plt.close("all")
     module = _import_script()
     saved_figures = _patch_io(monkeypatch)
+    paper_cov_ref_dir = tmp_path / "paper_cov"
+    _write_synthetic_paper_cov_reference(paper_cov_ref_dir)
     _set_user_settings(
         monkeypatch, module,
         run_dir=EXPERIMENTAL_RUN,
@@ -118,21 +145,26 @@ def test_run_summary_on_experimental(monkeypatch, tmp_path):
         vmi_ref_he=VMI_HE,
         vmi_ref_gas=VMI_GAS,
         paper_v2_ref_dir=tmp_path,
+        paper_cov_ref_dir=paper_cov_ref_dir,
     )
     rc = module.main()
     assert rc == 0
+    titles = [ax["title"] for figure in saved_figures for ax in figure]
     assert any(
-        any(
-            ax["title"] == "3-D speed vs Abel-inverted VMI radial distribution"
-            for ax in figure
-        )
-        for figure in saved_figures
+        title == "3-D speed vs Abel-inverted VMI radial distribution"
+        for title in titles
     )
+    assert "(c) velocity distribution comparison" in titles
+    assert "(f) phi angular distribution" in titles
+    assert "(d) experimental angular pair covariance" in titles
+    assert "(e) experimental radial pair covariance" in titles
+    assert "(g) angular pair-cov trace" in titles
+    assert "(h) radial pair-cov trace" in titles
+    assert "2-D detector-plane speed vs raw VMI radial profile" not in titles
+    assert "paper v2 azimuthal distribution" not in titles
+    assert not any(title.startswith("Angular pair covariance (") for title in titles)
     assert any(
-        any(
-            ax["title"] == "Final ion mass spectrum"
-            for ax in figure
-        )
-        for figure in saved_figures
+        title == "Final ion mass spectrum"
+        for title in titles
     )
     plt.close("all")
