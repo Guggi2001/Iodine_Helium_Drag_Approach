@@ -47,6 +47,15 @@ must stay stable. This is the first scope item that explicitly overrides
 the "do not change collision physics" forbidden-list rule below; the
 exception is scoped to the drag-model port only.
 
+**Planning is complete.** All architectural choices are locked in
+`DRAG_PORT_DESIGN_DECISIONS.md` (noise, mass attachment, drag form,
+integrator, spatial gating, validation). The frozen MD baseline is
+`PHYSICS_BASELINE.md`; the upstream drag-law extraction pipeline is
+`Drag_extraction_code.md`. The port is being implemented in dependency-ordered
+**slices**, and the **active task is Slice 1** — the pure gated-drag physics
+module — specified in `SLICE1_GOALS_gated_drag_module.md`. See the
+"Drag-Model Port" section below for the working rules that apply to this phase.
+
 ## Current Scope
 
 In scope:
@@ -142,7 +151,109 @@ Avoid changing checkpoint schema, physical constants, neutral propagation,
 ion propagation, collision physics, or `scripts/run_single_pulse.py` behavior
 unless a focused test reveals a real bug or the user explicitly asks.
 
-## Current Working Mode
+## Drag-Model Port
+
+This section governs the active drag-model phase. It sits above the
+post-processing rules below, which now describe the stable **comparison
+layer**, not active development.
+
+### Working method
+
+- **Physics-Definition vs. Software-Implementation boundary is strict.**
+  Default to mathematical formulation (LaTeX) and logic trees. Do **not**
+  write implementation code until the user gives the explicit trigger
+  `[PROCEED TO IMPLEMENTATION]`. Discussion and specification come first.
+- **Every model choice stays interchangeable behind a `SimConfig` enum** so
+  the empirical cross-check against the TDDFT / VMI references can select
+  among hypotheses. No drag form, noise model, mass scenario, or gate is
+  hard-wired; each lives behind its own enum surface documented in
+  `DRAG_PORT_DESIGN_DECISIONS.md`.
+- **Before proposing a governing equation, perform and display a strict
+  dimensional analysis.** Define the units of every parameter (forces in
+  `amu·Å/ps²`, velocity in `Å/ps`, etc.) and reject any formulation whose
+  units do not balance.
+- When brainstorming a model transition (discrete collisions → continuous
+  drag), list the physical trade-offs explicitly: lost degrees of freedom,
+  violated conservation laws, thermodynamic changes (e.g. the loss of the
+  Langevin fluctuation channel).
+
+### Friction convention (unified — do not reintroduce the second one)
+
+- **`γ(v)` is a force coefficient**, units **amu/ps**, defined
+  `γ(v) = |F_drag(v)| / v`. The friction force is `γ(v)·v` — **no leading
+  `m`**.
+- The friction **rate** is `γ/m` [1/ps] and appears **only** inside the
+  BAOAB damping exponent `e^(−γ·dt/m)`.
+- The FDT noise amplitude `√(2·γ·k_B·T_eff)` uses `γ` [amu/ps] directly.
+- Consequence: the drag-physics module is **mass-agnostic**. It never takes
+  `m`. Mass enters only at the integrator's O-step, as one explicit division
+  by `m(t)`. Do not pass mass into the drag module.
+
+### Slice plan (dependency-ordered)
+
+The Tier-0 critical path is the only path runnable with coefficients in hand
+(`linear_cubic` + `mass_scenario=fixed` at `m_eff`, noise off). It is built in
+four slices:
+
+1. **Slice 1 — pure gated-drag physics module.** *Active task.* No
+   dependencies.
+2. **Slice 2 — BAOAB ion-stage step** (consumes Slice 1's `γ(v)`; noise
+   amplitude pinned to zero).
+3. **Slice 3 — `SimConfig` enum surface + §6.5 mass↔coefficient consistency
+   guard.**
+4. **Slice 4 — ion-driver rewiring + O-step energy accounting.**
+
+Mass dynamics (§2), the `IonCheckpoint` v6 rename
+(`E_mass_attach_defect_eV` → `E_mass_transfer_eV`), and the noise machinery
+(§1) stay **stubbed behind their enums and inert** until their validation
+tier comes up. None are on the Tier-0 path.
+
+### Slice 1 — active task
+
+Specified in full in `SLICE1_GOALS_gated_drag_module.md`. Summary of intent:
+
+- Three pure functions, config-free and mass-free: `drag_force(v, depth, …)`
+  [amu·Å/ps²], `drag_gamma(v, depth, …)` [amu/ps], `spatial_gate(depth,
+  steepness)` [dimensionless].
+- Primary form `linear_cubic`: `F_drag = g(depth)·(a·v + b·v³)`,
+  `γ = g(depth)·(a + b·v²)`, with the erf-complement gate
+  `g(depth) = ½(1 − erf(depth/steepness))`.
+- Expose `γ` via its **closed form**, never via the `|F_drag|/v` division
+  (singular at `v→0` even where the form is finite). The closed-form vs.
+  division choice is explicit per form.
+- Dispatch reserves `linear_quadratic` and `threshold` as `NotImplemented`
+  (no fit pass yet) and `power_law` as an explicit deferral (needs the §3.8
+  low-velocity floor). Only `linear_cubic` is realised.
+- Slice 1 owns the coefficient-bundle **type** (form tag, coefficients,
+  `extraction_mass_model` metadata) but **not** the §6.5 guard (Slice 3).
+- Killer test: the in-hand 9 Å / 18 Å `{a,b}` reproduce the extraction's own
+  `(v, F_drag)` force-balance scatter on the trusted interior. Written
+  against the bundle **type**, with values plumbed in at test time.
+
+Slice 1 scope fence — does **not** touch: BAOAB step; `SimConfig` field
+additions; `ion_propagation_step` wiring; checkpoint schema / energy rename;
+noise activation; mass dynamics. `physics/collisions.py` is left intact and
+importable — the drag module is **additive and parallel**, not a deletion
+(removal needs explicit approval; see Forbidden list).
+
+### Validation hierarchy (sequential, not simultaneous)
+
+The undetermined parameters are entangled; validate in tier order, fixing
+each tier's winner before introducing the next unknown:
+
+- **Tier 0** — drag form, deterministic, fixed mass, in-window TDDFT traces.
+- **Tier 1** — mass scenario (A/B/biphasic), deterministic.
+- **Tier 2** — terminal I⁺(He)ₙ size distribution vs. experimental detector
+  data (the only observable that separates the mass scenarios).
+- **Tier 3** — ensemble second moments (noise) vs. VMI references.
+
+A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at
+config-load (§6.5): constant-mass coefficients are self-consistent **only**
+with `mass_scenario=fixed`; the inconsistent pair is a hard refuse unless
+`allow_inconsistent_mass_pairing=True`. Histogram comparisons default to the
+Wasserstein metric.
+
+## Post-Processing Comparison Layer
 
 Prefer current Python APIs over ad hoc scripts:
 
@@ -161,6 +272,8 @@ Prefer current Python APIs over ad hoc scripts:
    change is actually needed.
 8. Add or update focused pytest coverage when behavior changes.
 
+## General Request Handling
+
 For investigation, audit, inspect, compare, or explain requests:
 
 - do not edit files,
@@ -178,6 +291,10 @@ For implementation or fix requests:
 - add or update tests when behavior changes,
 - run relevant tests,
 - show changed files and remaining risks.
+
+During the drag-model phase, "implementation" requests still require the
+`[PROCEED TO IMPLEMENTATION]` trigger before any code is written (see
+Drag-Model Port → Working method).
 
 ## Post-Processing Workflow
 
@@ -389,6 +506,13 @@ For deterministic tests, disable stochastic features when possible:
 - few timesteps,
 - fixed droplet radius,
 - fixed random seed.
+
+For the drag-model port the deterministic configuration is the Tier-0 setup:
+`mass_scenario=fixed` at `m_eff`, noise amplitude zero, `linear_cubic` drag.
+The seven-step validation order above maps onto the drag-port tier hierarchy
+(Drag-Model Port → Validation hierarchy): formula/shape/one-step/multi-step
+deterministic checks are Tier 0–1; energy bookkeeping closes the §2.9
+invariant; statistical comparison is Tier 2–3.
 
 For stochastic tests, prefer distribution and moment checks over exact
 trajectory matching unless RNG identity is guaranteed.
