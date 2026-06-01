@@ -7,8 +7,29 @@ gas of discrete scatterers that randomly kick the projectile. For the
 **ion stage** we are replacing that with a continuous, TDDFT-calibrated
 **drag force** for I⁺ moving through the helium bubble: instead of
 sampling individual collisions, the ion feels a smooth velocity-dependent
-retarding force whose law was *extracted* from TD-DFT trajectories
-(force balance `F_drag(t) = F_C(t) − m_eff · a(t)`).
+retarding force whose law was *extracted* from TD-DFT trajectories by
+force balance.
+
+**Signed force-balance convention (matches upstream).** From the equation
+of motion `m_eff · a = F_C + F_drag`, the extracted signed drag is
+
+```
+F_drag(t) = m_eff · a(t) − F_C(t)
+```
+
+as written in `Drag_extraction_code.md` and §6.5 of the decisions doc.
+During the Coulomb explosion the ion accelerates outward (`F_C` outward,
+`m_eff·a < F_C`), so the *signed* `F_drag` is negative — it opposes the
+motion, as a drag must. The module functions below return the **positive
+magnitude** `g·(a·v + b·v³)` (with extracted `a,b > 0`); the integrator
+restores the sign and applies `−F_drag` along `v̂`. The earlier
+`F_drag = F_C − m_eff·a` phrasing was the magnitude with the sign folded
+in and is *not* the signed force-balance equation — do not propagate it.
+
+> **Verify before locking:** confirm the `F_drag_amuAps2` column in
+> `drag_data.csv` is stored as the positive magnitude. If it carries the
+> signed (negative) value, the lstsq refit would recover sign-flipped
+> coefficients and the killer test would silently encode the wrong sign.
 
 This module is **Slice 1** of that port: the pure-physics core that
 occupies the collision-model swap point. It provides three functions and
@@ -132,6 +153,21 @@ It validates on construction (unknown form, missing coefficients, bad
 mass model, non-positive mass all raise `ValueError`). The module
 *consumes* a bundle and never builds one from config.
 
+> **Deliberately deferred fields (Slice 3+), flagged so the type is not
+> frozen too narrowly.** Two known additions are *not* in the Slice 1
+> bundle and are fine to omit at constant-mass deterministic Tier 0, but
+> the type should leave room for them:
+> - **`a_err`, `b_err`** — the 1σ fit uncertainties are present in
+>   `fit_parameters.json` but not carried on the bundle. They feed the
+>   Tier 3 ensemble uncertainty band (§6 of the decisions doc), so Slice 3
+>   will want them on the type.
+> - **A time-resolved `m(t)` handle** — `extraction_mass_model` already
+>   admits `"time_resolved"`, but only the scalar `extraction_mass_amu` is
+>   stored. A `"time_resolved"` bundle needs a reference to the `m(t)`
+>   profile it was extracted under for the §6.5 guard to match it against
+>   an evolving-mass scenario. Out of Slice 1 scope (constant-mass only),
+>   but the field shape is a Slice 3 decision.
+
 ## The closed-form γ (a physics point, not a coding nicety)
 
 `γ` is exposed via its **closed form** `g·(a + b·v²)`, **never** via
@@ -195,6 +231,20 @@ window-representative ~19-He shell — *not* "the true mass of the ion."
 The module never uses it; it is carried as provenance so the Slice 3
 `mass_scenario ↔ coefficients` guard can later check consistency.
 
+> **Verify before locking — the provenance check the killer test cannot
+> catch.** The stamped `meff_amu = 202.954` must be the mass the force
+> balance *actually used* when `{a,b}` and `drag_data.csv` were produced.
+> An earlier extraction literal was `179.912`. Because `drag_data.csv` and
+> `fit_parameters.json` come from the *same* run, the lstsq killer test is
+> self-consistent regardless of which mass was used — it cannot detect a
+> relabelled mass. If the coefficients were fit at 179.912 and only the
+> JSON field was bumped to 203, the stamped provenance is false, and the
+> Slice 3 guard would validate `fixed`-mass runs against a mass the law
+> was never extracted under (a ~13% error feeding
+> `F_drag = m_eff·a − F_C`). **Confirm the extraction was re-run at
+> 202.954, not relabelled.** The value itself is consistent:
+> I-127 (126.90) + 19·He (19 × 4.0026 = 76.05) ≈ 202.95 amu.
+
 ## Why no SimConfig dependency
 
 `coeffs` and `steepness` arrive as plain function arguments (the same
@@ -239,3 +289,11 @@ cases):
 | Low-`v` regularity: `γ(0⁺) → g·a`, finite | no floor needed for `linear_cubic` | approx |
 | Mass-agnosticism: no function takes a mass argument | enforced | exact |
 | Reserved forms (`linear_quadratic`, `threshold`, `power_law`) | raise `NotImplementedError` | exact |
+
+> **Max-trajectory-speed open item is dormant, not resolved.** The
+> `linear_cubic` turnover guard `v† = √(−a/b)` only bites when `b < 0`.
+> Both extracted cases have `b > 0`, so there is no real turnover and the
+> §6.10 "source a max trajectory speed" requirement is moot *for these
+> coefficients*. A future re-extraction (different case, charge state, or
+> the `time_resolved`-m(t) refit) that yields `b < 0` reactivates it —
+> the guard then needs a real max-speed ceiling to test `v†` against.

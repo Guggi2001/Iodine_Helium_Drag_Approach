@@ -722,6 +722,38 @@ to be plumbed into the validation surface as a new comparison routine.
 
 ## 3. Drag functional form — analytic vs. tabulated
 
+> **Empirical finding (2026, post-extraction) — `power_law` exponent is
+> `n ≈ +2`, not `n ≈ −2`.** Throughout §1–§3 the power-law form was
+> reasoned about under the anticipated $n \approx -2$ (a hard-sphere
+> $\sigma \propto v^{-2}$ artifact, singular at $v\to 0$). The actual
+> exported extraction gives $n \approx +2$ for both cases (9 Å and 18 Å
+> similar). Consequences, propagated to the affected passages below:
+> - **The drag is regular at $v=0$, not singular.** $n>0 \Rightarrow
+>   F_\text{drag}\to 0$ and $\gamma(v) = \gamma_\text{PL} v^{\,n-1}\to 0$
+>   as $v\to0$. The $\gamma_0\to\infty$ objection that justified
+>   discarding N1 (§1.2) and the low-$v$ regularisation requirement
+>   (§3.8 `drag_low_v_floor`) **do not apply to the real coefficients**.
+>   `drag_low_v_floor` is retained *architecturally* for a hypothetical
+>   $n<0$ re-extraction but is **inert for the in-hand export**.
+> - **An $n\approx+2$ wing is the inertial/form-drag $\sim v^2$ behaviour
+>   §3.3 named as the generic physical expectation** — so the power-law
+>   form, far from being the discardable artifact, now *coincides* with
+>   the `linear_quadratic` high-$v$ wing. This is a Tier-0 cross-check
+>   result, not a prior.
+> - **The "$n\approx-2$ is a hard-sphere artifact" hypothesis (§3.3, §3.4)
+>   is partly resolved:** the extraction does *not* reproduce the old
+>   $\sigma\propto v^{-2}$ scaling, weakening the artifact concern. Left
+>   recorded rather than deleted, since the surrounding hypothesis-framing
+>   was the reasoning that motivated keeping the form interchangeable.
+> - **No Slice 1 impact:** `power_law` is deferred regardless of sign, and
+>   Slice 1's low-$v$ "contrast against divergence" test is asserted
+>   against the *hypothetical* $n<0$ form, not the real export.
+>
+> The original $n\approx-2$ reasoning is left in place below as the
+> recorded prior; read every "$n<0$ / singular at rest / needs a floor"
+> claim about `power_law` as **conditional on a sign the real export does
+> not have.**
+
 ### 3.1 Physical question
 
 How is $F_\text{drag}(v)$ represented in the integrator? The extraction
@@ -907,11 +939,15 @@ a fit pass.
 
 **Secondary — power law** $\;|F_\text{drag}| = \gamma\,v^{\,n}$. The
 extraction's historical default form and the "drag falls with speed"
-hypothesis. Most likely a hard-sphere $\sigma\propto v^{-2}$ artifact
-(§3.3); retained so the cross-check can confirm or reject that.
-Singular at $v=0$ for $n<0$, which re-enables the §3.8 low-velocity floor and
-the matching noise regulariser (§1.2) — the only form that does so.
-Coefficients $\{\gamma,n\}$ already extracted for both cases.
+hypothesis. Was expected to be a hard-sphere $\sigma\propto v^{-2}$
+artifact (§3.3); retained so the cross-check can confirm or reject that.
+**The cross-check has run (§3 finding note): the real export is
+$n\approx+2$, not $-2$ — drag *rises* as $\sim v^2$, the artifact
+hypothesis is not borne out, and the form is regular at $v=0$ with no
+floor needed.** The "singular at $v=0$ for $n<0$" property and the floor
+it re-enabled are therefore conditional on a sign the in-hand
+coefficients do not have. Coefficients $\{\gamma,n\}$ already extracted
+for both cases.
 
 Since all four are closed-form, swapping among them is a change behind
 the form enum with no structural impact on the integrator (the chosen
@@ -1011,20 +1047,23 @@ two outstanding fit passes, not a re-extraction of existing forms.
   v_0>0$); `power_law` ($\gamma>0$). The "maximum trajectory speed"
   needed for the `linear_cubic` turnover check is an open config item
   (flagged for §6 validation/tolerances).
-- **Low-velocity regularisation (only `power_law`).** The three
-  finite-at-zero forms (`linear_cubic`, `linear_quadratic`,
+- **Low-velocity regularisation (only `power_law`, and only if $n<0$).**
+  The three finite-at-zero forms (`linear_cubic`, `linear_quadratic`,
   `threshold`) need no regulariser — $F_\text{drag}\to0$ and
   $\gamma(v)$ stays finite as $v\to0$. Only `power_law` with $n<0$
   diverges; it then requires a floor on $\gamma(v)$ (equivalently a
   small $v_\text{floor}$ below which $\gamma$ is held constant) to keep
-  both the drag and the FDT noise amplitude finite. The chosen BAOAB
-  integrator (§4) partially defuses the divergence on its own — the
-  damping factor $e^{-\gamma\,dt/m}\in[0,1]$ stays bounded even as
-  $\gamma\to\infty$ — but the noise amplitude
-  $\sqrt{2\gamma k_BT_\text{eff}}$ still needs the floor. Exposed as
-  `SimConfig.drag_low_v_floor` (Å/ps), active only when
-  `drag_form = power_law`; ignored otherwise. This absorbs what was
-  previously a standalone low-velocity-regularisation section.
+  both the drag and the FDT noise amplitude finite. **The real extracted
+  exponent is $n\approx+2$ (§3 finding note), which is regular at $v=0$
+  and needs no floor — so `drag_low_v_floor` is inert for the in-hand
+  coefficients and is retained only for a hypothetical $n<0$
+  re-extraction.** The chosen BAOAB integrator (§4) partially defuses any
+  divergence on its own — the damping factor $e^{-\gamma\,dt/m}\in[0,1]$
+  stays bounded even as $\gamma\to\infty$ — but a divergent noise
+  amplitude $\sqrt{2\gamma k_BT_\text{eff}}$ would still need the floor.
+  Exposed as `SimConfig.drag_low_v_floor` (Å/ps), active only when
+  `drag_form = power_law` *and* $n<0$; ignored otherwise. This absorbs
+  what was previously a standalone low-velocity-regularisation section.
 - Cross-references: $\gamma(v) = |F_\text{drag}|/v$ (units amu/ps)
   feeds the §1.2 N2 noise amplitude; $m$ here is the physical $m(t)$ per §2.2, and the
   drag is applied as $-\gamma(v)v$ independent of $m(t)$.
@@ -1612,13 +1651,22 @@ first-pass screen, not the adjudicating metric.
   experimental I⁺(He)ₙ history into the surface (§2.10, Tier 2).
 - **Maximum trajectory speed** for the `linear_cubic` turnover guard
   (§3.8) is sourced here — from the TDDFT trajectories or a generous
-  ceiling — as it has no home in the baseline config.
+  ceiling — as it has no home in the baseline config. **Dormant for the
+  in-hand coefficients:** both extracted cases have $b>0$, so there is no
+  real turnover $v_\dagger=\sqrt{-a/b}$ and no max-speed value is needed
+  *yet*. A future $b<0$ re-extraction reactivates this item.
 - **Extraction-side action items** consolidated: stamp coefficient
-  bundles with `extraction_mass_model` metadata (§6.5); the *optional*
-  time-resolved-$m(t)$ re-extraction (§6.6) — a refinement, not a
-  correction, since the constant $m_\text{eff} \approx 203$ amu is
-  already window-representative; the outstanding `linear_quadratic` /
-  `threshold` fit passes (§3.7).
+  bundles with `extraction_mass_model` metadata (§6.5) **and verify the
+  stamped `extraction_mass_amu` is the mass the force balance actually ran
+  under, not a relabelled value** — a self-consistent refit cannot detect
+  a wrong-but-consistent mass, so this must be checked at the extraction
+  source (an earlier literal was 179.912; the correct value is
+  $\approx202.954$); the *optional* time-resolved-$m(t)$ re-extraction
+  (§6.6) — a refinement, not a correction, since the constant
+  $m_\text{eff} \approx 203$ amu is already window-representative; the
+  outstanding `linear_quadratic` / `threshold` fit passes (§3.7). **Note:
+  the `power_law` fit has been run and gives $n\approx+2$ (§3 finding
+  note), removing its low-$v$ floor obligation for the real coefficients.**
 - `SimConfig.allow_inconsistent_mass_pairing` (default `False`) — the
   only new field §6 introduces; the consistency guard (§6.5) is
   otherwise a config-load check over existing fields plus the coefficient
