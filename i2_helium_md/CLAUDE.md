@@ -52,9 +52,10 @@ exception is scoped to the drag-model port only.
 integrator, spatial gating, validation). The frozen MD baseline is
 `PHYSICS_BASELINE.md`; the upstream drag-law extraction pipeline is
 `Drag_extraction_code.md`. The port is being implemented in dependency-ordered
-**slices**, and the **active task is Slice 1** — the pure gated-drag physics
-module — specified in `SLICE1_GOALS_gated_drag_module.md`. See the
-"Drag-Model Port" section below for the working rules that apply to this phase.
+**slices**. **Slice 1 (the pure gated-drag physics module) is complete and
+reviewed; the active task is Slice 2** — the BAOAB ion-stage stepper —
+specified in `SLICE2_GOALS_baoab_ion_stepper.md`. See the "Drag-Model Port"
+section below for the working rules that apply to this phase.
 
 ## Current Scope
 
@@ -195,10 +196,13 @@ The Tier-0 critical path is the only path runnable with coefficients in hand
 (`linear_cubic` + `mass_scenario=fixed` at `m_eff`, noise off). It is built in
 four slices:
 
-1. **Slice 1 — pure gated-drag physics module.** *Active task.* No
-   dependencies.
-2. **Slice 2 — BAOAB ion-stage step** (consumes Slice 1's `γ(v)`; noise
-   amplitude pinned to zero).
+1. **Slice 1 — pure gated-drag physics module.** *Complete.* No
+   dependencies. Delivered: `physics/drag.py` (three pure mass-free functions +
+   `DragCoefficients` bundle type). Coefficients frozen under
+   `data/reference/drag/<case>/linear_and_cubic/`. See
+   `SLICE1_GOALS_gated_drag_module.md` and `drag_module.md`.
+2. **Slice 2 — BAOAB ion-stage stepper.** *Active task.* Consumes Slice 1's
+   `γ(v)`; new `physics/baoab.py`; noise amplitude pinned to zero at Tier 0.
 3. **Slice 3 — `SimConfig` enum surface + §6.5 mass↔coefficient consistency
    guard.**
 4. **Slice 4 — ion-driver rewiring + O-step energy accounting.**
@@ -208,33 +212,67 @@ Mass dynamics (§2), the `IonCheckpoint` v6 rename
 (§1) stay **stubbed behind their enums and inert** until their validation
 tier comes up. None are on the Tier-0 path.
 
-### Slice 1 — active task
+### Slice 1 — complete
 
-Specified in full in `SLICE1_GOALS_gated_drag_module.md`. Summary of intent:
+Delivered `physics/drag.py`: three pure, config-free, mass-free functions —
+`drag_force(v, depth, …)` [amu·Å/ps²], `drag_gamma(v, depth, …)` [amu/ps,
+closed form `g·(a+b·v²)`], `spatial_gate(depth, steepness)` [dimensionless
+erf-complement] — plus the `DragCoefficients` bundle type (form tag,
+coefficients, `extraction_mass_model` + `extraction_mass_amu` provenance).
+`linear_cubic` realised; `linear_quadratic` / `threshold` / `power_law`
+reserved and raise `NotImplementedError`. `physics/collisions.py` left intact
+and importable (additive, parallel — not a deletion). Specs:
+`SLICE1_GOALS_gated_drag_module.md`, `drag_module.md`.
 
-- Three pure functions, config-free and mass-free: `drag_force(v, depth, …)`
-  [amu·Å/ps²], `drag_gamma(v, depth, …)` [amu/ps], `spatial_gate(depth,
-  steepness)` [dimensionless].
-- Primary form `linear_cubic`: `F_drag = g(depth)·(a·v + b·v³)`,
-  `γ = g(depth)·(a + b·v²)`, with the erf-complement gate
-  `g(depth) = ½(1 − erf(depth/steepness))`.
-- Expose `γ` via its **closed form**, never via the `|F_drag|/v` division
-  (singular at `v→0` even where the form is finite). The closed-form vs.
-  division choice is explicit per form.
-- Dispatch reserves `linear_quadratic` and `threshold` as `NotImplemented`
-  (no fit pass yet) and `power_law` as an explicit deferral (needs the §3.8
-  low-velocity floor). Only `linear_cubic` is realised.
-- Slice 1 owns the coefficient-bundle **type** (form tag, coefficients,
-  `extraction_mass_model` metadata) but **not** the §6.5 guard (Slice 3).
-- Killer test: the in-hand 9 Å / 18 Å `{a,b}` reproduce the extraction's own
-  `(v, F_drag)` force-balance scatter on the trusted interior. Written
-  against the bundle **type**, with values plumbed in at test time.
+Two upstream verifications were flagged and remain the user's to confirm at the
+extraction source (a self-consistent refit cannot detect either):
 
-Slice 1 scope fence — does **not** touch: BAOAB step; `SimConfig` field
-additions; `ion_propagation_step` wiring; checkpoint schema / energy rename;
-noise activation; mass dynamics. `physics/collisions.py` is left intact and
-importable — the drag module is **additive and parallel**, not a deletion
-(removal needs explicit approval; see Forbidden list).
+- the stamped `extraction_mass_amu ≈ 202.954` is the mass the force balance
+  *actually ran under*, not a relabelled value (an earlier literal was
+  `179.912`);
+- `drag_data.csv`'s `F_drag` column stores the **positive magnitude** (signed
+  force balance is `F_drag = m_eff·a − F_C`, negative during the explosion).
+
+Post-extraction empirical finding folded into the decisions doc: the
+`power_law` exponent is `n ≈ +2` (not the anticipated `−2`), so the form is
+regular at `v→0` and `drag_low_v_floor` is inert for the real coefficients
+(retained only for a hypothetical `n<0` re-extraction).
+
+### Slice 2 — active task
+
+Specified in full in `SLICE2_GOALS_baoab_ion_stepper.md`. New module
+`physics/baoab.py`: the BAOAB operator-split ion-stage stepper (decision §4.6),
+replacing `velocity_verlet_step` for the ion stage only. Summary of intent:
+
+- **Scheme B–A–O–A–B:** B/A are the baseline kick/drift (conservative force =
+  Coulomb + droplet via the existing `_ion_accel_fn`); O is the new physics —
+  drag as multiplicative velocity damping `v ↦ e^(−γ·dt/m)·v`, plus a dormant
+  Langevin-noise site.
+- **Tier-0 reduction:** mass fixed at `m_eff`, `T_eff = 0` (noise off),
+  `linear_cubic` drag. The stepper is built and tested fully deterministically
+  and is still the production Tier-0 integrator.
+- **Asymmetric γ-freeze (intentional, documented in the module docstring):**
+  γ's velocity argument frozen at the O-step input velocity; γ's depth/gate
+  argument at the current O-step position (freshly known after the first
+  half-drift). This keeps the never-adds-energy dissipativity exact.
+- **Placement:** new `physics/baoab.py`, with `_kick`/`_drift` helpers
+  **extracted from `leapfrog.py`** to avoid duplicate physics. This is the one
+  knowing touch to the frozen baseline integrator — accepted because §4.6 added
+  an integrator at all, and the extraction is self-verified by the anchor test.
+- **Energy:** the O-step returns dissipated energy in **amu·Å²/ps²** (Slice 4
+  converts to eV); returned now though consumed only by Slice 4's §2.9 invariant.
+- **Per-step closure rebuild:** `make_ion_baoab_step` mirrors
+  `make_ion_step` and is rebuilt per step (mass changes under future
+  scenarios), matching `ion_propagation_step.py:184-193`.
+- **Anchor (killer) test:** at `γ=0` with noise off, BAOAB ≡ baseline
+  `velocity_verlet_step` to round-off — proving both integrator correctness and
+  that the kick/drift extraction left the frozen baseline behaviourally
+  unchanged.
+
+Slice 2 scope fence — does **not** touch: `SimConfig` fields; driver wiring
+(`ion_propagation_step.py:211-256`); checkpoint schema / energy rename; active
+noise; mass dynamics; the eV conversion; the neutral stage (the only
+`leapfrog.py` change is the behaviour-preserving kick/drift extraction).
 
 ### Validation hierarchy (sequential, not simultaneous)
 
