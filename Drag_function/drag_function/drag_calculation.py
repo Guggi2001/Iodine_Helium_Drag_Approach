@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Optional
+import json
+from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -176,7 +178,7 @@ M_HELIUM_AMU = 4.002602         # helium atom mass [amu]
 
 # Effective mass (your definition) [amu]
 # meff = m_I + 21*m_He  (no backflow term here; add later if needed)
-N_HE_SHELL = 21
+N_HE_SHELL = 19
 M_EFF_AMU = M_IODINE_AMU + N_HE_SHELL * M_HELIUM_AMU  # [amu]
 
 # Coulomb constant in eV·Å for elementary charges (+1e, +1e)
@@ -302,12 +304,21 @@ def main_calculation(
     R_A: np.ndarray,          # [Å]
     v_A_per_ps: np.ndarray,        # [Å/ps]   (already smoothed velocity in chosen window)
     settings: DragExtractionSettings = DragExtractionSettings(),
+    export: bool = False,     # If True, export fit parameters to JSON and arrays to CSV
+    export_dir: Optional[str] = None,  # Directory to save exported files; defaults to current working directory
 ) -> Dict[str, np.ndarray]:
     """
     Compute F_C(t), acceleration a(t) from spline, and F_drag(t).
 
     Returns a dict with arrays (all same length as input t), but note that only
     the trusted interior is meaningful for derivatives and drag law fitting.
+
+    Parameters
+    ----------
+    export : bool, default False
+        If True, export fit results and key arrays to files.
+    export_dir : str or None, default None
+        Directory for exported files. If None, uses current working directory.
     """
     t_ps = np.asarray(t_ps, float)
     R_A = np.asarray(R_A, float)
@@ -597,6 +608,43 @@ def main_calculation(
                 plt.show()
 
 
+    # --- Export results if requested ---
+    if export:
+        export_path = Path(export_dir) if export_dir else Path.cwd()
+        export_path.mkdir(parents=True, exist_ok=True)
+
+        # Export fit parameters to JSON
+        fit_params_for_export = {}
+        # include fit results (if any) and add meff_amu from settings
+        if fit_result:
+            fit_params_for_export.update({
+                k: float(v) if isinstance(v, (np.floating, float)) else v
+                for k, v in fit_result.items()
+            })
+
+        # Always include effective mass used for the inertial term
+        try:
+            fit_params_for_export["meff_amu"] = float(settings.meff_amu)
+        except Exception:
+            # fallback: store as-is if conversion fails
+            fit_params_for_export["meff_amu"] = settings.meff_amu
+
+        fit_json_path = export_path / "fit_parameters.json"
+        with open(fit_json_path, 'w') as f:
+            json.dump(fit_params_for_export, f, indent=2)
+        print(f"Fit parameters exported to {fit_json_path}")
+
+        # Export v_spline_Aps and F_drag_amuAps2 to CSV
+        export_data = pd.DataFrame({
+            't_ps': t_ps,
+            'v_spline_Aps': v_spline_Aps,
+            'F_drag_amuAps2': F_drag_amuAps2,
+        })
+
+        csv_path = export_path / "drag_data.csv"
+        export_data.to_csv(csv_path, index=False)
+        print(f"Drag data exported to {csv_path}")
+
     return {
         "t_ps": t_ps,                        # [ps]
         "R_A": R_A,                          # [Å]
@@ -643,9 +691,11 @@ v_9_SG_varying_wl = savgol_filter(v_9_IMF, window_length=2501, polyorder=1, deri
 R_recon = reconstruct_R_from_v(2 * v_9_IMF, t_9_w, R0=R_9_w[0])
 
 out = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
-                              truncate_points=500, plot_only_drag_with_fit = True))
+                              truncate_points=500, plot_only_drag_with_fit = True), export = True,
+                        export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\power')
 out_fit_2 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
-                              truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True))
+                              truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = True,
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\linear_and_cubic')
 
 
 t18 = dict18["t"]
@@ -660,9 +710,11 @@ polyorder = 1
 v_18_SG = savgol_filter(v_18_w, window_length=wl, polyorder=polyorder, deriv=0, mode="interp")
 
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
-                                                  plot_only_drag_with_fit = True))
+                                                  plot_only_drag_with_fit = True), export = True,
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\power')
 out_18_fit_2 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
-                                 fit_variant = 2, plot_only_drag_with_fit = True))
+                                 fit_variant = 2, plot_only_drag_with_fit = True), export = True,
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\linear_and_cubic')
 
 a = 3
 
