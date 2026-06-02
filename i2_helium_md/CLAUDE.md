@@ -52,9 +52,10 @@ exception is scoped to the drag-model port only.
 integrator, spatial gating, validation). The frozen MD baseline is
 `PHYSICS_BASELINE.md`; the upstream drag-law extraction pipeline is
 `Drag_extraction_code.md`. The port is being implemented in dependency-ordered
-**slices**. **Slice 1 (the pure gated-drag physics module) is complete and
-reviewed; the active task is Slice 2** — the BAOAB ion-stage stepper —
-specified in `SLICE2_GOALS_baoab_ion_stepper.md`. See the "Drag-Model Port"
+**slices**. **Slices 1 (pure gated-drag physics module) and 2 (BAOAB ion-stage
+stepper) are complete and reviewed; the active task is Slice 3** — the
+`SimConfig` drag surface, config-load guard, and coefficient loader — specified
+in `SLICE3_GOALS_config_and_guard.md`. See the "Drag-Model Port"
 section below for the working rules that apply to this phase.
 
 ## Current Scope
@@ -91,7 +92,10 @@ Use these principles for every porting decision, code review, and cleanup:
    formulas, and constants belong in `constants.py` or the appropriate shared
    module.
 2. No dead code. Remove unused imports, commented-out blocks, and speculative
-   branches.
+   branches. *Scoped, time-limited exception:* the Slice 3 drag-config fields
+   declared-but-not-yet-read (see Drag-Model Port → "Slice 3 declared-field
+   exception"). Each is tracked with the slice that activates it and removes it
+   from this exception.
 3. Encode units and conventions in names: `mass_kg`, `time_ps`,
    `T_particles_K`, `R0_GS_angstrom`, etc.
 4. Validate early and fail loudly. Wrong shape, unsupported collision mode,
@@ -201,10 +205,16 @@ four slices:
    `DragCoefficients` bundle type). Coefficients frozen under
    `data/reference/drag/<case>/linear_and_cubic/`. See
    `SLICE1_GOALS_gated_drag_module.md` and `drag_module.md`.
-2. **Slice 2 — BAOAB ion-stage stepper.** *Active task.* Consumes Slice 1's
-   `γ(v)`; new `physics/baoab.py`; noise amplitude pinned to zero at Tier 0.
-3. **Slice 3 — `SimConfig` enum surface + §6.5 mass↔coefficient consistency
-   guard.**
+2. **Slice 2 — BAOAB ion-stage stepper.** *Complete.* Delivered:
+   `physics/baoab.py` (B–A–O–A–B stepper, `make_ion_baoab_step`); `_kick`/
+   `_drift` extracted from `leapfrog.py` (behaviour-preserving, anchor-tested).
+   Noise dormant at `T_eff=0`. See `SLICE2_GOALS_baoab_ion_stepper.md` and
+   `baoab.md`.
+3. **Slice 3 — `SimConfig` drag surface + config-load guard + coefficient
+   loader.** *Active task.* Adds the drag fields, `check_drag_config(cfg)`
+   (§6.5 mass↔coefficient consistency **and** §3.3 per-form dissipativity), and
+   a content-validating JSON→`DragCoefficients` loader in the presets/config
+   layer. No behavioral change — the collision path still runs until Slice 4.
 4. **Slice 4 — ion-driver rewiring + O-step energy accounting.**
 
 Mass dynamics (§2), the `IonCheckpoint` v6 rename
@@ -238,41 +248,92 @@ Post-extraction empirical finding folded into the decisions doc: the
 regular at `v→0` and `drag_low_v_floor` is inert for the real coefficients
 (retained only for a hypothetical `n<0` re-extraction).
 
-### Slice 2 — active task
+### Slice 2 — complete
 
-Specified in full in `SLICE2_GOALS_baoab_ion_stepper.md`. New module
-`physics/baoab.py`: the BAOAB operator-split ion-stage stepper (decision §4.6),
-replacing `velocity_verlet_step` for the ion stage only. Summary of intent:
+Delivered `physics/baoab.py`: the BAOAB operator-split ion-stage stepper
+(decision §4.6, `make_ion_baoab_step`), replacing `velocity_verlet_step` for
+the ion stage only. Key properties locked in:
 
 - **Scheme B–A–O–A–B:** B/A are the baseline kick/drift (conservative force =
-  Coulomb + droplet via the existing `_ion_accel_fn`); O is the new physics —
-  drag as multiplicative velocity damping `v ↦ e^(−γ·dt/m)·v`, plus a dormant
-  Langevin-noise site.
-- **Tier-0 reduction:** mass fixed at `m_eff`, `T_eff = 0` (noise off),
-  `linear_cubic` drag. The stepper is built and tested fully deterministically
-  and is still the production Tier-0 integrator.
-- **Asymmetric γ-freeze (intentional, documented in the module docstring):**
-  γ's velocity argument frozen at the O-step input velocity; γ's depth/gate
-  argument at the current O-step position (freshly known after the first
-  half-drift). This keeps the never-adds-energy dissipativity exact.
-- **Placement:** new `physics/baoab.py`, with `_kick`/`_drift` helpers
-  **extracted from `leapfrog.py`** to avoid duplicate physics. This is the one
-  knowing touch to the frozen baseline integrator — accepted because §4.6 added
-  an integrator at all, and the extraction is self-verified by the anchor test.
-- **Energy:** the O-step returns dissipated energy in **amu·Å²/ps²** (Slice 4
-  converts to eV); returned now though consumed only by Slice 4's §2.9 invariant.
-- **Per-step closure rebuild:** `make_ion_baoab_step` mirrors
-  `make_ion_step` and is rebuilt per step (mass changes under future
-  scenarios), matching `ion_propagation_step.py:184-193`.
-- **Anchor (killer) test:** at `γ=0` with noise off, BAOAB ≡ baseline
-  `velocity_verlet_step` to round-off — proving both integrator correctness and
-  that the kick/drift extraction left the frozen baseline behaviourally
-  unchanged.
+  Coulomb + droplet via `_ion_accel_fn`); O is the new physics — drag as
+  multiplicative velocity damping `v ↦ e^(−γ·dt/m)·v` plus a dormant
+  Langevin-noise site. Mass enters **only** here (in amu), in the O-step
+  exponent and the energy bookkeeping.
+- **Asymmetric γ-freeze (intentional, in the module docstring):** γ's velocity
+  frozen at the O-step input velocity; γ's depth/gate at the current O-step
+  position. Keeps the never-adds-energy dissipativity exact.
+- **`_kick`/`_drift` extracted from `leapfrog.py`** to avoid duplicate physics —
+  the one knowing touch to the frozen integrator, behaviour-preserving and
+  self-verified by the anchor test.
+- **Energy:** O-step returns `ΔE_dissip` in **amu·Å²/ps²** (4-tuple
+  `(pos, vel, E_pot, ΔE_dissip)`); Slice 4 converts to eV. The noise-injection
+  energy channel is a deliberate future signature bump, not a reserved slot.
+- **`dt` is per-call** (`step(pos, vel, dt)`), mirroring `make_ion_step`; the
+  per-step closure rebuild is driven by mass, not `dt`.
+- **Anchor (killer) test:** at `γ=0`, noise off, BAOAB ≡ baseline
+  `velocity_verlet_step` to round-off, with `acc_fn` call count asserted
+  (`calls == 2·n == verlet_calls`) — proving integrator correctness and that
+  the kick/drift extraction left the baseline unchanged.
 
-Slice 2 scope fence — does **not** touch: `SimConfig` fields; driver wiring
-(`ion_propagation_step.py:211-256`); checkpoint schema / energy rename; active
-noise; mass dynamics; the eV conversion; the neutral stage (the only
-`leapfrog.py` change is the behaviour-preserving kick/drift extraction).
+Force-eval caching is deferred to Slice 4 (profiling-contingent) with one
+recorded trap: cache the conservative *force* `F_cons`, never the
+*acceleration* — under mass dynamics `a = F/m` goes stale at fixed position,
+a bug invisible to the fixed-mass anchor test. Specs:
+`SLICE2_GOALS_baoab_ion_stepper.md`, `baoab.md`.
+
+### Slice 3 — active task
+
+Specified in full in `SLICE3_GOALS_config_and_guard.md`. The first slice to
+touch `config.py` (a frozen file): additive fields only, safe inert defaults, a
+separable validation function, **no behavioral change** (the collision path
+still runs; Slice 4 swaps it). Summary of intent:
+
+- **All ~18 drag fields declared now** with inert defaults (see the declared-
+  field exception below). Enum *types* defined fully (all members) since the
+  guard's refusal logic references the non-`fixed` members. Form-selector fields
+  default to their **inert** member (`mass_scenario=fixed`, `noise_form=none`),
+  *not* the design's "primary."
+- **`check_drag_config(cfg)`** — a separate function called from
+  `SimConfig.validate()`, folding two checks: §6.5 mass↔coefficient consistency
+  (`fixed`↔constant coeffs within a hard-coded ~8 amu band; non-`fixed`↔
+  time-resolved; inconsistent → refuse unless `allow_inconsistent_mass_pairing`)
+  **and** §3.3 per-form dissipativity. The `linear_cubic` turnover guard
+  assert-and-skips (`b>0` ⇒ no real `v†`; max-speed ceiling left unsourced and
+  recorded). The dissipativity branch is the only live, non-vacuous refusal on
+  Tier-0-reachable input.
+- **Coefficient loader** in the presets/config layer (keeps `physics/`
+  I/O-free): `load_drag_coefficients(coeff_dir, *, expected_m_eff_amu)` —
+  content-validating, stamps `extraction_mass_amu` **from the JSON** (single
+  source of truth), refuses on provenance disagreement / missing / malformed.
+  The case (9 Å / 18 Å) lives in the **presets** (the geometry they already
+  encode), via a `REFERENCE_DRAG_ROOT` constant — **no `DragCase` enum, no
+  helper**.
+- **Two distinct mass comparisons, kept separate:** the loader's exact-match
+  provenance identity (JSON vs. preset `m_eff`) vs. the guard's ~8 amu physics
+  band (`extraction_mass_amu` vs. `m_eff_amu` under `fixed`). Distinct named
+  constants, distinct tests — do not collapse.
+- **Inert `SimConfig` defaults; a new drag-enabled preset** carries the real
+  coefficients. Existing presets and the hard-sphere path stay bit-identical.
+
+Slice 3 scope fence — does **not** touch: driver wiring (Slice 4); `physics/`
+I/O; checkpoint schema / energy rename; active noise; existing presets; existing
+`SimConfig` fields or `validate()` behaviour beyond invoking `check_drag_config`.
+
+#### Slice 3 declared-field exception (scoped, time-limited — rule 2)
+
+These `SimConfig` fields are declared in Slice 3 but **not yet read**; each is
+removed from the exception by the slice that activates it. A rule-2 audit should
+consult this table rather than flag them as dead surface.
+
+| field(s) | status at Slice 3 | activated by |
+|---|---|---|
+| `drag_form`, `drag_coefficients`, `drag_spatial_gate`, `drag_gate_steepness` | read by the guard now; consumed by the stepper build | Slice 4 |
+| `mass_scenario`, `m_eff_amu`, `mass_initial_amu`, `allow_inconsistent_mass_pairing` | read by the guard now | Slice 4 (stepper `m`) |
+| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it) | `power_law` activation |
+| `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Slice ≥4 / Tier 3 |
+| `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) |
+| `helium_density_profile` | placeholder/`None` | future G4 density profile |
+| `validation_histogram_metric` | declared, inert (`wasserstein`) | Tier 2 (histogram comparison) |
 
 ### Validation hierarchy (sequential, not simultaneous)
 
