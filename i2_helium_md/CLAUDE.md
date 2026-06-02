@@ -52,10 +52,11 @@ exception is scoped to the drag-model port only.
 integrator, spatial gating, validation). The frozen MD baseline is
 `PHYSICS_BASELINE.md`; the upstream drag-law extraction pipeline is
 `Drag_extraction_code.md`. The port is being implemented in dependency-ordered
-**slices**. **Slices 1 (pure gated-drag physics module) and 2 (BAOAB ion-stage
-stepper) are complete and reviewed; the active task is Slice 3** — the
-`SimConfig` drag surface, config-load guard, and coefficient loader — specified
-in `SLICE3_GOALS_config_and_guard.md`. See the "Drag-Model Port"
+**slices**. **Slices 1 (pure gated-drag physics module), 2 (BAOAB ion-stage
+stepper), and 3 (`SimConfig` drag surface + config-load guard + coefficient
+loader) are complete and reviewed; the active task is Slice 4** — the
+ion-driver rewiring and O-step energy accounting — specified in
+`SLICE4_GOALS_ion_driver_rewiring.md`. See the "Drag-Model Port"
 section below for the working rules that apply to this phase.
 
 ## Current Scope
@@ -211,11 +212,18 @@ four slices:
    Noise dormant at `T_eff=0`. See `SLICE2_GOALS_baoab_ion_stepper.md` and
    `baoab.md`.
 3. **Slice 3 — `SimConfig` drag surface + config-load guard + coefficient
-   loader.** *Active task.* Adds the drag fields, `check_drag_config(cfg)`
-   (§6.5 mass↔coefficient consistency **and** §3.3 per-form dissipativity), and
-   a content-validating JSON→`DragCoefficients` loader in the presets/config
-   layer. No behavioral change — the collision path still runs until Slice 4.
-4. **Slice 4 — ion-driver rewiring + O-step energy accounting.**
+   loader.** *Complete.* Delivered: the ~18 drag fields (named `Literal`
+   aliases, inert defaults), `check_drag_config(cfg)` (typo-reject + form
+   agreement + §6.5 mass↔coefficient consistency + §3.3 dissipativity),
+   `load_drag_coefficients` (content-validating, stamps `extraction_mass_amu`
+   from JSON), `REFERENCE_DRAG_ROOT`, and two drag-enabled presets. No
+   behavioral change — collision path still runs. See
+   `SLICE3_GOALS_config_and_guard.md` and `config_and_preset.md`.
+4. **Slice 4 — ion-driver rewiring + O-step energy accounting.** *Active task.*
+   Wires the BAOAB stepper into the ion stage via a parallel
+   `baoab_propagation_step` dispatched in `ion.py` on `drag_coefficients is not
+   None`. First runnable drag trajectory (Tier 0, deterministic). Wiring-only —
+   the TDDFT comparison is the separate next task.
 
 Mass dynamics (§2), the `IonCheckpoint` v6 rename
 (`E_mass_attach_defect_eV` → `E_mass_transfer_eV`), and the noise machinery
@@ -281,56 +289,108 @@ recorded trap: cache the conservative *force* `F_cons`, never the
 a bug invisible to the fixed-mass anchor test. Specs:
 `SLICE2_GOALS_baoab_ion_stepper.md`, `baoab.md`.
 
-### Slice 3 — active task
+### Slice 3 — complete
 
-Specified in full in `SLICE3_GOALS_config_and_guard.md`. The first slice to
-touch `config.py` (a frozen file): additive fields only, safe inert defaults, a
-separable validation function, **no behavioral change** (the collision path
-still runs; Slice 4 swaps it). Summary of intent:
+Delivered the declarative + validation layer on `config.py` / `presets.py`,
+additively and with **no behavioral change** (the collision path still runs;
+Slice 4 swaps it). Key properties locked in:
 
-- **All ~18 drag fields declared now** with inert defaults (see the declared-
-  field exception below). Enum *types* defined fully (all members) since the
-  guard's refusal logic references the non-`fixed` members. Form-selector fields
-  default to their **inert** member (`mass_scenario=fixed`, `noise_form=none`),
-  *not* the design's "primary."
-- **`check_drag_config(cfg)`** — a separate function called from
-  `SimConfig.validate()`, folding two checks: §6.5 mass↔coefficient consistency
-  (`fixed`↔constant coeffs within a hard-coded ~8 amu band; non-`fixed`↔
-  time-resolved; inconsistent → refuse unless `allow_inconsistent_mass_pairing`)
-  **and** §3.3 per-form dissipativity. The `linear_cubic` turnover guard
-  assert-and-skips (`b>0` ⇒ no real `v†`; max-speed ceiling left unsourced and
-  recorded). The dissipativity branch is the only live, non-vacuous refusal on
-  Tier-0-reachable input.
-- **Coefficient loader** in the presets/config layer (keeps `physics/`
-  I/O-free): `load_drag_coefficients(coeff_dir, *, expected_m_eff_amu)` —
-  content-validating, stamps `extraction_mass_amu` **from the JSON** (single
-  source of truth), refuses on provenance disagreement / missing / malformed.
-  The case (9 Å / 18 Å) lives in the **presets** (the geometry they already
-  encode), via a `REFERENCE_DRAG_ROOT` constant — **no `DragCase` enum, no
-  helper**.
-- **Two distinct mass comparisons, kept separate:** the loader's exact-match
-  provenance identity (JSON vs. preset `m_eff`) vs. the guard's ~8 amu physics
-  band (`extraction_mass_amu` vs. `m_eff_amu` under `fixed`). Distinct named
-  constants, distinct tests — do not collapse.
-- **Inert `SimConfig` defaults; a new drag-enabled preset** carries the real
-  coefficients. Existing presets and the hard-sphere path stay bit-identical.
+- **~18 drag fields** as named module-scope `Literal` aliases (house style,
+  matching `CollisionMode = Literal[1,2,3]`), all with **inert** defaults
+  (`mass_scenario=fixed`, `noise_form=none`, `drag_coefficients=None`) — *not*
+  the design's "primary." A config left untouched runs the hard-sphere path
+  unchanged. `mass_initial_amu` defaults to `m_eff_amu` (avoids a `None`-resolve
+  branch). `m_eff_amu = 202.953908` (full precision, for the loader's exact
+  match).
+- **`check_drag_config(cfg)`** — separate function, called from `validate()`,
+  no-ops when `drag_coefficients is None`. Runs (0) an **unconditional**
+  `drag_form` typo-reject (recovers the runtime safety `Literal` gives up vs.
+  `enum.Enum`) + `drag_form`↔`coeffs.form` agreement; (1) §3.3 per-form
+  dissipativity (`linear_cubic`: `a>0`, turnover assert-and-skip while `b>0`,
+  max-speed ceiling unsourced/recorded); (2) §6.5 mass↔coefficient consistency
+  (`fixed`↔constant within ~8 amu; non-`fixed`↔time-resolved; inconsistent →
+  refuse unless `allow_inconsistent_mass_pairing`). The non-`fixed` branch is
+  exercised by synthetic construction in tests, not left untested-green.
+- **`load_drag_coefficients(coeff_dir, *, expected_m_eff_amu)`** in the
+  presets/config layer (keeps `physics/` I/O-free): content-validating, stamps
+  `extraction_mass_amu` **from the JSON** (single source of truth), refuses on
+  provenance mismatch (exact 1e-6) / missing / malformed. Case lives in the
+  **presets** via `REFERENCE_DRAG_ROOT` — no `DragCase` enum, no helper.
+- **Two distinct mass tolerances, kept separate:** loader's exact-match
+  provenance identity vs. the guard's ~8 amu physics band
+  (`_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU = 8.0`). Distinct constants, distinct
+  tests.
+- **Two drag-enabled presets** (`single_pulse_N2000_drag`,
+  `single_pulse_N2000_18Angst_drag`) wire the real coefficients; existing
+  presets unmutated; hard-sphere path bit-identical.
 
-Slice 3 scope fence — does **not** touch: driver wiring (Slice 4); `physics/`
-I/O; checkpoint schema / energy rename; active noise; existing presets; existing
-`SimConfig` fields or `validate()` behaviour beyond invoking `check_drag_config`.
+Specs: `SLICE3_GOALS_config_and_guard.md`, `config_and_preset.md`.
 
-#### Slice 3 declared-field exception (scoped, time-limited — rule 2)
+### Slice 4 — active task
 
-These `SimConfig` fields are declared in Slice 3 but **not yet read**; each is
-removed from the exception by the slice that activates it. A rule-2 audit should
-consult this table rather than flag them as dead surface.
+Specified in full in `SLICE4_GOALS_ion_driver_rewiring.md`. Wires the BAOAB
+stepper into the ion stage so a drag preset runs end-to-end at Tier 0
+(deterministic, fixed mass). **Wiring-only** — the TDDFT comparison is the
+separate next task that *sets* the deferred §6.10 thresholds. This is the slice
+that **exercises** the scoped collision-physics exception (not just declares
+it). Summary of intent:
 
-| field(s) | status at Slice 3 | activated by |
+- **Parallel per-step function `baoab_propagation_step`** added to
+  `ion_propagation_step.py` as a third sibling (alongside
+  `neutral_propagation_step` / `ion_propagation_step`). `ion.py` dispatches
+  **once per run** on `drag_coefficients is not None` → BAOAB; else → the
+  existing collision step, **bit-identical and uncalled-for-drag**. The
+  collision path (and its mass attachment) is not deleted or made dormant — it
+  simply stays in the branch drag configs don't enter (the hard-sphere path is
+  calibration data §6 depends on).
+- **`ion.py` owns closure construction:** builds the `gamma_fn` + spatial gate
+  and the BAOAB closure via `make_ion_baoab_step`, **rebuilt every step**
+  (matching the `make_ion_step` pattern; Tier-1-ready though mass is fixed now).
+  The gate assembly implements the §5.5 collapse — `density_proportional`
+  (default) and `erf_tied` both build the erf-complement gate until a density
+  profile exists. `baoab_propagation_step` receives the ready `step` and does
+  thin per-step accounting.
+- **Energy:** `ΔE_dissip` (amu·Å²/ps² from the stepper) → eV via the **baseline
+  idiom** (amu→kg via `U`, ×100², ÷`EV`), accumulated into `E_dissip_eV`.
+  Closure `E_kin+E_pot+E_dissip` is **tight** (Verlet-drift level — dissipation
+  is exact, not approximate).
+- **Checkpoint v5 retained** (v6 is Tier-1 mass dynamics):
+  `E_mass_attach_defect_eV=0`, `temperature_diagnostic=NaN`,
+  `number_of_collisions=0` under the drag branch.
+- **`_check_drag_scope`** — drag-branch analog of `_check_scope`, rejects the
+  out-of-Tier-0 envelope (`T_eff>0`, `mass_scenario≠fixed`,
+  `drag_form≠linear_cubic`).
+- **Deterministic smoke-run harness** — the "thorough debug" artifact: tiny
+  fixed-seed run asserting finite trajectories, tight energy closure, monotone
+  `E_dissip>0`, v5 checkpoint round-trip, scope-guard rejection. Explicitly
+  **not** a TDDFT check.
+- **Shared scaffolding (rule 1):** only behavior-preserving, physics-free lifts
+  out of `ion_propagation_step` (depth, eV `E_kin`, possibly `E_pot`), each
+  gated on `test_ion_propagation_step.py` staying green; write-your-own if a
+  lift isn't clean.
+
+Slice 4 scope fence — does **not** touch: the checkpoint schema (v5 retained);
+mass dynamics; active noise; TDDFT validation/threshold-setting; new `SimConfig`
+fields; `physics/` (`drag.py`/`baoab.py` consumed unchanged); the neutral stage.
+
+#### Drag-config field exception (scoped, time-limited — rule 2)
+
+These `SimConfig` fields are declared but **not yet read by a consuming code
+path**; each is removed from the exception by the slice that activates it. A
+rule-2 audit should consult this table rather than flag them as dead surface.
+
+**Now consumed (Slice 4 — off the exception):** `drag_form`,
+`drag_coefficients`, `drag_spatial_gate`, `drag_gate_steepness`,
+`mass_scenario`, `m_eff_amu`, `mass_initial_amu`, `allow_inconsistent_mass_pairing`
+are read by the Slice 4 driver (gate/`gamma_fn`/closure build + scope guard) in
+addition to the Slice 3 guard. No longer dead surface.
+
+**Still declared-but-unread:**
+
+| field(s) | status | activated by |
 |---|---|---|
-| `drag_form`, `drag_coefficients`, `drag_spatial_gate`, `drag_gate_steepness` | read by the guard now; consumed by the stepper build | Slice 4 |
-| `mass_scenario`, `m_eff_amu`, `mass_initial_amu`, `allow_inconsistent_mass_pairing` | read by the guard now | Slice 4 (stepper `m`) |
-| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it) | `power_law` activation |
-| `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Slice ≥4 / Tier 3 |
+| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; real `power_law` export is `n≈+2`, also regular at `v=0`) | hypothetical `n<0` `power_law` |
+| `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Tier 3 (active noise) |
 | `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) |
 | `helium_density_profile` | placeholder/`None` | future G4 density profile |
 | `validation_histogram_metric` | declared, inert (`wasserstein`) | Tier 2 (histogram comparison) |
