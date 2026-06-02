@@ -10,10 +10,18 @@ code should have a tunable magic number.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Literal, Optional
 
 from .physics.constants import EV, K_B
+from .physics.drag import (
+    DragCoefficients,
+    LINEAR_CUBIC,
+    LINEAR_QUADRATIC,
+    POWER_LAW,
+    THRESHOLD,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -23,6 +31,48 @@ CollisionMode = Literal[1, 2, 3]
 # 1: constant scattering probability per timestep
 # 2: scatter after traveling one mean free path
 # 3: scatter w/ probability sigma * dR * rho_droplet  (default, "sigma mode")
+
+# ---------------------------------------------------------------------------
+# Drag-model enum aliases (Slice 3, DRAG_PORT_DESIGN_DECISIONS.md §1-§6).
+#
+# Named module-scope ``Literal`` aliases mirror the existing ``CollisionMode``
+# house style: a single source of truth for each enum's *members* (greppable,
+# all members declared) without introducing ``enum.Enum``. The full member sets
+# are declared now -- even members unreachable at Tier 0 -- because the §6.5
+# guard's refusal logic references the non-``fixed`` mass scenarios, so they
+# must exist as types to be referenced. Field defaults (below) pick each enum's
+# *inert* member, not the design's "primary" (a default config must do nothing
+# surprising).
+# ---------------------------------------------------------------------------
+DragForm = Literal["linear_cubic", "linear_quadratic", "threshold", "power_law"]
+DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
+MassScenario = Literal["fixed", "scenario_A_accretion", "scenario_B_stripping", "biphasic"]
+NoiseForm = Literal["none", "multiplicative_local_fdt", "empirical_residual"]
+NoiseCalibration = Literal["hard_sphere_variance", "tddft_residual", "strict_fdt_bath"]
+NoiseGeometry = Literal["longitudinal", "isotropic", "anisotropic"]
+NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
+MassRateForm = Literal["density_only", "sweeping", "dwell_time"]
+ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
+
+# Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
+# drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
+# the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
+# DISTINCT from the loader's exact-match provenance check (presets.py): that one
+# is a plumbing identity (same number flowing two ways), this is a physics band.
+_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU = 8.0
+
+# The non-``fixed`` mass scenarios (those requiring time-resolved coefficients).
+_EVOLVING_MASS_SCENARIOS = (
+    "scenario_A_accretion",
+    "scenario_B_stripping",
+    "biphasic",
+)
+
+# Recognised drag-form members (reuses the drag.py tags -- no duplicate string
+# literals). The guard rejects anything outside this set: ``Literal`` is not
+# enforced at runtime, so this is the recovery for the typo-catching given up by
+# choosing named ``Literal`` aliases over ``enum.Enum``.
+_KNOWN_DRAG_FORMS = (LINEAR_CUBIC, LINEAR_QUADRATIC, THRESHOLD, POWER_LAW)
 
 
 @dataclass
@@ -127,6 +177,35 @@ class SimConfig:
     custom_DFT_start: bool = False
 
     # ------------------------------------------------------------------
+    # Drag model (Slice 3 -- declarative + validation surface only; no
+    # behavioral change. The collision path still runs until Slice 4 swaps
+    # it. All ~18 fields declared now with INERT defaults; most are read by
+    # the guard or Slice 4. See CLAUDE.md "Slice 3 declared-field exception"
+    # for the field -> activating-slice table.
+    # ------------------------------------------------------------------
+    # -- Tier-0-live (read by the guard now and/or the Slice 4 stepper) --
+    drag_form: DragForm = "linear_cubic"                 # guard + Slice 4 build
+    drag_coefficients: Optional[DragCoefficients] = None  # guard + Slice 4 gamma
+    drag_spatial_gate: DragSpatialGate = "density_proportional"  # erf-tied (§5.5)
+    drag_gate_steepness: float = 14.2     # A; = potential_steepness (Slice 4 gate)
+    mass_scenario: MassScenario = "fixed"                # inert member (guard)
+    m_eff_amu: float = 202.953908         # amu; drag-law reference mass (§2.2)
+    mass_initial_amu: float = 202.953908  # amu; = m_eff_amu under `fixed` (A-ii)
+    allow_inconsistent_mass_pairing: bool = False        # refuse -> warn downgrade
+    drag_low_v_floor: float = 0.0         # A/ps; inert for linear_cubic (power_law n<0 only)
+
+    # -- Deferred (declared now, no Tier-0 reader; activated later) --
+    noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
+    noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
+    noise_geometry: NoiseGeometry = "longitudinal"       # Tier 3
+    noise_low_v_behavior: NoiseLowVBehavior = "vanish"   # Tier 3 (anisotropic only)
+    mass_rate_form: MassRateForm = "density_only"        # Tier 1 (scenario != fixed)
+    mass_rate_coefficient: float = 0.0    # kappa0/eta0; Tier 1
+    mass_relaxation_tau_ps: float = 0.0   # ps; biphasic only; Tier 1
+    helium_density_profile: Optional[object] = None      # future G4 density profile
+    validation_histogram_metric: ValidationHistogramMetric = "wasserstein"  # Tier 2
+
+    # ------------------------------------------------------------------
     # Output
     # ------------------------------------------------------------------
     output_dir: str = "results"
@@ -186,3 +265,135 @@ class SimConfig:
             raise ValueError("timesteps must be positive")
         if self.hard_sphere_collision_mode not in (1, 2, 3):
             raise ValueError("hard_sphere_collision_mode must be 1, 2, or 3")
+        check_drag_config(self)
+
+
+# ---------------------------------------------------------------------------
+# Drag config-load guard (Slice 3, DRAG_PORT_DESIGN_DECISIONS.md §3.3 + §6.5)
+# ---------------------------------------------------------------------------
+def check_drag_config(cfg: "SimConfig") -> None:
+    """Validate the drag surface of ``cfg`` at config-load (§3.3 + §6.5).
+
+    A separate, unit-testable function called from :meth:`SimConfig.validate`.
+
+    First it **always** rejects an unrecognised ``cfg.drag_form`` (the runtime
+    recovery for the typo-catching given up by named ``Literal`` aliases vs.
+    ``enum.Enum``; mirrors the ``mass_scenario`` reject arm). This runs before
+    the ``drag_coefficients is None`` early return, so a typo is caught even on a
+    non-drag config; the default ``"linear_cubic"`` passes unchanged.
+
+    The remaining two checks no-op when ``cfg.drag_coefficients is None`` (the
+    inert default -- a default config must do nothing surprising). When
+    coefficients are present, ``coeffs.form`` must equal ``cfg.drag_form`` (the
+    Slice 4 stepper builds from ``cfg.drag_form`` while consuming ``coeffs``, so
+    they must name the same form), then:
+
+    1. **Per-form dissipativity (§3.3)** -- the only live, non-vacuous refusal
+       on Tier-0-reachable input. For ``linear_cubic`` requires ``a > 0`` and
+       asserts there is no real turnover speed ``v_dagger = sqrt(-a/b)`` (true
+       whenever ``b > 0``, which both extracted cases satisfy; the
+       max-trajectory-speed ceiling that a ``b < 0`` re-extraction would need
+       is unsourced and recorded as a §7 open item, not invented here). The
+       reserved forms' branches are written for completeness but unreachable --
+       ``physics/drag.py`` raises ``NotImplementedError`` for them upstream.
+    2. **Mass <-> coefficient consistency (§6.5)** -- ``fixed`` is
+       self-consistent only with ``constant``-mass coefficients whose
+       ``extraction_mass_amu`` matches ``m_eff_amu`` within
+       :data:`_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU` (~2 He); the evolving
+       scenarios require ``time_resolved`` coefficients. An inconsistent pairing
+       is a hard error unless ``allow_inconsistent_mass_pairing`` downgrades it
+       to a warning.
+
+    Parameters
+    ----------
+    cfg : SimConfig
+        The configuration to validate.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``drag_form``, a ``drag_form``/coefficient-form
+        mismatch, a non-dissipative form, or an inconsistent mass<->coefficient
+        pairing when ``allow_inconsistent_mass_pairing`` is ``False``.
+    """
+    # Typo-recovery arm: Literal is not runtime-enforced. Runs unconditionally
+    # so a typo'd drag_form fails loudly even on a non-drag config.
+    if cfg.drag_form not in _KNOWN_DRAG_FORMS:
+        raise ValueError(
+            f"unknown drag_form {cfg.drag_form!r}; expected one of "
+            f"{_KNOWN_DRAG_FORMS}"
+        )
+
+    coeffs = cfg.drag_coefficients
+    if coeffs is None:
+        return  # inert default: nothing further to validate.
+
+    # The stepper (Slice 4) builds from cfg.drag_form while consuming coeffs, so
+    # the two must name the same form.
+    if coeffs.form != cfg.drag_form:
+        raise ValueError(
+            f"drag_form {cfg.drag_form!r} does not match coefficient form "
+            f"{coeffs.form!r}"
+        )
+
+    # --- 1. Per-form dissipativity (§3.3) ---
+    form = cfg.drag_form  # == coeffs.form (cross-checked above); §2.1 "reads drag_form"
+    c = coeffs.coefficients
+    if form == LINEAR_CUBIC:
+        a = float(c["a"])
+        b = float(c["b"])
+        if not (a > 0.0):
+            raise ValueError(
+                f"linear_cubic drag requires a > 0 (dissipative at low v), "
+                f"got a={a!r}"
+            )
+        # Turnover v_dagger = sqrt(-a/b): real only if b < 0. b > 0 => no real
+        # turnover => vacuously dissipative everywhere (assert-and-skip, §3.2).
+        # A b < 0 re-extraction would need a max-trajectory-speed ceiling to
+        # bound v_dagger against; that ceiling is unsourced (§7 open item) and
+        # is deliberately NOT invented here.
+        assert b > 0.0 or a > 0.0  # a>0 already enforced; documents the intent
+    elif form == LINEAR_QUADRATIC:  # unreachable: NotImplemented upstream
+        if not (float(c["a"]) > 0.0 and float(c["c"]) >= 0.0):
+            raise ValueError("linear_quadratic drag requires a > 0, c >= 0")
+    elif form == THRESHOLD:  # unreachable: NotImplemented upstream
+        if not (float(c["F_sat"]) > 0.0 and float(c["v0"]) > 0.0):
+            raise ValueError("threshold drag requires F_sat > 0, v0 > 0")
+    elif form == POWER_LAW:  # unreachable: NotImplemented upstream
+        if not (float(c["gamma"]) > 0.0):
+            raise ValueError("power_law drag requires gamma > 0")
+    else:  # pragma: no cover -- membership already enforced above
+        raise ValueError(f"unknown drag form {form!r}")
+
+    # --- 2. Mass <-> coefficient consistency (§6.5) ---
+    if cfg.mass_scenario == "fixed":
+        consistent = (
+            coeffs.extraction_mass_model == "constant"
+            and abs(coeffs.extraction_mass_amu - cfg.m_eff_amu)
+            <= _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU
+        )
+        detail = (
+            f"mass_scenario='fixed' requires constant-mass coefficients within "
+            f"{_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU} amu of m_eff_amu="
+            f"{cfg.m_eff_amu}; got extraction_mass_model="
+            f"{coeffs.extraction_mass_model!r}, extraction_mass_amu="
+            f"{coeffs.extraction_mass_amu}"
+        )
+    elif cfg.mass_scenario in _EVOLVING_MASS_SCENARIOS:
+        consistent = coeffs.extraction_mass_model == "time_resolved"
+        detail = (
+            f"mass_scenario={cfg.mass_scenario!r} requires time_resolved "
+            f"coefficients; got extraction_mass_model="
+            f"{coeffs.extraction_mass_model!r}"
+        )
+    else:  # pragma: no cover -- Literal type forbids other members
+        raise ValueError(f"unknown mass_scenario {cfg.mass_scenario!r}")
+
+    if not consistent:
+        msg = f"inconsistent mass<->coefficient pairing: {detail}"
+        if cfg.allow_inconsistent_mass_pairing:
+            warnings.warn(msg, RuntimeWarning)
+        else:
+            raise ValueError(
+                msg + " (set allow_inconsistent_mass_pairing=True to override)"
+            )

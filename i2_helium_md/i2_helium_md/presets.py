@@ -10,9 +10,98 @@ Start from a preset and override whichever fields you need:
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
+from pathlib import Path
 
 from .config import SimConfig
+from .physics.drag import DragCoefficients, LINEAR_CUBIC
+
+# Anchor for the frozen drag-coefficient layout (data/reference/drag/<case>/...).
+# ``parents[1]`` is the project root: this file is i2_helium_md/i2_helium_md/
+# presets.py, so parents[0] = the package dir, parents[1] = the repo root that
+# holds ``data/``. Defined once here so the directory is not a scattered literal.
+REFERENCE_DRAG_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference" / "drag"
+
+# Required keys in a linear_cubic fit_parameters.json (a/b plus the 1-sigma
+# errors and the stamped extraction mass). Errors are read to assert presence
+# (provenance completeness) even though Slice 3 does not yet consume them.
+_FIT_PARAM_REQUIRED_KEYS = ("a", "b", "a_err", "b_err", "meff_amu")
+
+
+def load_drag_coefficients(
+    coeff_dir: Path, *, expected_m_eff_amu: float
+) -> DragCoefficients:
+    """Load a ``linear_cubic`` :class:`DragCoefficients` bundle from disk.
+
+    Thin, content-validating, provenance-enforcing loader living in the
+    presets/config layer so ``physics/`` stays I/O-free (CLAUDE.md rule 6). The
+    case (9 A vs 18 A) is the droplet geometry the *caller* (a preset) already
+    encodes; this loader is case-agnostic and takes only a directory.
+
+    Reads ``coeff_dir/fit_parameters.json`` and returns a validated bundle whose
+    ``extraction_mass_amu`` is stamped **from the JSON** (single source of
+    truth), so the bundle's provenance can never silently diverge from the file
+    it came from.
+
+    Parameters
+    ----------
+    coeff_dir : Path
+        Directory containing ``fit_parameters.json`` (e.g.
+        ``REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic"``).
+    expected_m_eff_amu : float
+        The reference mass the *caller* (preset) expects this case to carry.
+        Compared **exactly** (float-eps) against the JSON ``meff_amu`` -- a
+        plumbing/provenance identity, DISTINCT from the guard's ~8 amu physics
+        band (config.py ``_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU``).
+
+    Returns
+    -------
+    DragCoefficients
+        A ``linear_cubic`` bundle with ``extraction_mass_model="constant"`` and
+        ``extraction_mass_amu`` taken from the JSON.
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``fit_parameters.json`` is absent (the message names the path).
+    ValueError
+        If the JSON is malformed, missing required keys, or its ``meff_amu``
+        disagrees with ``expected_m_eff_amu``.
+    """
+    json_path = coeff_dir / "fit_parameters.json"
+    if not json_path.is_file():
+        raise FileNotFoundError(
+            f"drag coefficient file not found: {json_path}"
+        )
+    try:
+        with open(json_path, "r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except (json.JSONDecodeError, OSError) as exc:
+        raise ValueError(f"malformed drag coefficient file {json_path}: {exc}")
+
+    missing = [k for k in _FIT_PARAM_REQUIRED_KEYS if k not in raw]
+    if missing:
+        raise ValueError(
+            f"drag coefficient file {json_path} missing required keys "
+            f"{missing}; need {_FIT_PARAM_REQUIRED_KEYS}"
+        )
+
+    json_m_eff = float(raw["meff_amu"])
+    # Exact-match provenance identity (NOT the physics band): the same number
+    # should be flowing two ways. A real difference is a wiring/provenance bug.
+    if abs(json_m_eff - float(expected_m_eff_amu)) > 1e-6:
+        raise ValueError(
+            f"drag coefficient provenance mismatch in {json_path}: JSON "
+            f"meff_amu={json_m_eff} != expected_m_eff_amu={expected_m_eff_amu}"
+        )
+
+    return DragCoefficients(
+        form=LINEAR_CUBIC,
+        coefficients={"a": float(raw["a"]), "b": float(raw["b"])},
+        extraction_mass_model="constant",
+        extraction_mass_amu=json_m_eff,  # stamped from JSON, single source.
+    )
 
 
 def single_pulse_N2000(**overrides) -> SimConfig:
@@ -113,5 +202,66 @@ def single_pulse_droplet_distribution(**overrides) -> SimConfig:
         single_initial_position=False,
         num_molecules=8000,
         use_single_droplet_size=False,
+    )
+    return replace(cfg, **overrides)
+
+
+# Drag-law reference mass (~19 He, §2.2). Both extracted cases (9 A and 18 A)
+# were fit at this value; it is the exact provenance the loader cross-checks.
+_DRAG_M_EFF_AMU = 202.953908
+
+
+def single_pulse_N2000_drag(**overrides) -> SimConfig:
+    """:func:`single_pulse_N2000` (9 A) wired with the linear_cubic drag law.
+
+    Loads and validates the frozen 9 A ``linear_cubic`` coefficients and exposes
+    them via ``drag_coefficients`` + the mass surface. **No behavioral change in
+    Slice 3:** the hard-sphere collision path still runs (Slice 4 swaps it); the
+    coefficients are loaded and config-validated but not yet consumed by a
+    stepper. The hard-sphere fields are inherited unchanged from
+    :func:`single_pulse_N2000`.
+
+    Parameters
+    ----------
+    **overrides
+        Any ``SimConfig`` field to override from the preset default.
+    """
+    coeffs = load_drag_coefficients(
+        REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic",
+        expected_m_eff_amu=_DRAG_M_EFF_AMU,
+    )
+    cfg = single_pulse_N2000(
+        drag_form="linear_cubic",
+        drag_coefficients=coeffs,
+        mass_scenario="fixed",
+        m_eff_amu=_DRAG_M_EFF_AMU,
+        mass_initial_amu=_DRAG_M_EFF_AMU,
+    )
+    return replace(cfg, **overrides)
+
+
+def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
+    """:func:`single_pulse_N2000_18Angst` (18 A) wired with the linear_cubic drag law.
+
+    The 18 A analog of :func:`single_pulse_N2000_drag`: builds the ``18A`` case
+    path, loads and validates the frozen 18 A ``linear_cubic`` coefficients. Same
+    Slice 3 caveat -- coefficients are loaded and validated, the collision path
+    still runs until Slice 4.
+
+    Parameters
+    ----------
+    **overrides
+        Any ``SimConfig`` field to override from the preset default.
+    """
+    coeffs = load_drag_coefficients(
+        REFERENCE_DRAG_ROOT / "18A" / "linear_and_cubic",
+        expected_m_eff_amu=_DRAG_M_EFF_AMU,
+    )
+    cfg = single_pulse_N2000_18Angst(
+        drag_form="linear_cubic",
+        drag_coefficients=coeffs,
+        mass_scenario="fixed",
+        m_eff_amu=_DRAG_M_EFF_AMU,
+        mass_initial_amu=_DRAG_M_EFF_AMU,
     )
     return replace(cfg, **overrides)
