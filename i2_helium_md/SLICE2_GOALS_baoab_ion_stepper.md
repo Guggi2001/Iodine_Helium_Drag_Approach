@@ -82,10 +82,11 @@ return (x1, v1, E_pot, ΔE_dissip)
 - **O** is the only genuinely new physics: drag as damping, plus the dormant
   noise site. Conservative forces never enter O; drag never enters B.
 - Two `acc_fn` evaluations per step — at `x0` (first B) and at `x1` (last B) —
-  matching the two evaluations `velocity_verlet_step` makes. The canonical
-  efficient form caches the final-B force as the next step's first-B force;
-  caching vs. re-evaluating must not change the result (guarded by the anchor
-  test), so the choice is left to implementation.
+  matching the two evaluations `velocity_verlet_step` makes. **Resolved to
+  re-evaluate** (no cross-step cache); the anchor test asserts the count
+  (`calls == 2·n == verlet_calls`) as a tested contract. Caching the final-B
+  force as the next first-B is deferred to Slice 4 (see §11, with the
+  force-not-acceleration trap).
 
 ### Governing O-step (Tier-0, noise off)
 
@@ -175,8 +176,20 @@ $\div m$ in amu → Å²/ps², root → Å/ps. Balances. **No formulation reject
   in Slice 2 beyond being asserted correct by the §7 tests.
 - When noise turns on (later), the noise *injects* energy that feeds the
   thermal floor and must be tracked **separately** from $E_\text{dissip}$ (a
-  sibling channel, §4.5 of the decisions doc). Out of Slice 2 scope; the return
-  signature should leave room for a second energy term without breaking.
+  sibling channel, §4.5 of the decisions doc). Out of Slice 2 scope.
+- **Return-slot resolution (implemented): bare 4-tuple, signature bump
+  accepted at Slice ≥3.** The earlier discussion weighed a named `StepResult`
+  structure (growable without breaking call sites) against a bare tuple. The
+  implementation uses a **4-tuple** `(pos, vel, E_pot, ΔE_dissip)`; adding the
+  noise-injection energy term is a deliberate one-time signature bump when
+  noise is activated, not a slot reserved now. No always-zero placeholder is
+  returned (that would be the dead branch CLAUDE.md rule 2 forbids). This
+  supersedes the "shape it now" wording previously in §11.
+- **Return-shape asymmetry is intentional.** `E_pot` is per-pair, shape
+  `(N,)`, eV — matching `velocity_verlet_step`'s convention. `ΔE_dissip` is
+  per-atom, shape `(2N,)`, amu·Å²/ps². The mismatch is inherited from the
+  baseline (potential is per-pair; per-atom energies are 2N) and is correct;
+  Slice 4 must **not** try to "align" the two shapes.
 
 ---
 
@@ -204,9 +217,12 @@ $\div m$ in amu → Å²/ps², root → Å/ps. Balances. **No formulation reject
 
 ## 8. Module interface (sketch — contract, not code)
 
-- **`make_ion_baoab_step(m, droplet_radii, acc_fn, gamma_fn, dt, *,
-  T_eff=0.0, rng=None)`** → closure `step(pos, vel) → (pos', vel', E_pot,
-  ΔE_dissip)`. Mirrors `leapfrog.make_ion_step`. `gamma_fn(v, depth)` is the
+- **`make_ion_baoab_step(m, droplet_radii, acc_fn, gamma_fn, *,
+  T_eff=0.0, rng=None)`** → closure `step(pos, vel, dt) → (pos', vel', E_pot,
+  ΔE_dissip)`. Mirrors `leapfrog.make_ion_step` *including its call
+  convention*: `dt` is **not** bound in the factory but passed to `step` on
+  each call, sourced from `SimConfig.dt_ion` by the Slice-4 driver (as
+  `ion_propagation_step.py` does `dt = cfg.dt_ion`). `gamma_fn(v, depth)` is the
   Slice 1 `drag_gamma` closed over `coeffs` + `steepness`; `acc_fn` is the
   conservative ion acceleration. `T_eff=0` and `rng=None` keep noise dormant.
 - The closure computes `depth = r_atom − droplet_radii` internally (mirroring
@@ -247,7 +263,8 @@ $\div m$ in amu → Å²/ps², root → Å/ps. Balances. **No formulation reject
 | Gate-off limit — deep vacuum ($g\to0\Rightarrow\gamma\to0$): O-step is identity, $\Delta E_\text{dissip}=0$ | no drag, no dissipation outside droplet | round-off |
 | Helper-extraction safety — `velocity_verlet_step` output unchanged vs. pre-refactor (covered by the anchor test + existing `test_*` for the neutral/ion Verlet path) | byte-identical behaviour | round-off |
 | Energy-return units — $\Delta E_\text{dissip}$ in amu·Å²/ps², not eV | enforced (no eV conversion in module) | exact |
-| Noise dormant — `T_eff=0` path draws no RNG and equals the deterministic O-step | identical with/without `rng` passed | exact |
+| Eval-for-eval parity (inside anchor test) — `acc_fn` called exactly twice per step | `calls == 2·n == verlet_calls` (no-cache contract; trip-wire for future caching → ≈`n+1`) | exact |
+| Noise dormant — `T_eff=0` with a real seeded `rng`: `rng.bit_generator.state` snapshotted before/after, unchanged (the dormancy proof — *not* output equality, which holds regardless) | no RNG draw consumed | exact |
 | Mass enters only in O-step + energy — `gamma_fn` and `acc_fn` carry no extra mass coupling | enforced | exact |
 
 The anchor test is the killer test: it proves the swap is safe by recovering
@@ -257,13 +274,23 @@ the frozen baseline in the no-drag limit.
 
 ## 11. Open items surfaced (recorded, not blockers)
 
-- **Force-evaluation caching** (cache final-B force as next first-B vs.
-  re-evaluate). Performance/cleanliness choice; the anchor test guards
-  correctness either way. Decide at implementation.
-- **Second energy channel for noise.** The return signature should anticipate a
-  separate noise-injection energy term (§6) so adding noise later does not
-  reshape the interface. Shape it now or accept a signature bump at Slice ≥3 —
-  flag, decide at implementation.
+- **Force-evaluation caching — resolved to *re-evaluate* now; caching deferred
+  to Slice 4, contingent on profiling.** Slice 2 makes two fresh `acc_fn`
+  evaluations per step (mirroring `velocity_verlet_step`), and the anchor test
+  asserts the count (`calls == 2·n == verlet_calls`) as a tested contract.
+  **Trap to flag for whoever optimizes later: cache the conservative *force*
+  $F_\text{cons}(x_1)$, never the *acceleration* $a_\text{cons}(x_1)$.** Under
+  mass dynamics $a = F/m$ changes at fixed position when $m$ changes, so a
+  cached acceleration goes silently stale (it would apply the previous step's
+  mass). At Tier 0 the mass is fixed, so this bug is **invisible to the anchor
+  test** — which is exactly why it must be recorded now. Caching a
+  position-only force and re-dividing by the current $m$ is safe but needs
+  `acc_fn` to expose force separately (a restructure). A future cache drops the
+  eval count to ≈`n+1` and updates the parity assertion deliberately.
+- **Second energy channel for noise — resolved (see §6): bare 4-tuple, no slot
+  reserved now.** Adding the noise-injection energy term is an accepted
+  one-time signature bump at Slice ≥3, not a placeholder field. No always-zero
+  return slot (dead branch).
 - **RNG draw-order** for the future noise draw (§9) — deferred to Slice ≥3.
 
 ---

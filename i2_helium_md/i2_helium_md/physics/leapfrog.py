@@ -69,6 +69,30 @@ AccelFn = Callable[[Positions], tuple[Accelerations, np.ndarray]]
 
 
 # ===========================================================================
+# Shared kick/drift primitives
+# ===========================================================================
+# Velocity-Verlet's kick and drift are the *same* operators BAOAB's B and A
+# steps use (SLICE2_GOALS_baoab_ion_stepper.md §7). They are factored out here
+# so ``physics/baoab.py`` consumes them rather than duplicating the physics
+# (CLAUDE.md rule 1). This is the one knowing touch to the frozen baseline
+# integrator; the BAOAB anchor test (gamma=0 -> BAOAB == velocity_verlet_step)
+# is the self-verifying guard that this extraction left the baseline
+# behaviourally unchanged.
+def _kick(vel: Velocities, acc: Accelerations, dt: float) -> Velocities:
+    """Velocity kick ``v -> v + dt*a`` (component-wise)."""
+    vx, vy, vz = vel
+    ax, ay, az = acc
+    return (vx + dt * ax, vy + dt * ay, vz + dt * az)
+
+
+def _drift(pos: Positions, vel: Velocities, dt: float) -> Positions:
+    """Position drift ``x -> x + dt*v`` (component-wise)."""
+    x, y, z = pos
+    vx, vy, vz = vel
+    return (x + dt * vx, y + dt * vy, z + dt * vz)
+
+
+# ===========================================================================
 # The pure algorithm
 # ===========================================================================
 def velocity_verlet_step(
@@ -106,26 +130,18 @@ def velocity_verlet_step(
         Potential energy (length N) evaluated at the new positions. Useful
         for energy-conservation diagnostics.
     """
-    x0, y0, z0 = pos
-    vx0, vy0, vz0 = vel
+    # Kick-drift-kick, expressed through the shared primitives:
+    #   half-kick:  v_half = v0 + (dt/2)*a0
+    #   full-drift: x1     = x0 + dt*v_half   == x0 + dt*v0 + (dt^2/2)*a0
+    #   half-kick:  v1     = v_half + (dt/2)*a1 == v0 + (dt/2)*(a0 + a1)
+    # which is exactly the classic velocity-Verlet update.
+    a0, _ = acc_fn(pos)
+    v_half = _kick(vel, a0, 0.5 * dt)
+    new_pos = _drift(pos, v_half, dt)
+    a1, E_pot_end = acc_fn(new_pos)
+    new_vel = _kick(v_half, a1, 0.5 * dt)
 
-    # --- step 1: acceleration at current position ---
-    (ax0, ay0, az0), _ = acc_fn((x0, y0, z0))
-
-    # --- step 2: drift to new position ---
-    x1 = x0 + dt * vx0 + 0.5 * ax0 * dt ** 2
-    y1 = y0 + dt * vy0 + 0.5 * ay0 * dt ** 2
-    z1 = z0 + dt * vz0 + 0.5 * az0 * dt ** 2
-
-    # --- step 3: acceleration at new position ---
-    (ax1, ay1, az1), E_pot_end = acc_fn((x1, y1, z1))
-
-    # --- step 4: kick velocity using the average acceleration ---
-    vx1 = vx0 + 0.5 * (ax0 + ax1) * dt
-    vy1 = vy0 + 0.5 * (ay0 + ay1) * dt
-    vz1 = vz0 + 0.5 * (az0 + az1) * dt
-
-    return (x1, y1, z1), (vx1, vy1, vz1), E_pot_end
+    return new_pos, new_vel, E_pot_end
 
 
 # ===========================================================================
