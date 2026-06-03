@@ -112,6 +112,7 @@ from i2_helium_md.physics.leapfrog import (
     velocity_verlet_step,  # pure algorithm, takes an acc_fn
     make_neutral_step,     # returns a step function for neutral propagation
     make_ion_step,         # returns a step function for ion propagation
+    make_ion_accel_fn,     # returns the bare conservative ion acc_fn (Slice 4)
 )
 ```
 
@@ -145,6 +146,32 @@ For ion propagation, identical pattern with `make_ion_step`:
 step = make_ion_step(cfg, mass, droplet_radii, charge, state_ids=None)
 pos, vel, E_pot = step(pos, vel, dt=cfg.dt_ion)
 ```
+
+### `make_ion_accel_fn` — exposing the bare acceleration (Slice 4, drag port)
+
+The drag-model port adds a separate ion-stage integrator
+(`physics/baoab.py`, BAOAB operator splitting). Its B/A "kick"/"drift" steps
+need the **bare conservative ion acceleration** `acc_fn` — the
+position-only `(x, y, z) → ((ax, ay, az), E_pot_per_pair)` callable — *not*
+bundled inside a velocity-Verlet closure. Previously the only public accessor
+was `make_ion_step`, which hides `_ion_accel_fn` inside its `step`.
+
+`make_ion_accel_fn(cfg, mass, droplet_radii, charge, state_ids=None)` returns
+that callable directly. `make_ion_step` was refactored to *consume* it, so
+there is exactly **one** source of the ion force assembly (CLAUDE.md rule 1 —
+no duplicated physics):
+
+```python
+from i2_helium_md.physics.leapfrog import make_ion_accel_fn
+
+acc_fn = make_ion_accel_fn(cfg, mass, droplet_radii, charge)
+(ax, ay, az), E_pot_per_pair = acc_fn((x, y, z))     # used by the BAOAB B/A steps
+```
+
+This is the one knowing, behavior-preserving touch the drag port makes to the
+frozen integrator file (the same discipline as the Slice 2 `_kick`/`_drift`
+extraction); `make_ion_step`'s output is byte-identical after the refactor, and
+the existing leapfrog + ion-step regression tests guard that.
 
 ## Internal walkthrough
 

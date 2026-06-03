@@ -55,13 +55,14 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..config import SimConfig
+from ..config import SimConfig, _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU
 from ..physics.collisions import (
     apply_collision,
     sample_collision_events,
     temperature_diagnostic_from_collision,
     velocity_dependent_cross_section,
 )
+from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, U
 from ..physics.interactions import partner_interaction_ion
 from ..physics.leapfrog import make_ion_step
@@ -197,15 +198,14 @@ def ion_propagation_step(
     # populate the per-atom (2N,) E_pot array.
 
     # 2. Depth into droplet.
-    r1 = np.sqrt(x1 ** 2 + y1 ** 2 + z1 ** 2)
-    depth = r1 - droplet_radii
+    depth = _depth(x1, y1, z1, droplet_radii)
 
     # 3. Pre-collision speed and energy. We compute these AFTER the
     #    leapfrog step so the collision uses the energy at the new
     #    position (matches MATLAB line 384: E0 = (v1*100)^2 * m / 2 / eV).
     v1_speed_sq = vx1 ** 2 + vy1 ** 2 + vz1 ** 2
     v1_speed = np.sqrt(v1_speed_sq)
-    E0_eV = 0.5 * state.mass_kg * (v1_speed_sq * 100.0 ** 2) / EV
+    E0_eV = _E_kin_eV(state.mass_kg, vx1, vy1, vz1)
 
     # 4. Per-atom cross section (constant or v-dependent).
     if cfg.sigma_dependent_on_v:
@@ -259,18 +259,10 @@ def ion_propagation_step(
     #    increased) mass for E_kin -- this matches MATLAB line 761,
     #    which uses ``mass_i(:, t_id+1)`` (post-attachment mass).
     v_post_sq = vx_after ** 2 + vy_after ** 2 + vz_after ** 2
-    E_kin_new_eV = 0.5 * new_mass_kg * (v_post_sq * 100.0 ** 2) / EV
+    E_kin_new_eV = _E_kin_eV(new_mass_kg, vx_after, vy_after, vz_after)
 
-    # E_pot_droplet at NEW positions. Uses ion binding energy.
-    E_droplet_eV = droplet_potential(
-        depth,
-        steepness=cfg.potential_steepness,
-        binding_energy=cfg.binding_energy_I_ion_eV,
-    )
-    # Split per-pair Coulomb energy half-and-half between the two atoms
-    # of each molecule (matches the neutral propagation_step convention).
-    E_partner_per_atom = np.tile(E_pot_coulomb_per_pair, 2) / 2.0
-    E_pot_new_eV = E_droplet_eV + E_partner_per_atom
+    # E_pot at NEW positions: ion-droplet binding + half partner Coulomb.
+    E_pot_new_eV = _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg)
 
     # 9. Cumulative bookkeeping.
     E_dissip_new = state.E_dissip_eV + dE_eV
@@ -303,8 +295,202 @@ def ion_propagation_step(
 
 
 # ===========================================================================
+# Drag-branch step function (pure) -- Slice 4, Tier 0
+# ===========================================================================
+def baoab_propagation_step(
+    state: IonStepState,
+    *,
+    step: BaoabStep,
+    cfg: SimConfig,
+    droplet_radii: np.ndarray,
+) -> IonStepState:
+    """Advance the ion propagation by one ``dt`` via the drag (BAOAB) path. Pure.
+
+    The Tier-0 drag-branch analog of :func:`ion_propagation_step`: **no** collision
+    sampling, **no** mass attachment. The conservative B/A kicks and the
+    dissipative O-step both live inside ``step`` (a BAOAB closure built by the
+    driver via :func:`i2_helium_md.physics.baoab.make_ion_baoab_step`); this
+    function does thin per-step accounting only -- depth, eV energies, the
+    dissipation unit-conversion, and the Tier-0 checkpoint fills.
+
+    Parameters
+    ----------
+    state : IonStepState
+        Current state (read only; not mutated).
+    step : BaoabStep
+        Pre-built BAOAB closure
+        ``(pos, vel, dt) -> (pos', vel', E_pot_per_pair, dE_dissip)`` where
+        ``E_pot_per_pair`` has shape (N,) in eV and ``dE_dissip`` has shape (2N,)
+        in **amu*A^2/ps^2** (per atom, ``>= 0``). The driver rebuilds it every
+        step (mass-driven; Tier-1-ready though Tier-0 mass is fixed).
+    cfg : SimConfig
+        Simulation config. ``dt_ion`` is the timestep.
+    droplet_radii : np.ndarray, shape (2N,)
+        Per-atom droplet radius in Angstrom (constant across the run).
+
+    Returns
+    -------
+    IonStepState
+        The new state at ``state.time_ps + cfg.dt_ion``. At Tier 0: ``mass_kg``
+        unchanged (fixed mass), ``E_mass_attach_defect_eV`` and
+        ``number_of_collisions`` carried unchanged (both 0 under the drag branch),
+        and ``temperature_diagnostic`` an all-NaN ``(3,)`` sentinel (no collisions
+        to diagnose).
+    """
+    dt = cfg.dt_ion
+
+    (x1, y1, z1), (vx1, vy1, vz1), E_pot_coulomb_per_pair, dE_dissip = step(
+        (state.x, state.y, state.z),
+        (state.vx, state.vy, state.vz),
+        dt,
+    )
+
+    # Per-atom depth into droplet (shared geometry lift).
+    depth = _depth(x1, y1, z1, droplet_radii)
+
+    # E_kin at the new velocity. Mass is fixed at Tier 0, so the post-step mass
+    # is the carried mass (no attachment).
+    E_kin_new_eV = _E_kin_eV(state.mass_kg, vx1, vy1, vz1)
+    E_pot_new_eV = _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg)
+
+    # Dissipated energy: amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U,
+    # A/ps->m/s via 100, J->eV via EV) -- the same conversion path as the
+    # mass-attach defect below in ion_propagation_step, so E_dissip_eV stays in a
+    # consistent eV with E_kin_eV / E_pot_eV.
+    dE_dissip_eV = dE_dissip * U * (100.0 ** 2) / EV
+    E_dissip_new = state.E_dissip_eV + dE_dissip_eV
+
+    return IonStepState(
+        x=x1, y=y1, z=z1,
+        vx=vx1, vy=vy1, vz=vz1,
+        mass_kg=state.mass_kg,                              # fixed mass (Tier 0)
+        E_kin_eV=E_kin_new_eV,
+        E_pot_eV=E_pot_new_eV,
+        E_dissip_eV=E_dissip_new,
+        E_mass_attach_defect_eV=state.E_mass_attach_defect_eV,  # stays 0 (no attach)
+        number_of_collisions=state.number_of_collisions,       # stays 0 (no collisions)
+        time_ps=state.time_ps + dt,
+        temperature_diagnostic=np.full(3, np.nan, dtype=float),
+    )
+
+
+# ===========================================================================
 # Internal helpers
 # ===========================================================================
+def _depth(x, y, z, droplet_radii):
+    """Per-atom depth into the droplet ``r_atom - r_droplet`` (negative inside).
+
+    Pure geometry, shared by the collision and drag paths (CLAUDE.md rule 1).
+    """
+    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    return r - droplet_radii
+
+
+def _E_kin_eV(mass_kg, vx, vy, vz):
+    """Per-atom kinetic energy in eV from mass in kg and velocity in A/ps.
+
+    ``0.5 * m * v^2`` with v in m/s (A/ps * 100), result in eV. The single source
+    of the ion-stage E_kin idiom (matches ``ion_initial_state._compute_E_kin_per_atom``
+    and the collision step); physics-free, so safe to share.
+    """
+    v_sq = vx ** 2 + vy ** 2 + vz ** 2
+    return 0.5 * mass_kg * (v_sq * 100.0 ** 2) / EV
+
+
+def _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg):
+    """Per-atom ion potential in eV: ion-droplet binding + half partner Coulomb.
+
+    The conservative ion potential, identical for the collision and drag paths
+    (both consume the same per-pair Coulomb from the ion acceleration). The
+    per-pair Coulomb is split half-and-half between a molecule's two atoms,
+    matching the neutral ``propagation_step`` convention.
+    """
+    E_droplet_eV = droplet_potential(
+        depth,
+        steepness=cfg.potential_steepness,
+        binding_energy=cfg.binding_energy_I_ion_eV,
+    )
+    E_partner_per_atom = np.tile(E_pot_coulomb_per_pair, 2) / 2.0
+    return E_droplet_eV + E_partner_per_atom
+
+
+def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
+    """Refuse to run the drag branch outside the Tier-0 envelope.
+
+    The drag-branch analog of :func:`_check_scope`. ``_check_scope`` demands
+    collision mode 3, which is irrelevant under drag; the drag path instead
+    asserts the Tier-0 deterministic / fixed-mass / linear_cubic envelope
+    (``DRAG_PORT_DESIGN_DECISIONS.md`` §6.4) so an out-of-scope drag config fails
+    at the driver, not deep in a half-implemented path.
+
+    Distinct from ``config.check_drag_config``: that validates the config's
+    *internal consistency* (form agreement, dissipativity, mass<->coefficient
+    pairing); this validates the *Tier-0 runnability envelope* (config-valid is
+    not the same as Tier-0-runnable). Mirrors how ``make_ion_baoab_step`` raises
+    :class:`NotImplementedError` for the not-yet-realised tiers.
+
+    Realized-mass trip-wire (§6.5). The final check reads the **realized** initial
+    ion mass ``initial_mass_kg`` -- the mass the stepper will actually integrate,
+    downstream of the ``build_initial_ion_state`` m_eff override -- *not* a config
+    field. Reading the config would merely echo what the override just set and
+    guard nothing. The drag law was extracted at ``m_eff``; integrating the
+    ``fixed`` scenario at any other inertia (e.g. the inherited bare-I+ ~127 amu)
+    silently applies the calibrated law at the wrong mass. A future refactor or a
+    bypassing path that leaves the mass at ~127 amu trips this on the ~76-amu gap.
+    Reuses the §6.5 ~8 amu mass-insensitivity band (no third tolerance).
+
+    Parameters
+    ----------
+    cfg : SimConfig
+    initial_mass_kg : np.ndarray, shape (2N,)
+        The realized per-atom initial ion mass in kg (``ckpt.mass_kg`` after the
+        Change-A override), i.e. what the BAOAB stepper integrates.
+    """
+    unsupported = []
+    if cfg.noise_form != "none":
+        unsupported.append(
+            f"noise_form={cfg.noise_form!r} (active Langevin noise is Tier 3)"
+        )
+    if cfg.mass_scenario != "fixed":
+        unsupported.append(
+            f"mass_scenario={cfg.mass_scenario!r} (mass dynamics is Tier 1)"
+        )
+    if cfg.drag_form != "linear_cubic":
+        unsupported.append(
+            f"drag_form={cfg.drag_form!r} (only 'linear_cubic' is realised; "
+            "other forms raise NotImplementedError in physics/drag.py)"
+        )
+    if cfg.effusive_dynamics:
+        unsupported.append("effusive_dynamics")
+    if cfg.single_charge_ionization_allowed:
+        unsupported.append("single_charge_ionization_allowed")
+    if cfg.additional_droplet_charges > 0:
+        unsupported.append("additional_droplet_charges > 0")
+
+    if unsupported:
+        raise NotImplementedError(
+            "drag-branch ion propagation is Tier-0 only and does not support: "
+            + ", ".join(unsupported)
+            + ". Tier-0 = mass_scenario='fixed', noise_form='none', "
+            "drag_form='linear_cubic'."
+        )
+
+    # Realized-mass trip-wire: the integration mass must equal the drag law's
+    # extraction mass m_eff within the §6.5 mass-insensitivity band. Per-atom
+    # (max), since the override fills uniformly.
+    max_mass_gap_amu = float(np.max(np.abs(initial_mass_kg / U - cfg.m_eff_amu)))
+    if max_mass_gap_amu > _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU:
+        raise NotImplementedError(
+            "drag-branch ion propagation must integrate at the drag-law "
+            f"extraction mass m_eff_amu={cfg.m_eff_amu}, but the realized initial "
+            f"ion mass is off by {max_mass_gap_amu:.3f} amu (> "
+            f"{_MASS_COEFFICIENT_CONSISTENCY_TOL_AMU} amu, §6.5). The fixed "
+            "scenario must run at m_eff (DRAG_PORT_DESIGN_DECISIONS.md §6.5); "
+            "the build_initial_ion_state m_eff override appears not to have "
+            "fired."
+        )
+
+
 def _check_scope(cfg: SimConfig) -> None:
     """Refuse to step when cfg requests features not yet implemented."""
     if cfg.hard_sphere_collision_mode != 3:

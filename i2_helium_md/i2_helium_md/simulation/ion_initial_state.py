@@ -150,7 +150,20 @@ def build_initial_ion_state(
     vz0 = neutral_ckpt.velocities_z[:, start_id].copy()
 
     # 4. Inherit static per-atom data from the neutral checkpoint.
-    mass_kg_initial = neutral_ckpt.mass_kg.copy()
+    if cfg.drag_coefficients is not None and cfg.mass_scenario == "fixed":
+        # Drag fixed-scenario integrates at the drag law's extraction mass
+        # m_eff, NOT the inherited neutral ~127 amu (bare I+). The linear_cubic
+        # law was fit under m_eff (~203 amu, ~19 He), and
+        # DRAG_PORT_DESIGN_DECISIONS.md §6.5 makes `fixed` the *only*
+        # self-consistent pairing -- it must run at m_eff or the calibrated law
+        # is applied at the wrong inertia. Uniform fill over all 2N ions. We
+        # read `mass_initial_amu` (the field whose purpose is "ion-stage initial
+        # mass", §2.8); at Tier 0 it equals `m_eff_amu`, but reading it keeps the
+        # field semantics clean for Tier 1 (where the two diverge). Do NOT
+        # "restore" the inherited neutral mass here -- the override is the fix.
+        mass_kg_initial = np.full(two_N, cfg.mass_initial_amu * U)
+    else:
+        mass_kg_initial = neutral_ckpt.mass_kg.copy()
     droplet_radii_angstrom = neutral_ckpt.droplet_radii.copy()
 
     # 5. Charges: all +1, since single_charge_ionization_allowed=False

@@ -39,18 +39,25 @@ using 2D radius and missing partner Coulomb) are fixed by
 from __future__ import annotations
 
 import math
+from functools import partial
 from typing import Optional
 
 import numpy as np
 
 from ..config import SimConfig
+from ..physics.baoab import make_ion_baoab_step
+from ..physics.constants import U
+from ..physics.drag import drag_gamma
+from ..physics.leapfrog import make_ion_accel_fn
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
 from .ion_initial_state import build_initial_ion_state
 from .ion_propagation_step import (
     IonStepState,
+    baoab_propagation_step,
     ion_propagation_step,
     ion_state_from_checkpoint_column,
     write_ion_state_to_checkpoint_column,
+    _check_drag_scope,
 )
 from .run_directory import RunDirectory
 
@@ -165,21 +172,54 @@ def run_ion_propagation(
 
     # Allocate constants used inside the loop once.
     charge = np.ones(2 * cfg.num_molecules, dtype=float)
+    droplet_radii = ckpt.droplet_radii_angstrom
+
+    # Dispatch once per run (D3): a validated drag-coefficient bundle routes the
+    # ion stage onto the BAOAB drag path; otherwise the hard-sphere collision
+    # path runs unchanged. The predicate is both *necessary* (BAOAB cannot run
+    # without coefficients) and *already validated* (a non-None bundle passed the
+    # Slice 3 check_drag_config: consistency + dissipativity + form agreement).
+    use_drag = cfg.drag_coefficients is not None
+    gamma_fn = None
+    if use_drag:
+        # Pass the *realized* initial ion mass (ckpt.mass_kg, downstream of the
+        # build_initial_ion_state m_eff override) so the scope guard's mass
+        # trip-wire checks what the stepper will actually integrate, not a
+        # config field.
+        _check_drag_scope(cfg, ckpt.mass_kg)
+        gate_steepness = _drag_gate_steepness(cfg)
+        # gamma_fn(speed, depth) -> gamma [amu/ps]; the erf gate (§5.5) lives
+        # inside drag_gamma via the steepness arg (hard FDT coupling, §5.2).
+        gamma_fn = partial(
+            drag_gamma, coeffs=cfg.drag_coefficients, steepness=gate_steepness,
+        )
 
     state = ion_state_from_checkpoint_column(ckpt, 0)
     prev_dist: np.ndarray | None = None
     next_storage_idx = 1
 
     for internal_id in range(1, num_internal_steps):
-        new_state = ion_propagation_step(
-            state,
-            cfg=cfg,
-            droplet_radii=ckpt.droplet_radii_angstrom,
-            charge=charge,
-            prev_distance_angstrom=prev_dist,
-            rng=rng,
-        )
-        prev_dist = _state_step_distance_ion(state, new_state)
+        if use_drag:
+            # Rebuild the BAOAB closure every step, matching the make_ion_step
+            # rebuild pattern (Tier-1-ready though Tier-0 mass is fixed). Mass
+            # enters here in amu (kg -> amu via U); noise dormant (T_eff=0).
+            acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
+            step = make_ion_baoab_step(
+                state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,
+            )
+            new_state = baoab_propagation_step(
+                state, step=step, cfg=cfg, droplet_radii=droplet_radii,
+            )
+        else:
+            new_state = ion_propagation_step(
+                state,
+                cfg=cfg,
+                droplet_radii=droplet_radii,
+                charge=charge,
+                prev_distance_angstrom=prev_dist,
+                rng=rng,
+            )
+            prev_dist = _state_step_distance_ion(state, new_state)
         state = new_state
 
         # Store every stride-th internal step.
@@ -233,6 +273,30 @@ def _check_scope_ion_driver(cfg: SimConfig) -> None:
             "(dt_fine/dt_coarse + switchtime), which is pump-probe "
             "scope and not implemented in this stage."
         )
+
+
+def _drag_gate_steepness(cfg: SimConfig) -> float:
+    """Resolve the spatial-gate steepness for the drag branch (§5.5 collapse).
+
+    At Tier 0 no ``helium_density_profile`` exists, so ``density_proportional``
+    (G4, the default) collapses to the erf complement (G2) -- identical to
+    ``erf_tied`` -- and both use ``cfg.potential_steepness``. ``erf_independent``
+    (G3) uses its own ``cfg.drag_gate_steepness`` (which itself defaults to
+    ``potential_steepness``). The discarded sharp boolean gate (G1) has no
+    continuous implementation in ``physics/drag.py`` and is rejected here so the
+    default preset cannot silently fall through with no gate.
+    """
+    gate = cfg.drag_spatial_gate
+    if gate in ("density_proportional", "erf_tied"):
+        return cfg.potential_steepness
+    if gate == "erf_independent":
+        return cfg.drag_gate_steepness
+    raise NotImplementedError(
+        f"drag_spatial_gate={gate!r} is not supported on the Tier-0 drag path; "
+        "use 'density_proportional' (default), 'erf_tied', or 'erf_independent'. "
+        "'sharp' (G1) is discarded -- a discontinuous force breaks the BAOAB "
+        "O-step (DRAG_PORT_DESIGN_DECISIONS.md §5.4)."
+    )
 
 
 def _internal_step_count_ion(cfg: SimConfig) -> int:

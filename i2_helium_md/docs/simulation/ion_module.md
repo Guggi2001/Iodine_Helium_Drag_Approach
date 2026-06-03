@@ -104,6 +104,53 @@ else
 end
 ```
 
+## Drag dispatch (Slice 4)
+
+When the config carries a drag-coefficient bundle, the driver runs the
+TDDFT-calibrated **drag** path instead of the hard-sphere collision path. The
+choice is made **once per run**, before the step loop:
+
+```python
+use_drag = cfg.drag_coefficients is not None
+```
+
+This predicate is both *necessary* (BAOAB cannot run without coefficients) and
+*already validated* (a non-`None` bundle passed the Slice 3 `check_drag_config`).
+There is no separate `use_drag` flag that could disagree with the coefficients'
+presence. Consequence: "drag preset" ≡ "has coefficients"; A/B scenario
+comparison uses *different presets*, not a toggle.
+
+On the drag branch the driver:
+
+1. calls `_check_drag_scope(cfg, ckpt.mass_kg)` — the Tier-0 envelope guard,
+   fed the **realized** initial ion mass (downstream of the
+   `build_initial_ion_state` `m_eff` override) so its mass trip-wire checks what
+   the stepper will actually integrate, not a config field;
+2. resolves the spatial-gate steepness via `_drag_gate_steepness(cfg)` — the
+   §5.5 G4→G2 collapse: `density_proportional` (default) and `erf_tied` both use
+   `cfg.potential_steepness`; `erf_independent` uses `cfg.drag_gate_steepness`;
+   `sharp` (G1) is rejected (a discontinuous force breaks the BAOAB O-step);
+3. builds `gamma_fn = partial(drag_gamma, coeffs=…, steepness=…)` (the erf gate
+   lives inside `drag_gamma`);
+4. in the loop, **rebuilds the BAOAB closure every step** (matching the
+   `make_ion_step` rebuild pattern; Tier-1-ready though Tier-0 mass is fixed),
+   converting kg→amu for the stepper and keeping noise dormant (`T_eff=0`):
+
+   ```python
+   acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
+   step   = make_ion_baoab_step(state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0)
+   new    = baoab_propagation_step(state, step=step, cfg=cfg, droplet_radii=droplet_radii)
+   ```
+
+The collision branch (`ion_propagation_step` + `prev_distance` tracking) is
+unchanged and runs whenever `drag_coefficients is None`. The drag branch needs
+no `prev_distance` and draws no RNG (deterministic at Tier 0).
+
+This is the wiring slice: it produces the first runnable drag trajectory. The
+TDDFT comparison against `9A_All_Data.csv` (which sets the §6.10 acceptance
+thresholds) is a **separate next task**, not part of this driver change. See
+`docs/slice_4.md` for the full Slice 4 walkthrough and remaining items.
+
 ## Auto-stride for memory budget
 
 If the full-resolution checkpoint would exceed `max_bytes`, the driver
@@ -207,6 +254,16 @@ All driver-level and build-time checks fire before any expensive
 stepping. The collision-mode check fires on the first inner-loop call
 to `ion_propagation_step`.
 
+On the **drag branch**, an additional Tier-0 envelope guard runs before the loop
+(`_check_drag_scope`, raising `NotImplementedError`):
+
+| Condition | Reason |
+|---|---|
+| `noise_form != "none"` | active Langevin noise is Tier 3 |
+| `mass_scenario != "fixed"` | mass dynamics is Tier 1 |
+| `drag_form != "linear_cubic"` | other forms not yet realised in `drag.py` |
+| realized `mass_kg` not within ~8 amu of `m_eff_amu` | the `fixed` scenario must integrate at the drag-law extraction mass (§6.5) |
+
 ## What's inside
 
 ```
@@ -216,12 +273,20 @@ run_ion_propagation(cfg, neutral_ckpt, *, rng, run_dir, max_bytes, verbose)
 ├─ _internal_step_count_ion(cfg)          -- ceil(ion_sim_time / dt_ion)
 ├─ _decide_stride_ion(N, internal_steps, cap)
 ├─ build_initial_ion_state(cfg, neutral_ckpt, num_steps_ion=stored, start_id=-1)
+│    -- drag `fixed`: ion mass overridden to m_eff here (not inherited 127 amu)
+├─ use_drag = cfg.drag_coefficients is not None
+│    if use_drag: _check_drag_scope(cfg, ckpt.mass_kg); build gamma_fn + gate
 ├─ inner loop:
 │    state  = ion_state_from_checkpoint_column(ckpt, 0)
 │    charge = ones(2N)                    -- allocated once
 │    for internal_id in 1..num_internal_steps-1:
-│        new = ion_propagation_step(state, ..., prev_distance, rng)
-│        prev_distance = |new - state|
+│        if use_drag:                      -- BAOAB drag path (deterministic)
+│            acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
+│            step   = make_ion_baoab_step(state.mass_kg/U, droplet_radii, acc_fn, gamma_fn, T_eff=0)
+│            new    = baoab_propagation_step(state, step=step, cfg=cfg, droplet_radii=...)
+│        else:                             -- hard-sphere collision path (unchanged)
+│            new = ion_propagation_step(state, ..., prev_distance, rng)
+│            prev_distance = |new - state|
 │        if internal_id % stride == 0:
 │            write_ion_state_to_checkpoint_column(new, ckpt, next_storage_idx)
 │            ckpt.temperature_diagnostic[next_storage_idx] = new.temperature_diagnostic

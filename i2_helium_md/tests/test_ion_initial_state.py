@@ -5,7 +5,8 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from i2_helium_md.presets import single_pulse_N2000
+from i2_helium_md.physics.constants import U
+from i2_helium_md.presets import single_pulse_N2000, single_pulse_N2000_drag
 from i2_helium_md.simulation.checkpoint import (
     IonCheckpoint,
     _ION_SCHEMA_VERSION,
@@ -115,6 +116,54 @@ class TestInheritance:
         cfg, neutral = small_neutral_run
         with pytest.raises(ValueError, match="start_id"):
             build_initial_ion_state(cfg, neutral, num_steps_ion=10, start_id=999)
+
+
+# ===========================================================================
+# Slice 4 fix: drag `fixed` integrates at m_eff, not the inherited neutral mass
+# (DRAG_PORT_DESIGN_DECISIONS.md §6.5). The neutral fixture carries bare-iodine
+# (~127 amu) mass, so the override visibly changes the value.
+# ===========================================================================
+class TestDragFixedMassOverride:
+    def _drag_cfg(self, neutral_cfg):
+        return single_pulse_N2000_drag(
+            num_molecules=neutral_cfg.num_molecules,
+            t_max_neutral=neutral_cfg.t_max_neutral,
+            dt_neutral=neutral_cfg.dt_neutral,
+        )
+
+    def test_override_fires_for_drag_fixed(self, small_neutral_run):
+        cfg, neutral = small_neutral_run
+        drag_cfg = self._drag_cfg(cfg)
+        ion = build_initial_ion_state(drag_cfg, neutral, num_steps_ion=10)
+        expected = drag_cfg.mass_initial_amu * U
+        np.testing.assert_allclose(ion.mass_kg, expected)
+        np.testing.assert_allclose(ion.mass_history_kg[:, 0], expected)
+        np.testing.assert_allclose(ion.mass_final_kg, expected)
+        # The override genuinely changed something: neutral mass was bare iodine
+        # (~127 amu), well below m_eff (~203 amu). Compare in amu -- np.allclose
+        # on ~1e-25 kg values is dominated by its default atol and misleads.
+        assert np.max(np.abs(neutral.mass_kg / U - drag_cfg.mass_initial_amu)) > 8.0
+
+    def test_override_is_uniform_over_all_atoms(self, small_neutral_run):
+        cfg, neutral = small_neutral_run
+        ion = build_initial_ion_state(self._drag_cfg(cfg), neutral, num_steps_ion=10)
+        assert np.all(ion.mass_kg == ion.mass_kg[0])
+
+    def test_no_override_for_non_drag_config(self, small_neutral_run):
+        # cfg here has drag_coefficients=None -> inherit neutral mass exactly.
+        cfg, neutral = small_neutral_run
+        ion = build_initial_ion_state(cfg, neutral, num_steps_ion=10)
+        np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
+
+    def test_no_override_for_non_fixed_drag_scenario(self, small_neutral_run):
+        cfg, neutral = small_neutral_run
+        drag_cfg = replace(
+            self._drag_cfg(cfg),
+            mass_scenario="scenario_A_accretion",
+            allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
+        )
+        ion = build_initial_ion_state(drag_cfg, neutral, num_steps_ion=10)
+        np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
 
 
 # ===========================================================================

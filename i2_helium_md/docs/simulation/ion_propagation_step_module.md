@@ -44,6 +44,7 @@ IonStepState (input)  ──────────────► IonStepState
 from i2_helium_md.simulation.ion_propagation_step import (
     IonStepState,
     ion_propagation_step,
+    baoab_propagation_step,   # drag-branch sibling (Slice 4)
 )
 
 new_state = ion_propagation_step(
@@ -170,6 +171,86 @@ that step is stored, so the array shape matches ``(num_stored_steps, 3)``
 -- the same downsampling as MATLAB's
 ``diagnostic_array(1:reduction_timesteps:end, :)`` in
 ``vmi_sim_3d_ion_propa.m:883``.
+
+## Drag branch (Slice 4): `baoab_propagation_step` + `_check_drag_scope`
+
+The drag-model port adds a **third sibling** per-step function alongside
+`neutral_propagation_step` and `ion_propagation_step`. The driver
+(`simulation/ion.py`) dispatches once per run on `cfg.drag_coefficients is not
+None`: present → drag path; absent → the collision path above, **bit-identical
+and uncalled-for-drag**. The collision step is *not* rewritten in place — it
+stays single-purpose so the hard-sphere regression surface is preserved.
+
+### Shared scaffolding (behavior-preserving §3.1 lifts)
+
+Three physics-free helpers were extracted from the collision step and are now
+shared by both paths (CLAUDE.md rule 1), each guarded by
+`test_ion_propagation_step.py` staying green:
+
+- `_depth(x, y, z, droplet_radii)` — per-atom `r − r_droplet`.
+- `_E_kin_eV(mass_kg, vx, vy, vz)` — `½ m v²` in eV.
+- `_E_pot_per_atom(depth, E_pot_per_pair, cfg)` — ion-droplet binding + half
+  partner Coulomb.
+
+### `baoab_propagation_step(state, *, step, cfg, droplet_radii)`
+
+The Tier-0 drag analog of `ion_propagation_step`: symmetric, but with the
+*middle* replaced — **no** collision sampling, **no** `apply_collision`, **no**
+mass attachment. The conservative B/A kicks and the dissipative O-step both live
+inside the pre-built BAOAB closure `step` (built by the driver via
+`make_ion_baoab_step`); this function does thin per-step accounting only:
+
+1. `(pos', vel', E_pot_per_pair, ΔE_dissip) = step(pos, vel, cfg.dt_ion)`.
+2. `depth = _depth(...)`; `E_kin = _E_kin_eV(...)` (fixed mass);
+   `E_pot = _E_pot_per_atom(...)`.
+3. **Dissipation eV conversion** — `ΔE_dissip` arrives from the stepper in
+   `amu·Å²/ps²` (Slice 2's pure-mechanical handoff). It is converted with the
+   *baseline idiom* (amu→kg via `U`, Å/ps→m/s via `100`, J→eV via `EV`):
+
+   ```
+   dE_dissip_eV = ΔE_dissip * U * 100**2 / EV
+   ```
+
+   the same conversion path as the mass-attach defect, so `E_dissip_eV` stays in
+   a consistent eV with `E_kin_eV`/`E_pot_eV`. It accumulates into the carried
+   `E_dissip_eV`.
+4. **Tier-0 fills:** `mass_kg` unchanged (fixed mass), `E_mass_attach_defect_eV`
+   and `number_of_collisions` carried unchanged (both 0 under the drag branch),
+   `temperature_diagnostic` set to an all-NaN `(3,)` sentinel (no collisions to
+   diagnose).
+
+The §2.9 energy invariant reduces to `E_kin + E_pot + E_dissip ≈ const`, and
+closure is **tight** (the O-step books dissipation analytically — exact — so the
+only drift is the conservative Verlet drift).
+
+### `_check_drag_scope(cfg, initial_mass_kg)`
+
+The drag-branch analog of `_check_scope`. `_check_scope` demands collision mode
+3, which is irrelevant under drag; this instead asserts the **Tier-0 runnability
+envelope** (distinct from `check_drag_config`, which validates config *internal
+consistency*). It raises `NotImplementedError` when:
+
+```
+noise_form != "none"            (active Langevin noise is Tier 3)
+mass_scenario != "fixed"        (mass dynamics is Tier 1)
+drag_form != "linear_cubic"     (other forms NotImplemented in drag.py)
+effusive_dynamics / single_charge_ionization_allowed / additional_droplet_charges > 0
+```
+
+**Realized-mass trip-wire (Slice 4 fix, §6.5).** The final check reads the
+**realized** initial ion mass `initial_mass_kg` — the array the stepper will
+actually integrate, passed by the driver as `ckpt.mass_kg` *downstream* of the
+`build_initial_ion_state` `m_eff` override — and raises if
+
+```
+max| initial_mass_kg / U − cfg.m_eff_amu |  >  _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU  (~8 amu)
+```
+
+It reuses the §6.5 mass-insensitivity band (no new tolerance constant) and reads
+the *realized* array, **not** the config field — reading the config would merely
+echo what the override set and guard nothing. A ~127-amu mass (76 amu below
+`m_eff`) trips it loudly. This is the trip-wire half of the defense-in-depth
+pairing with the `build_initial_ion_state` override.
 
 ## Out-of-scope branches
 

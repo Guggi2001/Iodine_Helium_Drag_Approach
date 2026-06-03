@@ -48,7 +48,9 @@ ion = build_initial_ion_state(
 
 - `positions_{x,y,z}[:, start_id]` — atom positions at the chosen start
 - `velocities_{x,y,z}[:, start_id]` — atom velocities at the chosen start
-- `mass_kg` — initial atom mass (per atom; iodine = 127 amu in our scope)
+- `mass_kg` — initial atom mass (per atom; iodine = 127 amu in our scope).
+  **Exception:** the drag `fixed` branch *overrides* this with `m_eff` — see
+  "Drag `fixed`-scenario mass override" below.
 - `droplet_radii` — per-atom droplet radius
 
 We don't read the energy columns from neutral; ion E_kin/E_pot use
@@ -69,6 +71,54 @@ All other trajectory arrays start at zero: `E_dissip_eV`,
 `relative_loss_per_ps`. The schema-v5 `temperature_diagnostic`
 field is allocated as a `(num_steps, 3)` array of NaN; only rows
 where the driver actually observes a collision are overwritten.
+
+## Drag `fixed`-scenario mass override (Slice 4 fix)
+
+The drag-model port adds one targeted exception to the "inherit `mass_kg` from
+the neutral checkpoint" rule. When **both**
+
+```
+cfg.drag_coefficients is not None   AND   cfg.mass_scenario == "fixed"
+```
+
+hold, `build_initial_ion_state` discards the inherited bare-iodine (~127 amu)
+mass and fills the entire `(2N,)` ion-mass array uniformly with
+`cfg.mass_initial_amu × U` (kg):
+
+```python
+if cfg.drag_coefficients is not None and cfg.mass_scenario == "fixed":
+    mass_kg_initial = np.full(two_N, cfg.mass_initial_amu * U)   # m_eff
+else:
+    mass_kg_initial = neutral_ckpt.mass_kg.copy()                # unchanged
+```
+
+**Why.** The `linear_cubic` drag law was *extracted* under
+`m_eff ≈ 203 amu` (~19 He shell), and `DRAG_PORT_DESIGN_DECISIONS.md` §6.5
+makes `fixed` the **only** self-consistent pairing — it must integrate at
+`m_eff`, or the calibrated law is applied at the wrong inertia (a ~37% / 76-amu
+error). The config-load guard (`check_drag_config`) cannot catch this: it
+compares two *config* numbers, while the integration mass comes from
+`state.mass_kg`, a different runtime boundary. This override closes that gap at
+the one place the initial ion mass is set.
+
+Notes:
+
+- It reads `mass_initial_amu` (the field whose *purpose* is "ion-stage initial
+  mass", §2.8), which equals `m_eff_amu` at Tier 0 but keeps field semantics
+  clean for Tier 1 (where they diverge: 127 amu under Scenario A, ~211 amu under
+  B). Do **not** "restore" the inherited mass — the override is the fix, not a
+  bug.
+- Everything downstream (`E_kin_t0`, `mass_final_kg`, `mass_history_kg[:, 0]`)
+  consumes the corrected mass automatically.
+- **Scope boundary:** non-drag configs and non-`fixed` drag scenarios inherit
+  the neutral mass **bit-identically** — the collision path is untouched. This
+  is the first early use of the Slice 3 `mass_initial_amu` field (previously
+  declared-but-unread).
+
+A downstream trip-wire in `_check_drag_scope` (see
+`ion_propagation_step_module.md`) re-reads the *realized* `state.mass_kg` and
+raises if it is not within ~8 amu of `m_eff` — defense-in-depth against a future
+refactor that bypasses this override.
 
 ## Bug fixes vs. legacy MATLAB
 

@@ -331,6 +331,54 @@ def make_neutral_step(
     return step
 
 
+def make_ion_accel_fn(
+    cfg: SimConfig,
+    mass: np.ndarray,
+    droplet_radii: np.ndarray,
+    charge: np.ndarray,
+    state_ids: np.ndarray | None = None,
+) -> AccelFn:
+    """Build the bare conservative ion acceleration ``acc_fn``.
+
+    Returns the *position-only* acceleration callable
+    ``(x, y, z) -> ((ax, ay, az), E_pot_per_pair)`` (Coulomb + droplet), with
+    accelerations in Angstrom/ps^2 and ``E_pot`` per pair (length N) in eV. This
+    is the single source of the ion ``acc_fn``: :func:`make_ion_step` binds it
+    into velocity-Verlet, and the ion-stage BAOAB stepper
+    (:func:`i2_helium_md.physics.baoab.make_ion_baoab_step`) consumes it directly
+    for its B/A kicks (CLAUDE.md rule 1 -- no duplicate force assembly).
+
+    Parameters
+    ----------
+    cfg : SimConfig
+    mass : np.ndarray, shape (2N,)
+        Atom masses in kg.
+    droplet_radii : np.ndarray, shape (2N,)
+        Per-atom droplet radius in Angstrom.
+    charge : np.ndarray, shape (2N,)
+        Per-atom integer charge (0 or 1).
+    state_ids : np.ndarray, shape (N,), optional
+        Per-molecule I2+ electronic state (0..3). Only used when
+        ``cfg.single_charge_ionization_allowed`` is True.
+
+    Returns
+    -------
+    acc_fn : callable
+        ``acc_fn((x, y, z)) -> ((ax, ay, az), E_pot_per_pair)``.
+    """
+    ctx = _StepContext(
+        mass=mass,
+        droplet_radii=droplet_radii,
+        charge=charge,
+        state_ids=state_ids,
+    )
+
+    def acc_fn(p: Positions) -> tuple[Accelerations, np.ndarray]:
+        return _ion_accel_fn(p, ctx, cfg)
+
+    return acc_fn
+
+
 def make_ion_step(
     cfg: SimConfig,
     mass: np.ndarray,
@@ -358,15 +406,7 @@ def make_ion_step(
     step : callable
         ``step(pos, vel, dt) -> (new_pos, new_vel, E_pot_per_pair)``
     """
-    ctx = _StepContext(
-        mass=mass,
-        droplet_radii=droplet_radii,
-        charge=charge,
-        state_ids=state_ids,
-    )
-
-    def acc_fn(p: Positions) -> tuple[Accelerations, np.ndarray]:
-        return _ion_accel_fn(p, ctx, cfg)
+    acc_fn = make_ion_accel_fn(cfg, mass, droplet_radii, charge, state_ids)
 
     def step(pos, vel, dt):
         return velocity_verlet_step(pos, vel, acc_fn, dt)
