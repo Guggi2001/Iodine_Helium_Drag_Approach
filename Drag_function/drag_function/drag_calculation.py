@@ -306,6 +306,8 @@ def main_calculation(
     settings: DragExtractionSettings = DragExtractionSettings(),
     export: bool = False,     # If True, export fit parameters to JSON and arrays to CSV
     export_dir: Optional[str] = None,  # Directory to save exported files; defaults to current working directory
+    t_start = None,         # Window for Drag extraction if not given not extracted to JSON File
+    t_end = None,
 ) -> Dict[str, np.ndarray]:
     """
     Compute F_C(t), acceleration a(t) from spline, and F_drag(t).
@@ -629,6 +631,12 @@ def main_calculation(
             # fallback: store as-is if conversion fails
             fit_params_for_export["meff_amu"] = settings.meff_amu
 
+        # Add time boundaries if they are numeric
+        if isinstance(t_start, (int, float, np.integer, np.floating)):
+            fit_params_for_export["t_start"] = float(t_start)
+        if isinstance(t_end, (int, float, np.integer, np.floating)):
+            fit_params_for_export["t_end"] = float(t_end)
+
         fit_json_path = export_path / "fit_parameters.json"
         with open(fit_json_path, 'w') as f:
             json.dump(fit_params_for_export, f, indent=2)
@@ -692,10 +700,12 @@ R_recon = reconstruct_R_from_v(2 * v_9_IMF, t_9_w, R0=R_9_w[0])
 
 out = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, plot_only_drag_with_fit = True), export = True,
-                        export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\power')
+                        export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\power',
+                       t_start = 2.67, t_end = 8.5)
 out_fit_2 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\linear_and_cubic')
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\linear_and_cubic',
+                             t_start = 2.67, t_end = 8.5)
 
 
 t18 = dict18["t"]
@@ -711,10 +721,12 @@ v_18_SG = savgol_filter(v_18_w, window_length=wl, polyorder=polyorder, deriv=0, 
 
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                                   plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\power')
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\power',
+                          t_start = 4.54, t_end = 8)
 out_18_fit_2 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                  fit_variant = 2, plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\linear_and_cubic')
+                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\linear_and_cubic',
+                                t_start = 4.54, t_end = 8)
 
 a = 3
 
