@@ -84,6 +84,8 @@ class TrajectoryComparison:
 def compare_distance(
     ion: IonCheckpoint,
     hedft: HedftTrajectory,
+    *,
+    window: tuple[float, float] | None = None,
 ) -> TrajectoryComparison:
     """Compare mean MD I-I separation against the HeDFT ``R_distance`` curve.
 
@@ -96,6 +98,13 @@ def compare_distance(
     hedft
         HeDFT reference trajectory loaded by
         :func:`load_hedft_trajectory`.
+    window
+        Optional ``(t_start, t_end)`` in picoseconds restricting the scored
+        overlap to ``[max(t_min, t_start), min(t_max, t_end)]``. ``None``
+        (the default) reproduces the whole-overlap behaviour bit-identically.
+        Used by the Tier-0 drag comparison to score only the in-window
+        (extraction-window) region while the full trajectory is plotted but
+        not scored.
 
     Returns
     -------
@@ -114,6 +123,7 @@ def compare_distance(
         y_md=np.asarray(distance_md, dtype=float),
         t_ref=np.asarray(hedft.time_ps, dtype=float),
         y_ref=np.asarray(hedft.distance_A, dtype=float),
+        window=window,
     )
 
 
@@ -122,6 +132,7 @@ def compare_velocity_magnitude(
     hedft: HedftTrajectory,
     *,
     atom: Literal["I1", "I2"],
+    window: tuple[float, float] | None = None,
 ) -> TrajectoryComparison:
     """Compare the mean MD speed of I1 (or I2) against the matching HeDFT |v|.
 
@@ -140,6 +151,10 @@ def compare_velocity_magnitude(
         ``"I1"`` selects atoms ``[0, num_molecules)`` and the
         ``v1_magnitude_Aps`` reference column. ``"I2"`` selects atoms
         ``[num_molecules, 2 * num_molecules)`` and ``v2_magnitude_Aps``.
+    window
+        Optional ``(t_start, t_end)`` in picoseconds restricting the scored
+        overlap, as in :func:`compare_distance`. ``None`` (the default)
+        reproduces the whole-overlap behaviour bit-identically.
 
     Returns
     -------
@@ -174,6 +189,7 @@ def compare_velocity_magnitude(
         y_md=np.asarray(speed_md, dtype=float),
         t_ref=np.asarray(hedft.time_ps, dtype=float),
         y_ref=np.asarray(ref_series, dtype=float),
+        window=window,
     )
 
 
@@ -184,6 +200,7 @@ def _compare_series(
     y_md: np.ndarray,
     t_ref: np.ndarray,
     y_ref: np.ndarray,
+    window: tuple[float, float] | None = None,
 ) -> TrajectoryComparison:
     """Resample ``y_md`` onto the HeDFT grid and compute RMSE + mean ratio.
 
@@ -198,9 +215,20 @@ def _compare_series(
 
     Lower bound is the symmetric ``max(min(tR), min(t_md))`` so that the
     interp call never has to extrapolate.
+
+    ``window=(t_start, t_end)`` (picoseconds) further tightens the overlap to
+    ``[max(t_min, t_start), min(t_max, t_end)]`` before the mask is applied —
+    so the RMSE / ratio and every carried in-window array are scored on the
+    windowed samples only. ``window=None`` leaves the whole-overlap path
+    bit-identical; this is the single place windowing lives, so the
+    finite-mask / ratio-guard logic is not re-derived per quantity.
     """
     t_min = float(max(t_md[0], t_ref[0]))
     t_max = float(min(t_md[-1], t_ref[-1]))
+
+    if window is not None:
+        t_min = max(t_min, float(window[0]))
+        t_max = min(t_max, float(window[1]))
 
     mask = (t_ref >= t_min) & (t_ref <= t_max)
     t_overlap = t_ref[mask]

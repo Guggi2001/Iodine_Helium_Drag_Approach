@@ -269,6 +269,95 @@ class TestCompareVelocityMagnitude:
 
 
 # ===========================================================================
+# Windowing (Tier-0 in-window scoring)
+# ===========================================================================
+class TestWindow:
+    def test_none_is_bit_identical_to_default(self):
+        """window=None must reproduce the whole-overlap path exactly."""
+        t = np.linspace(0.0, 10.0, 101)
+        r_hedft = 9.0 + 0.5 * t
+        r_md = r_hedft + 0.2 * np.sin(t)
+        ion = _make_ion_with_distance(t_md=t, distance=r_md)
+        hedft = _make_hedft(t_ps=t, distance=r_hedft)
+
+        base = compare_distance(ion, hedft)
+        explicit_none = compare_distance(ion, hedft, window=None)
+
+        assert explicit_none.rmse == base.rmse
+        assert explicit_none.mean_ratio == base.mean_ratio
+        assert explicit_none.num_overlap_points == base.num_overlap_points
+        assert explicit_none.overlap_t_min_ps == base.overlap_t_min_ps
+        assert explicit_none.overlap_t_max_ps == base.overlap_t_max_ps
+
+    def test_window_restricts_scored_samples(self):
+        """A window must drop out-of-window samples from the scored RMSE.
+
+        Construct a distance series that matches the reference exactly inside
+        [3, 7] but is offset by +5 angstrom outside it. The whole-overlap RMSE
+        is dominated by the offset region; the windowed RMSE is ~0.
+        """
+        t = np.linspace(0.0, 10.0, 101)
+        r_hedft = np.full_like(t, 9.0)
+        r_md = r_hedft.copy()
+        outside = (t < 3.0) | (t > 7.0)
+        r_md[outside] += 5.0
+        ion = _make_ion_with_distance(t_md=t, distance=r_md)
+        hedft = _make_hedft(t_ps=t, distance=r_hedft)
+
+        full = compare_distance(ion, hedft)
+        windowed = compare_distance(ion, hedft, window=(3.0, 7.0))
+
+        assert full.rmse > 1.0  # dominated by the out-of-window offset
+        assert windowed.rmse == pytest.approx(0.0, abs=1e-12)
+        # The scored bounds collapse to the window.
+        assert windowed.overlap_t_min_ps == pytest.approx(3.0)
+        assert windowed.overlap_t_max_ps == pytest.approx(7.0)
+        assert windowed.num_overlap_points < full.num_overlap_points
+        assert np.all(windowed.t_overlap_ps >= 3.0)
+        assert np.all(windowed.t_overlap_ps <= 7.0)
+
+    def test_window_applies_to_velocity(self):
+        """Windowing flows through compare_velocity_magnitude identically."""
+        t = np.linspace(0.0, 10.0, 101)
+        v_ref = np.full_like(t, 0.5)
+        ion = _make_ion_with_distance(
+            t_md=t, distance=np.full_like(t, 9.0),
+            speed_i1=0.5, speed_i2=0.5,
+        )
+        hedft = _make_hedft(t_ps=t, v1_mag=v_ref, v2_mag=v_ref)
+
+        windowed = compare_velocity_magnitude(
+            ion, hedft, atom="I1", window=(2.67, 8.5)
+        )
+        assert windowed.rmse == pytest.approx(0.0, abs=1e-12)
+        assert windowed.overlap_t_min_ps == pytest.approx(2.67)
+        assert windowed.overlap_t_max_ps == pytest.approx(8.5)
+
+    def test_window_intersects_with_available_overlap(self):
+        """A window wider than the data clamps to the available overlap."""
+        t_md = np.linspace(0.0, 5.0, 51)
+        t_hedft = np.linspace(0.0, 5.0, 51)
+        r = np.full_like(t_md, 9.0)
+        ion = _make_ion_with_distance(t_md=t_md, distance=r)
+        hedft = _make_hedft(t_ps=t_hedft, distance=np.full_like(t_hedft, 9.0))
+
+        windowed = compare_distance(ion, hedft, window=(-1.0, 100.0))
+        full = compare_distance(ion, hedft)
+        assert windowed.overlap_t_min_ps == full.overlap_t_min_ps
+        assert windowed.overlap_t_max_ps == full.overlap_t_max_ps
+        assert windowed.num_overlap_points == full.num_overlap_points
+
+    def test_too_narrow_window_raises(self):
+        """A window admitting <2 samples raises the existing overlap error."""
+        t = np.linspace(0.0, 10.0, 11)  # samples at integer ps
+        ion = _make_ion_with_distance(t_md=t, distance=np.full_like(t, 9.0))
+        hedft = _make_hedft(t_ps=t, distance=np.full_like(t, 9.0))
+        # Window [4.1, 4.9] contains no HeDFT sample.
+        with pytest.raises(ValueError, match="do not overlap"):
+            compare_distance(ion, hedft, window=(4.1, 4.9))
+
+
+# ===========================================================================
 # End-to-end smoke test with real reference + real run (gated)
 # ===========================================================================
 @pytest.mark.skipif(
