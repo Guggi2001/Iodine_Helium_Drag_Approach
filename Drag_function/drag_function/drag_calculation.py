@@ -23,7 +23,9 @@ def reconstruct_R_from_v(v_w, t_w, R0):
     Reconstruct R from smoothed velocity data using Savitzky-Golay filter.
     """
     return (R0 + cumulative_trapezoid(v_w, t_w, initial=0))
-t_exit_9 = 8.5
+t_exit_9 = 6
+
+BASE_PATH_SAVE_RESULTS = C.BASE_PATH_i2_helium_md
 
 test = True
 if test:
@@ -65,7 +67,7 @@ if test:
     R_9_w = R_9[mask_9]
     v_9_1_w = v_9_1[mask_9]
 
-    wl = 4901
+    wl = 2401
     polyorder = 1
     v9_test = savgol_filter(v_9_IMF, window_length=wl, polyorder=polyorder, deriv=0, mode="interp")
 
@@ -694,18 +696,18 @@ t_9_w = t_9_full[mask_9]
 v_9_w = v_9[mask_9]
 R_9 = dict9["R"]
 R_9_w = R_9[mask_9]
-v_9_SG_orig = savgol_filter(v_9_w, window_length=3901, polyorder=1, deriv=0, mode="interp")
+v_9_SG_orig = savgol_filter(v_9_w, window_length=2401, polyorder=1, deriv=0, mode="interp")
 v_9_SG_varying_wl = savgol_filter(v_9_IMF, window_length=2501, polyorder=1, deriv=0, mode="interp")
 R_recon = reconstruct_R_from_v(2 * v_9_IMF, t_9_w, R0=R_9_w[0])
 
 out = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, plot_only_drag_with_fit = True), export = True,
-                        export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\power',
-                       t_start = 2.67, t_end = 8.5)
+                        export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\power',
+                       t_start = 2.67, t_end = 6)
 out_fit_2 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\linear_and_cubic',
-                             t_start = 2.67, t_end = 8.5)
+                             export_dir =BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\linear_and_cubic',
+                             t_start = 2.67, t_end = 6)
 
 
 t18 = dict18["t"]
@@ -721,11 +723,11 @@ v_18_SG = savgol_filter(v_18_w, window_length=wl, polyorder=polyorder, deriv=0, 
 
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                                   plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\power',
+                             export_dir =  BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\power',
                           t_start = 4.54, t_end = 8)
 out_18_fit_2 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                  fit_variant = 2, plot_only_drag_with_fit = True), export = True,
-                             export_dir = r'C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\linear_and_cubic',
+                             export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\linear_and_cubic',
                                 t_start = 4.54, t_end = 8)
 
 a = 3

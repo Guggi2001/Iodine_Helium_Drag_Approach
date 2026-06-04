@@ -232,7 +232,7 @@ def plot_ceemdan_result(
 if __name__ == "__main__":
     t = dict9["t"]
     v = dict9["v2"]
-    mask = (t >= 2.67) & (t <= 8.5)
+    mask = (t >= 2.67) & (t <= 6)
     t_ps = t[mask]
     y = v[mask]
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     cleaned = reconstruct_without_imfs(imfs, drop_idx)
     #%%
-    wls = [1001, 2501,  3901]
+    wls = [1001, 2501]
 
 
     plt.figure(figsize=(10, 5))
@@ -268,7 +268,7 @@ if __name__ == "__main__":
     # Export data to CSV
     import pandas as pd
 
-    wl = 3901
+    wl = 2501
     cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=1)
 
     # Create DataFrame with time, cleaned_SG, and IMF cleaned data
