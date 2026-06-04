@@ -860,6 +860,41 @@ the references *is* a simulation result, not an a-priori choice. This
 reframes the per-form discussion below: "primary" means "first
 hypothesis to run," not "believed correct."
 
+> **Tier-0 finding (2026-06-04) — the dominant in-window error was *frame*,
+> not *form*.** The Tier-0 cross-check (`TIER0_FINDINGS.md`) found that the
+> 9 Å lab-frame mismatch is **not** discriminated by the form set above:
+> `linear_quadratic`'s $v^2$ wing would not fix it, because the error is an
+> *over-large effective friction from using lab speed* on a COM-drifting
+> trajectory, not a high-$v$ wing-shape problem. So before the form
+> cross-check can mean anything, the **extraction frame** (lab vs. ion–He
+> relative velocity) must be corrected (`EXTRACTION_FRAME_FIX_milestone.md`).
+> Until then the in-hand coefficients are provisional and the "which form
+> best matches" question is premature — a relative-velocity re-extraction may
+> make a single shared `linear_cubic` fit both cases (§3.6 headline), in which
+> case no form switch is warranted. The form set stays interchangeable as
+> designed; the point is only that the *first* discriminating error found was
+> upstream of the form.
+>
+> **CORRECTION (2026-06-04, same day, superseding the note above).** The
+> "frame, not form" reading was itself **substantially wrong** and is
+> withdrawn. Two facts overturned it: (1) the COM that the relative-velocity
+> story rested on was `½(v₁+v₂)` — but atom 1's sideways motion is a *TDDFT
+> artifact* (discarded at extraction; the law was fit to the single clean
+> atom 2, not an average), so a molecular COM was never in the extraction and
+> one of its inputs is distrusted; (2) the real 9 Å mismatch is a **windowing
+> + bubble-mode** effect, not a frame rotation — the extraction window runs
+> past ~6 ps where atom 2 develops a directional drift a central-force MD
+> cannot represent, and the residual in-window RMSE (~0.86) is dominated by
+> the 1.2 ps bubble oscillation present in the *raw* reference but removed by
+> the extraction's denoising. Re-extracting on the clean short window barely
+> moved the RMSE (0.86→0.88), confirming the *form/fit* is fine. So: the form
+> set conclusion stands (no form switch warranted), the coefficients are **not**
+> frame-provisional in the way claimed, and `EXTRACTION_FRAME_FIX_milestone.md`
+> is **demoted to a contingency** (see `TIER0_FINDINGS.md` and
+> `tier0_comparison_tasks_left.md`). The genuine residual question is settled by
+> comparing against the *same-smoothed* reference (an internal-consistency
+> check), not by a frame re-extraction.
+
 **Asymptotic signatures (for orientation, not selection):** linear
 Stokes-like drag at low $v$; an inertial/form-drag $\sim v^2$ wing at
 high $v$ is the generic expectation when an object sheds fluid; a
@@ -1382,6 +1417,32 @@ Recorded explicitly so a future contributor does not add a near-field
 density term and double-count the bubble physics already inside the
 drag law.
 
+> **Tier-0 finding (2026-06-04) — partial contradiction, recorded.** §5.6
+> assumed the bubble/relative physics was *correctly* absorbed into
+> $\gamma(v)$. The Tier-0 comparison (`TIER0_FINDINGS.md`) shows the
+> extraction absorbed it **incorrectly when COM drift is present**: $\gamma$
+> was fit against **lab** speed, so on a trajectory where the ion co-drifts
+> with the He (9 Å: ~4 Å/ps COM drift), $\gamma(|v_\text{lab}|)$ over-damps
+> because lab speed $\gg$ relative speed. The "it's baked into $\gamma$"
+> claim holds **only for a relative-velocity-correct extraction**, which the
+> in-hand lab-speed coefficients are not. The fix is a relative-velocity
+> re-extraction (`EXTRACTION_FRAME_FIX_milestone.md`), *not* adding a
+> near-field density term — so the §5.6 "do not double-count" guidance still
+> stands; what changes is that the current $\gamma$ is provisional until
+> re-extracted on $|v_\text{rel}|$. Whether the *simulation* must then track a
+> local $v_\text{He}$ to form $v_\text{rel}$ at run time (vs. a purely
+> extraction-side correction) is the open question deferred in the milestone.
+>
+> **CORRECTION (2026-06-04, same day).** The frame reading above was
+> superseded the same day — see the correction under §3.3 and
+> `TIER0_FINDINGS.md`. The 9 Å mismatch was traced to **windowing + bubble-mode
+> oscillation**, not a lab-vs-relative frame error built on the (artifactual)
+> atom-1 COM. §5.6's original "no near-field term, it's baked into γ" guidance
+> therefore **stands unmodified** — there is no demonstrated frame contamination
+> requiring a near-field term, and `EXTRACTION_FRAME_FIX_milestone.md` is
+> demoted to a contingency. This super-annotation is retained for the audit
+> trail (we hypothesised frame, then found windowing).
+
 ### 5.7 Interchangeability surface
 
 - `SimConfig.drag_spatial_gate ∈ {density_proportional, erf_tied,
@@ -1456,8 +1517,31 @@ itself a recorded design decision.
 `mass_scenario = fixed`, noise amplitude zero, against the TDDFT
 `9A`/`18A` distance and velocity traces *inside the extraction window
 only*. Isolates the **drag form** (§3) with no mass evolution, no noise,
-no transient. The cleanest possible test; must come first because every
-later tier is contaminated until the form is pinned.
+no transient. Must come first because every later tier is contaminated
+until the form is pinned.
+
+> **What Tier 0 actually achieves (reframed 2026-06-04, after the first
+> run — `TIER0_FINDINGS.md`).** Tier 0 is an **internal-consistency
+> check**, not a from-scratch physical validation of the drag law. It
+> answers: *does the new drag implementation + BAOAB driver correctly
+> forward-integrate the extracted γ, reproducing the (denoised) trajectory
+> γ was extracted from?* It does **not** independently re-derive whether
+> the drag law is physically true — γ was *fit* to the reference, so a
+> forward integration matching that reference is a consistency result, not
+> an independent confirmation. The honest comparison is therefore
+> **MD vs. the reference processed through the *same* CEEMDAN+SG denoising
+> the extraction used** (`Drag_extraction_code.md`): the MD integrates a
+> smooth law and produces a smooth trajectory with no bubble mode, so
+> scoring it against the *raw* reference (which still carries the 1.2 ps
+> bubble oscillation, large at 9 Å) double-penalizes the MD for not
+> reproducing the very oscillation the extraction *defined as noise and
+> removed*. Report raw-reference RMSE and same-smoothed RMSE side by side;
+> the same-smoothed number is the consistency instrument, the raw number
+> the harsher honest cross-check. Pass = the MD reproduces the
+> same-smoothed reference in-window (the law forward-integrates correctly);
+> production-physical-correctness is a *later* question, gated on the
+> reference-data and frame items only if the consistency check exposes a
+> residual the smoothing does not explain.
 
 *Cleanliness condition (see §6.6).* Tier 0 is cleanest when the
 simulation mass treatment matches the one the reference trajectory was
@@ -1470,6 +1554,23 @@ evolved) with coefficients extracted under that same $m(t)$; *then* a
 mismatch is purely the form. For a first pass the fixed-$m_\text{eff}$
 run is adequate, since the residual mass mismatch is small over most of
 the window.
+
+> **Window upper-edge caveat (2026-06-04 finding).** The 9 Å extraction
+> window `[2.67, 8.5]` runs *past* the regime where the extraction atom
+> (atom 2, the clean near-radial one) stays clean: atom 2 develops a
+> consistent-direction **drift after ~6 ps**. A central-force MD (Coulomb
+> + radial droplet + radial drag) has **no mechanism to produce a
+> directional sideways drift**, so it cannot reproduce atom 2's late
+> behaviour regardless of γ — the late-window mismatch is *not* a
+> drag-quality signal. 18 Å, by contrast, stays clean across its whole
+> `[4.54, 8.0]` window (which is why it passed). The transient-exclusion
+> machinery (`find_t_star_stationary_residual`) guards only the *lower*
+> edge `t*`; the **upper edge is unguarded** and should be symmetric
+> (walk forward, end the window where the residual *leaves* the stationary
+> band). Re-extracting on the shortened clean window `[2.67, ~6.2]` barely
+> changed the early-band velocity RMSE (0.86 → 0.88), confirming the late
+> drift did **not** contaminate the *fit* — γ is the same law either way;
+> the late data only inflated the *score*.
 
 **Tier 1 — mass scenario, deterministic.** With the Tier-0 form fixed
 and noise still off, turn on each mass scenario (A/B/biphasic) and

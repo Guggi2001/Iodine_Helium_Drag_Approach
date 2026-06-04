@@ -34,47 +34,113 @@ Date: 2026-06-04. Branch: `drag_implementation`.
 | 18 Å | from-onset | 2.51 | **0.16** | 1.02 / 1.03 |
 | 18 Å | t\*-seeded  | **0.30** | 0.16 | 0.99 / 1.00 |
 
-## Verdict
+## Verdict (corrected 2026-06-04 — supersedes the same-day "frame" reading)
 
-- **18 Å: `linear_cubic` reproduces the TDDFT trace cleanly.** t\*-seeded
-  distance tracks to **0.3 Å** and per-atom speed to ~0.16 Å/ps across the whole
-  window (ratios ~1.0); from-onset is nearly as good (|v| RMSE 0.16). This is a
-  genuine Tier-0 pass for 18 Å.
-- **9 Å: poor lab-frame match, but *not* a form failure.** The residual is
-  diagnosable, and `linear_quadratic` would not help (the issue is an over-large
-  effective friction, not the high-`v` wing shape).
+> **Retraction of the intermediate "frame systematic" reading.** During this
+> investigation the 9 Å mismatch was first attributed to a lab-vs-relative
+> *velocity-frame* error (a COM-drift effect), which prompted the
+> `EXTRACTION_FRAME_FIX_milestone.md`. **That reading was wrong** and is
+> withdrawn — see "Why the diagnosis changed" below. It is recorded here only
+> for the audit trail. The corrected diagnosis is **windowing + bubble-mode
+> oscillation**, both resolvable with data in hand, and Tier 0 is reframed as an
+> **internal-consistency check**.
 
-## Why the cases diverge (diagnosis)
+**What Tier 0 actually is.** An internal-consistency check that the new drag
+implementation + BAOAB driver **correctly forward-integrate the extracted γ**,
+reproducing the (denoised) trajectory γ was fit to. It is **not** an independent
+physical validation of the drag law — γ was *fit* to the reference, so a
+forward-integration match is consistency, not confirmation. This is a genuinely
+useful check (it exercises Slices 1–4 end-to-end on real data) and it is what
+Tier 0 can honestly deliver.
 
-The drag law is self-consistent with the extraction at `t*` by construction
-(`drag_data.csv` `v_spline=4.90`, `F_drag=321` matches 9A_All_Data's I2 speed —
-same trajectory). The divergence is in *forward integration*, and is a
-**center-of-mass-drift / reference-frame effect**:
+- **18 Å: clean consistency pass.** t\*-seeded distance 0.30 Å, mean |v| RMSE
+  0.16 Å/ps across the window (ratios ~1.0); from-onset nearly as good. The
+  extraction window stays in the clean radial regime throughout, so the MD
+  reproduces it well. This is the committed regression floor.
+- **9 Å: consistency holds in the clean regime; the residual is explained, not a
+  law failure.** The t\*-seeded MD tracks the clean extraction atom (atom 2)
+  **well from t\* until ~6.5 ps**, then diverges. The full-window numbers
+  (from-onset distance 9.85 Å, t\*-seeded 2.45 Å, mean |v| 1.09–1.55) are
+  inflated by **three identified, non-law effects**, none of which is a
+  drag-form or frame problem:
+  1. the **artifact atom** (atom 1) is in the mean-based comparison (see below);
+  2. the extraction window runs **past ~6 ps** where atom 2 develops a
+     directional drift the central-force MD *cannot* represent;
+  3. the **1.2 ps bubble oscillation** in the *raw* reference, which the
+     extraction removed before fitting γ.
 
-- At **18 Å** `t*` the explosion is clean-radial: per-atom `|v|` ≈ the radial
-  separation velocity, COM drift ≈ 0. The extracted `γ(v)`, applied to lab-frame
-  speed, *is* effectively applied to the radial speed → it reproduces the trace.
-- At **9 Å** `t*` the reference per-atom velocity is dominated by a **~4 Å/ps COM
-  drift** (atom 1 moves mostly in x, atom 2 mostly in y — nearly orthogonal; the
-  I₂⁺ is drifting through the droplet, not just exploding). The per-atom drag
-  `γ(|v_lab|)·v_lab` therefore damps the COM drift, collapsing MD speed
-  (4.7→~2.0 across the window) while the reference coasts at ~4.2. The
-  separation roughly tracks (t\*-seeded distance RMSE 2.45 Å) but the speed is
-  over-damped.
+**Consequence:** the in-hand `{a,b}` are **not** frame-provisional. `linear_cubic`
+is consistent with the extraction; no form switch is warranted; the
+`EXTRACTION_FRAME_FIX_milestone.md` is **demoted to a contingency**. The
+remaining Tier-0 work is the **same-smoothed consistency comparison** (below),
+data in hand. Tier 1's block is lifted to *conditional* — pending that
+same-smoothed confirmation (see `tier0_comparison_tasks_left.md`).
 
-**Physical reading:** drag should act on the ion-relative-to-helium velocity.
-When the ion (or ion+bubble) co-drifts with the He, lab speed is high but
-relative speed is low → little real drag. The extraction used **lab speed**
-(`v_spline` ≈ lab `|v|`). For a clean radial explosion (18 Å) lab ≈ relative and
-the law works; for a trajectory with large COM drift (9 Å) lab ≫ relative and
-`γ(|v_lab|)` over-damps. This is the §3.6 "the cases are in different regimes"
-finding, traced to an **extraction-frame** subtlety (§6.10 extraction-side item),
-not the drag *form*.
+## Why the diagnosis changed (frame → windowing + bubble-mode)
 
-The from-onset 9 Å number (9.85 Å) is additionally inflated by the
-uncalibrated pre-`t*` transient (§6.7): t\*-seeding removes most of the distance
-error (9.85→2.45 Å), confirming the transient is a large extra contributor at
-9 Å but **not** the whole story — the velocity over-damping persists on-trajectory.
+Three facts overturned the frame reading:
+
+1. **Atom 1's sideways motion is a TDDFT artifact**, judged unphysical and
+   **discarded at extraction**; γ was fit to the single clean atom (atom 2), not
+   an average. So the "molecular COM" `½(v₁+v₂)` the frame story rested on was
+   **never in the extraction**, and one of its two inputs (v₁) is distrusted. The
+   COM-drift mechanism was built on the artifact — it is unsound.
+2. **The break is local and directional, not a global bias.** The MD matches
+   atom 2 cleanly from t\* to ~6.5 ps (at most minimal excess drag early), then
+   breaks where **atom 2 itself begins a consistent-direction drift after ~6 ps**.
+   A frame/magnitude error would bias the fit *throughout*; a sharp mid-window
+   onset is a **regime change in the reference**. A central-force MD (Coulomb +
+   radial droplet + radial drag) has **no mechanism to produce a directional
+   sideways drift**, so it cannot reproduce atom 2's late motion regardless of γ
+   — the late mismatch is **not a drag-quality signal**.
+3. **18 Å stays clean across its whole window** `[4.54, 8.0]`. This — not "COM
+   drift ≈ 0" — is why 18 Å passed: its window never leaves the clean radial
+   regime, while 9 Å's `[2.67, 8.5]` runs past atom 2's ~6 ps drift onset. Same
+   form, same physics; the difference is purely whether the window stays inside
+   the clean regime.
+
+**The fit is fine — confirmed quantitatively.** Re-extracting γ on the shortened
+clean window `[2.67, ~6.2]` **barely changed** the early-band velocity RMSE
+(0.86 → 0.88, marginally *worse*). If late-drift points had contaminated the
+*fit*, re-fitting on the clean window would have *lowered* it. It didn't — so
+γ is essentially the same law either way, and the late data only inflated the
+*score*, not the *fit*. The "fit-contamination" hypothesis is dead.
+
+**What the ~0.86 residual is.** With windowing and the artifact atom accounted
+for, a residual ~0.86 Å/ps remains even in the clean band — but the MD curve
+matches atom 2 *by eye*. The most likely explanation is the **1.2 ps bubble
+oscillation**: γ was fit to a **CEEMDAN+SG-denoised** atom-2 velocity (bubble
+mode removed by construction), and the MD integrates that smooth law to produce
+a **smooth** trajectory. Scoring it against the **raw** `9A_All_Data.csv` —
+which still carries the large 9 Å bubble oscillation — charges the MD for not
+reproducing the very oscillation the extraction *defined as noise and removed*.
+RMSE penalises that oscillation-variance; the eye averages through it. **This is
+the next task to confirm** (below).
+
+## The remaining Tier-0 task — same-smoothed consistency comparison
+
+Score the MD against the reference processed through the **same** CEEMDAN+SG
+denoising the extraction used (`Drag_extraction_code.md`, identical
+`target_period_ps=1.2` / `noise_width` / SG window — **not** a hand-tuned
+filter), and **report it alongside the raw-reference RMSE, never instead of it**.
+
+- If the same-smoothed RMSE drops to ~18 Å-class (~0.2) → the 0.86 was
+  bubble-mode variance the law never claimed to reproduce; Tier 0 is a clean
+  **internal-consistency pass**, the frame milestone is fully retired, and Tier 1
+  unblocks.
+- If it stays elevated against the denoised reference → a genuine residual
+  survives, and *then* the demoted frame hypothesis (now: mild real drift of the
+  single clean atom, not the dead molecular-COM story) or a magnitude
+  recalibration revives — as a small, well-quantified residual, not the original
+  "9 Å fails badly" picture.
+
+**Caveat (kept honest):** same-smoothed scoring is *almost* circular — it checks
+the MD reproduces the denoised trajectory γ was fit to, i.e. internal
+consistency, not physical correctness against the true trajectory. That is
+exactly what Tier 0 is for; the raw-reference number remains the harsher honest
+cross-check, which is why both are always reported. Confirm the smoother
+**preserves atom 2's late directional drift** (different timescale from the
+1.2 ps oscillation) so it is not silently smoothed away.
 
 ## Data limitation found (recorded)
 
@@ -98,11 +164,29 @@ CSVs provide.
    essentially identical — distance 2.5124 vs 2.5120 Å, mean|v| 0.1629 vs
    0.1627 A/ps — so the committed reduced-N (N=50) reference is a faithful
    stand-in and the threshold transfers.
-3. **9 Å COM-drift / frame question: recorded extraction-side item, not pursued
-   here.** Confirm at the extraction source whether `v_spline` is lab speed vs
-   ion–He relative speed, and whether the 9 Å reference's large COM drift should
-   be removed (relative-velocity re-extraction, or gating drag on relative
-   velocity). Likely needs richer reference data (full 3D velocities).
+3. **9 Å mismatch → windowing + bubble-mode, NOT a frame systematic.** The
+   intermediate "frame" reading (and the `EXTRACTION_FRAME_FIX_milestone.md` it
+   spawned) is **withdrawn** — see "Why the diagnosis changed." The 9 Å residual
+   is explained by (i) the artifact atom in the mean comparison, (ii) the window
+   running past atom 2's ~6 ps directional drift onset (a central-force MD can't
+   represent it), and (iii) the 1.2 ps bubble oscillation in the raw reference
+   that the extraction removed before fitting γ. The clean-window re-extraction
+   barely moved the RMSE (0.86→0.88), proving the *fit* is fine. **Remaining
+   task: the same-smoothed consistency comparison** (score MD against the
+   reference denoised by the extraction's own CEEMDAN+SG, reported alongside the
+   raw number) — data in hand, no external dependency. `EXTRACTION_FRAME_FIX` is
+   **demoted to a contingency**, triggered only if a residual survives the
+   same-smoothed comparison.
+4. **Tier 1 block lifted to conditional.** With the frame story retired, the
+   §6.3 attribution objection (COM-drift contaminating Tier 1) no longer applies.
+   Tier 1 is **gated only on the same-smoothed consistency confirmation**; once
+   that shows Tier 0 is a clean internal-consistency pass, Tier 1 may proceed.
+5. **18 Å regression gate stands** (item 1) as the committed floor; its
+   "provisional / frame-null only" caveat from the intermediate reading is
+   **removed** — 18 Å is a legitimate clean-regime consistency pass, not a
+   luck-of-frame artifact.
+
+(Items 1–2 below are unchanged and remain valid.)
 
 ## Infrastructure delivered (independent of the physics outcome)
 

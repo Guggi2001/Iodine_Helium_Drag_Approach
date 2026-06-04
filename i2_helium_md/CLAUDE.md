@@ -52,15 +52,27 @@ exception is scoped to the drag-model port only.
 integrator, spatial gating, validation). The frozen MD baseline is
 `PHYSICS_BASELINE.md`; the upstream drag-law extraction pipeline is
 `Drag_extraction_code.md`. The port is being implemented in dependency-ordered
-**slices**. **All four implementation slices are complete and reviewed** —
-Slice 1 (pure gated-drag physics module), Slice 2 (BAOAB ion-stage stepper),
-Slice 3 (`SimConfig` drag surface + config-load guard + coefficient loader), and
-Slice 4 (ion-driver rewiring + O-step energy accounting, including the
-`SLICE4_FIX` mass-consistency fix). A drag-enabled preset now runs end-to-end at
-Tier 0. **The active task is the Tier-0 TDDFT comparison** — the first
-validation tier, specified in `TIER0_COMPARISON_spec.md` — which evaluates
-whether `linear_cubic` reproduces the TDDFT reference and *sets* the deferred
-§6.10 acceptance thresholds. See the "Drag-Model Port"
+**slices**. **All four implementation slices are complete and reviewed**
+(Slice 1 gated-drag physics module, Slice 2 BAOAB stepper, Slice 3 `SimConfig`
+surface + guard + loader, Slice 4 ion-driver rewiring incl. the `SLICE4_FIX`
+mass-consistency fix), and the **Tier-0 TDDFT comparison has run**
+(`TIER0_FINDINGS.md`). **Tier 0 is reframed as an internal-consistency check**
+that the drag implementation + BAOAB driver correctly forward-integrate the
+extracted γ (γ was *fit* to the reference, so a match is consistency, not
+independent confirmation). Verdict: **18 Å passes cleanly; 9 Å's residual is
+diagnosed as windowing + bubble-mode oscillation — NOT a drag-law or
+velocity-frame error.** (An intermediate "lab-vs-relative frame systematic"
+reading was investigated and **withdrawn**: the molecular COM it rested on was
+built on an artifact atom; the real cause is the extraction window running past
+atom 2's ~6 ps directional drift, which a central-force MD cannot represent, plus
+the 1.2 ps bubble oscillation the extraction denoised away.) The in-hand `{a,b}`
+are **sound, not frame-provisional**; `linear_cubic` stands. **The one remaining
+Tier-0 task is the same-smoothed consistency comparison** (score MD against the
+reference denoised by the extraction's own CEEMDAN+SG, reported alongside the raw
+number) — data in hand, no external dependency
+(`tier0_comparison_tasks_left.md`). `EXTRACTION_FRAME_FIX_milestone.md` is
+**demoted to a contingency**. **Tier 1 is conditionally unblocked**, gated only
+on that same-smoothed confirmation. See the "Drag-Model Port"
 section below for the working rules that apply to this phase.
 
 ## Current Scope
@@ -202,10 +214,8 @@ layer**, not active development.
 ### Slice plan (dependency-ordered)
 
 The Tier-0 critical path is the only path runnable with coefficients in hand
-(`linear_cubic` + `mass_scenario=fixed` at `m_eff`, noise off). It was built in
-four slices, **all now complete**; the active frontier has moved from
-*implementation* to the *validation hierarchy* (§6.4, see "Validation hierarchy"
-below — Tier 0 is the active task).
+(`linear_cubic` + `mass_scenario=fixed` at `m_eff`, noise off). It is built in
+four slices:
 
 1. **Slice 1 — pure gated-drag physics module.** *Complete.* No
    dependencies. Delivered: `physics/drag.py` (three pure mass-free functions +
@@ -226,13 +236,20 @@ below — Tier 0 is the active task).
    behavioral change — collision path still runs. See
    `SLICE3_GOALS_config_and_guard.md` and `config_and_preset.md`.
 4. **Slice 4 — ion-driver rewiring + O-step energy accounting.** *Complete.*
-   Delivered: parallel `baoab_propagation_step` dispatched in `ion.py` on
+   Parallel `baoab_propagation_step` dispatched in `ion.py` on
    `drag_coefficients is not None`; `make_ion_accel_fn` lift in `leapfrog.py`;
-   the amu·Å²/ps²→eV conversion; `_check_drag_scope`; v5-retained checkpoint
-   fills; the smoke harness; and the `SLICE4_FIX` mass-consistency fix (the
-   `fixed` drag run integrates at `m_eff`, guarded by a realized-mass check).
-   First runnable drag trajectory. See `SLICE4_GOALS_ion_driver_rewiring.md`,
-   `slice_4.md`, and `SLICE4_FIX_initial_mass_consistency.md`.
+   amu·Å²/ps²→eV conversion; `_check_drag_scope`; v5-retained checkpoint fills;
+   smoke harness; and the `SLICE4_FIX` mass-consistency fix (the `fixed` drag
+   run integrates at `m_eff`, guarded by a realized-mass check). First runnable
+   drag trajectory. See `SLICE4_GOALS_ion_driver_rewiring.md`, `slice_4.md`,
+   `SLICE4_FIX_initial_mass_consistency.md`.
+
+**Post-slice frontier.** The four-slice implementation arc is closed and the
+Tier-0 comparison has run (`TIER0_FINDINGS.md`). The active work is the
+**same-smoothed consistency comparison** (the one remaining Tier-0 task,
+`tier0_comparison_tasks_left.md`); `EXTRACTION_FRAME_FIX_milestone.md` is demoted
+to a contingency, and **Tier 1 is conditionally unblocked** pending that
+comparison. See "Tier-0 outcome and the active task" below.
 
 Mass dynamics (§2), the `IonCheckpoint` v6 rename
 (`E_mass_attach_defect_eV` → `E_mass_transfer_eV`), and the noise machinery
@@ -337,12 +354,11 @@ Specs: `SLICE3_GOALS_config_and_guard.md`, `config_and_preset.md`.
 
 ### Slice 4 — complete
 
-Specified in `SLICE4_GOALS_ion_driver_rewiring.md`; delivered in `slice_4.md`,
-with the mass-consistency fix in `SLICE4_FIX_initial_mass_consistency.md`. Wired
-the BAOAB stepper into the ion stage so a drag preset runs end-to-end at Tier 0
-(deterministic, fixed mass) — the first runnable drag trajectory, and the slice
-that **exercises** the scoped collision-physics exception. Key properties locked
-in:
+Specified in `SLICE4_GOALS_ion_driver_rewiring.md`; delivered in `slice_4.md`
+(+ `SLICE4_FIX_initial_mass_consistency.md`). Wired the BAOAB stepper into the
+ion stage so a drag preset runs end-to-end at Tier 0 (deterministic, fixed
+mass) — the first runnable drag trajectory, and the slice that **exercises** the
+scoped collision-physics exception. Key properties locked in:
 
 - **Parallel per-step function `baoab_propagation_step`** added to
   `ion_propagation_step.py` as a third sibling (alongside
@@ -377,18 +393,10 @@ in:
   out of `ion_propagation_step` (depth, eV `E_kin`, possibly `E_pot`), each
   gated on `test_ion_propagation_step.py` staying green; write-your-own if a
   lift isn't clean.
-- **Mass-consistency fix (`SLICE4_FIX`):** `build_initial_ion_state` fills the
-  ion mass array with `mass_initial_amu × U` under the `fixed` drag branch (so
-  the run integrates at `m_eff`, the law's extraction mass — §6.5), with a
-  realized-mass trip-wire in `_check_drag_scope` that reads `ckpt.mass_kg`
-  (downstream of the override, not the config field) and rejects a >~8 amu gap.
-  Non-drag / non-`fixed` paths inherit the neutral mass bit-identically.
 
-Slice 4 scope fence — did **not** touch: the checkpoint schema (v5 retained);
+Slice 4 scope fence — does **not** touch: the checkpoint schema (v5 retained);
 mass dynamics; active noise; TDDFT validation/threshold-setting; new `SimConfig`
-fields; the neutral stage. (`physics/` was touched only by the behavior-
-preserving `make_ion_accel_fn` lift in `leapfrog.py` — `drag.py`/`baoab.py`
-consumed unchanged.)
+fields; `physics/` (`drag.py`/`baoab.py` consumed unchanged); the neutral stage.
 
 #### Drag-config field exception (scoped, time-limited — rule 2)
 
@@ -408,57 +416,61 @@ addition to the Slice 3 guard. No longer dead surface.
 |---|---|---|
 | `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; real `power_law` export is `n≈+2`, also regular at `v=0`) | hypothetical `n<0` `power_law` |
 | `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Tier 3 (active noise) |
-| `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) |
+| `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) — conditionally unblocked, gated on the same-smoothed Tier-0 confirmation |
 | `helium_density_profile` | placeholder/`None` | future G4 density profile |
 | `validation_histogram_metric` | declared, inert (`wasserstein`) | Tier 2 (histogram comparison) |
 
-### Tier-0 TDDFT comparison — active task
+### Tier-0 outcome and the active task
 
-Specified in full in `TIER0_COMPARISON_spec.md`. With all four slices complete,
-the active frontier is the **first validation tier** (§6.4). This is a
-*different kind of task* than the slices: its deliverable is a **judgment plus a
-manufactured threshold**, not an objective pass/fail — §6.10 deferred the
-acceptance numbers precisely because they are set *by reading the first run*.
-The task (1) produces the windowed comparison, (2) decides whether
-`linear_cubic` is adequate, and (3) commits the threshold all later tiers
-inherit. Summary of intent:
+The Tier-0 TDDFT comparison has **run** (`TIER0_COMPARISON_spec.md` →
+`TIER0_FINDINGS.md`; scripts `TIER0_SCRIPTS.md`; status
+`tier0_comparison_tasks_left.md`). **Tier 0 is reframed as an
+internal-consistency check** — does the drag implementation + BAOAB driver
+correctly forward-integrate the extracted γ, reproducing the (denoised)
+trajectory γ was fit to? It is not an independent physical validation (γ was
+*fit* to the reference). Verdict:
 
-- **What's compared:** `linear_cubic`, `mass_scenario=fixed` at `m_eff`, noise
-  off, against the TDDFT distance + velocity-magnitude traces **inside the
-  extraction window only**, via `compare_distance` / `compare_velocity_magnitude`
-  (trajectory RMSE — **not** Wasserstein, which is the histogram tiers 2/3).
-- **Windowing (additive):** `compare_trajectories.py` gains an optional
-  `window=(t_start, t_end)` parameter; `window=None` is bit-identical to today.
-  `t_start`/`t_end` are read from `fit_parameters.json` (same provenance source
-  as the coefficients and `m_eff`). The pre-`t*` transient and post-window
-  divergence are **plotted but not scored** (§6.7 loose-everywhere). MD↔TDDFT
-  time-origin alignment is asserted as a hard precondition.
-- **Read the residual correctly (the key interpretation guard):** this is the
-  **first-pass** fixed-`m_eff` comparison (§6.6), not strictly-clean. A
-  **mid-window-good / ends-poorer** residual is the *expected signature of the
-  constant-mass approximation*, **not** a `linear_cubic` failure — do **not**
-  promote `linear_quadratic` on end-of-window divergence alone. A form problem
-  shows as **mid-window** shape mismatch.
-- **Thresholds:** two scalars on the **in-window** RMSE — distance RMSE (Å) and
-  the **mean of I1/I2** velocity-magnitude RMSE (Å/ps). `mean_ratio` and the
-  **I1–I2 split** are **reported diagnostics, not gates** (a large MD-side
-  asymmetry flags an upstream problem, not a drag verdict).
-- **Run:** reduced-N, full-duration, full-`dt` for the threshold-setting
-  iteration; confirm the threshold **transfers** to a full-N run before
-  committing.
-- **9 Å first, then 18 Å as a recorded finding:** 18 Å is the cross-case
-  consistency check (§3.6 shared-form headline), **not a hard gate** —
-  divergence is the §3.6 "different regimes" result to document, not a failure.
-- **Regression artifact:** `tests/test_tier0_drag_comparison.py` commits the
-  manufactured thresholds (named, with provenance) so later tiers cannot
-  silently degrade the form match.
+- **18 Å — clean consistency pass.** `linear_cubic` tracks the TDDFT trace
+  (t\*-seeded distance 0.30 Å, mean |v| RMSE 0.16 Å/ps) because its extraction
+  window stays in the clean radial regime throughout. Committed regression floor
+  (`tests/test_tier0_drag_comparison.py`: distance ≤ 3.0 Å, mean |v| ≤
+  0.25 Å/ps). This is a legitimate clean-regime pass (the earlier
+  "frame-null/provisional" caveat is withdrawn).
+- **9 Å — residual diagnosed; NOT a law or frame error.** The MD tracks the clean
+  extraction atom (atom 2) well from t\* to ~6.5 ps, then diverges. The inflated
+  full-window numbers come from three non-law effects: (1) the **artifact atom**
+  (atom 1, a discarded TDDFT artifact) is in the mean-based comparison; (2) the
+  window runs **past ~6 ps** where atom 2 develops a directional drift a
+  central-force MD **cannot** represent; (3) the **1.2 ps bubble oscillation** in
+  the raw reference that the extraction denoised away before fitting γ.
+  Clean-window re-extraction barely moved the RMSE (0.86→0.88), proving the
+  **fit is sound**.
 
-First-read watch-items: the Slice 1 provenance facts (`m_eff` extracted not
-relabelled; `F_drag` sign) become **load-bearing here** — a bad mid-window
-residual should re-check these before blaming the form; and this is the first
-task to read a drag run's diagnostics, so confirm
-`plot_ion_temperature_diagnostic.py` tolerates the all-NaN drag-branch
-`temperature_diagnostic` rather than erroring.
+**An intermediate "lab-vs-relative velocity frame systematic" reading was
+investigated and WITHDRAWN.** It rested on a molecular COM `½(v₁+v₂)` built on
+the artifact atom (atom 1) — a COM never in the extraction, one input distrusted.
+The real cause is windowing + bubble-mode (above), both data-in-hand.
+`EXTRACTION_FRAME_FIX_milestone.md` is therefore **demoted to a contingency**
+(pursue only if a residual survives the same-smoothed comparison and points to a
+genuine single-clean-atom drift); its external 3D-velocity dependency is **no
+longer the critical path**.
+
+**Active task: the same-smoothed consistency comparison** (one remaining Tier-0
+item, `tier0_comparison_tasks_left.md` §4.1). Score MD against the reference
+denoised by the **extraction's own CEEMDAN+SG** (not a hand-tuned filter),
+reported **alongside** the raw-reference RMSE. If it drops to ~18 Å-class, the
+0.86 was bubble-mode variance, Tier 0 is a clean consistency pass, and Tier 1
+unblocks. Data in hand; no external dependency.
+
+**Tier 1 is conditionally unblocked** — gated only on that same-smoothed
+confirmation (the frame-based block is lifted; the `{a,b}` are sound, not
+frame-provisional). Do not start Tier 1 (the `mass_rate_*` fields, the
+`IonCheckpoint` v6 bump, mass-scenario A/B/biphasic) until the same-smoothed
+comparison confirms Tier 0 is a clean internal-consistency pass.
+
+The Tier-0 *infrastructure* (the `window=` parameter, both harnesses, the
+regression gate) is reusable as-is. `linear_cubic` and the in-hand coefficients
+are **settled, not provisional**.
 
 ### Validation hierarchy (sequential, not simultaneous)
 
@@ -466,7 +478,13 @@ The undetermined parameters are entangled; validate in tier order, fixing
 each tier's winner before introducing the next unknown:
 
 - **Tier 0** — drag form, deterministic, fixed mass, in-window TDDFT traces.
-- **Tier 1** — mass scenario (A/B/biphasic), deterministic.
+  *Ran (2026-06-04), reframed as an internal-consistency check: 18 Å clean pass;
+  9 Å residual diagnosed as windowing + bubble-mode (not a law/frame error). One
+  task left — the same-smoothed consistency comparison. See "Tier-0 outcome and
+  the active task."*
+- **Tier 1** — mass scenario (A/B/biphasic), deterministic. **Conditionally
+  unblocked** — gated only on the same-smoothed Tier-0 confirmation (the earlier
+  frame-based block is withdrawn).
 - **Tier 2** — terminal I⁺(He)ₙ size distribution vs. experimental detector
   data (the only observable that separates the mass scenarios).
 - **Tier 3** — ensemble second moments (noise) vs. VMI references.
