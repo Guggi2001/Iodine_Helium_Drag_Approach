@@ -40,10 +40,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "18A"  # "9A" or "18A"
+CASE = "9A"  # "9A" or "18A"
 # A from-onset run for the same case, used only to read the droplet radius the
 # real pipeline assigns to this droplet size (so the spatial gate matches).
-ONSET_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "18A_drag_tier0_N2000"
+ONSET_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
 SHOW_FIGURE = True
 
 

@@ -4,7 +4,7 @@ import os
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 # Path Configuration
-office = False
+office = True
 if office:
     base_path = r"T:\NextCloud_PaulGuggenbichler\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_DFT\9A"
 else:
@@ -154,6 +154,8 @@ v1_z = v1_raw[:min_len_r, 3]
 v2_z = v2_raw[:min_len_r, 3]
 v1_x = v1_raw[:min_len_r, 1]
 v2_x = v2_raw[:min_len_r, 1]
+v1_y = v1_raw[:min_len_r, 2]
+v2_y = v2_raw[:min_len_r, 2]
 
 
 R_reconstructed = reconstruct_R_from_v(v1_mag+v2_mag, t_master[:min_len_r], 9)
@@ -168,16 +170,20 @@ v1_z_final = v1_z[::step]
 v2_z_final = v2_z[::step]
 v1_x_final = v1_x[::step]
 v2_x_final = v2_x[::step]
+v1_y_final = v1_y[::step]
+v2_y_final = v2_y[::step]
 
 # --- 4. Export to Unified CSV ---
 export_df = pd.DataFrame({
     'Time_ps': t_final,
     'V1_mag': v1_final,
     'V2_mag': v2_final,
-    'V1_z': np.abs(v1_z_final),
-    'V2_z': np.abs(v2_z_final),
-    'V1_x': np.abs(v1_x_final),
-    'V2_x': np.abs(v2_x_final),
+    'V1_x': v1_x_final,
+    'V1_y': v1_y_final,
+    'V1_z': v1_z_final,
+    'V2_x': v2_x_final,
+    'V2_y': v2_y_final,
+    'V2_z': v2_z_final,
     'R_distance': R_final
 })
 
@@ -240,9 +246,11 @@ R_actual = np.linalg.norm(r1_raw[:min_len_r, 1:4] - r2_raw[:min_len_r, 1:4], axi
 v1_mag = np.linalg.norm(v1_raw[:min_len_r, 1:4], axis=1)
 v1_z = v1_raw[:min_len_r, 3]
 v1_x = v1_raw[:min_len_r, 1]
+v1_y = v1_raw[:min_len_r, 2]
 v2_mag = np.linalg.norm(v2_raw[:min_len_r, 1:4], axis=1)
 v2_z = v2_raw[:min_len_r, 3]
 v2_x = v2_raw[:min_len_r, 1]
+v2_y = v2_raw[:min_len_r, 2]
 
 R_reconstructed = reconstruct_R_from_v(v1_mag+v2_mag, t_master[:min_len_r], 18)
 R_reconstructed = R_reconstructed[::step]
@@ -255,6 +263,8 @@ v1_z_final = v1_z[::step]
 v2_z_final = v2_z[::step]
 v1_x_final = v1_x[::step]
 v2_x_final = v2_x[::step]
+v1_y_final = v1_y[::step]
+v2_y_final = v2_y[::step]
 R_final  = R_actual[::step]
 
 # --- 4. Export to Unified CSV ---
@@ -262,10 +272,12 @@ export_df = pd.DataFrame({
     'Time_ps': t_final,
     'V1_mag': v1_final,
     'V2_mag': v2_final,
-    'V1_z': np.abs(v1_z_final),
-    'V2_z': np.abs(v2_z_final),
-    'V1_x': np.abs(v1_x_final),
-    'V2_x': np.abs(v2_x_final),
+    'V1_x': v1_x_final,
+    'V1_y': v1_y_final,
+    'V1_z': v1_z_final,
+    'V2_x': v2_x_final,
+    'V2_y': v2_y_final,
+    'V2_z': v2_z_final,
     'R_distance': R_final
 })
 
