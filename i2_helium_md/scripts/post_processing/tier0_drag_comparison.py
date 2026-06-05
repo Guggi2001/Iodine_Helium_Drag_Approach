@@ -221,7 +221,7 @@ def score(
     v1 = compare_velocity_magnitude(ion, hedft, atom="I1", window=window)
     v2 = compare_velocity_magnitude(ion, hedft, atom="I2", window=window)
 
-    mean_velocity_rmse = 0.5 * (v1.rmse + v2.rmse)
+    mean_velocity_rmse = 0.5 * (v2.rmse + v2.rmse)
     velocity_split = abs(v1.rmse - v2.rmse)
     return {
         "window": window,
