@@ -6,4 +6,6 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 /nul
-Drag_function/.idea/
+# JetBrains / PyCharm project files
+**/.idea/
+.idea/

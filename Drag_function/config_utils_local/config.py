@@ -1,6 +1,6 @@
 import os
 
-home = False
+home = True
 if home:
     BASE_PATH = r"C:\Users\paulg\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_DFT"
 else:
@@ -12,6 +12,6 @@ PATH18A_OLD = os.path.join(BASE_PATH, "18A")
 
 
 if home:
-    BASE_PATH_i2_helium_md = r"C:\Users\paulg\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_i2_helium_md"
+    BASE_PATH_i2_helium_md = r"C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md"
 else:
     BASE_PATH_i2_helium_md = r"T:\github synchronized\Iodine_Helium_Drag_Approach\i2_helium_md"
