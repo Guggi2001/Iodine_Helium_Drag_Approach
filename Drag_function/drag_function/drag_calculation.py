@@ -721,6 +721,16 @@ wl = 3401
 polyorder = 1
 v_18_SG = savgol_filter(v_18_w, window_length=wl, polyorder=polyorder, deriv=0, mode="interp")
 
+# Create DataFrame with time, cleaned_SG, and IMF cleaned data
+export_data = pd.DataFrame({
+    'time': t_18_w,
+    'cleaned_SG': v_18_SG,
+})
+
+# Export to CSV
+export_data.to_csv('cleaned_data_18.csv', index=False)
+print(f"Data exported to cleaned_data.csv")
+
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                                   plot_only_drag_with_fit = True), export = True,
                              export_dir =  BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\power',
