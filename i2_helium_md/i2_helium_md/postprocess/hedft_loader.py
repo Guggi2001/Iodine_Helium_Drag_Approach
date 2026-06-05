@@ -162,7 +162,7 @@ def load_hedft_trajectory(
     )
 
 
-_SMOOTHED_SPEED_COLUMNS: tuple[str, ...] = ("time", "cleaned_SG")
+_SMOOTHED_SPEED_COLUMNS: tuple[str, ...] = ("time", "cleaned_SG", "IMF_cleaned")
 
 
 @dataclass(frozen=True)

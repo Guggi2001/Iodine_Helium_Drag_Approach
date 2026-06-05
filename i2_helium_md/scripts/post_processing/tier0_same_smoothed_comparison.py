@@ -58,12 +58,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "18A"  # "9A" or "18A"
+CASE = "9A"  # "9A" or "18A"
 
 # A current-gamma from-onset drag run for this case (regenerated via
 # scripts/gen_tier0_runs.py). Also used by the t*-seeded mode to read the
 # droplet radius the real pipeline assigns.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "18A_drag_tier0_N50"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
 
 SHOW_FIGURE = True
 

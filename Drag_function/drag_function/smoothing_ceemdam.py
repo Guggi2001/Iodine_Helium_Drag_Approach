@@ -282,3 +282,6 @@ if __name__ == "__main__":
     export_data.to_csv('cleaned_data.csv', index=False)
     print(f"Data exported to cleaned_data.csv")
 
+    export_path = C.BASE_PATH_i2_helium_md + "/data/reference/drag/9A/velocity_smoothed/cleaned_data.csv"
+    export_data.to_csv(export_path, index=False)
+
