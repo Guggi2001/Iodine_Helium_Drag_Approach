@@ -20,8 +20,8 @@ import sys
 # USER SETTINGS
 # =============================================================================
 
-CASE = "18A"      # choose: "9A" or "18A"
-N = 2000           # choose e.g. 50 or 2000
+CASE = "9A"      # choose: "9A" or "18A"
+N = 50          # choose e.g. 50 or 2000
 
 ION_TIME_PS = 20.0
 DT_ION_PS = 0.01

@@ -222,7 +222,7 @@ def load_smoothed_speed_reference(path: str | Path) -> SmoothedSpeedReference:
     structured = np.genfromtxt(p, delimiter=",", names=True, dtype=float)
 
     actual_columns = tuple(structured.dtype.names or ())
-    if actual_columns != _SMOOTHED_SPEED_COLUMNS:
+    if actual_columns != _SMOOTHED_SPEED_COLUMNS and actual_columns != ("time", "cleaned_SG"):
         raise ValueError(
             f"Smoothed-speed reference {p.name} has unexpected columns "
             f"{list(actual_columns)}; expected {list(_SMOOTHED_SPEED_COLUMNS)}."

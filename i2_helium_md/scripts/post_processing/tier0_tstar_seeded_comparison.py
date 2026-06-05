@@ -96,6 +96,10 @@ def seed_neutral_at_reference(hedft, t_star, *, m_eff_amu, droplet_radius):
     vz1, vz2 = +dRdt / 2.0, -dRdt / 2.0
     vperp1 = float(np.sqrt(max(0.0, v1 * v1 - vz1 * vz1)))
     vperp2 = float(np.sqrt(max(0.0, v2 * v2 - vz2 * vz2)))
+    vz1 += vperp1
+    vz2 -= vperp2
+    vperp1 = 0
+    vperp2 = 0
     print(f"  reference @ t*={t_star}: R={R:.3f}, dR/dt={dRdt:.3f}, "
           f"|v1|={v1:.3f} (rad{vz1:.2f},perp{vperp1:.2f}), "
           f"|v2|={v2:.3f} (rad{vz2:.2f},perp{vperp2:.2f})")
