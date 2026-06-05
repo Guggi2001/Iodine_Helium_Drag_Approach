@@ -12,6 +12,7 @@ from .compare_trajectories import (
     TrajectoryComparison,
     compare_distance,
     compare_neutral_to_hedft,
+    compare_speed_to_reference,
     compare_velocity_magnitude,
 )
 from .energy_balance import (
@@ -23,7 +24,12 @@ from .energy_balance import (
     neutral_energy_totals,
     phi_histogram,
 )
-from .hedft_loader import HedftTrajectory, load_hedft_trajectory
+from .hedft_loader import (
+    HedftTrajectory,
+    SmoothedSpeedReference,
+    load_hedft_trajectory,
+    load_smoothed_speed_reference,
+)
 from .pair_correlation import (
     CovarianceMatrix,
     DistanceHistogram,
@@ -100,9 +106,12 @@ from .velocity_distribution import (
 __all__ = [
     "HedftTrajectory",
     "load_hedft_trajectory",
+    "SmoothedSpeedReference",
+    "load_smoothed_speed_reference",
     "TrajectoryComparison",
     "compare_distance",
     "compare_velocity_magnitude",
+    "compare_speed_to_reference",
     "NeutralComparison",
     "compare_neutral_to_hedft",
     "VmiReference",

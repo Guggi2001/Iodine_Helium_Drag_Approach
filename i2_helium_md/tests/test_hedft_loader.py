@@ -9,13 +9,19 @@ import pytest
 
 from i2_helium_md.postprocess.hedft_loader import (
     HedftTrajectory,
+    SmoothedSpeedReference,
     load_hedft_trajectory,
+    load_smoothed_speed_reference,
 )
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REF_9A = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
 REF_18A = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
+CLEANED_9A = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / "9A"
+    / "velocity_smoothed" / "cleaned_data.csv"
+)
 
 
 # ===========================================================================
@@ -142,6 +148,74 @@ class TestValidation:
         )
         with pytest.raises(ValueError, match="at least 2 time samples"):
             load_hedft_trajectory(path)
+
+
+# ===========================================================================
+# Smoothed-speed reference (Tier-0 same-smoothed comparison)
+# ===========================================================================
+_SMOOTHED_HEADER = "time,cleaned_SG"
+
+
+def _write_smoothed_csv(path: Path, *, t: np.ndarray, v: np.ndarray) -> None:
+    rows = [_SMOOTHED_HEADER]
+    for ti, vi in zip(t, v):
+        rows.append(f"{ti},{vi}")
+    path.write_text("\n".join(rows) + "\n", encoding="ascii")
+
+
+class TestSmoothedSpeedReference:
+    def test_load_round_trip(self, tmp_path):
+        t = np.array([2.67, 2.671, 2.672, 2.673])
+        v = np.array([4.93, 4.92, 4.91, 4.90])
+        path = tmp_path / "cleaned_data.csv"
+        _write_smoothed_csv(path, t=t, v=v)
+
+        ref = load_smoothed_speed_reference(path)
+
+        assert isinstance(ref, SmoothedSpeedReference)
+        np.testing.assert_array_equal(ref.time_ps, t)
+        np.testing.assert_array_equal(ref.speed_Aps, v)
+        assert ref.source_path == path.resolve()
+
+    def test_missing_file_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError, match="Smoothed-speed reference"):
+            load_smoothed_speed_reference(tmp_path / "nope.csv")
+
+    def test_bad_header_raises(self, tmp_path):
+        path = tmp_path / "cleaned_data.csv"
+        path.write_text("t,v\n2.67,4.9\n2.68,4.8\n", encoding="ascii")
+        with pytest.raises(ValueError, match="unexpected columns"):
+            load_smoothed_speed_reference(path)
+
+    def test_non_monotonic_time_raises(self, tmp_path):
+        path = tmp_path / "cleaned_data.csv"
+        _write_smoothed_csv(
+            path,
+            t=np.array([2.67, 2.69, 2.68, 2.70]),
+            v=np.array([4.9, 4.8, 4.7, 4.6]),
+        )
+        with pytest.raises(ValueError, match="non-monotonic time"):
+            load_smoothed_speed_reference(path)
+
+    def test_too_few_samples_raises(self, tmp_path):
+        path = tmp_path / "cleaned_data.csv"
+        path.write_text(_SMOOTHED_HEADER + "\n2.67,4.9\n", encoding="ascii")
+        with pytest.raises(ValueError, match="at least 2 samples"):
+            load_smoothed_speed_reference(path)
+
+
+@pytest.mark.skipif(
+    not CLEANED_9A.exists(),
+    reason="cleaned 9A velocity reference not present",
+)
+class TestRealCleaned9A:
+    def test_load_real_cleaned_9A(self):
+        ref = load_smoothed_speed_reference(CLEANED_9A)
+        assert ref.time_ps[0] == pytest.approx(2.67)
+        assert ref.time_ps[-1] == pytest.approx(6.0)
+        assert ref.time_ps.shape == ref.speed_Aps.shape
+        assert np.all(np.diff(ref.time_ps) > 0.0)
+        assert np.all(ref.speed_Aps > 0.0)
 
 
 # ===========================================================================

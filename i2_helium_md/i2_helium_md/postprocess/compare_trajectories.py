@@ -193,6 +193,89 @@ def compare_velocity_magnitude(
     )
 
 
+def compare_speed_to_reference(
+    ion: IonCheckpoint,
+    *,
+    atom: Literal["I1", "I2"],
+    t_ref_ps: np.ndarray,
+    ref_speed_Aps: np.ndarray,
+    window: tuple[float, float] | None = None,
+) -> TrajectoryComparison:
+    """Compare the mean MD speed of I1 (or I2) against an arbitrary reference curve.
+
+    Generalises :func:`compare_velocity_magnitude` to a reference that is *not*
+    a full :class:`HedftTrajectory` -- e.g. the CEEMDAN+SG-denoised |v2| trace
+    used by the Tier-0 same-smoothed consistency comparison
+    (``data/reference/drag/<case>/velocity_smoothed/cleaned_data.csv``). The MD
+    speed is reduced exactly as in :func:`compare_velocity_magnitude`, then
+    scored against ``(t_ref_ps, ref_speed_Aps)`` through the same
+    :func:`_compare_series` machinery, so the finite-mask / window / ratio-guard
+    logic is single-sourced (CLAUDE.md project principle 1).
+
+    Parameters
+    ----------
+    ion
+        Ion-stage checkpoint produced by the MD pipeline.
+    atom
+        ``"I1"`` selects atoms ``[0, num_molecules)``; ``"I2"`` selects
+        ``[num_molecules, 2 * num_molecules)``. The reference curve is the
+        denoised speed of the *same* atom (for the cleaned 9 A/18 A data this is
+        the clean atom, I2).
+    t_ref_ps, ref_speed_Aps
+        The reference time grid (ps, strictly increasing) and speed magnitude
+        (angstrom/ps). Must be 1-D and the same length.
+    window
+        Optional ``(t_start, t_end)`` in picoseconds restricting the scored
+        overlap, as in :func:`compare_velocity_magnitude`. ``None`` scores the
+        whole MD<->reference overlap.
+
+    Returns
+    -------
+    TrajectoryComparison
+        ``quantity`` is ``"v1_magnitude_Aps"`` or ``"v2_magnitude_Aps"``; RMSE
+        in angstrom/ps.
+
+    Raises
+    ------
+    ValueError
+        If ``atom`` is not ``"I1"``/``"I2"``, the reference arrays are not 1-D
+        of equal length, or the time axes do not overlap on >= 2 samples.
+    """
+    n = ion.num_molecules
+    if atom == "I1":
+        slc = slice(0, n)
+        quantity = _QUANTITY_V1
+    elif atom == "I2":
+        slc = slice(n, 2 * n)
+        quantity = _QUANTITY_V2
+    else:
+        raise ValueError(f"atom must be 'I1' or 'I2', got {atom!r}")
+
+    t_ref = np.asarray(t_ref_ps, dtype=float)
+    y_ref = np.asarray(ref_speed_Aps, dtype=float)
+    if t_ref.ndim != 1 or y_ref.ndim != 1 or t_ref.shape != y_ref.shape:
+        raise ValueError(
+            "t_ref_ps and ref_speed_Aps must be 1-D arrays of equal length, "
+            f"got shapes {t_ref.shape} and {y_ref.shape}"
+        )
+
+    speed_per_atom = np.sqrt(
+        ion.velocities_x[slc] ** 2
+        + ion.velocities_y[slc] ** 2
+        + ion.velocities_z[slc] ** 2
+    )
+    speed_md = np.mean(speed_per_atom, axis=0)
+
+    return _compare_series(
+        quantity=quantity,
+        t_md=np.asarray(ion.time_ps, dtype=float),
+        y_md=np.asarray(speed_md, dtype=float),
+        t_ref=t_ref,
+        y_ref=y_ref,
+        window=window,
+    )
+
+
 def _compare_series(
     *,
     quantity: str,

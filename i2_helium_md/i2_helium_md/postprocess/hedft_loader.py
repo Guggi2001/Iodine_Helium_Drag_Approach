@@ -162,6 +162,91 @@ def load_hedft_trajectory(
     )
 
 
+_SMOOTHED_SPEED_COLUMNS: tuple[str, ...] = ("time", "cleaned_SG")
+
+
+@dataclass(frozen=True)
+class SmoothedSpeedReference:
+    """A CEEMDAN+SG-denoised single-atom speed reference over the extraction window.
+
+    Loaded from ``data/reference/drag/<case>/velocity_smoothed/cleaned_data.csv``
+    (header ``time,cleaned_SG``). This is the denoised |v2| trace of the clean
+    iodine atom the drag law was fit to -- the instrument for the Tier-0
+    same-smoothed consistency comparison (``TIER0_FINDINGS.md``). The 9 A file
+    spans the clean window ``[2.67, 6.0]`` ps; the 18 A file spans
+    ``[4.54, 8.0]`` ps. Both axes are in the MD pipeline's units, so no
+    conversion is needed at comparison time.
+
+    Attributes
+    ----------
+    time_ps : np.ndarray, shape (T,)
+        Time grid in picoseconds, strictly increasing.
+    speed_Aps : np.ndarray, shape (T,)
+        Denoised speed magnitude |v2| in angstrom/ps.
+    source_path : Path
+        Absolute path of the file that was loaded.
+    """
+
+    time_ps: np.ndarray
+    speed_Aps: np.ndarray
+    source_path: Path
+
+
+def load_smoothed_speed_reference(path: str | Path) -> SmoothedSpeedReference:
+    """Load a two-column ``time,cleaned_SG`` denoised-speed CSV.
+
+    Parameters
+    ----------
+    path
+        Path to the CSV. Must exist; ``FileNotFoundError`` otherwise.
+
+    Returns
+    -------
+    SmoothedSpeedReference
+        Frozen dataclass with ``time_ps`` and ``speed_Aps`` (both 1-D).
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``path`` does not exist.
+    ValueError
+        If the header is missing / has wrong columns, there are fewer than 2
+        samples, or the time column is not strictly increasing.
+    """
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(
+            f"Smoothed-speed reference file not found: {p.resolve()}"
+        )
+
+    structured = np.genfromtxt(p, delimiter=",", names=True, dtype=float)
+
+    actual_columns = tuple(structured.dtype.names or ())
+    if actual_columns != _SMOOTHED_SPEED_COLUMNS:
+        raise ValueError(
+            f"Smoothed-speed reference {p.name} has unexpected columns "
+            f"{list(actual_columns)}; expected {list(_SMOOTHED_SPEED_COLUMNS)}."
+        )
+
+    time_ps = np.atleast_1d(np.asarray(structured["time"], dtype=float))
+    speed_Aps = np.atleast_1d(np.asarray(structured["cleaned_SG"], dtype=float))
+    if time_ps.size < 2:
+        raise ValueError(
+            f"Smoothed-speed reference {p.name} must have at least 2 samples, "
+            f"got {time_ps.size}."
+        )
+    if not np.all(np.diff(time_ps) > 0.0):
+        raise ValueError(
+            f"Smoothed-speed reference {p.name} has a non-monotonic time column."
+        )
+
+    return SmoothedSpeedReference(
+        time_ps=time_ps,
+        speed_Aps=speed_Aps,
+        source_path=p.resolve(),
+    )
+
+
 def _resolve_droplet_radius(
     path: Path,
     *,

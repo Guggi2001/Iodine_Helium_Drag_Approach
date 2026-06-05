@@ -2,8 +2,9 @@
 
 Pins the Tier-0 acceptance thresholds so later validation tiers cannot silently
 degrade the in-window form match. Anchored on the **18 A** case, which passes
-Tier-0 cleanly; the **9 A** case is the documented different-regime / extraction
--frame finding (TIER0_FINDINGS.md) and is asserted finite-only, not gated.
+Tier-0 cleanly; the **9 A** case carries a residual diagnosed as windowing +
+bubble-mode (TIER0_FINDINGS.md), still under investigation after the
+same-smoothed comparison, and is asserted finite-only, not gated.
 
 What is committed
 -----------------
@@ -154,11 +155,16 @@ class TestTier018A:
 
 
 class TestTier09A:
-    """9 A is the documented different-regime case: recorded finite, not gated.
+    """9 A carries a diagnosed residual: recorded finite, not gated.
 
-    Recorded numbers (2026-06-04, from-onset N=50): in-window distance RMSE
-    ~9.85 A, mean|v| RMSE ~1.55 A/ps -- the center-of-mass-drift / extraction
-    -frame finding in TIER0_FINDINGS.md, not a drag-form failure.
+    Recorded numbers (2026-06-05, current clean-window gamma a=24.876/b=2.085,
+    from-onset N=50, window [2.67, 6.0]): in-window distance RMSE ~9.17 A,
+    mean(I1,I2) |v| RMSE ~1.29 A/ps. The from-onset distance is inflated by the
+    uncalibrated pre-t* transient; the t*-seeded clean-form |v2| residual is
+    0.88 A/ps raw and 0.40 A/ps against the same-smoothed reference -- bubble-mode
+    confirmed as the dominant raw contributor, with a ~0.40 A/ps residual still
+    under investigation (TIER0_FINDINGS.md). Not a drag-form failure, and the
+    earlier extraction-frame reading is withdrawn.
     """
 
     def test_produces_finite_windowed_rmse(self):

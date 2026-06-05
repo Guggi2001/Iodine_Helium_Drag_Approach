@@ -142,6 +142,50 @@ cross-check, which is why both are always reported. Confirm the smoother
 **preserves atom 2's late directional drift** (different timescale from the
 1.2 ps oscillation) so it is not silently smoothed away.
 
+## Same-smoothed comparison — RESULT (2026-06-05)
+
+The same-smoothed comparison ran (`compare_speed_to_reference` +
+`load_smoothed_speed_reference` + `scripts/post_processing/
+tier0_same_smoothed_comparison.py`), scoring MD |v2| against the CEEMDAN+SG
+cleaned |v2| and the raw |v2|, both modes, over the cleaned window (9 Å
+`[2.67, 6.0]`, 18 Å `[4.54, 8.0]`):
+
+| case | mode | raw \|v2\| | smoothed \|v2\| | raw−smoothed |
+|---|---|---|---|---|
+| 9 Å  | from-onset | 1.164 | 0.815 | +0.349 |
+| 9 Å  | t\*-seeded  | 0.878 | **0.402** | +0.476 |
+| 18 Å | from-onset | 0.165 | 0.104 | +0.061 |
+| 18 Å | t\*-seeded  | 0.156 | **0.091** | +0.065 |
+
+**Outcome = the middle branch.** Same-smoothed scoring roughly **halves** the
+9 Å clean-form residual (0.88 → 0.40), confirming the 1.2 ps bubble-mode
+oscillation as the **dominant raw contributor** — but 0.40 does **not** collapse
+to the 18 Å-class ~0.09. A real residual survives in the clean regime.
+
+**Residual characterised (per-third decomposition, t\*-seeded):**
+
+- **9 Å: a near-uniform ~10% magnitude deficit.** MD |v2| is low across the whole
+  window (ratio 0.93/0.89/0.88 early/mid/late). Of the 0.40 total RMSE, **0.394 is
+  constant bias, only 0.08 is shape**. Flat, not end-loaded, not a mid-window
+  shape mismatch.
+- **18 Å control: zero net bias** (+0.002); residual is **pure shape** with the
+  textbook constant-`m_eff` §2 signature (mid-window 0.028/ratio 1.000; ends ~0.11).
+  The cleaned instrument and the machine are sound.
+
+**The surviving 9 Å residual is therefore NOT a form failure, NOT the constant-mass
+end signature, and NOT the withdrawn frame story — it is a near-constant ~10%
+over-damping** (the "magnitude recalibration" contingency). Prime suspect: the 9 Å
+`a` nearly doubled in the clean-window re-extraction (`a`: 13.86 → **24.876**,
+`b` ≈ unchanged 2.085), ~70% stronger than 18 Å's `a`=14.556 — strong enough that
+forward-integration undershoots its own fit target.
+
+**Decision (2026-06-05): investigate the residual before unblocking Tier 1.**
+The next step is an **extraction-side audit of the 9 Å clean-window `a`** (why it
+nearly doubled). Coefficients are not changed without the user. Tier 1 **stays
+blocked** pending that audit (not on a frame re-extraction). The committed 9 Å
+`md_mean_trajectory_N50.csv` was refreshed to the current γ (the prior one
+predated the re-extraction). No same-smoothed regression assertion committed yet.
+
 ## Data limitation found (recorded)
 
 The HeDFT CSVs store per-atom **speed magnitudes** + only the **x,z** velocity

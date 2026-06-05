@@ -11,6 +11,7 @@ from i2_helium_md.simulation.checkpoint import IonCheckpoint
 from i2_helium_md.postprocess.compare_trajectories import (
     TrajectoryComparison,
     compare_distance,
+    compare_speed_to_reference,
     compare_velocity_magnitude,
 )
 from i2_helium_md.postprocess.hedft_loader import HedftTrajectory
@@ -355,6 +356,115 @@ class TestWindow:
         # Window [4.1, 4.9] contains no HeDFT sample.
         with pytest.raises(ValueError, match="do not overlap"):
             compare_distance(ion, hedft, window=(4.1, 4.9))
+
+
+# ===========================================================================
+# Speed-vs-arbitrary-reference (Tier-0 same-smoothed consistency comparison)
+# ===========================================================================
+class TestCompareSpeedToReference:
+    """compare_speed_to_reference scores MD |v1|/|v2| against any speed curve.
+
+    Used by the Tier-0 same-smoothed comparison to score MD |v2| against the
+    CEEMDAN+SG-denoised |v2| reference (which is a 2-column CSV, not a full
+    HedftTrajectory).
+    """
+
+    def test_exact_recovery_against_matching_series(self):
+        t = np.linspace(0.0, 1.0, 11)
+        ion = _make_ion_with_distance(
+            t_md=t, distance=np.full_like(t, 9.0),
+            speed_i1=0.3, speed_i2=0.7,
+        )
+        ref = np.full_like(t, 0.7)
+        result = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t, ref_speed_Aps=ref
+        )
+        assert isinstance(result, TrajectoryComparison)
+        assert result.quantity == "v2_magnitude_Aps"
+        assert result.rmse == pytest.approx(0.0, abs=1e-12)
+        assert result.mean_ratio == pytest.approx(1.0, abs=1e-12)
+
+    def test_atom_selection(self):
+        """I1 -> speed 0.3 series; I2 -> speed 0.7 series; quantities differ."""
+        t = np.linspace(0.0, 1.0, 11)
+        ion = _make_ion_with_distance(
+            t_md=t, distance=np.full_like(t, 9.0),
+            num_molecules=4, speed_i1=0.3, speed_i2=0.7,
+        )
+        r1 = compare_speed_to_reference(
+            ion, atom="I1", t_ref_ps=t, ref_speed_Aps=np.full_like(t, 0.3)
+        )
+        r2 = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t, ref_speed_Aps=np.full_like(t, 0.7)
+        )
+        assert r1.quantity == "v1_magnitude_Aps"
+        assert r2.quantity == "v2_magnitude_Aps"
+        assert r1.rmse == pytest.approx(0.0, abs=1e-12)
+        assert r2.rmse == pytest.approx(0.0, abs=1e-12)
+
+    def test_known_constant_offset(self):
+        t = np.linspace(0.0, 1.0, 21)
+        ion = _make_ion_with_distance(
+            t_md=t, distance=np.full_like(t, 9.0), speed_i2=0.7,
+        )
+        ref = np.full_like(t, 0.7 - 0.2)  # MD is 0.2 A/ps above reference
+        result = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t, ref_speed_Aps=ref
+        )
+        assert result.rmse == pytest.approx(0.2, abs=1e-12)
+
+    def test_window_restricts_scoring(self):
+        t = np.linspace(0.0, 10.0, 101)
+        ion = _make_ion_with_distance(
+            t_md=t, distance=np.full_like(t, 9.0), speed_i2=0.5,
+        )
+        ref = np.full_like(t, 0.5)
+        outside = (t < 3.0) | (t > 7.0)
+        ref[outside] += 5.0  # only matches MD inside [3, 7]
+        full = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t, ref_speed_Aps=ref
+        )
+        windowed = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t, ref_speed_Aps=ref, window=(3.0, 7.0)
+        )
+        assert full.rmse > 1.0
+        assert windowed.rmse == pytest.approx(0.0, abs=1e-12)
+        assert windowed.overlap_t_min_ps == pytest.approx(3.0)
+        assert windowed.overlap_t_max_ps == pytest.approx(7.0)
+
+    def test_reference_window_subset_of_md(self):
+        """Reference covering only [2.67, 6.0] (like the cleaned 9A data) while
+        the MD run spans [0, 20] scores on the reference's own extent."""
+        t_md = np.linspace(0.0, 20.0, 2001)
+        ion = _make_ion_with_distance(
+            t_md=t_md, distance=np.full_like(t_md, 9.0), speed_i2=0.7,
+        )
+        t_ref = np.linspace(2.67, 6.0, 334)
+        ref = np.full_like(t_ref, 0.7)
+        result = compare_speed_to_reference(
+            ion, atom="I2", t_ref_ps=t_ref, ref_speed_Aps=ref
+        )
+        assert result.overlap_t_min_ps == pytest.approx(2.67)
+        assert result.overlap_t_max_ps == pytest.approx(6.0)
+        assert result.rmse == pytest.approx(0.0, abs=1e-12)
+
+    def test_invalid_atom_raises(self):
+        t = np.linspace(0.0, 1.0, 11)
+        ion = _make_ion_with_distance(t_md=t, distance=np.full_like(t, 9.0))
+        with pytest.raises(ValueError, match="atom must be"):
+            compare_speed_to_reference(
+                ion, atom="I3",  # type: ignore[arg-type]
+                t_ref_ps=t, ref_speed_Aps=t,
+            )
+
+    def test_mismatched_reference_shapes_raise(self):
+        t = np.linspace(0.0, 1.0, 11)
+        ion = _make_ion_with_distance(t_md=t, distance=np.full_like(t, 9.0))
+        with pytest.raises(ValueError, match="equal length"):
+            compare_speed_to_reference(
+                ion, atom="I2",
+                t_ref_ps=t, ref_speed_Aps=np.linspace(0.0, 1.0, 5),
+            )
 
 
 # ===========================================================================

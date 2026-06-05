@@ -9,10 +9,12 @@ next session has an unambiguous picture without re-reading the whole thread.
 `TIER0_COMPARISON_spec.md` (the task spec), `TIER0_SCRIPTS.md` (script guide),
 `EXTRACTION_FRAME_FIX_milestone.md` (now demoted to a contingency, see below).
 
-**One-line status:** Tier 0 is an **internal-consistency check** of the drag
-implementation; 18 Å passes cleanly, 9 Å's residual is diagnosed (windowing +
-bubble-mode, not a law/frame error), and the **only remaining task is the
-same-smoothed consistency comparison** — data in hand, no external dependency.
+**One-line status (updated 2026-06-05):** Tier 0 is an **internal-consistency
+check**; 18 Å passes cleanly. The same-smoothed comparison **ran** — it halved the
+9 Å residual (bubble-mode confirmed dominant) but left a near-constant **~10%
+magnitude over-damping** (0.40 Å/ps vs the 18 Å-class 0.09). Tier 1 **stays
+blocked** on an extraction-side audit of the 9 Å clean-window `a` (it nearly
+doubled). See §4.1.
 
 ---
 
@@ -111,7 +113,72 @@ raw reference.
 
 ## 4. Left to do
 
-### 4.1 The one remaining Tier-0 task — same-smoothed consistency comparison
+### 4.1 Same-smoothed consistency comparison — **RAN (2026-06-05)**
+
+**Status: done; outcome is the middle branch — bubble-mode confirmed dominant,
+but a real residual survives, now characterised and under investigation. Tier 1
+stays blocked pending that investigation.**
+
+Implemented as `compare_speed_to_reference` (a single-sourced primitive on
+`compare_trajectories.py`, scoring MD |v1|/|v2| against any speed curve via
+`_compare_series`) + `load_smoothed_speed_reference` (loader for the 2-column
+`velocity_smoothed/cleaned_data.csv`) + the harness
+`scripts/post_processing/tier0_same_smoothed_comparison.py`. The cleaned
+reference is the CEEMDAN+SG-denoised **|v2|** (clean atom); 9 Å spans the clean
+window `[2.67, 6.0]` (pre-truncated before the ~6 ps drift onset, so no late-drift
+contamination), 18 Å `[4.54, 8.0]`. Scored MD |v2| against **both** raw and
+cleaned, in **both** modes, over the cleaned window:
+
+| case | mode | raw \|v2\| | smoothed \|v2\| | raw−smoothed |
+|---|---|---|---|---|
+| 9 Å  | from-onset | 1.164 | 0.815 | +0.349 |
+| 9 Å  | t\*-seeded  | 0.878 | **0.402** | +0.476 |
+| 18 Å | from-onset | 0.165 | 0.104 | +0.061 |
+| 18 Å | t\*-seeded  | 0.156 | **0.091** | +0.065 |
+
+(18 Å t\*-seeded raw 0.156 reproduces the committed gate; 9 Å raw 0.878 reproduces
+the ~0.86 from §3.1.)
+
+**Reading: same-smoothed roughly halves the 9 Å residual (0.88 → 0.40), so
+bubble-mode is confirmed as the dominant raw contributor — but 0.40 does NOT
+collapse to the 18 Å-class ~0.09.** A real residual survives in the clean regime.
+
+**Residual characterised (the investigation, 2026-06-05).** Per-third decomposition
+of the t\*-seeded 9 Å residual vs the cleaned reference:
+
+- **9 Å: a near-uniform ~10% magnitude deficit.** MD |v2| is low across the whole
+  window (ratio 0.93 / 0.89 / 0.88 early/mid/late, roughly flat). Of the 0.40
+  total, **0.394 is constant bias** and only **0.08 is shape**. Not end-loaded,
+  not a mid-window shape mismatch.
+- **18 Å control: zero net bias** (+0.002), residual is **pure shape** with the
+  textbook constant-`m_eff` §2 signature (mid-window 0.028 / ratio 1.000; ends
+  ~0.11). The clean reference instrument is sound.
+
+**Conclusion of the investigation.** The surviving 9 Å residual is **not** a
+`linear_cubic` form failure (mid-window shape is fine), **not** the constant-mass
+end signature (it is flat, not end-loaded), and **not** the withdrawn frame story.
+It is a **near-constant ~10% over-damping** — the "magnitude recalibration"
+contingency this doc named. Prime suspect: the 9 Å `a` nearly **doubled** in the
+clean-window re-extraction (`a`: 13.86 → **24.876**, `b` ≈ unchanged 2.085),
+making 9 Å's drag ~70% stronger than 18 Å's `a`=14.556 — strong enough that
+forward-integration undershoots its own fit target.
+
+**Next step (smallest, extraction-side, NOT done here):** audit the 9 Å clean-window
+re-extraction `a` — why it nearly doubled (conditioning / window-length / the
+force-balance magnitude or velocity frame it ran under). A pure-1D self-integration
+of γ=`a`+`b`·v² against the cleaned |v2|(t) is *not* a clean check (the real
+trajectory carries residual Coulomb support the pure-drag ODE lacks), so the audit
+belongs at the extraction source. **Do not change coefficients without the user.**
+
+**Deliverables committed:** code + tests (44 green), the refreshed current-γ
+9 Å `md_mean_trajectory_N50.csv` (the old one predated the re-extraction), and
+this record. **No regression assertion** on the 9 Å same-smoothed number yet (it
+is under investigation).
+
+**Tier 1 stays blocked** — gated on resolving the ~10% magnitude residual, not on
+a frame re-extraction.
+
+### 4.1-orig Original task statement (for reference)
 
 Score the MD against the reference processed through the **same** CEEMDAN+SG
 denoising the extraction used (`Drag_extraction_code.md`: identical
@@ -147,15 +214,18 @@ filter), and **report it alongside the raw-reference RMSE, never instead of it.*
 - **Score I2-only (clean atom) for 9 Å**, reported beside the mean, so the
   artifact-atom contribution is explicitly separated in the committed record.
 
-### 4.3 Gated on the §4.1 outcome (not before)
+### 4.3 Gated on the §4.1 outcome
 
-- **Tier 1** — conditionally unblocked: proceed once the same-smoothed comparison
-  confirms Tier 0 is a clean internal-consistency pass. The original frame-based
-  block is lifted.
-- **`EXTRACTION_FRAME_FIX_milestone.md`** — contingency only: pursue *iff* a
-  residual survives the same-smoothed comparison *and* points to a genuine
-  single-clean-atom drift effect. Its external 3D-velocity dependency is **no
-  longer the project critical path**.
+- **Tier 1 — STILL BLOCKED (updated 2026-06-05).** The same-smoothed comparison
+  did **not** confirm a clean pass: the 9 Å residual halved (bubble-mode confirmed)
+  but a near-constant **~10% magnitude over-damping** survives (§4.1). Tier 1 is
+  gated on resolving that — the smallest next step is the **extraction-side audit
+  of the 9 Å clean-window `a`** (it nearly doubled, 13.86 → 24.876). The frame-based
+  block was already lifted; this is a magnitude block, not a frame block.
+- **`EXTRACTION_FRAME_FIX_milestone.md`** — remains a contingency, and the
+  same-smoothed result makes it *less* likely (the residual is a flat magnitude
+  offset, not a single-clean-atom directional drift). Pursue only if the `a` audit
+  exonerates the coefficient and a drift signature re-emerges.
 
 ---
 
