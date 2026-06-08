@@ -25,7 +25,15 @@ def load_data(file_path):
                 'v2_z': data['V2_z'].values,
                 'v1_x': data['V1_x'].values,
                 'v2_x': data['V2_x'].values,
-                'R': data['R_distance'].values
+                'v1_y': data['V1_y'].values,
+                'v2_y': data['V2_y'].values,
+                'R': data['R_distance'].values,
+                'x1': data['X1'].values,
+                'y1': data['Y1'].values,
+                'z1': data['Z1'].values,
+                'x2': data['X2'].values,
+                'y2': data['Y2'].values,
+                'z2': data['Z2'].values,
             }
         except Exception as e:
             print(f"[!] READ ERROR: Could not parse {file_path}. Details: {e}")

@@ -147,6 +147,14 @@ min_len_r = min(len(r1_raw), len(r2_raw))
 t_master = r1_raw[:min_len_r, 0]
 R_actual = np.linalg.norm(r1_raw[:min_len_r, 1:4] - r2_raw[:min_len_r, 1:4], axis=1)
 
+x_1 = r1_raw[:min_len_r, 1]
+y_1 = r1_raw[:min_len_r, 2]
+z_1 = r1_raw[:min_len_r, 3]
+
+x_2 = r2_raw[:min_len_r, 1]
+y_2 = r2_raw[:min_len_r, 2]
+z_2 = r2_raw[:min_len_r, 3]
+
 # Calculate V1 Magnitude
 v1_mag = np.linalg.norm(v1_raw[:min_len_r, 1:4], axis=1)
 v2_mag = np.linalg.norm(v2_raw[:min_len_r, 1:4], axis=1)
@@ -172,6 +180,12 @@ v1_x_final = v1_x[::step]
 v2_x_final = v2_x[::step]
 v1_y_final = v1_y[::step]
 v2_y_final = v2_y[::step]
+x_1_final = x_1[::step]
+y_1_final = y_1[::step]
+z_1_final = z_1[::step]
+x_2_final = x_2[::step]
+y_2_final = y_2[::step]
+z_2_final = z_2[::step]
 
 # --- 4. Export to Unified CSV ---
 export_df = pd.DataFrame({
@@ -184,7 +198,13 @@ export_df = pd.DataFrame({
     'V2_x': v2_x_final,
     'V2_y': v2_y_final,
     'V2_z': v2_z_final,
-    'R_distance': R_final
+    'R_distance': R_final,
+    'X1': x_1_final,
+    'Y1': y_1_final,
+    'Z1': z_1_final,
+    'X2': x_2_final,
+    'Y2': y_2_final,
+    'Z2': z_2_final
 })
 
 # Save to CSV
@@ -242,6 +262,17 @@ min_len_r = min(len(r1_raw), len(r2_raw), len(v2_raw), len(v1_raw))  # Ensure we
 t_master = r1_raw[:min_len_r, 0]
 R_actual = np.linalg.norm(r1_raw[:min_len_r, 1:4] - r2_raw[:min_len_r, 1:4], axis=1)
 
+# Define positions
+x_1 = r1_raw[:min_len_r, 1]
+y_1 = r1_raw[:min_len_r, 2]
+z_1 = r1_raw[:min_len_r, 3]
+
+x_2 = r2_raw[:min_len_r, 1]
+y_2 = r2_raw[:min_len_r, 2]
+z_2 = r2_raw[:min_len_r, 3]
+
+
+
 # Calculate V1 Magnitude
 v1_mag = np.linalg.norm(v1_raw[:min_len_r, 1:4], axis=1)
 v1_z = v1_raw[:min_len_r, 3]
@@ -266,6 +297,12 @@ v2_x_final = v2_x[::step]
 v1_y_final = v1_y[::step]
 v2_y_final = v2_y[::step]
 R_final  = R_actual[::step]
+x_1_final = x_1[::step]
+y_1_final = y_1[::step]
+z_1_final = z_1[::step]
+x_2_final = x_2[::step]
+y_2_final = y_2[::step]
+z_2_final = z_2[::step]
 
 # --- 4. Export to Unified CSV ---
 export_df = pd.DataFrame({
@@ -278,7 +315,13 @@ export_df = pd.DataFrame({
     'V2_x': v2_x_final,
     'V2_y': v2_y_final,
     'V2_z': v2_z_final,
-    'R_distance': R_final
+    'R_distance': R_final,
+    'X1': x_1_final,
+    'Y1': y_1_final,
+    'Z1': z_1_final,
+    'X2': x_2_final,
+    'Y2': y_2_final,
+    'Z2': z_2_final
 })
 
 # Save to CSV

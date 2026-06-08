@@ -1543,9 +1543,26 @@ until the form is pinned.
 > reference-data and frame items only if the consistency check exposes a
 > residual the smoothing does not explain.
 
-*Cleanliness condition (see §6.6).* Tier 0 is cleanest when the
-simulation mass treatment matches the one the reference trajectory was
-generated under. The TDDFT shell mass is *not* constant (it declines
+> **REPURPOSED (2026-06-08) — consistency → held-out generalization, under
+> Method B.** The extraction method is changing from direct `F_drag`-vs-`v`
+> regression (Method A) to **trajectory-matching calibration** (Method B,
+> `METHOD_B_trajectory_matching_extraction.md`): `{a,b}` are fit by minimizing
+> the forward-integrated in-window trajectory RMSE against the same-smoothed
+> reference. Under B the trajectory match **is the fit objective**, so the
+> internal-consistency framing above is **circular and retired** — re-running
+> "does forward-integration reproduce the reference?" just reads back the
+> objective. Tier 0 is therefore repurposed (not deleted): its infrastructure
+> (the `window=` parameter, the harnesses, the gate) now scores **held-out**
+> data — a held-out sub-window, the cross-case shared-form check (§3.6, the real
+> transport-physics signal), and the downstream observables (Tier 2 VMI, Tier 3
+> ensemble). The litmus test: agreement is only evidence if checked on data the
+> parameters were **not** fit against. This held-out role is *more* necessary
+> under B than the consistency check was under A, because B can overfit — and
+> **especially** for 9 Å, where trajectory-matching a radial-projected MD onto a
+> genuinely **non-radial** reference (the radial↔transverse oscillation, finding
+> in `TIER0_FINDINGS.md`) risks the coefficients absorbing the transverse
+> discrepancy as a dimensionality fudge. Held-out validation is non-optional for
+> 9 Å; 18 Å (genuinely radial) calibrates safely.
 ~21→14 He across the window, §6.6), so a fixed-$m_\text{eff} \approx
 203$ amu run matches the reference closely mid-window (where the shell
 is ~19 He) but drifts at the ends. For a *strictly* clean form

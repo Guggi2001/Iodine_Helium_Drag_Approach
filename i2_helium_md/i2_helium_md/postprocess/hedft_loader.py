@@ -1,9 +1,19 @@
 """Loader for HeDFT/TDDFT reference trajectory CSV files.
 
-Reads the normalized 8-column reference format produced from the legacy
-MATLAB pipeline:
+Reads the normalized reference format produced from the legacy MATLAB
+pipeline. The columns are (order in the file may vary; the loader matches by
+name):
 
-    Time_ps, V1_mag, V2_mag, V1_z, V2_z, V1_x, V2_x, R_distance
+    Time_ps,
+    V1_mag, V2_mag,                       # per-atom speed magnitudes
+    V1_x, V1_y, V1_z, V2_x, V2_y, V2_z,   # per-atom 3D velocity components
+    R_distance,                           # I-I separation |r1 - r2|
+    X1, Y1, Z1, X2, Y2, Z2                # per-atom 3D positions
+
+The 3D velocity components and the per-atom positions were added when the
+reference was re-exported; the radial-invariant comparison still scores only
+``R``, ``|v1|``, ``|v2|``, but the full vectors let the t*-seeded harness read
+a real radial seed and report the true radial/transverse split at t*.
 
 Two reference files exist under ``data/reference/``:
 
@@ -32,7 +42,15 @@ _EXPECTED_COLUMNS: tuple[str, ...] = (
     "V2_z",
     "V1_x",
     "V2_x",
+    "V2_y",
+    "V1_y",
     "R_distance",
+    "X1",
+    "X2",
+    "Y1",
+    "Y2",
+    "Z1",
+    "Z2"
 )
 
 # Pattern matches a leading "<int>A_" or "<float>A_" prefix in the filename
@@ -57,8 +75,13 @@ class HedftTrajectory:
         z-components of the I1 and I2 velocities, angstrom/ps.
     v1_x_Aps, v2_x_Aps : np.ndarray, shape (T,)
         x-components of the I1 and I2 velocities, angstrom/ps.
+    v1_y_Aps, v2_y_Aps : np.ndarray, shape (T,)
+        y-components of the I1 and I2 velocities, angstrom/ps.
     distance_A : np.ndarray, shape (T,)
         I-I separation in angstrom (the legacy ``R_distance`` column).
+    x1_A, y1_A, z1_A, x2_A, y2_A, z2_A : np.ndarray, shape (T,)
+        Per-atom 3D positions of I1 and I2 in angstrom. By construction
+        ``hypot(x1-x2, y1-y2, z1-z2) == distance_A``.
     droplet_radius_A : float
         9.0 or 18.0 angstrom; inferred from the filename prefix when
         not supplied explicitly.
@@ -73,7 +96,15 @@ class HedftTrajectory:
     v2_z_Aps: np.ndarray
     v1_x_Aps: np.ndarray
     v2_x_Aps: np.ndarray
+    v1_y_Aps: np.ndarray
+    v2_y_Aps: np.ndarray
     distance_A: np.ndarray
+    x1_A: np.ndarray
+    x2_A: np.ndarray
+    y1_A: np.ndarray
+    y2_A: np.ndarray
+    z1_A: np.ndarray
+    z2_A: np.ndarray
     droplet_radius_A: float
     source_path: Path
 
@@ -83,7 +114,7 @@ def load_hedft_trajectory(
     *,
     droplet_radius_A: float | None = None,
 ) -> HedftTrajectory:
-    """Load an 8-column HeDFT reference CSV into a :class:`HedftTrajectory`.
+    """Load a HeDFT reference CSV into a :class:`HedftTrajectory`.
 
     Parameters
     ----------
@@ -98,7 +129,8 @@ def load_hedft_trajectory(
     Returns
     -------
     HedftTrajectory
-        Frozen dataclass with the eight column arrays plus metadata.
+        Frozen dataclass with the velocity, position, and separation arrays
+        plus metadata.
 
     Raises
     ------
@@ -156,7 +188,15 @@ def load_hedft_trajectory(
         v2_z_Aps=np.asarray(structured["V2_z"], dtype=float),
         v1_x_Aps=np.asarray(structured["V1_x"], dtype=float),
         v2_x_Aps=np.asarray(structured["V2_x"], dtype=float),
+        v1_y_Aps=np.asarray(structured["V1_y"], dtype=float),
+        v2_y_Aps=np.asarray(structured["V2_y"], dtype=float),
         distance_A=np.asarray(structured["R_distance"], dtype=float),
+        x1_A=np.asarray(structured["X1"], dtype=float),
+        x2_A=np.asarray(structured["X2"], dtype=float),
+        y1_A=np.asarray(structured["Y1"], dtype=float),
+        y2_A=np.asarray(structured["Y2"], dtype=float),
+        z1_A=np.asarray(structured["Z1"], dtype=float),
+        z2_A=np.asarray(structured["Z2"], dtype=float),
         droplet_radius_A=float(radius),
         source_path=p.resolve(),
     )

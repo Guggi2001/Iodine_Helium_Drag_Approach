@@ -27,18 +27,32 @@ CLEANED_9A = (
 # ===========================================================================
 # Helpers
 # ===========================================================================
-_HEADER = "Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance"
+# Full 16-column reference header: velocities (mags + 3D components),
+# separation, and per-atom 3D positions.
+_HEADER = (
+    "Time_ps,V1_mag,V2_mag,V1_x,V1_y,V1_z,V2_x,V2_y,V2_z,R_distance,"
+    "X1,Y1,Z1,X2,Y2,Z2"
+)
 
 
 def _write_synthetic_csv(path: Path, *, t: np.ndarray, r: np.ndarray) -> None:
-    """Write a tiny CSV with the 8 expected columns (zeros except t and r)."""
+    """Write a tiny CSV with the 16 expected columns (zeros except t and r).
+
+    Time_ps and R_distance carry the supplied arrays; every velocity component
+    and position column is zero. Sufficient for loader round-trip / validation
+    tests, which do not exercise the velocity or position values.
+    """
     n = t.size
     z = np.zeros(n)
-    rows = [_HEADER]
-    for i in range(n):
-        rows.append(
-            f"{t[i]},{z[i]},{z[i]},{z[i]},{z[i]},{z[i]},{z[i]},{r[i]}"
-        )
+
+    def _row(i: int) -> str:
+        # Time_ps, V1_mag, V2_mag, V1_x, V1_y, V1_z, V2_x, V2_y, V2_z,
+        # R_distance, X1, Y1, Z1, X2, Y2, Z2
+        vals = [t[i], z[i], z[i], z[i], z[i], z[i], z[i], z[i], z[i],
+                r[i], z[i], z[i], z[i], z[i], z[i], z[i]]
+        return ",".join(str(v) for v in vals)
+
+    rows = [_HEADER] + [_row(i) for i in range(n)]
     path.write_text("\n".join(rows) + "\n", encoding="ascii")
 
 
@@ -60,6 +74,12 @@ class TestSyntheticRoundTrip:
         np.testing.assert_array_equal(traj.distance_A, r)
         np.testing.assert_array_equal(traj.v1_magnitude_Aps, np.zeros(4))
         np.testing.assert_array_equal(traj.v2_magnitude_Aps, np.zeros(4))
+        # 3D velocity components and per-atom positions round-trip too.
+        for arr in (
+            traj.v1_x_Aps, traj.v1_y_Aps, traj.v2_x_Aps, traj.v2_y_Aps,
+            traj.x1_A, traj.y1_A, traj.z1_A, traj.x2_A, traj.y2_A, traj.z2_A,
+        ):
+            np.testing.assert_array_equal(arr, np.zeros(4))
         assert traj.droplet_radius_A == 9.0
         assert traj.source_path == path.resolve()
 
@@ -108,11 +128,14 @@ class TestValidation:
 
     def test_bad_header_missing_column_raises(self, tmp_path):
         path = tmp_path / "9A_All_Data.csv"
-        # Drop the R_distance column
+        # Drop the R_distance column from the otherwise-complete header.
+        header_no_r = (
+            "Time_ps,V1_mag,V2_mag,V1_x,V1_y,V1_z,V2_x,V2_y,V2_z,"
+            "X1,Y1,Z1,X2,Y2,Z2"
+        )  # 15 columns: the full 16 minus R_distance
+        rest = ",".join(["0"] * 14)
         path.write_text(
-            "Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x\n"
-            "0.0,0,0,0,0,0,0\n"
-            "0.1,0,0,0,0,0,0\n",
+            f"{header_no_r}\n0.0,{rest}\n0.1,{rest}\n",
             encoding="ascii",
         )
         with pytest.raises(ValueError, match="missing=.*R_distance"):
@@ -120,10 +143,9 @@ class TestValidation:
 
     def test_bad_header_extra_column_raises(self, tmp_path):
         path = tmp_path / "9A_All_Data.csv"
+        row = ",".join(["0"] * 16) + ",0"  # 16 expected + 1 extra
         path.write_text(
-            "Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance,Extra\n"
-            "0.0,0,0,0,0,0,0,9,0\n"
-            "0.1,0,0,0,0,0,0,9,0\n",
+            f"{_HEADER},Extra\n{row}\n{row}\n",
             encoding="ascii",
         )
         with pytest.raises(ValueError, match="unexpected=.*Extra"):
@@ -142,8 +164,10 @@ class TestValidation:
 
     def test_too_few_samples_raises(self, tmp_path):
         path = tmp_path / "9A_All_Data.csv"
+        # One data row: R_distance is column index 9, the rest zero.
+        row = "0.0," + ",".join(["0"] * 8) + ",9.0," + ",".join(["0"] * 6)
         path.write_text(
-            _HEADER + "\n0.0,0,0,0,0,0,0,9.0\n",
+            _HEADER + "\n" + row + "\n",
             encoding="ascii",
         )
         with pytest.raises(ValueError, match="at least 2 time samples"):
@@ -232,7 +256,7 @@ class TestReal9A:
         assert traj.time_ps.shape[0] == 14082
         assert traj.time_ps[0] == 0.0
         assert traj.distance_A[0] == pytest.approx(9.0)
-        # All eight series share the time grid length.
+        # All component/position series share the time grid length.
         for arr in (
             traj.v1_magnitude_Aps,
             traj.v2_magnitude_Aps,
@@ -240,8 +264,19 @@ class TestReal9A:
             traj.v2_z_Aps,
             traj.v1_x_Aps,
             traj.v2_x_Aps,
+            traj.v1_y_Aps,
+            traj.v2_y_Aps,
+            traj.x1_A, traj.y1_A, traj.z1_A,
+            traj.x2_A, traj.y2_A, traj.z2_A,
         ):
             assert arr.shape == traj.time_ps.shape
+        # Per-atom positions are consistent with the stored separation.
+        sep = np.sqrt(
+            (traj.x1_A - traj.x2_A) ** 2
+            + (traj.y1_A - traj.y2_A) ** 2
+            + (traj.z1_A - traj.z2_A) ** 2
+        )
+        np.testing.assert_allclose(sep, traj.distance_A, rtol=1e-6, atol=1e-4)
 
 
 @pytest.mark.skipif(

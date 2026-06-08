@@ -7,18 +7,24 @@ transient by **seeding the ion at t* with the reference state** and integrating
 the drag law forward with ``run_ion_propagation`` over ``[t*, t_end]`` -- the
 strictly-cleaner form isolation hinted at in DRAG_PORT_DESIGN_DECISIONS §6.4.
 
-Data limitation (important, recorded)
--------------------------------------
-The HeDFT reference CSV stores per-atom SPEED magnitudes ``|v1|, |v2|`` and the
-I-I separation ``R``, but only the x,z velocity components (no y) -- so the full
-3D per-atom velocity is NOT recoverable from the file. We therefore seed the
-rotation-invariants the comparison actually scores: ``R(t*)``, the radial
-separation rate ``dR/dt(t*)`` (split equally between the equal-mass atoms along a
-constructed I-I axis), and the per-atom speeds ``|v1|, |v2|`` (leftover speed
-placed transverse). The raw ``R(t)`` carries bubble-mode oscillations (the modes
-CEEMDAN removes before drag extraction), so ``dR/dt`` is taken as a central
-difference; its exact value barely matters because the transverse speed
-dominates ``|v|``.
+Seed convention (internal-consistency, |v| placed radially)
+-----------------------------------------------------------
+The reference CSV now carries the full 3D per-atom velocity AND per-atom
+positions, so the true I-I axis and the real radial/transverse split are
+recoverable. The seed nonetheless places each atom's *full speed* ``|v_i|``
+along the I-I axis (transverse zero), because the drag law was extracted with
+the scalar speed ``v = |v2|`` as the radial velocity; forward-integrating gamma
+from ``|v|`` is the honest Tier-0 internal-consistency check (does the BAOAB
+driver reproduce the speed gamma was fit to?). This retires the previous
+reconstruction, which differenced raw ``R(t)`` for the radial rate and dumped
+the leftover speed into a fictitious transverse component -- inert KE the
+central-force MD damped on startup, producing the spurious 9 A downcurve.
+
+The harness additionally *reports* (does not seed) the real radial/transverse
+split of each atom at t*, projected onto the true bond axis
+``R_hat = (r1 - r2)/|r1 - r2|`` read from the position columns. For 9 A this
+shows atom 2 is ~99.6% transverse at t* (it genuinely co-translates); for
+18 A it is ~99.9% radial.
 
 How to use
 ----------
@@ -78,39 +84,75 @@ def _interp(t, ref_t, ref_y):
     return float(np.interp(t, ref_t, ref_y))
 
 
+def _report_real_radial_split(hedft, t_star):
+    """Print the true radial/transverse split of each atom at t* (diagnostic).
+
+    Reads the real 3D per-atom positions and velocities, builds the true bond
+    axis ``R_hat = (r1 - r2)/|r1 - r2|``, and reports ``v . R_hat`` (radial)
+    versus the transverse remainder for each atom. Also cross-checks that the
+    position-derived separation matches the stored ``R_distance`` column. This
+    feeds the verdict (is atom 2 genuinely near-radial?) but NOT the seed.
+    """
+    def vec(comps):
+        return np.array([_interp(t_star, hedft.time_ps, c) for c in comps])
+
+    r1 = vec((hedft.x1_A, hedft.y1_A, hedft.z1_A))
+    r2 = vec((hedft.x2_A, hedft.y2_A, hedft.z2_A))
+    v1 = vec((hedft.v1_x_Aps, hedft.v1_y_Aps, hedft.v1_z_Aps))
+    v2 = vec((hedft.v2_x_Aps, hedft.v2_y_Aps, hedft.v2_z_Aps))
+
+    r_rel = r1 - r2
+    R_pos = float(np.linalg.norm(r_rel))
+    R_col = _interp(t_star, hedft.time_ps, hedft.distance_A)
+    # Provenance cross-check (TASK section 5): |r1 - r2| must equal R_distance.
+    if not np.isclose(R_pos, R_col, rtol=1e-6, atol=1e-4):
+        raise ValueError(
+            f"position/separation mismatch at t*={t_star}: "
+            f"|r1-r2|={R_pos:.6f} != R_distance={R_col:.6f}"
+        )
+    R_hat = r_rel / R_pos
+
+    def split(v):
+        rad = float(v @ R_hat)
+        perp = float(np.linalg.norm(v - rad * R_hat))
+        return rad, perp
+
+    rad1, perp1 = split(v1)
+    rad2, perp2 = split(v2)
+    print(f"  real split @ t*={t_star} (true R_hat from positions, "
+          f"|r1-r2|={R_pos:.3f}==R_distance):")
+    print(f"    atom1: |v1|={np.linalg.norm(v1):.3f}  "
+          f"radial={rad1:+.3f}  transverse={perp1:.3f}")
+    print(f"    atom2: |v2|={np.linalg.norm(v2):.3f}  "
+          f"radial={rad2:+.3f}  transverse={perp2:.3f}")
+
+
 def seed_neutral_at_reference(hedft, t_star, *, m_eff_amu, droplet_radius):
     """Build a 1-molecule NeutralCheckpoint encoding the reference state at t*.
 
-    Seeds the scored rotation-invariants: R(t*), dR/dt(t*) (radial, along z),
-    and per-atom speeds |v1|,|v2| (leftover placed transverse, along x). See the
-    module docstring for why the full 3D velocity is not recoverable.
+    Seeds the scored rotation-invariants: R(t*) and the per-atom speeds
+    |v1|,|v2| placed *radially* along the constructed I-I axis (z), transverse
+    zero. This is the internal-consistency convention -- the drag law was
+    extracted with v = |v| as the radial velocity, so forward-integrating gamma
+    from |v| tests whether the BAOAB driver reproduces the fitted speed. See the
+    module docstring; the real radial/transverse split is reported separately by
+    :func:`_report_real_radial_split` for the verdict, not used here.
     """
     R = _interp(t_star, hedft.time_ps, hedft.distance_A)
     v1 = _interp(t_star, hedft.time_ps, hedft.v1_magnitude_Aps)
     v2 = _interp(t_star, hedft.time_ps, hedft.v2_magnitude_Aps)
-    h = 0.1
-    dRdt = (
-        _interp(t_star + h, hedft.time_ps, hedft.distance_A)
-        - _interp(t_star - h, hedft.time_ps, hedft.distance_A)
-    ) / (2.0 * h)
-    vz1, vz2 = +dRdt / 2.0, -dRdt / 2.0
-    vperp1 = float(np.sqrt(max(0.0, v1 * v1 - vz1 * vz1)))
-    vperp2 = float(np.sqrt(max(0.0, v2 * v2 - vz2 * vz2)))
-    vz1 += vperp1
-    vz2 -= vperp2
-    vperp1 = 0
-    vperp2 = 0
-    print(f"  reference @ t*={t_star}: R={R:.3f}, dR/dt={dRdt:.3f}, "
-          f"|v1|={v1:.3f} (rad{vz1:.2f},perp{vperp1:.2f}), "
-          f"|v2|={v2:.3f} (rad{vz2:.2f},perp{vperp2:.2f})")
+
+    _report_real_radial_split(hedft, t_star)
+    print(f"  seed @ t*={t_star}: R={R:.3f}, "
+          f"|v1|={v1:.3f} (radial), |v2|={v2:.3f} (radial), transverse=0")
 
     two_N = 2
     x = np.array([0.0, 0.0])
     y = np.array([0.0, 0.0])
     z = np.array([+R / 2.0, -R / 2.0])           # I-I axis = z
-    vx = np.array([+vperp1, -vperp2])            # transverse, COM-minimising signs
+    vx = np.array([0.0, 0.0])                     # no transverse component
     vy = np.array([0.0, 0.0])
-    vz = np.array([vz1, vz2])                     # radial separation rate
+    vz = np.array([+v1, -v2])                     # full speed, outward (radial)
 
     def col(a):
         return a.reshape(two_N, 1)

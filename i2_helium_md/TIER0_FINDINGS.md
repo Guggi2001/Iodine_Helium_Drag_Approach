@@ -186,15 +186,147 @@ blocked** pending that audit (not on a frame re-extraction). The committed 9 Å
 `md_mean_trajectory_N50.csv` was refreshed to the current γ (the prior one
 predated the re-extraction). No same-smoothed regression assertion committed yet.
 
-## Data limitation found (recorded)
+## t\*-seed from real 3D velocities — RESULT (2026-06-08)
 
-The HeDFT CSVs store per-atom **speed magnitudes** + only the **x,z** velocity
-components (no y). The full 3D per-atom velocity is therefore **not recoverable**
-from the reference file, so the t\*-seed reconstructs only the rotation-invariants
-the comparison scores (R, dR/dt, |v1|, |v2|). This is sufficient for the scored
-quantities but means a *fully* faithful 3D seed (and a clean COM-vs-relative
-decomposition of the 9 Å reference) needs richer reference data than the current
-CSVs provide.
+The reference was re-exported with full 3D per-atom velocities **and positions**,
+so the t\*-seed harness (`tier0_tstar_seeded_comparison.py`) was rewritten to read
+real data instead of reconstructing the seed
+(`TASK_tstar_seed_from_3d_velocities.md`). Per the locked decision, the seed
+places each atom's **full speed `|v_i|` radially** (internal-consistency: γ was
+fit with `v = |v2|` as the radial velocity), and the harness now *prints* the
+**real** radial/transverse split (true `R̂` from positions) and cross-checks
+`|r1−r2| == R_distance`.
+
+**Real radial/transverse split at `t*` (true bond axis from positions):**
+
+| case | \|v2\| | radial (v·R̂) | transverse | reading |
+|---|---|---|---|---|
+| 9 Å  | 4.90 | **−0.29** | **4.89** | ~99.6% transverse — atom 2 genuinely **co-translates** |
+| 18 Å | 3.12 | −3.12 | 0.17 | ~99.9% radial — clean |
+
+This is the **well-founded** version of the long-suspected 9 Å co-translation
+(now from the *clean* atom 2 and *real positions*, not the discarded artifact
+atom 1 the withdrawn "frame" story rested on). The cross-check
+`|r1−r2| == R_distance` holds exactly for both cases.
+
+**Same-smoothed residual — unchanged, and here is why.** With the real-data
+`|v|`-radial seed, the 9 Å t\*-seeded same-smoothed |v2| residual is **0.39 Å/ps**
+— essentially the prior **0.40**, *not* the 18 Å-class ~0.09. The reason is a
+correction to the `TASK` premise: the **committed** harness *already* seeded
+radially (the old code did `vz1 += vperp1; vperp1 = 0`, i.e. the "control" was
+already in effect; only the docstring mislabeled it as "leftover transverse"). So
+there was no live transverse-dump artifact left to remove, and removing it does
+**not** collapse the residual.
+
+| case | mode | raw \|v2\| | smoothed \|v2\| |
+|---|---|---|---|
+| 9 Å  | from-onset | 1.108 | 0.742 |
+| 9 Å  | t\*-seeded  | 0.860 | **0.390** |
+| 18 Å | from-onset | 0.165 | 0.105 |
+| 18 Å | t\*-seeded  | 0.158 | **0.094** |
+
+**Verdict.** The 0.39 residual is **real**, and the real-split diagnostic now
+*explains* it: 9 Å atom 2 carries ~4.9 Å/ps of genuine non-radial
+(co-translational) motion at `t*`, which a central-force MD (Coulomb + radial
+droplet + radial drag) **structurally cannot reproduce** regardless of γ. It is a
+**different-regime** finding — **not** a harness artifact (the artifact was already
+gone), **not** a drag-form error, and **not** the withdrawn frame story. The
+implementation is a faithful cleanup (real `|v|` radial seed, finite-difference
+retired, real-split diagnostic + provenance cross-check added); the verdict it
+yields differs from the `TASK`'s hoped-for "drops to 18 Å-class."
+
+**Tier 1 is therefore NOT auto-unblocked on this basis.** The optimistic path
+("artifact removed → residual gone → Tier 0 clean pass → Tier 1 unblocks") does
+not hold. The open decision is whether to record 9 Å as a documented
+co-translation / different-regime case and proceed, or pursue the co-translation
+further; the doubled-`a` extraction audit (2026-06-05) is confirmed **off this
+critical path** (it is not the cause of the residual).
+
+**Test fallout repaired.** The loader's new required columns
+(`V{1,2}_y`, positions) broke synthetic-CSV / direct-construction tests in
+`test_hedft_loader.py`, `test_compare_neutral_to_hedft.py`,
+`test_compare_trajectories.py`; all updated to the 16-column format. Full suite
+green (581 passed).
+
+## The 9 Å reference is non-radial — FIRST-CLASS PHYSICAL FINDING (2026-06-08)
+
+Re-studying the *authentic* 3D data (the earlier 2-D visualization had compacted
+it and hidden this) establishes the 9 Å reference's real structure, which must be
+flagged for what it is rather than smoothed over:
+
+- **A large, sustained transverse drift.** Atom 2 (the clean extraction atom)
+  carries a y-velocity of order **~4 Å/ps across the whole window**, not just at
+  `t*`. The ~99.6%-transverse split at `t*` (above) is one phase of this, not a
+  boundary peculiarity.
+- **A radial↔transverse oscillation.** A y-velocity peak **follows** each radial
+  (z) peak, and this repeats **~twice** across the window — a coupled exchange of
+  motion between the radial (explosion) and transverse (drift) directions, almost
+  certainly the bubble/droplet coupling carrying the ion laterally as it
+  separates.
+
+**What this means for the 9 Å extraction — stated plainly.** The extraction takes
+the *speed magnitude* `|v2|` (which oscillates as energy moves between radial and
+transverse), fits a smooth γ to it, and the MD projects that law **radially**.
+This is a **defined modelling convention, not a measurement of a purely-radial
+drag law**: it asserts "the drag depends on total speed, applied along the radial
+direction the MD evolves." It is defensible, but it is a *choice*, and the 9 Å
+drag law must be labelled as such — `|v|`-based-projected-radially, applied to a
+reference that is genuinely non-radial. It is **not** the clean radial-explosion
+phenomenon 18 Å represents.
+
+**The residual is a model-dimensionality statement, not a drag error.** The
+surviving 0.39 Å/ps is the central-force MD being structurally unable to carry the
+real transverse co-translation — the cost of the missing dimension, recorded and
+moved past, not a defect to patch by distorting γ.
+
+## Extraction method shift (A → B) and Tier-0 repurposing (2026-06-08)
+
+A second consequence of the non-radial reality and the hand-tuning observation
+(small parameter changes producing near-perfect in-window agreement) is a change
+in *how* the drag law is fit and *what* Tier 0 validates:
+
+- **Method shift A → B.** Adopt **trajectory-matching calibration** as the
+  extraction method (`METHOD_B_trajectory_matching_extraction.md`): fit `{a,b}` by
+  minimizing the forward-integrated in-window trajectory RMSE against the
+  same-smoothed reference, rather than the Method-A direct `F_drag`-vs-`v`
+  regression. This formalizes the hand-tuning (removing its "by hand" unrigour)
+  and optimizes the observable that matters.
+- **Tier 0's consistency-check role is retired (correctly).** Under B the
+  trajectory match *is* the fit objective, so re-running "does forward-integration
+  match?" reads back the objective — circular. That framing is obsolete.
+- **Tier 0 is repurposed, not obsolete: from consistency to held-out
+  generalization.** The infrastructure (the `window=` parameter, the harnesses,
+  the gate machinery) survives; the *question* changes to "does the B-fit
+  generalize beyond the data it was fit to?" — via a held-out window, the
+  cross-case shared-form check (the real transport-physics signal), and the
+  downstream observables (VMI, Tier 3). This held-out role is **more** necessary
+  under B than the consistency check was under A, because B is more prone to
+  overfitting.
+- **Mandatory guard for 9 Å.** Trajectory-matching a *radial-projected* MD onto
+  the *non-radial* 9 Å reference risks the drag coefficients **absorbing the
+  transverse discrepancy** — a dimensionality fudge that fits perfectly and
+  generalizes badly. Held-out validation (held-out case / VMI) is **non-optional**
+  for 9 Å specifically; 18 Å (genuinely radial) can be trajectory-matched safely.
+  See `METHOD_B_trajectory_matching_extraction.md` §5.
+
+**Status of `EXTRACTION_FRAME_FIX_milestone.md`:** further demoted. The 9 Å
+non-radial reality is now handled by the explicit radial-projection convention
+flag plus held-out validation, not a relative-velocity re-extraction. The
+He-field relative-velocity route is a contingency only if held-out validation
+shows the radial-projection convention cannot be made to generalize.
+
+## Data limitation found (recorded) — RESOLVED 2026-06-08
+
+*(Original limitation, kept for the audit trail.)* The HeDFT CSVs stored per-atom
+**speed magnitudes** + only the **x,z** velocity components (no y). The full 3D
+per-atom velocity was therefore **not recoverable** from the reference file, so
+the t\*-seed reconstructed only the rotation-invariants the comparison scores
+(R, dR/dt, |v1|, |v2|).
+
+**Resolved:** the reference was re-exported with the **full 3D per-atom velocity
+*and* per-atom positions** (`V{1,2}_{x,y,z}`, `X/Y/Z{1,2}`); `hedft_loader.py`
+reads them. This retired the reconstruction and enabled the real radial/transverse
+diagnostic below — see "t\*-seed from real 3D velocities".
 
 ## Decisions taken (2026-06-04)
 

@@ -117,15 +117,24 @@ drag law forward over `[t*, t_end]`.
   (same seeding pattern as the Slice-4 smoke harness) and reuses
   `run_ion_propagation`, so **no drag physics is re-implemented**. The ion clock
   is then shifted by `+t*` to align with the reference.
-- **Data limitation (recorded).** The HeDFT CSVs store per-atom *speed
-  magnitudes* + only the **x,z** velocity components (no y), so the full 3D
-  per-atom velocity is **not recoverable**. The seed therefore reconstructs the
-  rotation-invariants the comparison actually scores: `R(t*)`, `dR/dt(t*)`
-  (radial, split equally between the equal-mass atoms), and `|v1|, |v2|`
-  (leftover placed transverse). `dR/dt` uses a central difference because the raw
-  `R(t)` carries bubble-mode oscillations (the modes CEEMDAN removes before
-  extraction); its exact value barely matters because the transverse speed
-  dominates `|v|`.
+- **Seed convention — `|v|` placed radially (internal-consistency).** The
+  reference CSVs now carry the **full 3D per-atom velocity *and* per-atom
+  positions** (`V{1,2}_{x,y,z}`, `X/Y/Z{1,2}`), so the true I–I axis and the real
+  radial/transverse split are recoverable. The seed nonetheless places each
+  atom's *full speed* `|v_i|` along the constructed I–I axis (transverse zero),
+  because the drag law was extracted with the scalar speed `v = |v2|` as the
+  radial velocity — forward-integrating γ from `|v|` is the honest Tier-0
+  internal-consistency check (does the BAOAB driver reproduce the speed γ was fit
+  to?). This **retires the earlier `dR/dt`-reconstruction** (central difference on
+  raw `R(t)` for the radial rate, leftover speed dumped into a fictitious
+  transverse component); the finite difference is gone.
+- **Real-split diagnostic + provenance cross-check.** `_report_real_radial_split`
+  builds the true bond axis `R̂ = (r1−r2)/|r1−r2|` from the position columns at
+  `t*` and **prints** each atom's `v·R̂` (radial) vs the transverse remainder —
+  this *reports*, it does not feed the seed. It also asserts
+  `|r1−r2| == R_distance` at `t*`. Result: **9 Å atom 2 is ~99.6% transverse**
+  (radial −0.29, |v2|=4.90 — it genuinely co-translates); **18 Å atom 2 is
+  ~99.9% radial** (radial −3.12).
 - Reads the droplet radius from a from-onset run of the same case (so the spatial
   gate matches the real pipeline).
 
@@ -136,8 +145,13 @@ drag law forward over `[t*, t_end]`.
 (what the real simulation does). t\*-seeded = the diagnostic that separates
 "transient error" from "form error". Comparing the two was decisive: at 9 Å the
 t\*-seed cut the distance RMSE from 9.85 → 2.45 Å (so the transient is a large
-contributor) while the velocity over-damping persisted (a separate,
-extraction-frame effect).
+contributor) while a velocity residual persisted. With the real 3D + position
+data, that residual is now diagnosed by the real-split print above: **9 Å atom 2
+is ~99.6% transverse at `t*` — it genuinely co-translates**, which a central-force
+MD (Coulomb + radial droplet + radial drag) structurally cannot reproduce. The
+residual is therefore a *different-regime* signal, **not** a harness artifact and
+**not** a drag-law error (see `TIER0_FINDINGS.md` → "t\*-seed from real 3D
+velocities").
 
 ---
 

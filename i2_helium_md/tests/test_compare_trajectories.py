@@ -111,7 +111,10 @@ def _make_hedft(
         v2_z_Aps=z,
         v1_x_Aps=z,
         v2_x_Aps=z,
+        v1_y_Aps=z,
+        v2_y_Aps=z,
         distance_A=z if distance is None else np.asarray(distance, float),
+        x1_A=z, x2_A=z, y1_A=z, y2_A=z, z1_A=z, z2_A=z,
         droplet_radius_A=9.0,
         source_path=Path("synthetic"),
     )
