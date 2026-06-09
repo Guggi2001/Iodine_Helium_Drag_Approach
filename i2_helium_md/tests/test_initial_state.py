@@ -291,3 +291,39 @@ class TestEPotIncludesPartner:
             f"E_pot at t=0 for R0=9 A is too small ({E_pot_total:.4f} eV); "
             "partner Morse term may be missing."
         )
+
+
+# ===========================================================================
+# single_initial_position flag EFFECT (HeDFT centre-start)
+# ===========================================================================
+class TestSingleInitialPosition:
+    """The flag pins every molecule centre to the droplet centre (r0=0),
+    porting MATLAB vmi_sim_3d_neutral_propa_HeDFT_mimic.m:209-211. These
+    tests assert the *effect* (test_foundations.py asserts the preset value).
+    """
+
+    def test_flag_true_zeros_r0_and_centres_molecules(self):
+        # single_pulse_N2000 sets single_initial_position=True.
+        cfg = single_pulse_N2000(num_molecules=20, seed=0)
+        assert cfg.single_initial_position is True
+        ckpt = build_initial_state(cfg, num_steps=2,
+                                   rng=np.random.default_rng(0))
+        # r0 is pinned to the droplet centre for every molecule.
+        np.testing.assert_array_equal(ckpt.r0, np.zeros_like(ckpt.r0))
+        # Each molecule's centre = midpoint of its two atoms = origin.
+        N = ckpt.num_molecules
+        centre_x = 0.5 * (ckpt.positions_x[:N, 0] + ckpt.positions_x[N:, 0])
+        centre_y = 0.5 * (ckpt.positions_y[:N, 0] + ckpt.positions_y[N:, 0])
+        centre_z = 0.5 * (ckpt.positions_z[:N, 0] + ckpt.positions_z[N:, 0])
+        np.testing.assert_allclose(centre_x, 0.0, atol=1e-12)
+        np.testing.assert_allclose(centre_y, 0.0, atol=1e-12)
+        np.testing.assert_allclose(centre_z, 0.0, atol=1e-12)
+
+    def test_flag_false_leaves_r0_scattered(self):
+        from dataclasses import replace
+        cfg = single_pulse_N2000(num_molecules=20, seed=0)
+        cfg = replace(cfg, single_initial_position=False)
+        ckpt = build_initial_state(cfg, num_steps=2,
+                                   rng=np.random.default_rng(0))
+        # Without the flag, molecules keep their Boltzmann-sampled radii.
+        assert np.any(ckpt.r0 != 0.0)

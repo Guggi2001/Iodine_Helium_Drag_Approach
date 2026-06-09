@@ -83,6 +83,13 @@ def build_initial_state(
         droplet_radii=droplet_radii_per_molecule,
         rng=rng,
     )
+    # MATLAB vmi_sim_3d_neutral_propa_HeDFT_mimic.m:209-211 -- the
+    # HeDFT-comparison inputs pin every molecule centre to the droplet centre.
+    # We still SAMPLE r0 above (consuming the RNG identically) and zero it
+    # afterward, so every subsequent draw (orientations, velocities) is
+    # byte-identical -- only the r0 value changes.
+    if cfg.single_initial_position:
+        r0 = np.zeros_like(r0)
 
     # 4. Orientation angles + bond length.
     orient = sample_orientations(
