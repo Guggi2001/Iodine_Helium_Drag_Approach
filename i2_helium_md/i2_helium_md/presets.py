@@ -236,6 +236,7 @@ def single_pulse_N2000_drag(**overrides) -> SimConfig:
         mass_scenario="fixed",
         m_eff_amu=_DRAG_M_EFF_AMU,
         mass_initial_amu=_DRAG_M_EFF_AMU,
+        binding_energy_I_ion_eV = 0.1,
     )
     return replace(cfg, **overrides)
 

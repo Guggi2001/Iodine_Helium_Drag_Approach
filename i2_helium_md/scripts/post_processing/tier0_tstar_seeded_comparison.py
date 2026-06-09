@@ -51,6 +51,11 @@ CASE = "9A"  # "9A" or "18A"
 # real pipeline assigns to this droplet size (so the spatial gate matches).
 ONSET_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
 SHOW_FIGURE = True
+# Complementary diagnostic: time evolution of the three applied forces
+# (drag, droplet-confining, Coulomb) projected onto the radial axis, for the
+# clean extraction atom (atom 2). Reconstructed post-hoc from the stored
+# trajectory -- the checkpoint does not store forces.
+SHOW_FORCE_FIGURE = True
 
 
 # =============================================================================
@@ -66,18 +71,21 @@ import numpy as np  # noqa: E402
 
 import tier0_drag_comparison as T  # noqa: E402
 from i2_helium_md.physics.constants import U  # noqa: E402
+from i2_helium_md.physics.drag import drag_force  # noqa: E402
+from i2_helium_md.physics.interactions import partner_interaction_ion  # noqa: E402
+from i2_helium_md.physics.leapfrog import _droplet_acceleration  # noqa: E402
 from i2_helium_md.presets import (  # noqa: E402
     single_pulse_N2000_drag,
     single_pulse_N2000_18Angst_drag,
 )
 from i2_helium_md.simulation.checkpoint import NeutralCheckpoint  # noqa: E402
-from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
+from i2_helium_md.simulation.ion import run_ion_propagation, _drag_gate_steepness  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from i2_helium_md.postprocess.hedft_loader import load_hedft_trajectory  # noqa: E402
 
 
 _BUILDERS = {"9A": single_pulse_N2000_drag, "18A": single_pulse_N2000_18Angst_drag}
-_POST_WINDOW_MARGIN_PS = 4.0
+_POST_WINDOW_MARGIN_PS = 25.0
 
 
 def _interp(t, ref_t, ref_y):
@@ -172,7 +180,16 @@ def seed_neutral_at_reference(hedft, t_star, *, m_eff_amu, droplet_radius):
     )
 
 
-def run_case(case: str, onset_run_dir: Path):
+def run_case(case: str, onset_run_dir: Path, *, overrides=None):
+    """Seed the ion at t* and forward-integrate the drag law over [t*, t_end].
+
+    ``overrides`` (optional ``dict``) is forwarded to the preset builder as
+    extra ``SimConfig`` field overrides -- e.g.
+    ``{"binding_energy_I_ion_eV": 0.6, "potential_steepness": 8.0}`` to study the
+    confining-potential influence (see ``tier0_confining_sweep.py``). The seed
+    itself is parameter-independent (it encodes only the reference state and the
+    fixed droplet radius), so every override starts from the same t* state.
+    """
     builder = _BUILDERS[case]
     ref = PROJECT_ROOT / "data" / "reference" / f"{case}_All_Data.csv"
     coeff = PROJECT_ROOT / "data" / "reference" / "drag" / case / "linear_and_cubic"
@@ -191,7 +208,7 @@ def run_case(case: str, onset_run_dir: Path):
 
     duration = (t_end - t_star) + _POST_WINDOW_MARGIN_PS
     cfg = builder(num_molecules=1, ion_simulation_time=duration,
-                  dt_ion=0.01, seed=1)
+                  dt_ion=0.01, seed=1, **(overrides or {}))
     cfg.validate()
     ion = run_ion_propagation(cfg, neutral, verbose=False)
 
@@ -200,14 +217,125 @@ def run_case(case: str, onset_run_dir: Path):
 
     metrics = T.score(ion_shifted, hedft, (t_star, t_end))
     T.print_summary(metrics, label=f"{case} t*-seeded")
-    return ion_shifted, hedft, (t_star, t_end), droplet_radius, metrics
+    return ion_shifted, hedft, (t_star, t_end), droplet_radius, cfg, metrics
+
+
+def _reconstruct_radial_forces(ion, cfg, *, atom_index):
+    """Reconstruct the three radial-projected forces for one atom over time.
+
+    The ``IonCheckpoint`` stores no forces, but they are deterministic functions
+    of the stored state + ``cfg``, so they are replayed here with the *same*
+    physics functions the ion driver uses (CLAUDE.md rule 1 -- no duplicate
+    physics). Each force is projected onto the radial unit vector ``r_hat``;
+    sign convention: outward ``+``, inward ``-``.
+
+    Returns ``(drag_radial, coulomb_radial, droplet_radial)`` arrays of shape
+    ``(num_stored_steps,)`` in amu*A/ps^2, for the requested ``atom_index`` in
+    the 2N layout.
+    """
+    px, py, pz = ion.positions_x, ion.positions_y, ion.positions_z
+    vx, vy, vz = ion.velocities_x, ion.velocities_y, ion.velocities_z
+    mass_kg = ion.mass_kg                       # (2N,)
+    mass_amu = mass_kg / U                       # (2N,)
+    droplet_radii = ion.droplet_radii_angstrom   # (2N,)
+    two_N = px.shape[0]
+    charge = np.ones(two_N, dtype=float)
+    steepness = _drag_gate_steepness(cfg)
+
+    n_steps = px.shape[1]
+    drag_r = np.empty(n_steps)
+    coul_r = np.empty(n_steps)
+    drop_r = np.empty(n_steps)
+
+    for j in range(n_steps):
+        x, y, z = px[:, j], py[:, j], pz[:, j]
+        ux, uy, uz = vx[:, j], vy[:, j], vz[:, j]
+
+        r = np.sqrt(x**2 + y**2 + z**2)
+        r_safe = np.where(r > 0, r, 1.0)
+        rhx, rhy, rhz = x / r_safe, y / r_safe, z / r_safe
+
+        depth = r - droplet_radii
+        speed = np.sqrt(ux**2 + uy**2 + uz**2)
+        s_safe = np.where(speed > 0, speed, 1.0)
+        vhx, vhy, vhz = ux / s_safe, uy / s_safe, uz / s_safe
+
+        # Drag: native force [amu*A/ps^2], magnitude form, direction -v_hat.
+        f_drag = drag_force(speed, depth, cfg.drag_coefficients, steepness)
+        fdx, fdy, fdz = -f_drag * vhx, -f_drag * vhy, -f_drag * vhz
+        drag_radial = fdx * rhx + fdy * rhy + fdz * rhz
+
+        # Droplet confining: accel [A/ps^2] -> force via * mass_amu.
+        adx, ady, adz = _droplet_acceleration(
+            x, y, z, mass_kg, droplet_radii, cfg, use_ion_binding=True,
+        )
+        drop_radial = (adx * rhx + ady * rhy + adz * rhz) * mass_amu
+
+        # Coulomb partner: accel [A/ps^2] -> force via * mass_amu.
+        acx, acy, acz, _ = partner_interaction_ion(
+            x, y, z, mass_kg, charge, cfg,
+        )
+        coul_radial = (acx * rhx + acy * rhy + acz * rhz) * mass_amu
+
+        drag_r[j] = drag_radial[atom_index]
+        coul_r[j] = coul_radial[atom_index]
+        drop_r[j] = drop_radial[atom_index]
+
+    return drag_r, coul_r, drop_r
+
+
+def build_force_figure(ion, cfg, window, *, atom_index=1):
+    """Plot the radial-projected force evolution for the clean atom (atom 2).
+
+    Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
+    forces balance along the radial axis* over time -- drag, Coulomb, and the
+    droplet-confining force, each projected onto ``r_hat`` (outward ``+``). The
+    drag trace under-resolves the true dissipation for the non-radial 9 A case,
+    the visual counterpart of the model-dimensionality residual.
+
+    ``atom_index`` defaults to 1 = atom 2 (single-molecule 2N layout), the clean
+    extraction atom the drag law was fit to.
+    """
+    import matplotlib.pyplot as plt
+
+    drag_r, coul_r, drop_r = _reconstruct_radial_forces(
+        ion, cfg, atom_index=atom_index,
+    )
+    t = ion.time_ps
+    t_start, t_end = window
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.axhline(0.0, color="0.6", lw=0.8)
+    ax.plot(t, coul_r, color="tab:red", label="Coulomb")
+    ax.plot(t, drop_r, color="tab:blue", label="droplet (confining)")
+    ax.plot(t, drag_r, color="tab:green", label="drag")
+    ax.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+               label="scored window")
+    ax.set_xlabel("t / ps")
+    ax.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    ax.set_title(
+        f"{CASE} t*-seeded -- radial-projected forces, atom {atom_index + 1}"
+    )
+    ax.legend(frameon=False, ncol=2)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.tight_layout()
+    return fig
 
 
 def main() -> int:
-    ion, hedft, window, drop_radius, _ = run_case(CASE, ONSET_RUN_DIR)
+    ion, hedft, window, drop_radius, cfg, _ = run_case(CASE, ONSET_RUN_DIR)
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
         T.build_figure(ion, hedft, window, drop_radius)
+        plt.show()
+    if SHOW_FORCE_FIGURE:
+        import matplotlib.pyplot as plt
+        # atom 2 (index 1) is the clean extraction atom; atom 1 (index 0) is its
+        # partner. Both are seeded outward-radial, so the same sign conventions
+        # apply (Coulomb +, droplet -, drag opposing outward motion).
+        build_force_figure(ion, cfg, window, atom_index=1)
+        build_force_figure(ion, cfg, window, atom_index=0)
         plt.show()
     return 0
 

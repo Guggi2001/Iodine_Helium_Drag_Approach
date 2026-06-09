@@ -328,7 +328,7 @@ def build_figure(
         ax_d.legend(frameon=False)
 
     ax_v.plot(t_md, v1_md, color="tab:blue", lw=1.2, label="MD mean |v| I1")
-    ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, label="MD mean |v| I2")
+    ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, ls = '--', label="MD mean |v| I2")
     ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1.2,
               ls="-", label="HeDFT |v1|")
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1.2,
@@ -345,7 +345,7 @@ def build_figure(
     # layout is handled by constrained_layout=True in the subplots calls;
     # calling tight_layout() after constrained_layout can trigger a Matplotlib
     # warning about switching layout engines, so avoid it.
-    return fig_top, fig_bottom
+    return fig_bottom, fig_top
 
 
 def main() -> int:
