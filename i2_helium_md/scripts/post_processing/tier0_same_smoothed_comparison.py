@@ -162,7 +162,7 @@ def run_case(case: str, run_dir: Path):
     m_onset = score_mode(ion_onset, hedft, cleaned, window)
 
     # t*-seeded mode -- the clean-form diagnostic (current gamma inline).
-    ion_seeded, _, _, _ = TS.run_case(case, run_dir)
+    ion_seeded, _, _, _, _ = TS.run_case(case, run_dir)
     m_seeded = score_mode(ion_seeded, hedft, cleaned, window)
 
     print()

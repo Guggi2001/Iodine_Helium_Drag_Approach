@@ -221,7 +221,7 @@ def score(
     v1 = compare_velocity_magnitude(ion, hedft, atom="I1", window=window)
     v2 = compare_velocity_magnitude(ion, hedft, atom="I2", window=window)
 
-    mean_velocity_rmse = 0.5 * (v2.rmse + v2.rmse)
+    mean_velocity_rmse = 0.5 * (v1.rmse + v2.rmse)
     velocity_split = abs(v1.rmse - v2.rmse)
     return {
         "window": window,
@@ -259,20 +259,60 @@ def build_figure(
     ion: IonCheckpoint,
     hedft: HedftTrajectory,
     window: tuple[float, float],
+    droplet_radius = None,
 ):
-    """Full-trajectory distance + velocity panels with the scored window shaded.
+    """Create two figures:
 
-    The threshold reads only the windowed RMSE; the full trajectory (pre-t*
-    transient + post-window divergence) is shown but not scored (spec §3 D2).
+    - top figure: mean z positions (ax_t)
+    - bottom figure: distance + velocity panels (ax_d, ax_v) with the
+      scored window shaded.
+
+    Returns a tuple (fig_top, fig_bottom). The caller (main) shows all
+    open figures with ``plt.show()``.
     """
     import matplotlib.pyplot as plt
 
     t_md, dist_md, v1_md, v2_md = ensemble_mean_series(ion)
     t_start, t_end = window
 
-    fig, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 7.0), sharex=True)
+    n = ion.num_molecules
+    x1 = ion.positions_x[:n]
+    y1 = ion.positions_y[:n]
+    z1 = ion.positions_z[:n]
+
+    x2 = ion.positions_x[n:]
+    y2 = ion.positions_y[n:]
+    z2 = ion.positions_z[n:]
+    r1_mean = np.mean(np.sqrt(x1*x1 + y1*y1 + z1*z1), axis=0)
+    r2_mean = np.mean(np.sqrt(x2*x2 + y2*y2 + z2*z2), axis=0)
+
+    # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
+    fig_top, axes_top = plt.subplots(
+        3, 1, figsize=(8.0, 6.0), sharex=True, constrained_layout=True
+    )
+    ax_x, ax_y, ax_z = axes_top
+
+    ax_x.plot(t_md, np.mean(x1, axis=0), color="tab:red", lw=1.5, label="$x_1$ mean")
+    ax_x.plot(t_md, np.mean(x2, axis=0), color="tab:green", lw=1.5, label="$x_2$ mean")
+    ax_x.set_ylabel(r"x / $\mathrm{\AA}$")
+    ax_x.legend(frameon=False)
+
+    ax_y.plot(t_md, np.mean(y1, axis=0), color="tab:red", lw=1.5, label="$y_1$ mean")
+    ax_y.plot(t_md, np.mean(y2, axis=0), color="tab:green", lw=1.5, label="$y_2$ mean")
+    ax_y.set_ylabel(r"y / $\mathrm{\AA}$")
+    ax_y.legend(frameon=False)
+
+    ax_z.plot(t_md, np.mean(z1, axis=0), color="tab:red", lw=1.5, label="$z_1$ mean")
+    ax_z.plot(t_md, np.mean(z2, axis=0), color="tab:green", lw=1.5, label="$z_2$ mean")
+    ax_z.set_ylabel(r"z / $\mathrm{\AA}$")
+    ax_z.legend(frameon=False)
+
+    # Bottom figure: distance and velocity panels (share x-axis)
+    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 5.0), sharex=True, constrained_layout=True)
 
     ax_d.plot(t_md, dist_md, color="tab:blue", lw=1.5, label="MD mean")
+    ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R1 mean")
+    ax_d.plot(t_md, r2_mean, color="tab:green", lw=1.5, label="R2 mean")
     ax_d.plot(hedft.time_ps, hedft.distance_A, color="black", lw=1.5,
               label="HeDFT / TDDFT")
     ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
@@ -281,6 +321,11 @@ def build_figure(
     ax_d.legend(frameon=False)
     ax_d.spines["top"].set_visible(False)
     ax_d.spines["right"].set_visible(False)
+    if droplet_radius is not None:
+        ax_d.hlines(2*droplet_radius, xmin=hedft.time_ps[0], xmax=hedft.time_ps[-1],
+                    color="tab:orange", lw=1.2, ls="--",
+                    label=f"$d_{{\\mathrm{{droplet}}}}$ ={2*droplet_radius:.0f} Å")
+        ax_d.legend(frameon=False)
 
     ax_v.plot(t_md, v1_md, color="tab:blue", lw=1.2, label="MD mean |v| I1")
     ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, label="MD mean |v| I2")
@@ -295,9 +340,12 @@ def build_figure(
     ax_v.spines["top"].set_visible(False)
     ax_v.spines["right"].set_visible(False)
 
-    fig.suptitle(f"Tier-0 drag comparison  (r0={hedft.droplet_radius_A:.0f} A)")
-    fig.tight_layout()
-    return fig
+    title = f"Tier-0 drag comparison  (r0={hedft.droplet_radius_A:.0f} A)"
+    fig_bottom.suptitle(title)
+    # layout is handled by constrained_layout=True in the subplots calls;
+    # calling tight_layout() after constrained_layout can trigger a Matplotlib
+    # warning about switching layout engines, so avoid it.
+    return fig_top, fig_bottom
 
 
 def main() -> int:
@@ -305,6 +353,7 @@ def main() -> int:
     hedft = load_hedft_trajectory(HEDFT_PATH)
     t_start, t_end, meff_amu = read_drag_window(DRAG_COEFF_DIR)
     window = (t_start, t_end)
+    droplet_radius = float(RunDirectory(RUN_DIR).load_ion().droplet_radii_angstrom[0])
 
     print(
         f"Loaded drag ion checkpoint: N={ion.num_molecules}, "
@@ -334,7 +383,7 @@ def main() -> int:
 
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
-        build_figure(ion, hedft, window)
+        build_figure(ion, hedft, window, droplet_radius)
         plt.show()
     return 0
 

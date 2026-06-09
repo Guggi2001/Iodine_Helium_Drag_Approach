@@ -200,14 +200,14 @@ def run_case(case: str, onset_run_dir: Path):
 
     metrics = T.score(ion_shifted, hedft, (t_star, t_end))
     T.print_summary(metrics, label=f"{case} t*-seeded")
-    return ion_shifted, hedft, (t_star, t_end), metrics
+    return ion_shifted, hedft, (t_star, t_end), droplet_radius, metrics
 
 
 def main() -> int:
-    ion, hedft, window, _ = run_case(CASE, ONSET_RUN_DIR)
+    ion, hedft, window, drop_radius, _ = run_case(CASE, ONSET_RUN_DIR)
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
-        T.build_figure(ion, hedft, window)
+        T.build_figure(ion, hedft, window, drop_radius)
         plt.show()
     return 0
 
