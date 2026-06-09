@@ -76,6 +76,11 @@ EXPORT_MEAN_SERIES_PATH = (
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
 
+# Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
+# vs time, with the droplet binding-depth line). Same gating pattern as the
+# positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
+ENERGY_FIGURE = True
+
 
 # =============================================================================
 # IMPORT SETUP
@@ -93,7 +98,9 @@ from i2_helium_md.postprocess.compare_trajectories import (  # noqa: E402
     compare_distance,
     compare_velocity_magnitude,
 )
+from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.simulation.checkpoint import IonCheckpoint  # noqa: E402
+from i2_helium_md.simulation.ion_propagation_step import _E_kin_eV  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
@@ -259,6 +266,7 @@ def build_figure(
     ion: IonCheckpoint,
     hedft: HedftTrajectory,
     window: tuple[float, float],
+    positions_figure: bool,
     droplet_radius = None,
 ):
     """Create two figures:
@@ -270,6 +278,7 @@ def build_figure(
     Returns a tuple (fig_top, fig_bottom). The caller (main) shows all
     open figures with ``plt.show()``.
     """
+    global fig_top
     import matplotlib.pyplot as plt
 
     t_md, dist_md, v1_md, v2_md = ensemble_mean_series(ion)
@@ -286,26 +295,27 @@ def build_figure(
     r1_mean = np.mean(np.sqrt(x1*x1 + y1*y1 + z1*z1), axis=0)
     r2_mean = np.mean(np.sqrt(x2*x2 + y2*y2 + z2*z2), axis=0)
 
-    # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
-    fig_top, axes_top = plt.subplots(
-        3, 1, figsize=(8.0, 6.0), sharex=True, constrained_layout=True
-    )
-    ax_x, ax_y, ax_z = axes_top
+    if positions_figure:
+        # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
+        fig_top, axes_top = plt.subplots(
+            3, 1, figsize=(8.0, 6.0), sharex=True, constrained_layout=True
+        )
+        ax_x, ax_y, ax_z = axes_top
 
-    ax_x.plot(t_md, np.mean(x1, axis=0), color="tab:red", lw=1.5, label="$x_1$ mean")
-    ax_x.plot(t_md, np.mean(x2, axis=0), color="tab:green", lw=1.5, label="$x_2$ mean")
-    ax_x.set_ylabel(r"x / $\mathrm{\AA}$")
-    ax_x.legend(frameon=False)
+        ax_x.plot(t_md, np.mean(x1, axis=0), color="tab:red", lw=1.5, label="$x_1$ mean")
+        ax_x.plot(t_md, np.mean(x2, axis=0), color="tab:green", lw=1.5, label="$x_2$ mean")
+        ax_x.set_ylabel(r"x / $\mathrm{\AA}$")
+        ax_x.legend(frameon=False)
 
-    ax_y.plot(t_md, np.mean(y1, axis=0), color="tab:red", lw=1.5, label="$y_1$ mean")
-    ax_y.plot(t_md, np.mean(y2, axis=0), color="tab:green", lw=1.5, label="$y_2$ mean")
-    ax_y.set_ylabel(r"y / $\mathrm{\AA}$")
-    ax_y.legend(frameon=False)
+        ax_y.plot(t_md, np.mean(y1, axis=0), color="tab:red", lw=1.5, label="$y_1$ mean")
+        ax_y.plot(t_md, np.mean(y2, axis=0), color="tab:green", lw=1.5, label="$y_2$ mean")
+        ax_y.set_ylabel(r"y / $\mathrm{\AA}$")
+        ax_y.legend(frameon=False)
 
-    ax_z.plot(t_md, np.mean(z1, axis=0), color="tab:red", lw=1.5, label="$z_1$ mean")
-    ax_z.plot(t_md, np.mean(z2, axis=0), color="tab:green", lw=1.5, label="$z_2$ mean")
-    ax_z.set_ylabel(r"z / $\mathrm{\AA}$")
-    ax_z.legend(frameon=False)
+        ax_z.plot(t_md, np.mean(z1, axis=0), color="tab:red", lw=1.5, label="$z_1$ mean")
+        ax_z.plot(t_md, np.mean(z2, axis=0), color="tab:green", lw=1.5, label="$z_2$ mean")
+        ax_z.set_ylabel(r"z / $\mathrm{\AA}$")
+        ax_z.legend(frameon=False)
 
     # Bottom figure: distance and velocity panels (share x-axis)
     fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 5.0), sharex=True, constrained_layout=True)
@@ -345,15 +355,75 @@ def build_figure(
     # layout is handled by constrained_layout=True in the subplots calls;
     # calling tight_layout() after constrained_layout can trigger a Matplotlib
     # warning about switching layout engines, so avoid it.
-    return fig_bottom, fig_top
+    if positions_figure:
+        y = fig_bottom, fig_top
+    else:
+        y = fig_bottom
+    return y
+
+
+def plot_energy_analysis(
+    ion: IonCheckpoint,
+    cfg: SimConfig,
+    window: tuple[float, float],
+):
+    """Per-atom mean kinetic energy of both iodine atoms vs time.
+
+    Two ensemble-mean curves -- mean KE over the N atom-1's and over the N
+    atom-2's -- with a horizontal line at the droplet binding depth
+    (``cfg.binding_energy_I_ion_eV``) and the scored window shaded. KE is the
+    translational ``0.5*m*v^2`` via the shared ``_E_kin_eV`` idiom (single
+    source; v in A/ps, result in eV), evaluated with the per-atom, per-step
+    ``mass_history_kg`` so it stays correct if the mass ever evolves (Tier 1);
+    for Tier-0 the mass is the constant ``m_eff``.
+
+    The binding-depth line is the depth of the droplet confining well, not a
+    strict escape threshold (the well has finite range and there is also the
+    Coulomb term) -- labelled accordingly.
+
+    Returns the Matplotlib figure; the caller shows all open figures.
+    """
+    import matplotlib.pyplot as plt
+
+    n = ion.num_molecules
+    ke = _E_kin_eV(
+        ion.mass_history_kg,
+        ion.velocities_x,
+        ion.velocities_y,
+        ion.velocities_z,
+    )
+    ke_i1 = np.mean(ke[:n], axis=0)
+    ke_i2 = np.mean(ke[n:], axis=0)
+    t_md = np.asarray(ion.time_ps, dtype=float)
+    t_start, t_end = window
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.5), constrained_layout=True)
+    ax.plot(t_md, ke_i1, color="tab:blue", lw=1.4, label="MD mean KE I1")
+    ax.plot(t_md, ke_i2, color="tab:cyan", lw=1.4, ls="--",
+            label="MD mean KE I2")
+    ax.axhline(
+        cfg.binding_energy_I_ion_eV, color="tab:orange", lw=1.2, ls=":",
+        label=f"droplet binding depth = {cfg.binding_energy_I_ion_eV:.3g} eV",
+    )
+    ax.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+               label="scored window")
+    ax.set_xlabel("t / ps")
+    ax.set_ylabel(r"$E_\mathrm{kin}$ / eV")
+    ax.legend(frameon=False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.suptitle("Tier-0 per-atom kinetic energy")
+    return fig
 
 
 def main() -> int:
-    ion = RunDirectory(RUN_DIR).load_ion()
+    run = RunDirectory(RUN_DIR)
+    ion = run.load_ion()
+    cfg = run.load_cfg()
     hedft = load_hedft_trajectory(HEDFT_PATH)
     t_start, t_end, meff_amu = read_drag_window(DRAG_COEFF_DIR)
     window = (t_start, t_end)
-    droplet_radius = float(RunDirectory(RUN_DIR).load_ion().droplet_radii_angstrom[0])
+    droplet_radius = float(ion.droplet_radii_angstrom[0])
 
     print(
         f"Loaded drag ion checkpoint: N={ion.num_molecules}, "
@@ -383,7 +453,9 @@ def main() -> int:
 
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
-        build_figure(ion, hedft, window, droplet_radius)
+        build_figure(ion, hedft, window, False, droplet_radius)
+        if ENERGY_FIGURE:
+            plot_energy_analysis(ion, cfg, window)
         plt.show()
     return 0
 

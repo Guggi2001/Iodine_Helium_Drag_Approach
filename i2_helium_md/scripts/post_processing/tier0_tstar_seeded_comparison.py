@@ -51,6 +51,7 @@ CASE = "9A"  # "9A" or "18A"
 # real pipeline assigns to this droplet size (so the spatial gate matches).
 ONSET_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
 SHOW_FIGURE = True
+SHOW_POS_FIGURE = False
 # Complementary diagnostic: time evolution of the three applied forces
 # (drag, droplet-confining, Coulomb) projected onto the radial axis, for the
 # clean extraction atom (atom 2). Reconstructed post-hoc from the stored
@@ -295,6 +296,9 @@ def build_force_figure(ion, cfg, window, *, atom_index=1):
 
     ``atom_index`` defaults to 1 = atom 2 (single-molecule 2N layout), the clean
     extraction atom the drag law was fit to.
+    
+    Returns a 2x1 subplot figure with individual forces on top and net force on
+    the bottom.
     """
     import matplotlib.pyplot as plt
 
@@ -303,22 +307,37 @@ def build_force_figure(ion, cfg, window, *, atom_index=1):
     )
     t = ion.time_ps
     t_start, t_end = window
+    net_force = coul_r + drop_r + drag_r
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    ax.axhline(0.0, color="0.6", lw=0.8)
-    ax.plot(t, coul_r, color="tab:red", label="Coulomb")
-    ax.plot(t, drop_r, color="tab:blue", label="droplet (confining)")
-    ax.plot(t, drag_r, color="tab:green", label="drag")
-    ax.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-               label="scored window")
-    ax.set_xlabel("t / ps")
-    ax.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
-    ax.set_title(
+    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8, 7))
+
+    # Top subplot: individual forces
+    ax_top.axhline(0.0, color="0.6", lw=0.8)
+    ax_top.plot(t, coul_r, color="tab:red", label="Coulomb")
+    ax_top.plot(t, drop_r, color="tab:blue", label="droplet (confining)")
+    ax_top.plot(t, drag_r, color="tab:green", label="drag")
+    ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+                   label="scored window")
+    ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    ax_top.set_title(
         f"{CASE} t*-seeded -- radial-projected forces, atom {atom_index + 1}"
     )
-    ax.legend(frameon=False, ncol=2)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    ax_top.legend(frameon=False, ncol=2)
+    ax_top.spines["top"].set_visible(False)
+    ax_top.spines["right"].set_visible(False)
+
+    # Bottom subplot: net force
+    ax_bottom.axhline(0.0, color="0.6", lw=0.8)
+    ax_bottom.plot(t, net_force, color="tab:purple", label="net force", lw=2)
+    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+                      label="scored window")
+    ax_bottom.set_xlabel("t / ps")
+    ax_bottom.set_ylabel(r"$F_{\mathrm{net}} \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    ax_bottom.set_title("net force")
+    ax_bottom.legend(frameon=False, ncol=2)
+    ax_bottom.spines["top"].set_visible(False)
+    ax_bottom.spines["right"].set_visible(False)
+
     fig.tight_layout()
     return fig
 
@@ -327,7 +346,7 @@ def main() -> int:
     ion, hedft, window, drop_radius, cfg, _ = run_case(CASE, ONSET_RUN_DIR)
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
-        T.build_figure(ion, hedft, window, drop_radius)
+        T.build_figure(ion, hedft, window, SHOW_POS_FIGURE, drop_radius)
         plt.show()
     if SHOW_FORCE_FIGURE:
         import matplotlib.pyplot as plt
