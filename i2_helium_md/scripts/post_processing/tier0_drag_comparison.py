@@ -89,8 +89,9 @@ SHOW_FIGURE = True
 # Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
 # vs time, with the droplet binding-depth line). Same gating pattern as the
 # positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
-ENERGY_FIGURE = True
+ENERGY_FIGURE = False
 
+FORCE_FIGURE = True
 
 # =============================================================================
 # IMPORT SETUP
@@ -99,6 +100,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import numpy as np  # noqa: E402
+
+import tier0_tstar_seeded_comparison as TSS
 
 from i2_helium_md.postprocess import (  # noqa: E402
     HedftTrajectory,
@@ -476,6 +479,10 @@ def main() -> int:
         if ENERGY_FIGURE:
             plot_energy_analysis(ion, cfg, window)
         plt.show()
+        if FORCE_FIGURE:
+            TSS.build_force_figure(ion, cfg, window, atom_index=1)
+            TSS.build_force_figure(ion, cfg, window, atom_index=0)
+            plt.show()
     return 0
 
 
