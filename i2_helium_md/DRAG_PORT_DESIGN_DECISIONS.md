@@ -1658,7 +1658,58 @@ freely-mixable enums. **Enforced as a config-load consistency guard:**
   downgrades the refusal to a loud warning, for deliberate exploratory
   runs only.
 
-### 6.6 Effective mass is a varying quantity collapsed to a constant
+### 6.5.1 The drag / droplet-binding consistency constraint (2026-06-09)
+
+A second coupled pair, discovered when the validated drag was first run to
+ejection (`TIER0_FINDINGS.md` → "Correct drag traps the ions"). The MD droplet
+potential is a **static** well of depth `binding_energy_I_ion_eV` (the computed
+solvation energy, 0.308 eV). With an in-window-correct drag, the ion arrives at
+the surface with TDDFT-like *low* kinetic energy — **below** the static barrier —
+and is **trapped**: $R(t)$ reverses, no ejection. Yet the TD-HeDFT ions *do*
+escape with $<0.308$ eV, because real ejection is **dynamical** (the He
+reorganizes; the static barrier is bypassed). The old hard-sphere model escaped
+only by over-accelerating the ions past the static barrier; the correct drag
+removes that excess and exposes the incompatibility.
+
+This is **not** a drag error and **not** a re-measurement of the solvation energy.
+It means the static potential cannot represent dynamical ejection, and the
+binding depth must become an **effective, calibrated** parameter — a pragmatic
+stand-in for the absent dynamical barrier:
+
+- **Calibration target:** the **VMI final-velocity distribution** (the held-out
+  observable), with the drag and effective binding **jointly fit** over the full
+  post-dynamic-start window `[2.67, 14 ps]` (`cleaned_data_long.csv`); the TDDFT
+  escape energy is a sanity cross-check (the effective barrier sits near the
+  actual sub-0.308 eV KE the ions escape with). The full-window choice
+  (Method B §3.5) targets final velocity directly — but forfeits the
+  held-out-window validation axis, so **cross-case and VMI become the mandatory
+  held-out checks**, doubly so for 9 Å (whose post-6ps non-radial region the full
+  window deliberately re-includes, an accepted risk). **Not** a hand-picked
+  "just-escapes" threshold; **not** the static 0.308 eV (the upper-bound starting
+  point).
+- **Do not reduce the drag to force escape** — that detunes the validated
+  quantity to mask the binding treatment (the Method-B trap, concrete).
+
+`drag_coefficients` and the effective `binding_energy_I_ion_eV` are thus a
+**coupled pair**, enforced like the mass↔coefficient pair:
+
+- The effective binding is **stamped alongside the drag coefficients** in
+  `fit_parameters.json` (e.g. `effective_binding_energy_I_ion_eV` + calibration
+  provenance), recording the binding the drag was jointly validated against VMI.
+- The §6.5 config-load guard **extends to refuse a drag↔binding pairing not
+  jointly validated** — swapping drag coefficients requires re-checking the
+  binding-permits-escape, a detectable inconsistency rather than a silent one.
+- Escape hatch parallel to mass: a deliberate-exploration override (loud warning,
+  default off) for running an unvalidated pairing.
+
+**Deferred principled alternative:** a *dynamical* barrier (a surface-weakened or
+velocity-dependent depth representing the He getting out of the way) is the
+physically honest long-term fix. The effective-static depth is the tractable
+first step; whether it suffices, or the velocity-dependence of escape across the
+ensemble demands the dynamical form, is itself decided by the VMI distribution
+(the held-out observable, again the arbiter).
+
+
 
 TDDFT shell counts (per iodine, 9 Å case): ~21 He pre-explosion, ~19 at
 10 ps, ~14 at 14 ps — a monotone *decline* of ~⅓ across the trajectory.

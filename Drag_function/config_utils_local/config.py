@@ -1,6 +1,6 @@
 import os
 
-home = False
+home = True
 if home:
     BASE_PATH = r"C:\Users\paulg\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_DFT"
 else:

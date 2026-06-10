@@ -45,6 +45,11 @@ MD_DISTANCE_STRIDE = 50
 # so cap the overlay near 30 individual velocity traces.
 MD_VELOCITY_MAX_TRACES = 30
 
+# Optional CSV export of mean velocity
+EXPORT_MEAN_VELOCITY_CSV = False
+EXPORT_TIME_WINDOW_PS = (3.67, 20.0)  # (start_ps, end_ps)
+EXPORT_CSV_PATH = PROJECT_ROOT / "mean_velocity.csv"
+
 
 # =============================================================================
 # IMPORT SETUP
@@ -54,6 +59,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 from i2_helium_md.postprocess import (  # noqa: E402
     HedftTrajectory,
@@ -86,6 +92,9 @@ def main() -> int:
 
     _build_distance_figure(ion, hedft)
     _build_velocity_figure(ion, hedft)
+
+    if EXPORT_MEAN_VELOCITY_CSV:
+        _export_mean_velocity_csv(ion)
 
     plt.show()
     return 0
@@ -125,8 +134,8 @@ def _build_distance_figure(
         label="HeDFT",
     )
 
-    ax.set_xlim(0.0, 6.0)
-    ax.set_ylim(8.0, 40.0)
+    ax.set_xlim(0.0, 20.0)
+    ax.set_ylim(8.0, 240.0)
     ax.set_xlabel("t / ps")
     ax.set_ylabel(r"$R_1 - R_2$ / $\mathrm{\AA}$")
     ax.legend(frameon=False)
@@ -196,7 +205,7 @@ def _draw_velocity_tile(
         label="mean MD velocity",
     )
 
-    ax.set_xlim(0.0, 12.0)
+    ax.set_xlim(0.0, 20.0)
     ax.set_xlabel("t / ps")
     ax.set_ylabel(r"v / $\mathrm{\AA}/\mathrm{ps}$")
     ax.legend(frameon=False)
@@ -227,6 +236,37 @@ def _velocity_trace_indices(
         if len(indices) < max_traces:
             indices.append(int(mol_idx + num_molecules))
     return indices
+
+
+def _export_mean_velocity_csv(ion: IonCheckpoint) -> None:
+    """Extract mean velocity over time window and save to CSV.
+
+    Computes the magnitude of velocity for each atom, averages over all atoms,
+    then filters to the specified time window and exports as CSV.
+    """
+    # Compute per-atom speed
+    speed_per_atom = np.sqrt(
+        ion.velocities_x**2 + ion.velocities_y**2 + ion.velocities_z**2
+    )
+    # Average over all atoms
+    mean_speed = np.mean(speed_per_atom, axis=0)
+
+    # Filter to specified time window
+    start_ps, end_ps = EXPORT_TIME_WINDOW_PS
+    mask = (ion.time_ps >= start_ps) & (ion.time_ps <= end_ps)
+    time_window = ion.time_ps[mask]
+    mean_velocity_window = mean_speed[mask]
+
+    # Create DataFrame and save
+    df = pd.DataFrame({
+        'time_ps': time_window,
+        'mean_velocity_Aps': mean_velocity_window,
+    })
+    df.to_csv(EXPORT_CSV_PATH, index=False)
+
+    print(f"\nExported mean velocity ({start_ps:.2f}–{end_ps:.1f} ps) "
+          f"to {EXPORT_CSV_PATH}")
+    print(f"  {len(df)} samples saved")
 
 
 if __name__ == "__main__":

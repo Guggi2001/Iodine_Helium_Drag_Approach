@@ -286,34 +286,140 @@ A second consequence of the non-radial reality and the hand-tuning observation
 in *how* the drag law is fit and *what* Tier 0 validates:
 
 - **Method shift A → B.** Adopt **trajectory-matching calibration** as the
-  extraction method (`METHOD_B_trajectory_matching_extraction.md`): fit `{a,b}` by
-  minimizing the forward-integrated in-window trajectory RMSE against the
-  same-smoothed reference, rather than the Method-A direct `F_drag`-vs-`v`
-  regression. This formalizes the hand-tuning (removing its "by hand" unrigour)
-  and optimizes the observable that matters.
+  extraction method (`METHOD_B_trajectory_matching_extraction.md`): fit `{a,b}`
+  (jointly with the effective binding, §"Correct drag traps the ions") by
+  minimizing the forward-integrated trajectory RMSE against the same-smoothed
+  reference, rather than the Method-A direct `F_drag`-vs-`v` regression. This
+  formalizes the hand-tuning (removing its "by hand" unrigour) and optimizes the
+  observable that matters.
+- **Full calibration window `[2.67, 14 ps]` for both cases (2026-06-09).** The
+  fit now spans the full post-dynamic-start window to the end of the dynamics,
+  against the extended smoothed reference `cleaned_data_long.csv` (same CEEMDAN+SG
+  pipeline, extended span). Rationale: **final velocity is the production-relevant
+  quantity** (it feeds the VMI observable and the drag+binding pair must reach the
+  correct terminal speed), and a ~6 ps truncation never tested that. **Accepted
+  cost for 9 Å:** the full window re-includes the post-6ps non-radial region the
+  truncation excluded, so the 9 Å `{a,b}` will absorb some unrepresentable
+  transverse drift — a risk **deliberately accepted** (9 Å makes transverse motion
+  regardless; no truncation both reaches final velocity and excludes the
+  non-radial region), **not eliminated**. The 9 Å coefficients carry the expanded
+  flag: `|v|`-projected-radially, full-window, transverse-contaminated. 18 Å is
+  clean-radial throughout, so its full-window fit is purely beneficial.
 - **Tier 0's consistency-check role is retired (correctly).** Under B the
   trajectory match *is* the fit objective, so re-running "does forward-integration
   match?" reads back the objective — circular. That framing is obsolete.
 - **Tier 0 is repurposed, not obsolete: from consistency to held-out
   generalization.** The infrastructure (the `window=` parameter, the harnesses,
   the gate machinery) survives; the *question* changes to "does the B-fit
-  generalize beyond the data it was fit to?" — via a held-out window, the
-  cross-case shared-form check (the real transport-physics signal), and the
-  downstream observables (VMI, Tier 3). This held-out role is **more** necessary
-  under B than the consistency check was under A, because B is more prone to
-  overfitting.
-- **Mandatory guard for 9 Å.** Trajectory-matching a *radial-projected* MD onto
-  the *non-radial* 9 Å reference risks the drag coefficients **absorbing the
-  transverse discrepancy** — a dimensionality fudge that fits perfectly and
-  generalizes badly. Held-out validation (held-out case / VMI) is **non-optional**
-  for 9 Å specifically; 18 Å (genuinely radial) can be trajectory-matched safely.
-  See `METHOD_B_trajectory_matching_extraction.md` §5.
+  generalize beyond the data it was fit to?" The **held-out-window axis is
+  forfeited** by the full-window choice, so the load-bearing held-out axes are now
+  the **cross-case shared-form check** (the real transport-physics signal) and the
+  **downstream VMI observable**. This held-out role is **more** necessary under B
+  than the consistency check was under A — and the full-window choice raises the
+  stakes on it further.
+- **Mandatory guard for 9 Å (now doubly so).** Trajectory-matching a
+  *radial-projected* MD onto the *non-radial* 9 Å reference risks the coefficients
+  **absorbing the transverse discrepancy** — and the full window deliberately
+  feeds more of that region into the fit. Held-out validation (cross-case / VMI)
+  is **non-optional** for 9 Å; it is the only thing standing between the accepted
+  contamination and a corrupted coefficient set. 18 Å calibrates safely. See
+  `METHOD_B_trajectory_matching_extraction.md` §3.5, §4, §5.
 
 **Status of `EXTRACTION_FRAME_FIX_milestone.md`:** further demoted. The 9 Å
 non-radial reality is now handled by the explicit radial-projection convention
 flag plus held-out validation, not a relative-velocity re-extraction. The
 He-field relative-velocity route is a contingency only if held-out validation
 shows the radial-projection convention cannot be made to generalize.
+
+## Correct drag traps the ions — the static droplet barrier is structurally wrong for ejection (FIRST-CLASS PHYSICAL FINDING, 2026-06-09)
+
+A review plot (bubble diameter overlaid on `R(t)`) showed the ions **reversing**
+after the surface crossing — `R` turning over and *decreasing*, as if the atoms
+turn around. An energy check at the surface settled it: with the in-window-correct
+drag, the ions arrive at the droplet boundary with **radial kinetic energy below
+the static solvation barrier** `binding_energy_I_ion_eV = 0.308 eV`, so the
+confining potential pulls them back. **This is not a bug** — the implementation is
+correct; the drag correctly delivers TDDFT-like (low) kinetic energy at the
+surface, and a static well that deep traps an ion with that energy.
+
+**Why this is a structural finding, not a calibration tweak.** The predecessor's
+TD-HeDFT analysis is explicit (verbatim summary): two I⁺ at 9 Å, Coulomb
+explosion in He2000; after 5 ps ~**77 % of the initial Coulomb energy is
+dissipated** into the droplet, the ions slow to ~4.5 Å/ps — and *"the ions have
+less than the solvation energy of a single ion inside the droplet, but are still
+able to escape ... ion ejection cannot be predicted with static solvation
+potential values alone ... dynamical effects play a major role."* In the real
+(TD-HeDFT) physics the helium **reorganizes** and the departing ion is helped out
+by collective/time-dependent effects; the **effective escape barrier is below the
+static 0.308 eV**. The MD has **no dynamical bubble** — helium is a fixed
+potential well — so it imposes the full static barrier the real dynamics bypass.
+
+**Why the old model escaped and the new one does not — same root cause as the
+9 Å over-damping.** The hard-sphere model escaped *for the wrong reason*: its
+stochastic collisions over-accelerated the ions (velocity spiked well above the
+reference), giving them enough KE to clear the too-high static barrier by brute
+force. The accurate drag removes that excess KE — ions now arrive at the surface
+with *correct* (sub-barrier) energy — and the static barrier traps them. So the
+trapping and the Tier-0 9 Å "over-damping" residual are **the same phenomenon
+seen twice**: correct drag → correct (low) surface KE → incompatible with a
+static barrier that only ever "worked" because the old model cheated with excess
+energy.
+
+### Decision (2026-06-09): effective binding depth, calibrated jointly with drag against the VMI observable
+
+- **Do NOT reduce the drag *to force escape* as a separate after-the-fact knob.**
+  The drag's in-window velocity match is the anchored quantity; it must not be
+  detuned independently to compensate for the binding. (This is the Method-B trap
+  made concrete.) Under the joint fit below, drag and binding move *together*
+  against the data, not drag-then-binding-patch.
+- **`binding_energy_I_ion_eV` becomes an *effective, calibrated* parameter**, not
+  the static solvation energy. It is a **pragmatic stand-in for absent dynamical-
+  barrier physics**, explicitly *not* a corrected measurement of the solvation
+  energy (which remains 0.308 eV and would, if re-measured statically, reintroduce
+  the trap). The static value is now an **upper bound / starting point**.
+- **Joint extraction (drag coupled with binding), full window `[2.67, 14 ps]`.**
+  Drag coefficients and the effective binding are extracted **together** by
+  matching the full-window TDDFT reference curve (`cleaned_data_long.csv`), since
+  the binding↔drag coupling only appears through the forward-integrated trajectory
+  *to ejection* and final velocity is the production-relevant target.
+- **Degeneracy caveat (recorded).** Fitting drag *and* binding jointly to a
+  single trajectory is potentially **under-determined**: stronger drag + shallower
+  binding can mimic weaker drag + deeper binding for the in-window velocity. Two
+  things break the degeneracy: (i) the drag is *anchored* by the in-window
+  velocity shape (the early/mid trajectory pins the speed-dependence before the
+  barrier matters), and (ii) the **held-out VMI distribution** must select among
+  near-degenerate pairs — which is exactly why the held-out observable, not the
+  calibration trajectory, is the arbiter (Method B §4). A pair that fits the
+  calibration curve but mispredicts VMI is rejected even if its in-window RMSE is
+  excellent.
+- **Calibration target = the VMI final-velocity distribution (b), TDDFT escape
+  energy as sanity cross-check (c).** The effective depth + drag pair is whatever,
+  over the full window, lets the ions escape and reproduces the VMI reference —
+  the held-out observable, not a hand-picked "just-barely-escapes" threshold (the
+  un-provenanced fudge (a), rejected). Cross-check (c): the effective barrier sits
+  near the actual TDDFT KE-at-surface (ions escape with < 0.308 eV).
+- **Binding and drag are a jointly-calibrated COUPLED PAIR.** The effective
+  `binding_energy_I_ion_eV` is **stamped alongside the drag coefficients** (the
+  same way coefficients carry `extraction_mass_amu`), so a drag bundle records the
+  effective binding it was jointly fit with. Swapping drag coefficients without
+  re-checking the binding is a detectable inconsistency, not a silent one. The
+  §6.5 consistency machinery extends to cover this pair
+  (see `DRAG_PORT_DESIGN_DECISIONS.md` §6.5.1).
+- **Dynamical-barrier structure is the principled long-term fix, deferred.** A
+  depth that weakens near/at the surface (He getting out of the way), or a
+  velocity-dependent reduction, would represent the dynamical ejection directly.
+  It is new model structure with its own calibration — recorded as a future
+  option to "play with," after the effective-static depth is in and tested
+  against VMI. Whether a single effective-static number suffices, or the
+  velocity-dependence of escape across the ensemble demands the dynamical barrier,
+  is itself decided by the VMI distribution (again, the held-out observable is the
+  arbiter).
+
+**This vindicates Method B's mandatory held-out validation.** A trajectory-matched
+drag reproduces the in-window velocity beautifully and *still* fails the escape /
+VMI observable (the ions trap). In-window match ≠ correct production behaviour —
+which is exactly why the held-out observable (VMI), not the in-window trajectory,
+is the real test. The trapping is a live demonstration.
 
 ## Data limitation found (recorded) — RESOLVED 2026-06-08
 

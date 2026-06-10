@@ -73,6 +73,16 @@ EXPORT_MEAN_SERIES_PATH = (
     / "md_mean_trajectory.csv"
 )
 
+CLEANED_VELOCITIES_PATH_2 = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "velocity_smoothed"
+    / "cleaned_data_long.csv"
+)
+
+CLEANED_VELOCITIES_PATH = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "velocity_smoothed"
+    / "mean_velocity.csv"
+)
+
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
 
@@ -295,6 +305,13 @@ def build_figure(
     r1_mean = np.mean(np.sqrt(x1*x1 + y1*y1 + z1*z1), axis=0)
     r2_mean = np.mean(np.sqrt(x2*x2 + y2*y2 + z2*z2), axis=0)
 
+    structured = np.genfromtxt(CLEANED_VELOCITIES_PATH, delimiter=",", names=True, dtype=float)
+    time_ps = np.atleast_1d(np.asarray(structured["time_ps"], dtype=float))
+    speed_Aps = np.atleast_1d(np.asarray(structured["mean_velocity_Aps"], dtype=float))
+    structured_SG = np.genfromtxt(CLEANED_VELOCITIES_PATH_2, delimiter=",", names=True, dtype=float)
+    time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
+    velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
+
     if positions_figure:
         # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
         fig_top, axes_top = plt.subplots(
@@ -318,7 +335,7 @@ def build_figure(
         ax_z.legend(frameon=False)
 
     # Bottom figure: distance and velocity panels (share x-axis)
-    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 5.0), sharex=True, constrained_layout=True)
+    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 6.0), sharex=True, constrained_layout=True)
 
     ax_d.plot(t_md, dist_md, color="tab:blue", lw=1.5, label="MD mean")
     ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R1 mean")
@@ -339,6 +356,8 @@ def build_figure(
 
     ax_v.plot(t_md, v1_md, color="tab:blue", lw=1.2, label="MD mean |v| I1")
     ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, ls = '--', label="MD mean |v| I2")
+    ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:purple", lw=1.2)
+    ax_v.plot(time_SG, velocity_SG, label = r'$mean velocity SG$', color="tab:pink", lw=1.2, ls=":")
     ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1.2,
               ls="-", label="HeDFT |v1|")
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1.2,

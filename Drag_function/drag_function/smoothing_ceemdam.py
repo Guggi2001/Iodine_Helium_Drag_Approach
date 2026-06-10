@@ -232,7 +232,7 @@ def plot_ceemdan_result(
 if __name__ == "__main__":
     t = dict9["t"]
     v = dict9["v2"]
-    mask = (t >= 2.67) & (t <= 6)
+    mask = (t >= 2.67) & (t <= 14.08100)
     t_ps = t[mask]
     y = v[mask]
 
@@ -247,14 +247,14 @@ if __name__ == "__main__":
 
     cleaned = reconstruct_without_imfs(imfs, drop_idx)
     #%%
-    wls = [1001, 2401]
+    wls = [8401, 9401, 11401]
 
 
     plt.figure(figsize=(10, 5))
     plt.plot(t_ps, y, lw=1.0, label="original signal")
     plt.plot(t_ps, cleaned, lw=2.0, label="IMF filtering")
     for wl in wls:
-        cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=1)
+        cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=2)
         plt.plot(t_ps, cleaned_SG, lw=2.0, ls = '--', label="IMF + SG filtering (wl={})".format(wl))
     plt.xlabel("t (ps)")
     plt.ylabel("signal (arb.)")
@@ -268,8 +268,8 @@ if __name__ == "__main__":
     # Export data to CSV
     import pandas as pd
 
-    wl = 2401
-    cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=1)
+    wl = 9401
+    cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=2)
 
     # Create DataFrame with time, cleaned_SG, and IMF cleaned data
     export_data = pd.DataFrame({
@@ -279,9 +279,9 @@ if __name__ == "__main__":
     })
 
     # Export to CSV
-    export_data.to_csv('cleaned_data.csv', index=False)
+    export_data.to_csv('cleaned_data_long.csv', index=False)
     print(f"Data exported to cleaned_data.csv")
 
-    export_path = C.BASE_PATH_i2_helium_md + "/data/reference/drag/9A/velocity_smoothed/cleaned_data.csv"
+    export_path = C.BASE_PATH_i2_helium_md + "/data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
     export_data.to_csv(export_path, index=False)
 

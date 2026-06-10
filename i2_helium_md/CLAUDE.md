@@ -65,16 +65,21 @@ extraction takes the speed magnitude `|v|` and the MD projects it radially — a
 **defined modelling convention**, not a purely-radial drag law — and the 9 Å
 residual (~0.39 Å/ps same-smoothed) is the central-force MD being structurally
 unable to carry the real transverse co-translation (a **model-dimensionality**
-statement, not a drag error or the withdrawn frame story). **Two method changes
-follow:** (1) the extraction shifts to **trajectory-matching calibration**
-(Method B, `METHOD_B_trajectory_matching_extraction.md`) — fit `{a,b}` by
-minimizing the forward-integrated in-window trajectory RMSE; (2) **Tier 0 is
-repurposed from a consistency check to a held-out generalization check** (the
-consistency framing is circular under B). The active work is therefore the
-**Method-B extraction with held-out validation**; `EXTRACTION_FRAME_FIX_milestone.md`
-is further demoted, and **Tier 1 is gated on the 9 Å B-fit surviving held-out
+statement, not a drag error or the withdrawn frame story). A further finding: with
+correct (low) surface KE, the static 0.308 eV droplet well **traps** the ions
+(they reverse) — yet TD-HeDFT ions escape with < 0.308 eV because ejection is
+*dynamical*, so the **droplet binding becomes an effective parameter calibrated
+jointly with the drag** against the VMI observable (a stand-in for absent
+dynamical-barrier physics), stamped as a coupled pair. **Active work:** Method-B
+**joint** extraction (drag + effective binding, `METHOD_B_trajectory_matching_extraction.md`)
+over the **full window `[2.67, 14 ps]`** (final velocity is the production target)
+against `cleaned_data_long.csv`; Tier 0 repurposed from consistency to **held-out
+generalization** (the full-window choice forfeits the held-out-window axis, so
+cross-case + VMI are the load-bearing checks). `EXTRACTION_FRAME_FIX_milestone.md`
+is further demoted, and **Tier 1 is gated on the 9 Å fit surviving held-out
 validation** (mandatory there because trajectory-matching a radial-projected MD
-onto a non-radial reference can hide a dimensionality fudge). See the
+onto a non-radial reference — over a window that now re-includes the transverse
+region, an accepted risk — can hide a dimensionality fudge). See the
 "Drag-Model Port" section below for the working rules that apply to this phase.
 
 ## Current Scope
@@ -304,20 +309,35 @@ readings (audit trail in the log) — on:
   **model-dimensionality** statement (the central-force MD cannot carry the real
   transverse co-translation), not a drag-form or frame error.
 
-**Active work — two method changes (2026-06-08):**
+**Active work — Method-B joint extraction (drag + effective binding), 2026-06-09:**
 
 1. **Extraction A → B** (`METHOD_B_trajectory_matching_extraction.md`):
-   trajectory-matching calibration — fit `{a,b}` by minimizing the
-   forward-integrated in-window trajectory RMSE against the same-smoothed
-   reference.
-2. **Tier 0 repurposed:** consistency → **held-out generalization** (the
-   consistency framing is circular under B). Same infrastructure, now scoring
-   held-out data: held-out window, cross-case shared-form check, downstream VMI.
+   trajectory-matching calibration — fit the drag coefficients **jointly with the
+   effective droplet binding** by minimizing the forward-integrated trajectory
+   RMSE against the smoothed reference, over the **full post-dynamic-start window
+   `[2.67, 14 ps]`** (`cleaned_data_long.csv`, same CEEMDAN+SG extended in span).
+   Full window because **final velocity is the production-relevant target** (it
+   feeds VMI).
+2. **Binding↔drag is a coupled pair (binding trap, `TIER0_FINDINGS.md`).** Correct
+   drag delivers TDDFT-like *low* surface KE; the static 0.308 eV droplet well
+   then **traps** the ions (they reverse) — yet TD-HeDFT ions escape with < 0.308 eV
+   because ejection is *dynamical*. So `binding_energy_I_ion_eV` becomes an
+   **effective, calibrated** parameter (a stand-in for absent dynamical-barrier
+   physics; static value = upper bound), fit **jointly with the drag** against the
+   **VMI distribution** (target), TDDFT escape energy as cross-check. Stamped
+   alongside the drag coefficients; the §6.5.1 guard refuses an unvalidated
+   drag↔binding pairing. Do **not** detune the drag separately to force escape.
+3. **Tier 0 repurposed:** consistency → **held-out generalization** (circular
+   under B). The full-window choice **forfeits the held-out-window axis**, so the
+   load-bearing held-out checks are now **cross-case shared-form** + **VMI**. Same
+   infrastructure, scoring held-out data.
 
-**9 Å mandatory guard:** trajectory-matching a radial-projected MD onto the
-non-radial 9 Å reference can let the coefficients **absorb the transverse
-discrepancy** (a dimensionality fudge that fits well, generalizes badly).
-Held-out validation is **non-optional** for 9 Å; 18 Å calibrates safely.
+**9 Å mandatory guard (doubly so under full window):** the 9 Å reference is
+non-radial, and the full window deliberately re-includes its post-6ps transverse
+region — an **accepted risk**. Trajectory-matching can let the coefficients
+**absorb the transverse discrepancy**; cross-case / VMI held-out is the only thing
+that catches it. 18 Å is clean-radial and calibrates safely. *Joint-fit degeneracy:*
+drag and binding can trade off on the calibration curve — the held-out VMI breaks it.
 
 **Tier 1 is gated on the 9 Å Method-B fit surviving held-out validation.**
 `EXTRACTION_FRAME_FIX_milestone.md` is further demoted (the He-field
