@@ -54,6 +54,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
+CASE = "9A"
 # The finished drag run to score (produced by single_pulse_N2000_drag).
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
 
@@ -101,7 +102,12 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import numpy as np  # noqa: E402
 
-import tier0_tstar_seeded_comparison as TSS
+
+from i2_helium_md.physics.drag import drag_force  # noqa: E402
+from i2_helium_md.physics.interactions import partner_interaction_ion  # noqa: E402
+from i2_helium_md.physics.leapfrog import _droplet_acceleration  # noqa: E402
+from i2_helium_md.simulation.ion import  _drag_gate_steepness  # noqa: E402
+from i2_helium_md.physics.constants import U
 
 from i2_helium_md.postprocess import (  # noqa: E402
     HedftTrajectory,
@@ -438,6 +444,127 @@ def plot_energy_analysis(
     return fig
 
 
+def _reconstruct_radial_forces(ion, cfg, *, atom_index):
+    """Reconstruct the three radial-projected forces for one atom over time.
+
+    The ``IonCheckpoint`` stores no forces, but they are deterministic functions
+    of the stored state + ``cfg``, so they are replayed here with the *same*
+    physics functions the ion driver uses (CLAUDE.md rule 1 -- no duplicate
+    physics). Each force is projected onto the radial unit vector ``r_hat``;
+    sign convention: outward ``+``, inward ``-``.
+
+    Returns ``(drag_radial, coulomb_radial, droplet_radial)`` arrays of shape
+    ``(num_stored_steps,)`` in amu*A/ps^2, for the requested ``atom_index`` in
+    the 2N layout.
+    """
+    px, py, pz = ion.positions_x, ion.positions_y, ion.positions_z
+    vx, vy, vz = ion.velocities_x, ion.velocities_y, ion.velocities_z
+    mass_kg = ion.mass_kg  # (2N,)
+    mass_amu = mass_kg / U  # (2N,)
+    droplet_radii = ion.droplet_radii_angstrom  # (2N,)
+    two_N = px.shape[0]
+    charge = np.ones(two_N, dtype=float)
+    steepness = _drag_gate_steepness(cfg)
+
+    n_steps = px.shape[1]
+    drag_r = np.empty(n_steps)
+    coul_r = np.empty(n_steps)
+    drop_r = np.empty(n_steps)
+
+    for j in range(n_steps):
+        x, y, z = px[:, j], py[:, j], pz[:, j]
+        ux, uy, uz = vx[:, j], vy[:, j], vz[:, j]
+
+        r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+        r_safe = np.where(r > 0, r, 1.0)
+        rhx, rhy, rhz = x / r_safe, y / r_safe, z / r_safe
+
+        depth = r - droplet_radii
+        speed = np.sqrt(ux ** 2 + uy ** 2 + uz ** 2)
+        s_safe = np.where(speed > 0, speed, 1.0)
+        vhx, vhy, vhz = ux / s_safe, uy / s_safe, uz / s_safe
+
+        # Drag: native force [amu*A/ps^2], magnitude form, direction -v_hat.
+        f_drag = drag_force(speed, depth, cfg.drag_coefficients, steepness)
+        fdx, fdy, fdz = -f_drag * vhx, -f_drag * vhy, -f_drag * vhz
+        drag_radial = fdx * rhx + fdy * rhy + fdz * rhz
+
+        # Droplet confining: accel [A/ps^2] -> force via * mass_amu.
+        adx, ady, adz = _droplet_acceleration(
+            x, y, z, mass_kg, droplet_radii, cfg, use_ion_binding=True,
+        )
+        drop_radial = (adx * rhx + ady * rhy + adz * rhz) * mass_amu
+
+        # Coulomb partner: accel [A/ps^2] -> force via * mass_amu.
+        acx, acy, acz, _ = partner_interaction_ion(
+            x, y, z, mass_kg, charge, cfg,
+        )
+        coul_radial = (acx * rhx + acy * rhy + acz * rhz) * mass_amu
+
+        drag_r[j] = drag_radial[atom_index]
+        coul_r[j] = coul_radial[atom_index]
+        drop_r[j] = drop_radial[atom_index]
+
+    return drag_r, coul_r, drop_r
+
+
+def build_force_figure(ion, cfg, window, *, atom_index=1):
+    """Plot the radial-projected force evolution for the clean atom (atom 2).
+
+    Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
+    forces balance along the radial axis* over time -- drag, Coulomb, and the
+    droplet-confining force, each projected onto ``r_hat`` (outward ``+``). The
+    drag trace under-resolves the true dissipation for the non-radial 9 A case,
+    the visual counterpart of the model-dimensionality residual.
+
+    ``atom_index`` defaults to 1 = atom 2 (single-molecule 2N layout), the clean
+    extraction atom the drag law was fit to.
+
+    Returns a 2x1 subplot figure with individual forces on top and net force on
+    the bottom.
+    """
+    import matplotlib.pyplot as plt
+
+    drag_r, coul_r, drop_r = _reconstruct_radial_forces(
+        ion, cfg, atom_index=atom_index,
+    )
+    t = ion.time_ps
+    t_start, t_end = window
+    net_force = coul_r + drop_r + drag_r
+
+    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8, 7))
+
+    # Top subplot: individual forces
+    ax_top.axhline(0.0, color="0.6", lw=0.8)
+    ax_top.plot(t, coul_r, color="tab:red", label="Coulomb")
+    ax_top.plot(t, drop_r, color="tab:blue", label="droplet (confining)")
+    ax_top.plot(t, drag_r, color="tab:green", label="drag")
+    ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+                   label="scored window")
+    ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    ax_top.set_title(
+        f"{CASE} t*-seeded -- radial-projected forces, atom {atom_index + 1}"
+    )
+    ax_top.legend(frameon=False, ncol=2)
+    ax_top.spines["top"].set_visible(False)
+    ax_top.spines["right"].set_visible(False)
+
+    # Bottom subplot: net force
+    ax_bottom.axhline(0.0, color="0.6", lw=0.8)
+    ax_bottom.plot(t, net_force, color="tab:purple", label="net force", lw=2)
+    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+                      label="scored window")
+    ax_bottom.set_xlabel("t / ps")
+    ax_bottom.set_ylabel(r"$F_{\mathrm{net}} \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    ax_bottom.set_title("net force")
+    ax_bottom.legend(frameon=False, ncol=2)
+    ax_bottom.spines["top"].set_visible(False)
+    ax_bottom.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+    return fig
+
+
 def main() -> int:
     run = RunDirectory(RUN_DIR)
     ion = run.load_ion()
@@ -480,7 +607,7 @@ def main() -> int:
             plot_energy_analysis(ion, cfg, window)
         plt.show()
         if FORCE_FIGURE:
-            TSS.build_force_figure(ion, cfg, window, atom_index=0)
+            build_force_figure(ion, cfg, window, atom_index=0)
             plt.show()
     return 0
 
