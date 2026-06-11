@@ -4,7 +4,8 @@ import json
 import numpy as np
 import pytest
 
-from i2_helium_md import single_pulse_N2000
+from i2_helium_md import single_pulse_N2000, single_pulse_N2000_drag
+from i2_helium_md.physics.drag import DragCoefficients, drag_force
 from i2_helium_md.simulation.checkpoint import (
     IonCheckpoint,
     NeutralCheckpoint,
@@ -62,6 +63,35 @@ class TestCfgRoundTrip:
         loaded = run.load_cfg()
         assert loaded.seed == 42
         assert loaded.num_molecules == 500
+
+    def test_drag_config_round_trip_restores_coefficient_bundle(self, tmp_path):
+        run = RunDirectory(tmp_path / "drag")
+        cfg = single_pulse_N2000_drag(seed=42, num_molecules=5)
+        run.save_cfg(cfg)
+
+        loaded = run.load_cfg()
+
+        assert isinstance(loaded.drag_coefficients, DragCoefficients)
+        assert loaded.drag_coefficients == cfg.drag_coefficients
+        loaded.validate()
+        force = drag_force(
+            1.0,
+            -10.0,
+            loaded.drag_coefficients,
+            loaded.drag_gate_steepness,
+        )
+        assert np.isfinite(force)
+
+    def test_invalid_drag_coefficients_raise_at_load(self, tmp_path):
+        run = RunDirectory(tmp_path / "invalid_drag")
+        cfg = single_pulse_N2000_drag()
+        run.save_cfg(cfg)
+        payload = json.loads(run.cfg_path.read_text())
+        del payload["drag_coefficients"]["coefficients"]["b"]
+        run.cfg_path.write_text(json.dumps(payload))
+
+        with pytest.raises(ValueError, match="invalid drag_coefficients"):
+            run.load_cfg()
 
     def test_load_missing_raises(self, tmp_path):
         run = RunDirectory(tmp_path / "empty")

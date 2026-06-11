@@ -58,6 +58,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import SimConfig
+from ..physics.drag import DragCoefficients
 from .checkpoint import (
     IonCheckpoint,
     NeutralCheckpoint,
@@ -147,7 +148,7 @@ class RunDirectory:
         Raises ``FileNotFoundError`` if the run does not have one.
         Raises ``ValueError`` if the JSON contains fields that are not in
         ``SimConfig`` (this signals a version skew between the run and the
-        current code).
+        current code), or if a nested ``drag_coefficients`` bundle is invalid.
         """
         if not self.has_cfg():
             raise FileNotFoundError(
@@ -164,6 +165,23 @@ class RunDirectory:
                 f"cfg.json in {self.root} has unknown fields: {sorted(unknown)}. "
                 "This run was probably produced by a different version of the code."
             )
+
+        raw_drag_coefficients = payload.get("drag_coefficients")
+        if raw_drag_coefficients is not None:
+            if not isinstance(raw_drag_coefficients, dict):
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid drag_coefficients: "
+                    "expected a JSON object or null."
+                )
+            try:
+                payload["drag_coefficients"] = DragCoefficients(
+                    **raw_drag_coefficients
+                )
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid drag_coefficients: {exc}"
+                ) from exc
+
         return SimConfig(**payload)
 
     # -----------------------------------------------------------------

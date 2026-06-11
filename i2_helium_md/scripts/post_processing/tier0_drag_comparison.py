@@ -480,7 +480,6 @@ def main() -> int:
             plot_energy_analysis(ion, cfg, window)
         plt.show()
         if FORCE_FIGURE:
-            TSS.build_force_figure(ion, cfg, window, atom_index=1)
             TSS.build_force_figure(ion, cfg, window, atom_index=0)
             plt.show()
     return 0
