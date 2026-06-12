@@ -333,6 +333,8 @@ wanted. Decision: **leave as-is, flag broken**; the 9 Å A↔B agreement check i
 dropped from the cross-case validation; the two 9 Å force-balance tests in
 `tests/test_drag.py` (`TestForceBalanceReproduction[9A]`) are the **expected
 known-red baseline** until the artifact is restored or superseded.
+*(→ RESTORED 2026-06-12 — decision record below; the known-red baseline is
+cleared.)*
 
 ### Deferred
 
@@ -591,4 +593,67 @@ Implementation awaits `[PROCEED TO IMPLEMENTATION]`.
   **641 passed, 2 known-red** (unchanged baseline), transitional
   RuntimeWarnings gone. The legacy Method-A bundles stay on disk as the
   frozen independent cross-reference (loader contract unchanged).
+
+---
+
+## Method-A future role + 9 Å artifact restoration — decision record (2026-06-12)
+
+Resolves the "is a Method-A fit still needed?" discussion. User decisions
+locked via review questions; the artifact restoration was executed the same
+session.
+
+### The Method-A future-role verdict
+
+**No new Method-A (force-balance) fits are needed.** The §10 form phase
+fits the new drag forms by trajectory matching (the design-doc §3.7
+"outstanding `linear_quadratic` fit pass" route is superseded), and Tier 1
+reads the time-resolved `m(t)` shell trajectory directly off the TDDFT
+reference (design doc §2/§6.6) — the time-resolved re-extraction stays an
+optional refinement. The existing Method-A artifacts retain three roles:
+
+1. **Frozen regression-test fixtures** (never expires):
+   `tests/test_drag.py::TestForceBalanceReproduction` pins
+   `physics/drag.py` against the committed `drag_data.csv` scatter — the
+   guarantee that the module IS the extracted law.
+2. **Anchor *values*** for trajectory-matching optimizers — numerical
+   conditioning only, now decoupled (below).
+3. **Recorded evidence**: the `power/` exports' `n ≈ +2` is the §10
+   motivation and revives once as the A↔B cross-reference **on the
+   exponent** (trajectory-matched `n̂` vs Method-A's `n ≈ +2`). After §10
+   the METHOD_B §7 A↔B cross-reference role is fully retired (for
+   `linear_cubic` it is already played out: the `a`-ratio check is dead
+   under weak-`a`; the surviving content was `b` agreeing within ~20%).
+
+### Anchors → pre-registered constants (user decision)
+
+The §10 form phase sources its optimizer anchors as **named constants with
+provenance in the script's USER SETTINGS**, read off the Method-A bundles
+once and locked at the §10 pre-run session (alongside `T_form` and the `n`
+bounds). This removes the last *runtime* Method-A dependency and resolves
+the post-re-wiring anchor trap (`build_case_setup`'s `setup.a0/b0` reads
+`a0 = 0` from the shared bundle since the re-wiring — documented in
+`docs/extraction/trajectory_matching_module.md` and
+`scripts/extraction/scripts_explained.md`). Docs-only now; no code change
+until the form phase.
+
+### 9 Å Method-A artifact RESTORED (supersedes the 2026-06-11 leave-as-is decision)
+
+With Method-A's role reduced to frozen-fixture + anchor-values + evidence,
+a broken fixture was the one live inconsistency. Restoration executed:
+
+- `git show a7fc41c` recovered the candidate file; **cross-verified** by an
+  independent lstsq refit on the committed `drag_data.csv` trusted interior
+  (the test's exact recipe): refit `a = 36.79962483`, `b = 1.38728042` —
+  both match the a7fc41c values to ~1e-9 (test tolerance 1e-4), residual
+  band 3.3% (test band 7%). The a7fc41c file is the authentic,
+  self-consistent Method-A output; the broken state differed **only in
+  `a`** (3.7996 — a dropped leading digit of 36.7996; `b`/errors/window
+  were already authentic).
+- `data/reference/drag/9A/linear_and_cubic/fit_parameters.json` updated:
+  `a` 3.79962487165992 → 36.79962487165992. Non-fit fields unchanged
+  (`t_start`/`t_end` feed `test_tier0_drag_comparison._read_window`).
+- **The known-red baseline is CLEARED: full suite 643 passed, 0 failed**
+  (was 641/2 since the Method-B delivery). The 9 Å A↔B-check drop and the
+  §9.3 18 Å-only anchoring remain recorded history (correct decisions at
+  the time — the artifact really was broken when they were made).
 

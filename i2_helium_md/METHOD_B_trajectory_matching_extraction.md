@@ -629,8 +629,15 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
   0.2685 Å/ps?), not verdict power.
 - **Stage-2 shared joint fit per family**, same objective (per-case
   RMSE + escape penalty, then equal-weight mean), same windows, same
-  N/seed/anchoring discipline (anchors from the 18 Å Method-A bundle
-  only; family-specific anchor mapping recorded pre-run):
+  N/seed/anchoring discipline. **Anchor sourcing (user decision
+  2026-06-12, Method-A future-role record in `drag_migration_log.md`):
+  the anchors are PRE-REGISTERED CONSTANTS** — values read off the
+  Method-A bundles once (18 Å `linear_and_cubic` for the `{a, c}`-family
+  scale; the `power/` export may inform the `{C, n}` scale) and locked
+  with provenance in the script's USER SETTINGS at the pre-run session,
+  **not** a runtime read of any bundle (the preset-derived `setup.a0/b0`
+  reads `a0 = 0` from the shared bundle since the re-wiring and must not
+  be used). Family-specific anchor mapping recorded pre-run:
   - `lq_shared_3param` — `{a, c, E_bind}`, `a` lower bound 0;
   - `lq_shared_pure_quadratic` — `a ≡ 0`, fit `{c, E_bind}`; `T_a0`-analog
     equivalence classification between the two, as in §9.2;
@@ -691,7 +698,9 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
   decision).
 - [x] Presets re-wired to `shared_pure_cubic`; transitional §6.5.1 hatch
   removed from the presets; tests updated (2026-06-12).
-- [ ] `T_form` and `power_law` `n` bounds locked pre-run (first-runs rule).
+- [ ] `T_form`, the `power_law` `n` bounds, and the per-family
+  pre-registered anchor constants locked pre-run (first-runs rule;
+  anchors-as-constants decided 2026-06-12 — see §10.4).
 - [ ] Forms realized + guards + tests green.
 - [ ] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and
   comparison verdict recorded.
