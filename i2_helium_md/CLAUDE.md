@@ -70,17 +70,43 @@ correct (low) surface KE, the static 0.308 eV droplet well **traps** the ions
 (they reverse) — yet TD-HeDFT ions escape with < 0.308 eV because ejection is
 *dynamical*, so the **droplet binding becomes an effective parameter calibrated
 jointly with the drag** against the VMI observable (a stand-in for absent
-dynamical-barrier physics), stamped as a coupled pair. **Active work:** Method-B
-**joint** extraction (drag + effective binding, `METHOD_B_trajectory_matching_extraction.md`)
-over the **full window `[2.67, 14 ps]`** (final velocity is the production target)
-against `cleaned_data_long.csv`; Tier 0 repurposed from consistency to **held-out
-generalization** (the full-window choice forfeits the held-out-window axis, so
-cross-case + VMI are the load-bearing checks). `EXTRACTION_FRAME_FIX_milestone.md`
-is further demoted, and **Tier 1 is gated on the 9 Å fit surviving held-out
-validation** (mandatory there because trajectory-matching a radial-projected MD
-onto a non-radial reference — over a window that now re-includes the transverse
-region, an accepted risk — can hide a dimensionality fudge). See the
-"Drag-Model Port" section below for the working rules that apply to this phase.
+dynamical-barrier physics), stamped as a coupled pair. **The Method-B joint
+extraction has RUN (2026-06-11,** `METHOD_B_trajectory_matching_extraction.md` §8,
+delivery record in `drag_migration_log.md`**):** the 3-parameter joint fit
+`{a, b, E_bind}` over the full windows produced in-window-excellent, fully-escaping
+fits for both cases (`data/reference/drag/<case>/trajectory_matching/`,
+E_bind ≈ 0.071 / 0.154 eV ≪ static 0.308 — the trap resolved as designed) — but
+**both cases FAILED the provisional cross-case held-out bands**
+(`held_out_validation.json`): the linear coefficient `a` is **weakly identified**
+by the full-window trajectory objective (cubic dominates; 18 Å's `a` pinned at the
+optimizer bound, 9 Å shows a live `a`↔`E_bind` degeneracy ridge), and the
+cross-case `E_bind` disagreement (0.083 eV) is entangled with that ridge.
+**Both per-case Method-B bundles stand flagged not-yet-usable; the presets
+remain on the legacy Method-A bundles behind the transitional §6.5.1
+warning.** **The cross-case SHARED-FORM JOINT REFIT has RUN (2026-06-11,
+METHOD_B §9.7; delivery record in `drag_migration_log.md`) — verdict PASS on
+every pre-registered §9.4 band:** Stage 1 (the untouched 9 Å prediction from
+the §8 18 Å bundle, no refit — the last strictly held-out axis; recorded,
+non-gating) passed at 0.2685 Å/ps ≤ 0.45 with full escape; Stage 2's
+fully-shared `{a, b, E_bind}` fit passed its gating bands (18 Å 0.1345 ≤
+0.19, 9 Å 0.1240 ≤ 0.45, escape 1.0/1.0) with `a` running to the 0 bound and
+the `a ≡ 0` pure-cubic variant `T_a0`-equivalent — **the weak-`a` question is
+settled empirically: the transport law is effectively pure-cubic
+`γ = g·b·v²` (`b ≈ 2.516`, shared `E_bind ≈ 0.117 eV`). Tier 1 is UNGATED;
+VMI is the post-Tier-1 final arbiter.** Both variant bundles live under
+`data/reference/drag/shared/trajectory_matching/`. **The frontier decisions
+were resolved 2026-06-12 (METHOD_B §10):** the production candidate is
+**`shared_pure_cubic`** (`a = 0` exactly — the honest encoding of the
+identifiability conclusion); the **preset re-wiring is APPROVED but not yet
+executed** (the §6.5.1 transitional hatch comes off the presets with it);
+and the **next implementation phase is alternative drag-form
+discrimination**: realize the reserved `power_law` and `linear_quadratic`
+forms (incl. pure-quadratic `a ≡ 0`) and run each family through the same
+shared-form joint-refit machinery against the pure-cubic incumbent
+(motivated by the Method-A power-law `n ≈ +2` vs the §9.7 pure-cubic
+`n = 3` exponent tension). This phase precedes Tier 1.
+`EXTRACTION_FRAME_FIX_milestone.md` remains demoted. See the "Drag-Model Port"
+section below for the working rules that apply to this phase.
 
 ## Current Scope
 
@@ -251,19 +277,29 @@ four slices:
    drag trajectory. See `SLICE4_GOALS_ion_driver_rewiring.md`, `slice_4.md`,
    `SLICE4_FIX_initial_mass_consistency.md`.
 
-**Post-slice frontier.** The four-slice implementation arc is closed and the
-Tier-0 comparison has run (`TIER0_FINDINGS.md`). The active work is the
-**Method-B trajectory-matching extraction with held-out validation**
-(`METHOD_B_trajectory_matching_extraction.md`); the consistency-check framing of
-Tier 0 is retired in favour of held-out generalization,
-`EXTRACTION_FRAME_FIX_milestone.md` is further demoted, and **Tier 1 is gated on
-the 9 Å B-fit surviving held-out validation**. See "Tier-0 outcome and the active
-task" below.
+**Post-slice frontier.** The four-slice implementation arc is closed, the
+Tier-0 comparison has run (`TIER0_FINDINGS.md`), and the **shared-form joint
+refit has run and PASSED** (`METHOD_B_trajectory_matching_extraction.md` §9
+spec / §9.7 outcome, 2026-06-11; decided after the per-case Method-B fits
+failed the cross-case bands). The consistency-check framing of Tier 0 is
+retired in favour of held-out generalization,
+`EXTRACTION_FRAME_FIX_milestone.md` is further demoted, and **Tier 1 is now
+UNGATED by the §9 pass**. The frontier decisions were **resolved
+2026-06-12 (METHOD_B §10; decision record in `drag_migration_log.md`)**:
+production candidate `shared_pure_cubic`; preset re-wiring approved
+(pending execution, removes the transitional §6.5.1 hatch); milestone
+commit approved; and the next phase is the **alternative drag-form
+discrimination** (`power_law` + `linear_quadratic` incl. pure-quadratic,
+each through the same shared-refit machinery, reused §9.4 bands plus a
+pre-registered `T_form` equivalence threshold to be locked pre-run). The
+form phase precedes Tier 1; implementation awaits
+`[PROCEED TO IMPLEMENTATION]`. See "Tier-0 outcome and the active task"
+below.
 
 Mass dynamics (§2), the `IonCheckpoint` v6 rename
 (`E_mass_attach_defect_eV` → `E_mass_transfer_eV`), and the noise machinery
 (§1) stay **stubbed behind their enums and inert** until their validation
-tier comes up. None are on the Tier-0 path.
+tier comes up (Tier 1 is now reachable but not yet started).
 
 
 > **Per-slice delivery records and the full Tier-0 diagnosis history (including
@@ -288,9 +324,9 @@ addition to the Slice 3 guard. No longer dead surface.
 
 | field(s) | status | activated by |
 |---|---|---|
-| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; real `power_law` export is `n≈+2`, also regular at `v=0`) | hypothetical `n<0` `power_law` |
+| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; real `power_law` export is `n≈+2`, also regular at `v=0`; the §10 form phase realizes `power_law` but bounds `n ≥ 1`, floor stays inert) | hypothetical `n<1` `power_law` |
 | `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Tier 3 (active noise) |
-| `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) — gated on the 9 Å Method-B fit surviving held-out validation |
+| `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) — UNGATED 2026-06-11 (the shared-form refit passed its §9.4 bands); awaits the Tier-1 implementation phase |
 | `helium_density_profile` | placeholder/`None` | future G4 density profile |
 | `validation_histogram_metric` | declared, inert (`wasserstein`) | Tier 2 (histogram comparison) |
 
@@ -309,7 +345,12 @@ readings (audit trail in the log) — on:
   **model-dimensionality** statement (the central-force MD cannot carry the real
   transverse co-translation), not a drag-form or frame error.
 
-**Active work — Method-B joint extraction (drag + effective binding), 2026-06-09:**
+**Method-B joint extraction (drag + effective binding), specified 2026-06-09 —
+RAN 2026-06-11** (delivery record `drag_migration_log.md`; both cases fit
+cleanly in-window but failed the provisional cross-case held-out bands —
+weak-`a` identifiability + `a`↔`E_bind` ridge; bundles flagged not-yet-usable,
+presets not re-wired; **decision resolved 2026-06-11 → the shared-form joint
+refit, METHOD_B §9**). The method as specified:
 
 1. **Extraction A → B** (`METHOD_B_trajectory_matching_extraction.md`):
    trajectory-matching calibration — fit the drag coefficients **jointly with the
@@ -339,12 +380,22 @@ region — an **accepted risk**. Trajectory-matching can let the coefficients
 that catches it. 18 Å is clean-radial and calibrates safely. *Joint-fit degeneracy:*
 drag and binding can trade off on the calibration curve — the held-out VMI breaks it.
 
-**Tier 1 is gated on the 9 Å Method-B fit surviving held-out validation.**
+**Tier 1 was gated on the shared-form joint refit (METHOD_B §9) passing its
+pre-registered bands — it PASSED (2026-06-11, §9.7), so Tier 1 is UNGATED.**
+The VMI axis is **unreachable until Tier 1** (its channels are mass-selected;
+a fixed-`m_eff` ensemble cannot be honestly scored against
+`vmi_iplus_he.csv`), so the old Tier-1↔VMI gating was circular — by the
+recorded gate policy the §9 pass ungated Tier 1 and VMI is now the
+**post-Tier-1 final arbiter** (still stamped `pending`).
 `EXTRACTION_FRAME_FIX_milestone.md` is further demoted (the He-field
-relative-velocity route is a contingency only if the radial-projection convention
-cannot be made to generalize). The Tier-0 infrastructure is reusable as-is;
-`linear_cubic` stands; coefficients become Method-B-extracted (a swap behind the
-interchangeable surface).
+relative-velocity route was a contingency only if the radial-projection
+convention could not generalize — it did). The Tier-0 infrastructure is
+reusable as-is; `linear_cubic` stands; the validated coefficients are the
+shared Method-B bundles (a swap behind the interchangeable surface —
+production candidate `shared_pure_cubic`, decided 2026-06-12; re-wiring
+approved, not yet executed; the alternative-form discrimination phase
+(METHOD_B §10) then tests `power_law` / `linear_quadratic` against the
+pure-cubic incumbent before Tier 1 starts).
 
 ### Validation hierarchy (sequential, not simultaneous)
 
@@ -357,10 +408,12 @@ each tier's winner before introducing the next unknown:
   model-dimensionality statement, not a law error. Extraction shifts to Method B
   (trajectory-matching); Tier 0 repurposed from consistency to **held-out
   generalization**. See "Tier-0 outcome and the active task."*
-- **Tier 1** — mass scenario (A/B/biphasic), deterministic. **Gated on the 9 Å
-  Method-B fit surviving held-out validation** (held-out case / VMI), because
-  trajectory-matching a radial-projected MD onto the non-radial 9 Å reference can
-  hide a dimensionality fudge. The earlier frame-based block is withdrawn.
+- **Tier 1** — mass scenario (A/B/biphasic), deterministic. **UNGATED
+  2026-06-11: the shared-form joint refit (METHOD_B §9) passed its
+  pre-registered bands** — including the Stage-1 18Å-fit→9Å-predict held-out
+  check (0.2685 Å/ps ≤ 0.45) that guards against the dimensionality fudge of
+  trajectory-matching a radial-projected MD onto the non-radial 9 Å
+  reference. Not yet started; the earlier frame-based block is withdrawn.
 - **Tier 2** — terminal I⁺(He)ₙ size distribution vs. experimental detector
   data (the only observable that separates the mass scenarios).
 - **Tier 3** — ensemble second moments (noise) vs. VMI references.

@@ -1,0 +1,113 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_cubic",
+  "a": 1.4555867153856499,
+  "b": 3.3160571582301825,
+  "a_err": 1.4555867153856499,
+  "b_err": 0.16185517081837797,
+  "uncertainty_model": "seed_sweep_std_plus_rmse_sensitivity",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.07091762397734235,
+  "effective_binding_energy_err_eV": 0.006769409561473587,
+  "t_start": 4.54,
+  "t_end": 14.768,
+  "reference_file": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+  "objective": "in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_rmse_Aps": 0.09679788875655065,
+  "escape_fraction": 1.0,
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "seed_sweep_seeds": [
+    20260604,
+    20260605,
+    20260606,
+    20260607,
+    20260608
+  ],
+  "seed_sweep_results": [
+    {
+      "seed": 20260605,
+      "a": 1.4555757829669864,
+      "b": 3.3140297216665475,
+      "e_bind_eV": 0.07099581982884443,
+      "objective_Aps": 0.09679788807515047,
+      "rmse_Aps": 0.09679788807515047,
+      "escape_fraction": 1.0,
+      "converged": true
+    },
+    {
+      "seed": 20260606,
+      "a": 1.4555757829669864,
+      "b": 3.3140297216665475,
+      "e_bind_eV": 0.07099581982884443,
+      "objective_Aps": 0.09679788807519454,
+      "rmse_Aps": 0.09679788807519454,
+      "escape_fraction": 1.0,
+      "converged": true
+    },
+    {
+      "seed": 20260607,
+      "a": 1.4555757829669864,
+      "b": 3.3140297216665475,
+      "e_bind_eV": 0.07099581982884443,
+      "objective_Aps": 0.09679788807514608,
+      "rmse_Aps": 0.09679788807514608,
+      "escape_fraction": 1.0,
+      "converged": true
+    },
+    {
+      "seed": 20260608,
+      "a": 1.4555757829669864,
+      "b": 3.3140297216665475,
+      "e_bind_eV": 0.07099581982884443,
+      "objective_Aps": 0.09679788807516847,
+      "rmse_Aps": 0.09679788807516847,
+      "escape_fraction": 1.0,
+      "converged": true
+    },
+    {
+      "seed": 20260604,
+      "a": 1.4555867153856499,
+      "b": 3.3160571582301825,
+      "e_bind_eV": 0.07091762397734235,
+      "objective_Aps": 0.09679788875655065,
+      "rmse_Aps": 0.09679788875655065,
+      "escape_fraction": 1.0,
+      "converged": true
+    }
+  ],
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 454,
+    "converged": true,
+    "start_minima": [
+      {
+        "a": 1.4555867153856499,
+        "b": 3.3160571582301825,
+        "e_bind_eV": 0.07091762397734235,
+        "objective_Aps": 0.09679788875655065
+      },
+      {
+        "a": 1.4562350781757518,
+        "b": 3.3163729271387767,
+        "e_bind_eV": 0.07091960029807173,
+        "objective_Aps": 0.09679807851896932
+      },
+      {
+        "a": 1.4555725462194613,
+        "b": 3.316104017869618,
+        "e_bind_eV": 0.07094110485514755,
+        "objective_Aps": 0.0967980468320443
+      }
+    ]
+  },
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": false,
+    "full_window_heldout_window_axis_forfeited": true
+  }
+}

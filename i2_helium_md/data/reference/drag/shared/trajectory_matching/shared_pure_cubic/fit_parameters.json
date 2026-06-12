@@ -1,0 +1,101 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_cubic",
+  "a": 0.0,
+  "b": 2.5153508541760052,
+  "a_err": 0.0,
+  "b_err": 0.12277307740620991,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.11675778353879479,
+  "effective_binding_energy_err_eV": 0.011145061155975869,
+  "t_start": 2.67,
+  "t_end": 14.768,
+  "reference_file": [
+    "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  ],
+  "calibration_cases": [
+    "18A",
+    "9A"
+  ],
+  "stage": "stage2_joint",
+  "variant": "shared_pure_cubic",
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157,
+    "provenance": "18A Method-A bundle only (9A Method-A artifact provenance-broken, drag_migration_log.md 2026-06-11)"
+  },
+  "objective": "equal_weight_mean_over_cases_of_in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_mean_Aps": 0.1292649398514104,
+  "windows": {
+    "18A": [
+      4.54,
+      14.768
+    ],
+    "9A": [
+      2.67,
+      14.081
+    ]
+  },
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.13440214672133738,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.13440214672133738,
+      "num_overlap_points": 10229
+    },
+    "9A": {
+      "rmse_Aps": 0.12412773298148343,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12412773298148343,
+      "num_overlap_points": 11412
+    }
+  },
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 161,
+    "converged": true,
+    "start_minima": [
+      {
+        "a": 0.0,
+        "b": 2.5163504129487118,
+        "e_bind_eV": {
+          "18A": 0.1167112463369099,
+          "9A": 0.1167112463369099
+        },
+        "objective_Aps": 0.1292649700093048
+      },
+      {
+        "a": 0.0,
+        "b": 2.5164281404677773,
+        "e_bind_eV": {
+          "18A": 0.11672753858825179,
+          "9A": 0.11672753858825179
+        },
+        "objective_Aps": 0.12926504716060205
+      },
+      {
+        "a": 0.0,
+        "b": 2.5153508541760052,
+        "e_bind_eV": {
+          "18A": 0.11675778353879479,
+          "9A": 0.11675778353879479
+        },
+        "objective_Aps": 0.1292649398514104
+      }
+    ]
+  },
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": true,
+    "full_window_heldout_window_axis_forfeited": true,
+    "cross_case_axis_consumed_by_joint_fit": true
+  }
+}

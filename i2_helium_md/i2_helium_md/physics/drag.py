@@ -70,6 +70,12 @@ _REQUIRED_COEFF_KEYS: dict[str, tuple[str, ...]] = {
 
 _VALID_MASS_MODELS = ("constant", "time_resolved")
 
+# How the coefficients were extracted (provenance, METHOD_B doc §6):
+# "force_balance" = Method A (direct F_drag-vs-v regression, the original
+# pipeline); "trajectory_matching" = Method B (joint {a, b, E_bind} fit by
+# forward-integrated trajectory RMSE).
+_VALID_EXTRACTION_METHODS = ("force_balance", "trajectory_matching")
+
 
 @dataclass(frozen=True)
 class DragCoefficients:
@@ -96,18 +102,33 @@ class DragCoefficients:
         under (or the reference value for a ``time_resolved`` ``m(t)``).
         **Provenance only** -- this module is mass-agnostic and never uses it
         in any force or gamma evaluation.
+    extraction_method : str
+        Provenance: ``"force_balance"`` (Method A, the original direct
+        ``F_drag``-vs-``v`` regression -- the default, so legacy bundles load
+        unchanged) or ``"trajectory_matching"`` (Method B, the joint
+        ``{a, b, E_bind}`` forward-integration fit). Carried for the §6.5.1
+        guard and artifact stamping; never used in any force evaluation.
+    effective_binding_energy_I_ion_eV : float or None
+        The effective droplet binding depth [eV] the coefficients were
+        **jointly calibrated with** (Method B, §6.5.1 coupled pair), or
+        ``None`` for a legacy bundle whose drag<->binding pairing was never
+        jointly validated. **Provenance only** -- consumed by the config-load
+        guard, never by this module.
 
     Raises
     ------
     ValueError
         On unknown form, missing required coefficients, invalid mass model,
-        or non-positive extraction mass.
+        invalid extraction method, non-positive extraction mass, or
+        non-positive effective binding energy.
     """
 
     form: str
     coefficients: Mapping[str, float]
     extraction_mass_model: str
     extraction_mass_amu: float
+    extraction_method: str = "force_balance"
+    effective_binding_energy_I_ion_eV: float | None = None
 
     def __post_init__(self) -> None:
         if self.form not in _REQUIRED_COEFF_KEYS:
@@ -131,6 +152,18 @@ class DragCoefficients:
             raise ValueError(
                 f"extraction_mass_amu must be positive, got "
                 f"{self.extraction_mass_amu!r}"
+            )
+        if self.extraction_method not in _VALID_EXTRACTION_METHODS:
+            raise ValueError(
+                f"extraction_method must be one of "
+                f"{_VALID_EXTRACTION_METHODS}, got {self.extraction_method!r}"
+            )
+        if self.effective_binding_energy_I_ion_eV is not None and not (
+            self.effective_binding_energy_I_ion_eV > 0
+        ):
+            raise ValueError(
+                f"effective_binding_energy_I_ion_eV must be positive or None, "
+                f"got {self.effective_binding_energy_I_ion_eV!r}"
             )
 
 

@@ -82,6 +82,34 @@ class TestCfgRoundTrip:
         )
         assert np.isfinite(force)
 
+    def test_method_b_stamped_bundle_round_trips(self, tmp_path):
+        # The Method-B provenance fields (extraction_method + jointly
+        # calibrated binding) must survive cfg.json save/load; a None binding
+        # would mask a dropped field, so stamp non-default values explicitly.
+        run = RunDirectory(tmp_path / "drag_b")
+        stamped = DragCoefficients(
+            form="linear_cubic",
+            coefficients={"a": 14.0, "b": 2.0},
+            extraction_mass_model="constant",
+            extraction_mass_amu=202.953908,
+            extraction_method="trajectory_matching",
+            effective_binding_energy_I_ion_eV=0.21,
+        )
+        cfg = single_pulse_N2000_drag(
+            seed=42,
+            num_molecules=5,
+            drag_coefficients=stamped,
+            binding_energy_I_ion_eV=0.21,
+            allow_unvalidated_binding_pairing=False,
+        )
+        run.save_cfg(cfg)
+
+        loaded = run.load_cfg()
+        assert loaded.drag_coefficients == stamped
+        assert loaded.drag_coefficients.extraction_method == "trajectory_matching"
+        assert loaded.drag_coefficients.effective_binding_energy_I_ion_eV == 0.21
+        loaded.validate()  # stamped pairing matches -> §6.5.1 passes silently
+
     def test_invalid_drag_coefficients_raise_at_load(self, tmp_path):
         run = RunDirectory(tmp_path / "invalid_drag")
         cfg = single_pulse_N2000_drag()

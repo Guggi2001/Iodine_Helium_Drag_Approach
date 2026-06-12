@@ -43,13 +43,20 @@ from i2_helium_md.physics.drag import DragCoefficients, LINEAR_CUBIC
 _M_EFF = 202.953908
 
 
-def _constant_coeffs(*, a=13.86, b=2.58, m_eff=_M_EFF) -> DragCoefficients:
-    """A constant-mass linear_cubic bundle for guard tests."""
+def _constant_coeffs(*, a=13.86, b=2.58, m_eff=_M_EFF, binding=0.3) -> DragCoefficients:
+    """A constant-mass linear_cubic bundle for guard tests.
+
+    ``binding`` defaults to the ``SimConfig`` default ``binding_energy_I_ion_eV``
+    (0.3 eV) so the §6.5.1 pairing arm is satisfied and tests of the OTHER guard
+    arms stay focused; pass ``binding=None`` to exercise the unstamped-legacy
+    refusal explicitly (TestBindingPairingGuard).
+    """
     return DragCoefficients(
         form=LINEAR_CUBIC,
         coefficients={"a": a, "b": b},
         extraction_mass_model="constant",
         extraction_mass_amu=m_eff,
+        effective_binding_energy_I_ion_eV=binding,
     )
 
 
@@ -105,17 +112,31 @@ class TestExistingPresetsUnaffected:
 
 
 # ---------------------------------------------------------------------------
-# Guard: per-form dissipativity (§3.3) -- the only live Tier-0 refusal
+# Guard: per-form dissipativity (§3.3, relaxed to a >= 0 per METHOD_B §9.5)
 # ---------------------------------------------------------------------------
 class TestDissipativityGuard:
     def test_linear_cubic_positive_a_passes(self):
         cfg = SimConfig(drag_coefficients=_constant_coeffs(a=13.86, b=2.58))
         check_drag_config(cfg)  # b > 0 => no real turnover => passes
 
-    def test_linear_cubic_nonpositive_a_refused(self):
+    def test_linear_cubic_negative_a_refused(self):
         cfg = SimConfig(drag_coefficients=_constant_coeffs(a=-1.0, b=2.58))
-        with pytest.raises(ValueError, match="a > 0"):
+        with pytest.raises(ValueError, match="a >= 0"):
             check_drag_config(cfg)
+
+    def test_linear_cubic_zero_a_positive_b_passes(self):
+        # METHOD_B §9.5 pure-cubic variant: gamma = g*b*v^2 >= 0 vanishes only
+        # at v = 0 where no energy can be added -> strictly dissipative.
+        cfg = SimConfig(drag_coefficients=_constant_coeffs(a=0.0, b=2.58))
+        check_drag_config(cfg)
+
+    def test_linear_cubic_zero_a_nonpositive_b_refused(self):
+        # a = 0 is dissipative ONLY while b > 0; a = b = 0 (no drag at all)
+        # and a = 0, b < 0 (energy-adding) are both refused.
+        for b in (0.0, -1.0):
+            cfg = SimConfig(drag_coefficients=_constant_coeffs(a=0.0, b=b))
+            with pytest.raises(ValueError, match="requires b > 0"):
+                check_drag_config(cfg)
 
     def test_turnover_assert_and_skip_b_positive(self):
         # b > 0 => v_dagger = sqrt(-a/b) is imaginary => vacuously dissipative.
@@ -220,6 +241,64 @@ class TestMassConsistencyGuard:
 
 
 # ---------------------------------------------------------------------------
+# Guard: drag <-> binding consistency (§6.5.1) -- the coupled pair
+# ---------------------------------------------------------------------------
+class TestBindingPairingGuard:
+    def test_matching_stamped_binding_passes(self):
+        cfg = SimConfig(
+            binding_energy_I_ion_eV=0.21,
+            drag_coefficients=_constant_coeffs(binding=0.21),
+        )
+        check_drag_config(cfg)
+
+    def test_mismatched_stamped_binding_refused(self):
+        cfg = SimConfig(
+            binding_energy_I_ion_eV=0.30,
+            drag_coefficients=_constant_coeffs(binding=0.21),
+        )
+        with pytest.raises(ValueError, match="6.5.1"):
+            check_drag_config(cfg)
+
+    def test_unstamped_legacy_bundle_refused(self):
+        # A Method-A bundle has no jointly-validated binding: hard refuse.
+        cfg = SimConfig(drag_coefficients=_constant_coeffs(binding=None))
+        with pytest.raises(ValueError, match="not jointly validated"):
+            check_drag_config(cfg)
+
+    def test_escape_hatch_downgrades_to_warning(self):
+        cfg = SimConfig(
+            drag_coefficients=_constant_coeffs(binding=None),
+            allow_unvalidated_binding_pairing=True,
+        )
+        with pytest.warns(RuntimeWarning, match="6.5.1"):
+            check_drag_config(cfg)
+
+    def test_escape_hatch_downgrades_mismatch_too(self):
+        cfg = SimConfig(
+            binding_energy_I_ion_eV=0.30,
+            drag_coefficients=_constant_coeffs(binding=0.21),
+            allow_unvalidated_binding_pairing=True,
+        )
+        with pytest.warns(RuntimeWarning, match="mismatch"):
+            check_drag_config(cfg)
+
+    def test_no_coefficients_means_no_binding_check(self):
+        # Inert default: no drag -> the binding field is the collision-era
+        # parameter and is not guarded.
+        cfg = SimConfig(binding_energy_I_ion_eV=0.123)
+        check_drag_config(cfg)
+
+    def test_transitional_drag_presets_warn_not_refuse(self):
+        # Until the Method-B re-wiring, the drag presets pair a legacy bundle
+        # with a hand-set binding under the documented escape hatch: loud
+        # warning, not refusal. The re-wiring slice flips them to stamped
+        # bundles and removes the hatch (and this test's expectation).
+        with pytest.warns(RuntimeWarning, match="6.5.1"):
+            cfg = single_pulse_N2000_drag()
+            cfg.validate()
+
+
+# ---------------------------------------------------------------------------
 # Coefficient loader (§4)
 # ---------------------------------------------------------------------------
 class TestLoader:
@@ -263,6 +342,72 @@ class TestLoader:
         )
         with pytest.raises(ValueError, match="missing required keys"):
             load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+
+# ---------------------------------------------------------------------------
+# Method-B (trajectory_matching) loader mode -- legacy files load unchanged,
+# Method-B files must carry the joint-calibration provenance (METHOD_B §6)
+# ---------------------------------------------------------------------------
+_LEGACY_JSON = {
+    "a": 1.0, "b": 2.0, "a_err": 0.1, "b_err": 0.1, "meff_amu": _M_EFF,
+}
+_METHOD_B_JSON = {
+    **_LEGACY_JSON,
+    "extraction_method": "trajectory_matching",
+    "extraction_mass_model": "constant",
+    "effective_binding_energy_I_ion_eV": 0.21,
+    "t_start": 2.67,
+    "t_end": 14.0,
+    "reference_file": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv",
+}
+
+
+class TestLoaderMethodB:
+    def _write(self, tmp_path, payload):
+        (tmp_path / "fit_parameters.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    def test_legacy_file_loads_as_force_balance_with_no_binding(self, tmp_path):
+        self._write(tmp_path, _LEGACY_JSON)
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.extraction_method == "force_balance"
+        assert coeffs.effective_binding_energy_I_ion_eV is None
+
+    def test_trajectory_matching_file_stamps_binding(self, tmp_path):
+        self._write(tmp_path, _METHOD_B_JSON)
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.extraction_method == "trajectory_matching"
+        assert coeffs.effective_binding_energy_I_ion_eV == 0.21
+        assert coeffs.extraction_mass_model == "constant"
+        assert coeffs.extraction_mass_amu == _M_EFF
+
+    @pytest.mark.parametrize(
+        "dropped",
+        [
+            "extraction_mass_model",
+            "effective_binding_energy_I_ion_eV",
+            "t_start",
+            "t_end",
+            "reference_file",
+        ],
+    )
+    def test_trajectory_matching_missing_provenance_refused(self, tmp_path, dropped):
+        payload = dict(_METHOD_B_JSON)
+        del payload[dropped]
+        self._write(tmp_path, payload)
+        with pytest.raises(ValueError, match="Method-B keys"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+    def test_unknown_extraction_method_refused(self, tmp_path):
+        self._write(tmp_path, {**_LEGACY_JSON, "extraction_method": "hand_tuned"})
+        with pytest.raises(ValueError, match="unknown\\s+extraction_method"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+    def test_trajectory_matching_meff_mismatch_still_refused(self, tmp_path):
+        self._write(tmp_path, _METHOD_B_JSON)
+        with pytest.raises(ValueError, match="provenance mismatch"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF + 1.0)
 
 
 # ---------------------------------------------------------------------------

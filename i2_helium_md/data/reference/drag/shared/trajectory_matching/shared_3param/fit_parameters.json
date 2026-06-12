@@ -1,0 +1,101 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_cubic",
+  "a": 0.0002484791023503866,
+  "b": 2.5158776496235324,
+  "a_err": 0.0002484791023503866,
+  "b_err": 0.12279879004114869,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.1167805800418183,
+  "effective_binding_energy_err_eV": 0.011147237185809934,
+  "t_start": 2.67,
+  "t_end": 14.768,
+  "reference_file": [
+    "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  ],
+  "calibration_cases": [
+    "18A",
+    "9A"
+  ],
+  "stage": "stage2_joint",
+  "variant": "shared_3param",
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157,
+    "provenance": "18A Method-A bundle only (9A Method-A artifact provenance-broken, drag_migration_log.md 2026-06-11)"
+  },
+  "objective": "equal_weight_mean_over_cases_of_in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_mean_Aps": 0.12926516953209521,
+  "windows": {
+    "18A": [
+      4.54,
+      14.768
+    ],
+    "9A": [
+      2.67,
+      14.081
+    ]
+  },
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.1345107384577058,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.1345107384577058,
+      "num_overlap_points": 10229
+    },
+    "9A": {
+      "rmse_Aps": 0.12401960060648465,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12401960060648465,
+      "num_overlap_points": 11412
+    }
+  },
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 419,
+    "converged": true,
+    "start_minima": [
+      {
+        "a": 0.0002484791023503866,
+        "b": 2.5158776496235324,
+        "e_bind_eV": {
+          "18A": 0.1167805800418183,
+          "9A": 0.1167805800418183
+        },
+        "objective_Aps": 0.12926516953209521
+      },
+      {
+        "a": 0.004942219266380848,
+        "b": 2.5138229980273845,
+        "e_bind_eV": {
+          "18A": 0.11689200937734201,
+          "9A": 0.11689200937734201
+        },
+        "objective_Aps": 0.12926693104201578
+      },
+      {
+        "a": 0.004812405626402356,
+        "b": 2.515112975756335,
+        "e_bind_eV": {
+          "18A": 0.11697706227799126,
+          "9A": 0.11697706227799126
+        },
+        "objective_Aps": 0.12927419838012574
+      }
+    ]
+  },
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": true,
+    "full_window_heldout_window_axis_forfeited": true,
+    "cross_case_axis_consumed_by_joint_fit": true
+  }
+}

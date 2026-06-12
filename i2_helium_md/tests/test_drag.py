@@ -314,3 +314,42 @@ class TestDragCoefficientsType:
     def test_rejects_nonpositive_mass(self):
         with pytest.raises(ValueError):
             DragCoefficients(LINEAR_CUBIC, {"a": 1.0, "b": 1.0}, "constant", 0.0)
+
+    def test_extraction_method_defaults_to_force_balance(self):
+        # Legacy construction signature unchanged -> Method-A provenance with
+        # no jointly-validated binding (None, handled by the §6.5.1 guard).
+        c = DragCoefficients(LINEAR_CUBIC, {"a": 1.0, "b": 1.0}, "constant", 200.0)
+        assert c.extraction_method == "force_balance"
+        assert c.effective_binding_energy_I_ion_eV is None
+
+    def test_trajectory_matching_carries_binding(self):
+        c = DragCoefficients(
+            LINEAR_CUBIC,
+            {"a": 1.0, "b": 1.0},
+            "constant",
+            200.0,
+            extraction_method="trajectory_matching",
+            effective_binding_energy_I_ion_eV=0.2,
+        )
+        assert c.extraction_method == "trajectory_matching"
+        assert c.effective_binding_energy_I_ion_eV == 0.2
+
+    def test_rejects_unknown_extraction_method(self):
+        with pytest.raises(ValueError, match="extraction_method"):
+            DragCoefficients(
+                LINEAR_CUBIC,
+                {"a": 1.0, "b": 1.0},
+                "constant",
+                200.0,
+                extraction_method="hand_tuned",
+            )
+
+    def test_rejects_nonpositive_binding(self):
+        with pytest.raises(ValueError, match="effective_binding_energy"):
+            DragCoefficients(
+                LINEAR_CUBIC,
+                {"a": 1.0, "b": 1.0},
+                "constant",
+                200.0,
+                effective_binding_energy_I_ion_eV=0.0,
+            )

@@ -754,6 +754,18 @@ to be plumbed into the validation surface as a new comparison routine.
 > claim about `power_law` as **conditional on a sign the real export does
 > not have.**
 
+> **Status note (2026-06-12) — the form cross-check is now scheduled, via
+> trajectory matching, not Method-A fit passes.** The shared-form joint
+> refit (METHOD_B §9.7) passed with an effectively **pure-cubic** law
+> (`a → 0`, `γ = g·b·v²`), and the next phase (METHOD_B §10) realizes
+> `linear_quadratic` (incl. pure-quadratic `a ≡ 0`) and `power_law`
+> (free `n`, bounded `n ≥ 1`) and fits each family with the same
+> shared trajectory-matching machinery against the pure-cubic incumbent —
+> superseding the §3.7 "outstanding `linear_quadratic` fit pass" route.
+> `threshold` stays reserved (not in the §10 scope). The motivating
+> tension: the Method-A power-law export's $n\approx+2$ vs the
+> trajectory-matched pure-cubic $n=3$.
+
 ### 3.1 Physical question
 
 How is $F_\text{drag}(v)$ represented in the integrator? The extraction

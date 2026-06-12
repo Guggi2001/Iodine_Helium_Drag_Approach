@@ -1,0 +1,225 @@
+{
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "thresholds": {
+    "S1_PRED_RMSE_MAX_Aps": 0.45,
+    "S2_RMSE_18A_MAX_Aps": 0.19,
+    "S2_RMSE_9A_MAX_Aps": 0.45,
+    "escape_band": 1.0,
+    "T_a0_Aps": 0.005,
+    "provenance": "pre-registered \u00a79.4 bands (fixed 2026-06-11 before any run; anchors recorded in METHOD_B \u00a79.4); SUPERSEDE the \u00a78 provisional cross-case bands -- the 18A A<->B a-ratio check is not re-applied",
+    "gating": "Stage-2 bands only (Stage 1 recorded non-gating; T_a0 is a classification, not a gate) -- 2026-06-11 decisions"
+  },
+  "stage1": {
+    "date": "2026-06-11",
+    "branch": "drag_implementation",
+    "stage": "stage1_prediction",
+    "gating": "recorded_only_non_gating (2026-06-11 decision: only the Stage-2 bands carry verdict power)",
+    "params_source": {
+      "bundle": "data/reference/drag/18A/trajectory_matching/fit_parameters.json",
+      "note": "delivered \u00a78 18A per-case Method-B fit reused as-is (old 0.1*a0 lower bound; no refit under the new a >= 0 bound, per the 2026-06-11 pre-run clarification)",
+      "a": 1.4555867153856499,
+      "b": 3.3160571582301825,
+      "e_bind_eV": 0.07091762397734235
+    },
+    "prediction_case": "9A",
+    "rmse_Aps": 0.2684602696551268,
+    "escape_fraction": 1.0,
+    "num_overlap_points": 11412,
+    "checks": {
+      "S1_PRED_RMSE_MAX": {
+        "value_Aps": 0.2684602696551268,
+        "band_max_Aps": 0.45,
+        "pass": true
+      },
+      "S1_PRED_ESCAPE": {
+        "value": 1.0,
+        "band": 1.0,
+        "pass": true
+      }
+    },
+    "anchor_note": "0.45 = Tier-0 9A dimensionality residual (~0.39 A/ps) + margin (METHOD_B \u00a79.4)"
+  },
+  "stage2": {
+    "shared_3param": {
+      "variant": "shared_3param",
+      "a": 0.0002484791023503866,
+      "b": 2.5158776496235324,
+      "e_bind_eV": {
+        "18A": 0.1167805800418183,
+        "9A": 0.1167805800418183
+      },
+      "objective_mean_Aps": 0.12926516953209521,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.1345107384577058,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.1345107384577058
+        },
+        "9A": {
+          "rmse_Aps": 0.12401960060648465,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.12401960060648465
+        }
+      },
+      "n_evaluations": 419,
+      "converged": true,
+      "start_minima": [
+        {
+          "a": 0.0002484791023503866,
+          "b": 2.5158776496235324,
+          "e_bind_eV": {
+            "18A": 0.1167805800418183,
+            "9A": 0.1167805800418183
+          },
+          "objective_Aps": 0.12926516953209521
+        },
+        {
+          "a": 0.004942219266380848,
+          "b": 2.5138229980273845,
+          "e_bind_eV": {
+            "18A": 0.11689200937734201,
+            "9A": 0.11689200937734201
+          },
+          "objective_Aps": 0.12926693104201578
+        },
+        {
+          "a": 0.004812405626402356,
+          "b": 2.515112975756335,
+          "e_bind_eV": {
+            "18A": 0.11697706227799126,
+            "9A": 0.11697706227799126
+          },
+          "objective_Aps": 0.12927419838012574
+        }
+      ],
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.1345107384577058,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.12401960060648465,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      }
+    },
+    "shared_pure_cubic": {
+      "variant": "shared_pure_cubic",
+      "a": 0.0,
+      "b": 2.5153508541760052,
+      "e_bind_eV": {
+        "18A": 0.11675778353879479,
+        "9A": 0.11675778353879479
+      },
+      "objective_mean_Aps": 0.1292649398514104,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.13440214672133738,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.13440214672133738
+        },
+        "9A": {
+          "rmse_Aps": 0.12412773298148343,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.12412773298148343
+        }
+      },
+      "n_evaluations": 161,
+      "converged": true,
+      "start_minima": [
+        {
+          "a": 0.0,
+          "b": 2.5163504129487118,
+          "e_bind_eV": {
+            "18A": 0.1167112463369099,
+            "9A": 0.1167112463369099
+          },
+          "objective_Aps": 0.1292649700093048
+        },
+        {
+          "a": 0.0,
+          "b": 2.5164281404677773,
+          "e_bind_eV": {
+            "18A": 0.11672753858825179,
+            "9A": 0.11672753858825179
+          },
+          "objective_Aps": 0.12926504716060205
+        },
+        {
+          "a": 0.0,
+          "b": 2.5153508541760052,
+          "e_bind_eV": {
+            "18A": 0.11675778353879479,
+            "9A": 0.11675778353879479
+          },
+          "objective_Aps": 0.1292649398514104
+        }
+      ],
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.13440214672133738,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.12412773298148343,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      }
+    }
+  },
+  "pure_cubic_equivalence": {
+    "delta_objective_Aps": -2.2968068480455628e-07,
+    "threshold_Aps": 0.005,
+    "equivalent": true,
+    "conclusion": "pure-cubic recorded as the empirical conclusion on a's identifiability (a not identified by this objective)"
+  },
+  "stage1_stage2_parameter_shift": {
+    "note": "qualitative, recorded-only (2026-06-11 decision: no pre-registered band, no gate power); a large shift when 9A enters the objective flags 9A dragging the law toward its transverse contamination (METHOD_B \u00a79.2)",
+    "stage1_18A_fit": {
+      "a": 1.4555867153856499,
+      "b": 3.3160571582301825,
+      "e_bind_eV": 0.07091762397734235
+    },
+    "stage2_shared_3param": {
+      "a": 0.0002484791023503866,
+      "b": 2.5158776496235324,
+      "e_bind_eV": 0.1167805800418183
+    },
+    "shift": {
+      "delta_a": -1.4553382362832994,
+      "delta_b": -0.8001795086066501,
+      "delta_e_bind_eV": 0.04586295606447595
+    }
+  },
+  "diagnostic_4param": null,
+  "primary_pass": true,
+  "bundles_written": {
+    "shared_3param": "data/reference/drag/shared/trajectory_matching/shared_3param/fit_parameters.json",
+    "shared_pure_cubic": "data/reference/drag/shared/trajectory_matching/shared_pure_cubic/fit_parameters.json"
+  },
+  "verdict": "PASS: the shared_3param fit passes the pre-registered Stage-2 bands -> the shared bundle is the production candidate; Tier 1 UNGATES (gate policy \u00a79.1); VMI = post-Tier-1 final arbiter. Production-candidate choice between the recorded variants is deferred to the preset-rewiring decision.",
+  "vmi": "pending (unreachable until Tier 1; post-Tier-1 final arbiter)"
+}

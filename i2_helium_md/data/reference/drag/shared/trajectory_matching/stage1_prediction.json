@@ -1,0 +1,30 @@
+{
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "stage": "stage1_prediction",
+  "gating": "recorded_only_non_gating (2026-06-11 decision: only the Stage-2 bands carry verdict power)",
+  "params_source": {
+    "bundle": "data/reference/drag/18A/trajectory_matching/fit_parameters.json",
+    "note": "delivered \u00a78 18A per-case Method-B fit reused as-is (old 0.1*a0 lower bound; no refit under the new a >= 0 bound, per the 2026-06-11 pre-run clarification)",
+    "a": 1.4555867153856499,
+    "b": 3.3160571582301825,
+    "e_bind_eV": 0.07091762397734235
+  },
+  "prediction_case": "9A",
+  "rmse_Aps": 0.2684602696551268,
+  "escape_fraction": 1.0,
+  "num_overlap_points": 11412,
+  "checks": {
+    "S1_PRED_RMSE_MAX": {
+      "value_Aps": 0.2684602696551268,
+      "band_max_Aps": 0.45,
+      "pass": true
+    },
+    "S1_PRED_ESCAPE": {
+      "value": 1.0,
+      "band": 1.0,
+      "pass": true
+    }
+  },
+  "anchor_note": "0.45 = Tier-0 9A dimensionality residual (~0.39 A/ps) + margin (METHOD_B \u00a79.4)"
+}

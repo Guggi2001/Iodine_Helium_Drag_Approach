@@ -1,0 +1,66 @@
+{
+  "date": "2026-06-11",
+  "branch": "drag_implementation",
+  "thresholds": {
+    "coeff_ratio_band": [
+      0.5,
+      2.0
+    ],
+    "residual_ratio_max": 3.0,
+    "e_bind_max_diff_eV": 0.05,
+    "provenance": "provisional first-runs thresholds (\u00a76.10)"
+  },
+  "vmi": "pending",
+  "checks": {
+    "9A_A_vs_B_coefficient_agreement": "dropped: Method-A artifact provenance-broken (hand-edited); see drag_migration_log.md 2026-06-11",
+    "residual_quality_asymmetry": {
+      "rmse_ratio_9A_over_18A": 0.4226109053480479,
+      "pass": true
+    },
+    "cross_case_e_bind_consistency": {
+      "abs_diff_eV": 0.08336198591061748,
+      "pass": false
+    }
+  },
+  "verdict": "FAIL: 9A fit violates the cross-case bands -- consistent with the coefficients absorbing the transverse discrepancy; record as not-yet-usable for the radial MD (METHOD_B \u00a78), do not wire into presets.",
+  "shared_form_refit": {
+    "date": "2026-06-11",
+    "branch": "drag_implementation",
+    "note": "scored against the pre-registered \u00a79.4 bands, which supersede the provisional first-runs bands above (2026-06-11 decision; the A<->B a-ratio check is not re-applied)",
+    "stage1_9A_prediction": {
+      "rmse_Aps": 0.2684602696551268,
+      "escape_fraction": 1.0,
+      "gating": "recorded_only_non_gating"
+    },
+    "stage2_shared_3param": {
+      "per_case_rmse_Aps": {
+        "18A": 0.1345107384577058,
+        "9A": 0.12401960060648465
+      },
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.1345107384577058,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.12401960060648465,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      }
+    },
+    "primary_pass": true,
+    "verdict": "PASS: the shared_3param fit passes the pre-registered Stage-2 bands -> the shared bundle is the production candidate; Tier 1 UNGATES (gate policy \u00a79.1); VMI = post-Tier-1 final arbiter. Production-candidate choice between the recorded variants is deferred to the preset-rewiring decision.",
+    "shared_artifacts": "data/reference/drag/shared/trajectory_matching"
+  }
+}

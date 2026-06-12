@@ -28,6 +28,17 @@ REFERENCE_DRAG_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference"
 # (provenance completeness) even though Slice 3 does not yet consume them.
 _FIT_PARAM_REQUIRED_KEYS = ("a", "b", "a_err", "b_err", "meff_amu")
 
+# Additional keys a Method-B (trajectory_matching) fit_parameters.json must
+# carry (METHOD_B doc §6): the §6.5.1 coupled binding, the mass model it ran
+# under, the calibration window, and the reference it was fit against.
+_FIT_PARAM_METHOD_B_KEYS = (
+    "extraction_mass_model",
+    "effective_binding_energy_I_ion_eV",
+    "t_start",
+    "t_end",
+    "reference_file",
+)
+
 
 def load_drag_coefficients(
     coeff_dir: Path, *, expected_m_eff_amu: float
@@ -58,16 +69,23 @@ def load_drag_coefficients(
     Returns
     -------
     DragCoefficients
-        A ``linear_cubic`` bundle with ``extraction_mass_model="constant"`` and
-        ``extraction_mass_amu`` taken from the JSON.
+        A ``linear_cubic`` bundle with ``extraction_mass_amu`` taken from the
+        JSON. Legacy (Method-A) files yield
+        ``extraction_method="force_balance"`` with
+        ``extraction_mass_model="constant"`` and no stamped binding; files
+        declaring ``extraction_method="trajectory_matching"`` (Method B) must
+        also carry the joint-calibration provenance keys
+        (``_FIT_PARAM_METHOD_B_KEYS``) and yield a bundle stamped with
+        ``effective_binding_energy_I_ion_eV``.
 
     Raises
     ------
     FileNotFoundError
         If ``fit_parameters.json`` is absent (the message names the path).
     ValueError
-        If the JSON is malformed, missing required keys, or its ``meff_amu``
-        disagrees with ``expected_m_eff_amu``.
+        If the JSON is malformed, missing required keys (per-method), carries
+        an unknown ``extraction_method``, or its ``meff_amu`` disagrees with
+        ``expected_m_eff_amu``.
     """
     json_path = coeff_dir / "fit_parameters.json"
     if not json_path.is_file():
@@ -94,6 +112,38 @@ def load_drag_coefficients(
         raise ValueError(
             f"drag coefficient provenance mismatch in {json_path}: JSON "
             f"meff_amu={json_m_eff} != expected_m_eff_amu={expected_m_eff_amu}"
+        )
+
+    # Method discrimination: a legacy (Method-A) file carries no
+    # ``extraction_method`` key and loads exactly as before -- it is NOT
+    # re-stamped (Method A stays the frozen independent cross-reference; "no
+    # jointly-validated binding" is honestly represented as None and handled
+    # by the §6.5.1 guard). A Method-B file must declare itself and carry the
+    # full joint-calibration provenance.
+    extraction_method = str(raw.get("extraction_method", "force_balance"))
+    if extraction_method == "trajectory_matching":
+        missing_b = [k for k in _FIT_PARAM_METHOD_B_KEYS if k not in raw]
+        if missing_b:
+            raise ValueError(
+                f"trajectory_matching drag coefficient file {json_path} "
+                f"missing required Method-B keys {missing_b}; need "
+                f"{_FIT_PARAM_METHOD_B_KEYS}"
+            )
+        return DragCoefficients(
+            form=LINEAR_CUBIC,
+            coefficients={"a": float(raw["a"]), "b": float(raw["b"])},
+            extraction_mass_model=str(raw["extraction_mass_model"]),
+            extraction_mass_amu=json_m_eff,
+            extraction_method="trajectory_matching",
+            effective_binding_energy_I_ion_eV=float(
+                raw["effective_binding_energy_I_ion_eV"]
+            ),
+        )
+    if extraction_method != "force_balance":
+        raise ValueError(
+            f"drag coefficient file {json_path} carries unknown "
+            f"extraction_method {extraction_method!r}; expected "
+            f"'force_balance' (or absent, legacy) or 'trajectory_matching'"
         )
 
     return DragCoefficients(
@@ -236,8 +286,13 @@ def single_pulse_N2000_drag(**overrides) -> SimConfig:
         mass_scenario="fixed",
         m_eff_amu=_DRAG_M_EFF_AMU,
         mass_initial_amu=_DRAG_M_EFF_AMU,
-        binding_energy_I_ion_eV = 0.23,
-        #potential_steepness = 5,
+        binding_energy_I_ion_eV=0.11697706227799126,
+        # TRANSITIONAL (removed by the Method-B preset re-wiring): the legacy
+        # Method-A bundle carries no jointly-validated binding stamp, and the
+        # 0.23 eV above is the informal hand-tuning Method B replaces, so the
+        # §6.5.1 guard is downgraded to its loud warning here until the
+        # trajectory_matching bundle is wired in.
+        allow_unvalidated_binding_pairing=True,
     )
     return replace(cfg, **overrides)
 
@@ -265,5 +320,10 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
         mass_scenario="fixed",
         m_eff_amu=_DRAG_M_EFF_AMU,
         mass_initial_amu=_DRAG_M_EFF_AMU,
+        binding_energy_I_ion_eV=0.11697706227799126,
+        # TRANSITIONAL (removed by the Method-B preset re-wiring): legacy
+        # Method-A bundle, no jointly-validated binding stamp -- §6.5.1 guard
+        # downgraded to its loud warning until trajectory_matching is wired in.
+        allow_unvalidated_binding_pairing=True,
     )
     return replace(cfg, **overrides)

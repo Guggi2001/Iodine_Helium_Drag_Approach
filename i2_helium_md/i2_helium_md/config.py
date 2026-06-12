@@ -192,6 +192,7 @@ class SimConfig:
     m_eff_amu: float = 202.953908         # amu; drag-law reference mass (§2.2)
     mass_initial_amu: float = 202.953908  # amu; = m_eff_amu under `fixed` (A-ii)
     allow_inconsistent_mass_pairing: bool = False        # refuse -> warn downgrade
+    allow_unvalidated_binding_pairing: bool = False      # §6.5.1 refuse -> warn downgrade
     drag_low_v_floor: float = 0.0         # A/ps; inert for linear_cubic (power_law n<0 only)
 
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
@@ -288,10 +289,14 @@ def check_drag_config(cfg: "SimConfig") -> None:
     Slice 4 stepper builds from ``cfg.drag_form`` while consuming ``coeffs``, so
     they must name the same form), then:
 
-    1. **Per-form dissipativity (§3.3)** -- the only live, non-vacuous refusal
-       on Tier-0-reachable input. For ``linear_cubic`` requires ``a > 0`` and
-       asserts there is no real turnover speed ``v_dagger = sqrt(-a/b)`` (true
-       whenever ``b > 0``, which both extracted cases satisfy; the
+    1. **Per-form dissipativity (§3.3, relaxed per METHOD_B §9.5)** -- the
+       only live, non-vacuous refusal on Tier-0-reachable input. For
+       ``linear_cubic`` requires ``a >= 0`` (``a = 0`` is the pure-cubic
+       variant: ``gamma = g*(a + b*v^2) >= 0`` still vanishes only at
+       ``v = 0`` where no energy can be added, so it is strictly dissipative
+       -- but only while ``b > 0``, so ``a = 0`` with ``b <= 0`` is refused)
+       and asserts there is no real turnover speed ``v_dagger = sqrt(-a/b)``
+       (true whenever ``b > 0``, which both extracted cases satisfy; the
        max-trajectory-speed ceiling that a ``b < 0`` re-extraction would need
        is unsourced and recorded as a §7 open item, not invented here). The
        reserved forms' branches are written for completeness but unreachable --
@@ -303,6 +308,16 @@ def check_drag_config(cfg: "SimConfig") -> None:
        scenarios require ``time_resolved`` coefficients. An inconsistent pairing
        is a hard error unless ``allow_inconsistent_mass_pairing`` downgrades it
        to a warning.
+    3. **Drag <-> binding consistency (§6.5.1)** -- the coefficients and the
+       effective droplet binding are a jointly-calibrated coupled pair. A
+       bundle stamped with ``effective_binding_energy_I_ion_eV`` requires
+       ``cfg.binding_energy_I_ion_eV`` to equal the stamp exactly (1e-9 eV --
+       a wiring identity, not a physics band); an unstamped (legacy /
+       Method-A) bundle is refused outright because its pairing was never
+       jointly validated. Either refusal downgrades to a ``RuntimeWarning``
+       under ``allow_unvalidated_binding_pairing`` (used deliberately by the
+       Method-B fit loop, which by construction evaluates not-yet-validated
+       pairings).
 
     Parameters
     ----------
@@ -342,17 +357,22 @@ def check_drag_config(cfg: "SimConfig") -> None:
     if form == LINEAR_CUBIC:
         a = float(c["a"])
         b = float(c["b"])
-        if not (a > 0.0):
+        if a < 0.0:
             raise ValueError(
-                f"linear_cubic drag requires a > 0 (dissipative at low v), "
-                f"got a={a!r}"
+                f"linear_cubic drag requires a >= 0 (dissipative at low v; "
+                f"a = 0 is the METHOD_B §9.5 pure-cubic variant), got a={a!r}"
+            )
+        if a == 0.0 and not (b > 0.0):
+            raise ValueError(
+                f"linear_cubic with a == 0 (pure-cubic variant, METHOD_B "
+                f"§9.5) requires b > 0, got b={b!r}"
             )
         # Turnover v_dagger = sqrt(-a/b): real only if b < 0. b > 0 => no real
         # turnover => vacuously dissipative everywhere (assert-and-skip, §3.2).
         # A b < 0 re-extraction would need a max-trajectory-speed ceiling to
         # bound v_dagger against; that ceiling is unsourced (§7 open item) and
         # is deliberately NOT invented here.
-        assert b > 0.0 or a > 0.0  # a>0 already enforced; documents the intent
+        assert b > 0.0 or a > 0.0  # documents the intent (see refusals above)
     elif form == LINEAR_QUADRATIC:  # unreachable: NotImplemented upstream
         if not (float(c["a"]) > 0.0 and float(c["c"]) >= 0.0):
             raise ValueError("linear_quadratic drag requires a > 0, c >= 0")
@@ -396,4 +416,39 @@ def check_drag_config(cfg: "SimConfig") -> None:
         else:
             raise ValueError(
                 msg + " (set allow_inconsistent_mass_pairing=True to override)"
+            )
+
+    # --- 3. Drag <-> binding consistency (§6.5.1) ---
+    # The drag coefficients and the effective droplet binding are a
+    # jointly-calibrated COUPLED PAIR (TIER0_FINDINGS "Correct drag traps the
+    # ions"): an in-window-correct drag delivers sub-barrier surface KE, so the
+    # binding the run uses must be the one the coefficients were jointly
+    # validated with. Enforced like the §6.5 mass arm.
+    stamped_binding = coeffs.effective_binding_energy_I_ion_eV
+    if stamped_binding is None:
+        binding_msg = (
+            "drag<->binding pairing not jointly validated (§6.5.1): the "
+            "coefficient bundle carries no effective_binding_energy_I_ion_eV "
+            f"stamp (extraction_method={coeffs.extraction_method!r}), so "
+            f"binding_energy_I_ion_eV={cfg.binding_energy_I_ion_eV} was never "
+            "validated against these coefficients"
+        )
+    elif abs(cfg.binding_energy_I_ion_eV - stamped_binding) > 1e-9:
+        # Exact pairing: presets copy the value from the bundle stamp, so a
+        # real difference is a wiring bug, not a physics band.
+        binding_msg = (
+            "drag<->binding pairing mismatch (§6.5.1): "
+            f"cfg.binding_energy_I_ion_eV={cfg.binding_energy_I_ion_eV} != "
+            f"stamped effective_binding_energy_I_ion_eV={stamped_binding}"
+        )
+    else:
+        binding_msg = None
+
+    if binding_msg is not None:
+        if cfg.allow_unvalidated_binding_pairing:
+            warnings.warn(binding_msg, RuntimeWarning)
+        else:
+            raise ValueError(
+                binding_msg
+                + " (set allow_unvalidated_binding_pairing=True to override)"
             )

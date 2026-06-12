@@ -2,12 +2,49 @@ from config_utils_local import config as C
 from drag_function import io
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-
+from scipy.signal import savgol_filter
+import pandas as pd
 home = False
 dict9 = io.load_data(C.PATH9A)
 dict18 = io.load_data(C.PATH18A)
+
+
+t18 = dict18["t"]
+v18 = dict18["v1"]
+R18 = dict18["R"]
+mask = (t18 >= 4.54) & (t18 <= 14.76800)
+t_18_w = t18[mask]
+v_18_w = v18[mask]
+R_18_w = R18[mask]
+wl = 9401
+polyorder = 1
+v_18_SG = savgol_filter(v_18_w, window_length=wl, polyorder=polyorder, deriv=0, mode="interp")
+
+# Create DataFrame with time, cleaned_SG, and IMF cleaned data
+export_data = pd.DataFrame({
+    'time': t_18_w,
+    'cleaned_SG': v_18_SG,
+})
+
+# Export to CSV
+export_data.to_csv('cleaned_data_18_long.csv', index=False)
+print(f"Data exported to cleaned_data_long.csv")
+
+plt.figure(figsize=(12,8))
+plt.plot(t18, v18)
+plt.plot(t_18_w,v_18_SG )
+plt.show()
+
+
+
+
+a = 3
+
+
+
+
+
+
 
 v_9x = dict9['v2_x']
 v_9y = dict9['v2_y']

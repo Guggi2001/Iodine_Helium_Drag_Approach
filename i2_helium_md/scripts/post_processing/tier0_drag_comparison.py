@@ -54,28 +54,28 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "9A"
+CASE = "18A"
 # The finished drag run to score (produced by single_pulse_N2000_drag).
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_drag_tier0_N50"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "18A_drag_tier0_N50"
 
 # HeDFT reference trace for the same case (9A or 18A).
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
 
 # Drag coefficient directory -- the window [t_start, t_end] and m_eff are read
 # from its fit_parameters.json (same provenance as the coefficients).
 DRAG_COEFF_DIR = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "linear_and_cubic"
+    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "linear_and_cubic"
 )
 
 # Optional: write the ensemble-mean series here (the regression reference).
 # Set to None to skip the export and only print + plot.
 EXPORT_MEAN_SERIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "tier0"
+    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "tier0"
     / "md_mean_trajectory.csv"
 )
 
 CLEANED_VELOCITIES_PATH_2 = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "velocity_smoothed"
+    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "velocity_smoothed"
     / "cleaned_data_long.csv"
 )
 
