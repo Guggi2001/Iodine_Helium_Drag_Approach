@@ -561,3 +561,34 @@ Implementation awaits `[PROCEED TO IMPLEMENTATION]`.
   axis was spent by §9 Stage 2) — recorded honestly as ranking, not fresh
   held-out validation; VMI stays the post-Tier-1 final arbiter.
 
+### Milestone commit + preset re-wiring — delivery record (2026-06-12)
+
+- **Milestone commit `696bfa7`** (29 files): the full Method-B arc (per-case
+  §8 + shared §9 implementation, bundles, tests) + the §10 documentation
+  pass + the upstream `Drag_function` 18 Å export. **Pre-commit finding:**
+  a 17:14 post-verdict experiment (2026-06-11) had overwritten both
+  Method-A `linear_and_cubic/fit_parameters.json` files with a shared-fit
+  multi-start row (the *third* start, not the chosen best) and regenerated
+  both Tier-0 `md_mean_trajectory.csv` regression references — contradicting
+  the recorded state and turning the 18 Å force-balance tests red. **User
+  decision: restored all four reference artifacts to HEAD before
+  committing** (the experiment values remain available in the shared
+  bundles / `verdict.json`); suite verified back at 641 passed /
+  2 known-red.
+- **Preset re-wiring EXECUTED** (`[PROCEED TO IMPLEMENTATION]` given
+  2026-06-12): both drag presets (`single_pulse_N2000_drag`,
+  `single_pulse_N2000_18Angst_drag`) now load the one shared
+  `shared_pure_cubic` bundle (`_SHARED_DRAG_BUNDLE_DIR` in `presets.py`)
+  and set `binding_energy_I_ion_eV` **from the loaded bundle's stamp**
+  (single source of truth — the §6.5.1 exact-identity guard passes by
+  construction); the transitional `allow_unvalidated_binding_pairing=True`
+  hatch is **removed** from the presets (B2's transitional state retired).
+  Tests: `test_transitional_drag_presets_warn_not_refuse` flipped to
+  `test_rewired_drag_presets_validate_silently` (warnings escalate to
+  errors); `TestDragPresets` pins the re-wired bundle identity
+  (`extraction_method`, `a == 0.0`, binding identity); the redundant
+  hatch override removed from `test_run_directory.py`. Full suite:
+  **641 passed, 2 known-red** (unchanged baseline), transitional
+  RuntimeWarnings gone. The legacy Method-A bundles stay on disk as the
+  frozen independent cross-reference (loader contract unchanged).
+

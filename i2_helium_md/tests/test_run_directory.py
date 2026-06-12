@@ -100,7 +100,6 @@ class TestCfgRoundTrip:
             num_molecules=5,
             drag_coefficients=stamped,
             binding_energy_I_ion_eV=0.21,
-            allow_unvalidated_binding_pairing=False,
         )
         run.save_cfg(cfg)
 

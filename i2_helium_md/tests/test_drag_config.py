@@ -12,6 +12,7 @@ physics band), loader failure modes, and enum completeness.
 
 import json
 import typing
+import warnings
 
 import pytest
 
@@ -288,14 +289,17 @@ class TestBindingPairingGuard:
         cfg = SimConfig(binding_energy_I_ion_eV=0.123)
         check_drag_config(cfg)
 
-    def test_transitional_drag_presets_warn_not_refuse(self):
-        # Until the Method-B re-wiring, the drag presets pair a legacy bundle
-        # with a hand-set binding under the documented escape hatch: loud
-        # warning, not refusal. The re-wiring slice flips them to stamped
-        # bundles and removes the hatch (and this test's expectation).
-        with pytest.warns(RuntimeWarning, match="6.5.1"):
+    def test_rewired_drag_presets_validate_silently(self):
+        # Method-B re-wiring (METHOD_B §10, 2026-06-12): the presets carry the
+        # stamped shared_pure_cubic bundle and wire its jointly calibrated
+        # binding into binding_energy_I_ion_eV, so the §6.5.1 pairing passes
+        # with no escape hatch and no warning (warnings escalate to errors
+        # here to catch a regression to the transitional state).
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             cfg = single_pulse_N2000_drag()
             cfg.validate()
+        assert cfg.allow_unvalidated_binding_pairing is False
 
 
 # ---------------------------------------------------------------------------
@@ -451,6 +455,15 @@ class TestDragPresets:
         cfg = preset()
         assert cfg.drag_coefficients is not None
         assert cfg.drag_coefficients.form == LINEAR_CUBIC
+        # Re-wired (METHOD_B §10): both presets carry the one shared
+        # pure-cubic Method-B bundle (a = 0 exactly) with its stamped binding
+        # wired into the config -- the §6.5.1 identity holds by construction.
+        assert cfg.drag_coefficients.extraction_method == "trajectory_matching"
+        assert cfg.drag_coefficients.coefficients["a"] == 0.0
+        assert cfg.drag_coefficients.coefficients["b"] > 0.0
+        assert cfg.binding_energy_I_ion_eV == (
+            cfg.drag_coefficients.effective_binding_energy_I_ion_eV
+        )
         assert cfg.m_eff_amu == _M_EFF
         assert cfg.R0_GS_angstrom == r0
         cfg.validate()  # fixed + matching constant coeffs -> consistent

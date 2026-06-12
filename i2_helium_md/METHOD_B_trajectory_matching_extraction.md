@@ -482,8 +482,8 @@ equivalent it won't matter, the pure-cubic conclusion is recorded per §9.2).
 **→ RESOLVED 2026-06-12 (§10): `shared_pure_cubic` is the production
 candidate.** **Presets are NOT re-wired by this phase** (gated on the
 verdict plus a separate user decision; the Method-A bundles and the
-transitional §6.5.1 hatch remain). **→ Re-wiring APPROVED 2026-06-12
-(§10.1); execution pending.**
+transitional §6.5.1 hatch remain). **→ Re-wiring EXECUTED 2026-06-12
+(§10.1).**
 
 ---
 
@@ -542,13 +542,15 @@ Implementation awaits `[PROCEED TO IMPLEMENTATION]` (working-method rule).
    `shared_3param`'s `a = 0.0002` is optimizer noise at a bound, and
    carrying it forward invites a later reader treating it as a measured
    linear coefficient.
-2. **Preset re-wiring APPROVED:** wire the two drag presets to the
-   `shared_pure_cubic` bundle. The bundle carries a jointly-calibrated
-   stamped binding, so the transitional §6.5.1
-   `allow_unvalidated_binding_pairing` hatch comes **off** the presets and
-   the guard runs at full strength. Execution follows the documentation
-   pass and the milestone commit; it is a small bounded change (presets +
-   tests + doc status lines), separate from the form phase below.
+2. **Preset re-wiring APPROVED — EXECUTED 2026-06-12** (after the
+   milestone commit `696bfa7`): both drag presets load the shared
+   `shared_pure_cubic` bundle and wire its stamped
+   `effective_binding_energy_I_ion_eV` into `binding_energy_I_ion_eV`
+   directly from the loaded coefficients (the §6.5.1 identity holds by
+   construction); the transitional `allow_unvalidated_binding_pairing`
+   hatch is removed from the presets and the guard runs at full strength.
+   Suite verified back at the recorded 641-passed / 2-known-red baseline
+   with the transitional warnings gone.
 3. **Next implementation phase — alternative drag-form discrimination:**
    realize the reserved `power_law` and `linear_quadratic` forms (the
    latter including its **pure-quadratic** `a ≡ 0` variant) behind the
@@ -683,9 +685,12 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
 
 - [x] Documentation pass: §9.6/§9.7 deferred decisions resolved, this
   section added, CLAUDE.md + `drag_migration_log.md` updated (2026-06-12).
-- [ ] Milestone commit of the §9 delivery + this documentation pass.
-- [ ] Presets re-wired to `shared_pure_cubic`; transitional §6.5.1 hatch
-  removed from the presets; tests updated.
+- [x] Milestone commit of the §9 delivery + this documentation pass
+  (`696bfa7`, 2026-06-12; four reference artifacts overwritten by a
+  17:14 post-verdict experiment were restored to HEAD first — user
+  decision).
+- [x] Presets re-wired to `shared_pure_cubic`; transitional §6.5.1 hatch
+  removed from the presets; tests updated (2026-06-12).
 - [ ] `T_form` and `power_law` `n` bounds locked pre-run (first-runs rule).
 - [ ] Forms realized + guards + tests green.
 - [ ] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and

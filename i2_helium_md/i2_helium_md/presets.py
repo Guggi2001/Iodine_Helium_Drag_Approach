@@ -260,16 +260,28 @@ def single_pulse_droplet_distribution(**overrides) -> SimConfig:
 # were fit at this value; it is the exact provenance the loader cross-checks.
 _DRAG_M_EFF_AMU = 202.953908
 
+# Validated production drag bundle (METHOD_B §9.7 verdict + §10 decision,
+# 2026-06-12): the cross-case shared-form joint refit passed every
+# pre-registered band, and the pure-cubic variant (a = 0 exactly,
+# gamma = g*b*v**2) is the chosen production candidate. One size-independent
+# bundle serves both droplet cases; the spatial gate handles the surface.
+_SHARED_DRAG_BUNDLE_DIR = (
+    REFERENCE_DRAG_ROOT / "shared" / "trajectory_matching" / "shared_pure_cubic"
+)
+
 
 def single_pulse_N2000_drag(**overrides) -> SimConfig:
-    """:func:`single_pulse_N2000` (9 A) wired with the linear_cubic drag law.
+    """:func:`single_pulse_N2000` (9 A) wired with the validated drag law.
 
-    Loads and validates the frozen 9 A ``linear_cubic`` coefficients and exposes
-    them via ``drag_coefficients`` + the mass surface. **No behavioral change in
-    Slice 3:** the hard-sphere collision path still runs (Slice 4 swaps it); the
-    coefficients are loaded and config-validated but not yet consumed by a
-    stepper. The hard-sphere fields are inherited unchanged from
-    :func:`single_pulse_N2000`.
+    Loads the shared Method-B ``shared_pure_cubic`` bundle (trajectory-matching
+    joint refit over both HeDFT cases, METHOD_B §9.7) and exposes it via
+    ``drag_coefficients`` + the mass surface; the ion stage dispatches to the
+    BAOAB drag path. The jointly calibrated effective binding stamped in the
+    bundle is wired into ``binding_energy_I_ion_eV`` directly from the loaded
+    coefficients, so the §6.5.1 drag<->binding pairing identity holds by
+    construction and the config validates silently (no escape hatch). The
+    hard-sphere fields are inherited unchanged from :func:`single_pulse_N2000`
+    but the collision path is not entered.
 
     Parameters
     ----------
@@ -277,7 +289,7 @@ def single_pulse_N2000_drag(**overrides) -> SimConfig:
         Any ``SimConfig`` field to override from the preset default.
     """
     coeffs = load_drag_coefficients(
-        REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic",
+        _SHARED_DRAG_BUNDLE_DIR,
         expected_m_eff_amu=_DRAG_M_EFF_AMU,
     )
     cfg = single_pulse_N2000(
@@ -286,24 +298,17 @@ def single_pulse_N2000_drag(**overrides) -> SimConfig:
         mass_scenario="fixed",
         m_eff_amu=_DRAG_M_EFF_AMU,
         mass_initial_amu=_DRAG_M_EFF_AMU,
-        binding_energy_I_ion_eV=0.11697706227799126,
-        # TRANSITIONAL (removed by the Method-B preset re-wiring): the legacy
-        # Method-A bundle carries no jointly-validated binding stamp, and the
-        # 0.23 eV above is the informal hand-tuning Method B replaces, so the
-        # §6.5.1 guard is downgraded to its loud warning here until the
-        # trajectory_matching bundle is wired in.
-        allow_unvalidated_binding_pairing=True,
+        binding_energy_I_ion_eV=coeffs.effective_binding_energy_I_ion_eV,
     )
     return replace(cfg, **overrides)
 
 
 def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
-    """:func:`single_pulse_N2000_18Angst` (18 A) wired with the linear_cubic drag law.
+    """:func:`single_pulse_N2000_18Angst` (18 A) wired with the validated drag law.
 
-    The 18 A analog of :func:`single_pulse_N2000_drag`: builds the ``18A`` case
-    path, loads and validates the frozen 18 A ``linear_cubic`` coefficients. Same
-    Slice 3 caveat -- coefficients are loaded and validated, the collision path
-    still runs until Slice 4.
+    The 18 A analog of :func:`single_pulse_N2000_drag`: same shared
+    ``shared_pure_cubic`` Method-B bundle (the law is size-independent by the
+    §9.7 verdict), same stamped-binding wiring, on the 18 A base preset.
 
     Parameters
     ----------
@@ -311,7 +316,7 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
         Any ``SimConfig`` field to override from the preset default.
     """
     coeffs = load_drag_coefficients(
-        REFERENCE_DRAG_ROOT / "18A" / "linear_and_cubic",
+        _SHARED_DRAG_BUNDLE_DIR,
         expected_m_eff_amu=_DRAG_M_EFF_AMU,
     )
     cfg = single_pulse_N2000_18Angst(
@@ -320,10 +325,6 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
         mass_scenario="fixed",
         m_eff_amu=_DRAG_M_EFF_AMU,
         mass_initial_amu=_DRAG_M_EFF_AMU,
-        binding_energy_I_ion_eV=0.11697706227799126,
-        # TRANSITIONAL (removed by the Method-B preset re-wiring): legacy
-        # Method-A bundle, no jointly-validated binding stamp -- §6.5.1 guard
-        # downgraded to its loud warning until trajectory_matching is wired in.
-        allow_unvalidated_binding_pairing=True,
+        binding_energy_I_ion_eV=coeffs.effective_binding_energy_I_ion_eV,
     )
     return replace(cfg, **overrides)

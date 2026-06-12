@@ -81,9 +81,7 @@ E_bind ≈ 0.071 / 0.154 eV ≪ static 0.308 — the trap resolved as designed) 
 by the full-window trajectory objective (cubic dominates; 18 Å's `a` pinned at the
 optimizer bound, 9 Å shows a live `a`↔`E_bind` degeneracy ridge), and the
 cross-case `E_bind` disagreement (0.083 eV) is entangled with that ridge.
-**Both per-case Method-B bundles stand flagged not-yet-usable; the presets
-remain on the legacy Method-A bundles behind the transitional §6.5.1
-warning.** **The cross-case SHARED-FORM JOINT REFIT has RUN (2026-06-11,
+**Both per-case Method-B bundles stand flagged not-yet-usable.** **The cross-case SHARED-FORM JOINT REFIT has RUN (2026-06-11,
 METHOD_B §9.7; delivery record in `drag_migration_log.md`) — verdict PASS on
 every pre-registered §9.4 band:** Stage 1 (the untouched 9 Å prediction from
 the §8 18 Å bundle, no refit — the last strictly held-out axis; recorded,
@@ -97,8 +95,11 @@ VMI is the post-Tier-1 final arbiter.** Both variant bundles live under
 `data/reference/drag/shared/trajectory_matching/`. **The frontier decisions
 were resolved 2026-06-12 (METHOD_B §10):** the production candidate is
 **`shared_pure_cubic`** (`a = 0` exactly — the honest encoding of the
-identifiability conclusion); the **preset re-wiring is APPROVED but not yet
-executed** (the §6.5.1 transitional hatch comes off the presets with it);
+identifiability conclusion); the **preset re-wiring is EXECUTED
+(2026-06-12)** — both drag presets load the shared `shared_pure_cubic`
+bundle, wire its stamped binding into `binding_energy_I_ion_eV` (the §6.5.1
+identity holds by construction), and the transitional
+`allow_unvalidated_binding_pairing` hatch is removed from the presets;
 and the **next implementation phase is alternative drag-form
 discrimination**: realize the reserved `power_law` and `linear_quadratic`
 forms (incl. pure-quadratic `a ≡ 0`) and run each family through the same
@@ -286,9 +287,9 @@ retired in favour of held-out generalization,
 `EXTRACTION_FRAME_FIX_milestone.md` is further demoted, and **Tier 1 is now
 UNGATED by the §9 pass**. The frontier decisions were **resolved
 2026-06-12 (METHOD_B §10; decision record in `drag_migration_log.md`)**:
-production candidate `shared_pure_cubic`; preset re-wiring approved
-(pending execution, removes the transitional §6.5.1 hatch); milestone
-commit approved; and the next phase is the **alternative drag-form
+production candidate `shared_pure_cubic`; preset re-wiring **executed**
+(both presets on the shared bundle, transitional §6.5.1 hatch removed);
+milestone commit done (`696bfa7`); and the next phase is the **alternative drag-form
 discrimination** (`power_law` + `linear_quadratic` incl. pure-quadratic,
 each through the same shared-refit machinery, reused §9.4 bands plus a
 pre-registered `T_form` equivalence threshold to be locked pre-run). The
@@ -392,8 +393,9 @@ relative-velocity route was a contingency only if the radial-projection
 convention could not generalize — it did). The Tier-0 infrastructure is
 reusable as-is; `linear_cubic` stands; the validated coefficients are the
 shared Method-B bundles (a swap behind the interchangeable surface —
-production candidate `shared_pure_cubic`, decided 2026-06-12; re-wiring
-approved, not yet executed; the alternative-form discrimination phase
+production candidate `shared_pure_cubic`, decided 2026-06-12; **re-wiring
+executed 2026-06-12** — both drag presets carry the shared bundle with its
+stamped binding; the alternative-form discrimination phase
 (METHOD_B §10) then tests `power_law` / `linear_quadratic` against the
 pure-cubic incumbent before Tier 1 starts).
 
