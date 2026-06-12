@@ -356,6 +356,13 @@ def main_calculation(
     # --- trusted interior mask ---
     mask = trusted_interior_mask(t_ps, settings)
 
+    # --- prepare fit-friendly vectors from trusted interior (always build these so later branches can rely on them) ---
+    v_f_all = v_spline_Aps[mask]  # [Å/ps]
+    F_f_all = F_drag_amuAps2[mask]  # [amu*Å/ps^2]
+    mask_pos = np.isfinite(v_f_all) & np.isfinite(F_f_all) & (v_f_all > 0.0)
+    v_fit = v_f_all[mask_pos]
+    F_fit = F_f_all[mask_pos]
+
     # --- diagnostics / sanity printouts ---
     # Compute means on trusted interior only
     mean_FC = float(np.mean(F_C_amuAps2[mask]))
@@ -610,7 +617,68 @@ def main_calculation(
                 plt.legend()
                 plt.tight_layout()
                 plt.show()
+        # ---------------------------------------------------------------------------------------
+        # ---------------------------------------------------------------------------------------
+        #                   A quadratic v^2 fit, set fit_variant=3
+        # ---------------------------------------------------------------------------------------
+        # ---------------------------------------------------------------------------------------
+        elif settings.fit_variant == 3:
+            def drag_model_quad(v, a):
+                """F_drag(v) = a * v**2"""
+                return a * (v ** 2)
 
+            # Build fitting arrays from the trusted interior (do not rely on plotting branch variables)
+            v_all = v_spline_Aps[mask]
+            F_all = F_drag_amuAps2[mask]
+            valid = np.isfinite(v_all) & np.isfinite(F_all) & (v_all > 0.0)
+            v_fit_q = v_all[valid]
+            F_fit_q = F_all[valid]
+
+            # Require a minimum number of samples
+            if len(v_fit_q) < 10:
+                print("Not enough valid samples for quadratic v^2 fit.")
+            else:
+                # Linear-in-parameter solve: F = a * v^2  =>  a = sum(v^2 * F) / sum(v^4)
+                v2 = v_fit_q ** 2
+                numerator = float(np.sum(v2 * F_fit_q))
+                denominator = float(np.sum(v2 ** 2))
+                if denominator == 0:
+                    print("Degenerate velocity powers for quadratic fit (denominator=0).")
+                else:
+                    a_hat = numerator / denominator
+
+                    # Estimate uncertainty (assume homoscedastic residuals)
+                    F_pred = a_hat * (v_fit_q ** 2)
+                    residuals = F_fit_q - F_pred
+                    dof = max(1, len(F_fit_q) - 1)
+                    sigma2 = float(np.sum(residuals ** 2) / dof)
+                    cov_a = sigma2 / denominator
+                    a_err = float(np.sqrt(cov_a)) if cov_a >= 0 else float('nan')
+
+                    # R^2
+                    ss_res = float(np.sum(residuals ** 2))
+                    ss_tot = float(np.sum((F_fit_q - np.mean(F_fit_q)) ** 2))
+                    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float('nan')
+
+                    fit_result = {"a": a_hat, "a_err": a_err, "r2": r2}
+
+                    print("=== quadratic v^2 drag fit (trusted interior) ===")
+                    print(f"a     = {a_hat:.6e} ± {a_err:.6e}  [amu*Å/ps² / (Å/ps)^2 = amu/ps]")
+                    print(f"R^2   = {r2:.6f}")
+
+                    if settings.show_plots:
+                        v_grid = np.linspace(np.min(v_fit_q), np.max(v_fit_q), 400)
+                        F_grid = drag_model_quad(v_grid, a_hat)
+                        plt.figure(figsize=(8, 5))
+                        plt.scatter(v_fit_q, F_fit_q, s=10, alpha=0.6, label="F_drag samples")
+                        plt.plot(v_grid, F_grid, lw=2.0, label=f"fit: F = a v^2, a={a_hat:.3e}")
+                        plt.xlabel("v [Å/ps]")
+                        plt.ylabel("F_drag [amu·Å/ps²]")
+                        plt.title("Drag law fit: a v^2")
+                        plt.grid(True)
+                        plt.legend()
+                        plt.tight_layout()
+                        plt.show()
 
     # --- Export results if requested ---
     if export:
@@ -681,6 +749,9 @@ def drag_model_tert(v, a, b):
     """F_drag(v) = a*v + b*v^3"""
     return a * v + b * (v ** 3)
 
+def drag_model_quad(v,a):
+    return a*v**2
+
 
 dict9 = io.load_data(C.PATH9A)
 dict18 = io.load_data(C.PATH18A)
@@ -701,12 +772,17 @@ v_9_SG_varying_wl = savgol_filter(v_9_IMF, window_length=2501, polyorder=1, deri
 R_recon = reconstruct_R_from_v(2 * v_9_IMF, t_9_w, R0=R_9_w[0])
 
 out = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
-                              truncate_points=500, plot_only_drag_with_fit = True), export = True,
+                              truncate_points=500, plot_only_drag_with_fit = True), export = False,
                         export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\power',
                        t_start = 2.67, t_end = 6)
 out_fit_2 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
-                              truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = True,
+                              truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = False,
                              export_dir =BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\linear_and_cubic',
+                             t_start = 2.67, t_end = 6)
+
+out_fit_3 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
+                              truncate_points=500, fit_variant = 3, plot_only_drag_with_fit = True), export = True,
+                             export_dir =BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\quadratic',
                              t_start = 2.67, t_end = 6)
 
 
@@ -732,12 +808,17 @@ export_data.to_csv('cleaned_data_18.csv', index=False)
 print(f"Data exported to cleaned_data.csv")
 
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
-                                                  plot_only_drag_with_fit = True), export = True,
+                                                  plot_only_drag_with_fit = True), export = False,
                              export_dir =  BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\power',
                           t_start = 4.54, t_end = 8)
 out_18_fit_2 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
-                                 fit_variant = 2, plot_only_drag_with_fit = True), export = True,
+                                 fit_variant = 2, plot_only_drag_with_fit = True), export = False,
                              export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\linear_and_cubic',
+                                t_start = 4.54, t_end = 8)
+
+out_18_fit_3 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
+                                 fit_variant = 3, plot_only_drag_with_fit = True), export = True,
+                             export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\quadratic',
                                 t_start = 4.54, t_end = 8)
 
 a = 3
@@ -773,7 +854,26 @@ def compare_drag_two_cases_tert(v_9, F_drag_9, a_9, b_9, v_18, F_drag_18, a_18, 
     plt.plot(v_fit, drag_model_tert(v_fit, a_18, b_18), ls = "--", alpha = 0.4, label=f"Fit_18, a = {a_18:.2f}, b = {b_18:.2f}")
     plt.xlabel("v [Å/ps]")
     plt.ylabel("F_drag [amu*Å/ps²]")
-    plt.title("Comparison of F_drag between 9Å and 18Å cases with av+bv^3")
+    plt.title("Comparison of F_drag between 9Å and 18Å cases with av+bv^2")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    
+
+def compare_drag_two_cases_quad(v_9, F_drag_9, a_9, v_18, F_drag_18, a_18, v_fit_lims = None):
+    plt.figure(figsize=(8, 5))
+    plt.plot(v_9, F_drag_9, label="F_drag 9Å case")
+    plt.plot(v_18, F_drag_18, label="F_drag 18Å case")
+    if v_fit_lims is not None:
+        v_fit = np.linspace(v_fit_lims[0], v_fit_lims[1], 10000)
+    else:
+        v_fit = np.linspace(np.min(v_18), np.max(v_9), 10000)
+    plt.plot(v_fit, drag_model_quad(v_fit, a_9), ls = "--", alpha = 0.4, label=f"Fit_9, a = {a_9:.2f}")
+    plt.plot(v_fit, drag_model_quad(v_fit, a_18), ls = "--", alpha = 0.4, label=f"Fit_18, a = {a_18:.2f}")
+    plt.xlabel("v [Å/ps]")
+    plt.ylabel("F_drag [amu*Å/ps²]")
+    plt.title("Comparison of F_drag between 9Å and 18Å cases with av^2 fit")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
@@ -788,3 +888,6 @@ compare_drag_two_cases_tert(out_fit_2["v_spline_Aps"], out_fit_2["F_drag_amuAps2
 
 compare_drag_two_cases(out["v_spline_Aps"], out["F_drag_amuAps2"], out["fit_result"]["gamma"], out["fit_result"]["n"],
                        out_18["v_spline_Aps"], out_18["F_drag_amuAps2"], out_18["fit_result"]["gamma"], out_18["fit_result"]["n"], v_fit_lims = (0.5, 15))
+
+compare_drag_two_cases_quad(out_fit_3["v_spline_Aps"], out_fit_3["F_drag_amuAps2"], out_fit_3["fit_result"]["a"],
+                       out_18_fit_3["v_spline_Aps"], out_18_fit_3["F_drag_amuAps2"], out_18_fit_3["fit_result"]["a"], v_fit_lims = (0.5, 15))
