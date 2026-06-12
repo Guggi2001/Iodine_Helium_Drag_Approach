@@ -637,36 +637,102 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
   with provenance in the script's USER SETTINGS at the pre-run session,
   **not** a runtime read of any bundle (the preset-derived `setup.a0/b0`
   reads `a0 = 0` from the shared bundle since the re-wiring and must not
-  be used). Family-specific anchor mapping recorded pre-run:
+  be used). Family-specific anchor mapping (values **LOCKED** in §10.4.1;
+  carried as named constants in the driver's USER SETTINGS at
+  implementation):
   - `lq_shared_3param` — `{a, c, E_bind}`, `a` lower bound 0;
   - `lq_shared_pure_quadratic` — `a ≡ 0`, fit `{c, E_bind}`; `T_a0`-analog
     equivalence classification between the two, as in §9.2;
-  - `pl_shared_3param` — `{C, n, E_bind}`, `n` free within pre-registered
-    bounds (provisionally `[1, 4]`; **locked in a pre-run session**).
+  - `pl_shared_3param` — `{C, n, E_bind}`, `n` free within the locked
+    bounds `[1, 4]` (§10.4.1); the optimizer works in the **pivot
+    parameterization** `(γ_ref, n)`, `γ_ref = C·v_ref^(n−1)` at the
+    locked pivot speed `V_REF_APS` (§10.4.1) — it axis-aligns the
+    `log C ≈ const − n·log v̄` matching ridge so the fitted `n̂`'s
+    sensitivity half-width is meaningful; the stamped bundle records raw
+    `{C, n}` (the §10.3 closed form — loader contract unchanged).
 - **Bands: the §9.4 Stage-2 bands are reused unchanged**
   (`S2_RMSE_18A_MAX` 0.19, `S2_RMSE_9A_MAX` 0.45, escape 1.0). They are
   form-agnostic statements about trajectory reproduction; reusing them
-  avoids any post-hoc tuning. **New pre-registered numbers needed before
-  the first run (first-runs rule):** the form-equivalence threshold
-  `T_form` (Δobjective between a family's best fit and the pure-cubic
-  incumbent's 0.1293 Å/ps; `T_a0`-scale candidate 0.005 Å/ps, to be
-  locked), and the `power_law` `n` bounds. *Note:* unlike the §9 nested
-  `a ≡ 0` case, the alternative families are **not** nested in the
-  incumbent, so Δobjective can be negative (a genuinely better form) —
-  `T_form` is a two-sided classification: better-beyond-`T_form` /
-  equivalent-within-`T_form` / worse-beyond-`T_form`.
-- **Verdict mapping:** family passes the §9.4 bands AND beats the
-  incumbent beyond `T_form` → competing production candidate, decision
-  escalated to the user. Within `T_form` → **exponent degeneracy
-  recorded** as the finding; pure-cubic stays candidate; VMI post-Tier-1
-  arbitrates. Fails bands or worse beyond `T_form` → incumbent confirmed,
-  family bundle recorded as rejected-by-trajectory-objective.
+  avoids any post-hoc tuning. **The new pre-registered numbers are
+  LOCKED (2026-06-12 pre-run session, §10.4.1):** the form-equivalence
+  classification `T_form` scores
+  Δ = (a family's **best-variant** objective) − (the pure-cubic
+  incumbent's 0.1293 Å/ps) under a **two-threshold scheme** —
+  equivalent within ±`T_FORM_EQUIV_APS` (0.005 Å/ps, the
+  optimizer-noise/`T_a0` scale); "genuinely better → escalate" only
+  beyond `T_FORM_BETTER_APS` (Δ ≤ −0.013 Å/ps, the 10%-sensitivity
+  scale of the incumbent objective); the zone between is recorded as
+  "marginally better, not escalation-worthy"; worse beyond +0.005 →
+  rejected. *Note:* unlike the §9 nested `a ≡ 0` case, the alternative
+  families are **not** nested in the incumbent, so Δobjective can be
+  negative (a genuinely better form) — and the asymmetric escalation
+  bar keeps an improvement inside the objective's own flatness scale
+  from entering the record stamped "genuinely better".
+- **Verdict mapping (two-threshold, §10.4.1):** family passes the §9.4
+  bands AND beats the incumbent beyond `T_FORM_BETTER_APS` → competing
+  production candidate, decision escalated to the user. Within
+  ±`T_FORM_EQUIV_APS` → **exponent degeneracy recorded** as the finding;
+  pure-cubic stays candidate; VMI post-Tier-1 arbitrates. In the
+  marginal zone (−0.013 < Δ < −0.005) → recorded "marginally better,
+  not escalation-worthy"; pure-cubic stays. Fails bands or worse beyond
+  +`T_FORM_EQUIV_APS` → incumbent confirmed, family bundle recorded as
+  rejected-by-trajectory-objective.
 - **Methodological status of the axes (recorded honestly):** the §9
   cross-case axis was *spent* by the Stage-2 joint fit, and these
   comparisons re-use the same two trajectories — this is **model selection
   on seen data**, legitimate for ranking forms under a pre-registered
   protocol but not fresh held-out validation. No new validation claim is
   made; the winner's external test remains VMI after Tier 1.
+
+### 10.4.1 Pre-run constants — LOCKED (2026-06-12 pre-run session)
+
+First-runs rule satisfied: fixed before any form-phase run, not re-tuned
+after. Decision record in `drag_migration_log.md`. The driver scripts
+carry these as named constants with this provenance in their USER
+SETTINGS blocks.
+
+| constant | value | provenance / anchoring |
+|---|---|---|
+| `T_FORM_EQUIV_APS` | 0.005 Å/ps | equivalence-zone half-width; the optimizer-`fatol`/`T_a0` scale (§9.4) |
+| `T_FORM_BETTER_APS` | 0.013 Å/ps | escalation bar (Δ ≤ −0.013 = genuinely better); the 10%-sensitivity scale of the incumbent objective 0.1293 Å/ps |
+| `power_law` `n` bounds | `[1, 4]` | nesting points 2 and 3 interior; `n ≥ 1` keeps `γ` finite at `v = 0` (`drag_low_v_floor` stays inert, §10.3) |
+| `V_REF_APS` | 3.0 Å/ps | `power_law` pivot speed — inside both cases' in-window speed ranges (18 Å 2.54–3.02, 9 Å 2.83–4.95 Å/ps) |
+| `a0` | 14.555626399148123 amu/ps | `data/reference/drag/18A/linear_and_cubic/fit_parameters.json` |
+| `b0` | 2.0534044239692157 amu·ps/Å² | same bundle |
+| `c0` | 11.016050300970692 amu/Å | `data/reference/drag/18A/quadratic/fit_parameters.json` (Method-A quadratic export, commit `d1ca029`) |
+| `C0` | 10.36139380949775 amu·Å^(1−n)·ps^(n−2) | `data/reference/drag/18A/power/fit_parameters.json` |
+| `n0` | 2.0557526931077588 (dimensionless) | same bundle |
+
+Decisions bound to these numbers (user, 2026-06-12):
+
+- **Two-threshold `T_form`** (supersedes the original single-0.005
+  candidate): Δ = best-variant objective − 0.1293 is classified
+  better-beyond-`T_FORM_BETTER_APS` (escalate) / marginally-better
+  (−0.013 < Δ < −0.005; recorded, no escalation) / equivalent within
+  ±0.005 / worse beyond +0.005 (rejected). Rationale: 0.005 is the
+  right scale for "indistinguishable from optimizer noise" but
+  hair-trigger for "genuinely better" — the asymmetric bar keeps the
+  verdict record honest (a Δ = −0.007 must not enter the record stamped
+  "genuinely better" when it sits inside the objective's own flatness
+  scale).
+- **`power_law` pivot parameterization** `(γ_ref, n)` with
+  `γ_ref = C·v_ref^(n−1)` at `V_REF_APS` — optimizer-internal only; the
+  bundle stamps raw `{C, n}`.
+- **Anchors stay 18 Å-only** — now a convention choice (the 9 Å
+  Method-A artifact is restored, migration log 2026-06-12), kept for
+  consistency with the §9.3 record; anchors are numerical conditioning
+  only.
+- **Stage-1 analog convention:** each family's 18 Å-only fit uses the
+  family's full variant (`lq_shared_3param` / `pl_shared_3param`),
+  scored against the same 0.45 Å/ps number for comparability with
+  pure-cubic's 0.2685 (recorded, non-gating per §10.4).
+- **Interpretive context (recorded for reading the outcome):** the
+  in-window reference speed ranges are narrow (18 Å 2.54–3.02 Å/ps,
+  ratio 1.19; 9 Å 2.83–4.95, ratio 1.75), so exponent leverage comes
+  mainly from the from-onset transient and the **cross-case
+  speed-scale difference**, not the in-window shape — a large `n̂`
+  half-width (the degeneracy outcome) is a live expectation, and §10.2
+  already treats it as a finding, not a failure.
 
 ### 10.5 Implementation surface (awaits `[PROCEED TO IMPLEMENTATION]`)
 
@@ -698,9 +764,11 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
   decision).
 - [x] Presets re-wired to `shared_pure_cubic`; transitional §6.5.1 hatch
   removed from the presets; tests updated (2026-06-12).
-- [ ] `T_form`, the `power_law` `n` bounds, and the per-family
+- [x] `T_form`, the `power_law` `n` bounds, and the per-family
   pre-registered anchor constants locked pre-run (first-runs rule;
-  anchors-as-constants decided 2026-06-12 — see §10.4).
+  anchors-as-constants decided 2026-06-12; values **LOCKED 2026-06-12**,
+  §10.4.1 — two-threshold `T_form`, `n ∈ [1, 4]`, pivot
+  parameterization with `V_REF_APS = 3.0`, 18 Å-only anchors).
 - [ ] Forms realized + guards + tests green.
 - [ ] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and
   comparison verdict recorded.

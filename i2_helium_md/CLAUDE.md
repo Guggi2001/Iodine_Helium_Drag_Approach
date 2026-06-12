@@ -291,9 +291,12 @@ production candidate `shared_pure_cubic`; preset re-wiring **executed**
 (both presets on the shared bundle, transitional §6.5.1 hatch removed);
 milestone commit done (`696bfa7`); and the next phase is the **alternative drag-form
 discrimination** (`power_law` + `linear_quadratic` incl. pure-quadratic,
-each through the same shared-refit machinery, reused §9.4 bands plus a
-pre-registered `T_form` equivalence threshold to be locked pre-run). The
-form phase precedes Tier 1; implementation awaits
+each through the same shared-refit machinery, reused §9.4 bands plus the
+pre-registered two-threshold `T_form` scheme — **all pre-run constants
+LOCKED 2026-06-12** (METHOD_B §10.4.1: `T_FORM_EQUIV_APS = 0.005` /
+`T_FORM_BETTER_APS = 0.013` Å/ps, `n ∈ [1, 4]`, `power_law` pivot
+parameterization at `V_REF_APS = 3.0` Å/ps, 18 Å-only Method-A anchor
+constants). The form phase precedes Tier 1; implementation awaits
 `[PROCEED TO IMPLEMENTATION]`. See "Tier-0 outcome and the active task"
 below.
 

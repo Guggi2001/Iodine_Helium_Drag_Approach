@@ -657,3 +657,57 @@ a broken fixture was the one live inconsistency. Restoration executed:
   §9.3 18 Å-only anchoring remain recorded history (correct decisions at
   the time — the artifact really was broken when they were made).
 
+---
+
+## §10 form-phase pre-run constants — decision record (2026-06-12, pre-run session)
+
+The §10.6 pre-run lock executed: all open §10.4 design questions resolved
+by the user and the pre-registered constants fixed **before any form-phase
+run** (first-runs rule). Authoritative table: METHOD_B §10.4.1. Docs-only —
+implementation still awaits `[PROCEED TO IMPLEMENTATION]`.
+
+### User decisions (locked)
+
+- **`T_form` = two-threshold scheme** (supersedes the single-0.005
+  candidate): Δ = (family **best-variant** objective) − (incumbent
+  `shared_pure_cubic` 0.1293 Å/ps), classified as genuinely-better /
+  marginally-better / equivalent / worse via `T_FORM_EQUIV_APS = 0.005`
+  (optimizer-noise/`T_a0` scale) and `T_FORM_BETTER_APS = 0.013` (the
+  10%-sensitivity scale of the incumbent objective). Escalation to the
+  user only beyond −0.013; the −0.013 < Δ < −0.005 zone is recorded as
+  "marginally better, not escalation-worthy". Rationale: keeps a
+  within-flatness improvement from entering the verdict record stamped
+  "genuinely better".
+- **`power_law` optimizer parameterization = pivot `(γ_ref, n)`**,
+  `γ_ref = C·v_ref^(n−1)` at the locked pivot `V_REF_APS = 3.0 Å/ps`
+  (inside both in-window speed ranges) — axis-aligns the
+  `log C ≈ const − n·log v̄` matching ridge so `n̂`'s sensitivity
+  half-width is meaningful. Optimizer-internal only; bundles stamp raw
+  `{C, n}` (loader contract unchanged).
+- **`n` bounds locked `[1, 4]`** (nesting points 2 and 3 interior;
+  `n ≥ 1` keeps `γ` finite at `v = 0`, `drag_low_v_floor` stays inert).
+- **Anchors 18 Å-only, as pre-registered constants:**
+  `a0 = 14.555626399148123`, `b0 = 2.0534044239692157`
+  (`18A/linear_and_cubic/`), `c0 = 11.016050300970692`
+  (`18A/quadratic/`, the `d1ca029` Method-A quadratic export),
+  `C0 = 10.36139380949775`, `n0 = 2.0557526931077588` (`18A/power/`).
+  18 Å-only is now a convention choice (the 9 Å artifact is restored),
+  kept for consistency with the §9.3 record.
+- **Conventions:** Stage-1 analog per family runs the family's full
+  variant (`lq_shared_3param` / `pl_shared_3param`), scored against the
+  same 0.45 Å/ps number for comparability with pure-cubic's 0.2685
+  (recorded, non-gating); the `T_form` comparison uses each family's
+  best variant.
+
+### Interpretive context (recorded pre-run)
+
+The in-window smoothed-reference speed ranges are narrow — 18 Å
+2.54–3.02 Å/ps (max/min 1.19), 9 Å 2.83–4.95 Å/ps (1.75) — so the
+exponent leverage comes mainly from the from-onset transient and the
+**cross-case speed-scale difference** (one shared law must serve windows
+at ~2.75 vs ~3.9 Å/ps characteristic speed), not from in-window shape. A
+single-case fit could barely discriminate `v²` from `v³`; the shared
+machinery is what makes the question answerable. A large `n̂` half-width
+(the degeneracy outcome) is therefore a live expectation and is already
+a recorded-finding path in §10.2, not a failure.
+
