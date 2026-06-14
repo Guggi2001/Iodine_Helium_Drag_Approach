@@ -240,8 +240,9 @@ class TestLowVelocityRegularity:
 
         For linear_cubic, F_drag -> 0 as v -> 0, so computing gamma by division
         would be 0/0. The module's closed form gives the finite g*a instead.
-        (The genuine v->0 divergence belongs to the DEFERRED power_law n<0 form,
-        which raises NotImplementedError -- see TestFormDispatch.)
+        (The genuine v->0 divergence belongs to a hypothetical power_law n<1
+        law, which the §3.3 config guard refuses -- the realised power_law is
+        bounded to n >= 1; see TestFormPhaseFamilies.)
         """
         coeffs = _load_linear_cubic_bundle(case)
         assert float(drag_force(0.0, -40.0, coeffs, STEEPNESS_A)) == pytest.approx(0.0)
@@ -260,30 +261,178 @@ class TestMassAgnosticism:
 
 
 # ===========================================================================
-# Form dispatch: only linear_cubic realised (SLICE1 §5)
+# Form dispatch: threshold reserved; lq/pl realised (SLICE1 §5, METHOD_B §10)
 # ===========================================================================
-class TestFormDispatch:
-    @pytest.mark.parametrize(
-        "form,coeffs",
-        [
-            (LINEAR_QUADRATIC, {"a": 1.0, "c": 1.0}),
-            (THRESHOLD, {"F_sat": 1.0, "v0": 1.0}),
-            (POWER_LAW, {"gamma": 6.15, "n": 2.6}),
-        ],
+def _bundle(form: str, coeffs: dict) -> DragCoefficients:
+    return DragCoefficients(
+        form=form,
+        coefficients=coeffs,
+        extraction_mass_model="constant",
+        extraction_mass_amu=200.0,
     )
-    def test_unrealised_forms_raise_not_implemented(self, form, coeffs):
-        bundle = DragCoefficients(
-            form=form,
-            coefficients=coeffs,
-            extraction_mass_model="constant",
-            extraction_mass_amu=200.0,
-        )
+
+
+class TestFormDispatch:
+    def test_threshold_raises_not_implemented(self):
+        bundle = _bundle(THRESHOLD, {"F_sat": 1.0, "v0": 1.0})
         v = np.array([1.0])
         depth = np.array([-10.0])
         with pytest.raises(NotImplementedError):
             drag_force(v, depth, bundle, STEEPNESS_A)
         with pytest.raises(NotImplementedError):
             drag_gamma(v, depth, bundle, STEEPNESS_A)
+
+    @pytest.mark.parametrize(
+        "form,coeffs",
+        [
+            (LINEAR_QUADRATIC, {"a": 1.0, "c": 1.0}),
+            (POWER_LAW, {"C": 6.15, "n": 2.6}),
+        ],
+    )
+    def test_form_phase_families_are_realised(self, form, coeffs):
+        bundle = _bundle(form, coeffs)
+        v = np.array([1.0, 3.0])
+        depth = np.array([-10.0, -10.0])
+        assert np.all(np.isfinite(drag_force(v, depth, bundle, STEEPNESS_A)))
+        assert np.all(np.isfinite(drag_gamma(v, depth, bundle, STEEPNESS_A)))
+
+
+# ===========================================================================
+# METHOD_B §10 form-phase families: closed forms, v=0 regularity, nesting
+# ===========================================================================
+class TestFormPhaseFamilies:
+    """linear_quadratic / power_law governing equations (METHOD_B §10.3)."""
+
+    V = np.linspace(0.2, 6.0, 25)         # away from v=0 (division is legal)
+    DEPTHS = np.array([-40.0, -5.0, 0.0, 10.0])
+
+    @pytest.mark.parametrize(
+        "form,coeffs",
+        [
+            (LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0}),
+            (LINEAR_QUADRATIC, {"a": 0.0, "c": 11.0}),   # pure-quadratic
+            (POWER_LAW, {"C": 10.36, "n": 2.056}),
+            (POWER_LAW, {"C": 3.0, "n": 1.0}),           # n = 1 boundary
+        ],
+    )
+    def test_gamma_closed_form_equals_force_over_v(self, form, coeffs):
+        # gamma(v) = |F_drag(v)| / v away from rest -- the defining identity
+        # of the force-coefficient convention; analytical, tight tolerance.
+        bundle = _bundle(form, coeffs)
+        for d in self.DEPTHS:
+            F = drag_force(self.V, d, bundle, STEEPNESS_A)
+            gam = drag_gamma(self.V, d, bundle, STEEPNESS_A)
+            np.testing.assert_allclose(gam, F / self.V, rtol=1e-12)
+
+    def test_linear_quadratic_explicit_values(self):
+        # F = g*(a*v + c*v^2), gamma = g*(a + c*v) at unit gate (deep inside).
+        bundle = _bundle(LINEAR_QUADRATIC, {"a": 2.0, "c": 3.0})
+        d = -400.0  # gate -> 1 to round-off
+        v = 2.0
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            2.0 * v + 3.0 * v**2, rel=1e-12
+        )
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            2.0 + 3.0 * v, rel=1e-12
+        )
+
+    def test_power_law_explicit_values(self):
+        # F = g*C*v^n, gamma = g*C*v^(n-1) at unit gate (deep inside).
+        bundle = _bundle(POWER_LAW, {"C": 5.0, "n": 2.5})
+        d = -400.0
+        v = 3.0
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            5.0 * v**2.5, rel=1e-12
+        )
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            5.0 * v**1.5, rel=1e-12
+        )
+
+    def test_linear_quadratic_gamma_finite_at_rest(self):
+        # gamma -> g*a at v = 0 (closed form; division would be 0/0).
+        bundle = _bundle(LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0})
+        for d in (-40.0, 0.0, 10.0):
+            g = spatial_gate(d, STEEPNESS_A)
+            gam0 = drag_gamma(0.0, d, bundle, STEEPNESS_A)
+            assert np.isfinite(gam0)
+            assert float(gam0) == pytest.approx(g * 4.0)
+
+    def test_power_law_gamma_at_rest_n_above_one_is_zero(self):
+        bundle = _bundle(POWER_LAW, {"C": 10.0, "n": 2.5})
+        gam0 = drag_gamma(0.0, -40.0, bundle, STEEPNESS_A)
+        assert float(gam0) == 0.0
+
+    def test_power_law_gamma_at_rest_n_equal_one_is_g_times_C(self):
+        # numpy 0.0**0.0 == 1.0 realizes the n = 1 limit exactly.
+        bundle = _bundle(POWER_LAW, {"C": 10.0, "n": 1.0})
+        for d in (-40.0, 0.0):
+            g = spatial_gate(d, STEEPNESS_A)
+            gam0 = drag_gamma(0.0, d, bundle, STEEPNESS_A)
+            assert float(gam0) == pytest.approx(g * 10.0)
+
+    @pytest.mark.parametrize(
+        "form,coeffs",
+        [
+            (LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0}),
+            (POWER_LAW, {"C": 10.36, "n": 2.056}),
+        ],
+    )
+    def test_dissipative_and_gate_shared(self, form, coeffs):
+        # Drag opposes motion (F >= 0 magnitude convention) and gamma carries
+        # the SAME gate factor as the force (hard FDT coupling carrier, §5.2).
+        bundle = _bundle(form, coeffs)
+        for d in self.DEPTHS:
+            F = drag_force(self.V, d, bundle, STEEPNESS_A)
+            gam = drag_gamma(self.V, d, bundle, STEEPNESS_A)
+            assert np.all(F >= 0.0)
+            assert np.all(gam >= 0.0)
+            np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
+
+
+class TestNestingIdentities:
+    """§10.3 cross-check obligations: power_law nests both incumbents EXACTLY.
+
+    power_law(n=2, C=c) == linear_quadratic(a=0, c)   (pure-quadratic)
+    power_law(n=3, C=b) == linear_cubic(a=0, b)       (pure-cubic)
+
+    Analytical identities -- tight tolerance (rtol 1e-12; the only float
+    difference is x*x*x vs x**3.0 evaluation order).
+    """
+
+    V = np.linspace(0.0, 6.0, 31)          # includes v = 0
+    DEPTHS = np.array([-40.0, -5.0, 0.0, 10.0])
+
+    def test_power_law_n2_equals_pure_quadratic(self):
+        c = 11.016050300970692              # the locked c0 scale (§10.4.1)
+        pl = _bundle(POWER_LAW, {"C": c, "n": 2.0})
+        lq = _bundle(LINEAR_QUADRATIC, {"a": 0.0, "c": c})
+        for d in self.DEPTHS:
+            np.testing.assert_allclose(
+                drag_force(self.V, d, pl, STEEPNESS_A),
+                drag_force(self.V, d, lq, STEEPNESS_A),
+                rtol=1e-12, atol=0.0,
+            )
+            np.testing.assert_allclose(
+                drag_gamma(self.V, d, pl, STEEPNESS_A),
+                drag_gamma(self.V, d, lq, STEEPNESS_A),
+                rtol=1e-12, atol=0.0,
+            )
+
+    def test_power_law_n3_equals_pure_cubic(self):
+        b = 2.5153654   # the shared_pure_cubic production scale
+        pl = _bundle(POWER_LAW, {"C": b, "n": 3.0})
+        lc = _bundle(LINEAR_CUBIC, {"a": 0.0, "b": b})
+        for d in self.DEPTHS:
+            np.testing.assert_allclose(
+                drag_force(self.V, d, pl, STEEPNESS_A),
+                drag_force(self.V, d, lc, STEEPNESS_A),
+                rtol=1e-12, atol=0.0,
+            )
+            np.testing.assert_allclose(
+                drag_gamma(self.V, d, pl, STEEPNESS_A),
+                drag_gamma(self.V, d, lc, STEEPNESS_A),
+                rtol=1e-12, atol=0.0,
+            )
 
 
 # ===========================================================================

@@ -1,0 +1,125 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "power_law",
+  "C": 2.8352193049228096,
+  "n": 2.9269072014570736,
+  "C_err": 0.13838570416885165,
+  "n_err": 0.2793865965027207,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.11263328767444261,
+  "effective_binding_energy_err_eV": 0.010751359278014988,
+  "t_start": 2.67,
+  "t_end": 14.768,
+  "reference_file": [
+    "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  ],
+  "calibration_cases": [
+    "18A",
+    "9A"
+  ],
+  "stage": "stage2_joint",
+  "variant": "pl_shared_3param",
+  "anchors": {
+    "C0": 10.36139380949775,
+    "n0": 2.0557526931077588,
+    "v_ref_Aps": 3.0,
+    "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+  },
+  "objective": "equal_weight_mean_over_cases_of_in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_mean_Aps": 0.12917083295946366,
+  "windows": {
+    "18A": [
+      4.54,
+      14.768
+    ],
+    "9A": [
+      2.67,
+      14.081
+    ]
+  },
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.1305131392320937,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.1305131392320937,
+      "num_overlap_points": 10229
+    },
+    "9A": {
+      "rmse_Aps": 0.12782852668683362,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12782852668683362,
+      "num_overlap_points": 11412
+    }
+  },
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 4,
+    "evals": 493,
+    "converged": true,
+    "start_minima": [
+      {
+        "coefficients": {
+          "C": 2.8345082093177045,
+          "n": 2.9271127537589114
+        },
+        "e_bind_eV": {
+          "18A": 0.11263186793608705,
+          "9A": 0.11263186793608705
+        },
+        "objective_Aps": 0.12917083348079988
+      },
+      {
+        "coefficients": {
+          "C": 2.831631114717837,
+          "n": 2.927709014827615
+        },
+        "e_bind_eV": {
+          "18A": 0.112660347393526,
+          "9A": 0.112660347393526
+        },
+        "objective_Aps": 0.12917085165574868
+      },
+      {
+        "coefficients": {
+          "C": 2.8352193049228096,
+          "n": 2.9269072014570736
+        },
+        "e_bind_eV": {
+          "18A": 0.11263328767444261,
+          "9A": 0.11263328767444261
+        },
+        "objective_Aps": 0.12917083295946366
+      },
+      {
+        "coefficients": {
+          "C": 2.831942180819708,
+          "n": 2.927590218995297
+        },
+        "e_bind_eV": {
+          "18A": 0.11267748005400606,
+          "9A": 0.11267748005400606
+        },
+        "objective_Aps": 0.12917083782266037
+      }
+    ]
+  },
+  "date": "2026-06-14",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": true,
+    "full_window_heldout_window_axis_forfeited": true,
+    "cross_case_axis_consumed_by_joint_fit": true,
+    "model_selection_on_seen_data": true
+  },
+  "pivot": {
+    "v_ref_Aps": 3.0,
+    "gamma_ref": 23.548054864536738,
+    "note": "optimizer-internal parameterization gamma_ref = C*v_ref**(n-1) (\u00a710.4.1); the stamped law is the raw closed-form {C, n}"
+  }
+}

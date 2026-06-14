@@ -769,8 +769,57 @@ Decisions bound to these numbers (user, 2026-06-12):
   anchors-as-constants decided 2026-06-12; values **LOCKED 2026-06-12**,
   §10.4.1 — two-threshold `T_form`, `n ∈ [1, 4]`, pivot
   parameterization with `V_REF_APS = 3.0`, 18 Å-only anchors).
-- [ ] Forms realized + guards + tests green.
-- [ ] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and
-  comparison verdict recorded.
-- [ ] Production-candidate confirmation or escalation recorded; Tier-1
-  start decision then on the table.
+- [x] Forms realized + guards + tests green (2026-06-12/14: `linear_quadratic`
+  and `power_law` realized behind the dispatch; §3.3 guard arms; form-generic
+  loader; nesting-identity + dissipativity + extraction-recovery + artifact
+  tests; full suite **705 passed / 0 failed**).
+- [x] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and
+  comparison verdict recorded (2026-06-14 — drivers
+  `scripts/extraction/method_b_form_refit_{linear_quadratic,power_law}.py`,
+  outcome §10.7).
+- [x] Production-candidate confirmation or escalation recorded; Tier-1
+  start decision then on the table. **Incumbent `shared_pure_cubic`
+  CONFIRMED** (§10.7): neither family beats it; no escalation. Tier-1 start
+  is now on the table.
+
+### 10.7 Outcome — RAN 2026-06-14, incumbent CONFIRMED (delivery record in `drag_migration_log.md`)
+
+Both families ran through the §9 machinery (N=50, seed 20260604, 20 ps @ 0.01 ps;
+anchors the §10.4.1 LOCKED 18 Å-only constants passed explicitly — NOT the
+re-wired preset's `a0 = 0`). Scored against the reused §9.4 Stage-2 bands plus
+the two-threshold `T_form` vs the exact incumbent objective
+`0.1292649398514104 Å/ps`. **Model selection on seen data** (the §9 cross-case
+axis was spent) — a pre-registered ranking, not fresh held-out validation; VMI
+after Tier 1 remains the external arbiter.
+
+- **`power_law` (`pl_shared_3param`, free `n`): EQUIVALENT → pure-cubic
+  confirmed.** All four starts converged to **`n̂ = 2.927`** (C ≈ 2.835,
+  E_bind ≈ 0.113 eV), objective **0.129171** → Δ = **−0.0001 Å/ps**, inside
+  ±`T_FORM_EQUIV` (0.005). Bands PASS (18 Å 0.1305, 9 Å 0.1278, escape 1.0/1.0).
+  The free-exponent fit **independently recovers the pure-cubic exponent**
+  (`n ≈ 3`), *not* the Method-A `n ≈ 2.06` — resolving the §10.2 tension in
+  favour of `n = 3`. `n_err` half-width **0.279** (a genuine measurement, not a
+  wild degeneracy: the trajectory objective *does* see the exponent here).
+  Stage-1 analog (18 Å→9 Å predict, non-gating): 0.411 ≤ 0.45 PASS.
+- **`linear_quadratic` (forced `n = 2`): WORSE → rejected-by-objective.** Both
+  variants pass the §9.4 bands (18 Å 0.131, 9 Å 0.195/0.195, escape 1.0) and
+  collapse to the **pure-quadratic** corner (`a → 0`, `T_a0`-analog
+  −1e-6 EQUIVALENT, `c ≈ 12.8`, E_bind ≈ 0.048 eV), but the family objective
+  **0.16315** → Δ = **+0.0339 Å/ps**, well past +`T_FORM_EQUIV` → recorded
+  **rejected-by-trajectory-objective**. Stage-1 analog 9 Å prediction **0.699 >
+  0.45 FAIL** (non-gating) — the `n = 2` family does **not** generalize from
+  18 Å the way pure-cubic did (0.2685).
+- **Joint conclusion:** the full-window trajectory objective **discriminates the
+  exponent** (contra the §10.2 worry that it might be exponent-degenerate the way
+  it was `a`-degenerate): forced `v²` is measurably worse, and the free-`n` fit
+  lands at `v³`. **No alternative family beats `shared_pure_cubic`; no
+  escalation.** The incumbent stands; the Method-A `n ≈ 2` is not supported by
+  trajectory matching. The exponent question does **not** pass to VMI undecided —
+  it is settled here at `n ≈ 3`, with VMI (post-Tier-1) the final external check.
+- **Artifacts** under `data/reference/drag/shared/trajectory_matching/`:
+  `{lq_shared_3param,lq_shared_pure_quadratic,pl_shared_3param}/fit_parameters.json`
+  (each loads through `load_drag_coefficients`; sensitivity-only band, seed sweep
+  omitted per §8), `stage1_analog_{linear_quadratic,power_law}.json`,
+  `verdict_{linear_quadratic,power_law}.json`, and the combined
+  `form_comparison_verdict.json`. **Presets remain on `shared_pure_cubic`
+  (NOT re-wired by this phase).**

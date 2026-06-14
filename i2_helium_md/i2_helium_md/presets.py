@@ -15,7 +15,12 @@ from dataclasses import replace
 from pathlib import Path
 
 from .config import SimConfig
-from .physics.drag import DragCoefficients, LINEAR_CUBIC
+from .physics.drag import (
+    DragCoefficients,
+    LINEAR_CUBIC,
+    REALIZED_FORMS,
+    _REQUIRED_COEFF_KEYS,
+)
 
 # Anchor for the frozen drag-coefficient layout (data/reference/drag/<case>/...).
 # ``parents[1]`` is the project root: this file is i2_helium_md/i2_helium_md/
@@ -23,10 +28,15 @@ from .physics.drag import DragCoefficients, LINEAR_CUBIC
 # holds ``data/``. Defined once here so the directory is not a scattered literal.
 REFERENCE_DRAG_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference" / "drag"
 
-# Required keys in a linear_cubic fit_parameters.json (a/b plus the 1-sigma
-# errors and the stamped extraction mass). Errors are read to assert presence
-# (provenance completeness) even though Slice 3 does not yet consume them.
-_FIT_PARAM_REQUIRED_KEYS = ("a", "b", "a_err", "b_err", "meff_amu")
+# Required keys in a fit_parameters.json, per realised form: the form's
+# coefficients (from the drag module's single-source key table) plus their
+# 1-sigma/sensitivity errors, and the stamped extraction mass. Errors are read
+# to assert presence (provenance completeness) even where not yet consumed.
+_FIT_PARAM_REQUIRED_KEYS = {
+    form: keys + tuple(f"{k}_err" for k in keys) + ("meff_amu",)
+    for form, keys in _REQUIRED_COEFF_KEYS.items()
+    if form in REALIZED_FORMS
+}
 
 # Additional keys a Method-B (trajectory_matching) fit_parameters.json must
 # carry (METHOD_B doc §6): the §6.5.1 coupled binding, the mass model it ran
@@ -43,7 +53,7 @@ _FIT_PARAM_METHOD_B_KEYS = (
 def load_drag_coefficients(
     coeff_dir: Path, *, expected_m_eff_amu: float
 ) -> DragCoefficients:
-    """Load a ``linear_cubic`` :class:`DragCoefficients` bundle from disk.
+    """Load a realised-form :class:`DragCoefficients` bundle from disk.
 
     Thin, content-validating, provenance-enforcing loader living in the
     presets/config layer so ``physics/`` stays I/O-free (CLAUDE.md rule 6). The
@@ -53,7 +63,12 @@ def load_drag_coefficients(
     Reads ``coeff_dir/fit_parameters.json`` and returns a validated bundle whose
     ``extraction_mass_amu`` is stamped **from the JSON** (single source of
     truth), so the bundle's provenance can never silently diverge from the file
-    it came from.
+    it came from. The form is read from the JSON's optional ``form`` key; a
+    file without one is a legacy ``linear_cubic`` bundle and loads exactly as
+    before (loader contract unchanged). Realised forms and their per-form
+    coefficient keys come from the drag module's single-source tables
+    (``linear_cubic`` {a, b}, ``linear_quadratic`` {a, c}, ``power_law``
+    {C, n}; METHOD_B §10.3).
 
     Parameters
     ----------
@@ -69,8 +84,8 @@ def load_drag_coefficients(
     Returns
     -------
     DragCoefficients
-        A ``linear_cubic`` bundle with ``extraction_mass_amu`` taken from the
-        JSON. Legacy (Method-A) files yield
+        A bundle of the JSON's declared form with ``extraction_mass_amu``
+        taken from the JSON. Legacy (Method-A) files yield
         ``extraction_method="force_balance"`` with
         ``extraction_mass_model="constant"`` and no stamped binding; files
         declaring ``extraction_method="trajectory_matching"`` (Method B) must
@@ -83,8 +98,9 @@ def load_drag_coefficients(
     FileNotFoundError
         If ``fit_parameters.json`` is absent (the message names the path).
     ValueError
-        If the JSON is malformed, missing required keys (per-method), carries
-        an unknown ``extraction_method``, or its ``meff_amu`` disagrees with
+        If the JSON is malformed, declares an unrealised form, is missing
+        required keys (per form and per method), carries an unknown
+        ``extraction_method``, or its ``meff_amu`` disagrees with
         ``expected_m_eff_amu``.
     """
     json_path = coeff_dir / "fit_parameters.json"
@@ -98,11 +114,21 @@ def load_drag_coefficients(
     except (json.JSONDecodeError, OSError) as exc:
         raise ValueError(f"malformed drag coefficient file {json_path}: {exc}")
 
-    missing = [k for k in _FIT_PARAM_REQUIRED_KEYS if k not in raw]
+    # Form discrimination: absent key = legacy linear_cubic (the pre-§10
+    # bundles never stamped a form; their contract is unchanged).
+    form = str(raw.get("form", LINEAR_CUBIC))
+    if form not in REALIZED_FORMS:
+        raise ValueError(
+            f"drag coefficient file {json_path} declares form {form!r}; "
+            f"loadable forms are {REALIZED_FORMS} ('threshold' is reserved)"
+        )
+    required = _FIT_PARAM_REQUIRED_KEYS[form]
+
+    missing = [k for k in required if k not in raw]
     if missing:
         raise ValueError(
-            f"drag coefficient file {json_path} missing required keys "
-            f"{missing}; need {_FIT_PARAM_REQUIRED_KEYS}"
+            f"drag coefficient file {json_path} (form {form!r}) missing "
+            f"required keys {missing}; need {required}"
         )
 
     json_m_eff = float(raw["meff_amu"])
@@ -113,6 +139,8 @@ def load_drag_coefficients(
             f"drag coefficient provenance mismatch in {json_path}: JSON "
             f"meff_amu={json_m_eff} != expected_m_eff_amu={expected_m_eff_amu}"
         )
+
+    coefficients = {k: float(raw[k]) for k in _REQUIRED_COEFF_KEYS[form]}
 
     # Method discrimination: a legacy (Method-A) file carries no
     # ``extraction_method`` key and loads exactly as before -- it is NOT
@@ -130,8 +158,8 @@ def load_drag_coefficients(
                 f"{_FIT_PARAM_METHOD_B_KEYS}"
             )
         return DragCoefficients(
-            form=LINEAR_CUBIC,
-            coefficients={"a": float(raw["a"]), "b": float(raw["b"])},
+            form=form,
+            coefficients=coefficients,
             extraction_mass_model=str(raw["extraction_mass_model"]),
             extraction_mass_amu=json_m_eff,
             extraction_method="trajectory_matching",
@@ -147,8 +175,8 @@ def load_drag_coefficients(
         )
 
     return DragCoefficients(
-        form=LINEAR_CUBIC,
-        coefficients={"a": float(raw["a"]), "b": float(raw["b"])},
+        form=form,
+        coefficients=coefficients,
         extraction_mass_model="constant",
         extraction_mass_amu=json_m_eff,  # stamped from JSON, single source.
     )

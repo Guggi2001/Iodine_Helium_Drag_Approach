@@ -1,0 +1,429 @@
+{
+  "_meta": {
+    "date": "2026-06-14",
+    "branch": "drag_implementation",
+    "phase": "METHOD_B \u00a710 alternative drag-form discrimination",
+    "incumbent": "shared_pure_cubic (gamma = g*b*v^2, n=3)",
+    "incumbent_objective_Aps": 0.1292649398514104,
+    "note": "model selection on SEEN data under a pre-registered protocol (the \u00a79 cross-case axis was spent by the Stage-2 joint fit); NOT fresh held-out validation -- the winner's external test is VMI after Tier 1. Presets are NOT re-wired; Tier 1 not started; VMI stays pending/post-Tier-1."
+  },
+  "linear_quadratic": {
+    "date": "2026-06-14",
+    "branch": "drag_implementation",
+    "family": "linear_quadratic",
+    "form": "linear_quadratic",
+    "variants": [
+      "lq_shared_3param",
+      "lq_shared_pure_quadratic"
+    ],
+    "anchors": {
+      "a0": 14.555626399148123,
+      "c0": 11.016050300970692,
+      "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+    },
+    "stage1_analog": {
+      "date": "2026-06-14",
+      "branch": "drag_implementation",
+      "family": "linear_quadratic",
+      "stage": "stage1_analog",
+      "gating": "recorded_only_non_gating (\u00a710.4: honestly weakened -- the 9A data has been seen repeatedly; audit-trail value, no verdict power; only the Stage-2 bands gate)",
+      "fit_18A_only": {
+        "variant": "lq_shared_3param",
+        "coefficients": {
+          "a": 16.625376355423196,
+          "c": 6.131253474136262
+        },
+        "e_bind_eV": 0.05321259121057448,
+        "objective_Aps": 0.09940599099853792
+      },
+      "prediction_case": "9A",
+      "rmse_Aps": 0.6986670410087336,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 11412,
+      "checks": {
+        "S1_ANALOG_RMSE_MAX": {
+          "value_Aps": 0.6986670410087336,
+          "band_max_Aps": 0.45,
+          "pass": false
+        },
+        "S1_ANALOG_ESCAPE": {
+          "value": 1.0,
+          "band": 1.0,
+          "pass": true
+        }
+      },
+      "anchor_note": "0.45 = same number as pure-cubic's Stage-1 (Tier-0 9A dimensionality residual ~0.39 + margin); compare to pure-cubic's 0.2685 (METHOD_B \u00a79.7 / \u00a710.4.1)"
+    },
+    "stage2": {
+      "lq_shared_3param": {
+        "variant": "lq_shared_3param",
+        "form": "linear_quadratic",
+        "coefficients": {
+          "a": 9.805022771384936e-05,
+          "c": 12.792201727123915
+        },
+        "e_bind_eV": {
+          "18A": 0.048236582655347665,
+          "9A": 0.048236582655347665
+        },
+        "objective_mean_Aps": 0.16315173487946547,
+        "per_case": {
+          "18A": {
+            "rmse_Aps": 0.13076335618473528,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.13076335618473528,
+            "num_overlap_points": 10229
+          },
+          "9A": {
+            "rmse_Aps": 0.19554011357419565,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.19554011357419565,
+            "num_overlap_points": 11412
+          }
+        },
+        "n_evaluations": 445,
+        "converged": true,
+        "start_minima": [
+          {
+            "coefficients": {
+              "a": 9.805022771384936e-05,
+              "c": 12.792201727123915
+            },
+            "e_bind_eV": {
+              "18A": 0.048236582655347665,
+              "9A": 0.048236582655347665
+            },
+            "objective_Aps": 0.16315173487946547
+          },
+          {
+            "coefficients": {
+              "a": 6.658078831384194,
+              "c": 12.785974388185831
+            },
+            "e_bind_eV": {
+              "18A": 0.01,
+              "9A": 0.01
+            },
+            "objective_Aps": 0.1954127912689813
+          },
+          {
+            "coefficients": {
+              "a": 0.0005693348099058174,
+              "c": 12.80906584996043
+            },
+            "e_bind_eV": {
+              "18A": 0.04808298076925389,
+              "9A": 0.04808298076925389
+            },
+            "objective_Aps": 0.16315356749408857
+          }
+        ],
+        "bands": {
+          "S2_RMSE_18A": {
+            "value_Aps": 0.13076335618473528,
+            "band_max_Aps": 0.19,
+            "pass": true
+          },
+          "S2_RMSE_9A": {
+            "value_Aps": 0.19554011357419565,
+            "band_max_Aps": 0.45,
+            "pass": true
+          },
+          "S2_ESCAPE": {
+            "value": {
+              "18A": 1.0,
+              "9A": 1.0
+            },
+            "band": 1.0,
+            "pass": true
+          },
+          "all_pass": true
+        }
+      },
+      "lq_shared_pure_quadratic": {
+        "variant": "lq_shared_pure_quadratic",
+        "form": "linear_quadratic",
+        "coefficients": {
+          "a": 0.0,
+          "c": 12.797261465926757
+        },
+        "e_bind_eV": {
+          "18A": 0.04827726466315125,
+          "9A": 0.04827726466315125
+        },
+        "objective_mean_Aps": 0.16315039939176046,
+        "per_case": {
+          "18A": {
+            "rmse_Aps": 0.13127510839476425,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.13127510839476425,
+            "num_overlap_points": 10229
+          },
+          "9A": {
+            "rmse_Aps": 0.19502569038875667,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.19502569038875667,
+            "num_overlap_points": 11412
+          }
+        },
+        "n_evaluations": 168,
+        "converged": true,
+        "start_minima": [
+          {
+            "coefficients": {
+              "a": 0.0,
+              "c": 12.790419455429403
+            },
+            "e_bind_eV": {
+              "18A": 0.04838145361627849,
+              "9A": 0.04838145361627849
+            },
+            "objective_Aps": 0.16315071949721938
+          },
+          {
+            "coefficients": {
+              "a": 0.0,
+              "c": 12.792851442872326
+            },
+            "e_bind_eV": {
+              "18A": 0.04832786742784062,
+              "9A": 0.04832786742784062
+            },
+            "objective_Aps": 0.16315042835338422
+          },
+          {
+            "coefficients": {
+              "a": 0.0,
+              "c": 12.797261465926757
+            },
+            "e_bind_eV": {
+              "18A": 0.04827726466315125,
+              "9A": 0.04827726466315125
+            },
+            "objective_Aps": 0.16315039939176046
+          }
+        ],
+        "bands": {
+          "S2_RMSE_18A": {
+            "value_Aps": 0.13127510839476425,
+            "band_max_Aps": 0.19,
+            "pass": true
+          },
+          "S2_RMSE_9A": {
+            "value_Aps": 0.19502569038875667,
+            "band_max_Aps": 0.45,
+            "pass": true
+          },
+          "S2_ESCAPE": {
+            "value": {
+              "18A": 1.0,
+              "9A": 1.0
+            },
+            "band": 1.0,
+            "pass": true
+          },
+          "all_pass": true
+        }
+      }
+    },
+    "pure_quadratic_equivalence": {
+      "delta_objective_Aps": -1.3354877050064662e-06,
+      "threshold_Aps": 0.005,
+      "equivalent": true,
+      "conclusion": "pure-quadratic recorded as the empirical reduced form (a not identified by this objective)"
+    },
+    "best_variant": "lq_shared_pure_quadratic",
+    "t_form": {
+      "delta_objective_Aps": 0.03388545954035005,
+      "incumbent_objective_Aps": 0.1292649398514104,
+      "best_variant_objective_Aps": 0.16315039939176046,
+      "T_FORM_EQUIV_APS": 0.005,
+      "T_FORM_BETTER_APS": 0.013,
+      "bands_pass": true,
+      "zone": "worse",
+      "escalate_to_user": false,
+      "interpretation": "worse than the incumbent beyond +T_FORM_EQUIV -> family bundle recorded rejected-by-trajectory-objective; incumbent confirmed"
+    },
+    "bundles_written": {
+      "lq_shared_3param": "data/reference/drag/shared/trajectory_matching/lq_shared_3param/fit_parameters.json",
+      "lq_shared_pure_quadratic": "data/reference/drag/shared/trajectory_matching/lq_shared_pure_quadratic/fit_parameters.json"
+    },
+    "verdict": "RECORDED (rejected): linear_quadratic does not improve on the pure-cubic incumbent under the trajectory objective / \u00a79.4 bands -> incumbent confirmed.",
+    "presets_rewired": false,
+    "tier1_started": false,
+    "vmi": "pending (post-Tier-1 final arbiter, regardless of form outcome)",
+    "methodological_status": "model selection on seen data under a pre-registered protocol (the \u00a79 cross-case axis was spent); NOT fresh held-out validation"
+  },
+  "power_law": {
+    "date": "2026-06-14",
+    "branch": "drag_implementation",
+    "family": "power_law",
+    "form": "power_law",
+    "variants": [
+      "pl_shared_3param"
+    ],
+    "anchors": {
+      "C0": 10.36139380949775,
+      "n0": 2.0557526931077588,
+      "v_ref_Aps": 3.0,
+      "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+    },
+    "stage1_analog": {
+      "date": "2026-06-14",
+      "branch": "drag_implementation",
+      "family": "power_law",
+      "stage": "stage1_analog",
+      "gating": "recorded_only_non_gating (\u00a710.4: honestly weakened -- the 9A data has been seen repeatedly; audit-trail value, no verdict power; only the Stage-2 bands gate)",
+      "fit_18A_only": {
+        "variant": "pl_shared_3param",
+        "coefficients": {
+          "C": 1.0528832545995732,
+          "n": 4.0
+        },
+        "e_bind_eV": 0.08252619363995342,
+        "objective_Aps": 0.09285527196829534
+      },
+      "prediction_case": "9A",
+      "rmse_Aps": 0.4109963522424283,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 11412,
+      "checks": {
+        "S1_ANALOG_RMSE_MAX": {
+          "value_Aps": 0.4109963522424283,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S1_ANALOG_ESCAPE": {
+          "value": 1.0,
+          "band": 1.0,
+          "pass": true
+        }
+      },
+      "anchor_note": "0.45 = same number as pure-cubic's Stage-1 (Tier-0 9A dimensionality residual ~0.39 + margin); compare to pure-cubic's 0.2685 (METHOD_B \u00a79.7 / \u00a710.4.1)"
+    },
+    "stage2": {
+      "pl_shared_3param": {
+        "variant": "pl_shared_3param",
+        "form": "power_law",
+        "coefficients": {
+          "C": 2.8352193049228096,
+          "n": 2.9269072014570736
+        },
+        "e_bind_eV": {
+          "18A": 0.11263328767444261,
+          "9A": 0.11263328767444261
+        },
+        "objective_mean_Aps": 0.12917083295946366,
+        "per_case": {
+          "18A": {
+            "rmse_Aps": 0.1305131392320937,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.1305131392320937,
+            "num_overlap_points": 10229
+          },
+          "9A": {
+            "rmse_Aps": 0.12782852668683362,
+            "escape_fraction": 1.0,
+            "objective_Aps": 0.12782852668683362,
+            "num_overlap_points": 11412
+          }
+        },
+        "n_evaluations": 493,
+        "converged": true,
+        "start_minima": [
+          {
+            "coefficients": {
+              "C": 2.8345082093177045,
+              "n": 2.9271127537589114
+            },
+            "e_bind_eV": {
+              "18A": 0.11263186793608705,
+              "9A": 0.11263186793608705
+            },
+            "objective_Aps": 0.12917083348079988
+          },
+          {
+            "coefficients": {
+              "C": 2.831631114717837,
+              "n": 2.927709014827615
+            },
+            "e_bind_eV": {
+              "18A": 0.112660347393526,
+              "9A": 0.112660347393526
+            },
+            "objective_Aps": 0.12917085165574868
+          },
+          {
+            "coefficients": {
+              "C": 2.8352193049228096,
+              "n": 2.9269072014570736
+            },
+            "e_bind_eV": {
+              "18A": 0.11263328767444261,
+              "9A": 0.11263328767444261
+            },
+            "objective_Aps": 0.12917083295946366
+          },
+          {
+            "coefficients": {
+              "C": 2.831942180819708,
+              "n": 2.927590218995297
+            },
+            "e_bind_eV": {
+              "18A": 0.11267748005400606,
+              "9A": 0.11267748005400606
+            },
+            "objective_Aps": 0.12917083782266037
+          }
+        ],
+        "bands": {
+          "S2_RMSE_18A": {
+            "value_Aps": 0.1305131392320937,
+            "band_max_Aps": 0.19,
+            "pass": true
+          },
+          "S2_RMSE_9A": {
+            "value_Aps": 0.12782852668683362,
+            "band_max_Aps": 0.45,
+            "pass": true
+          },
+          "S2_ESCAPE": {
+            "value": {
+              "18A": 1.0,
+              "9A": 1.0
+            },
+            "band": 1.0,
+            "pass": true
+          },
+          "all_pass": true
+        }
+      }
+    },
+    "exponent": {
+      "n_hat": 2.9269072014570736,
+      "n_err_halfwidth": 0.2793865965027207,
+      "C_err": 0.13838570416885165,
+      "nesting_note": "n=2 -> pure-quadratic (Method-A n~+2), n=3 -> pure-cubic incumbent; the n_hat half-width measures exponent identifiability (\u00a710.2/\u00a710.4.1: a large half-width is a live expectation -- the degeneracy is itself the finding)"
+    },
+    "best_variant": "pl_shared_3param",
+    "t_form": {
+      "delta_objective_Aps": -9.410689194674915e-05,
+      "incumbent_objective_Aps": 0.1292649398514104,
+      "best_variant_objective_Aps": 0.12917083295946366,
+      "T_FORM_EQUIV_APS": 0.005,
+      "T_FORM_BETTER_APS": 0.013,
+      "bands_pass": true,
+      "zone": "equivalent",
+      "escalate_to_user": false,
+      "interpretation": "indistinguishable from the incumbent within +/-T_FORM_EQUIV -> exponent degeneracy recorded as the finding; pure-cubic stays the candidate; VMI post-Tier-1 arbitrates"
+    },
+    "bundles_written": {
+      "pl_shared_3param": "data/reference/drag/shared/trajectory_matching/pl_shared_3param/fit_parameters.json"
+    },
+    "verdict": "RECORDED (equivalent): power_law is indistinguishable from the pure-cubic incumbent within T_FORM_EQUIV -> exponent degeneracy recorded (n_hat=2.927); pure-cubic stays the candidate; VMI post-Tier-1 arbitrates.",
+    "presets_rewired": false,
+    "tier1_started": false,
+    "vmi": "pending (post-Tier-1 final arbiter, regardless of form outcome)",
+    "methodological_status": "model selection on seen data under a pre-registered protocol (the \u00a79 cross-case axis was spent); NOT fresh held-out validation"
+  }
+}

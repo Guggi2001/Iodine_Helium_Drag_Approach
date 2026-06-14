@@ -17,31 +17,42 @@ the BAOAB damping exponent ``e^(-gamma*dt/m)`` (Slice 2, not here). Because
 never takes ``m``. Mass enters only at the integrator's O-step, as one explicit
 division by ``m(t)``.
 
-Governing equations (primary form ``linear_cubic``, the only form realised)
+Governing equations (realised forms; METHOD_B §10.3 dimensional analysis)
 ---------------------------------------------------------------------------
 With ``depth = r_atom - r_droplet`` (negative inside the droplet, positive
 outside -- the same convention as :func:`i2_helium_md.physics.potentials.droplet_potential`)::
 
-    g(depth)        = 0.5 * (1 - erf(depth / steepness))      # dimensionless in [0, 1]
-    F_drag(v,depth) = g(depth) * (a*v + b*v**3)               # amu*A/ps^2
-    gamma(v,depth)  = g(depth) * (a + b*v**2)                 # amu/ps
+    g(depth) = 0.5 * (1 - erf(depth / steepness))    # dimensionless in [0, 1]
 
-Units (``a`` in amu/ps, ``b`` in amu*ps/A^2) balance to a force; see
-``SLICE1_GOALS_gated_drag_module.md`` §3. The drag opposes motion; these
-functions return the **positive magnitude** form and the consumer applies
-``-F_drag`` along ``v_hat`` at the integrator (Slice 2).
+    linear_cubic     {a [amu/ps], b [amu*ps/A^2]}:
+        F_drag = g * (a*v + b*v**3)                  # amu*A/ps^2
+        gamma  = g * (a + b*v**2)                    # amu/ps
+    linear_quadratic {a [amu/ps], c [amu/A]}:
+        F_drag = g * (a*v + c*v**2)                  # [c*v**2] = amu*A/ps^2 OK
+        gamma  = g * (a + c*v)                       # [c*v]    = amu/ps     OK
+    power_law        {C [amu*A^(1-n)*ps^(n-2)], n [dimensionless]}:
+        F_drag = g * C * v**n                        # amu*A/ps^2 by [C]
+        gamma  = g * C * v**(n-1)                    # amu/ps     by [C]
 
-``gamma`` is exposed via its **closed form** ``g*(a + b*v**2)``, *never* via
+All unit checks balance to a force / force coefficient; see
+``SLICE1_GOALS_gated_drag_module.md`` §3 and METHOD_B §10.3. The drag opposes
+motion; these functions return the **positive magnitude** form and the consumer
+applies ``-F_drag`` along ``v_hat`` at the integrator (Slice 2).
+
+Nesting identities (the §10.3 cross-check obligations, exact by construction):
+``power_law(n=2, C=c) == linear_quadratic(a=0, c)`` (pure-quadratic) and
+``power_law(n=3, C=b) == linear_cubic(a=0, b)`` (pure-cubic).
+
+``gamma`` is exposed via its **closed form** per form, *never* via
 ``|F_drag|/v``: the two are analytically equal, but the division manufactures a
-``0/0`` singularity at ``v -> 0`` that the ``linear_cubic`` form does not have
-(``gamma -> g*a`` there). This is a physics-definition point, made explicit per
-form -- it is exactly the ``v -> 0`` boundary where ``power_law`` (n<0) genuinely
-*does* diverge and would need the §3.8 floor.
+``0/0`` singularity at ``v -> 0`` that the closed forms do not have
+(``gamma -> g*a`` for ``linear_cubic``/``linear_quadratic``; ``gamma -> 0`` for
+``power_law`` with ``n > 1`` and ``-> g*C`` at ``n = 1``). The §3.3 config
+guard enforces ``n >= 1``; an ``n < 1`` law would diverge at rest and would
+activate the §3.8 ``drag_low_v_floor`` obligation (the floor stays inert).
 
-The other three forms (``linear_quadratic``, ``threshold``, ``power_law``) are
-reserved behind the same dispatch and raise :class:`NotImplementedError`; see
-``SLICE1_GOALS_gated_drag_module.md`` §5. Adding them later is a branch, not a
-signature change.
+``threshold`` remains reserved behind the same dispatch and raises
+:class:`NotImplementedError`; see ``SLICE1_GOALS_gated_drag_module.md`` §5.
 """
 
 from __future__ import annotations
@@ -53,20 +64,30 @@ import numpy as np
 from scipy.special import erf
 
 
-# Drag-form tags. Only LINEAR_CUBIC is realised in Slice 1; the rest are
-# reserved behind the dispatch (see :func:`_raise_unrealised_form`).
+# Drag-form tags. LINEAR_CUBIC (Slice 1), LINEAR_QUADRATIC and POWER_LAW
+# (METHOD_B §10 form phase) are realised; THRESHOLD stays reserved behind the
+# dispatch (see :func:`_raise_unrealised_form`).
 LINEAR_CUBIC = "linear_cubic"
 LINEAR_QUADRATIC = "linear_quadratic"
 THRESHOLD = "threshold"
 POWER_LAW = "power_law"
 
 # Required coefficient keys per form (variable arity by form, §3.8).
+# POWER_LAW's amplitude key is "C" (METHOD_B §10.3/§10.5 raw-{C, n} stamp);
+# the historical Method-A export 18A/power/fit_parameters.json keeps its
+# legacy "gamma" key -- it is frozen evidence read once for the locked C0
+# anchor constant, never loaded through load_drag_coefficients.
 _REQUIRED_COEFF_KEYS: dict[str, tuple[str, ...]] = {
     LINEAR_CUBIC: ("a", "b"),            # amu/ps, amu*ps/A^2
     LINEAR_QUADRATIC: ("a", "c"),        # amu/ps, amu/A
     THRESHOLD: ("F_sat", "v0"),          # amu*A/ps^2, A/ps
-    POWER_LAW: ("gamma", "n"),           # amu*A^(1-n)*ps^(n-2), dimensionless
+    POWER_LAW: ("C", "n"),               # amu*A^(1-n)*ps^(n-2), dimensionless
 }
+
+# The forms with realised force/gamma branches below -- the single source for
+# the loader's form acceptance and the Slice-4 driver's scope guard. THRESHOLD
+# is deliberately absent (reserved; out of the METHOD_B §10 form-phase scope).
+REALIZED_FORMS: tuple[str, ...] = (LINEAR_CUBIC, LINEAR_QUADRATIC, POWER_LAW)
 
 _VALID_MASS_MODELS = ("constant", "time_resolved")
 
@@ -89,10 +110,12 @@ class DragCoefficients:
     ----------
     form : str
         Drag-form tag, one of ``{LINEAR_CUBIC, LINEAR_QUADRATIC, THRESHOLD,
-        POWER_LAW}``. Only ``LINEAR_CUBIC`` is realised in Slice 1.
+        POWER_LAW}``. ``THRESHOLD`` is reserved (not realised).
     coefficients : Mapping[str, float]
-        Form-tagged, variable-arity coefficients. For ``LINEAR_CUBIC``:
-        ``{"a": <amu/ps>, "b": <amu*ps/A^2>}``.
+        Form-tagged, variable-arity coefficients. ``LINEAR_CUBIC``:
+        ``{"a": <amu/ps>, "b": <amu*ps/A^2>}``; ``LINEAR_QUADRATIC``:
+        ``{"a": <amu/ps>, "c": <amu/A>}``; ``POWER_LAW``:
+        ``{"C": <amu*A^(1-n)*ps^(n-2)>, "n": <dimensionless>}``.
     extraction_mass_model : str
         How mass was treated during extraction: ``"constant"`` or
         ``"time_resolved"``. The §6.5 guard (Slice 3) reads this; Slice 1
@@ -168,18 +191,13 @@ class DragCoefficients:
 
 
 def _raise_unrealised_form(form: str) -> None:
-    """Raise for any form not realised in Slice 1 (explicit, never silent)."""
-    if form in (LINEAR_QUADRATIC, THRESHOLD):
+    """Raise for any form not realised (explicit, never silent)."""
+    if form == THRESHOLD:
         raise NotImplementedError(
-            f"drag form {form!r} is reserved but not yet extracted (no fit "
-            f"pass; see DRAG_PORT_DESIGN_DECISIONS.md §3.7). Only "
-            f"{LINEAR_CUBIC!r} is realised in Slice 1."
-        )
-    if form == POWER_LAW:
-        raise NotImplementedError(
-            f"drag form {POWER_LAW!r} is deferred: it needs the §3.8 "
-            f"low-velocity floor and divergent-gamma handling (out of Tier-0 "
-            f"scope). Only {LINEAR_CUBIC!r} is realised in Slice 1."
+            f"drag form {THRESHOLD!r} is reserved but not realised (explicitly "
+            f"out of the METHOD_B §10 form-phase scope; see "
+            f"DRAG_PORT_DESIGN_DECISIONS.md §3.7). Realised forms: "
+            f"{LINEAR_CUBIC!r}, {LINEAR_QUADRATIC!r}, {POWER_LAW!r}."
         )
     # DragCoefficients.__post_init__ already rejects unknown forms; defensive.
     raise ValueError(f"unknown drag form {form!r}")
@@ -223,9 +241,11 @@ def spatial_gate(depth, steepness: float) -> np.ndarray:
 def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarray:
     """Gated drag-force magnitude ``F_drag(v, depth)`` [amu*A/ps^2].
 
-    For ``linear_cubic``::
+    Per realised form::
 
-        F_drag(v, depth) = g(depth) * (a*v + b*v**3)
+        linear_cubic:     F_drag = g(depth) * (a*v + b*v**3)
+        linear_quadratic: F_drag = g(depth) * (a*v + c*v**2)
+        power_law:        F_drag = g(depth) * C * v**n
 
     Returns the **positive magnitude** form (drag opposes motion); the consumer
     applies ``-F_drag`` along ``v_hat`` at the integrator (Slice 2).
@@ -237,7 +257,7 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
     depth : array_like
         ``r_atom - r_droplet`` in Angstrom (negative inside).
     coeffs : DragCoefficients
-        Form-tagged coefficient bundle. Only ``LINEAR_CUBIC`` is realised.
+        Form-tagged coefficient bundle (``threshold`` is reserved).
     steepness : float
         Gate width in Angstrom (> 0).
 
@@ -249,7 +269,7 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
     Raises
     ------
     NotImplementedError
-        If ``coeffs.form`` is a reserved/deferred (non-``linear_cubic``) form.
+        If ``coeffs.form`` is the reserved ``threshold`` form.
     """
     v = np.asarray(v, dtype=float)
     g = spatial_gate(depth, steepness)
@@ -257,22 +277,35 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         a = float(coeffs.coefficients["a"])
         b = float(coeffs.coefficients["b"])
         return g * (a * v + b * v**3)
+    if coeffs.form == LINEAR_QUADRATIC:
+        a = float(coeffs.coefficients["a"])
+        c = float(coeffs.coefficients["c"])
+        return g * (a * v + c * v**2)
+    if coeffs.form == POWER_LAW:
+        C = float(coeffs.coefficients["C"])
+        n = float(coeffs.coefficients["n"])
+        return g * C * v**n
     _raise_unrealised_form(coeffs.form)
 
 
 def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarray:
     """Gated friction force-coefficient ``gamma(v, depth)`` [amu/ps] (closed form).
 
-    For ``linear_cubic``::
+    Per realised form::
 
-        gamma(v, depth) = g(depth) * (a + b*v**2)
+        linear_cubic:     gamma = g(depth) * (a + b*v**2)
+        linear_quadratic: gamma = g(depth) * (a + c*v)
+        power_law:        gamma = g(depth) * C * v**(n-1)
 
     Exposed via the **closed form**, *not* ``|F_drag|/v``: analytically equal,
-    but the division is singular at ``v -> 0`` where ``linear_cubic`` is finite
-    (``gamma -> g*a``). Later consumed by *both* the O-step rate ``gamma/m`` and
-    the FDT noise amplitude ``sqrt(2*gamma*kB*Teff)``; carries the **same**
-    ``g(depth)`` as :func:`drag_force` (hard FDT coupling, §5.2), so the noise
-    the future O-step reads is gated consistently with the drag.
+    but the division is singular at ``v -> 0`` where the closed forms are
+    regular (``gamma -> g*a`` for ``linear_cubic``/``linear_quadratic``;
+    ``gamma -> 0`` for ``power_law`` with ``n > 1``, ``-> g*C`` at ``n = 1`` --
+    the §3.3 guard enforces ``n >= 1``, where ``v**(n-1)`` is finite at rest).
+    Later consumed by *both* the O-step rate ``gamma/m`` and the FDT noise
+    amplitude ``sqrt(2*gamma*kB*Teff)``; carries the **same** ``g(depth)`` as
+    :func:`drag_force` (hard FDT coupling, §5.2), so the noise the future
+    O-step reads is gated consistently with the drag.
 
     Parameters
     ----------
@@ -281,20 +314,20 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
     depth : array_like
         ``r_atom - r_droplet`` in Angstrom (negative inside).
     coeffs : DragCoefficients
-        Form-tagged coefficient bundle. Only ``LINEAR_CUBIC`` is realised.
+        Form-tagged coefficient bundle (``threshold`` is reserved).
     steepness : float
         Gate width in Angstrom (> 0).
 
     Returns
     -------
     np.ndarray
-        Friction force-coefficient in amu/ps. Finite at ``v = 0``
-        (``-> g*a``) for ``linear_cubic``.
+        Friction force-coefficient in amu/ps. Finite at ``v = 0`` for every
+        realised form within its guard-validated coefficient domain.
 
     Raises
     ------
     NotImplementedError
-        If ``coeffs.form`` is a reserved/deferred (non-``linear_cubic``) form.
+        If ``coeffs.form`` is the reserved ``threshold`` form.
     """
     v = np.asarray(v, dtype=float)
     g = spatial_gate(depth, steepness)
@@ -302,4 +335,14 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         a = float(coeffs.coefficients["a"])
         b = float(coeffs.coefficients["b"])
         return g * (a + b * v**2)
+    if coeffs.form == LINEAR_QUADRATIC:
+        a = float(coeffs.coefficients["a"])
+        c = float(coeffs.coefficients["c"])
+        return g * (a + c * v)
+    if coeffs.form == POWER_LAW:
+        C = float(coeffs.coefficients["C"])
+        n = float(coeffs.coefficients["n"])
+        # n >= 1 (guard-enforced) keeps v**(n-1) finite at v = 0; numpy's
+        # 0.0**0.0 == 1.0 realizes the n = 1 limit gamma -> g*C exactly.
+        return g * C * v ** (n - 1.0)
     _raise_unrealised_form(coeffs.form)

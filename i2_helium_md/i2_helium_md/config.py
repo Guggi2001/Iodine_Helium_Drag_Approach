@@ -373,15 +373,44 @@ def check_drag_config(cfg: "SimConfig") -> None:
         # bound v_dagger against; that ceiling is unsourced (§7 open item) and
         # is deliberately NOT invented here.
         assert b > 0.0 or a > 0.0  # documents the intent (see refusals above)
-    elif form == LINEAR_QUADRATIC:  # unreachable: NotImplemented upstream
-        if not (float(c["a"]) > 0.0 and float(c["c"]) >= 0.0):
-            raise ValueError("linear_quadratic drag requires a > 0, c >= 0")
+    elif form == LINEAR_QUADRATIC:
+        a = float(c["a"])
+        cc = float(c["c"])
+        # §10.3 dissipativity arm (mirrors the §9.5 linear_cubic relaxation):
+        # a >= 0, c >= 0, a + c > 0. gamma = g*(a + c*v) >= 0 with no
+        # turnover; pure-quadratic (METHOD_B §10, the Method-A n~+2
+        # hypothesis) is the a == 0, c > 0 corner.
+        if a < 0.0 or cc < 0.0:
+            raise ValueError(
+                f"linear_quadratic drag requires a >= 0 and c >= 0 "
+                f"(dissipative; a = 0 is the pure-quadratic variant, "
+                f"METHOD_B §10.3), got a={a!r}, c={cc!r}"
+            )
+        if not (a + cc > 0.0):
+            raise ValueError(
+                f"linear_quadratic drag requires a + c > 0 (a zero-drag law "
+                f"is not a drag law), got a={a!r}, c={cc!r}"
+            )
     elif form == THRESHOLD:  # unreachable: NotImplemented upstream
         if not (float(c["F_sat"]) > 0.0 and float(c["v0"]) > 0.0):
             raise ValueError("threshold drag requires F_sat > 0, v0 > 0")
-    elif form == POWER_LAW:  # unreachable: NotImplemented upstream
-        if not (float(c["gamma"]) > 0.0):
-            raise ValueError("power_law drag requires gamma > 0")
+    elif form == POWER_LAW:
+        C = float(c["C"])
+        n = float(c["n"])
+        # §10.3: C > 0 keeps the law strictly dissipative for v > 0; n >= 1
+        # keeps gamma = g*C*v**(n-1) finite at v = 0 (an n < 1 law would
+        # diverge at rest and activate the §3.8 drag_low_v_floor obligation
+        # -- the floor stays inert, refused here instead).
+        if not (C > 0.0):
+            raise ValueError(
+                f"power_law drag requires C > 0 (dissipative), got C={C!r}"
+            )
+        if not (n >= 1.0):
+            raise ValueError(
+                f"power_law drag requires n >= 1 (gamma finite at v = 0; "
+                f"METHOD_B §10.3 -- n < 1 would need the inert §3.8 "
+                f"low-velocity floor), got n={n!r}"
+            )
     else:  # pragma: no cover -- membership already enforced above
         raise ValueError(f"unknown drag form {form!r}")
 

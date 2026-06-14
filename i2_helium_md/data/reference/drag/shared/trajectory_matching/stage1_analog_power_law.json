@@ -1,0 +1,33 @@
+{
+  "date": "2026-06-14",
+  "branch": "drag_implementation",
+  "family": "power_law",
+  "stage": "stage1_analog",
+  "gating": "recorded_only_non_gating (\u00a710.4: honestly weakened -- the 9A data has been seen repeatedly; audit-trail value, no verdict power; only the Stage-2 bands gate)",
+  "fit_18A_only": {
+    "variant": "pl_shared_3param",
+    "coefficients": {
+      "C": 1.0528832545995732,
+      "n": 4.0
+    },
+    "e_bind_eV": 0.08252619363995342,
+    "objective_Aps": 0.09285527196829534
+  },
+  "prediction_case": "9A",
+  "rmse_Aps": 0.4109963522424283,
+  "escape_fraction": 1.0,
+  "num_overlap_points": 11412,
+  "checks": {
+    "S1_ANALOG_RMSE_MAX": {
+      "value_Aps": 0.4109963522424283,
+      "band_max_Aps": 0.45,
+      "pass": true
+    },
+    "S1_ANALOG_ESCAPE": {
+      "value": 1.0,
+      "band": 1.0,
+      "pass": true
+    }
+  },
+  "anchor_note": "0.45 = same number as pure-cubic's Stage-1 (Tier-0 9A dimensionality residual ~0.39 + margin); compare to pure-cubic's 0.2685 (METHOD_B \u00a79.7 / \u00a710.4.1)"
+}

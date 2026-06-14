@@ -100,14 +100,28 @@ identifiability conclusion); the **preset re-wiring is EXECUTED
 bundle, wire its stamped binding into `binding_energy_I_ion_eV` (the §6.5.1
 identity holds by construction), and the transitional
 `allow_unvalidated_binding_pairing` hatch is removed from the presets;
-and the **next implementation phase is alternative drag-form
-discrimination**: realize the reserved `power_law` and `linear_quadratic`
-forms (incl. pure-quadratic `a ≡ 0`) and run each family through the same
-shared-form joint-refit machinery against the pure-cubic incumbent
-(motivated by the Method-A power-law `n ≈ +2` vs the §9.7 pure-cubic
-`n = 3` exponent tension). This phase precedes Tier 1.
-`EXTRACTION_FRAME_FIX_milestone.md` remains demoted. See the "Drag-Model Port"
-section below for the working rules that apply to this phase.
+and the **alternative drag-form discrimination phase has RUN
+(2026-06-14, METHOD_B §10.7; delivery record in `drag_migration_log.md`) —
+the incumbent `shared_pure_cubic` is CONFIRMED:** the reserved `power_law`
+and `linear_quadratic` forms (incl. pure-quadratic `a ≡ 0`) were realized
+behind the dispatch and run through the same shared-form joint-refit
+machinery against the pure-cubic incumbent. The full-window trajectory
+objective **does discriminate the exponent** (unlike the linear term, §9):
+the free-`n` `power_law` fit independently recovers **`n̂ = 2.927 ≈ 3`**
+(objective 0.129171, Δ = −0.0001 → EQUIVALENT to pure-cubic; `n_err` ≈ 0.28,
+a genuine measurement) — **not** the Method-A `n ≈ 2.06` — while the forced
+`n = 2` `linear_quadratic` family, though it passes the §9.4 bands, is
+measurably **worse** (objective 0.16315, Δ = +0.0339 → rejected-by-objective;
+its 18 Å→9 Å Stage-1 prediction 0.699 also fails the 0.45 band). The §9.7/§10.2
+`n = 3` vs `n ≈ 2` tension is thus **resolved in favour of `n = 3`**; no family
+beats `shared_pure_cubic`, no escalation, and **presets stay on
+`shared_pure_cubic` (NOT re-wired by this phase)**. Both rejected-family bundles
+plus the verdicts live under
+`data/reference/drag/shared/trajectory_matching/`. **Tier 1 start is now on
+the table** (it was UNGATED by §9; the form is now settled). VMI remains the
+post-Tier-1 final arbiter. `EXTRACTION_FRAME_FIX_milestone.md` remains demoted.
+See the "Drag-Model Port" section below for the working rules that apply to
+this phase.
 
 ## Current Scope
 
@@ -289,16 +303,22 @@ UNGATED by the §9 pass**. The frontier decisions were **resolved
 2026-06-12 (METHOD_B §10; decision record in `drag_migration_log.md`)**:
 production candidate `shared_pure_cubic`; preset re-wiring **executed**
 (both presets on the shared bundle, transitional §6.5.1 hatch removed);
-milestone commit done (`696bfa7`); and the next phase is the **alternative drag-form
-discrimination** (`power_law` + `linear_quadratic` incl. pure-quadratic,
-each through the same shared-refit machinery, reused §9.4 bands plus the
-pre-registered two-threshold `T_form` scheme — **all pre-run constants
-LOCKED 2026-06-12** (METHOD_B §10.4.1: `T_FORM_EQUIV_APS = 0.005` /
+milestone commit done (`696bfa7`); and the **alternative drag-form
+discrimination phase has RUN (2026-06-14, METHOD_B §10.7) and CONFIRMED the
+incumbent** (`power_law` + `linear_quadratic` incl. pure-quadratic, each
+through the same shared-refit machinery, reused §9.4 bands plus the
+pre-registered two-threshold `T_form` scheme — all pre-run constants LOCKED
+2026-06-12 per METHOD_B §10.4.1: `T_FORM_EQUIV_APS = 0.005` /
 `T_FORM_BETTER_APS = 0.013` Å/ps, `n ∈ [1, 4]`, `power_law` pivot
 parameterization at `V_REF_APS = 3.0` Å/ps, 18 Å-only Method-A anchor
-constants). The form phase precedes Tier 1; implementation awaits
-`[PROCEED TO IMPLEMENTATION]`. See "Tier-0 outcome and the active task"
-below.
+constants). Outcome: the free-`n` `power_law` fit recovers **`n̂ = 2.927 ≈ 3`**
+(EQUIVALENT to pure-cubic, Δ = −0.0001; `n_err` ≈ 0.28) and forced-`v²`
+`linear_quadratic` is measurably worse (Δ = +0.0339, rejected) — the exponent
+is discriminated and lands at `n = 3`, `shared_pure_cubic` stands, no
+escalation, presets NOT re-wired. **The form phase is done; Tier 1 start is now
+on the table** (forms realized + guards + tests green, full suite 705 passed).
+Drivers `scripts/extraction/method_b_form_refit_{linear_quadratic,power_law}.py`
++ `form_phase_common.py`. See "Tier-0 outcome and the active task" below.
 
 Mass dynamics (§2), the `IonCheckpoint` v6 rename
 (`E_mass_attach_defect_eV` → `E_mass_transfer_eV`), and the noise machinery
@@ -328,7 +348,7 @@ addition to the Slice 3 guard. No longer dead surface.
 
 | field(s) | status | activated by |
 |---|---|---|
-| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; real `power_law` export is `n≈+2`, also regular at `v=0`; the §10 form phase realizes `power_law` but bounds `n ≥ 1`, floor stays inert) | hypothetical `n<1` `power_law` |
+| `drag_low_v_floor` | declared, inert (`linear_cubic` ignores it; the §10 form phase **realized** `power_law` with `n ≥ 1` and the fit landed at `n̂ ≈ 2.93`, so `γ` is regular at `v=0` and the floor stays inert) | hypothetical `n<1` `power_law` |
 | `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior` | declared, inert (`none`) | Tier 3 (active noise) |
 | `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps` | declared, inert | Tier 1 (evolving mass) — UNGATED 2026-06-11 (the shared-form refit passed its §9.4 bands); awaits the Tier-1 implementation phase |
 | `helium_density_profile` | placeholder/`None` | future G4 density profile |

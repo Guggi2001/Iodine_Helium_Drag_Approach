@@ -280,6 +280,52 @@ objective — the §3.5 accepted risk, carried by the bundle).
 a failure-localization device, never a loadable production pairing); a
 trapped fit in **any** case; unfilled uncertainty fields.
 
+## Form-discrimination API (METHOD_B §10)
+
+The §10 layer runs the `linear_quadratic` and `power_law` families through
+the **same** joint objective against the pure-cubic incumbent. It mirrors the
+§9 API form-for-form, with the coefficients carried as the form's raw
+closed-form **dict** (`{a, c}` / `{C, n}`) instead of the `linear_cubic`
+scalars. Variant tags: `LQ_SHARED_3PARAM`, `LQ_SHARED_PURE_QUADRATIC`,
+`PL_SHARED_3PARAM` (collected in `FORM_VARIANTS`). Data structures:
+`FormObjectiveResult` / `JointFormObjectiveResult` (form-generic analogs of
+the §9 results) and `SharedFormTrajectoryMatchingFit`.
+
+- **`evaluate_form_objective(form, coefficients, e_bind_eV, setup, *, ...)`**
+  and **`evaluate_joint_form_objective(form, coefficients, e_bind_by_case_eV,
+  setups, *, ...)`** — the form-generic front-ends of `_run_and_score` (the
+  core extracted from `evaluate_objective`, which now delegates to it
+  bitwise-equally). Same objective semantics; `evaluate_form_objective`
+  accepts `linear_cubic` too, for the cross-check against `evaluate_objective`.
+- **`fit_shared_form_trajectory_matching(setups, *, variant, anchors,
+  n_bounds=(1,4), ...)`** — the Stage-2 shared joint fit (≥2 cases), same
+  normalized bounded Nelder-Mead + `E_bind` pre-scan + multi-start discipline
+  as §9. The normalized vector is family-specific: lq `(a/a0, c/c0, E/0.308)`
+  with `a` lower bound 0 (pure-quadratic reachable); pl
+  `(γ_ref/γ_ref0, n, E/0.308)` in the **pivot** parameterization
+  `γ_ref = C·v_ref^(n−1)` (§10.4.1 — axis-aligns the matching ridge so the
+  `n̂` half-width is meaningful), with `n` direct-bounded by `n_bounds`. The
+  `anchors` dict is the family's pre-registered constants (`{a0, c0}` /
+  `{C0, n0, v_ref_Aps}`), validated positive — **never** a runtime bundle
+  read.
+- **`fit_form_trajectory_matching(setup, *, variant, anchors, **kwargs)`** —
+  the single-case Stage-1 analog (fit on 18 Å only, predict 9 Å). Same engine;
+  record-only output (the writer refuses single-case bundles).
+- **`form_sensitivity_halfwidths(setups, best, *, v_ref_Aps=None, ...)`** —
+  RMSE-sensitivity half-widths; lq scans `(a, c, E)` (fixed `a=0` → 0.0 by
+  convention), pl scans the **pivot** `(γ_ref, n, E)` (requires `v_ref_Aps`;
+  the driver converts the `γ_ref` half-width to `C_err = γ_ref_err/v_ref^(n̂−1)`
+  at fixed `n` and stamps `n_err` directly).
+- **`write_shared_form_fit_parameters(fit, out_dir, *, anchor_provenance,
+  stage="stage2_joint")`** — the §10 bundle writer; same loader contract
+  (raw coefficients + `<k>_err` + the §9.6 provenance superset + the variant
+  tag + a new `model_selection_on_seen_data` flag). power_law bundles add a
+  `pivot` block (`v_ref_Aps`, `gamma_ref`) for re-derivability. Refuses
+  single-case (Stage-1) fits, trapped fits, and unfilled uncertainty.
+
+Drivers: `scripts/extraction/form_phase_common.py` +
+`method_b_form_refit_{linear_quadratic,power_law}.py`.
+
 ## Provenance helpers
 
 `_reference_file_str` (repo-relative POSIX path for the stamp; absolute if
@@ -288,14 +334,19 @@ or `"unknown"` — the provenance stamp must never crash a fit run).
 
 ## Status and test coverage
 
-Both production runs are complete and recorded (per-case §8: delivered but
+All production runs are complete and recorded (per-case §8: delivered but
 failed the provisional cross-case bands, bundles flagged not-yet-usable;
-shared §9.7: **PASS**, pure-cubic equivalent, Tier 1 ungated). Per the
-first-runs rule the recorded verdicts stand — do not re-run the fits to
-"check" them.
+shared §9.7: **PASS**, pure-cubic equivalent, Tier 1 ungated; §10
+form-discrimination §10.7: **incumbent CONFIRMED** — the free-`n` `power_law`
+fit recovers `n̂ = 2.927 ≈ 3` (EQUIVALENT, Δ = −0.0001) and forced-`v²`
+`linear_quadratic` is measurably worse (Δ = +0.0339, rejected), so no
+alternative form beats `shared_pure_cubic`). Per the first-runs rule the
+recorded verdicts stand — do not re-run the fits to "check" them.
 
-Tests: `tests/test_extraction_trajectory_matching.py` (35 tests; stub-MD
-via the `run_fn` injection seam — fit recovery on stub laws, joint
-objective semantics, variant behavior, all refusal paths, writer/loader
+Tests: `tests/test_extraction_trajectory_matching.py` (60 tests; stub-MD
+via the `run_fn` injection seam — fit recovery on stub laws incl. the §10
+form variants and the pl pivot transform, joint objective semantics, the
+bitwise `linear_cubic` cross-check of `evaluate_form_objective` vs
+`evaluate_objective`, variant behavior, all refusal paths, writer/loader
 round-trips, committed shared-bundle artifact checks; plus one real
-N=2/0.2 ps wiring evaluation).
+N=2/0.2 ps wiring evaluation). Full suite **705 passed / 0 failed**.

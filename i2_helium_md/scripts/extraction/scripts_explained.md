@@ -1,6 +1,6 @@
 # The Method-B extraction scripts, explained
 
-The three scripts in this directory are the **drivers** of the Method-B
+The scripts in this directory are the **drivers** of the Method-B
 trajectory-matching extraction (`METHOD_B_trajectory_matching_extraction.md`);
 all heavy lifting lives in `i2_helium_md/extraction/trajectory_matching.py`
 (documented in `docs/extraction/trajectory_matching_module.md`). They were
@@ -9,9 +9,12 @@ file explains what each script does, what it wrote, and what to watch out
 for if one is ever run again.
 
 ```
-method_b_extraction.py        per-case joint {a, b, E_bind} fit      (plan B4)
-method_b_cross_case_check.py  provisional cross-case held-out check  (plan B5/B7)
-method_b_shared_refit.py      §9 shared-form joint refit, 2 stages   (§9)
+method_b_extraction.py                    per-case joint {a, b, E_bind} fit   (plan B4)
+method_b_cross_case_check.py              provisional cross-case held-out     (plan B5/B7)
+method_b_shared_refit.py                  §9 shared-form joint refit, 2 stages (§9)
+form_phase_common.py                      §10 shared helpers + LOCKED constants
+method_b_form_refit_linear_quadratic.py   §10 linear_quadratic family driver  (§10)
+method_b_form_refit_power_law.py          §10 power_law family driver          (§10)
 ```
 
 Intended run order (as it happened historically): extraction per case →
@@ -20,15 +23,19 @@ refit.
 
 ## Status box — read this first
 
-- **All production runs are complete** (2026-06-11) and the verdicts are
-  recorded in the artifacts and in `drag_migration_log.md`. Per the
-  **first-runs rule** the pre-registered thresholds were fixed before the
-  runs and the recorded verdicts stand — do not re-run a fit to "check" it.
+- **All production runs are complete** (§8/§9 on 2026-06-11, the §10
+  form-discrimination phase on 2026-06-14) and the verdicts are recorded in
+  the artifacts and in `drag_migration_log.md`. Per the **first-runs rule**
+  the pre-registered thresholds were fixed before the runs and the recorded
+  verdicts stand — do not re-run a fit to "check" it.
 - **Outcome in one line each:** the per-case fits were in-window excellent
   but **failed** the provisional cross-case bands (weak-`a`
   identifiability; bundles flagged not-yet-usable); the shared refit
   **passed** every pre-registered §9.4 band — the law is effectively
-  pure-cubic, Tier 1 ungated.
+  pure-cubic, Tier 1 ungated; the §10 form phase then **confirmed the
+  incumbent** — the free-`n` `power_law` fit recovers `n̂ ≈ 2.93 ≈ 3` and
+  forced-`v²` `linear_quadratic` is measurably worse, so no alternative form
+  beats `shared_pure_cubic` (no escalation, presets unchanged).
 - **The §9.4 bands supersede the cross-case check's provisional bands.**
   `method_b_cross_case_check.py`'s check (i) (the 18 Å A↔B `a`-ratio band)
   is **dead** under the weak-`a` finding — it would auto-fail any `a → 0`
@@ -213,6 +220,72 @@ Stage 1: 0.2685 Å/ps ≤ 0.45, full escape. Stage 2 `shared_3param`:
 `shared_pure_cubic` indistinguishable (`T_a0 = −2.3e-7`). Tier 1 ungated;
 the diagnostic was not needed.
 
+## 4. `form_phase_common.py` + the two `method_b_form_refit_*.py` drivers (§10)
+
+The §10 **alternative-form discrimination** phase: realize the `power_law`
+and `linear_quadratic` families and run each through the **same** §9
+shared-form joint-refit machinery against the pure-cubic incumbent, to test
+whether any alternative drag exponent fits the two cases as well or better.
+This is **model selection on seen data** under a pre-registered protocol (the
+§9 cross-case axis was already spent by the Stage-2 joint fit) — a legitimate
+ranking, **not** fresh held-out validation; the winner's external test stays
+VMI after Tier 1.
+
+`form_phase_common.py` is the shared module (project rule 1 — no copy-paste
+between the two siblings). It carries:
+
+- the **LOCKED §10.4.1 pre-registered constants** as named constants with
+  provenance: the reused §9.4 Stage-2 bands (18 Å ≤ 0.19, 9 Å ≤ 0.45, escape
+  1.0), the two `T_form` thresholds (`T_FORM_EQUIV_APS = 0.005`,
+  `T_FORM_BETTER_APS = 0.013`), the exact incumbent objective
+  `INCUMBENT_OBJECTIVE_APS = 0.1292649398514104`, the `power_law` `n` bounds
+  `(1, 4)` and pivot speed `V_REF_APS = 3.0`, and the 18 Å-only anchor
+  constants `A0`/`C0_LQ`/`PL_C0`/`PL_N0` (read off the Method-A bundles once,
+  locked here — **never** a runtime bundle read, since the re-wired presets
+  carry `a0 = 0`);
+- `band_checks` (the reused §9.4 bands, made form-generic — scores a
+  `JointFormObjectiveResult`), `fit_summary`, `fit_is_trapped`;
+- `classify_t_form` — the **two-threshold, asymmetric** classifier:
+  `Δ = best-variant objective − incumbent` → `genuinely_better` (escalate,
+  *and* must pass the bands) / `marginally_better` (recorded, no escalation) /
+  `equivalent` (exponent degeneracy recorded, pure-cubic stays) / `worse`
+  (rejected). The asymmetry keeps a Δ inside the objective's own flatness scale
+  from being stamped "genuinely better";
+- `update_form_comparison_verdict` — read-modify-write of the combined
+  `form_comparison_verdict.json` (keyed by family) next to the §9
+  `verdict.json`.
+
+Each sibling driver (`method_b_form_refit_linear_quadratic.py`,
+`method_b_form_refit_power_law.py`) mirrors the §9 driver flow: build both
+setups → DRY_RUN (joint eval ×2 + bitwise-determinism assert) → **Stage-1
+analog** (fit the family's full variant on 18 Å only, score the untouched 9 Å
+prediction vs 0.45 Å/ps for comparability with pure-cubic's 0.2685 — recorded,
+**non-gating**, record-only JSON, no bundle) → **Stage-2 shared joint fits**
+(lq runs `lq_shared_3param` + `lq_shared_pure_quadratic` then the `T_a0`-analog
+equivalence; pl runs `pl_shared_3param` only, in the locked **pivot**
+parameterization `(γ_ref, n)`) → §9.4 band checks → `T_form` classification on
+the family best variant → sensitivity (`form_sensitivity_halfwidths`; pl
+converts the pivot half-width to `C_err = γ_ref_err / v_ref^(n̂−1)` and stamps
+`n_err` directly — the sharpest single number this phase produces) → bundle
+writes (skipping trapped fits) → per-family + combined verdicts. The anchors are
+passed as the LOCKED constants, **never** `setup.a0/b0` (the post-re-wiring
+caveat in the status box — a fresh setup reads `a0 = 0`).
+
+**Production outcome (2026-06-14, METHOD_B §10.7): incumbent CONFIRMED.**
+
+- `power_law` (free `n`): all 4 starts → **`n̂ = 2.927`** (C ≈ 2.835,
+  E_bind ≈ 0.113 eV), objective 0.129171 → Δ = −0.0001 → **EQUIVALENT** to
+  pure-cubic; bands PASS; `n_err` half-width 0.279. The free-exponent fit
+  **independently recovers `n ≈ 3`**, not Method-A's `n ≈ 2.06`; Stage-1
+  analog 9 Å predict 0.411 ≤ 0.45 PASS.
+- `linear_quadratic` (forced `n = 2`): both variants pass the §9.4 bands but
+  collapse to the pure-quadratic corner (`a → 0`, `c ≈ 12.8`, E_bind ≈ 0.048)
+  with objective 0.16315 → Δ = +0.0339 → **WORSE, rejected-by-objective**;
+  Stage-1 analog 9 Å predict 0.699 > 0.45 FAIL (non-gating).
+- **No family beats `shared_pure_cubic`; no escalation; presets NOT re-wired.**
+  The §10.2 exponent tension is resolved in favour of `n = 3` — the trajectory
+  objective discriminates the exponent (unlike the linear term, §9).
+
 ---
 
 ## Artifact map
@@ -228,9 +301,18 @@ data/reference/drag/
 │   ├── linear_and_cubic/fit_parameters.json      Method-A (restored 2026-06-12; frozen)
 │   └── trajectory_matching/                      (same two files; 9 Å flags set)
 └── shared/trajectory_matching/
-    ├── stage1_prediction.json                    Stage-1 held-out record (non-gating)
+    ├── stage1_prediction.json                    §9 Stage-1 held-out record (non-gating)
     ├── verdict.json                              the complete §9 run record
-    ├── shared_3param/fit_parameters.json         variant bundle (a at the 0 bound)
-    └── shared_pure_cubic/fit_parameters.json     variant bundle — PRODUCTION CANDIDATE
-                                                  (wired into the presets 2026-06-12)
+    ├── shared_3param/fit_parameters.json         §9 variant bundle (a at the 0 bound)
+    ├── shared_pure_cubic/fit_parameters.json     §9 variant — PRODUCTION CANDIDATE
+    │                                             (wired into the presets 2026-06-12)
+    ├── stage1_analog_linear_quadratic.json       §10 lq Stage-1 analog (non-gating)
+    ├── stage1_analog_power_law.json              §10 pl Stage-1 analog (non-gating)
+    ├── verdict_linear_quadratic.json             §10 lq family verdict (rejected: worse)
+    ├── verdict_power_law.json                    §10 pl family verdict (equivalent → n≈3)
+    ├── form_comparison_verdict.json              §10 combined verdict (keyed by family)
+    ├── lq_shared_3param/fit_parameters.json      §10 rejected bundle (a→0, pure-quad)
+    ├── lq_shared_pure_quadratic/fit_parameters.json  §10 rejected bundle (n=2 forced)
+    └── pl_shared_3param/fit_parameters.json      §10 bundle: n̂=2.927 ≈ pure-cubic
+                                                  (EQUIVALENT — incumbent confirmed)
 ```

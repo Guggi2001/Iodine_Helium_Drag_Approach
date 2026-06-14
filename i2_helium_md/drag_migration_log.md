@@ -711,3 +711,97 @@ machinery is what makes the question answerable. A large `n̂` half-width
 (the degeneracy outcome) is therefore a live expectation and is already
 a recorded-finding path in §10.2, not a failure.
 
+## §10 form-phase — delivery record (2026-06-14): **incumbent `shared_pure_cubic` CONFIRMED**
+
+The four-slice arc's §10 alternative-form discrimination phase implemented and
+run. The exponent is settled empirically: the full-window trajectory objective
+**does** discriminate the drag exponent, and it picks `n ≈ 3` (pure-cubic),
+**not** the Method-A `n ≈ 2.06`.
+
+### Delivered (code)
+
+- **`physics/drag.py`** — `linear_quadratic` (`F = g·(a·v + c·|v|·v)`,
+  `γ = g·(a + c·|v|)`) and `power_law` (`F = g·C·|v|ⁿ`, `γ = g·C·|v|ⁿ⁻¹`,
+  numpy `0.0**0.0 == 1.0` realizes the `n=1` limit) realized behind the dispatch
+  branch (Slice-1 promise kept — no signature change). `_raise_unrealised_form`
+  is now `threshold`-only; `REALIZED_FORMS = (linear_cubic, linear_quadratic,
+  power_law)` is the single source for loader + scope guard; module docstring
+  carries the per-form governing equations, §10.3 dimensional analysis, and the
+  nesting identities. **`power_law` coefficient key is `"C"`** (resolves the
+  spec-vs-code discrepancy; §10.3/§10.5 stamp raw `{C, n}`; the historical
+  Method-A `18A/power/fit_parameters.json` keeps its legacy `"gamma"` key —
+  frozen evidence read once for `C0`, never loaded through the loader).
+- **`config.py`** — §3.3 guard arms (§10.3): `linear_quadratic` `a ≥ 0`,
+  `c ≥ 0`, `a + c > 0` (pure-quadratic corner `a=0, c>0`); `power_law` `C > 0`,
+  `n ≥ 1` (n<1 refused → `drag_low_v_floor` stays inert).
+- **`presets.py`** — form-generic `load_drag_coefficients` (optional JSON
+  `"form"` key; absent ⇒ legacy `linear_cubic`, byte-identical; per-form
+  required keys from `_REQUIRED_COEFF_KEYS`); `_FIT_PARAM_REQUIRED_KEYS` now a
+  per-form dict.
+- **`simulation/ion_propagation_step.py`** — `_check_drag_scope` relaxed to the
+  realized form set `{linear_cubic, linear_quadratic, power_law}` (`threshold`
+  still refused; T_eff>0 / mass_scenario≠fixed arms unchanged). `ion.py` needed
+  no change — its `gamma_fn = partial(drag_gamma, …)` was already form-generic.
+- **`extraction/trajectory_matching.py`** — the §10 layer beside the frozen §9
+  API: `_run_and_score` core (extracted from `evaluate_objective`, which now
+  delegates; bitwise-equal), the variant tags + `FORM_VARIANTS`, `_C_to_pivot`/
+  `_pivot_to_C`, `FormObjectiveResult`/`JointFormObjectiveResult`/
+  `SharedFormTrajectoryMatchingFit`, `evaluate_form_objective` /
+  `evaluate_joint_form_objective`, `fit_shared_form_trajectory_matching` (≥2
+  cases) + `fit_form_trajectory_matching` (single-case Stage-1 analog),
+  `form_sensitivity_halfwidths` (lq scans `(a,c,E)`; pl scans the PIVOT
+  `(γ_ref,n,E)`), and `write_shared_form_fit_parameters` (refuses single-case /
+  trapped / unfilled-uncertainty; pl bundles add a `pivot` block).
+- **Drivers** — `scripts/extraction/form_phase_common.py` (LOCKED §10.4.1
+  constants, reused §9.4 band check, two-threshold `T_form` classifier,
+  combined-verdict read-modify-write) + two siblings
+  `method_b_form_refit_linear_quadratic.py` / `method_b_form_refit_power_law.py`
+  (USER SETTINGS + DRY_RUN pattern; anchors passed as pre-registered constants,
+  **never** `setup.a0/b0`).
+- **Tests** — `TestFormDispatch` (threshold-only NIE), `TestFormPhaseFamilies`,
+  `TestNestingIdentities`, `TestFormPhaseDissipativityGuard`,
+  `TestLoaderFormGeneric`, per-family BAOAB smoke runs, and the extraction
+  `TestPivotTransform`/`TestFormObjective`/`TestFormFit`/`TestFormSensitivity`/
+  `TestWriteSharedFormFitParameters`. Full suite **705 passed / 0 failed**.
+
+### Session decisions (user, 2026-06-12 — bound the remaining work)
+
+1. Driver structure = sibling script per family (the §9 `method_b_shared_refit.py`
+   stays frozen).
+2. Multi-start = implementation freedom (lq mirrors §9's 3 starts; pl uses 4
+   starts probing the exponent at n0, 2.0, 3.0).
+3. Stage-1-analog 18 Å-only fits = record-only JSON, no loadable bundle (the
+   writer refuses single-case fits).
+4. `_check_drag_scope` relaxed to the realized form set; `threshold` still
+   refused.
+5. `power_law` coefficient key renamed `"gamma"` → `"C"` (spec-vs-code gap).
+
+### Run record (production, 2026-06-14; first-runs rule honoured)
+
+N=50, seed 20260604, 20 ps @ 0.01 ps; anchors the §10.4.1 LOCKED 18 Å-only
+constants (`a0=14.5556`, `c0=11.0161`, `C0=10.3614`, `n0=2.0558`, `V_REF=3.0`);
+joint objective bitwise-deterministic (DRY_RUN verified both siblings).
+Incumbent objective `0.1292649398514104 Å/ps`.
+
+- **`power_law` (`pl_shared_3param`, free `n`) — EQUIVALENT → pure-cubic
+  confirmed.** All 4 starts → `n̂ = 2.927` (C ≈ 2.835, E_bind ≈ 0.113 eV),
+  objective **0.129171**, Δ = **−0.0001** (within ±0.005); bands PASS
+  (18 Å 0.1305, 9 Å 0.1278, escape 1.0/1.0); `n_err` half-width **0.279**.
+  Stage-1 analog 9 Å predict 0.411 ≤ 0.45 PASS. The free-exponent fit
+  **independently recovers `n ≈ 3`**, not Method-A's `n ≈ 2.06`.
+- **`linear_quadratic` (forced `n = 2`) — WORSE → rejected-by-objective.** Both
+  variants pass the §9.4 bands and collapse to the pure-quadratic corner
+  (`a → 0`, `T_a0`-analog −1e-6 EQUIVALENT, `c ≈ 12.8`, E_bind ≈ 0.048 eV), but
+  objective **0.16315**, Δ = **+0.0339** (past +0.005) → recorded
+  rejected-by-trajectory-objective. Stage-1 analog 9 Å predict **0.699 > 0.45
+  FAIL** (non-gating) — does not generalize the way pure-cubic did (0.2685).
+- **Verdict: no family beats `shared_pure_cubic`; no escalation.** The §10.2
+  exponent tension is resolved in favour of `n = 3`; the trajectory objective
+  discriminates the exponent (unlike the linear term, §9). VMI (post-Tier-1)
+  is the final external check. **Presets stay on `shared_pure_cubic` (NOT
+  re-wired by this phase). Tier-1 start is now on the table.**
+- **Artifacts** under `data/reference/drag/shared/trajectory_matching/`:
+  `{lq_shared_3param,lq_shared_pure_quadratic,pl_shared_3param}/fit_parameters.json`
+  (all load through `load_drag_coefficients`), `stage1_analog_*.json`,
+  `verdict_{linear_quadratic,power_law}.json`, `form_comparison_verdict.json`.
+

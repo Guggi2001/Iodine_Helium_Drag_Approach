@@ -13,6 +13,12 @@ import numpy as np
 import pytest
 
 from i2_helium_md.physics.constants import U
+from i2_helium_md.physics.drag import (
+    DragCoefficients,
+    LINEAR_QUADRATIC,
+    POWER_LAW,
+    THRESHOLD,
+)
 from i2_helium_md.presets import single_pulse_N2000_drag
 from i2_helium_md.simulation.checkpoint import (
     NeutralCheckpoint,
@@ -168,3 +174,65 @@ def test_scope_guard_accepts_m_eff_mass(drag_cfg):
 
     mass_meff_kg = np.full(4, drag_cfg.m_eff_amu * U)
     _check_drag_scope(drag_cfg, mass_meff_kg)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# METHOD_B §10 form phase: the realised families run through the same driver
+# ---------------------------------------------------------------------------
+def _form_cfg(drag_cfg, form, coefficients):
+    """The drag preset re-pointed at a form-phase coefficient bundle.
+
+    Stamps the config's own binding (exact §6.5.1 pairing) and m_eff (exact
+    §6.5 consistency), mirroring how the extraction objective builds configs.
+    """
+    coeffs = DragCoefficients(
+        form=form,
+        coefficients=coefficients,
+        extraction_mass_model="constant",
+        extraction_mass_amu=drag_cfg.m_eff_amu,
+        extraction_method="trajectory_matching",
+        effective_binding_energy_I_ion_eV=drag_cfg.binding_energy_I_ion_eV,
+    )
+    return replace(drag_cfg, drag_form=form, drag_coefficients=coeffs)
+
+
+_FORM_PHASE_PARAMS = [
+    (LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0}),
+    (LINEAR_QUADRATIC, {"a": 0.0, "c": 11.0}),   # pure-quadratic variant
+    (POWER_LAW, {"C": 10.36, "n": 2.056}),
+]
+
+
+@pytest.mark.parametrize("form,coefficients", _FORM_PHASE_PARAMS)
+def test_scope_guard_accepts_realised_forms(drag_cfg, form, coefficients):
+    from i2_helium_md.simulation.ion_propagation_step import _check_drag_scope
+
+    cfg = _form_cfg(drag_cfg, form, coefficients)
+    cfg.validate()  # config-level guards (form agreement, §10.3 arms) pass
+    mass_meff_kg = np.full(4, cfg.m_eff_amu * U)
+    _check_drag_scope(cfg, mass_meff_kg)  # must not raise
+
+
+def test_scope_guard_rejects_reserved_threshold(drag_cfg):
+    from i2_helium_md.simulation.ion_propagation_step import _check_drag_scope
+
+    cfg = _form_cfg(drag_cfg, THRESHOLD, {"F_sat": 1.0, "v0": 1.0})
+    mass_meff_kg = np.full(4, cfg.m_eff_amu * U)
+    with pytest.raises(NotImplementedError, match="drag_form"):
+        _check_drag_scope(cfg, mass_meff_kg)
+
+
+@pytest.mark.parametrize("form,coefficients", _FORM_PHASE_PARAMS)
+def test_form_phase_families_run_end_to_end(drag_cfg, neutral, form, coefficients):
+    """Tiny deterministic run per family: finite, dissipative, collision-free."""
+    cfg = _form_cfg(drag_cfg, form, coefficients)
+    ck = run_ion_propagation(cfg, neutral)
+    for name in (
+        "positions_x", "positions_y", "positions_z",
+        "velocities_x", "velocities_y", "velocities_z",
+        "E_kin_eV", "E_pot_eV", "E_dissip_eV",
+    ):
+        assert np.all(np.isfinite(getattr(ck, name))), name
+    assert np.all(np.diff(ck.E_dissip_eV, axis=1) >= 0)
+    assert ck.E_dissip_eV[:, -1].sum() > 0.0
+    assert np.all(ck.number_of_collisions == 0)

@@ -38,7 +38,12 @@ from i2_helium_md.config import (
     check_drag_config,
     _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU,
 )
-from i2_helium_md.physics.drag import DragCoefficients, LINEAR_CUBIC
+from i2_helium_md.physics.drag import (
+    DragCoefficients,
+    LINEAR_CUBIC,
+    LINEAR_QUADRATIC,
+    POWER_LAW,
+)
 
 # The frozen 9 A extraction mass; both cases share it (verified on disk).
 _M_EFF = 202.953908
@@ -57,6 +62,17 @@ def _constant_coeffs(*, a=13.86, b=2.58, m_eff=_M_EFF, binding=0.3) -> DragCoeff
         coefficients={"a": a, "b": b},
         extraction_mass_model="constant",
         extraction_mass_amu=m_eff,
+        effective_binding_energy_I_ion_eV=binding,
+    )
+
+
+def _form_coeffs(form: str, coefficients: dict, *, binding=0.3) -> DragCoefficients:
+    """A constant-mass bundle of an arbitrary realised form (METHOD_B §10)."""
+    return DragCoefficients(
+        form=form,
+        coefficients=coefficients,
+        extraction_mass_model="constant",
+        extraction_mass_amu=_M_EFF,
         effective_binding_energy_I_ion_eV=binding,
     )
 
@@ -143,6 +159,60 @@ class TestDissipativityGuard:
         # b > 0 => v_dagger = sqrt(-a/b) is imaginary => vacuously dissipative.
         cfg = SimConfig(drag_coefficients=_constant_coeffs(a=1.0, b=5.0))
         check_drag_config(cfg)  # passes with no max-speed ceiling needed
+
+
+# ---------------------------------------------------------------------------
+# Guard: §10.3 dissipativity arms for the form-phase families (METHOD_B §10)
+# ---------------------------------------------------------------------------
+class TestFormPhaseDissipativityGuard:
+    def _cfg(self, form, coefficients):
+        return SimConfig(
+            drag_form=form,
+            drag_coefficients=_form_coeffs(form, coefficients),
+        )
+
+    # --- linear_quadratic: a >= 0, c >= 0, a + c > 0 ---
+    def test_lq_positive_pair_passes(self):
+        check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0}))
+
+    def test_lq_pure_quadratic_passes(self):
+        # a = 0, c > 0: the pure-quadratic variant (the Method-A n~+2
+        # hypothesis as a closed form) -- strictly dissipative for v > 0.
+        check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": 0.0, "c": 11.0}))
+
+    def test_lq_pure_linear_passes(self):
+        # c = 0, a > 0 degenerates to pure Stokes drag -- still dissipative.
+        check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": 4.0, "c": 0.0}))
+
+    def test_lq_negative_a_refused(self):
+        with pytest.raises(ValueError, match="a >= 0 and c >= 0"):
+            check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": -1.0, "c": 11.0}))
+
+    def test_lq_negative_c_refused(self):
+        with pytest.raises(ValueError, match="a >= 0 and c >= 0"):
+            check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": 4.0, "c": -1.0}))
+
+    def test_lq_zero_drag_refused(self):
+        with pytest.raises(ValueError, match=r"a \+ c > 0"):
+            check_drag_config(self._cfg(LINEAR_QUADRATIC, {"a": 0.0, "c": 0.0}))
+
+    # --- power_law: C > 0, n >= 1 ---
+    def test_pl_interior_passes(self):
+        check_drag_config(self._cfg(POWER_LAW, {"C": 10.36, "n": 2.056}))
+
+    def test_pl_n_equal_one_boundary_passes(self):
+        # n = 1 is the locked lower fit bound (§10.4.1); gamma -> g*C at rest.
+        check_drag_config(self._cfg(POWER_LAW, {"C": 3.0, "n": 1.0}))
+
+    def test_pl_nonpositive_C_refused(self):
+        for C in (0.0, -2.0):
+            with pytest.raises(ValueError, match="C > 0"):
+                check_drag_config(self._cfg(POWER_LAW, {"C": C, "n": 2.0}))
+
+    def test_pl_n_below_one_refused(self):
+        # n < 1 diverges at rest (would need the inert §3.8 floor) -> refused.
+        with pytest.raises(ValueError, match="n >= 1"):
+            check_drag_config(self._cfg(POWER_LAW, {"C": 10.0, "n": 0.5}))
 
 
 # ---------------------------------------------------------------------------
@@ -412,6 +482,89 @@ class TestLoaderMethodB:
         self._write(tmp_path, _METHOD_B_JSON)
         with pytest.raises(ValueError, match="provenance mismatch"):
             load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF + 1.0)
+
+
+# ---------------------------------------------------------------------------
+# Form-generic loader (METHOD_B §10.5): per-form keys, legacy contract intact
+# ---------------------------------------------------------------------------
+_METHOD_B_PROVENANCE = {
+    k: _METHOD_B_JSON[k]
+    for k in (
+        "extraction_method",
+        "extraction_mass_model",
+        "effective_binding_energy_I_ion_eV",
+        "t_start",
+        "t_end",
+        "reference_file",
+    )
+}
+_LQ_JSON = {
+    "form": "linear_quadratic",
+    "a": 4.0, "c": 11.0, "a_err": 0.5, "c_err": 0.8, "meff_amu": _M_EFF,
+    **_METHOD_B_PROVENANCE,
+}
+_PL_JSON = {
+    "form": "power_law",
+    "C": 10.36, "n": 2.056, "C_err": 1.2, "n_err": 0.3, "meff_amu": _M_EFF,
+    **_METHOD_B_PROVENANCE,
+}
+
+
+class TestLoaderFormGeneric:
+    def _write(self, tmp_path, payload):
+        (tmp_path / "fit_parameters.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    def test_linear_quadratic_round_trip(self, tmp_path):
+        self._write(tmp_path, _LQ_JSON)
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == LINEAR_QUADRATIC
+        assert coeffs.coefficients == {"a": 4.0, "c": 11.0}
+        assert coeffs.extraction_method == "trajectory_matching"
+        assert coeffs.effective_binding_energy_I_ion_eV == 0.21
+
+    def test_power_law_round_trip(self, tmp_path):
+        self._write(tmp_path, _PL_JSON)
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == POWER_LAW
+        assert coeffs.coefficients == {"C": 10.36, "n": 2.056}
+
+    def test_explicit_linear_cubic_form_key_accepted(self, tmp_path):
+        # A new-style file may also stamp form="linear_cubic" explicitly.
+        self._write(tmp_path, {**_LEGACY_JSON, "form": "linear_cubic"})
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == LINEAR_CUBIC
+
+    def test_reserved_threshold_form_refused(self, tmp_path):
+        self._write(
+            tmp_path,
+            {"form": "threshold", "F_sat": 1.0, "v0": 1.0, "meff_amu": _M_EFF},
+        )
+        with pytest.raises(ValueError, match="reserved"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+    def test_unknown_form_refused(self, tmp_path):
+        self._write(tmp_path, {**_LEGACY_JSON, "form": "exotic"})
+        with pytest.raises(ValueError, match="declares form"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+    def test_per_form_keys_enforced(self, tmp_path):
+        # A linear_quadratic file carrying linear_cubic's {a, b} keys must be
+        # refused for the missing {c, c_err}, naming the form.
+        bad = dict(_LQ_JSON)
+        del bad["c"], bad["c_err"]
+        bad["b"], bad["b_err"] = 2.0, 0.1
+        self._write(tmp_path, bad)
+        with pytest.raises(ValueError, match="linear_quadratic.*missing"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+
+    def test_method_b_provenance_required_for_new_forms_too(self, tmp_path):
+        payload = dict(_PL_JSON)
+        del payload["effective_binding_energy_I_ion_eV"]
+        self._write(tmp_path, payload)
+        with pytest.raises(ValueError, match="Method-B keys"):
+            load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
 
 
 # ---------------------------------------------------------------------------

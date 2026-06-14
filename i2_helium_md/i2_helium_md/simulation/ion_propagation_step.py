@@ -64,6 +64,7 @@ from ..physics.collisions import (
 )
 from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, U
+from ..physics.drag import REALIZED_FORMS
 from ..physics.interactions import partner_interaction_ion
 from ..physics.leapfrog import make_ion_step
 from ..physics.potentials import droplet_potential
@@ -415,13 +416,14 @@ def _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg):
 
 
 def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
-    """Refuse to run the drag branch outside the Tier-0 envelope.
+    """Refuse to run the drag branch outside the deterministic fixed-mass envelope.
 
     The drag-branch analog of :func:`_check_scope`. ``_check_scope`` demands
     collision mode 3, which is irrelevant under drag; the drag path instead
-    asserts the Tier-0 deterministic / fixed-mass / linear_cubic envelope
-    (``DRAG_PORT_DESIGN_DECISIONS.md`` §6.4) so an out-of-scope drag config fails
-    at the driver, not deep in a half-implemented path.
+    asserts the deterministic / fixed-mass / realised-form envelope
+    (``DRAG_PORT_DESIGN_DECISIONS.md`` §6.4, form set widened by the METHOD_B
+    §10 form phase) so an out-of-scope drag config fails at the driver, not
+    deep in a half-implemented path.
 
     Distinct from ``config.check_drag_config``: that validates the config's
     *internal consistency* (form agreement, dissipativity, mass<->coefficient
@@ -455,10 +457,11 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
         unsupported.append(
             f"mass_scenario={cfg.mass_scenario!r} (mass dynamics is Tier 1)"
         )
-    if cfg.drag_form != "linear_cubic":
+    if cfg.drag_form not in REALIZED_FORMS:
         unsupported.append(
-            f"drag_form={cfg.drag_form!r} (only 'linear_cubic' is realised; "
-            "other forms raise NotImplementedError in physics/drag.py)"
+            f"drag_form={cfg.drag_form!r} (realised forms: {REALIZED_FORMS}; "
+            "'threshold' is reserved and raises NotImplementedError in "
+            "physics/drag.py)"
         )
     if cfg.effusive_dynamics:
         unsupported.append("effusive_dynamics")
@@ -469,10 +472,11 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
 
     if unsupported:
         raise NotImplementedError(
-            "drag-branch ion propagation is Tier-0 only and does not support: "
+            "drag-branch ion propagation is deterministic fixed-mass only "
+            "and does not support: "
             + ", ".join(unsupported)
-            + ". Tier-0 = mass_scenario='fixed', noise_form='none', "
-            "drag_form='linear_cubic'."
+            + ". Envelope = mass_scenario='fixed', noise_form='none', a "
+            "realised drag_form (METHOD_B §10 form phase)."
         )
 
     # Realized-mass trip-wire: the integration mass must equal the drag law's
