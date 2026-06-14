@@ -1,10 +1,13 @@
 # Method B — Trajectory-Matching Drag Extraction
 
-**Status:** Method specification. Defines an **alternative drag-extraction
-method** that fits the drag coefficients by minimizing the *forward-integrated
-in-window trajectory* RMSE against the smoothed reference — as opposed to the
-current Method A, which regresses the force-balance residual `F_drag` against
-speed directly. No implementation until `[PROCEED TO IMPLEMENTATION]`.
+**Status:** Implemented and run; this is the **active extraction method**. It
+fits the drag coefficients (jointly with the effective droplet binding) by
+minimizing the *forward-integrated trajectory* RMSE against the smoothed
+reference — as opposed to Method A, which regresses the force-balance residual
+`F_drag` against speed directly. §1–§7 are the live method specification;
+§8–§10.7 record the outcomes (per-case fit → shared-form joint refit →
+alternative-form discrimination). The production law is `shared_pure_cubic`
+(`γ = g·b·v²`); full decision/delivery history is in `drag_migration_log.md`.
 
 **Why it exists.** The Tier-0 investigation showed that hand-adjusting the fit
 parameters while comparing the forward-integrated MD against the smoothed
@@ -298,122 +301,81 @@ To have the same rigour as Method A, a B extraction produces:
 
 ---
 
-## 8. Definition of done — status (2026-06-11 delivery; record in `drag_migration_log.md`)
+## 8. Per-case Method-B fit — outcome (superseded by §9; delivery record in `drag_migration_log.md`)
 
-- [x] B implemented as a named extraction method producing `{a,b}` (jointly
-  with `E_bind`, §5.5) by minimizing the forward-integrated in-window
-  trajectory RMSE against the same-smoothed reference, with seed-sweep +
-  sensitivity uncertainty and a provenance stamp
-  (`extraction_method = trajectory_matching`).
-  (`i2_helium_md/extraction/trajectory_matching.py`,
-  `scripts/extraction/method_b_extraction.py`.)
-- [x] At least one **held-out axis** exercised and recorded — the cross-case
-  axis ran (`scripts/extraction/method_b_cross_case_check.py` →
-  `held_out_validation.json` per case); VMI stamped `pending`.
-- [x] 18 Å B-fit produced; held-out check ran — **FAILED the provisional
-  A↔B band** (`a_B/a_A = 0.10`): the linear coefficient is weakly identified
-  by the full-window objective (`a` pinned at the optimizer bound; cubic term
-  dominates over the window). Partly identifiability, not proven overfit;
-  thresholds deliberately not re-tuned post hoc.
-- [x] 9 Å B-fit produced **with the radial-to-non-radial flag**; held-out
-  check ran — **FAILED** (cross-case `E_bind` disagreement 0.083 eV,
-  entangled with the live `a`↔`E_bind` degeneracy ridge the multi-start
-  exposed). **Recorded as not-yet-usable for the radial MD** (the honest
-  finding); NOT wired into presets.
-- [ ] The Tier-0 docs rewritten from consistency to held-out generalization
-  (separate doc pass — still deferred).
-- [x] One-line verdict per case:
-  - **18 Å:** in-window excellent (0.097 Å/ps full-window, full escape,
-    E_bind 0.071 eV) but the B-fit left the Method-A coefficient region in
-    the weakly-identified `a` direction — not yet generalization-validated.
-  - **9 Å:** in-window excellent (0.041 Å/ps — *suspiciously* better than
-    clean-radial 18 Å, the §5 signature) but fails cross-case consistency —
-    stands flagged, not usable.
-  - Open decision (migration log): constrain `a` / shared-form cross-case
-    refit / pure-cubic reduced form / let the VMI tier arbitrate.
-    **RESOLVED 2026-06-11 → §9** (shared-form joint refit; pure-cubic folded
-    in as a variant; VMI recognized as unreachable until Tier 1).
+B was implemented as a named extraction method
+(`i2_helium_md/extraction/trajectory_matching.py`,
+`scripts/extraction/method_b_extraction.py`) producing `{a, b}` jointly with
+`E_bind` (§5.5) by minimizing the forward-integrated trajectory RMSE against the
+same-smoothed reference. The cross-case held-out axis ran; VMI stamped `pending`.
+
+**Result: both per-case fits are in-window excellent but FAIL the cross-case
+held-out bands** — and stand flagged **not usable**, not wired into presets:
+
+- **18 Å:** in-window 0.097 Å/ps, full escape, `E_bind` 0.071 eV.
+- **9 Å:** in-window 0.041 Å/ps (*suspiciously* better than clean-radial 18 Å —
+  the §5 signature), full escape, `E_bind` 0.154 eV.
+
+The dominant finding is that **the linear coefficient `a` is weakly identified by
+the full-window trajectory objective** (the cubic term dominates over both
+windows): 18 Å's `a` pinned at the optimizer bound, 9 Å showed a live
+`a`↔`E_bind` degeneracy ridge, and the cross-case `E_bind` disagreement (0.083 eV)
+is entangled with it. This motivates the cross-case **shared-form joint refit**
+(§9), which resolves the ridge.
 
 ---
 
-## 9. Shared-form joint refit (2026-06-11 — the §8 open decision, resolved)
+## 9. Shared-form joint refit — spec (resolves the §8 weak-`a` ridge)
 
-**Decision.** Among the §8 candidates — (a) constrain `a`, (b) shared-form
-joint refit, (c) pure-cubic reduced form, (d) VMI arbitration — the user
-selected **(b) the cross-case shared-form joint refit**, with (c) folded in as
-an explicit variant (§9.2). Rationale: a successful shared fit is the
-strongest available statement that the drag law is a *general working
-principle* (one size-independent transport law) rather than a per-case fudge.
+The chosen response to §8 is the **cross-case shared-form joint refit**: fit one
+size-independent drag law plus one effective binding across both cases. A
+successful shared fit is the strongest available statement that the drag law is a
+*general working principle* (one size-independent transport law), not a per-case
+fudge. The pure-cubic reduced form (`a ≡ 0`) is folded in as an explicit variant.
 
-### 9.1 The VMI axis is unreachable until Tier 1 — a circular gate, resolved by policy
+### 9.1 The VMI axis is unreachable until Tier 1 — gate policy
 
 The VMI channels are **mass-selected** and the final velocity depends on the
 mass history, so a fixed-`m_eff` ensemble cannot be honestly scored against
 `vmi_iplus_he.csv`. The designated ultimate arbiter (§4 axis 3) therefore
-**requires Tier 1 mass evolution — which was itself gated on held-out
-survival.** That gate was circular. Resolution (user decision, 2026-06-11):
-
-- **Cross-case is the only falsification axis reachable now.** The design
-  below therefore preserves held-out content (Stage 1) *before* the joint fit
-  consumes the axis (Stage 2).
-- **Gate policy:** if the shared-form refit passes its pre-registered bands
-  (§9.4), **Tier 1 ungates**; the **VMI tier moves explicitly to post-Tier-1
-  final arbiter** (it stays stamped `pending` until then).
+requires Tier 1 mass evolution. Gate policy: if the shared-form refit passes its
+pre-registered bands (§9.4), **Tier 1 ungates** and the **VMI tier becomes the
+post-Tier-1 final arbiter** (stamped `pending` until then). Cross-case is the
+only falsification axis reachable now, so the design preserves held-out content
+(Stage 1) *before* the joint fit consumes the axis (Stage 2).
 
 ### 9.2 Hypothesis and stages
 
-**Hypothesis under test:** one size-independent drag law `{a, b}` plus one
-effective binding `E_bind` carries both cases. Physically defensible — the
-bulk He density the ion traverses is the same liquid in both droplets; the
-spatial gate handles the surface. Fully shared = **3 parameters against 2
-full trajectories: over-constrained, hence falsifiable** — unlike the
-independent per-case fits (6 parameters), the shared fit *can* fail, which
-restores the falsifiability content the §8 failure showed was missing.
+**Hypothesis:** one size-independent drag law `{a, b}` plus one effective binding
+`E_bind` carries both cases (the bulk He density the ion traverses is the same
+liquid in both droplets; the spatial gate handles the surface). Fully shared =
+**3 parameters against 2 full trajectories — over-constrained, hence
+falsifiable**, restoring the falsifiability the per-case (6-parameter) fits lack.
 
-- **Stage 1 — score the untouched 9 Å prediction from the delivered §8 18 Å
-  bundle** (the §4 "fit one and check it predicts the other" variant).
-  **No fresh 18 Å refit** (user decision 2026-06-11): Stage 1 **reuses the
-  §8 single-case 18 Å fit** (`a = 1.456`, `b = 3.316`, `E_bind = 0.0709 eV`,
-  produced under the old `0.1·a₀` lower bound) — Stage 1 is therefore pure
-  prediction: one forward integration of 9 Å under the 18 Å-fit parameters
-  plus scoring, no optimizer in the loop and hence no Stage-1 variants.
-  18 Å is the safe clean-radial calibration case; 9 Å is a strictly held-out
-  case, **zero refitting**. The expected-if-the-law-generalizes outcome is
-  calibrated by Tier 0: the 9 Å prediction residual should land near the
-  known ~0.39 Å/ps dimensionality residual (the central-force MD cannot
-  carry the transverse drift regardless of the law). Stage 1 is recorded
-  **before** Stage 2 spends the cross-case axis. **Stage 1 is recorded,
-  non-gating** (user decision 2026-06-11): only the Stage-2 bands carry
-  verdict power (§9.4).
-- **Stage 2 — joint fit over both cases.** Primary: fully-shared
-  `{a, b, E_bind}`. Objective: per-case (RMSE + escape penalty) first, then
-  the **equal-weight mean across the two cases** (the windows differ in
-  length; per-case RMSE first prevents long-window dominance). Variants:
-  - `shared_3param` — `a` free with **lower bound 0** (guard note §9.5);
-  - `shared_pure_cubic` — `a ≡ 0`, fit `{b, E_bind}` (the §8 option (c) as an
-    in-design variant). If the two variants' objectives are indistinguishable
-    (Δ ≤ `T_a0`, §9.4), the pure-cubic reduced form is recorded as the
+- **Stage 1 (held-out, non-gating)** — score the untouched 9 Å prediction from
+  the §8 18 Å single-case bundle (`a = 1.456`, `b = 3.316`, `E_bind = 0.0709`).
+  Pure prediction: one 9 Å forward integration + scoring, no optimizer, no
+  variants. 9 Å is strictly held-out (zero refit). If the law generalizes, the
+  residual should land near the Tier-0 ~0.39 Å/ps dimensionality residual.
+- **Stage 2 (gating)** — joint fit over both cases. Objective: per-case
+  (RMSE + escape penalty) first, then the **equal-weight mean** (prevents
+  long-window dominance). Variants:
+  - `shared_3param` — `a` free, lower bound 0 (§9.5);
+  - `shared_pure_cubic` — `a ≡ 0`, fit `{b, E_bind}`. If the two variants are
+    indistinguishable (Δ ≤ `T_a0`, §9.4), the pure-cubic reduced form is the
     **empirical conclusion** on `a`'s identifiability;
-  - `diagnostic_4param` — shared `{a, b}`, per-case `E_bind`. Run **only if
-    the primary fails its bands**: localizes whether the drag law or the
-    binding is what fails to generalize.
-- **Stage-1↔Stage-2 parameter-shift check:** a large shift of the shared
-  parameters when 9 Å enters the objective flags 9 Å dragging the law toward
-  its transverse contamination — the §5 warning, made measurable. **This
-  check is qualitative and recorded-only** (user decision 2026-06-11): no
-  pre-registered band, no gate power — the load-bearing falsification is
-  carried by the Stage-1 prediction and the Stage-2 bands; the shift is
-  recorded alongside the verdicts as diagnostic context. (With Stage 1
-  reusing the §8 bundle, the shift compares the §8 18 Å parameters against
-  the Stage-2 shared parameters.)
+  - `diagnostic_4param` — shared `{a, b}`, per-case `E_bind`; run **only if the
+    primary fails its bands** (localizes drag-vs-binding failure).
+- **Stage-1↔Stage-2 parameter-shift check** — qualitative, recorded-only (no
+  band): a large shift when 9 Å enters the objective would flag 9 Å dragging the
+  law toward its transverse contamination (the §5 warning, made measurable).
 
 ### 9.3 Normalization and anchors
 
-Optimization stays in the delivered extractor's normalized bounded
-Nelder-Mead pattern; the conditioning anchors `{a0, b0}` come **from the 18 Å
-Method-A bundle only** — the 9 Å Method-A artifact is provenance-broken (user
-decision 2026-06-11, migration log) and must not condition the fit.
-Multi-start as before (E_bind pre-scan + ridge-probing starts).
+Optimization uses the extractor's normalized bounded Nelder-Mead pattern with
+multi-start (E_bind pre-scan + ridge-probing starts); the conditioning anchors
+`{a0, b0}` come from the **18 Å Method-A bundle only** (a convention choice, kept
+for the record).
 
 ### 9.4 Pre-registered thresholds (first-runs rule — fixed before any run, not re-tuned after)
 
@@ -436,25 +398,18 @@ suspiciously-good signature, not a clean anchor); 0.005 Å/ps ≈ the optimizer
 `a ≡ 0` optimum (up to optimizer noise), so the Δ above is ≥ 0 by
 construction.
 
-**Gating policy (user decision 2026-06-11): only the Stage-2 bands
-(`S2_RMSE_18A_MAX`, `S2_RMSE_9A_MAX`, `S2_ESCAPE`) carry verdict power.**
-The Stage-1 rows are recorded for the held-out audit trail but are
-non-gating: a Stage-1 fail does not block the Tier-1 ungate if Stage 2
-passes. `T_a0` is a classification threshold (which conclusion to record on
-`a`'s identifiability), not a pass/fail gate.
+**Gating policy:** only the Stage-2 bands (`S2_RMSE_18A_MAX`, `S2_RMSE_9A_MAX`,
+`S2_ESCAPE`) carry verdict power; the Stage-1 rows are recorded for the held-out
+audit trail but are non-gating. `T_a0` is a classification threshold (which
+conclusion to record on `a`'s identifiability), not a pass/fail gate. These §9.4
+bands supersede the §8 provisional cross-case bands (the 18 Å A↔B `a`-ratio check
+is dead under the weak-`a` finding and not re-applied).
 
-**Supersession (user decision 2026-06-11):** these §9.4 bands **supersede
-the §8 provisional cross-case bands** for judging the shared refit. In
-particular the 18 Å A↔B `a`-ratio check (band [0.5, 2.0]) is **not
-re-applied** to the shared fit — it would auto-fail any `a → 0` fit and is
-dead under the weak-`a` finding; the per-case `held_out_validation.json`
-updates record the shared-refit verdicts under the §9.4 bands only.
-
-**Verdict mapping.** Stage-2 primary passes its bands → the shared bundle is
-the production candidate; Tier 1 ungates (§9.1); VMI = post-Tier-1 final
-arbiter. Primary fails → run `diagnostic_4param` to localize; the per-case
-bundles stay flagged not-yet-usable; `EXTRACTION_FRAME_FIX_milestone.md`
-remains the recorded contingency.
+**Verdict mapping.** Stage-2 primary passes its bands → the shared bundle is the
+production candidate, Tier 1 ungates (§9.1), VMI = post-Tier-1 final arbiter.
+Primary fails → run `diagnostic_4param` to localize; per-case bundles stay
+flagged not-yet-usable; `EXTRACTION_FRAME_FIX_milestone.md` remains the
+contingency.
 
 ### 9.5 `a = 0` and the §3.3 guard
 
@@ -469,21 +424,14 @@ case a later phase wants the explicit tag.)
 ### 9.6 Artifacts and provenance (outcome in §9.7)
 
 `data/reference/drag/shared/trajectory_matching/`: `fit_parameters.json`
-(`extraction_method = "trajectory_matching"` — unchanged loader contract —
-plus `calibration_cases`, `stage`, `variant` provenance fields),
+(`extraction_method = "trajectory_matching"` — unchanged loader contract — plus
+`calibration_cases`, `stage`, `variant` provenance fields),
 `stage1_prediction.json`, and the verdict records; the per-case
-`held_out_validation.json` files are updated (with the shared-refit verdicts
-under the §9.4 bands — the §8 provisional bands are superseded, see §9.4).
-**If the `shared_3param` and `shared_pure_cubic` variants differ beyond
-`T_a0`, BOTH variant bundles are recorded** (the `variant` provenance field
-disambiguates); which one becomes the production candidate is deferred to
-the preset-rewiring decision (user decision 2026-06-11 — if they are
-equivalent it won't matter, the pure-cubic conclusion is recorded per §9.2).
-**→ RESOLVED 2026-06-12 (§10): `shared_pure_cubic` is the production
-candidate.** **Presets are NOT re-wired by this phase** (gated on the
-verdict plus a separate user decision; the Method-A bundles and the
-transitional §6.5.1 hatch remain). **→ Re-wiring EXECUTED 2026-06-12
-(§10.1).**
+`held_out_validation.json` files updated with the shared-refit verdicts under the
+§9.4 bands. Both variant bundles (`shared_3param`, `shared_pure_cubic`) are
+recorded when they differ beyond `T_a0` (the `variant` field disambiguates). The
+production candidate is `shared_pure_cubic` and the presets are wired to it
+(§10).
 
 ---
 
@@ -520,48 +468,36 @@ by DRY_RUN).
   (each loads through `load_drag_coefficients`; sensitivity-only uncertainty
   band, seed sweep omitted per the §8 seed-insensitivity finding), plus
   `stage1_prediction.json` and `verdict.json`; per-case
-  `held_out_validation.json` files updated. **Presets remain NOT re-wired**
-  (production-candidate choice between the equivalent variants + re-wiring
-  await a separate user decision — **both RESOLVED 2026-06-12, §10**).
-  Regression coverage:
+  `held_out_validation.json` files updated. Production candidate =
+  `shared_pure_cubic`; presets are wired to it (§10). Regression coverage:
   `tests/test_extraction_trajectory_matching.py::TestSharedBundleArtifacts`.
 
 ---
 
-## 10. Production candidate + alternative-form discrimination phase (2026-06-12)
+## 10. Production candidate + alternative-form discrimination phase
 
-Resolves the §9.6/§9.7 deferred decisions and defines the **next
-implementation phase**. Decision record in `drag_migration_log.md`.
-Implementation awaits `[PROCEED TO IMPLEMENTATION]` (working-method rule).
+Defines the production candidate and the alternative-form discrimination phase
+(now complete — outcome §10.7). Decision/delivery records in
+`drag_migration_log.md`.
 
-### 10.1 Decisions (user, 2026-06-12)
+### 10.1 Decisions
 
 1. **Production candidate = `shared_pure_cubic`.** The two §9.7 bundles are
-   `T_a0`-equivalent; `shared_pure_cubic` is chosen because `a = 0` exactly
-   is the honest encoding of the §9.7 identifiability conclusion —
-   `shared_3param`'s `a = 0.0002` is optimizer noise at a bound, and
-   carrying it forward invites a later reader treating it as a measured
-   linear coefficient.
-2. **Preset re-wiring APPROVED — EXECUTED 2026-06-12** (after the
-   milestone commit `696bfa7`): both drag presets load the shared
-   `shared_pure_cubic` bundle and wire its stamped
-   `effective_binding_energy_I_ion_eV` into `binding_energy_I_ion_eV`
-   directly from the loaded coefficients (the §6.5.1 identity holds by
-   construction); the transitional `allow_unvalidated_binding_pairing`
-   hatch is removed from the presets and the guard runs at full strength.
-   Suite verified back at the recorded 641-passed / 2-known-red baseline
-   with the transitional warnings gone.
-3. **Next implementation phase — alternative drag-form discrimination:**
-   realize the reserved `power_law` and `linear_quadratic` forms (the
-   latter including its **pure-quadratic** `a ≡ 0` variant) behind the
-   existing interchangeable surface, and run **each family through the same
-   shared-form joint-refit machinery (§9)**, comparing against the
-   pure-cubic incumbent. `threshold` is explicitly **not** in this phase's
-   scope (it stays reserved).
-4. **Ordering:** the form phase precedes Tier 1. Tier 1 stays
-   ungated-but-not-started — the transport form should be settled (or its
-   degeneracy recorded) before mass dynamics builds on it. VMI remains the
-   post-Tier-1 final arbiter regardless of the form outcome.
+   `T_a0`-equivalent; `shared_pure_cubic` (`a = 0` exactly) is the honest
+   encoding of the §9.7 identifiability conclusion (`shared_3param`'s
+   `a = 0.0002` is optimizer noise at a bound).
+2. **Presets are wired to `shared_pure_cubic`.** Both drag presets load the
+   shared bundle and set `binding_energy_I_ion_eV` from its stamped
+   `effective_binding_energy_I_ion_eV` (the §6.5.1 identity holds by
+   construction); the transitional `allow_unvalidated_binding_pairing` hatch is
+   removed and the guard runs at full strength.
+3. **Alternative drag-form discrimination phase:** realize the reserved
+   `power_law` and `linear_quadratic` forms (the latter including its
+   pure-quadratic `a ≡ 0` variant) behind the interchangeable surface, and run
+   each family through the same shared-form joint-refit machinery (§9) against
+   the pure-cubic incumbent. `threshold` stays reserved (out of scope).
+4. **Ordering:** the form phase precedes Tier 1 — the transport form is settled
+   before mass dynamics builds on it. VMI remains the post-Tier-1 final arbiter.
 
 ### 10.2 Motivation — the exponent question
 
@@ -734,7 +670,7 @@ Decisions bound to these numbers (user, 2026-06-12):
   half-width (the degeneracy outcome) is a live expectation, and §10.2
   already treats it as a finding, not a failure.
 
-### 10.5 Implementation surface (awaits `[PROCEED TO IMPLEMENTATION]`)
+### 10.5 Implementation surface (delivered — see §10.7)
 
 - `physics/drag.py` — realize `linear_quadratic` and `power_law` behind
   the existing dispatch (a branch, not a signature change — the Slice-1
@@ -754,33 +690,16 @@ Decisions bound to these numbers (user, 2026-06-12):
   `variant` provenance field; a comparison verdict record alongside
   `verdict.json`.
 
-### 10.6 Definition of done
+### 10.6 Definition of done — complete
 
-- [x] Documentation pass: §9.6/§9.7 deferred decisions resolved, this
-  section added, CLAUDE.md + `drag_migration_log.md` updated (2026-06-12).
-- [x] Milestone commit of the §9 delivery + this documentation pass
-  (`696bfa7`, 2026-06-12; four reference artifacts overwritten by a
-  17:14 post-verdict experiment were restored to HEAD first — user
-  decision).
-- [x] Presets re-wired to `shared_pure_cubic`; transitional §6.5.1 hatch
-  removed from the presets; tests updated (2026-06-12).
-- [x] `T_form`, the `power_law` `n` bounds, and the per-family
-  pre-registered anchor constants locked pre-run (first-runs rule;
-  anchors-as-constants decided 2026-06-12; values **LOCKED 2026-06-12**,
-  §10.4.1 — two-threshold `T_form`, `n ∈ [1, 4]`, pivot
-  parameterization with `V_REF_APS = 3.0`, 18 Å-only anchors).
-- [x] Forms realized + guards + tests green (2026-06-12/14: `linear_quadratic`
-  and `power_law` realized behind the dispatch; §3.3 guard arms; form-generic
-  loader; nesting-identity + dissipativity + extraction-recovery + artifact
-  tests; full suite **705 passed / 0 failed**).
-- [x] Per-family Stage-1 analog + Stage-2 shared fit run; bundles and
-  comparison verdict recorded (2026-06-14 — drivers
-  `scripts/extraction/method_b_form_refit_{linear_quadratic,power_law}.py`,
-  outcome §10.7).
-- [x] Production-candidate confirmation or escalation recorded; Tier-1
-  start decision then on the table. **Incumbent `shared_pure_cubic`
-  CONFIRMED** (§10.7): neither family beats it; no escalation. Tier-1 start
-  is now on the table.
+All items done (delivery records in `drag_migration_log.md`): production
+candidate `shared_pure_cubic` chosen and presets re-wired (transitional §6.5.1
+hatch removed); the §10.4.1 pre-run constants locked; `linear_quadratic` and
+`power_law` realized behind the dispatch with guard arms, form-generic loader,
+and nesting-identity/dissipativity/extraction-recovery/artifact tests (full suite
+705 passed / 0 failed); both families run through the §9 machinery; incumbent
+`shared_pure_cubic` **confirmed** (§10.7, no escalation). Tier-1 start is now on
+the table.
 
 ### 10.7 Outcome — RAN 2026-06-14, incumbent CONFIRMED (delivery record in `drag_migration_log.md`)
 

@@ -1,11 +1,12 @@
 # Drag-Model Port — Migration Log
 
-**Purpose.** Detailed record of the drag-model port's implementation slices and
-the Tier-0 investigation. This is the **reference detail** that `CLAUDE.md`
-summarises: CLAUDE.md carries the compact current status and the live rules; this
-log carries the per-slice delivery records and the full Tier-0 diagnosis history
-(including the withdrawn readings, kept for the audit trail). Consult this when
-the summary in CLAUDE.md is insufficient.
+**Purpose.** This log is the **single home for the drag-model port's decision
+history** — the per-slice delivery records, the dated decision records, and the
+full Tier-0 diagnosis history including every withdrawn reading. The companion
+docs (`CLAUDE.md`, `METHOD_B_…`, `TIER0_FINDINGS.md`,
+`DRAG_PORT_DESIGN_DECISIONS.md`) carry only the **present state** plus the live
+rules/specs and point here for history. Consult this when you need to know *how*
+a decision was reached or *what was tried and withdrawn*.
 
 **Companion docs:** `DRAG_PORT_DESIGN_DECISIONS.md` (the frozen design),
 `METHOD_B_trajectory_matching_extraction.md` (the active extraction method),
@@ -163,14 +164,42 @@ fields; `physics/` (`drag.py`/`baoab.py` consumed unchanged); the neutral stage.
 
 ## Tier-0 outcome — full record
 
+### Withdrawn Tier-0 readings (audit trail)
+
+The 9 Å diagnosis converged through several readings that were each adopted then
+withdrawn. Recorded here (the one home for them) so a later reader knows what was
+tried and why it was wrong; `TIER0_FINDINGS.md` keeps only the settled picture.
+
+1. **"Frame systematic" (withdrawn).** The 9 Å mismatch was first read as a
+   lab-vs-relative velocity-frame / COM-drift error and spawned
+   `EXTRACTION_FRAME_FIX_milestone.md`. **Wrong:** atom 1's sideways motion is a
+   TDDFT artifact *discarded at extraction* (γ was fit to the single clean atom 2,
+   not the `½(v₁+v₂)` COM the story rested on), and the break is local/directional,
+   not the global bias a frame error would produce.
+2. **"Windowing + bubble-mode" (partly right, superseded).** Next read as three
+   non-law effects: the artifact atom in the mean comparison, the window running
+   past atom 2's ~6 ps drift onset, and the 1.2 ps bubble oscillation the
+   extraction denoised away. The same-smoothed comparison confirmed bubble-mode as
+   the dominant *raw* contributor (residual 0.88 → ~0.40) — but it did **not**
+   collapse to the 18 Å-class ~0.09, so a real residual survived.
+3. **"Different-regime / over-damping" (refined, not final).** The surviving
+   ~0.40 was briefly read as a near-constant ~10% over-damping (prime suspect: the
+   9 Å clean-window `a` nearly doubling). Superseded once real 3D positions showed
+   the residual is dimensional, not a magnitude miscalibration.
+4. **Settled — 9 Å reference is genuinely non-radial (current).** Re-exporting the
+   reference with real 3D per-atom velocities *and* positions showed atom 2 carries
+   a sustained ~4 Å/ps transverse co-translation; the central-force MD cannot
+   represent it, so the ~0.39 Å/ps residual is a **model-dimensionality** statement,
+   not a drag-form/frame/magnitude error. This is the first-class finding in
+   `TIER0_FINDINGS.md`.
+
 ### Tier-0 investigation and verdict (detail)
 
 The Tier-0 comparison has **run** (`TIER0_COMPARISON_spec.md` →
 `TIER0_FINDINGS.md`; scripts `TIER0_SCRIPTS.md`; status
-`tier0_comparison_tasks_left.md`). It converged through several **withdrawn
-readings** (full audit trail in the findings: "different regimes" → "frame
-systematic" → "windowing + bubble-mode") onto a settled picture once the
-reference was re-exported with real 3D per-atom velocities **and** positions:
+`tier0_comparison_tasks_left.md`). It converged through the withdrawn readings
+above onto a settled picture once the reference was re-exported with real 3D
+per-atom velocities **and** positions:
 
 - **18 Å — clean pass.** `linear_cubic` reproduces the trace (t\*-seeded distance
   0.30 Å, mean |v| RMSE ~0.09–0.16 Å/ps); its window stays in the clean radial
