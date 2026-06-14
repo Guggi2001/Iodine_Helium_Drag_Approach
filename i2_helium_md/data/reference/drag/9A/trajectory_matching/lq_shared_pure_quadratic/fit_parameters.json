@@ -1,0 +1,77 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_quadratic",
+  "a": 0.0,
+  "c": 10.320782604526824,
+  "a_err": 0.0,
+  "c_err": 0.1026968962133612,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.13031545418302376,
+  "effective_binding_energy_err_eV": 0.006360635263695208,
+  "t_start": 2.67,
+  "t_end": 14.081,
+  "reference_file": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv",
+  "calibration_case": "9A",
+  "stage": "per_case_diagnostic",
+  "variant": "lq_shared_pure_quadratic",
+  "anchors": {
+    "a0": 14.555626399148123,
+    "c0": 11.016050300970692,
+    "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+  },
+  "objective": "in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_rmse_Aps": 0.04456972779710247,
+  "escape_fraction": 1.0,
+  "num_overlap_points": 11412,
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 148,
+    "converged": true,
+    "start_minima": [
+      {
+        "coefficients": {
+          "a": 0.0,
+          "c": 10.324763140236351
+        },
+        "e_bind_eV": {
+          "9A": 0.13018347903660366
+        },
+        "objective_Aps": 0.04456984386131255
+      },
+      {
+        "coefficients": {
+          "a": 0.0,
+          "c": 10.320782604526824
+        },
+        "e_bind_eV": {
+          "9A": 0.13031545418302376
+        },
+        "objective_Aps": 0.04456972779710247
+      },
+      {
+        "coefficients": {
+          "a": 0.0,
+          "c": 10.322881554560226
+        },
+        "e_bind_eV": {
+          "9A": 0.13023447982487932
+        },
+        "objective_Aps": 0.04456987520729203
+      }
+    ]
+  },
+  "date": "2026-06-14",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": true,
+    "full_window_heldout_window_axis_forfeited": true,
+    "per_case_calibrated_not_validated": true,
+    "cross_case_axis_not_applied": true
+  }
+}

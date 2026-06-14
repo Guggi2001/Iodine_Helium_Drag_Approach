@@ -742,3 +742,72 @@ after Tier 1 remains the external arbiter.
   `verdict_{linear_quadratic,power_law}.json`, and the combined
   `form_comparison_verdict.json`. **Presets remain on `shared_pure_cubic`
   (NOT re-wired by this phase).**
+
+### 10.8 Per-case alternative-form fits — diagnostic (RAN 2026-06-14)
+
+§8 gave `linear_cubic` per-case (9 Å-only, 18 Å-only) bundles; §10.7 gave
+`linear_quadratic` / `power_law` only the *shared* joint refits. §10.8 fills the
+missing diagonal: individual per-case fits for those two families, to answer two
+questions the shared fit cannot — per-case `n̂` (and its in-curve
+identifiability) and per-case pure-quadratic collapse (`a → 0`).
+
+**Methodological status (stamped in every bundle).** These are
+**calibrated-not-validated, single-case** fits: for these forms the §9 cross-case
+held-out axis is already spent, and a single-case fit trivially matches its own
+curve (the §5/§8 warning). 9 Å additionally carries the transverse-contamination
+flag. They are **diagnostic only, NEVER preset-wired**; the incumbent stays
+`shared_pure_cubic`. No outcome here reopens the form question (strictly
+documentary, user decision 2026-06-14). Bundles carry the new honesty flags
+`per_case_calibrated_not_validated` and `cross_case_axis_not_applied` (plus the
+standing `transverse_contaminated_non_radial_reference` /
+`full_window_heldout_window_axis_forfeited`).
+
+Run: N=50, seed 20260604, 20 ps @ 0.01 ps; the §10.4.1 LOCKED anchors passed
+explicitly (conditioning-only); sensitivity-only band (seed sweep omitted per §8);
+power_law `C_err` is the fixed-`n` partial band `C_err = γ_ref_err / v_ref**(n−1)`
+(NOT a marginal uncertainty — n-covariance dropped, consistent with the
+per-parameter sensitivity model). **All 6 bundles written, escape 1.0/1.0, 0
+trapped skips.**
+
+| case | variant | best fit | E_bind (eV) | in-window RMSE (Å/ps) |
+|------|---------|----------|-------------|------------------------|
+| 18 Å | `lq_shared_3param`        | `a = 16.63 ± 1.59`, `c = 6.13 ± 0.59`     | 0.053 | 0.0994 |
+| 18 Å | `lq_shared_pure_quadratic`| `a ≡ 0`, `c = 11.27 ± 0.55`               | 0.060 | 0.0993 |
+| 18 Å | `pl_shared_3param`        | `C = 1.05`, **`n̂ = 4.000 ± 1.333`** (railed to the n=4 bound) | 0.083 | 0.0929 |
+| 9 Å  | `lq_shared_3param`        | **`a → 0`**, `c = 10.32 ± 0.10`           | 0.130 | 0.0446 |
+| 9 Å  | `lq_shared_pure_quadratic`| `a ≡ 0`, `c = 10.32 ± 0.10`               | 0.130 | 0.0446 |
+| 9 Å  | `pl_shared_3param`        | `C = 3.59`, **`n̂ = 2.651 ± 0.026`**       | 0.157 | 0.0406 |
+
+**Findings.**
+
+- **Per-case `n̂` is strongly case-asymmetric — it confirms *and refines* the
+  §10.4.1 expectation.** 18 Å alone **cannot** identify the exponent: it rails to
+  the `n = 4` upper bound with a huge half-width (±1.333) — the predicted in-curve
+  degeneracy. But 9 Å alone identifies it **tightly**: `n̂ = 2.651 ± 0.026`. So the
+  pre-registered "exponent is unidentified within a single curve" is *not*
+  uniform — 9 Å's broader in-window speed range (earlier window onset 2.67 ps, the
+  more energetic R0 = 9 Å Coulomb explosion) gives a single curve enough speed
+  leverage to pin `n`, while 18 Å's narrow range does not. The leverage is
+  case-dependent, not purely cross-case.
+- **Pure-quadratic collapse is also case-dependent.** 9 Å collapses (`a → 0` in
+  the free 3-param `lq` fit, identical to the forced pure-quadratic variant,
+  RMSE 0.0446 either way). 18 Å's 3-param fit keeps `a = 16.6`, **but** forcing
+  `a ≡ 0` gives the same RMSE (0.0993 vs 0.0994) — so that `a` is the §10.4.1
+  weak-`a` ridge: locally a finite half-width, globally degenerate with the
+  `a = 0` corner at equal objective. 18 Å's `a` is not meaningfully identified
+  despite the non-zero best-fit value.
+- **Consistent with the shared fit, by the cross-case mechanism.** The shared
+  (cross-case) fit landed at `n̂ = 2.927 ≈ 3`; per-case, 9 Å → 2.65 and 18 Å →
+  railed/unidentified. Combining the two cases' different speed scales is what
+  pins `n ≈ 3` — exactly the §10.4.1 cross-case-leverage point. Neither single
+  case alone lands at 3: 9 Å biased low (and transverse-contaminated), 18 Å
+  unidentified. This **does not reopen** the incumbent — `shared_pure_cubic`
+  stands; these are diagnostic artifacts.
+
+**Artifacts** under `data/reference/drag/{9A,18A}/trajectory_matching/{lq_shared_3param,lq_shared_pure_quadratic,pl_shared_3param}/fit_parameters.json`
+(each loads through `load_drag_coefficients`), plus the run summary
+`data/reference/drag/shared/trajectory_matching/per_case_form_summary.json`.
+New code: the single-case writer `write_per_case_form_fit_parameters` (beside the
+shared writer, whose single-case refusal is left intact) and the sibling driver
+`scripts/extraction/method_b_per_case_form.py` (reuses `form_phase_common`).
+**Presets unchanged; Tier-1 not started.**

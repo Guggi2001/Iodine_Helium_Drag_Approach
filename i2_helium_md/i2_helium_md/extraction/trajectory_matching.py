@@ -1875,3 +1875,174 @@ def write_shared_form_fit_parameters(
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=2)
     return out_path
+
+
+def write_per_case_form_fit_parameters(
+    fit: SharedFormTrajectoryMatchingFit,
+    out_dir: Path,
+    *,
+    transverse_contaminated: bool,
+    anchor_provenance: str,
+    v_ref_Aps: float | None = None,
+) -> Path:
+    """Write a §10.8 per-case (single-case) form ``fit_parameters.json`` bundle.
+
+    The per-case analog of :func:`write_shared_form_fit_parameters`: it writes a
+    single-case (9 A-only or 18 A-only) ``linear_quadratic`` / ``power_law`` fit
+    as a loadable bundle, filling the missing diagonal that §8 already gave
+    ``linear_cubic``. Same loader contract (the bundle loads through
+    :func:`i2_helium_md.presets.load_drag_coefficients`): the form's raw
+    coefficients + per-key ``<k>_err``, the Method-B provenance keys, and the
+    single-case window / reference. ``power_law`` additionally stamps the pivot
+    block (``v_ref_Aps``, ``gamma_ref``) for re-derivability.
+
+    These are diagnostic, **calibrated-not-validated** single-case fits: for
+    these forms the §9 cross-case held-out axis is already spent, and a
+    single-case fit trivially matches its own curve (METHOD_B §5/§8 warning).
+    They are NEVER preset-wired -- the incumbent stays ``shared_pure_cubic``
+    (§10.8); the honesty flags carry that status in the artifact.
+
+    This is a distinct entry point from :func:`write_shared_form_fit_parameters`
+    (which deliberately refuses single-case fits, the 2026-06-12 "Stage-1 analog
+    is record-only" decision); that refusal is left intact.
+
+    Parameters
+    ----------
+    fit : SharedFormTrajectoryMatchingFit
+        A completed SINGLE-case form fit (``len(fit.cases) == 1``), as produced
+        by :func:`fit_form_trajectory_matching`. ``coeff_errs`` /
+        ``uncertainty_model`` must be filled (the driver computes them from the
+        sensitivity scan).
+    out_dir : Path
+        Target directory (created if needed); the §10.8 convention is
+        ``REFERENCE_DRAG_ROOT / case / "trajectory_matching" / variant``.
+    transverse_contaminated : bool
+        The standing 9 A flag: True for the genuinely non-radial 9 A reference,
+        False for clean-radial 18 A (same semantics as
+        :func:`write_fit_parameters`).
+    anchor_provenance : str
+        Human-readable origin of the pre-registered §10.4.1 anchors (the anchors
+        are conditioning-only; carried for provenance).
+    v_ref_Aps : float, optional
+        REQUIRED for ``power_law`` -- the locked pivot speed (§10.4.1) stamped in
+        the pivot block. Ignored for ``linear_quadratic``.
+
+    Raises
+    ------
+    ValueError
+        If the fit is not single-case, carries an escape penalty (trapped), has
+        unfilled uncertainty fields, or is ``power_law`` without ``v_ref_Aps``.
+    """
+    if len(fit.cases) != 1:
+        raise ValueError(
+            "write_per_case_form_fit_parameters writes a SINGLE-case bundle "
+            f"(the §10.8 per-case diagnostic), got cases {fit.cases}; the "
+            "joint Stage-2 fit uses write_shared_form_fit_parameters"
+        )
+    case = fit.cases[0]
+    trapped = {
+        c: r.escape_fraction
+        for c, r in fit.best.per_case.items()
+        if r.penalty_Aps != 0.0
+    }
+    if trapped:
+        raise ValueError(
+            "refusing to write a trapped fit: escape_fraction by case "
+            f"{trapped} (penalty != 0); the binding<->drag pair must permit "
+            "full escape"
+        )
+    coeff_keys = _REQUIRED_COEFF_KEYS[fit.form]
+    if (
+        fit.coeff_errs is None
+        or fit.uncertainty_model is None
+        or any(k not in fit.coeff_errs for k in coeff_keys)
+    ):
+        raise ValueError(
+            f"uncertainty fields (coeff_errs for {coeff_keys}, "
+            "uncertainty_model) must be filled before writing the bundle"
+        )
+    if fit.form == POWER_LAW and v_ref_Aps is None:
+        raise ValueError(
+            "power_law per-case bundle needs v_ref_Aps (the locked V_REF_APS "
+            "pivot speed, §10.4.1) to stamp the pivot block"
+        )
+    e_values = sorted(set(fit.best.e_bind_eV.values()))
+    assert len(e_values) == 1  # single case -> trivially one binding
+    e_shared = e_values[0]
+
+    repo_root = REFERENCE_DRAG_ROOT.parents[2]
+    r = fit.best.per_case[case]
+    payload = {
+        "extraction_method": "trajectory_matching",
+        "form": fit.form,
+        **{k: fit.best.coefficients[k] for k in coeff_keys},
+        **{f"{k}_err": fit.coeff_errs[k] for k in coeff_keys},
+        "uncertainty_model": fit.uncertainty_model,
+        "meff_amu": fit.meff_amu,
+        "extraction_mass_model": "constant",
+        "effective_binding_energy_I_ion_eV": e_shared,
+        "effective_binding_energy_err_eV": fit.e_bind_err_eV,
+        "t_start": fit.windows[case][0],
+        "t_end": fit.windows[case][1],
+        "reference_file": _reference_file_str(
+            fit.reference_paths[case], repo_root
+        ),
+        # --- per-case form provenance (§10.8) ---
+        "calibration_case": case,
+        "stage": "per_case_diagnostic",
+        "variant": fit.variant,
+        "anchors": {**fit.anchors, "provenance": anchor_provenance},
+        "objective": "in_window_rmse_mean_abs_v2_plus_escape_penalty",
+        "objective_rmse_Aps": r.rmse_Aps,
+        "escape_fraction": r.escape_fraction,
+        "num_overlap_points": r.num_overlap_points,
+        "n_molecules_fit": fit.n_molecules,
+        "seed": fit.seed,
+        "optimizer": {
+            "method": "nelder-mead",
+            "n_starts": len(fit.starts),
+            "evals": fit.n_evaluations,
+            "converged": fit.converged,
+            "start_minima": [
+                {
+                    "coefficients": s.coefficients,
+                    "e_bind_eV": s.e_bind_eV,
+                    "objective_Aps": s.objective,
+                }
+                for s in fit.starts
+            ],
+        },
+        "date": _datetime.date.today().isoformat(),
+        "branch": _git_branch(repo_root),
+        "flags": {
+            "radial_projection_convention": True,
+            "transverse_contaminated_non_radial_reference": (
+                transverse_contaminated
+            ),
+            "full_window_heldout_window_axis_forfeited": True,
+            # --- §10.8 single-case honesty flags ---
+            # Diagnostic only: a single-case fit trivially matches its own
+            # curve (cross-case axis spent for these forms); NEVER preset-wired.
+            "per_case_calibrated_not_validated": True,
+            "cross_case_axis_not_applied": True,
+        },
+    }
+    if fit.form == POWER_LAW:
+        C, n = fit.best.coefficients["C"], fit.best.coefficients["n"]
+        payload["pivot"] = {
+            "v_ref_Aps": v_ref_Aps,
+            "gamma_ref": _C_to_pivot(C, n, v_ref_Aps),
+            "note": (
+                "optimizer-internal parameterization gamma_ref = "
+                "C*v_ref**(n-1) (§10.4.1); the stamped law is the raw "
+                "closed-form {C, n}. C_err is the fixed-n partial band "
+                "C_err = gamma_ref_err / v_ref**(n-1), NOT a marginal "
+                "uncertainty (§10.8)"
+            ),
+        }
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "fit_parameters.json"
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=2)
+    return out_path

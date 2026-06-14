@@ -1,0 +1,175 @@
+{
+  "date": "2026-06-14",
+  "branch": "drag_implementation",
+  "phase": "METHOD_B \u00a710.8 per-case alternative-form fits (diagnostic)",
+  "status": "calibrated-not-validated single-case fits; cross-case axis spent for these forms; NEVER preset-wired; incumbent shared_pure_cubic unchanged; strictly documentary (no outcome reopens the form question, 2026-06-14)",
+  "settings": {
+    "N": 50,
+    "seed": 20260604,
+    "ion_time_ps": 20.0,
+    "dt_ion_ps": 0.01,
+    "maxfev_per_start": 400,
+    "n_bounds": [
+      1.0,
+      4.0
+    ],
+    "v_ref_Aps": 3.0,
+    "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8"
+  },
+  "anchors": {
+    "lq_shared_3param": {
+      "a0": 14.555626399148123,
+      "c0": 11.016050300970692
+    },
+    "lq_shared_pure_quadratic": {
+      "a0": 14.555626399148123,
+      "c0": 11.016050300970692
+    },
+    "pl_shared_3param": {
+      "C0": 10.36139380949775,
+      "n0": 2.0557526931077588,
+      "v_ref_Aps": 3.0
+    },
+    "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+  },
+  "results": [
+    {
+      "case": "18A",
+      "variant": "lq_shared_3param",
+      "form": "linear_quadratic",
+      "coefficients": {
+        "a": 16.625376355423196,
+        "c": 6.131253474136262
+      },
+      "e_bind_eV": 0.05321259121057448,
+      "objective_rmse_Aps": 0.09940599099853792,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 10229,
+      "converged": true,
+      "transverse_contaminated": false,
+      "status": "written",
+      "coeff_errs": {
+        "a": 1.58696774301767,
+        "c": 0.5852560134402798
+      },
+      "e_bind_err_eV": 0.007095012161409932,
+      "bundle": "data/reference/drag/18A/trajectory_matching/lq_shared_3param/fit_parameters.json",
+      "wall_s": 283.65929480001796
+    },
+    {
+      "case": "18A",
+      "variant": "lq_shared_pure_quadratic",
+      "form": "linear_quadratic",
+      "coefficients": {
+        "a": 0.0,
+        "c": 11.266810220189324
+      },
+      "e_bind_eV": 0.05977950069122013,
+      "objective_rmse_Aps": 0.09932035983347816,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 10229,
+      "converged": true,
+      "transverse_contaminated": false,
+      "status": "written",
+      "coeff_errs": {
+        "a": 0.0,
+        "c": 0.5499276416997176
+      },
+      "e_bind_err_eV": 0.007970600092162685,
+      "bundle": "data/reference/drag/18A/trajectory_matching/lq_shared_pure_quadratic/fit_parameters.json",
+      "wall_s": 134.2794009000063
+    },
+    {
+      "case": "18A",
+      "variant": "pl_shared_3param",
+      "form": "power_law",
+      "coefficients": {
+        "C": 1.0528832545995732,
+        "n": 4.0
+      },
+      "e_bind_eV": 0.08252619363995342,
+      "objective_rmse_Aps": 0.09285527196829534,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 10229,
+      "converged": true,
+      "transverse_contaminated": false,
+      "status": "written",
+      "coeff_errs": {
+        "C": 0.10050249248450481,
+        "n": 1.3333333333333335
+      },
+      "e_bind_err_eV": 0.007877500301995556,
+      "bundle": "data/reference/drag/18A/trajectory_matching/pl_shared_3param/fit_parameters.json",
+      "wall_s": 578.3498690999986
+    },
+    {
+      "case": "9A",
+      "variant": "lq_shared_3param",
+      "form": "linear_quadratic",
+      "coefficients": {
+        "a": 0.0,
+        "c": 10.323011369497173
+      },
+      "e_bind_eV": 0.130276346039891,
+      "objective_rmse_Aps": 0.04456969624335844,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 11412,
+      "converged": true,
+      "transverse_contaminated": true,
+      "status": "written",
+      "coeff_errs": {
+        "a": 0.0,
+        "c": 0.10271907352816534
+      },
+      "e_bind_err_eV": 0.004404581223253462,
+      "bundle": "data/reference/drag/9A/trajectory_matching/lq_shared_3param/fit_parameters.json",
+      "wall_s": 523.1698226000008
+    },
+    {
+      "case": "9A",
+      "variant": "lq_shared_pure_quadratic",
+      "form": "linear_quadratic",
+      "coefficients": {
+        "a": 0.0,
+        "c": 10.320782604526824
+      },
+      "e_bind_eV": 0.13031545418302376,
+      "objective_rmse_Aps": 0.04456972779710247,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 11412,
+      "converged": true,
+      "transverse_contaminated": true,
+      "status": "written",
+      "coeff_errs": {
+        "a": 0.0,
+        "c": 0.1026968962133612
+      },
+      "e_bind_err_eV": 0.006360635263695208,
+      "bundle": "data/reference/drag/9A/trajectory_matching/lq_shared_pure_quadratic/fit_parameters.json",
+      "wall_s": 173.98440159999882
+    },
+    {
+      "case": "9A",
+      "variant": "pl_shared_3param",
+      "form": "power_law",
+      "coefficients": {
+        "C": 3.591115888725368,
+        "n": 2.650473805277683
+      },
+      "e_bind_eV": 0.156608024943673,
+      "objective_rmse_Aps": 0.04055090832261733,
+      "escape_fraction": 1.0,
+      "num_overlap_points": 11412,
+      "converged": true,
+      "transverse_contaminated": true,
+      "status": "written",
+      "coeff_errs": {
+        "C": 0.03573338087296033,
+        "n": 0.02637352647825808
+      },
+      "e_bind_err_eV": 0.0031014530430021614,
+      "bundle": "data/reference/drag/9A/trajectory_matching/pl_shared_3param/fit_parameters.json",
+      "wall_s": 553.5637905999902
+    }
+  ]
+}

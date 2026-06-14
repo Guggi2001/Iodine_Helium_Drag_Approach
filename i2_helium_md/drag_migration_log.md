@@ -834,3 +834,62 @@ Incumbent objective `0.1292649398514104 Å/ps`.
   (all load through `load_drag_coefficients`), `stage1_analog_*.json`,
   `verdict_{linear_quadratic,power_law}.json`, `form_comparison_verdict.json`.
 
+## §10.8 per-case alternative-form fits — delivery record (2026-06-14): **DIAGNOSTIC, presets unchanged**
+
+Filled the missing diagonal: per-case (9 Å-only, 18 Å-only) fits for
+`linear_quadratic` / `power_law` (§10.7 had only the shared joint refits;
+`linear_cubic` already had §8 per-case bundles). **Strictly documentary** (user
+decision 2026-06-14): no outcome reopens the form question; the incumbent stays
+`shared_pure_cubic`; these are entirely before any Tier-1 start.
+
+### Decisions (user, 2026-06-14)
+
+1. Artifact = loadable bundles (one per `(case, variant)`); both `lq` variants +
+   the free-`n` `pl` ⇒ 6 bundles.
+2. Strictly documentary — never preset-wired; honesty flags load-bearing.
+3. Sibling driver reusing `form_phase_common`, **not** a flag on the
+   `linear_cubic`-wired §8 `method_b_extraction.py`.
+
+### Delivered (code)
+
+- **`extraction/trajectory_matching.py`** — new `write_per_case_form_fit_parameters`
+  (form-generic, single-case; mirrors both existing writers' refusals — trapped /
+  unfilled uncertainty — and adds the §10.8 honesty flags
+  `per_case_calibrated_not_validated`, `cross_case_axis_not_applied`; `pl` stamps
+  the pivot block + a note that `C_err` is the fixed-`n` partial band). The shared
+  writer's single-case refusal is **left intact** (the two are distinct entry
+  points). Reuses `fit_form_trajectory_matching` (single-case) and
+  `form_sensitivity_halfwidths`.
+- **`scripts/extraction/method_b_per_case_form.py`** — sibling driver; builds each
+  case setup once, loops `(case, variant)`, abort-and-skip on trapped (recorded,
+  not a failure), sensitivity-only band (seed sweep omitted per §8), writes to
+  `data/reference/drag/<case>/trajectory_matching/<variant>/` (extends the §8
+  per-case location with a variant subdir; no collision with the flat
+  `linear_cubic` per-case file).
+- **Tests** — `TestPerCaseFormBundleWriter` (round-trip via `load_drag_coefficients`;
+  honesty + transverse flags; `pl` pivot block; refuses multi-case / trapped /
+  unfilled). Full suite **712 passed / 0 failed**.
+
+### Run record (production, 2026-06-14)
+
+N=50, seed 20260604, 20 ps @ 0.01 ps; §10.4.1 LOCKED anchors (conditioning-only);
+DRY_RUN determinism verified both cases. **6/6 bundles written, escape 1.0, 0
+trapped skips.**
+
+- **18 Å** — `lq_3param` `a=16.63±1.59, c=6.13±0.59` (RMSE 0.0994); `lq_pure_quad`
+  `c=11.27±0.55` (RMSE 0.0993 — equal, so the `a=16.6` is the §10.4.1 weak-`a`
+  ridge, globally degenerate with the `a=0` corner); `pl_3param` **`n̂=4.000±1.333`
+  RAILED to the n=4 bound** (exponent unidentified within the 18 Å curve).
+- **9 Å** (transverse-contaminated) — `lq_3param` **collapses `a→0`**, `c=10.32±0.10`
+  (RMSE 0.0446); `pl_3param` **`n̂=2.651±0.026`** (exponent identified *tightly*
+  within the single curve, `C=3.59`).
+- **Interpretation.** Per-case exponent leverage is **case-asymmetric** — it
+  *refines* the §10.4.1 "unidentified within a single curve" expectation: 9 Å's
+  broader in-window speed range pins `n` tightly; 18 Å's narrow range rails to the
+  bound. The shared fit's `n̂=2.927≈3` arises from the cross-case speed-scale
+  combination (9 Å→2.65, 18 Å→unidentified) — neither single case lands at 3.
+  **No reopening of the incumbent; `shared_pure_cubic` stands; presets unchanged;
+  Tier-1 not started.**
+- **Artifacts** — the 6 `<case>/trajectory_matching/<variant>/fit_parameters.json`
+  + `shared/trajectory_matching/per_case_form_summary.json`.
+

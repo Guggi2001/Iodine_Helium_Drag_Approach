@@ -1,0 +1,93 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "power_law",
+  "C": 3.591115888725368,
+  "n": 2.650473805277683,
+  "C_err": 0.03573338087296033,
+  "n_err": 0.02637352647825808,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.156608024943673,
+  "effective_binding_energy_err_eV": 0.0031014530430021614,
+  "t_start": 2.67,
+  "t_end": 14.081,
+  "reference_file": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv",
+  "calibration_case": "9A",
+  "stage": "per_case_diagnostic",
+  "variant": "pl_shared_3param",
+  "anchors": {
+    "C0": 10.36139380949775,
+    "n0": 2.0557526931077588,
+    "v_ref_Aps": 3.0,
+    "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+  },
+  "objective": "in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_rmse_Aps": 0.04055090832261733,
+  "escape_fraction": 1.0,
+  "num_overlap_points": 11412,
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 4,
+    "evals": 662,
+    "converged": true,
+    "start_minima": [
+      {
+        "coefficients": {
+          "C": 3.5929629203913755,
+          "n": 2.650161115957051
+        },
+        "e_bind_eV": {
+          "9A": 0.15659543420673938
+        },
+        "objective_Aps": 0.040550908854353494
+      },
+      {
+        "coefficients": {
+          "C": 3.5894413665421294,
+          "n": 2.6507497650897838
+        },
+        "e_bind_eV": {
+          "9A": 0.1566224680674605
+        },
+        "objective_Aps": 0.04055091321032169
+      },
+      {
+        "coefficients": {
+          "C": 3.591322922474332,
+          "n": 2.6504690015389434
+        },
+        "e_bind_eV": {
+          "9A": 0.15659892546911605
+        },
+        "objective_Aps": 0.04055091701932915
+      },
+      {
+        "coefficients": {
+          "C": 3.591115888725368,
+          "n": 2.650473805277683
+        },
+        "e_bind_eV": {
+          "9A": 0.156608024943673
+        },
+        "objective_Aps": 0.04055090832261733
+      }
+    ]
+  },
+  "date": "2026-06-14",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": true,
+    "full_window_heldout_window_axis_forfeited": true,
+    "per_case_calibrated_not_validated": true,
+    "cross_case_axis_not_applied": true
+  },
+  "pivot": {
+    "v_ref_Aps": 3.0,
+    "gamma_ref": 22.014334102793875,
+    "note": "optimizer-internal parameterization gamma_ref = C*v_ref**(n-1) (\u00a710.4.1); the stamped law is the raw closed-form {C, n}. C_err is the fixed-n partial band C_err = gamma_ref_err / v_ref**(n-1), NOT a marginal uncertainty (\u00a710.8)"
+  }
+}

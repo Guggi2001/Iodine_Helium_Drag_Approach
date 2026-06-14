@@ -40,6 +40,7 @@ from i2_helium_md.extraction.trajectory_matching import (
     joint_sensitivity_halfwidths,
     sensitivity_halfwidths,
     write_fit_parameters,
+    write_per_case_form_fit_parameters,
     write_shared_fit_parameters,
     write_shared_form_fit_parameters,
 )
@@ -1147,5 +1148,173 @@ class TestWriteSharedFormFitParameters:
         with pytest.raises(ValueError, match="trapped"):
             write_shared_form_fit_parameters(
                 fit, tmp_path, anchor_provenance="test"
+            )
+
+
+class TestPerCaseFormBundleWriter:
+    """The §10.8 single-case (9 A-only / 18 A-only) form bundle writer.
+
+    All fits run against the stub ``run_fn`` (no MD); a single-case fit is the
+    Stage-1-analog engine called per case (``fit_form_trajectory_matching``).
+    """
+
+    def _single_case_fit(self, joint_grid, *, case, variant, keys, true, anchors):
+        t_grid, ref_speed = joint_grid
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=keys, true_by_case={case: true}
+        )
+        fit = fit_form_trajectory_matching(
+            setups[case], variant=variant, anchors=anchors,
+            run_fn=run_fn, maxfev_per_start=200, extra_starts=False,
+            prescan_e_bind_eV=[0.15, 0.2, 0.25],
+        )
+        fit.coeff_errs = {k: 0.1 for k in keys}
+        fit.e_bind_err_eV = 0.01
+        fit.uncertainty_model = (
+            "rmse_sensitivity_only_seed_sweep_omitted_per_s8"
+        )
+        return fit
+
+    def test_lq_per_case_bundle_loads_through_loader(self, joint_grid, tmp_path):
+        fit = self._single_case_fit(
+            joint_grid, case="18A", variant=LQ_SHARED_3PARAM, keys=("a", "c"),
+            true=_LQ_TRUE, anchors=_LQ_ANCHORS,
+        )
+        out = write_per_case_form_fit_parameters(
+            fit, tmp_path, transverse_contaminated=False,
+            anchor_provenance="test constants",
+        )
+        assert out.name == "fit_parameters.json"
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == "linear_quadratic"
+        assert coeffs.extraction_method == "trajectory_matching"
+        assert coeffs.coefficients["a"] == pytest.approx(
+            fit.best.coefficients["a"]
+        )
+        assert coeffs.coefficients["c"] == pytest.approx(
+            fit.best.coefficients["c"]
+        )
+        assert coeffs.effective_binding_energy_I_ion_eV == pytest.approx(
+            next(iter(fit.best.e_bind_eV.values()))
+        )
+
+    def test_per_case_honesty_flags_and_single_case_provenance(
+        self, joint_grid, tmp_path
+    ):
+        import json as _json
+
+        # 9 A carries the transverse-contamination flag.
+        fit = self._single_case_fit(
+            joint_grid, case="9A", variant=LQ_SHARED_PURE_QUADRATIC,
+            keys=("a", "c"), true=(0.0, 11.0, 0.20), anchors=_LQ_ANCHORS,
+        )
+        out = write_per_case_form_fit_parameters(
+            fit, tmp_path, transverse_contaminated=True,
+            anchor_provenance="test constants",
+        )
+        with open(out, "r", encoding="utf-8") as fh:
+            raw = _json.load(fh)
+        assert raw["calibration_case"] == "9A"
+        assert raw["stage"] == "per_case_diagnostic"
+        assert raw["variant"] == LQ_SHARED_PURE_QUADRATIC
+        assert isinstance(raw["reference_file"], str)  # single, not a list
+        flags = raw["flags"]
+        assert flags["per_case_calibrated_not_validated"] is True
+        assert flags["cross_case_axis_not_applied"] is True
+        assert flags["transverse_contaminated_non_radial_reference"] is True
+        assert flags["full_window_heldout_window_axis_forfeited"] is True
+        # pure-quadratic: a fixed at 0, its band 0 (still a written coeff).
+        assert raw["a"] == 0.0
+
+    def test_pl_per_case_bundle_stamps_pivot(self, joint_grid, tmp_path):
+        import json as _json
+
+        fit = self._single_case_fit(
+            joint_grid, case="18A", variant=PL_SHARED_3PARAM, keys=("C", "n"),
+            true=_PL_TRUE, anchors=_PL_ANCHORS,
+        )
+        out = write_per_case_form_fit_parameters(
+            fit, tmp_path, transverse_contaminated=False,
+            anchor_provenance="test constants", v_ref_Aps=3.0,
+        )
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == "power_law"
+        assert coeffs.coefficients["C"] == pytest.approx(
+            fit.best.coefficients["C"]
+        )
+        with open(out, "r", encoding="utf-8") as fh:
+            raw = _json.load(fh)
+        assert raw["C_err"] == 0.1 and raw["n_err"] == 0.1
+        assert raw["pivot"]["v_ref_Aps"] == 3.0
+        assert raw["pivot"]["gamma_ref"] == pytest.approx(
+            raw["C"] * 3.0 ** (raw["n"] - 1.0)
+        )
+
+    def test_refuses_multi_case_fit(self, joint_grid, tmp_path):
+        # A genuine 2-case shared fit must NOT go through the per-case writer.
+        t_grid, ref_speed = joint_grid
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"),
+            true_by_case={"18A": _LQ_TRUE, "9A": _LQ_TRUE},
+        )
+        fit = fit_shared_form_trajectory_matching(
+            setups, variant=LQ_SHARED_3PARAM, anchors=_LQ_ANCHORS,
+            run_fn=run_fn, maxfev_per_start=50, extra_starts=False,
+            prescan_e_bind_eV=[0.2],
+        )
+        fit.coeff_errs = {"a": 0.1, "c": 0.1}
+        fit.uncertainty_model = "x"
+        with pytest.raises(ValueError, match="SINGLE-case"):
+            write_per_case_form_fit_parameters(
+                fit, tmp_path, transverse_contaminated=False,
+                anchor_provenance="test",
+            )
+
+    def test_refuses_unfilled_uncertainty(self, joint_grid, tmp_path):
+        fit = self._single_case_fit(
+            joint_grid, case="18A", variant=LQ_SHARED_3PARAM, keys=("a", "c"),
+            true=_LQ_TRUE, anchors=_LQ_ANCHORS,
+        )
+        fit.coeff_errs = {"a": 0.1}  # c_err missing
+        with pytest.raises(ValueError, match="uncertainty"):
+            write_per_case_form_fit_parameters(
+                fit, tmp_path, transverse_contaminated=False,
+                anchor_provenance="test",
+            )
+
+    def test_pl_requires_v_ref(self, joint_grid, tmp_path):
+        fit = self._single_case_fit(
+            joint_grid, case="18A", variant=PL_SHARED_3PARAM, keys=("C", "n"),
+            true=_PL_TRUE, anchors=_PL_ANCHORS,
+        )
+        with pytest.raises(ValueError, match="v_ref_Aps"):
+            write_per_case_form_fit_parameters(
+                fit, tmp_path, transverse_contaminated=False,
+                anchor_provenance="test",  # v_ref_Aps omitted
+            )
+
+    def test_refuses_trapped_fit(self, joint_grid, tmp_path):
+        t_grid, ref_speed = joint_grid
+        setups, _ = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"), true_by_case={"18A": _LQ_TRUE},
+        )
+        trap_fn = _make_form_stub_run_fn(
+            t_grid, ref_speed, keys=("a", "c"), true=_LQ_TRUE,
+            trap_above_e_eV=0.0,
+        )
+        fit = fit_form_trajectory_matching(
+            setups["18A"], variant=LQ_SHARED_3PARAM, anchors=_LQ_ANCHORS,
+            run_fn=lambda cfg, neutral: trap_fn(cfg, neutral),
+            maxfev_per_start=5, extra_starts=False, prescan_e_bind_eV=[0.2],
+        )
+        fit.coeff_errs = {"a": 0.1, "c": 0.1}
+        fit.uncertainty_model = "x"
+        assert all(
+            r.escape_fraction == 0.0 for r in fit.best.per_case.values()
+        )
+        with pytest.raises(ValueError, match="trapped"):
+            write_per_case_form_fit_parameters(
+                fit, tmp_path, transverse_contaminated=False,
+                anchor_provenance="test",
             )
 
