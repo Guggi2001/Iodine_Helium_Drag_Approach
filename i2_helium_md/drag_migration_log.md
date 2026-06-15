@@ -893,3 +893,65 @@ trapped skips.**
 - **Artifacts** — the 6 `<case>/trajectory_matching/<variant>/fit_parameters.json`
   + `shared/trajectory_matching/per_case_form_summary.json`.
 
+## Tier-0 comparison gate → same-smoothed `|v2|` — delivery record (2026-06-15)
+
+Completed a mid-implementation that had been left half-wired: switching the
+`tier0_drag_comparison.py` **scored gate** from the raw-HeDFT distance + mean
+`|v|` RMSEs to the **same-smoothed `|v2|` RMSE against `cleaned_data_long.csv`**
+(column `cleaned_SG`). Rationale: under Method B the coefficients were fit by
+minimizing exactly that same-smoothed trajectory RMSE
+(`METHOD_B_trajectory_matching_extraction.md` §6), so the Tier-0 report must
+score *what the parameters were fit to*, not an unrelated raw-HeDFT metric.
+
+### State recovered
+
+The prior session had already rewritten `score()` (new `smoothed:
+SmoothedSpeedReference` parameter; computes `compare_speed_to_reference(ion,
+atom="I2", …)` against the smoothed reference; returns `v_I2_smoothed_rmse_Aps`
+/ `v_I2_smoothed_mean_ratio` / `n_scored_smoothed`) and added the imports
+(`SmoothedSpeedReference`, `load_smoothed_speed_reference`,
+`compare_speed_to_reference`), but stopped before wiring the call site —
+`main()` still called `score(ion, hedft, window)` (a `TypeError`: the smoothed
+arg was missing and never loaded) and `print_summary()` still labelled the raw
+distance / mean `|v|` as the GATE.
+
+### Delivered (code)
+
+- **`scripts/post_processing/tier0_drag_comparison.py`** — two edits completing
+  the switch (no API/signature change beyond the already-present `score()`):
+  - `main()` now loads `smoothed = load_smoothed_speed_reference(
+    CLEANED_VELOCITIES_PATH_2)` (the per-case `cleaned_data_long.csv`) and passes
+    it to `score(ion, hedft, window, smoothed)`.
+  - `print_summary()` promotes `v_I2_smoothed_rmse_Aps` to the GATE line
+    (labelled same-smoothed Method-B objective, with sample count) and demotes
+    raw distance + mean `|v|` into the diagnostics block.
+- The smoothed loader accepts both layouts — 18 Å 2-column (`time,cleaned_SG`)
+  and 9 Å 3-column (`+IMF_cleaned`) — so a single load path covers both cases.
+
+### Verification
+
+- `py_compile` OK; `pytest tests/test_tier0_drag_comparison.py -q` → **4 passed**
+  (the regression test uses its own `_score` on the package `compare_*` APIs, so
+  it is independent of the script's `score()` signature — the change is safe).
+- `load_smoothed_speed_reference` confirmed on both files: 9 Å 11412 pts
+  `[2.670, 14.081]`, 18 Å 10229 pts `[4.540, 14.768]`.
+
+The gate is now I2-velocity-only by construction (no smoothed distance or
+smoothed I1 reference exists); raw distance + per-atom `|v|` survive as reported
+diagnostics. No physics, presets, bundles, or thresholds changed.
+
+### Doc — `TIER0_SCRIPTS.md` rewrite (2026-06-15)
+
+Rewrote `scripts/TIER0_SCRIPTS.md` to the **three remaining** Tier-0 scripts at
+current state, dropping the stale sections for the two scripts removed in
+`d93e3a3` (`tier0_tstar_seeded_comparison.py`,
+`tier0_same_smoothed_comparison.py`) and the dead `TIER0_COMPARISON_spec.md`
+reference. The doc now describes: `tier0_common.py` (the shared `CATALOG` +
+`build_drag_cfg` + naming + per-case `window_source_dir`), `gen_tier0_runs.py`
+(catalog-driven run generation with optional inline hand-tuning), and
+`tier0_drag_comparison.py` (scores the **same-smoothed `|v2|`** gate, raw
+metrics demoted to diagnostics). Intro updated for the retired
+consistency-check → held-out-generalization role and the `shared_pure_cubic`
+production law. No code referenced by the doc changed beyond the gate switch
+above.
+

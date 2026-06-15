@@ -54,35 +54,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "18A"
-# The finished drag run to score (produced by single_pulse_N2000_drag).
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "18A_drag_tier0_N50"
+CASE = "9A"      # droplet geometry: "9A" or "18A"
 
-# HeDFT reference trace for the same case (9A or 18A).
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
-
-# Drag coefficient directory -- the window [t_start, t_end] and m_eff are read
-# from its fit_parameters.json (same provenance as the coefficients).
-DRAG_COEFF_DIR = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "linear_and_cubic"
-)
-
-# Optional: write the ensemble-mean series here (the regression reference).
-# Set to None to skip the export and only print + plot.
-EXPORT_MEAN_SERIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "tier0"
-    / "md_mean_trajectory.csv"
-)
-
-CLEANED_VELOCITIES_PATH_2 = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "18A" / "velocity_smoothed"
-    / "cleaned_data_long.csv"
-)
-
-CLEANED_VELOCITIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "velocity_smoothed"
-    / "mean_velocity.csv"
-)
+# Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
+# VARIANT (and CASE / N / RUN_TAG) the run was generated with by
+# scripts/gen_tier0_runs.py.
+VARIANT = "percase_linear_cubic"
+N = 50
+RUN_TAG = ""      # set to the same marker used in gen_tier0_runs.py for a tuned run
 
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
@@ -92,13 +71,46 @@ SHOW_FIGURE = True
 # positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
 ENERGY_FIGURE = False
 
-FORCE_FIGURE = True
+FORCE_FIGURE = False
 
 # =============================================================================
 # IMPORT SETUP
 # =============================================================================
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.tier0_common import run_dir_name, window_source_dir  # noqa: E402
+
+# --- Paths resolved from CASE + VARIANT (no hand-edited path triple) ---
+# The finished drag run to score (produced by scripts/gen_tier0_runs.py).
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / run_dir_name(CASE, VARIANT, N, RUN_TAG)
+
+# HeDFT reference trace for the same case.
+HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / f"{CASE}_All_Data.csv"
+
+# The scored window [t_start, t_end] + m_eff are read from the PER-CASE
+# trajectory_matching bundle -- NOT the (possibly shared) variant being run: a
+# shared bundle stamps the 9A onset t_start=2.67 for both cases, so the 18A
+# window must come from the per-case source (9A [2.67,14.081], 18A [4.54,14.768]).
+DRAG_COEFF_DIR = window_source_dir(CASE)
+
+# Optional: write the ensemble-mean series here (free-to-churn diagnostic; NOT
+# the committed md_mean_trajectory_N50.csv). Set to None to skip the export.
+EXPORT_MEAN_SERIES_PATH = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "tier0"
+    / "md_mean_trajectory.csv"
+)
+
+# Optional figure overlays, CASE-derived. mean_velocity.csv exists for 9A only;
+# build_figure guards each by existence before plotting.
+CLEANED_VELOCITIES_PATH = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "velocity_smoothed"
+    / "mean_velocity.csv"
+)
+CLEANED_VELOCITIES_PATH_2 = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "velocity_smoothed"
+    / "cleaned_data_long.csv"
+)
 
 import numpy as np  # noqa: E402
 
@@ -111,10 +123,13 @@ from i2_helium_md.physics.constants import U
 
 from i2_helium_md.postprocess import (  # noqa: E402
     HedftTrajectory,
+    SmoothedSpeedReference,
     load_hedft_trajectory,
+    load_smoothed_speed_reference,
 )
 from i2_helium_md.postprocess.compare_trajectories import (  # noqa: E402
     compare_distance,
+    compare_speed_to_reference,
     compare_velocity_magnitude,
 )
 from i2_helium_md.config import SimConfig  # noqa: E402
@@ -241,8 +256,28 @@ def score(
     ion: IonCheckpoint,
     hedft: HedftTrajectory,
     window: tuple[float, float],
+    smoothed: SmoothedSpeedReference,
 ) -> dict:
-    """Compute the Tier-0 scored numbers + diagnostics for one run."""
+    """Compute the Tier-0 scored numbers + diagnostics for one run.
+
+    The **GATE** is the in-window |v2| RMSE against the *same-smoothed* reference
+    (``cleaned_data_long.csv``, column ``cleaned_SG``) -- the very quantity the
+    Method-B trajectory-matching extraction minimised, so the comparison scores
+    what the coefficients were fit to (METHOD_B_trajectory_matching_extraction.md
+    §6). The raw-HeDFT distance + I1/I2 velocity-magnitude RMSEs are retained as
+    reported-not-gated diagnostics (there is no smoothed distance or smoothed I1
+    reference; the smoothed metric is intrinsically I2-velocity-only).
+    """
+    # GATE: same-smoothed |v2| RMSE (Method-B objective).
+    v2_smoothed = compare_speed_to_reference(
+        ion,
+        atom="I2",
+        t_ref_ps=smoothed.time_ps,
+        ref_speed_Aps=smoothed.speed_Aps,
+        window=window,
+    )
+
+    # Diagnostics: raw-HeDFT distance + per-atom velocity magnitude.
     dist = compare_distance(ion, hedft, window=window)
     v1 = compare_velocity_magnitude(ion, hedft, atom="I1", window=window)
     v2 = compare_velocity_magnitude(ion, hedft, atom="I2", window=window)
@@ -252,6 +287,9 @@ def score(
     return {
         "window": window,
         "n_scored": dist.num_overlap_points,
+        "v_I2_smoothed_rmse_Aps": v2_smoothed.rmse,
+        "v_I2_smoothed_mean_ratio": v2_smoothed.mean_ratio,
+        "n_scored_smoothed": v2_smoothed.num_overlap_points,
         "distance_rmse_A": dist.rmse,
         "distance_mean_ratio": dist.mean_ratio,
         "v_I1_rmse_Aps": v1.rmse,
@@ -269,11 +307,15 @@ def print_summary(metrics: dict, *, label: str) -> None:
     print(f"===== Tier-0 comparison: {label} =====")
     print(f"  scored window      : [{t_start:.3f}, {t_end:.3f}] ps "
           f"({metrics['n_scored']} HeDFT samples)")
-    print(f"  GATE distance RMSE : {metrics['distance_rmse_A']:.4f} A")
-    print(f"  GATE mean |v| RMSE : {metrics['v_mean_rmse_Aps']:.4f} A/ps "
+    print(f"  GATE |v2| RMSE     : {metrics['v_I2_smoothed_rmse_Aps']:.4f} A/ps "
+          f"(same-smoothed cleaned_data_long.csv, Method-B objective; "
+          f"{metrics['n_scored_smoothed']} samples)")
+    print("  -- diagnostics (reported, not gated) --")
+    print(f"  |v2| smoothed ratio: {metrics['v_I2_smoothed_mean_ratio']:.4f}")
+    print(f"  raw distance RMSE  : {metrics['distance_rmse_A']:.4f} A")
+    print(f"  raw mean |v| RMSE  : {metrics['v_mean_rmse_Aps']:.4f} A/ps "
           f"(= mean of I1={metrics['v_I1_rmse_Aps']:.4f}, "
           f"I2={metrics['v_I2_rmse_Aps']:.4f})")
-    print("  -- diagnostics (reported, not gated) --")
     print(f"  distance mean_ratio: {metrics['distance_mean_ratio']:.4f}")
     print(f"  I1-I2 vel split    : {metrics['v_split_Aps']:.4f} A/ps")
     print(f"  vel mean_ratio I1/I2: {metrics['v_I1_mean_ratio']:.4f} / "
@@ -314,12 +356,18 @@ def build_figure(
     r1_mean = np.mean(np.sqrt(x1*x1 + y1*y1 + z1*z1), axis=0)
     r2_mean = np.mean(np.sqrt(x2*x2 + y2*y2 + z2*z2), axis=0)
 
-    structured = np.genfromtxt(CLEANED_VELOCITIES_PATH, delimiter=",", names=True, dtype=float)
-    time_ps = np.atleast_1d(np.asarray(structured["time_ps"], dtype=float))
-    speed_Aps = np.atleast_1d(np.asarray(structured["mean_velocity_Aps"], dtype=float))
-    structured_SG = np.genfromtxt(CLEANED_VELOCITIES_PATH_2, delimiter=",", names=True, dtype=float)
-    time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
-    velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
+    # Optional reference overlays, each guarded by existence (mean_velocity.csv
+    # is 9A-only; cleaned_data_long.csv exists for both cases).
+    time_ps = speed_Aps = None
+    if CLEANED_VELOCITIES_PATH.is_file():
+        structured = np.genfromtxt(CLEANED_VELOCITIES_PATH, delimiter=",", names=True, dtype=float)
+        time_ps = np.atleast_1d(np.asarray(structured["time_ps"], dtype=float))
+        speed_Aps = np.atleast_1d(np.asarray(structured["mean_velocity_Aps"], dtype=float))
+    time_SG = velocity_SG = None
+    if CLEANED_VELOCITIES_PATH_2.is_file():
+        structured_SG = np.genfromtxt(CLEANED_VELOCITIES_PATH_2, delimiter=",", names=True, dtype=float)
+        time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
+        velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
 
     if positions_figure:
         # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
@@ -365,8 +413,10 @@ def build_figure(
 
     ax_v.plot(t_md, v1_md, color="tab:blue", lw=1.2, label="MD mean |v| I1")
     ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, ls = '--', label="MD mean |v| I2")
-    ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:purple", lw=1.2)
-    ax_v.plot(time_SG, velocity_SG, label = r'$mean velocity SG$', color="tab:pink", lw=1.2, ls=":")
+    if time_ps is not None:
+        ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:purple", lw=1.2)
+    if time_SG is not None:
+        ax_v.plot(time_SG, velocity_SG, label = r'$mean velocity SG$', color="tab:pink", lw=1.2, ls=":")
     ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1.2,
               ls="-", label="HeDFT |v1|")
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1.2,
@@ -589,7 +639,13 @@ def main() -> int:
 
     assert_time_origin_aligned(ion, hedft, window)
 
-    metrics = score(ion, hedft, window)
+    # Method-B gate reference: the same CEEMDAN+SG-smoothed |v2| trace the
+    # trajectory-matching extraction minimised against (cleaned_data_long.csv,
+    # column cleaned_SG). Loader accepts both the 2-col (18A) and 3-col (9A,
+    # +IMF_cleaned) layouts.
+    smoothed = load_smoothed_speed_reference(CLEANED_VELOCITIES_PATH_2)
+
+    metrics = score(ion, hedft, window, smoothed)
     print_summary(metrics, label=f"r0={hedft.droplet_radius_A:.0f}A N={ion.num_molecules}")
 
     if EXPORT_MEAN_SERIES_PATH is not None:

@@ -1525,84 +1525,91 @@ itself a recorded design decision.
 
 ### 6.4 The sequential validation hierarchy
 
-**Tier 0 — drag form, deterministic, fixed mass.** Run
-`mass_scenario = fixed`, noise amplitude zero, against the TDDFT
-`9A`/`18A` distance and velocity traces *inside the extraction window
-only*. Isolates the **drag form** (§3) with no mass evolution, no noise,
-no transient. Must come first because every later tier is contaminated
-until the form is pinned.
+The tiers run in order; each fixes its winner before the next unknown is
+introduced (§6.3 — the parameters are entangled). Current state (2026-06-15) is
+recorded inline: **Tier 0 is complete**, **Tier 1 is ungated and next**, Tiers
+2–3 are downstream. Full records: `TIER0_FINDINGS.md` and
+`METHOD_B_trajectory_matching_extraction.md`.
 
-> **What Tier 0 actually achieves (reframed 2026-06-04, after the first
-> run — `TIER0_FINDINGS.md`).** Tier 0 is an **internal-consistency
-> check**, not a from-scratch physical validation of the drag law. It
-> answers: *does the new drag implementation + BAOAB driver correctly
-> forward-integrate the extracted γ, reproducing the (denoised) trajectory
-> γ was extracted from?* It does **not** independently re-derive whether
-> the drag law is physically true — γ was *fit* to the reference, so a
-> forward integration matching that reference is a consistency result, not
-> an independent confirmation. The honest comparison is therefore
-> **MD vs. the reference processed through the *same* CEEMDAN+SG denoising
-> the extraction used** (`Drag_extraction_code.md`): the MD integrates a
-> smooth law and produces a smooth trajectory with no bubble mode, so
-> scoring it against the *raw* reference (which still carries the 1.2 ps
-> bubble oscillation, large at 9 Å) double-penalizes the MD for not
-> reproducing the very oscillation the extraction *defined as noise and
-> removed*. Report raw-reference RMSE and same-smoothed RMSE side by side;
-> the same-smoothed number is the consistency instrument, the raw number
-> the harsher honest cross-check. Pass = the MD reproduces the
-> same-smoothed reference in-window (the law forward-integrates correctly);
-> production-physical-correctness is a *later* question, gated on the
-> reference-data and frame items only if the consistency check exposes a
-> residual the smoothing does not explain.
+**Tier 0 — drag form, deterministic, fixed mass (COMPLETE).** Run
+`mass_scenario = fixed` at `m_eff`, noise amplitude zero, scored *inside the
+extraction window only* against the TDDFT `9A`/`18A` traces. Isolates the **drag
+form** (§3) with no mass evolution, noise, or transient — it must come first
+because every later tier is contaminated until the form is pinned. Four things
+were settled here.
 
-> **REPURPOSED (2026-06-08) — consistency → held-out generalization, under
-> Method B.** The extraction method is changing from direct `F_drag`-vs-`v`
-> regression (Method A) to **trajectory-matching calibration** (Method B,
-> `METHOD_B_trajectory_matching_extraction.md`): `{a,b}` are fit by minimizing
-> the forward-integrated in-window trajectory RMSE against the same-smoothed
-> reference. Under B the trajectory match **is the fit objective**, so the
-> internal-consistency framing above is **circular and retired** — re-running
-> "does forward-integration reproduce the reference?" just reads back the
-> objective. Tier 0 is therefore repurposed (not deleted): its infrastructure
-> (the `window=` parameter, the harnesses, the gate) now scores **held-out**
-> data — a held-out sub-window, the cross-case shared-form check (§3.6, the real
-> transport-physics signal), and the downstream observables (Tier 2 VMI, Tier 3
-> ensemble). The litmus test: agreement is only evidence if checked on data the
-> parameters were **not** fit against. This held-out role is *more* necessary
-> under B than the consistency check was under A, because B can overfit — and
-> **especially** for 9 Å, where trajectory-matching a radial-projected MD onto a
-> genuinely **non-radial** reference (the radial↔transverse oscillation, finding
-> in `TIER0_FINDINGS.md`) risks the coefficients absorbing the transverse
-> discrepancy as a dimensionality fudge. Held-out validation is non-optional for
-> 9 Å; 18 Å (genuinely radial) calibrates safely.
-~21→14 He across the window, §6.6), so a fixed-$m_\text{eff} \approx
-203$ amu run matches the reference closely mid-window (where the shell
-is ~19 He) but drifts at the ends. For a *strictly* clean form
-isolation, impose the reference $m(t)$ (prescribed, not dynamically
-evolved) with coefficients extracted under that same $m(t)$; *then* a
-mismatch is purely the form. For a first pass the fixed-$m_\text{eff}$
-run is adequate, since the residual mass mismatch is small over most of
-the window.
+*Extraction B chosen over A (first-runs verdict).* Method A (direct
+`F_drag`-vs-`v` regression) was the original pipeline. Tier 0's first runs
+forward-integrated A's extracted γ and asked, independently, whether it
+reproduced the reference — and it did **not**: A's coefficients gave a poor
+in-window trajectory, while *hand-adjusting* the coefficients against the
+forward-integrated MD drove the in-window residual very small. That hand-tuning
+observation *is* end-to-end calibration done by hand, so the method was switched
+to **Method B — trajectory-matching calibration**: fit `{a,b}` (jointly with the
+effective binding) by minimizing the forward-integrated, radial-projected,
+in-window trajectory RMSE against the same-smoothed reference
+(`cleaned_data_long.csv`, the extraction's own CEEMDAN+SG). Method A is kept only
+as an independent cross-reference, not the default.
 
-> **Window upper-edge caveat (2026-06-04 finding).** The 9 Å extraction
-> window `[2.67, 8.5]` runs *past* the regime where the extraction atom
-> (atom 2, the clean near-radial one) stays clean: atom 2 develops a
-> consistent-direction **drift after ~6 ps**. A central-force MD (Coulomb
-> + radial droplet + radial drag) has **no mechanism to produce a
-> directional sideways drift**, so it cannot reproduce atom 2's late
-> behaviour regardless of γ — the late-window mismatch is *not* a
-> drag-quality signal. 18 Å, by contrast, stays clean across its whole
-> `[4.54, 8.0]` window (which is why it passed). The transient-exclusion
-> machinery (`find_t_star_stationary_residual`) guards only the *lower*
-> edge `t*`; the **upper edge is unguarded** and should be symmetric
-> (walk forward, end the window where the residual *leaves* the stationary
-> band). Re-extracting on the shortened clean window `[2.67, ~6.2]` barely
-> changed the early-band velocity RMSE (0.86 → 0.88), confirming the late
-> drift did **not** contaminate the *fit* — γ is the same law either way;
-> the late data only inflated the *score*.
+*Tier 0's role repurposed: consistency → held-out generalization.* Under A,
+Tier 0 was an internal-consistency check ("does forward-integrating the
+independently-extracted γ reproduce the reference?"). Under B the trajectory
+match **is the fit objective**, so re-running that check is circular and is
+retired. The infrastructure (the `window=` parameter, the harnesses, the gate)
+survives but now scores **held-out** data — the cross-case shared-form check (the
+transport-physics signal, §3.6) and the downstream VMI/ensemble observables.
+Held-out validation is *more* necessary under B than the consistency check was
+under A, because B can overfit. The Tier-0 scoring gate is accordingly the
+**same-smoothed `|v2|` RMSE** — the exact quantity Method B minimised
+(`scripts/post_processing/tier0_drag_comparison.py`).
 
-**Tier 1 — mass scenario, deterministic.** With the Tier-0 form fixed
-and noise still off, turn on each mass scenario (A/B/biphasic) and
+*Three fit variants — optimal parameters identified.* The shared-form joint-refit
+machinery (one size-independent law + one effective binding across *both* cases —
+over-constrained at 3 parameters vs 2 trajectories, hence falsifiable) was run
+for all three drag forms; optimal parameters were found for each (N=50, seed
+20260604, full window `[t*, ~14 ps]`):
+
+- **`shared_pure_cubic`** (`linear_cubic`, `a ≡ 0`, `γ = g·b·v²`): `b = 2.5154`,
+  `E_bind = 0.1168 eV` — **PRODUCTION**. Per-case RMSE 18 Å 0.134 / 9 Å 0.124,
+  full escape, objective 0.12926.
+- **`pl_shared_3param`** (`power_law`, free `n`): `C = 2.835`, `n̂ = 2.927 ≈ 3`,
+  `E_bind ≈ 0.113 eV` — **EQUIVALENT** (Δobjective = −0.0001, inside ±0.005). The
+  free exponent independently recovers cubic (`n ≈ 3`), *not* Method-A's
+  `n ≈ 2.06`.
+- **`lq_shared_3param`** (`linear_quadratic`, forced `n = 2`): collapses to
+  pure-quadratic (`a → 0`, `c ≈ 12.8`), `E_bind ≈ 0.048 eV` — **WORSE**
+  (Δ = +0.034) → rejected-by-objective; its held-out 9 Å prediction also fails
+  (0.699 > 0.45).
+
+The trajectory objective thus **discriminates the exponent** and picks `n = 3`;
+`shared_pure_cubic` is confirmed with no escalation. (Per-case single-curve fits
+for all three forms exist as diagnostics only — never preset-wired — and show the
+exponent leverage is case-asymmetric: 9 Å alone pins `n̂ ≈ 2.65`, 18 Å alone
+rails to the `n = 4` bound; the cross-case combination is what lands at 3.)
+
+*Two first-class physics findings.* (1) **The 9 Å reference is genuinely
+non-radial:** atom 2 carries a sustained ~4 Å/ps transverse drift in a
+radial↔transverse oscillation (~99.6 % transverse at `t*`), while 18 Å is
+~99.9 % radial. A central-force MD cannot carry that transverse co-translation,
+so the surviving 9 Å same-smoothed residual (~0.39 Å/ps t\*-seeded, vs ~0.09 for
+18 Å) is a **model-dimensionality statement, not a drag error**; the 9 Å law
+carries a standing "`|v|`-projected-radially, transverse-contaminated" flag.
+(2) **Correct drag traps the ions:** the in-window-correct drag delivers
+TDDFT-like *low* surface kinetic energy — below the static
+`binding_energy_I_ion_eV = 0.308 eV` solvation barrier — so a static well that
+deep prevents ejection. The fix is **not** to weaken the drag (that would detune
+the validated quantity); instead the binding depth becomes an **effective
+parameter calibrated jointly with the drag** against the VMI distribution
+(§6.5.1), with the TDDFT escape energy as a sanity cross-check.
+
+18 Å is the trustworthy, clean-radial calibration case and is the committed
+regression floor (distance RMSE ≤ 3.0 Å, mean |v| RMSE ≤ 0.25 Å/ps;
+`tests/test_tier0_drag_comparison.py`). 9 Å is recorded finite-only, suspect
+until it survives the held-out cross-case / VMI checks.
+
+**Tier 1 — mass scenario, deterministic (UNGATED — next).** With the Tier-0
+form fixed (`shared_pure_cubic`) and noise still off, turn on each mass scenario
+(A/B/biphasic) and
 compare the full post-transient trajectory plus the time-resolved shell
 trajectory (~21→~19→~14 He, §2.1). Isolates the **mass scenario** (§2). The transient-tolerance
 relaxation (§6.7) lives here. Each non-`fixed` scenario requires its own
