@@ -21,6 +21,41 @@ pseudo-code. Mathematical formulation in LaTeX where needed.
 
 ---
 
+## 0. Document map (entry point)
+
+**This document is the single entry point** for the I⁺/He drag-port +
+mass-dynamics planning. Three artifacts, with a strict ownership rule:
+
+- **`DRAG_PORT_DESIGN_DECISIONS.md` (this doc)** — entry point and the **drag
+  spine** (noise, drag form, integrator, spatial gate, validation tiers). Stable:
+  Tier 0 is complete and the drag law is locked.
+- **`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md`** — the **live mass-model
+  detail**: two-channel mechanism, energy budget, ladder, early window, all
+  risks (R1–R12), assumptions (A1–A11), and open questions (OQ1–OQ6). Mechanism
+  locked, calibration open.
+- **`CALIBRATION_MAP.md`** — the **cross-doc parameter index**: every parameter →
+  class (locked/sourced/derived/bounded/free) → Tier anchor → cross-check.
+
+**Navigation rule.** Anything carrying a *revision date*, an *OQ flag*, or a
+*calibration value that can still move* lives in **exactly one place — the MASS
+doc** — and is reached from here by reference. Sections in this doc describe
+*structure* (mechanism shape, which doc owns what), not drifting values. §2
+below is a structural summary of the mass model; its detail, risks, and open
+calibration are owned by the MASS doc.
+
+**Consolidation status (2026-06-15).** This is the *light* entry-point
+consolidation: the superseded three-scenario framing (former §2) is replaced by
+the summary below; the MASS doc remains the live detail doc. A **full merge**
+(absorbing MASS wholesale, retiring it) is deliberately **deferred to the
+OQ-freeze**, which triggers when:
+1. **OQ1** resolves (drag electronic-state provenance — can still flip A10);
+2. the **ladder shape** and **electronic picture** (the only two genuinely-free
+   knobs) are Tier-2-arbitrated; and
+3. **OQ6** is checked ($E_\infty$ stripping reachability).
+Until then MASS is still moving and is kept separate by design.
+
+---
+
 ## 1. Noise model
 
 ### 1.1 Physical question
@@ -110,6 +145,26 @@ non-trivial:
 $v$-dependent in any case. Anchoring the noise to that same $v$-
 dependence is the most internally consistent choice. The Itô/
 Stratonovich choice is settle-once and the integrator handles it.
+
+**Correction under the locked pure-cubic form (2026-06-15).** Tier-0
+locked the $a=0$ pure-cubic drag (§3.4), so
+$\gamma_0 \equiv \lim_{v\to0}\gamma(v) = 0$ — **not** the finite $a$ this
+N2 argument assumed above. The FDT noise amplitude
+$\sqrt{2\,\gamma(v)\,g\,k_B T_\text{eff}}$ therefore $\to 0$ as $v\to0$:
+the ion at rest feels neither friction nor thermal kick. This is the
+*opposite* failure mode from the discarded N1 / $n<0$ case (divergence
+at rest); here the noise vanishes. **Accepted**, because (i) the
+strict-FDT bath kick was already shown dynamically null
+($\sim 7\times10^{-4}\ \text{Å/ps}$ vs $\sim10\ \text{Å/ps}$ working
+speed, §1.3(a)) — a floor that vanishes at rest removes nothing
+observable; (ii) no finite rest-friction was ever data-anchored;
+(iii) $v=0$ is a regular point ($F\to0$ smoothly), so no regulariser is
+needed and `drag_low_v_floor` stays inert (already inert for the
+$n\approx+2$ export; now also for pure cubic). The N2 *expression* is
+unchanged; only "$\gamma_0=a$ finite" is corrected to "$\gamma_0=0$,"
+and N2 still reduces correctly (trivially) at low $v$. *Blanket:* read
+every remaining §1–§3 reference to "$\gamma_0=a$" or "finite $\gamma$
+at rest" for `linear_cubic` with $a=0$ substituted.
 
 #### Secondary — N3: empirical noise from TDDFT residual variance
 
@@ -385,340 +440,119 @@ noise-model variants. A new validation hook will be required.
 
 ---
 
-## 2. Mass attachment
+## 2. Mass model (summary — full detail in MASS doc)
+
+> **Supersedes the former §2 three-scenario framing (2026-06-15).** The original
+> Scenario A / B / biphasic trade-off analysis is superseded by the locked mass
+> model in `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` (retained in version
+> history). This section keeps only the **stable spine** and the **shared
+> infrastructure the drag spine references** (the $m_\text{eff}$ framing §2.2 and
+> the energy invariant/schema §2.9); the superseded scenario subsections (§2.3–§2.7)
+> are stubbed and point to the MASS doc. Mechanism detail, risks (R1–R12),
+> assumptions (A1–A11), and open calibration (OQ1–OQ6) are owned by the MASS doc;
+> every parameter's provenance by `CALIBRATION_MAP.md`. **Subsection numbers are
+> preserved as stable cross-reference anchors** even where content is condensed.
+
+**Locked mechanism — `biphasic_energy_gated` (the stable spine).** Two
+discrete-stochastic channels on an integer, non-monotone shell count $n(t)$:
+**pickup** (Poisson, rate $\lambda_\text{attach}(\rho_\text{He}(\text{depth}))$,
+$n\to n+1$) and **evaporation** (energy-gated + RRK rate-limited: shedding
+suppressed while net self-unbound $E_\text{int}>\sum_i D_0^{\,\mathrm{I^+}}(i)$,
+then saturating rate $k=\nu(1-D_0(n)/E_\text{int})^{\,s-1}$, cold shed); plus an
+**internal-energy reservoir** $E_\text{int}$ cooled (Newton's law) via the
+GAH25-matched variable $E_\text{solv.struct}=E_\text{bind}+E_\text{int}$. Terminal
+$n$ at 20 ps spans a **regime axis** ($\{f_\text{int},\tau_\text{dissip},$ ladder
+depth$\}$): shell-retaining (default) ↔ total stripping (Calvo24 limit —
+reachable, evaluated in secondary runs, not excluded; OQ6). **Live
+cross-dependency:** the drag effective binding (§6.5.1 / Tier 0) and the mass-side
+electronic picture / ladder depth (MASS A10) are coupled through **OQ1**, owned by
+the MASS doc; this doc's Tier-0 provenance flag (§6.4) points there.
 
 ### 2.1 Physical question
 
-What happens to the helium solvation shell during and after the Coulomb
-explosion of I₂⁺ inside the droplet? This is genuinely open physics, not
-just a modelling choice. Three things are known experimentally:
+What happens to the He solvation shell during/after the Coulomb explosion of I₂⁺
+inside the droplet — retain, strip, or equilibrate? Genuinely open physics. Known:
+pre-ionisation ~21 He/iodine; mid-flight 9 Å (TDDFT) shell **declines ~21→~19 (10
+ps)→~14 (14 ps)** with drag-extraction reference mass ~19 He ≈ 203 amu (§2.2);
+detector size distribution falls off monotonically. The original A/B/biphasic
+bracket is superseded by the locked biphasic mechanism (above; MASS doc). This is
+the **generative process for the experimental observable** — the per-fragment
+I⁺Heₙ velocity histograms — so mass evolution is load-bearing: a fixed-mass run
+yields one species and cannot generate the fragment channels.
 
-- **Pre-ionisation:** neutral I₂ in the droplet ground state carries
-  ~42 He in a structured solvation shell — i.e. **~21 He per iodine
-  atom**. This is a measured configuration of the *molecule*, not the
-  ion-stage initial condition.
-- **Mid-flight, 9 Å case (time-resolved, TDDFT-derived):** the per-I⁺
-  shell *declines* monotonically along the trajectory — **~21 He
-  pre-explosion → ~19 He at 10 ps → ~14 He at 14 ps**. The
-  drag-extraction reference mass is taken at **~19 He ≈ 203 amu**, the
-  window-representative value of this trajectory; this is the constant
-  $m_\text{eff}$ the drag law is fit against (§2.2). It sits near the
-  mean of the declining shell rather than at either extreme, so the
-  drag law is calibrated at a mass the ion genuinely carries through the
-  middle of the fit window.
-- **Detector, post-ejection:** the I⁺(He)ₙ size distribution falls off
-  monotonically — most ions are bare, then $n=1$, then $n=2$, etc.
-  This is the *terminal* mass constraint.
+### 2.2 The $m_\text{eff}$ framing  *(retained — shared infrastructure)*
 
-The unknown is everything between explosion and mid-flight. Two
-hypotheses bracket the possibilities, with a third occupying the middle:
+**$m_\text{eff}\approx203$ amu (~19 He) is not the ion's true mass; it is the mass
+*assumed during drag extraction*** — a parameter of the *drag law*, not the ion.
+Consequences: the simulation's instantaneous $m(t)$ is the physical mass and is
+used for integrator inertia ($F=m(t)a$) and KE bookkeeping; the drag force is
+applied as $F_\text{drag}=-\gamma(v)v$ at face value with no invented
+$M$-dependence; when $m(t)\neq m_\text{eff}$ the drag law is **extrapolated**
+outside its calibration domain (unrigorous but unavoidable — the extraction
+provides no $M$-scaling for $\gamma$), mild near mid-window and growing toward the
+ends. `SimConfig.m_eff_amu` exists as the named drag-law reference mass, separate
+from the physical $m(t)$. §6.5 makes the mass-scenario↔coefficient pairing a
+config-load guard (`extraction_mass_model` metadata); §6.6 records the optional
+time-resolved-$m(t)$ re-extraction. *(This is the R6 consistency anchor — MASS R6.)*
 
-- **Scenario A — full strip:** the Coulomb explosion at $R = R_e$
-  blows the entire shell off. Bare I⁺ emerges into the droplet and
-  rebuilds the shell during traversal.
-- **Scenario B — coherent shell, surface stripping:** the shell
-  largely survives the explosion (the dressed ion accelerates as a
-  unit), with shedding concentrated at the droplet surface.
-- **Biphasic — partial impulse strip, then equilibration:** part of
-  the shell is lost in the initial impulse, then mass relaxes toward
-  a conditions-dependent equilibrium with both gain and loss channels.
+### 2.3 Scenario A (full strip + accretion)  *(superseded → MASS doc)*
 
-The Coulomb energy released per atom (~2.7 eV) is roughly 2× the total
-shell binding (~1.3 eV for 42 He at ~30 meV each), placing the
-situation in the borderline between impulsive and adiabatic regimes.
-Neither A nor B can be ruled out a priori. The architecture must
-support all three so they can be compared against the experimental
-size distribution.
+Superseded by the locked biphasic mechanism. **Retained references:** the $t^*$
+surface-crossing **transient cut** (the transient is excluded from drag
+extraction; no literature law exists there) and the **density-driven accretion
+rate** $\dot M\propto\rho_\text{He}$ — both now live in the MASS pickup channel
+(MASS §4) and the §6.7 transient free-zone (widened to several ps there, MASS
+A7/R9).
 
-### 2.2 The $m_\text{eff}$ framing
+### 2.4 Scenario B (coherent shell, surface stripping)  *(superseded → MASS doc)*
 
-A clarifying observation that makes the rest of this section
-coherent: **$m_\text{eff} \approx 203\,\text{amu}$ (~19 He) is not "the
-true mass of the ion." It is the mass that was *assumed* during drag
-extraction.** It is a parameter of the *drag law*, not of the ion.
+Superseded. Retained as a comparison/regression baseline only.
 
-Consequences:
+### 2.5 Biphasic (partial strip + equilibration)  *(promoted → MASS doc)*
 
-- The simulation's instantaneous $m(t)$ is the *physical* mass — what
-  the dressed ion currently weighs.
-- $m_\text{eff}$ is a property of the fitted force, like a reference
-  state in a transport coefficient.
-- When $m(t) \neq m_\text{eff}$, the drag law is being *extrapolated*
-  outside its calibration domain. This is unrigorous but unavoidable
-  (the extraction provides no $M$-scaling for $\gamma$).
+The biphasic structure is the **production mechanism**, promoted and made precise
+(energy-gated, RRK rate-limited) in the MASS doc. Detail there.
 
-This framing dictates the architectural decisions:
+### 2.6 Sub-decision selection  *(superseded → MASS doc)*
 
-- **Integrator inertia:** uses $m(t)$ always. $F = m(t)\,a$. No
-  ambiguity.
-- **Drag force:** applied as $F_\text{drag} = -\gamma(v)\,v$
-  regardless of $m(t)$. The extracted $\gamma(v)$ is taken at face
-  value, with no invented $M$-dependence.
-- **Kinetic energy bookkeeping:** uses $m(t)$ always.
-- **`SimConfig.m_eff_amu` exists** as the drag-law reference mass,
-  exposed and named separately from the physical mass trajectory.
-  This makes the distinction visible and supports future re-
-  extractions at different reference masses.
+Production default is `biphasic_energy_gated` (MASS doc); `fixed`/`A`/`B` retained
+as comparison baselines. The earlier attach-rate-drop hint (0.09→0.005) is recorded
+against this subsection and folded into the §6 validation notes.
 
-**Provenance and optional refinement (see §6.5–§6.6).** The extraction
-mass is ~19 He ≈ 203 amu, the window-representative value of the
-declining ~21→~14 He shell (§2.1) — i.e. a sensible constant near the
-middle of the fit window, not an off-target guess. The only residual
-unrigour is that it is a *constant* standing in for a quantity that
-varies by ~⅓ across the trajectory; the $m(t)\neq m_\text{eff}$
-extrapolation above is therefore mild near mid-window and grows toward
-the ends. §6.6 records the optional time-resolved-$m(t)$ re-extraction
-that removes even this residual; §6.5 makes the mass-scenario↔coefficient
-pairing an enforced config-load guard and requires the extraction to
-stamp each coefficient bundle with its `extraction_mass_model` metadata.
+### 2.7 Velocity scaling within pickup  *(superseded → MASS doc)*
 
-### 2.3 Scenario A — full strip with continuous accretion
+Density-only $\lambda_\text{attach}\propto\rho_\text{He}$ confirmed as primary
+(resting-ion velocity scaling not required); pickup $v$-dependence kept pluggable
+(MASS R7). Detail: MASS §4 / §10.
 
-- **Initial mass:** ~127 amu (bare I⁺).
-- **Mass evolution:** monotone increase via continuous accretion ODE.
-- **Functional form (primary velocity scaling):**
-  $$\dot M(t) = \kappa_0 \cdot \rho_\text{He}(\text{depth}(t))$$
-  density-driven, velocity-independent. He attaches at a rate
-  proportional to local availability.
-- **Alternative velocity scalings (secondary, interchangeable):**
-  - $\dot M \propto v\,\rho_\text{He}$ — sweeping geometry; fast ion
-    encounters more He per unit time.
-  - $\dot M \propto \rho_\text{He}/v$ — dwell-time picture; slow ion
-    lingers per He. This is what the hard-sphere model *accidentally*
-    implements via the $\sigma \propto v^{-2}$ scaling.
-- **Calibration target:** $\kappa_0$ fit jointly against (i) the
-  time-resolved per-I⁺ shell trajectory at 9 Å (~21→~19→~14 He, §2.1),
-  and (ii) the experimental I⁺(He)ₙ size distribution stored in the
-  local Python history.
-- **Energy bookkeeping:** kinetic-energy defect becomes a continuous
-  integral $E_\text{defect}(t) = -\tfrac{1}{2}\int_0^t \dot M\,v^2\,dt'$.
-  Always ≤ 0 (cold He arrives at $v$, fake KE injected, subtracted
-  out).
+### 2.8 Interchangeability surface
 
-**Known limitation, recorded explicitly.** Under Scenario A, the
-simulation propagates an ion of mass ~127 amu through the bubble-exit
-transient (~0.5 ps), applying a drag law calibrated at $m_\text{eff}
-\approx 203$ amu. The drag law is being *extrapolated outside its
-calibration domain at $t = 0$*. This is precisely the window the
-drag extraction excluded via $t^*$, so no calibration data exists
-inside it. The transient nevertheless determines the initial
-conditions for the well-calibrated mid-flight phase. **Validation
-tolerances on $v(t)$ during the first ~0.5 ps should not be tight
-for Scenario A specifically.** Mid- and late-trajectory observables
-remain the validation anchor.
+`SimConfig.mass_scenario` — production `biphasic_energy_gated`; `fixed`, `A`, `B`
+retained as comparison/regression baselines. Field-level config (pickup rate,
+$f_\text{ret}$, $f_\text{int}$, $\nu$, $s$, ladder shape, electronic picture, …):
+MASS doc §11.
 
-### 2.4 Scenario B — coherent shell, surface stripping
+### 2.9 Schema and energy-bookkeeping changes  *(retained — shared infrastructure)*
 
-- **Initial mass:** the measured ion-stage-onset shell, **~21 He per
-  I⁺ ≈ 211 amu** (§2.1), *not* $m_\text{eff}$. The 42-He number is the
-  whole-molecule pre-ionisation shell (~21 per atom); under B's
-  coherent-shell premise the shell largely survives the explosion, so
-  the ion stage begins near the measured ~21-He value and *declines*
-  from there (~19 at 10 ps, ~14 at 14 ps). This initial physical mass
-  (~211 amu) is distinct from the drag-law reference $m_\text{eff}
-  \approx 203$ amu (~19 He, §2.2); per §2.2 the integrator uses the
-  physical mass while the drag is applied at face value.
-- **Mass evolution:** monotone decrease via continuous loss ODE.
-  $\dot M < 0$ throughout.
-- **Functional form (primary):**
-  $$\dot M(t) = -\eta_0 \cdot \rho_\text{He}(\text{depth}(t))$$
-  loss rate driven by *gradient* or *position* relative to droplet
-  surface — concretely, mass loss concentrated where He density is
-  changing rapidly (the bubble wall). Possible alternative forms
-  include $\dot M \propto -|a|$ (loss driven by acceleration
-  magnitude) — kept as a secondary trial.
-- **Calibration target:** $\eta_0$ fit against the experimental
-  size distribution.
-- **Drag-law extrapolation:** B starts at ~211 amu, just *above* the
-  $m_\text{eff} \approx 203$ amu the drag law was extracted at — only
-  ~4% off, since both sit near the top of the measured shell range.
-  Far less than Scenario A's bare-127-amu start (~37% light). As the
-  shell strips, $m(t)$ falls *through* $m_\text{eff}$ toward lighter
-  values; the extrapolation is near-zero in the first part of the
-  trajectory and grows only as the shell drops well below 19 He late.
-  The most benign drag-law-extrapolation profile of the evolving
-  scenarios.
-- **Energy bookkeeping:** the kinetic-energy "defect" term changes
-  sign and meaning. With $\dot M < 0$:
-  $$E_\text{transfer}(t) = -\tfrac{1}{2}\int_0^t \dot M\,v^2\,dt' \geq 0$$
-  represents *real energy carried away* by shed He, not a correction
-  for fake injection. The name `E_mass_attach_defect_eV` no longer
-  fits; rename to `E_mass_transfer_eV` to cover both signs cleanly.
-  Schema bump to `IonCheckpoint` v6.
+**`IonCheckpoint` schema bump to v6** under any non-`fixed` scenario: rename
+`E_mass_attach_defect_eV`→`E_mass_transfer_eV` (same `(2N,T)` shape, sign now
+covers accretion and stripping); drop the `mass_history_kg` monotonicity
+guarantee; add a scenario-metadata field. **Energy invariant** under continuous
+mass dynamics:
+$$E_\text{kin}+E_\text{pot}+E_\text{dissip}+E_\text{mass\_transfer}\approx\text{const}$$
+(modulo Verlet drift). **The MASS model extends this to a five-term invariant**
+by the $E_\text{int}$ reservoir:
+$E_\text{kin}+E_\text{pot}+E_\text{dissip}+E_\text{mass\_transfer}+E_\text{int}=\text{const}$
+(MASS §6); cold shedding is energy-neutral for $E_\text{solv.struct}$ (no K1/K2
+double-count).
 
-### 2.5 Biphasic — partial strip with equilibration
+### 2.10 Validation criterion specific to mass
 
-- **Initial mass:** the measured ion-stage-onset shell, **~21 He per
-  I⁺ ≈ 211 amu** (§2.1), same as Scenario B — the 42-He figure is the
-  whole-molecule pre-ionisation shell (~21 per atom), and the ion stage
-  begins with the measured surviving shell. The biphasic model takes
-  this as the starting point and allows both gain and loss channels.
-  As in §2.4, this physical initial mass is distinct from the drag-law
-  reference $m_\text{eff} \approx 203$ amu (§2.2).
-- **Mass evolution:** relaxation toward a conditions-dependent
-  equilibrium:
-  $$\dot M(t) = \frac{M_\text{eq}(v, \text{depth}) - M(t)}{\tau}$$
-  with $M_\text{eq}(\cdot)$ a function and $\tau$ a relaxation time.
-- **Functional form choices for $M_\text{eq}$:** undetermined
-  without further data. Simplest first try: $M_\text{eq}$ depends on
-  local He density only, with the equilibrium shell being heavier in
-  denser surroundings. Velocity dependence would represent shell
-  stripping by ion speed (fast ion can't hold its shell).
-- **Calibration:** at least two parameters ($\tau$ and the
-  scaling of $M_\text{eq}$). Cannot be pinned down by mid-flight
-  mass alone; needs the experimental size distribution *and* the
-  time-resolved shell trajectory (~21→~19→~14 He, §2.1) as separate
-  constraints.
-- **Drag-law extrapolation:** least problematic of the three — the
-  trajectory $m(t)$ is closest to $m_\text{eff}$ on average if the
-  equilibrium is set near 203 amu.
-- **Mass is not monotone.** Implications for downstream tooling that
-  may assume `mass_history_kg` is non-decreasing. Documentation flag.
+Mass affects **both moments**: the first moment via $F=m(t)a$ (TDDFT distance/
+velocity traces, **Tier 1**, shell trajectory ~21→19→14 He), and the
+**distribution** — the terminal I⁺Heₙ size distribution at the detector is *the*
+discriminating observable (**Tier 2**). See §6.4.
 
-**Why biphasic is interesting but not primary.** Most parameters,
-most degrees of freedom, hardest to calibrate from available data. It
-is the most flexible model and likely the most physically realistic,
-but starts as a secondary option until A and B have been compared.
-
-### 2.6 Sub-decision selection
-
-**Primary — Scenario A, density-driven accretion.**
-
-The simplest hypothesis that matches the "violent explosion strips
-everything" intuition. Single parameter $\kappa_0$ to calibrate
-against two constraints (mid-flight mass, terminal size distribution).
-The known drag-law extrapolation issue during the bubble-exit
-transient is explicitly recorded as a tolerance relaxation, not a
-fatal flaw.
-
-**Secondary — Scenario B, density-driven stripping.**
-
-Symmetric to A in structure (one parameter, same calibration targets)
-but with opposite sign on $\dot M$. Worth implementing in parallel so
-A and B can be compared on the same validation surface. Weak
-empirical hint in its favour: the existing model's factor-of-18 drop
-in attachment rate between 9 Å and 18 Å droplets (0.09 → 0.005) is
-more naturally explained by *net loss being faster in smaller
-droplets* than by *gross accretion being faster in smaller droplets*.
-
-**Secondary — Biphasic relaxation.**
-
-Held in reserve for the case where neither A nor B individually fits
-the experimental size distribution adequately. More parameters, more
-flexibility, harder to constrain.
-
-**Tertiary / null hypothesis — Fixed mass at $m_\text{eff}$.**
-
-Pin $m(t) = m_\text{eff} \approx 203$ amu throughout the ion stage. No
-mass dynamics. Useful as a *baseline*: if M1 matches the validation
-surface adequately, mass dynamics don't matter and A/B/biphasic are
-over-modelling. If M1 fails, the comparison tells us *how much* mass
-dynamics matters. Also: M1 is the only model where the drag law is
-never extrapolated outside its calibration domain — it is the
-internal-consistency reference. §6.5 sharpens this: M1 is the *only*
-scenario for which the in-hand constant-mass coefficients form a
-self-consistent pair, and the §6.5 config-load guard enforces that
-pairing.
-
-**Discarded — collision-gated Bernoulli attachment (current model).**
-
-Cannot survive without collisions to gate on. The physical content
-that was hidden in its $\sigma(v)$ coupling (slow ions pick up faster
-via the implicit $1/v$ scaling) gets re-expressed cleanly in the
-Scenario A velocity-scaling alternatives.
-
-**Empirical lean toward Scenario B (recorded; see §6.8).** The TDDFT
-shell counts (~21 He pre-explosion → ~19 at 10 ps → ~14 at 14 ps,
-9 Å case) show monotone *loss*, pointing at Scenario B over the
-primary Scenario A. B is additionally the only scenario whose
-time-resolved $m(t)$ can be read directly off the reference rather than
-modelled. This strengthens the 0.09→0.005 attach-rate hint above with a
-second independent argument. **Not auto-promoting:** A remains the
-recorded primary and simplest hypothesis until the §6.4 hierarchy
-(Tier 1/Tier 2) adjudicates A against B.
-
-### 2.7 Sub-decision: velocity scaling within Scenario A
-
-Independent of the A/B/biphasic choice, *within* Scenario A the
-velocity scaling of $\dot M$ encodes a real physical claim.
-
-- **Primary:** $\dot M \propto \rho_\text{He}(\text{depth})$, no $v$
-  dependence. Simplest. He attaches based on local availability;
-  speed irrelevant.
-- **Secondary:** $\dot M \propto v\,\rho_\text{He}$ — sweeping
-  geometry. Fast ions encounter more He per unit time.
-- **Secondary:** $\dot M \propto \rho_\text{He}/v$ — dwell-time. Slow
-  ions linger and stick. This is what hard-sphere accidentally
-  implements; preserving it is a hedge against losing some emergent
-  behaviour from the old model.
-- **Discarded:** none. All three are physically defensible and the
-  data does not yet discriminate.
-
-### 2.8 Interchangeability surfaces
-
-The architecture exposes mass dynamics through the following surfaces:
-
-- `SimConfig.mass_scenario ∈ {fixed, scenario_A_accretion,
-  scenario_B_stripping, biphasic}` — top-level scenario selector.
-- `SimConfig.mass_initial_amu` — initial ion-stage mass; defaults to
-  ~127 amu (bare I⁺) under `scenario_A_accretion`, to the measured
-  onset shell ~211 amu (~21 He, §2.1) under `scenario_B_stripping` and
-  `biphasic`, and to $m_\text{eff}$ under `fixed` (the only scenario
-  whose initial mass is the drag-law reference, per the §6.5
-  consistency guard).
-- `SimConfig.m_eff_amu` — drag-law reference mass, default ~203 (19 He).
-  Used by the drag extraction and exposed for transparency; **not**
-  the same as `mass_initial_amu`.
-- `SimConfig.mass_rate_form ∈ {density_only, sweeping, dwell_time}` —
-  velocity scaling for $\dot M$ under Scenarios A and B.
-- `SimConfig.mass_rate_coefficient` — $\kappa_0$ or $\eta_0$, sign
-  determined by scenario.
-- For biphasic: `SimConfig.mass_relaxation_tau_ps` and a
-  functional-form selector for $M_\text{eq}(\cdot)$.
-
-These are decoupled from the noise-model surfaces (§1) and from the
-drag-functional-form surfaces (§3, future).
-
-### 2.9 Schema and energy-bookkeeping changes
-
-**`IonCheckpoint` schema bump to v6** is required under any scenario
-other than `fixed`. Changes:
-
-- Rename `E_mass_attach_defect_eV` → `E_mass_transfer_eV`. Same array
-  shape `(2N, T)`, same cumulative semantics, but the sign convention
-  now covers both accretion (negative cumulative) and stripping
-  (positive cumulative).
-- `mass_history_kg` retains its shape but its monotonicity
-  guarantee is dropped (biphasic and Scenario B both violate
-  monotonicity).
-- Add a small metadata field recording which scenario produced the
-  run, so downstream tools can interpret `E_mass_transfer_eV` and
-  `mass_history_kg` correctly.
-
-**Energy invariant** under continuous mass dynamics:
-$$E_\text{kin}(t) + E_\text{pot}(t) + E_\text{dissip}(t) + E_\text{mass\_transfer}(t) \approx \text{const}$$
-modulo Verlet drift. The continuous form replaces the per-step
-discrete defect from the existing model. No new dissipation channels;
-just a smooth version of the existing accounting.
-
-### 2.10 Validation criterion specific to mass attachment
-
-Unlike the noise model (§1.6), mass attachment affects both **first
-and second moments**:
-
-- First moment: the trajectory $v(t)$ is modulated by $m(t)$ via
-  $F = m\,a$. Comparison against the TDDFT reference distance and
-  velocity traces (post-transient phase) is sensitive to mass
-  evolution.
-- Distribution: the final I⁺(He)ₙ size distribution at the detector
-  is *the* discriminating experimental observable between scenarios.
-  This is the new validation target the existing code does not yet
-  exercise.
-
-The local Python history of experimental size-distribution data needs
-to be plumbed into the validation surface as a new comparison routine.
-
----
 
 ## 3. Drag functional form — analytic vs. tabulated
 
@@ -923,10 +757,13 @@ condition checked at config-load (the extraction's `curve_fit` carries
 no bounds):
 
 - **linear+cubic:** requires $a + b\,v^2 \ge 0$ across the operating
-  range. $a>0, b\ge0$ is monotone and clean. If $b<0$ there is a
-  turnover speed $v_\dagger = \sqrt{-a/b}$ beyond which the cubic flips
-  the force sign (anti-dissipative); assert $a>0$ and $v_\dagger$ above
-  the maximum trajectory speed.
+  range. $a\ge0, b>0$ is monotone and clean. **The locked production law
+  has $a=0$** (pure cubic, §3.4): $F=bv^3>0$ and $dF/dv=3bv^2\ge0$ for
+  all $v\ge0$ — strictly dissipative and monotone, with the turnover
+  $v_\dagger=\sqrt{-a/b}$ **undefined** (guard trivially satisfied).
+  Assert $a\ge0$ and $b>0$. (A future $b<0$ re-extraction would
+  reintroduce a turnover $v_\dagger$ to assert above the maximum
+  trajectory speed.)
 - **linear+quadratic:** requires $a + c\,|v| \ge 0$; with $a,c>0$ this
   holds for all $v$ with no turnover. Assert $a>0, c\ge0$.
 - **threshold:** $F_\text{sat}/v_0 > 0$ (i.e. both $F_\text{sat}>0$ and
@@ -948,14 +785,23 @@ All four analytic forms are first-class and interchangeable behind the
 not a belief about correctness; the empirical cross-check against the
 TDDFT references selects among them.
 
-**Primary — linear+cubic** $\;F_\text{drag} = a\,v + b\,v^3$. Regular
-at $v=0$, finite $\gamma_0 = a$ for the N2 noise, analytically
-differentiable ($dF/dv = a + 3bv^2$). Coefficients $\{a,b\}$ (with
-$1\sigma$ errors and $R^2$) already extracted for both 9 Å and 18 Å,
-so it is the form with data in hand and is kept as the default first
-run. Caveats recorded honestly: the $v^3$ wing extrapolates more
-steeply than the physically-generic quadratic, and it carries the
-$b<0$ turnover risk (guarded, §3.3).
+**Primary (LOCKED 2026-06-15) — pure cubic**, the $a=0$ instance of
+linear+cubic: $\;F_\text{drag} = g(\text{depth})\,b\,v^3$, with
+$b = 2.5154\ \text{amu·ps/Å}^2$ and $g$ the §5 gate. Tier-0
+trajectory-matching (Method B, $n=3$) was selected over Method A
+($n\approx2$) and drove the linear coefficient to zero, so the linear
+term is **absent** in the production law, not merely small. Regular at
+$v=0$ ($F\to0$ smoothly), analytically differentiable
+($dF/dv = 3bv^2$), shared across both cases (§3.6). Coefficients are in
+hand for 9 Å and 18 Å. **Two consequences of $a=0$, recorded:**
+(i) $\gamma_0 \equiv \lim_{v\to0}\gamma(v) = 0$ — *not* the finite $a$
+the §1.2 N2 argument assumed; the FDT noise amplitude vanishes at rest
+(addressed in §1.2's correction note, and accepted). (ii) The "$v^3$
+wing extrapolates more steeply than the physically-generic quadratic"
+caveat is now **load-bearing**, not cosmetic — beyond the fit window the
+cubic over-brakes; see R10 (high-velocity ceiling) in
+`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` §8. The $b<0$
+turnover risk does **not** apply ($b>0$, no real $v_\dagger$).
 
 *Note — linear+quadratic is the stronger physical default and may
 supersede this on cross-check.* On both integrator-neutrality and
@@ -1083,13 +929,15 @@ two outstanding fit passes, not a re-extraction of existing forms.
   below). Per-preset, enabling per-case forms.
 - `SimConfig.drag_coefficients` — form-tagged coefficient bundle of
   variable arity by form, per-case:
-  - `linear_cubic`: $\{a, b\}$, units amu/ps and amu·ps/Å².
+  - `linear_cubic` (LOCKED, pure cubic): $\{a=0,\ b=2.5154\}$, units
+    amu/ps and amu·ps/Å².
   - `linear_quadratic`: $\{a, c\}$, units amu/ps and amu/Å.
   - `power_law`: $\{\gamma, n\}$, $\gamma$ in
     amu·Å$^{1-n}$·ps$^{n-2}$, $n$ dimensionless.
   - `threshold`: $\{F_\text{sat}, v_0\}$, units amu·Å/ps² and Å/ps.
 - **Drag-validity guard (config-load):** per-form dissipativity check
-  from §3.3 — `linear_cubic` ($a>0$, $v_\dagger$ above max speed);
+  from §3.3 — `linear_cubic` ($a\ge0$, $b>0$; with the locked $a=0$ the
+  turnover $v_\dagger$ is undefined and the guard is trivially met);
   `linear_quadratic` ($a>0, c\ge0$); `threshold` ($F_\text{sat}>0,
   v_0>0$); `power_law` ($\gamma>0$). The "maximum trajectory speed"
   needed for the `linear_cubic` turnover check is an open config item
@@ -1478,386 +1326,182 @@ drag law.
 
 ## 6. Validation surface and tolerances
 
-### 6.1 Physical question
+### 6.1 Why this section exists
 
-Every "primary" chosen in §1–§5 was deferred to empirical cross-check
-against the TDDFT and experimental references. §6 specifies the
-instrument that resolves those deferrals. It is not a postscript: if the
-validation surface is weak, every upstream primary stays unfalsified and
-the interchangeability apparatus produces nothing. The section has three
-jobs — extend the baseline validation surface to observables it does not
-currently exercise, order the comparisons so the large undetermined
-parameter space stays separable, and enforce the consistency constraint
-between the mass scenario (§2) and the extracted drag coefficients (§3).
+Every "primary" in §1–§5 is deferred to empirical cross-check against the TDDFT
+and experimental references; §6 is the instrument that resolves those deferrals
+and the **order** in which it does so. Three jobs: extend the baseline surface to
+observables it does not exercise (§6.2), order the comparisons so the entangled
+parameter space stays separable (§6.3–§6.4), and enforce the two consistency
+constraints coupling drag to {mass, binding} (§6.5–§6.5.1). The per-parameter map
+of *which tier anchors what* lives in `CALIBRATION_MAP.md` ("anchor coverage by
+tier"); this section is the rationale and current status.
 
-### 6.2 What the baseline validation surface cannot do
+### 6.2 What the baseline surface cannot do
 
-The baseline (PHYSICS_BASELINE §13) ships trajectory comparison
-(`compare_distance`, `compare_velocity_magnitude`), final-velocity
-histograms against the VMI references, and energy-balance plots. These
-were built for a *deterministic* model matched to *single* reference
-trajectories. The drag port breaks three of their assumptions:
+The baseline (PHYSICS_BASELINE §13) ships single-trajectory comparison, VMI
+final-velocity histograms, and energy-balance plots — built for a deterministic
+model matched to single references. The drag port breaks three assumptions, each
+needing a new hook: noise lives in **second moments** (§1.6, single-trajectory
+compare is blind to spread); the mass model is discriminated only by the terminal
+**I⁺Heₙ size distribution** (a discrete-$n$ distribution the code does not yet
+compare); and the form cross-check needs the comparison **clean** (the BAOAB
+choice §4.6 only pays off if validation isolates the form). New hooks required: an
+ensemble-variance comparison (Tier 3) and a discrete-$n$ size-distribution routine
+(Tier 2).
 
-- **Noise lives in second moments (§1.6).** `compare_distance` matches
-  one trajectory to one reference and is blind to ensemble spread; it
-  cannot discriminate any noise variant.
-- **Mass scenarios need a new observable (§2.10).** The discriminating
-  measurement between Scenarios A/B/biphasic is the terminal I⁺(He)ₙ
-  size distribution, which the code does not currently exercise.
-- **The form cross-check needs the comparison to be clean (§3, §4).**
-  The whole reason BAOAB was chosen (§4.6) is so a trajectory difference
-  is attributable to the drag form rather than to an integration
-  artifact. That payoff is only realised if the validation can isolate
-  the form from the other unknowns.
+### 6.3 The attribution problem → sequential validation
 
-### 6.3 The attribution problem
+The unknowns interact (drag form, noise, mass model, gate) and the observables are
+coupled — final velocity depends on form *and* mass *and* gate; its spread on noise
+*and* ensemble. A flat "run everything, compare to VMI" cannot separate them.
+Resolution: a **hierarchy ordered by separability** — each tier isolates as few
+unknowns as possible and fixes its winner before the next is introduced.
+Validation is **sequential, not simultaneous**.
 
-The undetermined parameters interact: drag form (4), noise
-form/calibration/geometry (§1), mass scenario (4+) and its velocity
-scaling (3), spatial gate (4). The observables are coupled — final
-velocity depends on form *and* mass *and* gate, while its *spread*
-depends on noise *and* ensemble size. A flat "run everything, compare to
-VMI" cannot separate these. The resolution is a **validation hierarchy
-ordered by separability**: each tier isolates as few unknowns as
-possible and fixes its winner before the next tier's unknown is
-introduced. Validation is therefore **sequential, not simultaneous** —
-itself a recorded design decision.
+### 6.4 The sequential validation hierarchy — status and goals
 
-### 6.4 The sequential validation hierarchy
+Current state (2026-06-15): **Tier 0 complete · Tier 1 ungated and next · Tiers 2–3
+downstream.** Full records: `TIER0_FINDINGS.md`,
+`METHOD_B_trajectory_matching_extraction.md`. Per-parameter tier anchors:
+`CALIBRATION_MAP.md`.
 
-The tiers run in order; each fixes its winner before the next unknown is
-introduced (§6.3 — the parameters are entangled). Current state (2026-06-15) is
-recorded inline: **Tier 0 is complete**, **Tier 1 is ungated and next**, Tiers
-2–3 are downstream. Full records: `TIER0_FINDINGS.md` and
-`METHOD_B_trajectory_matching_extraction.md`.
+**Tier 0 — drag form, deterministic, fixed mass (COMPLETE).** Method B
+trajectory-matching settled the drag law: `shared_pure_cubic` ($a=0$,
+$b=2.5154$ amu·ps/Å², effective binding $E_\text{bind}=0.1168$ eV) — production;
+`power_law` with free exponent independently recovered $n\approx3$;
+`linear_quadratic` ($n{=}2$) rejected by objective and held-out 9 Å. **18 Å is
+the clean-radial regression floor** (distance RMSE ≤ 3.0 Å, mean $|v|$ RMSE ≤ 0.25
+Å/ps); **9 Å carries the transverse-contamination flag** (a model-dimensionality
+limit, not a drag error). Two findings carry forward: that 9 Å flag, and "correct
+drag traps the ions" → the binding becomes an effective jointly-calibrated
+parameter (§6.5.1, with the OQ1 provenance flag there).
 
-**Tier 0 — drag form, deterministic, fixed mass (COMPLETE).** Run
-`mass_scenario = fixed` at `m_eff`, noise amplitude zero, scored *inside the
-extraction window only* against the TDDFT `9A`/`18A` traces. Isolates the **drag
-form** (§3) with no mass evolution, noise, or transient — it must come first
-because every later tier is contaminated until the form is pinned. Four things
-were settled here.
+**Tier 1 — mass scenario, deterministic (UNGATED — next). Goal: *which mass
+model*, with no noise and no Tier-2 commitment.** With the Tier-0 form fixed and
+noise off, run the locked `biphasic_energy_gated` mechanism (and `fixed`/A/B as
+baselines) and compare the full post-transient trajectory **and the time-resolved
+shell trajectory** (~21→~19→~14 He, §2.1) against the 9 Å TDDFT reference.
+Isolates the **mass model** (§2 → MASS doc). **This tier is OQ-independent** — the
+shell trajectory does not depend on the electronic picture or ladder *values* — so
+it can run now. The transient free-zone (§6.7) lives here; each non-`fixed`
+scenario needs its own coefficient extraction (§6.5) before its comparison carries
+meaning. The deterministic invariant/consistency checks (five-term energy
+conservation, cold-shed neutrality, no gate-open avalanche; MASS §6) are the
+build's correctness gate and hold **regardless of OQ values** — the cheap insurance
+to build first.
 
-*Extraction B chosen over A (first-runs verdict).* Method A (direct
-`F_drag`-vs-`v` regression) was the original pipeline. Tier 0's first runs
-forward-integrated A's extracted γ and asked, independently, whether it
-reproduced the reference — and it did **not**: A's coefficients gave a poor
-in-window trajectory, while *hand-adjusting* the coefficients against the
-forward-integrated MD drove the in-window residual very small. That hand-tuning
-observation *is* end-to-end calibration done by hand, so the method was switched
-to **Method B — trajectory-matching calibration**: fit `{a,b}` (jointly with the
-effective binding) by minimizing the forward-integrated, radial-projected,
-in-window trajectory RMSE against the same-smoothed reference
-(`cleaned_data_long.csv`, the extraction's own CEEMDAN+SG). Method A is kept only
-as an independent cross-reference, not the default.
+**Tier 2 — terminal size distribution. Goal: *arbitrate the genuinely-free knobs*.**
+Compare the simulated I⁺Heₙ size distribution (discrete integer-$n$) against the
+experimental detector histogram. This is the *only* observable that sharply
+separates the mass scenarios and the **two genuinely-free knobs — the ladder shape
+and the electronic picture** (`CALIBRATION_MAP` tally; MASS R3/A10) — plus the
+bounded early-window scalars ($f_\text{int}, f_\text{ret}, \tau_\text{dissip}, \nu$).
+It also evaluates the **total-stripping limit** (Calvo24, secondary; MASS §6.11,
+OQ6). *Load-bearing caveat:* Tier 2 carries **8+ quantities on one observable**;
+whether the size distribution actually separates them is the central calibration
+risk (documented per-parameter in `CALIBRATION_MAP`). **OQ-gated:** *committing*
+the ladder/binding calibration here depends on **OQ1** (the drag $E_\text{bind}$ vs
+mixture-ladder double-count, §6.5.1 / MASS A10/OQ6) — build and run Tier 2 freely,
+but do **not lock** a Tier-2 ladder fit while OQ1 is open.
 
-*Tier 0's role repurposed: consistency → held-out generalization.* Under A,
-Tier 0 was an internal-consistency check ("does forward-integrating the
-independently-extracted γ reproduce the reference?"). Under B the trajectory
-match **is the fit objective**, so re-running that check is circular and is
-retired. The infrastructure (the `window=` parameter, the harnesses, the gate)
-survives but now scores **held-out** data — the cross-case shared-form check (the
-transport-physics signal, §3.6) and the downstream VMI/ensemble observables.
-Held-out validation is *more* necessary under B than the consistency check was
-under A, because B can overfit. The Tier-0 scoring gate is accordingly the
-**same-smoothed `|v2|` RMSE** — the exact quantity Method B minimised
-(`scripts/post_processing/tier0_drag_comparison.py`).
+**Tier 3 — ensemble second moments.** With noise on, compare the final-velocity
+histogram **width** and (if T3 geometry, §1.4) angular spread against VMI, plus
+cross-trajectory variance on the 8000-atom `single_pulse_droplet_distribution`.
+Isolates the **noise model** (§1) given form + mass + gate from Tiers 0–2.
 
-*Three fit variants — optimal parameters identified.* The shared-form joint-refit
-machinery (one size-independent law + one effective binding across *both* cases —
-over-constrained at 3 parameters vs 2 trajectories, hence falsifiable) was run
-for all three drag forms; optimal parameters were found for each (N=50, seed
-20260604, full window `[t*, ~14 ps]`):
+*Numeric acceptance thresholds are deferred:* §6 fixes the metrics (§6.9) and the
+order; pass/fail numbers are set once first runs are seen, since everything
+upstream is cross-checked empirically. The one committed floor is the 18 Å Tier-0
+regression above.
 
-- **`shared_pure_cubic`** (`linear_cubic`, `a ≡ 0`, `γ = g·b·v²`): `b = 2.5154`,
-  `E_bind = 0.1168 eV` — **PRODUCTION**. Per-case RMSE 18 Å 0.134 / 9 Å 0.124,
-  full escape, objective 0.12926.
-- **`pl_shared_3param`** (`power_law`, free `n`): `C = 2.835`, `n̂ = 2.927 ≈ 3`,
-  `E_bind ≈ 0.113 eV` — **EQUIVALENT** (Δobjective = −0.0001, inside ±0.005). The
-  free exponent independently recovers cubic (`n ≈ 3`), *not* Method-A's
-  `n ≈ 2.06`.
-- **`lq_shared_3param`** (`linear_quadratic`, forced `n = 2`): collapses to
-  pure-quadratic (`a → 0`, `c ≈ 12.8`), `E_bind ≈ 0.048 eV` — **WORSE**
-  (Δ = +0.034) → rejected-by-objective; its held-out 9 Å prediction also fails
-  (0.699 > 0.45).
+### 6.5 Consistency constraint I — mass scenario ↔ drag coefficients (R6)
 
-The trajectory objective thus **discriminates the exponent** and picks `n = 3`;
-`shared_pure_cubic` is confirmed with no escalation. (Per-case single-curve fits
-for all three forms exist as diagnostics only — never preset-wired — and show the
-exponent leverage is case-asymmetric: 9 Å alone pins `n̂ ≈ 2.65`, 18 Å alone
-rails to the `n = 4` bound; the cross-case combination is what lands at 3.)
+The force balance $F_\text{drag}(t)=m(t)\,a(t)-F_C(R(t))$ pins only the
+combination $m(t)a(t)$, so what is attributed to drag depends on the assumed
+$m(t)$: a law extracted at constant $m_\text{eff}$ is self-consistent **only**
+re-applied at $m_\text{eff}$. `mass_scenario` and `drag_coefficients` are a
+**coupled pair**, enforced as a config-load guard — coefficient bundles stamped
+with `extraction_mass_model ∈ {constant, time_resolved}` (an extraction-side
+stamping action, §6.6); `fixed`@$M$ needs `constant`@$M$ within ~1–2 He;
+non-`fixed` needs `time_resolved` under a matching $m(t)$; a mismatched pairing
+**refuses to run**, with `SimConfig.allow_inconsistent_mass_pairing` (default
+`False`) downgrading the refusal to a loud warning for exploration. **Production
+status:** `biphasic_energy_gated` runs a non-monotone $m(t)$ and therefore trips
+this guard structurally — see MASS **R6** for the production handling (the §6.6
+mid-window defence makes the inconsistent pairing defensible; the clean
+re-extraction is blocked by the 9 Å transverse flag).
 
-*Two first-class physics findings.* (1) **The 9 Å reference is genuinely
-non-radial:** atom 2 carries a sustained ~4 Å/ps transverse drift in a
-radial↔transverse oscillation (~99.6 % transverse at `t*`), while 18 Å is
-~99.9 % radial. A central-force MD cannot carry that transverse co-translation,
-so the surviving 9 Å same-smoothed residual (~0.39 Å/ps t\*-seeded, vs ~0.09 for
-18 Å) is a **model-dimensionality statement, not a drag error**; the 9 Å law
-carries a standing "`|v|`-projected-radially, transverse-contaminated" flag.
-(2) **Correct drag traps the ions:** the in-window-correct drag delivers
-TDDFT-like *low* surface kinetic energy — below the static
-`binding_energy_I_ion_eV = 0.308 eV` solvation barrier — so a static well that
-deep prevents ejection. The fix is **not** to weaken the drag (that would detune
-the validated quantity); instead the binding depth becomes an **effective
-parameter calibrated jointly with the drag** against the VMI distribution
-(§6.5.1), with the TDDFT escape energy as a sanity cross-check.
+### 6.5.1 Consistency constraint II — drag ↔ droplet binding (OQ1)
 
-18 Å is the trustworthy, clean-radial calibration case and is the committed
-regression floor (distance RMSE ≤ 3.0 Å, mean |v| RMSE ≤ 0.25 Å/ps;
-`tests/test_tier0_drag_comparison.py`). 9 Å is recorded finite-only, suspect
-until it survives the held-out cross-case / VMI checks.
+"Correct drag traps the ions": the in-window-correct drag delivers sub-barrier
+surface KE, so the **static** 0.308 eV solvation well prevents the ejection that
+the TD-HeDFT ions achieve **dynamically** (the He reorganises; the static barrier
+is bypassed). This is not a drag error and not a re-measured solvation energy —
+the binding depth becomes an **effective parameter jointly calibrated with the
+drag** against the VMI final-velocity distribution (not the static 0.308 eV; not a
+hand-picked "just-escapes" threshold; **do not weaken the drag to force escape** —
+that detunes the validated quantity). Enforced like the mass pair: the effective
+binding is stamped alongside the coefficients (`effective_binding_energy_I_ion_eV`
++ provenance) and the §6.5 guard refuses an un-jointly-validated drag↔binding
+pairing. *Deferred principled alternative:* a **dynamical** (velocity-dependent)
+barrier — the honest long-term fix, decided by the VMI distribution.
 
-**Tier 1 — mass scenario, deterministic (UNGATED — next).** With the Tier-0
-form fixed (`shared_pure_cubic`) and noise still off, turn on each mass scenario
-(A/B/biphasic) and
-compare the full post-transient trajectory plus the time-resolved shell
-trajectory (~21→~19→~14 He, §2.1). Isolates the **mass scenario** (§2). The transient-tolerance
-relaxation (§6.7) lives here. Each non-`fixed` scenario requires its own
-coefficient extraction (§6.5) before its trajectory comparison carries
-meaning.
+> > **Provenance flag (2026-06-15, OQ1 — see mass-doc §10A).** The static
+> `0.308 eV` solvation barrier here is the **$X_2$/³Π deep-snowball** value
+> ([IHe05] He–I⁺(³Π), $S_{\mathrm{I^+}}=-3578$ K in the [I2-notes] He-DFT); the
+> jointly-fit effective `0.1168 eV` is a factor ~2.6 shallower. **If** that
+> lowering is purely *dynamical* (the in-window-correct drag delivers
+> sub-barrier surface KE, as argued just above) — i.e. the trajectory was run on
+> $X_2$ and the ion simply never equilibrates to the deep well — then `0.1168 eV`
+> is an $X_2$-input number reduced by dynamics, and the mass-doc A10
+> statistical-SO-mixture ladder (also shallower than $X_2$) must **not**
+> double-count the same reduction. This couples the drag-binding provenance to
+> the mass-side electronic-picture choice; both are provisional pending author
+> confirmation (mass-doc OQ1). User is in contact with the authors.
 
-**Tier 2 — terminal mass distribution.** Compare the simulated I⁺(He)ₙ
-size distribution against the experimental detector data. This is the
-*only* observable that sharply separates A/B/biphasic and is a
-distribution-vs-distribution comparison the code cannot currently do.
-The reference is a histogram of n-counts per integer snowball mass
-(I⁺, I⁺He₁, I⁺He₂, …), i.e. a *discrete* distribution over integer n.
+### 6.6 The $m_\text{eff}$ constant and optional time-resolved re-extraction
 
-**Tier 3 — ensemble second moments.** With noise on, compare the
-final-velocity histogram *width* and (if T3 geometry, §1.4) angular
-spread against the VMI references, plus cross-trajectory variance on the
-8000-atom `single_pulse_droplet_distribution`. Isolates the **noise
-model** (§1) given form + mass + gate from Tiers 0–2.
+TDDFT shell (9 Å): ~21→19→14 He; extraction collapses this to the constant
+$m_\text{eff}\approx203$ amu (~19 He), the window-representative value. Because
+$F_\text{drag}=m\,a-F_C$ is a difference of comparable terms, the fractional error
+from the constant-mass approximation tracks $|m(t)-m_\text{eff}|/m_\text{eff}$ —
+**near-zero mid-window, ~⅓ only at the trajectory ends** (which coincide with the
+§6.7 free-zone). So the in-hand constant-mass coefficients are usable as-is
+mid-window; this is the **load-bearing defence for the R6 inconsistent pairing**
+(MASS R6). **Option-3 (time-resolved) re-extraction** uses $m(t)$ directly in the
+force balance $F_\text{drag}(t)=m(t)a(t)-F_C(R(t))$ — an optional refinement, the
+natural pairing for an evolving-mass scenario (notably the measured-loss $m(t)$),
+not required for constant-mass scenarios. *Extraction-side action item:* verify the
+stamped `extraction_mass_amu` is the mass the balance actually ran under, not a
+relabelled value (a self-consistent refit cannot detect a wrong-but-consistent
+mass; an earlier literal 179.912 vs the correct ≈202.954).
 
-### 6.5 The mass-scenario / coefficient consistency constraint
+### 6.7 Transient free-extrapolation zone
 
-The force balance underlying extraction,
-$$F_\text{drag}(t) = m(t)\,a(t) - F_C(R(t)),$$
-constrains only the *combination* $m(t)\,a(t)$ against the measured
-$a(t), R(t)$. What is attributed to drag depends entirely on the assumed
-$m(t)$: two mass assumptions applied to the *same* TDDFT trajectory yield
-two *different* drag laws, each self-consistent only when re-simulated
-under its own mass assumption. Consequences:
+No TDDFT data exists at the violent bubble-exit onset (the $t^*$ cut, §2.3), so
+neither drag nor mass law is anchored in the first ~0.5 ps under any scenario —
+**widened to several ps on the mass side** by the early self-instability (MASS
+A7/R9). Validation tolerances on $v(t)$, $R(t)$ here are **loose for all
+scenarios**; mid/late observables remain the anchor. The pure-cubic high-$v$
+over-braking in this same window is MASS **R10**.
 
-- A drag law extracted at constant $m_\text{eff}$ is self-consistent
-  **only** when re-applied at constant $m_\text{eff}$. Running it under
-  an evolving-mass scenario applies the law to a mass trajectory
-  different from its extraction — the trajectory will miss the reference
-  for a reason that is not physics.
-- `mass_scenario = fixed` at $m_\text{eff}$ is therefore the **only**
-  scenario for which the in-hand constant-mass coefficients are
-  self-consistent — a stronger statement than §2.6's "no-extrapolation
-  baseline": it is the only scenario matching the extraction's own mass
-  assumption.
-- `mass_scenario ∈ {A, B, biphasic}` requires coefficients
-  **re-extracted under that scenario's time-varying $m(t)$**. Using
-  constant-mass coefficients here is the §2.2 extrapolation, now
-  diagnosed precisely: the law was solved under a *different* $m(t)$ and
-  is no longer the unique drag consistent with the data.
+### 6.8 Shell-loss evidence (informs Tier 1)
 
-`mass_scenario` and `drag_coefficients` are thus a **coupled pair**, not
-freely-mixable enums. **Enforced as a config-load consistency guard:**
+The TDDFT shell data (21→19→14, monotone loss) is the **Tier-1 target** and was the
+original empirical lean toward stripping over accretion. The three-scenario
+framing is superseded by the locked biphasic mechanism (§2.5 → MASS doc), but the
+observation stands and is privileged for extraction: the directly-readable $m(t)$
+(the measured loss) is the natural pairing for §6.6 option-3. The locked biphasic
+mechanism subsumes both gain and loss; Tier 1/2 adjudicate where on the regime
+axis the ion lands (MASS §6.11).
 
-- Each coefficient bundle carries
-  `drag_coefficients.extraction_mass_model ∈ {constant, time_resolved}`
-  plus the constant value (or the $m(t)$ reference) it was extracted
-  under. This requires the extraction pipeline to **stamp** each bundle
-  with its mass metadata — an extraction-side action item (§6.8), since
-  the current `fit_result` records only $\{a,b\}$ / $\{\gamma,n\}$.
-- `fixed` at value $M$ requires `extraction_mass_model = constant` at
-  the same $M$ within a tolerance of **~1–2 He (~4–8 amu)** — the regime
-  where the curve is genuinely insensitive to mass. This is where the
-  "±1–2 He is negligible" argument lives legitimately: as the *width* of
-  the consistency check, not as licence to ignore a larger gap.
-- non-`fixed` scenarios require `extraction_mass_model = time_resolved`
-  under a matching $m(t)$.
-- Pairing a non-`fixed` scenario with constant-mass coefficients is the
-  inconsistent case → **refuse to run** (hard error). One escape hatch:
-  `SimConfig.allow_inconsistent_mass_pairing = True` (default `False`)
-  downgrades the refusal to a loud warning, for deliberate exploratory
-  runs only.
+### 6.9 Histogram comparison metric (Tier 2/3)
 
-### 6.5.1 The drag / droplet-binding consistency constraint (2026-06-09)
-
-A second coupled pair, discovered when the validated drag was first run to
-ejection (`TIER0_FINDINGS.md` → "Correct drag traps the ions"). The MD droplet
-potential is a **static** well of depth `binding_energy_I_ion_eV` (the computed
-solvation energy, 0.308 eV). With an in-window-correct drag, the ion arrives at
-the surface with TDDFT-like *low* kinetic energy — **below** the static barrier —
-and is **trapped**: $R(t)$ reverses, no ejection. Yet the TD-HeDFT ions *do*
-escape with $<0.308$ eV, because real ejection is **dynamical** (the He
-reorganizes; the static barrier is bypassed). The old hard-sphere model escaped
-only by over-accelerating the ions past the static barrier; the correct drag
-removes that excess and exposes the incompatibility.
-
-This is **not** a drag error and **not** a re-measurement of the solvation energy.
-It means the static potential cannot represent dynamical ejection, and the
-binding depth must become an **effective, calibrated** parameter — a pragmatic
-stand-in for the absent dynamical barrier:
-
-- **Calibration target:** the **VMI final-velocity distribution** (the held-out
-  observable), with the drag and effective binding **jointly fit** over the full
-  post-dynamic-start window `[2.67, 14 ps]` (`cleaned_data_long.csv`); the TDDFT
-  escape energy is a sanity cross-check (the effective barrier sits near the
-  actual sub-0.308 eV KE the ions escape with). The full-window choice
-  (Method B §3.5) targets final velocity directly — but forfeits the
-  held-out-window validation axis, so **cross-case and VMI become the mandatory
-  held-out checks**, doubly so for 9 Å (whose post-6ps non-radial region the full
-  window deliberately re-includes, an accepted risk). **Not** a hand-picked
-  "just-escapes" threshold; **not** the static 0.308 eV (the upper-bound starting
-  point).
-- **Do not reduce the drag to force escape** — that detunes the validated
-  quantity to mask the binding treatment (the Method-B trap, concrete).
-
-`drag_coefficients` and the effective `binding_energy_I_ion_eV` are thus a
-**coupled pair**, enforced like the mass↔coefficient pair:
-
-- The effective binding is **stamped alongside the drag coefficients** in
-  `fit_parameters.json` (e.g. `effective_binding_energy_I_ion_eV` + calibration
-  provenance), recording the binding the drag was jointly validated against VMI.
-- The §6.5 config-load guard **extends to refuse a drag↔binding pairing not
-  jointly validated** — swapping drag coefficients requires re-checking the
-  binding-permits-escape, a detectable inconsistency rather than a silent one.
-- Escape hatch parallel to mass: a deliberate-exploration override (loud warning,
-  default off) for running an unvalidated pairing.
-
-**Deferred principled alternative:** a *dynamical* barrier (a surface-weakened or
-velocity-dependent depth representing the He getting out of the way) is the
-physically honest long-term fix. The effective-static depth is the tractable
-first step; whether it suffices, or the velocity-dependence of escape across the
-ensemble demands the dynamical form, is itself decided by the VMI distribution
-(the held-out observable, again the arbiter).
-
-
-
-TDDFT shell counts (per iodine, 9 Å case): ~21 He pre-explosion, ~19 at
-10 ps, ~14 at 14 ps — a monotone *decline* of ~⅓ across the trajectory.
-The drag extraction collapses this to a constant $m_\text{eff} \approx
-203$ amu (~19 He), the window-representative value. Two facts follow:
-
-- **The constant is well-chosen but still a constant.** 19 He sits near
-  the mean of the declining shell, so the drag law is calibrated at a
-  mass the ion genuinely carries through the middle of the fit window —
-  there is no large level error to correct. The only residual unrigour
-  is the collapse of a ~⅓-varying $m(t)$ to a single number.
-- **The residual error is mild and bounded.** Because $F_\text{drag} =
-  m\,a - F_C$ is a *difference* of comparable terms, the fractional
-  error on $F_\text{drag}$ from the constant-mass approximation tracks
-  $|m(t) - m_\text{eff}|/m_\text{eff}$, which is near-zero mid-window
-  and reaches ~⅓ only at the trajectory ends (~14 He late, ~21 He
-  early). This is within the regime where the curve is relatively
-  insensitive to mass, so the in-hand coefficients are usable as-is for
-  the constant-mass scenarios; time-resolved re-extraction is an
-  *optional refinement*, not a correction of a flaw.
-
-**Constant mass is not the fully conservative choice it appears to be.**
-The original rationale for a constant — distrust that the gentle
-shell evolution (9 Å bubble) transfers to the violent
-equilibrium-distance onset ($R_e \approx 2.6$ Å, Coulomb ~12× stronger)
-— is legitimate, but a constant is *also* a mass law ($\dot M = 0$),
-measured nowhere near the violent onset and not matching the declining
-trend even in the gentle case. The genuinely conservative statement is
-that the **first ~0.5 ps violent transient is uncalibrated for both drag
-and mass under every scenario** — generalising §2.3's Scenario-A-only
-concession.
-
-**Optional time-resolved re-extraction (extraction-side, §6.10).** The
-one refinement that removes even the residual constant-mass unrigour:
-interpolate $m(t)$ from the shell counts and use it directly in the
-force balance $F_\text{drag}(t) = m(t)\,a(t) - F_C(R(t))$, rather than
-the constant $m_\text{eff} = 203$ amu. This is *not required* for the
-constant-mass scenarios (`fixed`, and A/B/biphasic validated against the
-constant-mass coefficients within the §6.5 tolerance), but it is the
-most defensible extraction and is the natural pairing for an
-evolving-mass scenario whose $m(t)$ matches the reference trajectory
-(notably Scenario B, whose measured loss *is* the $m(t)$ to use). The
-architecture is unaffected — the sim still applies $-\gamma(v)v$ at face
-value per §2.2; only the coefficients change.
-
-### 6.7 Transient tolerance — generalised free-extrapolation zone
-
-No TDDFT data exists at the violent bubble-exit onset (the $t^*$ cut,
-§2.3, excludes it), so neither the drag law nor the mass law is anchored
-in the first ~0.5 ps — under *any* scenario, not only Scenario A.
-Validation tolerances on $v(t)$ and $R(t)$ during this window must be
-**loose for all scenarios**; the mid- and late-trajectory observables
-remain the anchor. This generalises the §2.3 Scenario-A-specific note.
-
-### 6.8 Empirical lean toward Scenario B (recorded, not auto-promoting)
-
-The TDDFT shell data (21→19→14, monotone loss) empirically points to
-Scenario B (stripping), the §2 *secondary*, over Scenario A (accretion),
-the §2 *primary* — a pre-simulation evidence point. B is additionally
-privileged: it is the only scenario whose time-resolved $m(t)$ can be
-read **directly off the reference** (the measured loss *is* the $m(t)$
-to use in option-3 extraction), whereas A requires *modelling* an
-accretion $m(t)$ the gentle TDDFT does not provide. This strengthens the
-§2.6 hint (the 0.09→0.005 attach-rate drop) with a second, independent
-argument. **Not auto-flipped:** the hierarchy (§6.4) exists precisely to
-test A against B; A remains the simplest hypothesis and the recorded
-primary until Tier 1/Tier 2 adjudicate. Recorded as a note against §2.6.
-
-### 6.9 Histogram comparison metric
-
-Tiers 2 and 3 compare distributions, requiring a divergence metric. The
-choice has consequences and is tiered like the rest.
-
-**Primary — Wasserstein (earth-mover) distance.** Reports the cost of
-transporting one distribution onto the other in the *physical units of
-the observable* — Å/ps for final velocity, integer He-count for the size
-distribution. Binning-free, sensitive to overall shape and location, and
-directly interpretable ("the distributions differ by ⟨Δ⟩ He on
-average"). For the discrete integer-n size distribution (§6.4) the
-1-D Wasserstein on integer support is exact and natural. Best default
-for both distribution tiers.
-
-**Secondary — binned $\chi^2$.** Respects the existing VMI bin
-convention directly (0.04 Å/ps internal bins, 15-bin moving mean,
-display to 2800 m/s; PHYSICS_BASELINE §13), so it slots into the current
-histogram tooling with least change. Sensitive to per-bin disagreement
-and gives a familiar goodness-of-fit number, but depends on binning and
-needs care with low-count bins in the size-distribution tail (most ions
-bare, falling off monotonically). Kept for continuity with the baseline
-VMI comparison.
-
-**Secondary — Kolmogorov–Smirnov (max CDF gap).** Distribution-free,
-parameter-free, good as a quick scalar screen. But it is most sensitive
-near the distribution median and relatively insensitive in the tails —
-a poor fit for the size distribution, whose discriminating content is in
-the *tail* (how many ions retain large shells). Kept as a cheap
-first-pass screen, not the adjudicating metric.
-
-### 6.10 Open items and interchangeability surface
-
-- **Numeric acceptance thresholds are deferred.** §6 fixes the metrics
-  and the hierarchy; the pass/fail numbers are set once the first runs
-  are seen, since everything upstream is being cross-checked empirically.
-- **New validation hooks required** (the baseline does not provide
-  them): an ensemble-variance comparison (Tier 3) the single-trajectory
-  `compare_distance` / `compare_velocity_magnitude` cannot give (§1.6);
-  a discrete-n size-distribution comparison routine plumbing the
-  experimental I⁺(He)ₙ history into the surface (§2.10, Tier 2).
-- **Maximum trajectory speed** for the `linear_cubic` turnover guard
-  (§3.8) is sourced here — from the TDDFT trajectories or a generous
-  ceiling — as it has no home in the baseline config. **Dormant for the
-  in-hand coefficients:** both extracted cases have $b>0$, so there is no
-  real turnover $v_\dagger=\sqrt{-a/b}$ and no max-speed value is needed
-  *yet*. A future $b<0$ re-extraction reactivates this item.
-- **Extraction-side action items** consolidated: stamp coefficient
-  bundles with `extraction_mass_model` metadata (§6.5) **and verify the
-  stamped `extraction_mass_amu` is the mass the force balance actually ran
-  under, not a relabelled value** — a self-consistent refit cannot detect
-  a wrong-but-consistent mass, so this must be checked at the extraction
-  source (an earlier literal was 179.912; the correct value is
-  $\approx202.954$); the *optional* time-resolved-$m(t)$ re-extraction
-  (§6.6) — a refinement, not a correction, since the constant
-  $m_\text{eff} \approx 203$ amu is already window-representative; the
-  outstanding `linear_quadratic` / `threshold` fit passes (§3.7). **Note:
-  the `power_law` fit has been run and gives $n\approx+2$ (§3 finding
-  note), removing its low-$v$ floor obligation for the real coefficients.**
-- `SimConfig.allow_inconsistent_mass_pairing` (default `False`) — the
-  only new field §6 introduces; the consistency guard (§6.5) is
-  otherwise a config-load check over existing fields plus the coefficient
-  metadata.
-- `SimConfig.validation_histogram_metric ∈ {wasserstein, chi2, ks}` —
-  primary `wasserstein`; selects the Tier 2/3 divergence metric.
+**Primary — Wasserstein (earth-mover)** in the observable's physical units (Å/ps
+for velocity, integer He-count for size): binning-free, exact on integer-$n$
+support, directly interpretable. **Secondary — binned $\chi^2$** (respects the VMI
+bin convention, PHYSICS_BASELINE §13; care with the low-count size-distribution
+tail). **Secondary — KS** (cheap scalar screen; tail-insensitive, so not the
+size-distribution adjudicator). `SimConfig.validation_histogram_metric ∈
+{wasserstein, chi2, ks}`, primary `wasserstein`.
