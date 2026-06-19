@@ -8,6 +8,40 @@ One table mapping every model parameter to its **classification**, its
 `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` (pickup, evaporation,
 cooling, ladder, early window). Physics-Definition only; no code.
 
+> **Update 2026-06-17.** [IHe05] EPAPS analytic fit obtained → rows 9, 18, 20
+> tightened from order-of-magnitude prior to **pinned**: $D_0^{\mathrm{I^+}}(1)$
+> ($X_2$ 106.9 / mixture 74.4 cm⁻¹, exact $J{=}0$ ZPE) and RRK $\nu=2.42$ ps⁻¹
+> ($V''(R_e){=}748.1$ cm⁻¹/Å²). Detail + the SO-coupled $X_2/I_1/I_0$ depths in the
+> MASS doc 2026-06-17 revision. The two **Free** knobs (ladder shape, electronic
+> picture) are unchanged in count; the electronic-picture *rung scale* is now
+> numeric (mixture/$X_2=0.70$).
+>
+> **Update 2026-06-17 (cont.).** Ladder shape **Form U** adopted: the discrete
+> `ladder_shape ∈ {gradual, shell_structured}` (old row 19) becomes a single
+> sigmoid with one continuous knob $\kappa$ (`ladder_steepness`), anchored at the
+> pinned rung, a sourced bulk-He floor (new row 23), and $n^*$ (row 22). The Free
+> count stays 2 ($\kappa$ + picture, co-fit). Cross-check corrected (row 21):
+> $\sum_i D_0 \neq |S_{\mathrm{I^+}}|$ — $|S|$ is collective (pair ladder cannot
+> reach 2484 cm⁻¹), an upper bound only; reachable target is the drag binding
+> 0.1168 eV. New OQ7 (the $|S|$ energy reference). Reversible.
+>
+> **Update 2026-06-17 (cont. 3).** Full [GAH25] studied → confirms K2; **$E_\infty$
+> split locked**: occupancy-resolved $E_\infty(N)=-|S(N)|$ with explicit
+> electrostriction term (row 12, new 12b — the *dominant* binding per GAH25
+> geometry), resolving OQ6 (stripping cap) and the equilibrium layer of R12.
+> Ladder geometry corrected from GAH25 Table II: shell radius ~4.67 Å (not pair
+> $R_e$) → cliff **7.5×** (row 19, was 13.4×), He–He roomy not compressed.
+> Secondary: $n^*\approx20$ cross-check (row 22, OQ8); $\lambda_\text{attach}$
+> central ~0.7–1.1/ps for I⁺ (row 7); Calvo K⁺ PIMC as a $\kappa$ lead. Reversible.
+>
+> **Update 2026-06-17 (cont. 2).** Early-window scalars pinned: $E_\text{avail}^
+> \text{ion}=2.70$ eV (row 15, per-ion convention; ½ of 5.40 eV pair, reversible);
+> integrated ladder $\sum_i D_0$ now numeric and **nearly $\kappa$-independent**
+> (row 21); $f_\text{int}$ self-unbound **floor $\approx0.04$–$0.10$** (row 14),
+> small ⇒ the GAH25 self-unbound onset is robust, not fine-tuned. Form U cliff
+> recentered to $n^*+\tfrac12$. The gate threshold and floor are **picture-set,
+> $\kappa$-independent** — pinnable ahead of the Tier-2 $\kappa$/picture fit.
+
 ## Classification scheme
 
 - **Locked** — fixed by completed Tier 0; not re-fit downstream.
@@ -48,22 +82,24 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | 4 | Drag | $v_\text{ceiling}$ (Å/ps) | high-$v$ cubic ceiling cap (contingent) | **Bounded** (only if R10-(b) invoked) | TDDFT peak speed (Tier 0/1) | Tier-1 transient $v$ excursions above $v_\text{max,fit}$ | R10 |
 | 5 | Gate | $g(\text{depth})$ (dimensionless) | drag spatial gate, G4→G2 | **Derived** (erf-tied G2 until $\rho_\text{He}$ profile exists) | confining-potential steepness (14.2 Å) | Tier-1 trajectory; promote to G4 with measured $\rho_\text{He}$ | §5 **[D]** |
 | 6 | Noise | $T_\text{eff}$, FDT amplitude | multiplicative local-FDT bath kick (N2) | **Bounded/Derived** (tied to $\gamma(v)$; $\propto\sqrt{\gamma g k_BT_\text{eff}}$) | Tier 3 (ensemble width / VMI) | strict-FDT shown dynamically null (§1.3a) | §1 **[D]** |
-| 7 | Pickup | $\lambda_\text{attach}(\rho_\text{He})$ (ps⁻¹) | Poisson He capture rate | **Sourced + Bounded** (Nat23 2.0/ps Na⁺ at rest, ±factor-2) | Tier 2 size dist | Tier-1 shell trajectory (21→19→14); 9/18 Å density contrast | R1 (Na⁺→I⁺), R7 ($v$-dep) |
+| 7 | Pickup | $\lambda_\text{attach}(\rho_\text{He})$ (ps⁻¹) | Poisson He capture rate | **Sourced + Bounded** — central ~0.7–1.1/ps (GAH25 Rb⁺/Cs⁺; I⁺ is Rb⁺-like), **not** 2.0 (Na⁺ exp); ±factor-2 | Tier 2 size dist | Tier-1 shell trajectory; 9/18 Å density contrast | R1 (Na⁺→I⁺), R7 ($v$-dep) |
 | 8 | Pickup | $\rho_\text{He}(\text{depth})$ (Å⁻³) | density profile gating capture | **Sourced** (baseline/TDDFT density) | baseline | Tier 1 | — |
-| 9 | Evap | $\nu$ (ps⁻¹) | RRK prefactor (I⁺–He stretch freq) | **Sourced** ($\sim\mathcal{O}(1)$, IHe05 $X_2$ curvature) | Tier 2 size dist | I2-notes cascade timing (OQ5); curvature recompute | OQ5, A11 |
-| 10 | Evap | $s=3n-6$ (dimensionless) | RRK effective vibrational DOF | **Derived** (mode-count; effective-scalar override) | Tier 2 — **joint with `ladder_shape`** | size-dist tail/spread shape | A11 (classical RRK; coupling) |
+| 9 | Evap | $\nu$ (ps⁻¹) | RRK prefactor (I⁺–He stretch freq) | **Sourced (pinned 2.42, 2026-06-17)** — $\omega_e{=}80.6$ cm⁻¹ from IHe05 EPAPS $V''(R_e){=}748.1$ cm⁻¹/Å² | Tier 2 size dist | I2-notes cascade timing (OQ5); near-threshold spacing → effective $s$ | OQ5, A11 |
+| 10 | Evap | $s=3n-6$ (dimensionless) | RRK effective vibrational DOF | **Derived** (mode-count; effective-scalar override) | Tier 2 — **joint with `ladder_steepness` ($\kappa$)** | size-dist tail/spread shape | A11 (classical RRK; coupling) |
 | 11 | Cooling | $\tau_\text{dissip}$ (ps) | Newton-cooling time of $E_\text{solv.struct}$ | **Bounded** (sweep $[2.6,16.5]$, externally anchored) | external (GAH25 Table III / exp) + Tier 2 if sensitive | $t_\times$ vs GAH25 $t_0$; terminal-$n$ insensitivity sweep | R8 (Na⁺-only) |
-| 12 | Cooling | $E_\infty=E_\text{bind}^\text{eq}$ (eV) | K2 asymptote (equilibrium-shell binding) | **Sourced** (GAH25 −3424/−4144 K Na⁺; compute I⁺ shell) | equilibrium-shell binding | I⁺ shell solvation $S_{\mathrm{I^+}}{=}{-}3578$ K [I2-notes] | OQ6 (stripping reach) |
+| 12 | Cooling | $E_\infty(N)=-\|S(N)\|$ (eV) | K2 asymptote, **occupancy-resolved** | **Sourced (split, 2026-06-17)** — full-shell $\|S_{\mathrm{I^+}}\|{=}0.308$ eV [I2-notes]; GAH25 −3424/−4144 K Na⁺ fixes form+$\tau$ | equilibrium-shell binding | OQ6 resolved (fixed $E_\infty$ caps strip); shape via $\kappa$ | OQ6, OQ7 |
+| 12b | Cooling | $E_\text{elec}(N)$ (eV) | electrostriction binding (collective excess) | **Sourced/Derived** ($-(\|S(N)\|-\sum_i D_0)$; **dominant** per GAH25 geometry) | — | marginal release → bath on shed (A8); $\partial\|S\|/\partial n{\approx}124$ cm⁻¹ ≈ $D_0(1)$ | K2, A8, OQ7 |
 | 13 | Budget | $f_\text{ret}\in[0,1]$ (dimensionless) | S1 pickup binding-release retained fraction | **Bounded** (prior small) | Tier 2 size dist | 9/18 Å density contrast (feedback gain → density-dependence of terminal $n$) | — |
-| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | S2 onset partition, $E_\text{int}(0){=}f_\text{int}E_\text{avail}$ | **Bounded** (self-unbound floor → 1) | Tier 2 size dist | GAH25 $t_0$ via $t_\times$; identifiability fallback (pin at fixed $\tau$) | R1 regime axis |
-| 15 | Early | $E_\text{avail}$ (eV) | Coulomb onset energy available | **Sourced/fixed ref** (~5.5 eV/pair scale) | fixed reference ($t^*$-window) | — | — |
-| 16 | Early | $E_\text{int}(0)$ (eV) | initial internal energy | **Derived** ($=f_\text{int}E_\text{avail}$) | — | — | — |
+| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | S2 onset partition, $E_\text{int}(0){=}f_\text{int}E_\text{avail}^\text{ion}$ | **Bounded** — floor $\approx0.04$–$0.10$ ($X_2$), ~0.06–0.07 (mix), picture-set & $\kappa$-indep (2026-06-17); soft upper ~0.2 | Tier 2 size dist | GAH25 $t_0$ via $t_\times$; floor robust → onset not fine-tuned (A7) | R1 regime axis |
+| 15 | Early | $E_\text{avail}^\text{ion}$ (eV) | per-ion Coulomb onset budget | **Sourced/fixed (pinned 2.70, 2026-06-17)** — ½·$e^2/R_e(\mathrm{I_2})$, $R_e{=}2.666$ Å | fixed reference ($t^*$-window) | per-ion convention (reversible to 5.40 pair) | — |
+| 16 | Early | $E_\text{int}(0)$ (eV) | initial internal energy | **Derived** ($=f_\text{int}E_\text{avail}^\text{ion}$) | — | — | — |
 | 17 | Early | $t_\times$ (ps) | self-bound crossing (gate-open time) | **Derived diagnostic** | — | GAH25 $t_0$ = 5.0/6.53 ps (±factor-2, Na⁺) | §6.11 |
-| 18 | Ladder | $D_0^{\mathrm{I^+}}(1)=143.9$ cm⁻¹ ≈ 17.8 meV | first dissociation rung ($X_2/³Π$) | **Sourced** (IHe05, ~3% accuracy) | external ab initio | mobility/ZEKE-validated curve | OQ1 (which curve) |
-| 19 | Ladder | $D_0^{\mathrm{I^+}}(n{>}1)$ / `ladder_shape` | rung profile: gradual vs shell-structured | **Free** (gradual default, templated) | Tier 2 size dist (gap vs smooth) | $n^*{=}21$ [I2-notes]; joint with $s$ | R3, A5, OQ4 |
-| 20 | Ladder | `ladder_electronic_picture` | statistical-mixture (default) vs $X_2$-only | **Free choice** | Tier 2 size dist | $\sum_i D_0$ vs $E_\text{bind}{=}0.1168$; $S_{\mathrm{I^+}}$ | A10, OQ1 |
-| 21 | Ladder | $\sum_i D_0^{\mathrm{I^+}}(i)$ (eV) | integrated ladder = self-bound gate threshold | **Derived** (from ladder + picture) | — | §6.5.1 effective binding 0.1168 eV | A10 |
-| 22 | Ladder | $n^*=21$ | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only) | external | alkali $R_e$-scaling (Rb⁺/Cs⁺ ≈ 18/21) | OQ4 |
+| 18 | Ladder | $D_0^{\mathrm{I^+}}(1)$: $X_2$ 106.9 / mix 74.4 cm⁻¹ | first dissociation rung (picture-dependent) | **Sourced (pinned 2026-06-17)** — IHe05 EPAPS fit, exact $J{=}0$ ZPE $G(0){=}37$ cm⁻¹ ($D_e{=}143.9$ is **not** $D_0$); $\pm3$ cm⁻¹ | external ab initio | mobility/ZEKE-validated curve; mixture/$X_2$=0.70 | OQ1 (which curve) |
+| 19 | Ladder | $\kappa$ (Form U) / `ladder_steepness` | sigmoid steepness, gradual↔cliff (1 knob) | **Free** (prior large: 7.5× radial cliff) | Tier 2 size dist (broad vs magic-peak) | $n^*{=}21$ [I2-notes]; joint w/ picture + $s$; tabulated fallback | R3, A5, OQ4 |
+| 20 | Ladder | `ladder_electronic_picture` | statistical-mixture (default) vs $X_2$-only | **Free choice** | Tier 2 size dist | rung scale pinned: mix 74.4 vs $X_2$ 106.9 cm⁻¹ (=0.70); $\sum_i D_0$ vs $E_\text{bind}{=}0.1168$; $S_{\mathrm{I^+}}$ | A10, OQ1 |
+| 21 | Ladder | $\sum_i D_0^{\mathrm{I^+}}(i)$ (eV) | integrated ladder = self-bound gate threshold | **Derived** — $X_2$ 0.12–0.28 / mix 0.17–0.19 eV (2026-06-17); **nearly $\kappa$-indep** (cliff at $n^*{+}\tfrac12$) | — | drag binding 0.1168 eV (reachable); $|S|{=}0.308$ is **collective UB, NOT a sum target** | A10, OQ7 |
+| 22 | Ladder | $n^*=21$ | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only) | external | **GAH25 $R_e$-scaling → ~20** (Rb⁺ 18/Cs⁺ 21; corroborates 21 to ±1–2); OQ8 | OQ4, OQ8 |
+| 23 | Ladder | $D_\text{floor}$ (cm⁻¹) | outer-shell rung floor (Form U) | **Sourced** ($\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹, 7.15 K) | external (bulk superfluid) | picture-independent; sets sigmoid lower anchor | R3 |
 
 ### Cross-cutting (not single parameters)
 
@@ -78,14 +114,15 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 ## Tally — how few true knobs remain
 
 - **Locked (3):** $b$, $a$, $E_\text{bind}$ (Tier-0 complete).
-- **Sourced (7):** $\lambda_\text{attach}$, $\rho_\text{He}$, $\nu$, $E_\infty$,
-  $E_\text{avail}$, $D_0(1)$, $n^*$.
+- **Sourced (8):** $\lambda_\text{attach}$, $\rho_\text{He}$, $\nu$, $E_\infty$,
+  $E_\text{avail}^\text{ion}$, $D_0(1)$, $n^*$, $D_\text{floor}$.
 - **Derived (5):** $g(\text{depth})$, $s$, $E_\text{int}(0)$, $t_\times$,
   $\sum_i D_0$.
 - **Bounded (4–5):** $\tau_\text{dissip}$, $f_\text{ret}$, $f_\text{int}$,
   $v_\text{ceiling}$, ($T_\text{eff}$/noise).
-- **Free (2):** the ladder **shape** ($D_0(n{>}1)$) and the **electronic
-  picture** — both choices the Tier-2 size distribution arbiters.
+- **Free (2):** the ladder **steepness** $\kappa$ (Form U sigmoid, $D_0(n{>}1)$)
+  and the **electronic picture** — both choices the Tier-2 size distribution
+  arbiters, co-fit (not separable).
 
 **Headline:** after sourcing/derivation/bounding, the genuinely free
 calibration collapses to **the ladder shape and the electronic picture**, both
@@ -106,7 +143,8 @@ is locked, imported with a prior, or computed.
 - **Tier 3:** the noise model.
 - **External / author-contact:** OQ1 (drag electronic state), OQ2
   ($KE_\text{shed}$), OQ3 ($E_\text{bind}(N)$ vs ladder), OQ4 ($S_{\mathrm{I^+}}$/$n^*$
-  provenance), OQ5 (cascade timing), OQ6 ($E_\infty$ stripping reach).
+  provenance), OQ5 (cascade timing), OQ6 ($E_\infty$ stripping reach), OQ7
+  ($S_{\mathrm{I^+}}$ energy reference — interprets the $|S|$-vs-$\sum D_0$ gap).
 
 *Note:* Tier 2 carries a heavy load (8+ quantities on one observable). The
 identifiability arguments are documented per-parameter (e.g. $f_\text{ret}$ via

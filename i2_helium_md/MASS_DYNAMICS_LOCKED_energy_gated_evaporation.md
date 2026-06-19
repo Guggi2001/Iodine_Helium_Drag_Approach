@@ -18,6 +18,116 @@ targets, §10), the partition fraction $f_\text{ret}$, or the cooling time
 $\tau_\text{dissip}$. Maintains the strict Physics-Definition /
 Software-Implementation boundary: no code here.
 
+**Revision 2026-06-17 (folded in) — EPAPS fit closes the first rung and the RRK
+prefactor; A10 mixture rung now numeric.** The [IHe05] EPAPS analytic fit
+parameters (corrected Eq. (3), erratum [IHe05-E]) were obtained, so $V''(R_e)$ for
+the He–I⁺ curves is now exact (the fit reproduces Table IV to four figures;
+$R_e=3.2527$ Å, $D_e=143.89$ cm⁻¹; the Degli-Esposti–Werner switching function is
+inert at the well, $f(R_e)=1$). Three quantities move from order-of-magnitude
+prior to **pinned**, and the A10 fork acquires concrete first-rung numbers:
+1. **First rung $D_0^{\,\mathrm{I^+}}(1)$, $X_2$/³Π = 106.9 cm⁻¹** (13.3 meV,
+   0.01325 eV). Computed from the **exact $J{=}0$ vibrational ground state** of the
+   fitted curve (radial Schrödinger, $\mu=3.880$ amu), **not** a harmonic ZPE: the
+   well holds 5 bound levels ($-106.9,-52.3,-20.9,-6.2,-1.1$ cm⁻¹), and the true
+   ZPE $G(0)=37.0$ cm⁻¹ is **26% of $D_e$** — far larger than the ~10% Na⁺-analogy
+   fraction the old $D_0\approx125$–135 cm⁻¹ estimate assumed (R3). Residual
+   uncertainty is now the [IHe05] ±3% well-depth accuracy, $\approx\pm3$ cm⁻¹; the
+   ZPE-method error is eliminated. See R3.
+2. **RRK prefactor $\nu=2.42$ ps⁻¹** ($\omega_e=80.6$ cm⁻¹, well-bottom curvature
+   $V''(R_e)=748.1$ cm⁻¹/Å²) — same order as the old $\sim\mathcal{O}(1)$ prior but
+   now sourced from the fit, not estimated. *Caveat for the $s$/`ladder_steepness` ($\kappa$)
+   joint calibration (A11):* this is the bottom-of-well frequency; the
+   near-threshold level spacing collapses (55→31→15→5 cm⁻¹ up the anharmonic
+   ladder), so the effective attempt frequency of a near-dissociation complex is
+   lower and is absorbed into the effective $s$. See §4, A11.
+3. **A10 electronic-picture fork is now numeric.** Via [IHe05] Eq. (9) with the
+   atomic ³P$_j$ splittings ($D_0^{at}=6451$, $D_1^{at}=7090$ cm⁻¹), the three
+   ground-correlating SO dimer rungs are $D_0$: $X_2=106.9$, $I_1=62.4$,
+   $I_0=54.0$ cm⁻¹, so the equal-weight **statistical-mixture first rung $=74.4$
+   cm⁻¹** (9.23 meV, 0.00923 eV) — **~70% of the $X_2$-only rung**. This quantifies
+   the OQ1 double-count hazard: a ~30% reduction at the dimer level is precisely
+   what must *not* be stacked on top of an already dynamically-lowered drag
+   binding. See A10, §10A OQ1. *Three objects kept distinct (do not equate):*
+   $D_0(1)$ (single dimer bond, above) ≠ $\sum_i D_0(i)$ (integrated pair ladder =
+   gate threshold) ≠ $S_{\mathrm{I^+}}=-0.308$ eV (many-body first-shell solvation,
+   pair sum + He–He + electrostriction) ≠ $E_\text{bind}=0.1168$ eV (ion↔droplet
+   effective binding from drag).
+The $n>1$ ladder *shape* (R3/A5) remains open; only the first rung and the
+electronic-picture rung scale are pinned here. Added reference [IHe05-E].
+
+**Revision 2026-06-17 (cont.) — Form U ladder adopted; $|S|$ is collective; the
+shell cliff is geometric.** The $n>1$ ladder shape is now fixed *as a form* (one
+continuous knob), and two findings reshape R3/A5:
+1. **Form U adopted.** The discrete `ladder_shape ∈ {gradual, shell_structured}`
+   is retired in favor of a single sigmoid family,
+   $D_0(n)=D_\text{floor}+(D_0(1)-D_\text{floor})(1-\sigma(n))/(1-\sigma(1))$,
+   $\sigma(n)=[1+e^{-\kappa(n-n^*-\tfrac12)}]^{-1}$, anchored at the pinned rung, a sourced
+   bulk-He floor $D_\text{floor}=|\mu_\text{He}^\text{bulk}|\approx4.97$ cm⁻¹, and
+   sourced $n^*\approx21$. The **single Free shape knob is $\kappa$** (gradual
+   $\kappa\!\to\!0$ ↔ cliff $\kappa\!\gg\!1$), Tier-2-arbitrated jointly with the
+   electronic picture and $\{\nu,s\}$. New config field `ladder_steepness`;
+   tabulated ladder kept as declared fallback. See R3, A5, §11.
+2. **$|S_{\mathrm{I^+}}|$ is collective, not $\sum_i D_0$ (corrects the old
+   integrated-ladder cross-check).** A monotone pair ladder anchored at the pinned
+   $D_0(1)=106.9$ cm⁻¹ **cannot** reach the DFT $|S|=2484$ cm⁻¹ (flat ceiling
+   2245; shortfall ≥239 cm⁻¹, ≥922 for the mixture). $|S|$ therefore carries
+   collective content (electrostriction + DFT correlation) and is an **upper
+   bound**, not a rung-sum target — do not calibrate rungs to $|S|/n^*$. The
+   reachable integrated cross-check is the §6.5.1 drag binding (942 cm⁻¹). New
+   author-contact item: the $|S|$ energy reference (§10A).
+3. **The radial cliff is geometric, surviving open-shell blurring.** Pure
+   charge-induced-dipole binding drops **7.5×** from shell-1 to shell-2 (radial,
+   not electronic), and the shell sits at the [GAH25] radius $r_1^e\approx4.67$ Å
+   (not the pair $R_e$), where He–He is roomy (NN 3.97 Å > 2.97 Å, mildly
+   attractive), so the physical prior is **mild in-shell decline then cliff**
+   (large $\kappa$), revising the earlier "open-shell ⇒ gradual/shell-less" lean.
+   See R3. *(Geometry corrected 2026-06-17 on re-reading GAH25 — an earlier note
+   using the pair $R_e$ wrongly found a compressed 2.70 Å shell and a 13.4× cliff.)*
+All three are **reversible** if OQ1 or the $|S|$-reference question reopens.
+
+**Revision 2026-06-17 (cont. 2) — early-window scalars pinned; gate/floor
+decouple from $\kappa$.** With Form U in place, three coupled early-window
+quantities are now numeric:
+1. **$E_\text{avail}^\text{ion}=2.70$ eV (pinned, per-ion convention adopted).**
+   Pair release $e^2/R_{\mathrm{II}}=14.40/2.666=5.40$ eV at $R_{\mathrm{II}}=
+   R_e(\mathrm{I_2})=2.666$ Å, split equally → 2.70 eV/ion. Switched S2 from the
+   pair value (where $f_\text{int}$ silently carried the ½) to the per-ion budget;
+   *reversible* (pair value doubles the floor). See S2, §11.
+2. **Integrated first-shell ladder $\sum_{i=1}^{21}D_0$ now numeric:** $X_2$
+   0.12–0.28 eV (flat-shell↔crowding-reduced), mixture 0.17–0.19 eV. **Nearly
+   $\kappa$-independent** (~10%) once the cliff is centered at $n^*+\tfrac12$ — so
+   $\kappa$ shapes only the terminal-$n$ histogram, **not** the self-bound gate
+   threshold (row 21, R3, S2).
+3. **$f_\text{int}$ self-unbound floor $\approx0.04$–$0.10$ ($X_2$, per-ion),
+   ~0.06–0.07 (mixture).** Small ⇒ **the GAH25 self-unbound onset is robust, not
+   fine-tuned** (strengthens A7/A8). Floor is picture-set and pinnable now, ahead
+   of the $\kappa$/picture Tier-2 fit.
+Also adopted: the **Form U $n^*+\tfrac12$ centering** refinement (cliff between
+shell-1 and shell-2). All reversible.
+
+**Revision 2026-06-17 (cont. 3) — GAH25 full paper studied; $E_\infty$ split
+locked; ladder geometry corrected.** Re-reading the actual [GAH25] (not the prior
+summary) confirmed the K2 machinery verbatim (Eqs. 11–12, Table III) and forced:
+1. **$E_\infty$ binding split LOCKED (decision: split).** $E_\text{solv.struct}=
+   E_\text{bind}^\text{pair}(N)+E_\text{elec}(N)+E_\text{int}(N)$, cooling to the
+   **occupancy-resolved** $E_\infty(N)=-|S(N)|$. GAH25 geometry shows
+   electrostriction is the *dominant* binding term (collective $\approx124$ vs
+   pair-at-shell-radius $\approx25$ cm⁻¹/atom), so it is carried explicitly. Resolves
+   **OQ6** (occupancy-resolution removes the stripping cap — a fixed $E_\infty$
+   drives $E_\text{int}^\text{eq}$ to $-0.28$ eV by $N{=}2$ and halts shedding) and
+   the equilibrium layer of **R12** ($E_\text{int}^\text{eq}=0$ exactly). A8 amended
+   (marginal electrostriction release → bath). See K2, R12, A8, A9, OQ6.
+2. **Ladder geometry corrected (was wrong in cont./cont.2).** The shell sits at
+   the GAH25 radius $r_1^e\approx4.67$ Å, **not** the pair $R_e=3.25$ Å: radial
+   cliff **7.5×** (not 13.4×); shell-1 He–He **roomy/mildly attractive** (NN
+   3.97 Å > 2.97), **not** compressed. Form U and the large-$\kappa$ prior survive;
+   only the two numbers and the crowding sign change. See R3.
+3. **Secondary GAH25 cross-checks (logged):** $n^*\approx20$ by $R_e$-scaling (vs
+   [I2-notes] 21; OQ8); $\lambda_\text{attach}$ for I⁺ should center ~0.7–1.1/ps
+   (Rb⁺/Cs⁺) not 2.0 (Na⁺); Calvo K⁺ PIMC as a possible $\kappa$ anchor. See OQ8,
+   R1, references.
+All reversible pending OQ1/OQ6/OQ7/OQ8.
+
 **Revision 2026-06-15 (folded in).** Two refinements to the evaporation
 channel, both leaving the two-channel structure intact:
 1. **Self-bound gate, parameter-free (R9 resolved).** Evaporation is
@@ -70,9 +180,10 @@ ceiling caveat is R10.
    §10A. Label correction: $X_2\equiv³Π\equiv V_\Pi$ (molecular ground state);
    ³P₂ is the atomic sublevel it correlates to. See R3, A10, §10A, §11.
 6. **RRK $\{\nu,s\}$ sourced, not free (A11).** $\nu$ gets a stretch-frequency
-   prior $\sim\mathcal{O}(1)$ ps⁻¹ from the [IHe05] $X_2$ curvature; $s$ is
+   value $\nu=2.42$ ps⁻¹ from the [IHe05] $X_2$ curvature (**pinned 2026-06-17**;
+   was $\sim\mathcal{O}(1)$ prior); $s$ is
    mode-counted $3n-6$ by default (effective-scalar override available),
-   calibrated *jointly* with `ladder_shape` since both probe shell rigidity.
+   calibrated *jointly* with `ladder_steepness` ($\kappa$) since both probe shell rigidity.
    Classical RRK is a stated simplification with $s$ absorbing the RRKM/quantum
    difference. Cascade-timing cross-check from [I2-notes] flagged as OQ5. See
    §4, A11, §10/§10A, §11.
@@ -96,7 +207,17 @@ ceiling caveat is R10.
   doi:10.1063/5.0291643. ⁴He-TDDFT of *both* pump and probe steps. Supplies the
   internal-energy budget, the Newton's-law-of-cooling dissipation form, the
   non-monotone shell evolution during ejection, and the early self-instability of
-  the solvation structure.
+  the solvation structure. **Full paper studied 2026-06-17:** Table I (pair
+  $D_e/R_e$ — places I⁺ at Rb⁺), Table II ($r_1^e,r_2^e,n_1^e$ — fixes the shell
+  *geometry*: $r_1^e\gg$ pair $R_e$, used to correct the R3 cliff to 7.5× and the
+  crowding sign), Table III (Newton fit $t_0,\tau,E_\infty$ — confirms K2 exactly).
+  Energy analysis is **Na⁺-only**; cools a *growing* shell (vs our shrinking).
+- **[Calvo24/25]** — F. Calvo, J. Chem. Phys. **161**, 121101 (2024) (Na⁺) and
+  J. Low Temp. Phys. **51**, 453 (2025) (K⁺), PIMC/RPMD pump–probe. **Lead (not
+  yet obtained):** K⁺ is the nearest alkali with a potentially published
+  per-rung evaporation-energy ladder $D_0(n)$ — a candidate to anchor the Form U
+  steepness $\kappa$ rather than leaving it fully free (Tier 2). Also the
+  total-stripping (Calvo) limit referenced for the secondary-run target.
 - **[IHe05]** — Buchachenko, Tscherbul, Kłos, Szczęśniak, Chałasiński, Webb &
   Viehland, *"Interaction potentials of the RG–I anions, neutrals, and cations
   (RG = He, Ne, Ar),"* J. Chem. Phys. **122**, 194311 (2005),
@@ -110,6 +231,16 @@ ceiling caveat is R10.
   equal-weight statistical mixture of these three — the basis for the A10 default.
   Source for the first ladder rung $D_0^{\,\mathrm{I^+}}(1)$, the electronic
   picture (A10), and the open-shell / SO structure of the I⁺–He interaction.
+  **EPAPS analytic fit obtained (2026-06-17):** doc E-JCPSA6-122-018521 supplies
+  the $\{g_l,\alpha,\beta,\delta,D_4,D_6,D_8\}$ for each curve, evaluated with the
+  corrected short-range form ([IHe05-E]); this pins $V''(R_e)$ and hence
+  $D_0(1)$ and $\nu$ exactly (2026-06-17 revision).
+- **[IHe05-E]** — Buchachenko *et al.*, *Erratum*, J. Chem. Phys. **161**, 149901
+  (2024), doi:10.1063/5.0237596. Corrects Eq. (3) of [IHe05] to
+  $V_\text{SR}(R)=\sum_{l=0}^{8} g_l R^l \exp[-\alpha R-\beta]$ for consistency with
+  the EPAPS fit parameters (flagged by N. Halberstadt — the author contact for
+  OQ1/OQ4). "Results and conclusions unaffected"; Table IV stands. Required to
+  evaluate the EPAPS fit correctly.
 - **[I2-notes]** — García-Alfonso, Barranco, Halberstadt, Hauser & Pi,
   *"I₂ molecules in superfluid He nanodroplets,"* **working document** (dated
   Feb 2025, broken eq/fig refs, internal interpolation discrepancy). I⁺-specific
@@ -306,12 +437,18 @@ k(E_\text{int}, n) =
 P_\text{shed}(dt) = 1 - e^{-k\,dt},
 $$
 with $\nu$ a prefactor (ps⁻¹) and $s$ the effective number of vibrational
-degrees of freedom of the I⁺Heₙ complex. **Parameter sourcing (2026-06-15):**
-- $\nu$ is the **I⁺–He stretch attempt frequency**, with a physical prior from
-  the [IHe05] $X_2$ curve curvature,
-  $\nu=\tfrac{1}{2\pi}\sqrt{V''(R_e)/\mu}$, $\mu\approx m_\text{He}$ (He-dominated
-  reduced mass): for a ~144 cm⁻¹ well at $R_e=3.25$ Å this lands at
-  **$\nu\sim\mathcal{O}(1)$ ps⁻¹** (low end of the earlier 1–10 band).
+degrees of freedom of the I⁺Heₙ complex. **Parameter sourcing (updated 2026-06-17):**
+- $\nu$ is the **I⁺–He stretch attempt frequency**,
+  $\nu=\tfrac{1}{2\pi}\sqrt{V''(R_e)/\mu}$, with the **true** reduced mass
+  $\mu=m_\text{He}m_{\mathrm{I^+}}/(m_\text{He}+m_{\mathrm{I^+}})=3.880$ amu (not
+  $\approx m_\text{He}$; ~3% lighter, $+1.5\%$ on $\omega$). The [IHe05] EPAPS fit
+  gives $V''(R_e)=748.1$ cm⁻¹/Å² exactly, so $\omega_e=80.6$ cm⁻¹ and
+  **$\nu=2.42$ ps⁻¹ (pinned)** — same order as the earlier $\sim\mathcal{O}(1)$
+  prior, now sourced from the fit rather than estimated. *Caveat:* this is the
+  **bottom-of-well** frequency; the anharmonic level spacing collapses toward
+  threshold (55→31→15→5 cm⁻¹ up the $X_2$ ladder), so a near-dissociation
+  complex's effective attempt frequency is lower — absorbed into the effective
+  $s$ (A11), reinforcing the joint $\{\nu,s\}$/`ladder_steepness` ($\kappa$) calibration.
 - $s$ is **mode-counted, not free:** $s=3n-6$ (the vibrational DOF of the
   $n$-He shell; $3n-5$ if treated linear), so $s$ is $n$-dependent
   ($\sim57$ at $n{\sim}21$, $\sim9$ at $n{\sim}5$) and parameter-free by
@@ -319,7 +456,7 @@ degrees of freedom of the I⁺Heₙ complex. **Parameter sourcing (2026-06-15):*
   (mirroring the gate-onset: derive-by-default, override-for-test). The
   mode-count and the ladder shape are **not independent** — for a blurred
   /gradual shell (A10/R3) the effective $s$ may fall below the naïve $3n-6$, so
-  $s$ and `ladder_shape` are calibrated *jointly* against the size distribution,
+  $s$ and `ladder_steepness` ($\kappa$) are calibrated *jointly* against the size distribution,
   not separately (both probe the same shell-rigidity question). $s$ also absorbs
   the classical-RRK-vs-RRKM simplification (A11).
 
@@ -416,22 +553,46 @@ point-mass MD does not natively have. Its **structure is locked**; the
 - **S2 — Coulomb-explosion onset deposit (parameterized as a partition
   fraction).** The initial internal energy is written
   $$
-  E_\text{int}(0) = f_\text{int}\,E_\text{avail},
+  E_\text{int}(0) = f_\text{int}\,E_\text{avail}^\text{ion},
   \qquad f_\text{int}\in[0,1],
   $$
-  with $E_\text{avail}$ the energy liberated at the dication onset (the I–I
-  Coulomb release at $R_e$, ~5.5 eV/pair, of which almost all goes to
-  *translational* dissociation) and $f_\text{int}$ the small fraction that
-  couples into shell-*internal* modes. The fraction is preferred over a bare
-  $E_\text{int}(0)$ because it is physically interpretable and intrinsically
-  bounded. **Two-sided physics bounds (not a hardcoded value):**
-  - *Lower:* the one GAH25 fact that survives the alkali→I⁺ /
-    gentle→violent regime transfer is the **qualitative** self-unbound onset
-    — so $E_\text{int}(0) > \sum_{i=1}^{n_0} D_0^{\,\mathrm{I^+}}(i)$
-    (order 0.1–0.3 eV for a ~21-He shell, ladder-shape dependent). The
-    mechanism is trusted even where the timescale is not.
-  - *Upper:* $f_\text{int}\le 1$ caps it at $E_\text{avail}$; physically
-    $f_\text{int}$ is small, giving an illustrative band ~0.1–1 eV.
+  with **$E_\text{avail}^\text{ion}=2.70$ eV the per-ion share** of the I–I
+  Coulomb release (pinned 2026-06-17, per-ion convention adopted; see below) and
+  $f_\text{int}$ the small fraction coupling into *this* ion's shell-*internal*
+  modes. *Source:* the pair release is $E_\text{avail}=e^2/R_{\mathrm{II}}=
+  14.40/2.666=5.40$ eV at the vertical geometry $R_{\mathrm{II}}=R_e(\mathrm{I_2})
+  =2.666$ Å ($[\text{eV·Å}/\text{Å}]=\text{eV}$ ✓); equal-mass dissociation splits
+  it, so one ion's budget is $E_\text{avail}^\text{ion}=2.70$ eV. *Convention flag
+  (reversible):* the doc previously used the **pair** value 5.40 eV with $f_\text{int}$
+  silently absorbing the ½; the per-ion value is cleaner ("fraction of this ion's
+  energy that heats its shell") and is now the default — switching back doubles the
+  floor below. The fraction is preferred over a bare $E_\text{int}(0)$ because it is
+  physically interpretable and intrinsically bounded. **Two-sided bounds, now
+  numeric (2026-06-17):**
+  - *Lower (self-unbound floor):* $E_\text{int}(0) > \sum_{i=1}^{n_0}
+    D_0^{\,\mathrm{I^+}}(i)$ at $n_0=21$, i.e. $f_\text{int} > f_\text{int}^\text{floor}
+    =\sum_i D_0/E_\text{avail}^\text{ion}$ ($[\text{eV}/\text{eV}]$ dimensionless ✓).
+    The integrated first-shell ladder is now computed from Form U: **$X_2$
+    0.12–0.28 eV, mixture 0.17–0.19 eV** (the $X_2$ span is the flat-shell vs
+    crowding-reduced range, §A5/Form U limitation; the upper end is the
+    flat-shell value, the lower tracks the reachable drag binding 0.117 eV). With
+    $E_\text{avail}^\text{ion}=2.70$ eV this gives **$f_\text{int}^\text{floor}
+    \approx0.04$–$0.10$** ($X_2$), ~0.06–0.07 (mixture). **Key result — the
+    self-unbound onset is robust, not fine-tuned:** the floor is at most ~10%, so
+    GAH25's several-ps self-unbound window is reproduced for essentially the entire
+    physical range of $f_\text{int}$; the mechanism does not hinge on a tuned
+    partition (strengthens A7, A8).
+  - *Upper:* hard cap $f_\text{int}\le 1$; physically small. Velocity sanity check
+    (ejection ~10 Å/ps, ion+shell ~211 amu → translational KE ~1.1 eV vs the
+    2.70 eV per-ion share) is consistent with $f_\text{int}$ well below 1 but does
+    not pin it (TDDFT-class). Working window $f_\text{int}\in[\sim0.05,\lesssim0.2]$:
+    firm lower edge, soft ceiling.
+  - *Decoupling (load-bearing for build order):* with the Form U cliff at the
+    shell boundary $n^*+\tfrac12$, the first-shell sum is **nearly $\kappa$-independent**
+    (varies ~10% over $\kappa\in[0.3,5]$) — $\kappa$ shapes only the cross-cliff
+    region (terminal-$n$ histogram), **not** the gate threshold or this floor. So
+    the floor is **picture-set and pinnable now**, without waiting on the $\kappa$
+    arbitration (R9, §6.11).
   The earlier "static-$D_0$ gate strips the shell at $t=0$" hazard is
   **resolved** by the self-bound suppression gate
   ($E_\text{int}>\sum_i D_0$, §4 / R9), not by special-casing S2. What
@@ -462,21 +623,52 @@ point-mass MD does not natively have. Its **structure is locked**; the
   the cooled master variable is $E_\text{solv.struct}$, and
   $$
   \left.\frac{dE_\text{solv.struct}}{dt}\right|_\text{K2}
-  = -\frac{E_\text{solv.struct}-E_\infty}{\tau_\text{dissip}},
-  \qquad \tau_\text{dissip}=\tau_\text{GAH25},\;\; E_\infty=E_\text{bind}^\text{eq}.
+  = -\frac{E_\text{solv.struct}-E_\infty(N)}{\tau_\text{dissip}},
+  \qquad \tau_\text{dissip}=\tau_\text{GAH25}.
   $$
-  Internal energy is recovered as
-  $E_\text{int} = E_\text{solv.struct}-E_\text{bind}(N)$ with
-  $E_\text{bind}(N) = -\sum_{i=1}^{N} D_0^{\,\mathrm{I^+}}(i)$ — **valid only
-  after the self-bound crossing $t_\times$** (locked rule, A9; see R12). The
-  single relaxation time $\tau_\text{dissip}$ is now applied to the *correct*
+
+  **Binding split — pair + electrostriction (LOCKED 2026-06-17, GAH25-vindicated;
+  resolves OQ6 and R12).** The equilibrium binding is *not* the pair ladder sum:
+  re-reading GAH25 (Table I/II), the first shell sits at $r_1^e\approx4.67$ Å (far
+  outside the pair $R_e=3.25$ Å), where pair polarization is only
+  $D_4/r_1^{e4}\approx25$ cm⁻¹/atom, yet the DFT per-atom shell binding is
+  $|S|/n^*\approx179$ K $\approx124$ cm⁻¹/atom — so **collective electrostriction
+  (snowball compression) is the dominant binding term, ~5× the pair-at-radius**,
+  not a small correction. We therefore carry it explicitly:
+  $$
+  E_\text{solv.struct}(N)=\underbrace{-\textstyle\sum_{i\le N}D_0^{\,\mathrm{I^+}}(i)}_{E_\text{bind}^\text{pair}(N)\ \text{[IHe05]}}
+  +\underbrace{-\big(|S(N)|-\textstyle\sum_{i\le N}D_0\big)}_{E_\text{elec}(N)\le0\ \text{[I2-notes]/GAH25}}
+  +\;E_\text{int}(N),
+  \qquad E_\infty(N)=-|S(N)|.
+  $$
+  *Dim:* every term in eV; $E_\infty(N)$ in eV ✓. Two locked consequences:
+  - **$E_\infty$ is occupancy-resolved (OQ6 resolved).** A *fixed* full-shell
+    $E_\infty$ would drive the reconstructed $E_\text{int}^\text{eq}=E_\infty-E_\text{bind}(N)$
+    increasingly negative as the shell strips ($-0.03$ eV at $N{=}21$ →
+    $-0.28$ eV at $N{=}2$), pushing $E_\text{int}$ below every rung and
+    **mechanically halting shedding** — a hard cap. With $E_\infty(N)=-|S(N)|$
+    tracking the current shell ($\to0$ as $N\to0$), full stripping stays
+    reachable. $|S(N)|=|S|\cdot\sum_{i\le N}D_0/\sum_{i\le n^*}D_0$ distributes the
+    collective full-shell value over the ladder shape (*flagged assumption*; the
+    GAH25 near-constant collective marginal $\partial|S|/\partial n\approx124$ cm⁻¹
+    supports a near-linear distribution).
+  - **$E_\text{int}$ reconstruction is now exact (R12 systematic eliminated).**
+    Recovering $E_\text{int}=E_\text{solv.struct}-E_\text{bind}^\text{pair}(N)-E_\text{elec}(N)$
+    uses the *same* collective binding K2 cools toward, so $E_\text{int}^\text{eq}=0$
+    with no spurious offset — the $|S|-\sum D_0$ "collective excess" lives in
+    $E_\text{elec}$, not dumped into $E_\text{int}$ (cf. the old R12 hazard).
+    Still **valid only after $t_\times$** (A9).
+
+  The single relaxation time $\tau_\text{dissip}$ is now applied to the *correct*
   quantity, removing the quantity-mismatch error of cooling $E_\text{int}$
   alone. $\tau$ is **transplanted directly** ($\tau_\text{K2}=\tau_\text{GAH25}$,
   no inflation) — see the no-double-count finding below. It remains bracketed
   but not pinned (§10, R8): experiment gives $\tau\approx2.6\pm0.4$ ps (Na⁺,
   $\langle N\rangle{=}3600$); TDDFT gives $\tau\approx7.3$ (shell-1) – $16.5$
   (shell-2) ps — treat as a ±factor-3 sweep band, with the residual that these
-  are **Na⁺** numbers transplanted to a **Rb⁺-like** I⁺ (§6.11, R8).
+  are **Na⁺** numbers transplanted to a **Rb⁺-like** I⁺ (§6.11, R8), *and* that
+  GAH25 cools a shell *growing* toward equilibrium whereas the I⁺ shell *shrinks*
+  (a direction-of-evolution transplant — rate assumed symmetric).
 
   **No-double-count finding (resolves the earlier $\tau_\text{K2}\!\ge\!\tau_\text{GAH25}$
   worry).** With cold shedding (A8), an evaporation event is *energy-neutral*
@@ -622,13 +814,15 @@ but the [Calvo24] total-vaporization limit is **the far end of this same
 biphasic axis, not a separate model** — it is *not ruled out*. It is kept as a
 **secondary / sensitivity-run evaluation target** (terminal $n\to$ small, a
 narrow histogram near bare I⁺), checked against the Tier-2 size distribution; we
-do not pre-judge it. *Caveat to flag (OQ6, §10A):* whether secondary runs can
-actually *reach* full strip is contingent on the K2 asymptote $E_\infty=
-E_\text{bind}^\text{eq}$ — as locked, the bound-equilibrium target may
-mechanically leave a residual shell even when the dynamics drives toward
-stripping. This is a thing to **check** when the secondary runs are set up, not
-a change made now; if confirmed limiting, $E_\infty$ would need revisiting (no
-mechanism change is made here).
+do not pre-judge it. *Reachability (OQ6, RESOLVED 2026-06-17):* whether secondary
+runs can *reach* full strip was contingent on the K2 asymptote — and a *fixed*
+full-shell $E_\infty$ would indeed mechanically leave a residual shell (it drives
+the reconstructed $E_\text{int}^\text{eq}$ negative as the shell shrinks, halting
+shedding). The **occupancy-resolved** $E_\infty(N)=-|S(N)|$ now adopted (K2 split)
+removes this cap ($E_\infty\to0$ as $N\to0$), so total strip stays dynamically
+reachable. The remaining open item is only *energetic favorability* — where the
+liberated electrostriction energy goes on full collapse (OQ6/OQ7), not a
+mechanical block.
 
 ---
 
@@ -685,13 +879,24 @@ alone (deep) or a statistical $X_2{+}I_1{+}I_0$ mixture (shallower) is a real
 fork — see A10**, defaulted to the mixture. Two caveats on the number, two on
 the ladder:
 
-- *$D_e$ vs $D_0$.* 143.9 cm⁻¹ is the potential well depth $D_e$, not the
-  zero-point-corrected dissociation energy $D_0(1)$ the cascade gate needs. He is
-  light, so the ZPE is non-negligible; by analogy with the Na⁺–He case (where
-  $D_e\approx285$ cm⁻¹ vs the [Nat23] $D_0(1)=270$ cm⁻¹, a ~15 cm⁻¹ gap),
-  $D_0^{\,\mathrm{I^+}}(1)\approx125$–$135$ cm⁻¹ ≈ 15–17 meV. Use $D_e$ as the
-  upper bound and apply a ZPE correction (or compute $D_0$ from the published
-  analytic fit) before wiring the first rung.
+- *$D_e$ vs $D_0$ — RESOLVED (2026-06-17, EPAPS fit).* 143.9 cm⁻¹ is the well
+  depth $D_e$, not the zero-point-corrected dissociation energy $D_0(1)$ the
+  cascade gate needs. The old estimate $D_0\approx125$–135 cm⁻¹ borrowed a
+  Na⁺-like ~10% ZPE fraction (Na⁺–He: $D_e\approx285$ vs [Nat23] $D_0=270$, a
+  ~15 cm⁻¹ gap) and was **too high**: He–I⁺ is a shallow, long-bond, light-$\mu$
+  well, so its ZPE is a much larger fraction of $D_e$. Solving the **exact $J{=}0$
+  radial Schrödinger equation** on the fitted [IHe05] $X_2$ curve ($V''(R_e)=748.1$
+  cm⁻¹/Å², 5 bound levels) gives a true ground-state ZPE $G(0)=37.0$ cm⁻¹
+  (**26% of $D_e$**, vs the harmonic 40.3), so
+  $$
+  D_0^{\,\mathrm{I^+}}(1)\big|_{X_2} = 106.9\ \text{cm}^{-1}
+  = 13.3\ \text{meV} = 0.01325\ \text{eV}\quad(\pm3\ \text{cm}^{-1}\ \text{from the}
+  \ \text{[IHe05] }\pm3\%\ \text{well-depth accuracy}).
+  $$
+  This is **pinned** — no harmonic assumption, no Na⁺ analogy. The shape for $n>1$
+  remains open (below); only the first rung is fixed. *Electronic-picture
+  dependence (A10):* 106.9 cm⁻¹ is the $X_2$-only rung; the statistical-mixture
+  rung is $74.4$ cm⁻¹ (~70%; see A10).
 - *Open-shell, spin-orbit-split.* Unlike the closed-shell alkali cations, I⁺ is
   ³P₂ and [IHe05] resolves *six* SO-coupled He–I⁺ curves; three correlate with
   the ground ³P₂ sublevel. The single scalar $D_0(1)$ used here is the lowest
@@ -708,28 +913,85 @@ ladder on Na⁺** (the [Nat23] table); template on the K⁺/Rb⁺ end, where [GA
 already observed the shell structure is *less* clean (oscillations around linear
 binding, "bigger size allowing several He atoms to bind at the same time").
 
-**Open-shell → likely gradual structural evolution without pronounced shells.**
-The decisive physical caveat: I⁺ is open-shell and SO-split, like the heavy
-noble-gas cations and Pb⁺. For Pb⁺Heₙ the literature finding is that **spin-orbit
-coupling causes a gradual structural evolution without pronounced solvation
-shells** — the closed-shell "fill shell, sharp drop at closure" picture (Na⁺) is
-replaced by a smoother, more monotone binding-energy ladder with no sharp magic
-number. If I⁺Heₙ behaves the same way, $D_0^{\,\mathrm{I^+}}(n)$ is a **smoothly
-decaying** sequence rather than the flat-then-cliff Na⁺ shape. This would
-*simplify* the cascade (no special-cased shell-closure rung) but means borrowing
-the Na⁺ ladder shape would be actively misleading.
+**Open-shell blurs angular sub-structure, but the radial cliff is geometric and
+survives (REVISED 2026-06-17).** The earlier lean was "open-shell ⇒ gradual,
+shell-less" (Pb⁺Heₙ: SO coupling smears solvation shells). That argument is now
+**only half right**, and the corrected picture *favors* shell structure:
+- *Angular (within-shell):* anisotropy/SO mixing does wash out sharp angular
+  sub-structure, supporting a **mild, gradual decline within shell 1** (the
+  Pb⁺-like part of the argument survives).
+- *Radial (between-shell):* the dominant binding is the isotropic
+  charge-induced-dipole $-D_4/R^4$ ($D_4=11852$ cm⁻¹·Å⁴, [IHe05] EPAPS, $=\tfrac12
+  \alpha_\text{He}e^2$ to 0.4%), which is **not** affected by electronic openness.
+  *Geometry from [GAH25] Table II (corrected 2026-06-17):* the first shell sits at
+  $r_1^e\approx4.67$ Å (interpolating Rb⁺ 4.5 / Cs⁺ 4.8 Å) — far outside the pair
+  $R_e=3.25$ Å — and shell-2 at $r_2^e\approx7.72$ Å. So the pair binding drops by
+  $(r_2^e/r_1^e)^4=(7.72/4.67)^4\approx\textbf{7.5×}$ across the shell boundary
+  (lower still with inner-shell screening). A **radial cliff at $n^*$ is therefore
+  expected even for an open-shell ion** — it is geometric, not electronic.
+- *He–He is roomy at the true shell radius (CORRECTED 2026-06-17):* at the
+  [GAH25] shell radius $r_1^e\approx4.67$ Å (not the pair $R_e$), the shell-1
+  He–He nearest-neighbour spacing for $n\!\sim\!20$ is **3.97 Å $>$ He–He $R_e$
+  2.97 Å → roomy, mildly *attractive*** (an earlier note using the pair $R_e$
+  wrongly found 2.70 Å / compressed). So He–He gives a small positive
+  contribution, not a penalty. The within-shell decline instead comes from the
+  He being **pushed outward** to $r_1^e$, where pair polarization is only
+  $D_4/r_1^{e4}\approx25$ cm⁻¹ — but the collective snowball lifts the *net*
+  per-atom binding back to $\approx124$ cm⁻¹ ($|S|/n^*$), close to the lone-He
+  $D_0(1)=107$. This is exactly why the pair ladder undercounts $|S|$
+  (electrostriction-dominated; see K2 split, R12).
+Net: the physically-motivated $D_0^{\,\mathrm{I^+}}(n)$ is **mild within-shell
+decline, then a ~7.5× radial cliff to a bulk-He floor** — closer to *structured*
+than *gradual*, with the in-shell slope the genuinely uncertain part. (The pair
+ladder anchored at $D_0(1)$ remains the right *shed-cost* object: the collective
+marginal $\partial|S|/\partial n\approx124$ cm⁻¹ ≈ $D_0(1)$, a fortunate
+near-cancellation — K2.)
 
-*Resolution — test and compare, don't commit.* We do not pre-judge shell-
-structured vs gradual. Both ladder shapes are kept pluggable behind
-`dissociation_ladder` (§11): (i) a **gradual/smooth** decay anchored at the
-[IHe05] first rung (the open-shell-consistent first hypothesis), and (ii) a
-**shell-structured** K⁺/Rb⁺-templated shape (the closed-shell-analogue fallback).
-The Tier-2 size distribution discriminates them: a smooth vs a shell-structured
-ladder produces a measurably different terminal-$n$ envelope (a sharp ladder
-piles probability at the closure $n$; a smooth ladder spreads it). The §6.5.1
-effective-binding calibration constrains the *integrated* ladder
-$\sum_i D_0(i)$ regardless of which shape is used. *Mitigation status:* first rung
-sourced; shape is a deliberate two-way test, not an unresolved gap.
+*Resolution — Form U, one continuous steepness knob (ADOPTED 2026-06-17).* The
+old discrete `{gradual, shell_structured}` choice is replaced by a **single
+sigmoid family** spanning both as limits, anchored exactly at the pinned rung and
+a sourced floor:
+$$
+D_0^{\,\mathrm{I^+}}(n)=D_\text{floor}+\big(D_0(1)-D_\text{floor}\big)\,
+\frac{1-\sigma(n)}{1-\sigma(1)},\qquad \sigma(n)=\big[1+e^{-\kappa(n-n^*-\tfrac12)}\big]^{-1},
+$$
+with $D_0(1)$ pinned (picture-dependent: 106.9 / 74.4 cm⁻¹), $D_\text{floor}=
+|\mu_\text{He}^\text{bulk}|\approx4.97$ cm⁻¹ (7.15 K, sourced), $n^*\approx21$
+(sourced, [I2-notes]), and **the single Free shape knob $\kappa$**:
+$\kappa\!\to\!0$ → gradual quasi-linear decay; $\kappa\!\gg\!1$ → sharp cliff at
+$n^*$. *Dimensional check:* $\sigma$ dimensionless ($\kappa$ per-unit-$n$,
+$(n{-}n^*{-}\tfrac12)$ dimensionless), bracket dimensionless, $D_0(n)$ in cm⁻¹ ✓.
+*Centering at $n^*+\tfrac12$ (refinement 2026-06-17):* the cliff sits **between**
+the last in-shell atom ($n^*$) and the first shell-2 atom ($n^*{+}1$), so shell-1
+rungs are counted at full depth and the drop lands on shell 2. *Physical prior:*
+the 7.5× radial cliff argues **large $\kappa$**. The Tier-2 size
+distribution arbitrates $\kappa$ continuously (broad histogram → small $\kappa$;
+magic peak at $n^*$ → large $\kappa$), co-fit with the electronic picture (the two
+are **not** separable — the mixture shares the *same* floor but a lower top, so it
+is a more-compressed ladder at fixed $\kappa$). *Decoupling (2026-06-17):* with the
+cliff at $n^*+\tfrac12$, the **integrated first-shell sum $\sum_{i=1}^{21}D_0$ is
+nearly $\kappa$-independent** (~10% over $\kappa\in[0.3,5]$) — $\kappa$ shapes the
+cross-cliff/shell-2 region (the histogram) but **not** the self-bound gate
+threshold or the S2 floor, which are therefore picture-set and pinnable without
+the $\kappa$ fit (§6 R9, S2). *Fallback (declared, not default):*
+a single sigmoid is monotone and single-cliff; if the histogram shows a peak at a
+non-closure $n$ (a geometric magic number, e.g. icosahedral 12/13) or a second
+cliff, revert to a tabulated ladder.
+
+**Integrated-ladder cross-check — corrected (2026-06-17): $\sum_i D_0 \neq |S|$.**
+The DFT first-shell solvation $|S_{\mathrm{I^+}}|=0.308$ eV $=2484$ cm⁻¹ implies a
+mean rung 118 cm⁻¹ — *above* the pinned $D_0(1)=106.9$. A monotone pair ladder
+therefore **cannot reach $|S|$** (flat ceiling $21\times106.9=2245$ cm⁻¹, short by
+≥239 cm⁻¹; ≥922 for the mixture). So $|S|$ is a **collective** quantity
+(electrostriction/snowball compression + DFT correlation) that pair dissociation
+energies structurally undercount; it is an **upper bound, not a rung-sum target**,
+and rungs must **not** be calibrated to $|S|/n^*$. The reachable integrated
+cross-check is instead the §6.5.1 *drag effective binding* $E_\text{bind}=0.1168$
+eV $=942$ cm⁻¹, which a moderate-$\kappa$ ladder meets naturally (representative
+sums 835–1571 cm⁻¹) — retained as the consistency probe (with the OQ1 double-count
+caveat), while $|S|$ bounds the many-body excess (~240+ cm⁻¹). *Mitigation status:*
+first rung + floor + closure sourced; one continuous shape knob $\kappa$; all
+reversible if OQ1 or the $|S|$-reference question (new OQ, §10A) reopens.
 
 **R4 — Energy double-counting between drag and $E_\text{int}$ (MEDIUM).** Drag
 dissipation and internal-energy heating could erroneously draw the same energy.
@@ -878,17 +1140,22 @@ boundary effect. *Open item (cannot resolve from the paper):* the actual
 $KE_\text{shed}$ distribution over 5–6.5 ps, which sets the leak magnitude —
 needs GAH25 movies/supplementary or a value from the authors.
 
-**R12 — Hot-structure binding $\neq$ static ladder sum (LOW–MEDIUM, GATED).**
-The $E_\text{int}$ reconstruction $E_\text{int}=E_\text{solv.struct}+\sum_i
-D_0(i)$ assumes equilibrium binding; the hot early structure's true
-$E_\text{bind}(N)$ deviates from $-\sum_i D_0(i)$ (multi-peak, distorted,
-GAH25 Fig. 3). *Mitigation (locked rule, A9):* never reconstruct $E_\text{int}$
-from the ladder inside the gate window; trust only $E_\text{solv.struct}$
-there. The gate enforces this automatically. *Open item:* quantify the
-$E_\text{bind}(N)$ vs $-\sum_i D_0$ deviation right at $t_\times$, where the
-structure is self-bound but not yet equilibrated ($E_\infty$ reached only at
-~11+ ps in GAH25) — bounds the reconstruction error at the one instant it is
-first used.
+**R12 — Hot-structure binding $\neq$ static ladder sum (LOW–MEDIUM, GATED;
+equilibrium part RESOLVED 2026-06-17).** Two layers, now separated:
+- *Equilibrium layer (resolved by the K2 binding split).* The old reconstruction
+  $E_\text{int}=E_\text{solv.struct}+\sum_i D_0$ undercounted the binding by the
+  collective excess $|S|-\sum_i D_0$ (electrostriction; ~0.03–0.06 eV at large
+  $\kappa$, and per GAH25 the *dominant* shell-binding term). Using the **split**
+  binding $E_\text{bind}^\text{pair}+E_\text{elec}$ in both the cooling target and
+  the reconstruction makes $E_\text{int}^\text{eq}=0$ exactly — the systematic is
+  eliminated, not just gated (K2).
+- *Hot-transient layer (still gated, A9).* Even with the correct equilibrium
+  split, the hot early structure's *instantaneous* binding deviates from the
+  equilibrium value (multi-peak, distorted, GAH25 Fig. 3). *Mitigation (A9):*
+  never reconstruct $E_\text{int}$ inside the gate window; trust only
+  $E_\text{solv.struct}$ there. *Open item:* quantify the deviation right at
+  $t_\times$ ($E_\infty$ reached only ~11+ ps in GAH25) — bounds the error at the
+  one instant it is first used.
 
 ---
 
@@ -927,16 +1194,22 @@ requires mode-resolved structure.
 (QUALIFIED).** Assumes a single ground-state binding ladder analogous to
 [Nat23] Eq. (1), $E_\text{bind}(n)=\sum_i D_0(i)$, collapsing the I⁺(³P₂)
 spin-orbit multiplet ([IHe05] resolves six He–I⁺ curves) to one scalar rung per
-$n$. *Two things being tested rather than assumed:* (i) the *shape* — smooth
-gradual decay (open-shell/Pb⁺-like, the first hypothesis) vs flat-then-cliff
-shell structure (closed-shell/alkali-like) — discriminated by the Tier-2 size
-distribution (R3); (ii) the scalar-multiplet collapse — which **electronic
-picture** sets the rung depth (statistical mixture vs $X_2$-only) is itself a
-decision (A10), and the single-scalar collapse is adequate if terminal-$n$
-statistics match Tier 2, falsified if the size distribution shows structure only
-an SO-resolved ladder reproduces. *Tighten:* source/compute I⁺Heₙ rungs for
-$n>1$; cross-check the integrated ladder against the §6.5.1 effective binding;
-resolve OQ1 (§10A).
+$n$. *Two things being tested rather than assumed:* (i) the *shape* — now a
+**single Form-U sigmoid** with one continuous steepness knob $\kappa$ spanning
+gradual ($\kappa\!\to\!0$) to sharp-cliff ($\kappa\!\gg\!1$), anchored at the
+pinned rung, sourced bulk floor, and sourced $n^*$ (R3, adopted 2026-06-17);
+physical prior favors large $\kappa$ (geometric radial cliff) — discriminated by
+the Tier-2 size distribution; (ii) the scalar-multiplet collapse — which
+**electronic picture** sets the rung depth (statistical mixture vs $X_2$-only) is
+itself a decision (A10), co-fit with $\kappa$ (not separable: shared floor, lower
+top → more-compressed mixture ladder), and the single-scalar collapse is adequate
+if terminal-$n$ statistics match Tier 2, falsified if the size distribution shows
+structure only an SO-resolved ladder reproduces. *Cross-check, corrected
+(2026-06-17):* the integrated ladder $\sum_i D_0 \neq |S_{\mathrm{I^+}}|$ — a
+monotone pair ladder cannot reach the DFT $|S|=2484$ cm⁻¹ (collective excess
+≥239 cm⁻¹), so check $\sum_i D_0$ against the reachable §6.5.1 drag binding
+(942 cm⁻¹), treating $|S|$ as an upper bound only. *Tighten:* resolve OQ1 and the
+$|S|$-reference question (§10A).
 
 **A6 — Pickup and evaporation are independent channels.** Both draw per step
 without cross-gating. *Tighten:* physical; the only coupling is via $E_\text{int}$
@@ -953,7 +1226,12 @@ longer strips the shell at onset; the crossing out of this window
 ($t_\times$) is a cross-checked prediction (§6.11). This widens the §6.7
 Scenario-A-only ~0.5 ps concession to a several-ps, all-scenario free zone
 for the *drag/tolerance* side (R10), while the *mass* side is now governed by
-the parameter-free gate rather than a loose tolerance.
+the parameter-free gate rather than a loose tolerance. *Strengthened (2026-06-17):*
+the self-unbound onset is **robust, not fine-tuned** — the S2 floor
+$f_\text{int}^\text{floor}=\sum_i D_0/E_\text{avail}^\text{ion}\approx0.04$–$0.10$
+($X_2$) is at most ~10%, so the violent explosion satisfies $E_\text{int}(0)>
+\sum_i D_0$ for essentially the entire physical $f_\text{int}$ range. The
+qualitative GAH25 onset thus transfers without resting on a tuned partition (S2).
 
 **A8 — Cold-shed energy-neutrality for $E_\text{solv.struct}$, contingent on
 the gate (NEW, load-bearing).** Two sub-claims: (1) a shed atom carries ≈0 KE
@@ -973,20 +1251,32 @@ the GAH25 shell-1 Newton fit starts at 6.0 ps while self-binding completes at
 $t_0=6.53$ ps — a ~0.5 ps window where their fit and the unstable phase
 overlap (R11, accepted). *Tighten:* obtain the $KE_\text{shed}$ distribution
 during 5–6.5 ps (movies/supplementary or from Halberstadt) to bound the leak.
+*Amendment under the binding split (2026-06-17):* with $E_\text{bind}$ now
+pair + electrostriction (K2), a cold shed changes $E_\text{bind}^\text{pair}$ by
+the pair $D_0$ *and* $E_\text{elec}$ by the marginal electrostriction
+($\partial|S|/\partial n-D_0$). To keep $E_\text{int}$-neutrality, the **marginal
+electrostriction release books to the bath** (`E_dissip`) per shed event — small
+($\partial|S|/\partial n\approx124$ cm⁻¹ vs the lone-He $D_0(1)=107$, a ~15%
+marginal), so A8 is now "neutral for $E_\text{int}$ up to a bath-booked marginal,"
+not exactly neutral. On *full* stripping the accumulated $E_\text{elec}$ (the
+snowball-collapse energy) is liberated; whether it radiates to the droplet or
+adds to ejected-ion KE is open (OQ6, bundled with OQ7).
 
 **A9 — Static-ladder $E_\text{int}$ reconstruction is valid only after
-$t_\times$ (NEW, locked rule).** Recovering $E_\text{int}=E_\text{solv.struct}
--E_\text{bind}(N)$ uses $E_\text{bind}(N)=-\sum_i D_0(i)$, the *equilibrium*
-ladder. For a hot, distorted, multi-peak early structure (GAH25 Fig. 3) the
-true binding $E_\text{bind}(N)\neq-\sum_i D_0(i)$, so the reconstruction errs
-exactly in the early window. **Rule:** never use the per-rung $E_\text{int}$
-vs $D_0(n)$ comparison (or the ladder reconstruction) inside the gate window
-($E_\text{solv.struct}>0$); only $E_\text{solv.struct}$ itself is trusted
-there. Post-$t_\times$, as the structure relaxes toward equilibrium, the
-ladder sum is valid. The gate enforces this automatically (R12). *Tighten:*
-check how far $E_\text{bind}(N)$ for the hot structure deviates from
-$-\sum_i D_0$ right at $t_\times$, where the structure is self-bound but still
-far from equilibrium ($E_\infty$ not reached until ~11+ ps in GAH25).
+$t_\times$ (locked rule; reconstruction binding updated 2026-06-17).** Recovering
+$E_\text{int}=E_\text{solv.struct}-E_\text{bind}^\text{pair}(N)-E_\text{elec}(N)$
+now uses the **split** equilibrium binding (pair + electrostriction, K2), so at
+equilibrium $E_\text{int}^\text{eq}=0$ exactly — the old collective-excess offset
+is gone (R12 resolved). It nonetheless remains a reconstruction of the
+*equilibrium* binding: for a hot, distorted, multi-peak early structure (GAH25
+Fig. 3) the true instantaneous binding $\neq$ the equilibrium split, so the
+reconstruction still errs in the early window. **Rule unchanged:** never use the
+per-rung $E_\text{int}$ vs $D_0(n)$ comparison (or the reconstruction) inside the
+gate window ($E_\text{solv.struct}>0$); only $E_\text{solv.struct}$ itself is
+trusted there. Post-$t_\times$, the split binding is valid. The gate enforces this
+automatically (R12). *Tighten:* check how far the hot-structure binding deviates
+from the equilibrium split right at $t_\times$ ($E_\infty$ not reached until
+~11+ ps in GAH25).
 
 **A10 — Binding-ladder electronic picture: statistical SO mixture (production
 DEFAULT), $X_2$-only (documented alternative) (NEW).** I⁺ is open-shell, atomic
@@ -1006,6 +1296,22 @@ $V_\Sigma$ ([IHe05] Eq. 9). Two pictures for the production binding ladder:
   created with enough energy populate a statistical mix of the three
   ground-sublevel SO states. Mixing in $V_\Sigma$ makes the *effective* binding
   **shallower** than $X_2$ alone.
+
+**First-rung numbers, both pictures (2026-06-17, EPAPS + [IHe05] Eq. 9).**
+Evaluating the SO-coupled curves from $V_\Pi$ (³Π) and $V_\Sigma$ (³Σ⁻) with the
+atomic ³P$_j$ splittings $D_0^{at}=6451$, $D_1^{at}=7090$ cm⁻¹, and ZPE-correcting
+each via its exact $J{=}0$ ground state:
+
+| SO state | $D_e$ (cm⁻¹) | $D_0$ (cm⁻¹) | $D_0$ (eV) |
+|---|---|---|---|
+| $X_2$ (³Π) | 143.9 | **106.9** | 0.01325 |
+| $I_1$ | 89.5 | 62.4 | 0.00773 |
+| $I_0$ | 79.1 | 54.0 | 0.00670 |
+| **equal-weight mixture** | — | **74.4** | **0.00923** |
+
+So the production-default (mixture) first rung is **$D_0(1)=74.4$ cm⁻¹ ≈ 9.23 meV**,
+**~70% of the $X_2$-only rung (106.9 cm⁻¹)**. The two pictures are now separated by
+a concrete factor, not a qualitative "shallower."
 
 **DEFAULT = statistical mixture (2).** Rationale: production I⁺ is born from I₂
 double-ionization / Coulomb explosion — a violent, high-energy creation, exactly
@@ -1062,17 +1368,19 @@ size distribution requires an RRKM-shaped, non-power-law switch-on.
 | Item | Symbol | Source / target | Tier |
 |---|---|---|---|
 | Pickup rate coefficient | $\lambda_0$ | OOM prior only ([GAH25] well-depth dep.); pin from I⁺ TDDFT + size dist. | 1 / 2 |
-| First ladder rung | $D_0^{\,\mathrm{I^+}}(1)$ | **sourced:** [IHe05] $D_e=143.9$ cm⁻¹ at $R_e=3.25$ Å, minus ZPE → ~125–135 cm⁻¹ | — |
-| Ladder shape ($n>1$) | gradual vs shell-structured | open-shell→gradual (1st try) vs K⁺/Rb⁺ template; discriminated by size dist. | 2 |
-| Integrated ladder | $\sum_i D_0(i)$ | cross-checked against §6.5.1 effective binding | 2 |
+| First ladder rung | $D_0^{\,\mathrm{I^+}}(1)$ | **pinned (2026-06-17):** [IHe05] EPAPS fit, exact $J{=}0$ ZPE → $X_2$ **106.9 cm⁻¹** (0.01325 eV); mixture **74.4 cm⁻¹** (0.00923 eV); $\pm3$ cm⁻¹ | — (sourced) |
+| Ladder shape ($n>1$) | $\kappa$ (Form U sigmoid) | single steepness knob, gradual↔cliff; prior large (7.5× radial cliff, R3); co-fit w/ picture + $\{\nu,s\}$; discriminated by size dist. | 2 (Free) |
+| Ladder floor | $D_\text{floor}$ | $\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹ (7.15 K), bulk superfluid; picture-independent | — (sourced) |
+| Integrated ladder | $\sum_i D_0(i)$ | **numeric (2026-06-17):** $X_2$ 0.12–0.28 eV / mix 0.17–0.19 eV; nearly $\kappa$-independent; cross-check vs drag binding 0.117 eV ($\neq|S|=0.308$, collective) | derived |
 | Binding-release retained fraction | $f_\text{ret}$ | size distribution | 2 |
 | Newton-cooling relaxation time | $\tau_\text{dissip}$ | **sweep band $[2.6,16.5]$ ps** (R8), externally anchored; not pinned from this work's size dist. | sweep |
-| Newton-cooling asymptote (binding) | $E_\infty=E_\text{bind}^\text{eq}$ | equilibrium-shell binding ([GAH25] Table III: $-3424$/$-4144$ K for Na⁺ shell-1/2); compute for I⁺ shell | 2 |
-| Onset partition fraction | $f_\text{int}$ | $E_\text{int}(0)=f_\text{int}E_\text{avail}$ (§6.11/S2); bounded by self-unbound floor and 1; pin from size dist. | 2 |
+| Newton-cooling asymptote (binding) | $E_\infty(N)=-|S(N)|$ | **occupancy-resolved (2026-06-17, split):** $E_\text{bind}^\text{pair}+E_\text{elec}$; full-shell $|S_{\mathrm{I^+}}|{=}0.308$ eV ([I2-notes]); GAH25 Na⁺ $-3424/-4144$ K calibrates form+$\tau$; OQ6 resolved | 2 (shape via $\kappa$) |
+| Onset Coulomb budget | $E_\text{avail}^\text{ion}$ | **pinned 2.70 eV (2026-06-17):** ½ of $e^2/R_e(\mathrm{I_2})=5.40$ eV ($R_e=2.666$ Å); per-ion convention; fixed reference | — (sourced) |
+| Onset partition fraction | $f_\text{int}$ | $E_\text{int}(0)=f_\text{int}E_\text{avail}^\text{ion}$ (§6.11/S2); **floor $\approx0.04$–$0.10$ ($X_2$, 2026-06-17),** picture-set & $\kappa$-indep; soft upper ~0.2; pin from size dist. | 2 |
 | Self-bound crossing time | $t_\times$ | **derived diagnostic, not fitted**; cross-check vs GAH25 ~5–6.5 ps (±factor-2) and size dist. (§6.11) | — |
 | Early-instability gate | **derived, not fitted** | self-bound criterion $E_\text{int}<\sum_i D_0(i)$ (R9); the ~several-ps onset is now a *prediction* vs [GAH25], cross-checked by size dist. | — |
-| RRK prefactor | $\nu$ | **stretch-frequency prior** $\sim\mathcal{O}(1)$ ps⁻¹ from [IHe05] $X_2$ curvature (§4); cross-check vs [I2-notes] cascade timing (OQ5) + size dist. | 2 |
-| RRK effective DOF | $s$ | **mode-counted $s=3n-6$, not free** (A11); effective-scalar override for sensitivity; calibrated *jointly* with `ladder_shape` (A11 coupling) | derived |
+| RRK prefactor | $\nu$ | **pinned $2.42$ ps⁻¹ (2026-06-17):** $\omega_e=80.6$ cm⁻¹ from [IHe05] EPAPS $V''(R_e)=748.1$ cm⁻¹/Å² (§4); cross-check vs [I2-notes] cascade timing (OQ5) + size dist. | 2 |
+| RRK effective DOF | $s$ | **mode-counted $s=3n-6$, not free** (A11); effective-scalar override for sensitivity; calibrated *jointly* with `ladder_steepness` ($\kappa$) (A11 coupling) | derived |
 | Pickup $v$-dependence (if needed) | sweeping/dwell | only if density-only fails Tier 1/2 | 1 / 2 |
 | Total-stripping limit (Calvo24) | terminal $n\to0$ | reachable far end of the biphasic regime axis (§6.11); **evaluated in secondary/sensitivity runs, not excluded, not default**; check vs size dist. (and OQ6) | secondary |
 
@@ -1101,9 +1409,13 @@ update on confirmation.**
   on top of an already dynamically-lowered binding; the A10 default would then
   rest *only* on the birth-violence argument, and the mixture-vs-$X_2$ choice
   should be re-examined for whether the dynamics already delivers the mixture-like
-  effective depth. *If instead the extraction already SO-averaged:* 0.1168 eV is
-  mixture-like and self-consistent with the A10 default. **Until resolved:** treat
-  the A10 mixture default as physically motivated but provisional; do not cite
+  effective depth. **Magnitude now pinned (2026-06-17):** the mixture/$X_2$ ratio
+  at the dimer level is $74.4/106.9=0.70$, so the static-mixture reduction is
+  **~30%**; that is the size of the reduction that must not be double-applied if
+  the drag's 0.1168 eV already carries a dynamical lowering. *If instead the
+  extraction already SO-averaged:* 0.1168 eV is mixture-like and self-consistent
+  with the A10 default. **Until resolved:** treat the A10 mixture default as
+  physically motivated but provisional; do not cite
   $E_\text{bind}$ as independent support for it; carry both possibilities.
 - **OQ2 — $KE_\text{shed}$ distribution over 5–6.5 ps** (bounds R11 hot-ejection
   leak; from GAH25 movies/supplementary).
@@ -1118,18 +1430,37 @@ update on confirmation.**
   He-count-vs-time trace. The cascade-timing anchor that would pin the
   $\{\nu,s\}$ combination (how many He leave over the ~5 ps window, per-event
   spacing) may live only in the supplementary **movies**. *If extractable:*
-  in-hand cross-check for $\nu\sim\mathcal{O}(1)$ ps⁻¹ and the effective $s$.
+  in-hand cross-check for the pinned $\nu=2.42$ ps⁻¹ and the effective $s$.
   *If movie-only:* author-contact item. Confirm whether $N_\text{He}(t)$ is
   readable.
-- **OQ6 — Does $E_\infty$ permit full stripping in secondary runs?** The
-  total-vaporization limit (Calvo24) is retained as a secondary-run evaluation
-  target (§6.11, §10 table), but the K2 asymptote $E_\infty=E_\text{bind}^\text{eq}$
-  is a *bound-equilibrium* target that may mechanically leave a residual shell
-  even when the dynamics drives toward bare I⁺. **Check at secondary-run
-  setup** whether the locked $E_\infty$ caps terminal $n$ above 0; if so, a
-  regime-dependent or shell-tracking $E_\infty$ would be needed to let the
-  stripping end be genuinely reachable. Flagged only — no mechanism change made
-  now.
+- **OQ6 — Full-stripping reach (mechanism RESOLVED 2026-06-17; energy release
+  still open).** *Resolved:* the capping risk is real — a *fixed* full-shell
+  $E_\infty$ drives the reconstructed $E_\text{int}^\text{eq}$ negative as the
+  shell strips ($-0.03$ eV at $N{=}21$ → $-0.28$ eV at $N{=}2$) and halts shedding.
+  The **occupancy-resolved $E_\infty(N)=-|S(N)|$** (K2 split) removes the cap
+  ($E_\infty\to0$ as $N\to0$), so the Calvo24 total-strip limit stays reachable.
+  *Still open:* on full stripping the accumulated $E_\text{elec}$
+  (snowball-collapse energy, ~$|S|-\sum D_0$) is liberated — whether it radiates
+  to the droplet or adds to ejected-ion KE bears on whether total strip is
+  energetically *favored*. **Bundle with OQ7** (both need the $N$-resolved
+  structure/reference of $|S|$); ask Halberstadt.
+- **OQ7 — Energy reference of the DFT solvation $S_{\mathrm{I^+}}$ (NEW
+  2026-06-17, LOW–MEDIUM).** The finding that a monotone pair ladder cannot reach
+  $|S|=2484$ cm⁻¹ interprets cleanly as *collective excess* only if $|S|$ is
+  referenced to **free I⁺ + free He**. If [I2-notes] references it to bulk He
+  (chemical-potential zero), snowball-formation, or a larger structure than the
+  first shell, the floor/closure anchors, the $E_\text{elec}$ magnitude, and the
+  size of the "collective excess" shift. **Ask Halberstadt** (same contact as
+  OQ1/OQ4) for the $S_{\mathrm{I^+}}=-3578$ K reference convention. Does not block
+  Form U or the K2 split (both anchored on $D_0(1)$, floor, $n^*$, and the
+  *shape* of $|S(N)|$); only sets the collective magnitude.
+- **OQ8 — I⁺ shell occupancy $n^*$ and the Tier-1 endpoint (NEW 2026-06-17,
+  LOW).** GAH25 $R_e$-scaling (I⁺ $R_e=3.25$ Å, 56% Rb⁺→Cs⁺ whose $n_1^e=18\to21$)
+  gives $n^*\approx20$, corroborating [I2-notes]'s 21 to ±1–2 but at the high
+  edge. Separately, the Tier-1 endpoint "14" in $21\to19\to14$ equals Na⁺'s
+  $n_1^e$ exactly — **confirm it is I⁺-specific from [I2-notes], not inherited
+  from a Na⁺ template.** Low stakes (geometry, not energetics), but a clean
+  GAH25 cross-check to close.
 
 ---
 
@@ -1146,48 +1477,66 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
 - `SimConfig.pickup_rate_coefficient` — $\lambda_0$ ($\text{ps}^{-1}$).
 - `SimConfig.pickup_rate_form ∈ {density_only, sweeping, dwell_time}` — default
   `density_only` ([Nat23]-supported, §5).
-- `SimConfig.dissociation_ladder` — $D_0^{\,\mathrm{I^+}}(n)$ bundle (eV per
-  rung), or pointer to the effective-binding calibration. First rung anchored at
-  [IHe05] (ZPE-corrected); for $n>1$ the shape is selected by:
+- `SimConfig.dissociation_ladder` — $D_0^{\,\mathrm{I^+}}(n)$, **Form U** (sigmoid,
+  adopted 2026-06-17): $D_0(n)=D_\text{floor}+(D_0(1)-D_\text{floor})\,(1-\sigma(n))
+  /(1-\sigma(1))$, $\sigma(n)=[1+e^{-\kappa(n-n^*-\tfrac12)}]^{-1}$. Anchors: first rung
+  **pinned** from [IHe05] EPAPS (exact ZPE), $X_2$ 0.01325 eV / mixture 0.00923 eV
+  (picture-dependent, below); floor $D_\text{floor}=|\mu_\text{He}^\text{bulk}|
+  \approx4.97$ cm⁻¹ (sourced); closure $n^*\approx21$ (sourced, [I2-notes]).
+  Tabulated-ladder override retained as the declared fallback (R3).
+- `SimConfig.ladder_steepness` — $\kappa$ (per-unit-$n$), the **single Free shape
+  knob**: $\kappa\!\to\!0$ gradual, $\kappa\!\gg\!1$ sharp cliff at $n^*$. Physical
+  prior large (7.5× geometric radial cliff, R3). Tier-2-arbitrated **jointly**
+  with `ladder_electronic_picture` (not separable) and the RRK $\{\nu,s\}$.
+  Replaces the retired discrete `ladder_shape ∈ {gradual, shell_structured}`.
 - `SimConfig.ladder_electronic_picture ∈ {statistical_mixture, x2_only}` —
   `statistical_mixture` (equal-weight $X_2{+}I_1{+}I_0$, shallower; the
   production default per A10, motivated by violent Coulomb-explosion birth) vs
   `x2_only` (deep $X_2/³Π$ snowball, the [I2-notes]-consistent comparison). Sets
-  the rung depths and hence $\sum_i D_0$, the gate, and $t_\times$. Default
+  the rung *top* (74.4 vs 106.9 cm⁻¹; shared floor → mixture is more compressed at
+  fixed $\kappa$), hence $\sum_i D_0$, the gate, and $t_\times$. Default
   provisional pending OQ1 (§10A).
-- `SimConfig.ladder_shape ∈ {gradual, shell_structured}` — `gradual` (smooth
-  decay, open-shell/Pb⁺-consistent) is the first hypothesis; `shell_structured`
-  (K⁺/Rb⁺-templated, flat-then-cliff) is the closed-shell-analogue alternative.
-  Discriminated by the Tier-2 size distribution (R3, A5). Not pre-judged.
 - `SimConfig.internal_energy_retained_fraction` — $f_\text{ret}\in[0,1]$.
 - `SimConfig.internal_energy_cooling_tau_ps` — $\tau_\text{dissip}$, the
   Newton's-law-of-cooling relaxation time for $E_\text{solv.struct}$ (§6 K2;
   replaces the earlier generic "bath rate"). Carried as the $[2.6,16.5]$ ps
   sweep band (R8).
-- `SimConfig.solv_struct_asymptote_eV` — $E_\infty=E_\text{bind}^\text{eq}$,
-  the equilibrium-shell *binding* energy that $E_\text{solv.struct}$ relaxes
-  toward (§6 K2). NOT an internal-energy floor (corrects the earlier
-  `internal_energy_equilibrium_eV`, which is retired).
+- `SimConfig.solv_struct_asymptote` — $E_\infty(N)=-|S(N)|$, the
+  **occupancy-resolved** equilibrium-shell *binding* that $E_\text{solv.struct}$
+  relaxes toward (§6 K2, split, 2026-06-17). NOT a fixed full-shell constant
+  (that caps stripping, OQ6) and NOT an internal-energy floor. Built as
+  $|S(N)|=|S_{\mathrm{I^+}}|\cdot\sum_{i\le N}D_0/\sum_{i\le n^*}D_0$ with
+  full-shell $|S_{\mathrm{I^+}}|=0.308$ eV ([I2-notes]); $\to0$ as $N\to0$.
+  Retires the fixed `solv_struct_asymptote_eV`.
+- `SimConfig.electrostriction_binding` — $E_\text{elec}(N)=-(|S(N)|-\sum_{i\le N}
+  D_0)\le0$, the collective snowball-compression binding beyond the pair ladder
+  (**dominant term**, ~5× pair-at-shell-radius per GAH25). Part of
+  $E_\text{solv.struct}$; its marginal release on shedding books to `E_dissip`
+  (A8 amendment). Sourced (not free) from $|S_{\mathrm{I^+}}|$ + the ladder shape.
 - `SimConfig.internal_energy_partition_fraction` — $f_\text{int}\in[0,1]$,
-  the fraction of onset energy coupled into shell-internal modes;
-  $E_\text{int}(0)=f_\text{int}\cdot E_\text{avail}$ (§6.11/S2).
-  Calibration target (§10), bounded below by the self-unbound floor.
-- `SimConfig.coulomb_available_eV` — $E_\text{avail}$, the onset energy
-  liberated at $R_e$ (I–I Coulomb, ~5.5 eV/pair scale). Sets the upper
-  reference for $E_\text{int}(0)$; sits in the uncalibrated $t^*$ window so
-  it is a fixed reference, not a fit target.
+  the fraction of *this ion's* onset energy coupled into shell-internal modes;
+  $E_\text{int}(0)=f_\text{int}\cdot E_\text{avail}^\text{ion}$ (§6.11/S2).
+  Calibration target (§10), **bounded below by the self-unbound floor
+  $f_\text{int}^\text{floor}\approx0.04$–$0.10$ ($X_2$, 2026-06-17)** — picture-set,
+  $\kappa$-independent; soft upper ~0.2.
+- `SimConfig.coulomb_available_eV` — $E_\text{avail}^\text{ion}=\mathbf{2.70}$ eV
+  (**pinned 2026-06-17, per-ion convention**): half of the pair release
+  $e^2/R_{\mathrm{II}}=14.40/2.666=5.40$ eV at $R_{\mathrm{II}}=R_e(\mathrm{I_2})
+  =2.666$ Å. Fixed reference (sits in the uncalibrated $t^*$ window), not a fit
+  target. *Reversible:* set to the pair value 5.40 eV to use the old convention
+  (doubles the floor).
 - `SimConfig.internal_energy_initial_eV` — **retired** as a free field;
   derived as $f_\text{int}\cdot E_\text{avail}$. Retained only as an optional
   manual override (default: unset → use the derived value) for sensitivity
   exploration.
 - `SimConfig.evap_rate_prefactor_per_ps` — RRK prefactor $\nu$ (ps⁻¹), the
-  I⁺–He stretch attempt frequency; physical prior $\sim\mathcal{O}(1)$ ps⁻¹ from
-  the [IHe05] $X_2$ curvature (§4), cross-checked vs [I2-notes] cascade timing
-  (OQ5). Governs the shed rate once self-bound.
+  I⁺–He stretch attempt frequency; **default 2.42 ps⁻¹** ($\omega_e=80.6$ cm⁻¹,
+  pinned from [IHe05] EPAPS $V''(R_e)$, §4), cross-checked vs [I2-notes] cascade
+  timing (OQ5). Governs the shed rate once self-bound.
 - `SimConfig.evap_rrk_dof` — RRK effective DOF $s$, the exponent $s-1$ in the
   rate (§4). **Derived by default as $s=3n-6$** (mode-count, $n$-dependent,
   A11); set to a fixed scalar only to override for sensitivity. Calibrated
-  jointly with `ladder_shape` (A11 coupling), not independently.
+  jointly with `ladder_steepness` ($\kappa$) (A11 coupling), not independently.
 - `SimConfig.evap_gate_onset_eV` — **retired** as a free knob (R9 resolved).
   The suppression threshold is now the *derived* integrated ladder
   $\sum_i D_0^{\,\mathrm{I^+}}(i)$. Retained only as an optional manual
@@ -1209,7 +1558,7 @@ Newton-cooling form, $\tau$, and the downgraded A2 is auditable.
 | **[Nat23]** Albrechtsen, Nature 623 (2023) | Na⁺, at-rest accretion (pump only) | Poisson pickup structure; energy-gated dissociation cascade; cold-shed He (≈0 KE); broad $S_t(n)$ → native integer-$n$ spread; $D_0$ *ladder structure* | Rate 2.0/ps is at-rest, light, deep-well Na⁺ — OOM only; $D_0$ *values* are Na-specific (not transferable) |
 | **[Calvo24]** Calvo, JCP 161 (2024) | Na⁺, full pump+probe incl. ejection (RPMD) | Non-monotone shell during ejection; fragment-size *and* fragment-temperature distributions as the discriminating observable; outer (loose) He evaporate preferentially → cascade order; violent-ejection → total vaporization bracket | Cascade not complete at 20 ps → terminal $n$ is upper bound (R5); strong-ejection alkali strips *everything* → I⁺ loss may dominate more than 9 Å decline implies (R1); RPMD lacks superfluidity/exchange |
 | **[GAH25]** García-Alfonso/Halberstadt, JCP 163, 144309 (2025) | Na⁺,K⁺,Rb⁺,Cs⁺ solvation + Na⁺ pump–probe (⁴He-TDDFT, He₂₀₀₀) | The §6 budget (Eqs. 10–11); **Newton's-law-of-cooling applied to $E_\text{solv.struct}=E_\text{bind}+E_\text{int}$** (Eq. 12, Table III: $t_0$=6.53/5.0 ps, $\tau$=7.3/16.5 ps, $E_\infty$=−3424/−4144 K for shell-1/2) → fixes K2 *form and variable*; self-bound onset $t_0\equiv$ our gate crossing $t_\times$; cold-shed → no K1/K2 double-count (A8); non-monotone gain-then-loss confirmed | **Energy analysis is Na⁺-only** — the least I⁺-like alkali; I⁺ is Rb⁺-like in well depth (207 vs 204 K), so $t_0$/$\tau$ are imported from the worst-matched case (R8, §6.11); well-depth-dependent rate → A2 (rate not transferable); ~0.5 ps fit/unstable-phase overlap (R11); hot-structure binding ≠ ladder sum early (R12); still alkali, not I⁺ |
-| **[IHe05]** Buchachenko/Viehland, JCP 122 (2005) | He–I⁺ ab initio **pair** potential (the only I⁺ source) | First ladder rung $D_0^{\,\mathrm{I^+}}(1)$: $D_e=143.9$ cm⁻¹, $R_e=3.25$ Å; places I⁺ between Rb⁺/K⁺ → ladder template choice; validated vs I⁺ mobility | $D_e$ not $D_0$ (ZPE correction needed); open-shell ³P₂, SO-split (six curves) → scalar collapse (A5) and likely *gradual, shell-less* ladder (R3); **no $n>1$ cluster data** |
+| **[IHe05]** Buchachenko/Viehland, JCP 122 (2005) + erratum [IHe05-E] | He–I⁺ ab initio **pair** potential (the only I⁺ source) | First ladder rung $D_0^{\,\mathrm{I^+}}(1)$ **pinned** via EPAPS fit + exact ZPE ($X_2$ 106.9 / mixture 74.4 cm⁻¹); $R_e=3.25$ Å; places I⁺ between Rb⁺/K⁺ → ladder template choice; RRK $\nu=2.42$ ps⁻¹ from $V''(R_e)$; validated vs I⁺ mobility | ~~$D_e$ not $D_0$ (ZPE)~~ **resolved 2026-06-17** ($G(0)=37$ cm⁻¹ exact); open-shell ³P₂, SO-split (six curves) → scalar collapse (A5) and likely *gradual, shell-less* ladder (R3); **no $n>1$ cluster data** |
 
 **Net effect on the lock:** the *mechanism* (two-channel discrete, Poisson
 pickup, energy-gated loss, $E_\text{int}$ reservoir) is **strengthened** — two
