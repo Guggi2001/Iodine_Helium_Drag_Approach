@@ -25,6 +25,8 @@ collision physics" forbidden-list rule.
 
 - `drag_migration_log.md` — canonical phase status + full decision / withdrawal history
 - `DRAG_PORT_DESIGN_DECISIONS.md` — frozen architecture choices
+- `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` — live mass-model detail (locked mechanism, SQ1–SQ3 integrator/mass-jump split, R/A/OQ registers)
+- `TIER1A_IMPLEMENTATION_PLAN.md` — active build plan (anchored kinematic mass-dynamics validation)
 - `PHYSICS_BASELINE.md` — MD baseline
 - `METHOD_B_trajectory_matching_extraction.md` — extraction method + held-out validation
 - `TIER0_FINDINGS.md` — Tier-0 verdict
@@ -33,9 +35,15 @@ collision physics" forbidden-list rule.
 
 Compact state (verify against the log before relying on it): production law is
 `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the shared bundle; drag
-form is settled (pure-cubic); Tier 0 converged (18 Å clean pass, 9 Å non-radial);
-Tier 1 (mass dynamics) is UNGATED and next; noise (Tier 3), mass dynamics
-(Tier 1), and the `IonCheckpoint` v6 rename stay stubbed/inert behind their enums.
+form is settled (pure-cubic); **Tier 0 is complete** (18 Å clean pass, 9 Å
+non-radial flag). **The current goal is the Tier 1a build** — anchored kinematic
+mass-dynamics validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT
+loss curve, and a controlled `fixed` vs `discrete`-mass A/B tests the influence of
+mass dynamics on the trajectory. The work is the variable-mass integrator upgrade
+(SQ1–SQ3). Tier 1a is in the planning→implementation stage and stays behind the
+`[PROCEED TO IMPLEMENTATION]` trigger. Noise (Tier 3) stays stubbed/inert behind its
+enum; the `IonCheckpoint` schema bump is activated by Tier 1a (`n(t)` + the four-term
+ledger fields, **no `E_int` field yet**).
 
 ## Current Scope
 
@@ -162,17 +170,32 @@ status.**
 Parameters are entangled; validate in tier order, fixing each tier's winner
 before introducing the next unknown:
 
-- **Tier 0** — drag form, deterministic, fixed mass, in-window TDDFT traces.
-- **Tier 1** — mass scenario (A/B/biphasic), deterministic.
-- **Tier 2** — terminal I⁺(He)ₙ size distribution vs. experimental detector data
-  (the only observable that separates the mass scenarios).
-- **Tier 3** — ensemble second moments (noise) vs. VMI references.
+- **Tier 0 — COMPLETE.** Drag form, deterministic, fixed mass, in-window TDDFT
+  traces. Locked: `shared_pure_cubic` (18 Å clean pass, 9 Å non-radial flag).
+- **Tier 1a — ACTIVE (current goal).** Anchored kinematic mass-dynamics validation.
+  The shell schedule `n(t)` is *anchored* to the 9 Å TDDFT loss curve
+  (~21→19→14 He), not generated; the run is a controlled `fixed` vs `discrete`-mass
+  A/B that tests whether drag + variable mass reproduce `R(t)`, `|v(t)|` and whether
+  the four-term §2.9 ledger closes. Discriminates the mass-model *class* via the
+  `|v|∝1/m` cold-shed signature. **OQ-independent** — picture/ladder/κ/ν/s are
+  bypassed by the anchor. The build is the variable-mass integrator upgrade
+  (SQ1–SQ3: drag O-step under `m(t)`; momentum-conserving cold-shed jump; post-jump
+  `m⁺`). The predictive shell-timing variant ("1b") is **rejected** (TDDFT is not
+  ground truth — experiment arbitrates at Tier 2). Plan + slices:
+  `TIER1A_IMPLEMENTATION_PLAN.md`.
+- **Tier 2 — terminal I⁺(He)ₙ size distribution** vs. experimental detector data —
+  the only observable that separates the mass scenarios *and* arbitrates the two
+  genuinely-free knobs (ladder shape + electronic picture). The biphasic *generative*
+  mechanism (Poisson pickup + RRK + gate) is unfalsified until here.
+- **Tier 3 — ensemble second moments** (noise) vs. VMI references.
 
-A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at
-config-load (§6.5): constant-mass coefficients are self-consistent only with
-`mass_scenario=fixed`; the inconsistent pair is a hard refuse unless
-`allow_inconsistent_mass_pairing=True`. Histogram comparisons default to the
-Wasserstein metric. Current tier status: `drag_migration_log.md` / `TIER0_FINDINGS.md`.
+A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at config-load
+(§6.5): constant-mass coefficients are self-consistent only with
+`mass_scenario=fixed`. The Tier-1a `discrete` run trips this guard structurally and
+runs under `allow_inconsistent_mass_pairing=True`, defended by the §6.6 mid-window
+argument (anchored `m≈19 He = m_eff` mid-window; the `n=21`/`n=14` ends sit in the
+§6.7 free-zone). Histogram comparisons (Tier 2/3) default to the Wasserstein metric.
+Current tier status: `drag_migration_log.md` / `TIER0_FINDINGS.md`.
 
 ## Post-Processing Comparison Layer
 

@@ -18,6 +18,182 @@ targets, §10), the partition fraction $f_\text{ret}$, or the cooling time
 $\tau_\text{dissip}$. Maintains the strict Physics-Definition /
 Software-Implementation boundary: no code here.
 
+**Revision 2026-06-21 — consistency-check pass (4 fixes); mechanism unchanged,
+lock holds.** Cross-reading the loaded sources against the pinned ansatz surfaced
+three scenario-independent bookkeeping fixes and one scenario-keyed budget split.
+None touch the two-channel mechanism or any lock; all reversible.
+1. **$n^*$ leak corrected: per-atom collective binding now uses the cation count
+   21 throughout (was silently 20).** The figures "$|S|/n^*\approx124$ cm⁻¹
+   $\approx179$ K" (K2 split, $\partial|S|/\partial n$ marginal; R3
+   electrostriction-dominance) divide $|S|$ by $\approx20$ — the **neutral**
+   I@He₂₀₀₀ first-shell count ([I2-notes] Fig. 9), not the **cation** $n^*=21$
+   (Fig. 10). With $n^*=21$: $|S|/n^*=2484/21=\mathbf{118}$ cm⁻¹ $=170$ K, and the
+   collective-vs-pair-at-radius ratio is $118/25=\mathbf{4.7\times}$ (was $5\times$).
+   Qualitative conclusions stand (electrostriction still dominant; marginal still
+   $\approx D_0(1)=107$). **OQ8 upgraded LOW→LOW–MEDIUM:** the $20/21$ ambiguity is
+   no longer "geometry only" — it had leaked into the K2 marginal-release
+   bookkeeping (A8) and the $E_\text{elec}$ magnitude. Adopt $n^*=21$ for all
+   per-atom energetics; carry $n^*=21^{+0}_{-1}$ only where the GAH25 $R_e$-scaling
+   ($\approx20$) is the explicit cross-check. (CALIBRATION_MAP rows 12b, 22 mirror.)
+2. **$X_2$ Form U integrated band corrected to 0.25–0.28 eV; the 0.12 lower half
+   was an unstated crowding/drag-binding cross-check, not a $\kappa$ extreme.**
+   Evaluating Form U analytically with the cliff at $n^*+\tfrac12=21.5$,
+   $\sum_{n=1}^{21}D_0=21D_\text{floor}+(D_0(1)-D_\text{floor})\,W(\kappa)/N(\kappa)$,
+   $W=\sum_n(1-\sigma(n))$, $N=1-\sigma(1)$, over $\kappa\in[0.3,5]$ gives **$X_2$
+   0.25–0.28 eV** and **mixture 0.17–0.19 eV**. The mixture span (~11%) **confirms
+   the "nearly $\kappa$-independent" gate-threshold claim** (R9, S2, row 21) for
+   Form U as defined. But the previously quoted $X_2$ band "0.12–0.28" imported a
+   **crowding reduction** whose lower end coincides with the drag binding
+   0.117 eV — i.e. the one effect that breaks $\kappa$-independence sat inside the
+   band advertised as $\kappa$-independent. *Fix:* report Form U as **0.25–0.28
+   ($X_2$) / 0.17–0.19 (mix)**; list the crowding-reduced value and the §6.5.1 drag
+   binding (0.117 eV) as **separate cross-checks**, not band endpoints. The
+   decoupling (gate/floor $\kappa$-independent → pinnable ahead of the Tier-2 fit)
+   survives, now cleanly. (CALIBRATION_MAP row 21 mirror.)
+3. **Third electronic sub-case added: cooling-relaxation, between the mixture and
+   $X_2$ rungs.** The A10 default forms the mixture rung as the equal-weight mean
+   of dissociation energies ($\tfrac13(106.9{+}62.4{+}54.0)=74.4$ cm⁻¹). But
+   [IHe05] §III.B averages **transport cross-sections** over a *frozen* SO
+   population; the dissociation-energy mean is this project's own ansatz, not
+   IHe05's operation. Physically, an evaporating complex **cools**, so it may relax
+   toward the deepest curve ($X_2$, 106.9) rather than stay in the birth mixture —
+   the gate-relevant rung could sit **above 74.4, below 106.9**. *Fix:* the
+   `ladder_electronic_picture` fork carries a **third option**, `cooling_relaxed`
+   (rung between mixture and $X_2$, e.g. a relaxation-weighted blend), in addition
+   to `statistical_mixture` (default) and `x2_only`. Strictly between the two
+   existing brackets, so it cannot widen the Tier-2 search beyond current bounds;
+   it fills the gap the binary fork skips. See A5, A10, §11.
+4. **$E_\text{avail}^\text{ion}$ split into a scenario-keyed pair (validation vs
+   production); A7 reworded to "robust, narrower margin."** The pinned 2.70 eV is
+   the **production** onset (vertical double-ionization at $R_e(\mathrm I_2)=2.666$ Å,
+   $\tfrac12\cdot14.40/2.666$). Tier 0 and Tier 1 instead validate against the
+   [I2-notes] protocol that ionizes after the I atoms have drifted to **$d\approx9$
+   Å** (A-state dissociation then double-ionization, §III.B.2; author-confirmed),
+   giving $E_\text{avail}^\text{ion}=\tfrac12\cdot14.40/9=\mathbf{0.80\ eV}$ — a
+   $3.375\times$ smaller budget. Since $\sum_i D_0$ is scenario-independent, the S2
+   floor $f_\text{int}^\text{floor}=\sum_iD_0/E_\text{avail}^\text{ion}$ scales as
+   $1/E_\text{avail}$: mixture **0.065–0.072 @ 2.70 eV → 0.21–0.24 @ 0.80 eV**;
+   $X_2$ (Form U) **0.093–0.104 → 0.31–0.35**. **A7 reworded:** the self-unbound
+   onset is **robust across both scenarios** (floor stays far below the hard cap
+   $f_\text{int}\le1$), but the headroom shrinks from $\sim14\times$ (floor 0.07 @
+   2.70 eV) to $\sim4.5\times$ (floor 0.22 @ 0.80 eV) — keep "robust," drop fixed-margin
+   language. The **soft upper edge $f_\text{int}\lesssim0.2$ is a velocity-consistency
+   plausibility bound, not a constraint** (S2): the floor is the only derived
+   early-window edge. The heuristic is **scenario-invariant** —
+   $E_\text{trans}/E_\text{avail}\approx40\%$ at both budgets ($v\propto\sqrt{E_\text{avail}}$:
+   0.32 eV at $v\approx5.5$ Å/ps for 0.80 eV, [I2-notes] Fig. 23; $\sim1.1$ eV at
+   $\sim10$ Å/ps for 2.70 eV), so the soft ceiling reads $\sim0.6$ at **both**;
+   only the *floor* moves with scenario, narrowing the window from below. *Config:*
+   `coulomb_available_eV` becomes scenario-keyed — **0.80 eV (validation, $d{=}9$ Å) /
+   2.70 eV (production, $R_e$)** — stamped to the same scenario tag that guards the
+   drag↔mass pairing (DESIGN §6.5/§6.5.1), so a 2.70-eV onset cannot run against
+   0.80-eV-calibrated drag/shell references without tripping the guard. Add Fig. 23's
+   peak $v\approx5$–6 Å/ps as an explicit R10 / early-window cross-check **at the
+   0.80 eV budget**. **This A7/S2 partition is provisional pending OQ2** — the
+   $KE_\text{shed}$/energy-partition from the GAH25 movies or Halberstadt would
+   convert the soft ceiling into a real budget-derived headroom and may move the
+   window's upper edge and the translational fraction. See A7, S2, §6.11, R10, OQ2;
+   CALIBRATION_MAP rows 14, 15.
+
+**Revision 2026-06-21 (cont.) — Method-level consistency proof: invariant closes;
+RRK mode-count corrected.** Auditing the *mechanism* (not just parameters) as a
+closed system gave one pass and one fix.
+1. **Five-term invariant verified closed under every channel (PASS, no change).**
+   Tracking $\Delta(E_\text{kin},E_\text{pot},E_\text{dissip},E_\text{mass\_transfer},
+   E_\text{int})$ through drag (continuous), pickup S1, cold-shed K1, and K2 cooling:
+   each channel sums to zero (drag: KE↔dissip; S1: $-D_0+f_\text{ret}D_0+(1{-}f_\text{ret})D_0=0$
+   plus capture-KE defect → mass_transfer; K1: $E_\text{int}{-}D_0$, $E_\text{pot}{+}D_0$,
+   A8 marginal → bath; K2: $dE_\text{int}=-dE_\text{dissip}$ at fixed $N$). K1∩K2
+   non-overlap (cold-shed neutrality) and drag↔$E_\text{int}$ disjointness hold. The
+   §6 invariant is a **genuine closed conservation law for the Method** (modulo
+   Verlet drift), not approximate. No edit — recorded as the audit result.
+2. **RRK effective DOF corrected $3n-6\to3n-3$; last atom is direct dissociation
+   (MEDIUM).** Two coupled errors: (i) §4 defined $s$ as the DOF "of the I⁺Heₙ
+   **complex**" ($n{+}1$ atoms → $3n-3$) but wrote $3n-6$ (an $n$-atom count),
+   disagreeing with its own definition by 3; (ii) $3n-6$ goes $s{=}0$ at $n{=}2$ and
+   $s{=}{-}3$ at $n{=}1$, where $k=\nu(1-D_0/E_\text{int})^{s-1}$ **diverges at
+   threshold** ($s<1$), breaking the saturating-rate / no-avalanche guarantee (§4)
+   and R5's physical-timescale claim — in the *small-$n$ regime that is the only
+   place $\{\nu,s\}$ are observable* (at large $n$ the huge exponent makes $k$ a
+   near-step function set by cooling, not kinetics; the size-distribution tail
+   sensitivity lives at $n\lesssim$ few, which the total-strip OQ6 run also
+   traverses). *Fix:* (a) $s=3n-3$ (full complex, $\ge3$ for $n\ge2$); (b) $n{=}1$
+   modelled as **direct dissociation $k=\nu$** gated by $E_\text{int}>D_0(1)$
+   (single mode → statistical RRK degenerate; also the boundary where cold-shed
+   neutrality A8 is weakest — flagged); (c) **config-load guard $s\ge1$** on any
+   effective-scalar override (dissipativity-style, §3.3-analog). Bounded
+   $k\in[0,\nu)$ and the no-avalanche guarantee now hold end-to-end through the last
+   atom. Touches §4, A11, §10/§11; CALIBRATION_MAP row 10. Mechanism and invariant
+   unchanged.
+
+**Revision 2026-06-21 (cont. 2) — pickup↔gate loop proven stable; occupancy cap
+(Form B) added for completeness.** Continuing the Method-level consistency proof to
+the feedback loop between accretion and the self-bound gate.
+1. **Pickup↔gate loop is stable and well-posed — "equilibrium is emergent, not a
+   parameter" now proven (§6.11 stability note).** On the mean-field flow
+   $\langle\dot n\rangle,\langle\dot E_\text{int}\rangle$: (a) the self-unbound
+   margin $G\equiv E_\text{int}-\Sigma(n)$ is a **pathwise Lyapunov function** —
+   between pickups $\dot G=-E_\text{int}/\tau\le0$, and *at* a pickup
+   $\Delta G=-(1-f_\text{ret})D_0(n{+}1)\le0$ because accretion adds a full binding
+   rung but only $f_\text{ret}$ of it as heat — so $G$ monotonically falls and the
+   gate **always** crosses in finite time (pickup is *stabilizing*; the earlier
+   runaway worry had the sign backwards). $G(0)>0$ is exactly the $f_\text{int}$
+   floor (S2). (b) Terminal $n$ is a **stable freeze-out attractor** governed by the
+   dimensionless $\Pi(n)\equiv\lambda(n)f_\text{ret}\tau$: $\Pi>1$ shedding persists,
+   $\Pi<1$ freeze; with $\Pi\to0$ at exit ($\rho_\text{He}\to0$) guaranteeing
+   termination on every trajectory. $\Pi$ is the quantitative spine of the R1
+   regime axis; no limit cycle (K2 dissipative, source decays). No edit to the
+   mechanism — recorded as the audit result, with $\Pi$ and $t_\times$ as the two
+   early diagnostics.
+2. **Occupancy cap added (Langmuir "Form B"), A12 — closes the only gap the proof
+   surfaced.** Density-only $\lambda_\text{attach}$ had no $n$-dependence, so a
+   resting/slow ion would accrete unboundedly ($n\to\infty$), contradicting
+   [Nat23]'s resting-ion leveling-off. Fix: $\lambda_\text{attach}=\lambda_0
+   (\rho_\text{He}/\rho_\text{bulk})(1-n/n^*)_+^{\,p}$ — a site-saturation factor
+   →0 at $n^*$. **Caps the rate only**, so the §6 invariant and the $G$-crossing are
+   untouched and the freeze-out attractor *gains* a second stabilizing route
+   ($n\to n^*$ as well as exit). **Inert for production** (the ion exits before
+   saturation; Form B ≡ density-only for ejection) — added for resting-ion
+   correctness, reviewer-defensibility, and the Tier-1-tail case. Costs the exponent
+   $p$, **default tied to $\kappa$** (both encode first-shell abruptness — not
+   independent, like $s\!\leftrightarrow\!\kappa$), so **zero net new free
+   parameters** unless the size distribution forces the split. Rejected: hard wall
+   (discontinuous; makes the $\pm1$–2-uncertain $n^*$ a hard input) and shell-2
+   two-reservoir ("Form C", deferred). Touches §4 (rate + dim table), §6.11, A12
+   (new), §10/§11; CALIBRATION_MAP rows $\lambda_\text{attach}$, $p$ (new), $\Pi$
+   (new).
+
+**Revision 2026-06-21 (cont. 3) — integrator↔mass-jump operator split specified;
+Method proof closes (conditional).** The last structural item: where the
+continuous BAOAB integrator meets the discrete mass jumps (A13, new).
+1. **SQ1 (built, accepted): drag-on path is $O(dt)$, not $O(dt^2)$.** The
+   state-dependent $\gamma(v)=gbv^2/m$ is frozen at $v_\text{in}$ and applied as
+   $e^{-\gamma dt}$ — locally first-order on the cubic. **Retire the BAOAB
+   second-order claim for production** (holds only in the constant-$\gamma$ limit).
+   The trade is correct: freezing $v_\text{in}$ buys **exact dissipation
+   bookkeeping** ($\Delta E_\text{dissip}=\tfrac12 m(\|v_\text{in}\|^2-\|v_\text{out}\|^2)$,
+   any $dt$) and **unconditional dissipativity** ($\|v_\text{out}\|\le\|v_\text{in}\|$,
+   no large-$dt$ blow-up on the stiff cubic) — both worth more than an order here.
+   Residual: a **one-signed over-braking bias** (folded into R10; expect simulated
+   peak $v$ slightly below Fig. 23 at fixed $dt$).
+2. **SQ2 (spec, unbuilt): momentum-conserving velocity reset is an invariant
+   precondition.** Jumps reset $v^+=(m v^-\pm m_\text{He}u_\text{He})/(m\pm m_\text{He})$
+   (He at rest). **The §6 five-term invariant closure presupposes this** —
+   $E_\text{mass\_transfer}$ *is* the reduced-mass KE defect
+   $\tfrac12\tfrac{m\,m_\text{He}}{m+m_\text{He}}\|v^-{-}u_\text{He}\|^2$ this reset
+   produces; a label-only $v$ voids the proof. This also **corrected the invariant
+   text** from the heavy-ion $\tfrac12 m_\text{He}v^2$ (a ~3% closure error at
+   $n{=}1$) to the exact reduced-mass form. Jump-step order reduction is benign
+   (jump-steps are $dt$-independent in number → measure-zero as $dt\to0$); ordering
+   fixed jump-then-O; at most one mass event per step (shed before pickup).
+3. **SQ3 (spec, unbuilt): post-jump O-step uses $m^+$** in friction and the FDT
+   noise amplitude (forced by SQ2; small but a definiteness requirement).
+   *Net:* no structural defect. **The Method consistency proof now closes,
+   conditional on SQ2(a) being implemented as specified** — recorded as an
+   implementation precondition, not an open physics question. Touches §4 (jump
+   rules + dim table), §6 (invariant, reduced-mass correction), A13 (new), §11
+   (4 config fields); CALIBRATION_MAP $E_\text{mass\_transfer}$ note.
+
 **Revision 2026-06-17 (folded in) — EPAPS fit closes the first rung and the RRK
 prefactor; A10 mixture rung now numeric.** The [IHe05] EPAPS analytic fit
 parameters (corrected Eq. (3), erratum [IHe05-E]) were obtained, so $V''(R_e)$ for
@@ -263,7 +439,7 @@ and the §13 external-validation table for what transfers vs. warns).
 The ion-stage helium count $n(t)$ evolves by **two independent discrete
 stochastic channels** operating per BAOAB sub-step:
 
-- **Pickup** — a **Poisson process**, rate $\lambda_\text{attach}(\rho_\text{He}(\text{depth}))$, each event $n \to n+1$, $m \to m + m_\text{He}$.
+- **Pickup** — a **Poisson process**, rate $\lambda_\text{attach}(\rho_\text{He}(\text{depth}),n)$ (density-gated, with a Langmuir occupancy cap toward $n^*$; A12), each event $n \to n+1$, $m \to m + m_\text{He}$, with a **momentum-conserving velocity reset** $v^+=\dfrac{m\,v^-+m_\text{He}u_\text{He}}{m+m_\text{He}}$ (captured He taken **at rest** in the droplet frame, $u_\text{He}=0$, so $v^+=\tfrac{m}{m+m_\text{He}}v^-$; thermal $u_\text{He}$ deferred). This reset is **mandatory** — it is the operation whose KE defect *defines* $E_\text{mass\_transfer}$ in the invariant (A13); carrying $v$ through unchanged would break closure.
 - **Evaporation** — **energy-gated and RRK rate-limited**, governed by two
   conditions on the tracked complex internal energy $E_\text{int}$ and an
   I⁺Heₙ dissociation-energy ladder $D_0^{\,\mathrm{I^+}}(n)$:
@@ -275,8 +451,13 @@ stochastic channels** operating per BAOAB sub-step:
     the top rung sheds with a *saturating* unimolecular rate (§4); each
     event $n \to n-1$, $m \to m - m_\text{He}$, $E_\text{int} \mathrel{-}=
     D_0^{\,\mathrm{I^+}}(n)$, shed He leaving **cold** (≈ zero kinetic
-    energy). The bounded rate caps per-step shedding — no instantaneous
-    cascade.
+    energy, $u_\text{He}\approx0$), with the **symmetric momentum-conserving
+    reset** $v^+=\tfrac{m\,v^- - m_\text{He}u_\text{He}}{m-m_\text{He}}\to
+    \tfrac{m}{m-m_\text{He}}v^-$ (the lighter complex retains the momentum;
+    A13). The bounded rate caps per-step shedding — no instantaneous
+    cascade. At most **one mass event per step** (pickup or shed; if both
+    Bernoulli draws fire, shed is applied first, then pickup — a fixed order
+    for unambiguous bookkeeping, joint prob. $\sim\lambda\nu\,dt^2\sim4\times10^{-4}$; A13).
 
 Mass is therefore **integer-valued in He count**, **non-monotone**, and the
 equilibrium shell size is an **emergent balance** between Poisson gain and
@@ -390,7 +571,7 @@ project's own TDDFT shell counts and the experimental I⁺Heₙ size distributio
 
 **What does NOT transfer (must be re-sourced or calibrated):**
 
-- The numeric $D_0^\text{Na^+}(N)$ values (Na⁺–He specific). The I⁺ ladder
+- The numeric $D_0^{\mathrm{Na^+}}(N)$ values (Na⁺–He specific). The I⁺ ladder
   $D_0^{\,\mathrm{I^+}}(n)$ must come from literature (I⁺Heₙ binding energies) or
   be treated as a calibrated quantity, consistent with §6.5.1's treatment of
   ion binding as an *effective* parameter.
@@ -407,8 +588,19 @@ Per BAOAB sub-step of size $dt = dt_\text{ion} = 0.01$ ps:
 $$
 P_\text{attach}(dt) = 1 - e^{-\lambda_\text{attach}\,dt} \approx \lambda_\text{attach}\,dt,
 \qquad
-\lambda_\text{attach} = \lambda_0 \,\frac{\rho_\text{He}(\text{depth})}{\rho_\text{bulk}}.
+\lambda_\text{attach} = \lambda_0 \,\frac{\rho_\text{He}(\text{depth})}{\rho_\text{bulk}}\,
+\Big(1-\tfrac{n}{n^*}\Big)_+^{\,p}.
 $$
+The final factor is a **Langmuir-style occupancy (site-saturation) cap** (added
+2026-06-21, A12): a sticking coefficient that falls as the first shell fills,
+$(\cdot)_+\equiv\max(\cdot,0)$, exponent $p\ge0$. It reduces to the density-only
+form for $n\ll n^*$ (preserves the [Nat23] resting-ion anchor 2.0/ps, §2.7/§5) and
+goes continuously to zero at $n{=}n^*$, so a resting/slow-exit ion saturates at
+$n^*$ instead of accreting unboundedly. **For the production ejection problem it is
+physically inert** — the ion exits ($\rho_\text{He}\to0$) before the shell
+saturates, so $\Pi$ crosses 1 via density first (§6.11); it earns its keep only if
+the Tier-1 tail lingers near saturation, and for resting-ion correctness (A12).
+Units: the factor is dimensionless, $[\lambda_\text{attach}]=\text{ps}^{-1}$ ✓.
 A single independent Bernoulli draw per ion per step; **no collision gate** (this
 is *not* the discarded $b_\text{collision}$-coupled model of baseline §7.1).
 
@@ -449,16 +641,31 @@ degrees of freedom of the I⁺Heₙ complex. **Parameter sourcing (updated 2026-
   threshold (55→31→15→5 cm⁻¹ up the $X_2$ ladder), so a near-dissociation
   complex's effective attempt frequency is lower — absorbed into the effective
   $s$ (A11), reinforcing the joint $\{\nu,s\}$/`ladder_steepness` ($\kappa$) calibration.
-- $s$ is **mode-counted, not free:** $s=3n-6$ (the vibrational DOF of the
-  $n$-He shell; $3n-5$ if treated linear), so $s$ is $n$-dependent
-  ($\sim57$ at $n{\sim}21$, $\sim9$ at $n{\sim}5$) and parameter-free by
-  default, with a single effective-scalar override available for sensitivity
-  (mirroring the gate-onset: derive-by-default, override-for-test). The
-  mode-count and the ladder shape are **not independent** — for a blurred
-  /gradual shell (A10/R3) the effective $s$ may fall below the naïve $3n-6$, so
-  $s$ and `ladder_steepness` ($\kappa$) are calibrated *jointly* against the size distribution,
-  not separately (both probe the same shell-rigidity question). $s$ also absorbs
-  the classical-RRK-vs-RRKM simplification (A11).
+- $s$ is **mode-counted, not free:** $s=3(n{+}1)-6=\mathbf{3n-3}$ — the
+  vibrational DOF of the **full I⁺Heₙ complex** ($n$ He $+$ 1 ion $=n{+}1$ atoms,
+  nonlinear), **corrected 2026-06-21** from the earlier $3n-6$, which counted an
+  $n$-atom object and disagreed with this line's own "complex" definition by 3 and
+  went $\le0$ for $n\le2$ (see the 2026-06-21 (cont.) revision and A11). So $s$ is
+  $n$-dependent ($\sim60$ at $n{\sim}21$, $\sim12$ at $n{\sim}5$, $=3$ at $n{=}2$)
+  and parameter-free by default, with a single effective-scalar override available
+  for sensitivity (derive-by-default, override-for-test), **guarded $s\ge1$ at
+  config-load** (a dissipativity-style bound, §3.3-analog: $s<1$ makes $k$ diverge
+  at threshold). **Physical band $[3n-3,\,3n]$ (A11):** $3n-3$ is the conservative
+  free-complex default; hindered shell rotations retained as **librations** push
+  the effective $s$ *up* toward $3n$, while a blurred/separable shell (A10/R3)
+  pushes it *down* (fewer effectively-coupled modes) — opposite drifts, both the
+  same shell-rigidity question. So $s$ and `ladder_steepness` ($\kappa$) are
+  calibrated *jointly* against the size distribution, not separately. $s$ also
+  absorbs the classical-RRK-vs-RRKM simplification (A11).
+- **Last-atom step ($n{=}1$) is direct dissociation, not statistical RRK
+  (2026-06-21).** I⁺He₁ is a diatomic with a *single* vibrational mode, so the
+  statistical phase-space picture is degenerate ($s=3n-3=0$ at $n{=}1$; even
+  $3n-6$ failed here). The $n{=}1\to0$ loss is therefore modelled as **direct
+  dissociation at the fixed attempt frequency**, $k=\nu$, gated only by
+  $E_\text{int}>D_0(1)$ (no RRK bracket). This keeps the per-step rate bounded by
+  $\nu\,dt$ (avalanche guarantee intact) through the last atom and is exactly the
+  regime where cold-shed neutrality (A8) is weakest, so it is flagged as the
+  **boundary of validity of the statistical evaporation picture** (A11).
 
 *Dimensional check on $\nu$:* $[\sqrt{V''/\mu}]=\sqrt{(\text{amu·Å}^2
 \text{ps}^{-2}/\text{Å}^2)/\text{amu}}=\text{ps}^{-1}$ ✓.
@@ -480,13 +687,15 @@ equals the RRK-rate-limited shed rate; no $M_\text{eq}$ or $\tau$ parameter.
 |---|---|---|---|
 | Pickup rate | $\lambda_\text{attach}$ | $\text{ps}^{-1}$ | $[\lambda\,dt]=1$ ✓ |
 | Gating density ratio | $\rho_\text{He}/\rho_\text{bulk}$ | dimensionless | ✓ |
-| Pickup KE injection | $\tfrac12 m_\text{He} v^2$ | $\text{amu·Å}^2/\text{ps}^2$ = energy | ✓ |
+| Occupancy cap factor | $(1-n/n^*)_+^{\,p}$ | dimensionless | $n,n^*$ counts; $p$ pure ✓ |
+| Pickup KE defect (reduced-mass) | $\tfrac12\tfrac{m\,m_\text{He}}{m+m_\text{He}}\|v^-{-}u_\text{He}\|^2$ | $\text{amu·Å}^2/\text{ps}^2$ = energy | exact under momentum reset (A13) ✓ |
 | Dissociation rung | $D_0^{\,\mathrm{I^+}}(n)$ | eV (energy) | ✓ |
 | Integrated binding (gate) | $\sum_i D_0^{\,\mathrm{I^+}}(i)$ | eV | compared to $E_\text{int}$ (eV) ✓ |
 | RRK prefactor | $\nu$ | $\text{ps}^{-1}$ | $[\nu\,dt]=1$ ✓ |
 | RRK bracket | $1 - D_0(n)/E_\text{int}$ | dimensionless | eV/eV ✓ |
-| RRK effective DOF | $s=3n-6$ | dimensionless | mode-counted (A11); exponent $s-1$ dimensionless ✓ |
-| RRK rate | $k=\nu(\cdot)^{s-1}$ | $\text{ps}^{-1}$ | $[k\,dt]=1$ ✓ |
+| RRK effective DOF | $s=3n-3$ ($n\ge2$) | dimensionless | mode-counted, full complex (A11); $s{-}1\ge1$; guarded $s\ge1$ ✓ |
+| RRK rate | $k=\nu(\cdot)^{s-1}$ ($n\ge2$) | $\text{ps}^{-1}$ | $[k\,dt]=1$; bounded $k\in[0,\nu)$ ✓ |
+| Last-atom rate | $k=\nu$ ($n{=}1$, direct) | $\text{ps}^{-1}$ | gated $E_\text{int}>D_0(1)$; bounded by $\nu$ ✓ |
 | Shed-He KE | $\approx 0$ | — | no $\tfrac12 m v^2$ on loss ✓ |
 | Internal energy | $E_\text{int}$ | eV | ✓ |
 
@@ -556,37 +765,51 @@ point-mass MD does not natively have. Its **structure is locked**; the
   E_\text{int}(0) = f_\text{int}\,E_\text{avail}^\text{ion},
   \qquad f_\text{int}\in[0,1],
   $$
-  with **$E_\text{avail}^\text{ion}=2.70$ eV the per-ion share** of the I–I
-  Coulomb release (pinned 2026-06-17, per-ion convention adopted; see below) and
-  $f_\text{int}$ the small fraction coupling into *this* ion's shell-*internal*
-  modes. *Source:* the pair release is $E_\text{avail}=e^2/R_{\mathrm{II}}=
-  14.40/2.666=5.40$ eV at the vertical geometry $R_{\mathrm{II}}=R_e(\mathrm{I_2})
-  =2.666$ Å ($[\text{eV·Å}/\text{Å}]=\text{eV}$ ✓); equal-mass dissociation splits
-  it, so one ion's budget is $E_\text{avail}^\text{ion}=2.70$ eV. *Convention flag
-  (reversible):* the doc previously used the **pair** value 5.40 eV with $f_\text{int}$
-  silently absorbing the ½; the per-ion value is cleaner ("fraction of this ion's
-  energy that heats its shell") and is now the default — switching back doubles the
-  floor below. The fraction is preferred over a bare $E_\text{int}(0)$ because it is
-  physically interpretable and intrinsically bounded. **Two-sided bounds, now
-  numeric (2026-06-17):**
+  with **$E_\text{avail}^\text{ion}$ the per-ion share** of the I–I Coulomb release
+  (**scenario-keyed, 2026-06-21**) and $f_\text{int}$ the small fraction coupling
+  into *this* ion's shell-*internal* modes. *Source:* the pair release is
+  $E_\text{avail}^\text{pair}=e^2/R_{\mathrm{II}}=14.40/R_{\mathrm{II}}$, split
+  equally by equal-mass dissociation, so $E_\text{avail}^\text{ion}=7.20/R_{\mathrm{II}}$
+  eV ($[\text{eV·Å}/\text{Å}]=\text{eV}$ ✓). **Two scenarios at different $R_{\mathrm{II}}$:**
+  - *Validation (Tier 0/1):* the [I2-notes] protocol dissociates I₂ on the A state
+    and double-ionizes after the atoms drift to $R_{\mathrm{II}}\approx9$ Å →
+    $E_\text{avail}^\text{ion}=7.20/9=\mathbf{0.80\ eV}$. **This is the budget the
+    drag and the 21→19→14 shell references were generated under**, so it is the one
+    the mass model uses when reproducing them (author-confirmed, §III.B.2).
+  - *Production:* vertical double-ionization at $R_{\mathrm{II}}=R_e(\mathrm{I_2})
+    =2.666$ Å → $E_\text{avail}^\text{ion}=7.20/2.666=\mathbf{2.70\ eV}$ (pair 5.40),
+    a $3.375\times$ hotter onset.
+  *Convention flag (reversible):* the doc previously used the **pair** value with
+  $f_\text{int}$ silently absorbing the ½; the per-ion value is cleaner and is the
+  default — switching back doubles the floor below. The fraction is preferred over a
+  bare $E_\text{int}(0)$ because it is physically interpretable and intrinsically
+  bounded. **Two-sided bounds, scenario-keyed (2026-06-21):**
   - *Lower (self-unbound floor):* $E_\text{int}(0) > \sum_{i=1}^{n_0}
     D_0^{\,\mathrm{I^+}}(i)$ at $n_0=21$, i.e. $f_\text{int} > f_\text{int}^\text{floor}
     =\sum_i D_0/E_\text{avail}^\text{ion}$ ($[\text{eV}/\text{eV}]$ dimensionless ✓).
-    The integrated first-shell ladder is now computed from Form U: **$X_2$
-    0.12–0.28 eV, mixture 0.17–0.19 eV** (the $X_2$ span is the flat-shell vs
-    crowding-reduced range, §A5/Form U limitation; the upper end is the
-    flat-shell value, the lower tracks the reachable drag binding 0.117 eV). With
-    $E_\text{avail}^\text{ion}=2.70$ eV this gives **$f_\text{int}^\text{floor}
-    \approx0.04$–$0.10$** ($X_2$), ~0.06–0.07 (mixture). **Key result — the
-    self-unbound onset is robust, not fine-tuned:** the floor is at most ~10%, so
-    GAH25's several-ps self-unbound window is reproduced for essentially the entire
-    physical range of $f_\text{int}$; the mechanism does not hinge on a tuned
-    partition (strengthens A7, A8).
-  - *Upper:* hard cap $f_\text{int}\le 1$; physically small. Velocity sanity check
-    (ejection ~10 Å/ps, ion+shell ~211 amu → translational KE ~1.1 eV vs the
-    2.70 eV per-ion share) is consistent with $f_\text{int}$ well below 1 but does
-    not pin it (TDDFT-class). Working window $f_\text{int}\in[\sim0.05,\lesssim0.2]$:
-    firm lower edge, soft ceiling.
+    The integrated first-shell ladder from Form U (pure $\kappa$-range, corrected
+    2026-06-21): **$X_2$ 0.25–0.28 eV, mixture 0.17–0.19 eV** (both ~11% over
+    $\kappa\in[0.3,5]$ — confirms near-$\kappa$-independence). *Separate
+    cross-checks (not band endpoints):* the crowding-reduced value and the §6.5.1
+    drag binding 0.117 eV; the earlier "0.12–0.28" $X_2$ band conflated the
+    crowding reduction into the band. **Scenario-keyed floor (2026-06-21):** at
+    $E_\text{avail}^\text{ion}=2.70$ eV (production), $f_\text{int}^\text{floor}
+    \approx0.09$–$0.10$ ($X_2$), ~0.065 (mix); at $E_\text{avail}^\text{ion}=0.80$
+    eV ($d{=}9$ Å, the **Tier-0/1 validation** budget), $\approx0.31$–$0.35$
+    ($X_2$), $0.21$–$0.24$ (mix). **Self-unbound onset is robust across both
+    scenarios** (floor far below the hard cap $f_\text{int}\le1$), but the headroom
+    shrinks from $\sim14\times$ (2.70 eV) to $\sim4.5\times$ (0.80 eV); the
+    mechanism does not hinge on a tuned partition (A7, A8), though the Tier-1 margin
+    is the narrower one.
+  - *Upper:* hard cap $f_\text{int}\le 1$. The ~0.2 edge is a **velocity-consistency
+    plausibility bound, not a constraint** — Tier 2 may exceed it with a flag, not a
+    rejection. Velocity sanity check, scenario-invariant in *fraction*
+    ($E_\text{trans}/E_\text{avail}\approx40\%$, since $v\propto\sqrt{E_\text{avail}}$):
+    ejection ~10 Å/ps → ~1.1 eV of the 2.70 eV (production); ~5–6 Å/ps → ~0.32 eV of
+    the 0.80 eV ([I2-notes] Fig. 23, validation) — both read a soft ceiling ~0.6.
+    Only the *floor* moves with scenario; the ceiling does not. **Provisional pending
+    OQ2** (the $KE_\text{shed}$/partition would convert the soft ceiling into a real
+    budget-derived headroom). Working window: firm lower edge, soft ceiling.
   - *Decoupling (load-bearing for build order):* with the Form U cliff at the
     shell boundary $n^*+\tfrac12$, the first-shell sum is **nearly $\kappa$-independent**
     (varies ~10% over $\kappa\in[0.3,5]$) — $\kappa$ shapes only the cross-cliff
@@ -632,8 +855,9 @@ point-mass MD does not natively have. Its **structure is locked**; the
   re-reading GAH25 (Table I/II), the first shell sits at $r_1^e\approx4.67$ Å (far
   outside the pair $R_e=3.25$ Å), where pair polarization is only
   $D_4/r_1^{e4}\approx25$ cm⁻¹/atom, yet the DFT per-atom shell binding is
-  $|S|/n^*\approx179$ K $\approx124$ cm⁻¹/atom — so **collective electrostriction
-  (snowball compression) is the dominant binding term, ~5× the pair-at-radius**,
+  $|S|/n^*\approx170$ K $\approx118$ cm⁻¹/atom ($n^*=21$, corrected 2026-06-21;
+  was 179 K/124 cm⁻¹ off $n^*{=}20$) — so **collective electrostriction
+  (snowball compression) is the dominant binding term, ~4.7× the pair-at-radius**,
   not a small correction. We therefore carry it explicitly:
   $$
   E_\text{solv.struct}(N)=\underbrace{-\textstyle\sum_{i\le N}D_0^{\,\mathrm{I^+}}(i)}_{E_\text{bind}^\text{pair}(N)\ \text{[IHe05]}}
@@ -650,7 +874,7 @@ point-mass MD does not natively have. Its **structure is locked**; the
     tracking the current shell ($\to0$ as $N\to0$), full stripping stays
     reachable. $|S(N)|=|S|\cdot\sum_{i\le N}D_0/\sum_{i\le n^*}D_0$ distributes the
     collective full-shell value over the ladder shape (*flagged assumption*; the
-    GAH25 near-constant collective marginal $\partial|S|/\partial n\approx124$ cm⁻¹
+    GAH25 near-constant collective marginal $\partial|S|/\partial n\approx118$ cm⁻¹
     supports a near-linear distribution).
   - **$E_\text{int}$ reconstruction is now exact (R12 systematic eliminated).**
     Recovering $E_\text{int}=E_\text{solv.struct}-E_\text{bind}^\text{pair}(N)-E_\text{elec}(N)$
@@ -711,11 +935,20 @@ $$
 E_\text{kin} + E_\text{pot} + E_\text{dissip} + E_\text{mass\_transfer} + E_\text{int} \approx \text{const}.
 $$
 This extends the §2.9 invariant by the new $E_\text{int}$ reservoir.
-`E_mass_transfer_eV` (the renamed §2.9 field) absorbs the pickup KE-injection
-defect (cold He swept up at ion speed, $-\tfrac12 m_\text{He}v^2$, as in baseline
-§7.1.3) and the cold-shed bookkeeping. $E_\text{int}$ remains the tracked
-reservoir in the invariant; K2 now cools $E_\text{solv.struct}$, but at fixed
-$N$ (between shed events) $E_\text{bind}(N)$ is constant so
+`E_mass_transfer_eV` (the renamed §2.9 field) absorbs the pickup KE defect and
+the cold-shed bookkeeping. **Exact (reduced-mass) form (corrected 2026-06-21,
+A13):** the momentum-conserving capture defect is
+$$
+\Delta E_\text{cap}=\tfrac12\,\frac{m\,m_\text{He}}{m+m_\text{He}}\,\|v^- - u_\text{He}\|^2
+\;\xrightarrow{u_\text{He}=0}\;\tfrac12\,\frac{m\,m_\text{He}}{m+m_\text{He}}\,\|v^-\|^2,
+$$
+$[\text{amu·Å}^2/\text{ps}^2]$ ✓ — **not** the heavy-ion approximation
+$\tfrac12 m_\text{He}v^2$ (baseline §7.1.3), which is the $m\gg m_\text{He}$ limit
+and overstates the defect by $\sim3\%$ at $n{=}1$ (reduced mass 3.88 vs 4 amu),
+shrinking as the complex grows. Using the reduced-mass form makes the invariant
+close **exactly** under the §4 momentum reset, not to $\sim3\%$. $E_\text{int}$
+remains the tracked reservoir in the invariant; K2 now cools $E_\text{solv.struct}$,
+but at fixed $N$ (between shed events) $E_\text{bind}(N)$ is constant so
 $dE_\text{solv.struct}=dE_\text{int}$, and the drained energy is booked to
 `E_dissip_eV` (bath) exactly as before — the variable swap changes only the
 *driving force* (now the gap to equilibrium *binding*, not to an internal
@@ -823,6 +1056,71 @@ removes this cap ($E_\infty\to0$ as $N\to0$), so total strip stays dynamically
 reachable. The remaining open item is only *energetic favorability* — where the
 liberated electrostriction energy goes on full collapse (OQ6/OQ7), not a
 mechanical block.
+
+**Stability of the pickup↔gate loop — the equilibrium is provably emergent
+(2026-06-21).** The coupled mean-field flow of the two locked channels is
+
+$$
+\langle \dot n \rangle
+=
+\lambda(n)-k\,\mathbf{1}_{\mathrm{open}}.
+$$
+
+$$
+\langle \dot E_{\mathrm{int}} \rangle
+=
+-\frac{E_{\mathrm{int}}}{\tau}
++\lambda(n)\,f_{\mathrm{ret}}\,D_0(n+1)
+-k\,D_0(n)\,\mathbf{1}_{\mathrm{open}}.
+$$
+
+with
+
+$$
+\lambda(n)
+=
+\lambda_0
+\left(\frac{\rho_{\mathrm{He}}}{\rho_{\mathrm{bulk}}}\right)
+\left(1-\frac{n}{n^*}\right)_+^{\,p},
+\qquad
+k
+=
+\nu\left(1-\frac{D_0(n)}{E_{\mathrm{int}}}\right)^{s-1}.
+$$
+
+The first equation has units of $\mathrm{ps}^{-1}$ and the second of $\mathrm{eV\,ps}^{-1}$. Two results close the
+"emergent, not a parameter" claim:
+- **Crossing is guaranteed (pathwise Lyapunov).** Let the self-unbound margin be
+  $G\equiv E_\text{int}-\Sigma(n)$, $\Sigma(n)=\sum_{i\le n}D_0(i)$ (eV); the gate
+  is suppressed while $G>0$. Between pickups $\dot G=-E_\text{int}/\tau\le0$; at a
+  pickup, $\Sigma$ gains a **full** rung while $E_\text{int}$ gains only
+  $f_\text{ret}$ of it, so $\Delta G=-(1-f_\text{ret})D_0(n{+}1)\le0$. Hence **$G$
+  is monotone non-increasing along every sample path**, strictly decreasing
+  whenever $E_\text{int}>0$ — so cooling drives $G\to0$ in finite time and the gate
+  **always opens**. Pickup is on the *stabilizing* side: accretion deposits a whole
+  rung of binding but only a fraction of heat, the $(1-f_\text{ret})$ remainder
+  radiating to the bath (so the earlier "longer suppression → runaway pickup" worry
+  had the sign backwards). The $f_\text{int}$ floor (S2) is exactly $G(0)>0$ —
+  necessary and sufficient for this suppression-then-crossing structure.
+- **Terminal $n$ is a stable freeze-out attractor, set by one dimensionless group.**
+  Treating $E_\text{int}$ as fast ($\lambda\tau\lesssim1$), its quasi-steady value
+  at fixed $n$ is $E_\text{int}^\text{qs}=\Pi(n)\,D_0(n)$ with
+  $$
+  \boxed{\;\Pi(n)\equiv\lambda(n)\,f_\text{ret}\,\tau\;}\qquad(\text{dimensionless: }\text{ps}^{-1}\!\cdot1\cdot\text{ps}\ \checkmark).
+  $$
+  Shedding requires $E_\text{int}^\text{qs}>D_0(n)$, i.e. $\Pi(n)>1$; for $\Pi(n)<1$
+  shedding shuts off and $n$ **freezes** (stable: a fluctuation above $D_0$ is
+  drained by cooling; an extra pickup cools back; the large-$s$ near-step sharpens
+  the shut-off). **Two stabilizing routes to $\Pi<1$:** exit-driven
+  ($\rho_\text{He}\to0$ as the ion leaves) and filling-driven ($n\to n^*$ via the
+  A12 cap). The first guarantees termination for **every** ejection trajectory
+  regardless of the cap; the second makes a resting/slow ion saturate rather than
+  diverge. So terminal $n$ is well-posed and stable for all parameters — no
+  fine-tuning, no runaway, no limit cycle (K2 is dissipative and the only source
+  decays through the exit/fill gates). **$\Pi$ is the quantitative spine of the R1
+  regime axis:** shell-retaining vs stripping is just how long $\Pi>1$ persists
+  (dense-traversal time vs $\tau$) before it crosses 1. $\Pi(t)$ and $t_\times$ are
+  the two derived diagnostics of the early dynamics (CALIBRATION_MAP).
 
 ---
 
@@ -937,14 +1235,14 @@ shell-less" (Pb⁺Heₙ: SO coupling smears solvation shells). That argument is 
   contribution, not a penalty. The within-shell decline instead comes from the
   He being **pushed outward** to $r_1^e$, where pair polarization is only
   $D_4/r_1^{e4}\approx25$ cm⁻¹ — but the collective snowball lifts the *net*
-  per-atom binding back to $\approx124$ cm⁻¹ ($|S|/n^*$), close to the lone-He
+  per-atom binding back to $\approx118$ cm⁻¹ ($|S|/n^*$, $n^*{=}21$), close to the lone-He
   $D_0(1)=107$. This is exactly why the pair ladder undercounts $|S|$
   (electrostriction-dominated; see K2 split, R12).
 Net: the physically-motivated $D_0^{\,\mathrm{I^+}}(n)$ is **mild within-shell
 decline, then a ~7.5× radial cliff to a bulk-He floor** — closer to *structured*
 than *gradual*, with the in-shell slope the genuinely uncertain part. (The pair
 ladder anchored at $D_0(1)$ remains the right *shed-cost* object: the collective
-marginal $\partial|S|/\partial n\approx124$ cm⁻¹ ≈ $D_0(1)$, a fortunate
+marginal $\partial|S|/\partial n\approx118$ cm⁻¹ ≈ $D_0(1)$, a fortunate
 near-cancellation — K2.)
 
 *Resolution — Form U, one continuous steepness knob (ADOPTED 2026-06-17).* The
@@ -1226,12 +1524,19 @@ longer strips the shell at onset; the crossing out of this window
 ($t_\times$) is a cross-checked prediction (§6.11). This widens the §6.7
 Scenario-A-only ~0.5 ps concession to a several-ps, all-scenario free zone
 for the *drag/tolerance* side (R10), while the *mass* side is now governed by
-the parameter-free gate rather than a loose tolerance. *Strengthened (2026-06-17):*
-the self-unbound onset is **robust, not fine-tuned** — the S2 floor
-$f_\text{int}^\text{floor}=\sum_i D_0/E_\text{avail}^\text{ion}\approx0.04$–$0.10$
-($X_2$) is at most ~10%, so the violent explosion satisfies $E_\text{int}(0)>
-\sum_i D_0$ for essentially the entire physical $f_\text{int}$ range. The
-qualitative GAH25 onset thus transfers without resting on a tuned partition (S2).
+the parameter-free gate rather than a loose tolerance. *Reworded (2026-06-21,
+scenario-keyed):* the self-unbound onset is **robust across both scenarios** but
+with **scenario-dependent margin**. The S2 floor
+$f_\text{int}^\text{floor}=\sum_i D_0/E_\text{avail}^\text{ion}$ scales as
+$1/E_\text{avail}$: $\approx0.065$ (mix) / $0.09$–$0.10$ ($X_2$) at the 2.70 eV
+production budget, rising to $\approx0.21$–$0.24$ / $0.31$–$0.35$ at the 0.80 eV
+$d{=}9$ Å **validation** budget (Tier 0/1). The floor stays far below the hard cap
+$f_\text{int}\le1$ in **both** cases, so the violent explosion clears it and the
+qualitative GAH25 onset transfers without a tuned partition — but the headroom
+shrinks from $\sim14\times$ (production) to $\sim4.5\times$ (validation), so the
+*tight* self-unbound test is the Tier-1 one, not the production one. Keep "robust";
+the earlier "at most ~10%, fine-tuned-free for essentially the entire range" holds
+only at the 2.70 eV budget (S2).
 
 **A8 — Cold-shed energy-neutrality for $E_\text{solv.struct}$, contingent on
 the gate (NEW, load-bearing).** Two sub-claims: (1) a shed atom carries ≈0 KE
@@ -1256,7 +1561,7 @@ pair + electrostriction (K2), a cold shed changes $E_\text{bind}^\text{pair}$ by
 the pair $D_0$ *and* $E_\text{elec}$ by the marginal electrostriction
 ($\partial|S|/\partial n-D_0$). To keep $E_\text{int}$-neutrality, the **marginal
 electrostriction release books to the bath** (`E_dissip`) per shed event — small
-($\partial|S|/\partial n\approx124$ cm⁻¹ vs the lone-He $D_0(1)=107$, a ~15%
+($\partial|S|/\partial n\approx118$ cm⁻¹ vs the lone-He $D_0(1)=107$, a ~15%
 marginal), so A8 is now "neutral for $E_\text{int}$ up to a bath-booked marginal,"
 not exactly neutral. On *full* stripping the accumulated $E_\text{elec}$ (the
 snowball-collapse energy) is liberated; whether it radiates to the droplet or
@@ -1340,26 +1645,156 @@ shallower $\sum_i D_0$ → lower gate, earlier crossing. *Falsify/tighten:*
 integrated ladder under each picture vs the §6.5.1 effective binding; the
 terminal-$n$ envelope (Tier 2); and confirmation from the authors (OQ1).
 *Config:* `ladder_electronic_picture ∈ {statistical_mixture (default),
-x2_only}` (§11).
+x2_only, cooling_relaxed}` (§11; `cooling_relaxed` added 2026-06-21 — rung
+between mixture and $X_2$, see the 2026-06-21 revision item 3).
 
 **A11 — Evaporation kinetics are classical RRK, with $s$ absorbing the
-simplification (NEW).** The shed rate (§4) uses classical Rice–Ramsperger–Kassel
-form, $k=\nu(1-D_0/E_\text{int})^{s-1}$, the simplest unimolecular kinetics.
-This deliberately ignores the *quantum* mode structure and zero-point energy of
-the I⁺Heₙ complex — which matters here because He modes are soft and the system
-is cold, so the more defensible form would be RRKM (explicit density/sum of
-states). RRKM is not adopted because it needs the I⁺Heₙ vibrational spectrum,
-which does not exist ($n>1$, A10/R3). *Position:* classical RRK is a stated
-simplification; the **effective DOF $s$ absorbs the RRKM/quantum/ZPE
-difference** — it is mode-counted at $3n-6$ by default but calibratable as an
-effective scalar, so the classical form is a parametrized stand-in, not a
-first-principles claim. *Coupling (flagged):* $s$ and the ladder shape (A10/R3)
-both probe shell rigidity/separability and are **not independent** — a
-blurred/gradual shell lowers the effective $s$ below $3n-6$; calibrate them
-**jointly** against the size distribution. *Cross-check / tighten:* the I⁺
-cascade timescale from [I2-notes] (OQ5, §10A) pins the $\{\nu,s\}$ combination
-the same way GAH25's window pinned $\{f_\text{int},\tau\}$; falsified if the
-size distribution requires an RRKM-shaped, non-power-law switch-on.
+simplification; mode-count and small-$n$ validity corrected 2026-06-21.** The shed
+rate (§4) uses classical Rice–Ramsperger–Kassel form,
+$k=\nu(1-D_0/E_\text{int})^{s-1}$, the simplest unimolecular kinetics. This
+deliberately ignores the *quantum* mode structure and zero-point energy of the
+I⁺Heₙ complex — which matters here because He modes are soft and the system is
+cold, so the more defensible form would be RRKM (explicit density/sum of states).
+RRKM is not adopted because it needs the I⁺Heₙ vibrational spectrum, which does not
+exist ($n>1$, A10/R3). *Position:* classical RRK is a stated simplification; the
+**effective DOF $s$ absorbs the RRKM/quantum/ZPE difference** — mode-counted at
+$s=3(n{+}1)-6=\mathbf{3n-3}$ (full $n{+}1$-atom complex) by default, calibratable
+as an effective scalar, so the classical form is a parametrized stand-in, not a
+first-principles claim. **DOF counting — why $3n-3$, not $3n-6$ (recorded
+2026-06-21).** $s$ must count the *internal vibrational* modes among which
+$E_\text{int}$ randomizes — i.e. the standard $3N-6$ (nonlinear): total $3N$
+Cartesian DOF minus 3 c.o.m. translations minus 3 overall rotations, neither of
+which is part of the dissociating reservoir. The complex is **I⁺Heₙ $=n{+}1$
+atoms**, so $s_\text{vib}=3(n{+}1)-6=3n-3$ — the full subtraction *is* applied;
+the $-6$ is present, the ion is simply included in $N$. The retired $3n-6$ was
+$3N-6$ with $N=n$, dropping the ion from the atom count — which then
+double-removes symmetry: a He-only cluster moving against a fixed ion anchor has
+**no free overall translation or rotation to subtract** (the ion potential breaks
+both), so that picture counts $3n$, not $3n-6$. The honest bracket is therefore
+$$
+3n-3 \;\le\; s_\text{vib} \;\le\; 3n,
+$$
+with $3n-3$ the **conservative free-complex default** (the 3 shell rotations
+treated as free and removed) and $3n$ the stiff limit (those 3 treated as soft
+**librations** that *do* hold and exchange energy on dissociation timescales,
+since a real snowball is a hindered, not free, rotor). The old $3n-6$ sat *below*
+this entire physical band. The libration question — how far up the $[3n-3,3n]$
+band the effective $s$ rides — is **exactly the shell-rigidity question that the
+effective-$s$ override and $\kappa$ co-calibrate** (coupling below), so the band
+is the sensitivity range, not an error bar to eliminate. *Boundary cases:* at
+$n{=}2$ (I⁺He₂, 3 atoms) the default $3n-3=3$ assumes a **bent** geometry; a
+**linear** He–I⁺–He gives $3N-5=4$, a $+1$ shift that is non-negligible at
+single-digit $s$ — flag linear as the alternative. At $n{=}1$ (diatomic) $3N-6$ is
+undefined and $3N-5=1$: statistical RRK with $s{=}1$ gives constant $k=\nu$, which
+**is** the direct-dissociation rule adopted in §4 — so that special case is not a
+patch but the $s{=}1$ linear-diatomic limit of the same formula.
+**Boundedness requires $s\ge1$ (corrected 2026-06-21):**
+the rate saturates $k\in[0,\nu)$ only for $s>1$; $s=1$ gives constant $k=\nu$; and
+$s<1$ makes $k\to\infty$ at threshold ($E_\text{int}\to D_0^+$), reintroducing the
+gate-open avalanche the RRK rate was added to remove. The earlier $s=3n-6$ went
+$s{=}0$ at $n{=}2$ and $s{=}{-}3$ at $n{=}1$ — divergent — so it broke the
+boundedness guarantee in the small-$n$ regime. The corrected $3n-3$ is $\ge3$ for
+all $n\ge2$; a config-load guard enforces $s\ge1$ on any override. **The last atom
+($n{=}1$) is handled as direct dissociation $k=\nu$** (single mode → statistical
+RRK degenerate; §4), the explicit boundary of the statistical picture (and where
+cold-shed neutrality A8 is weakest). *Why this regime matters:* at large $n$ the
+huge exponent makes $k$ a near-step function, so terminal $n$ there is set by
+*cooling crossing the gate*, not by RRK kinetics — the genuine $\{\nu,s\}$
+sensitivity of the size-distribution tail lives in the **small-$n$ cascade**
+($n\lesssim$ few), exactly the regime the $3n-6$ error corrupted and the
+total-stripping secondary run (OQ6) must traverse. *Coupling (flagged):* $s$ and
+the ladder shape (A10/R3) both probe shell rigidity/separability and are **not
+independent** — a blurred/gradual shell lowers the effective $s$ below $3n-3$;
+calibrate them **jointly** against the size distribution. *Cross-check / tighten:*
+the I⁺ cascade timescale from [I2-notes] (OQ5, §10A) pins the $\{\nu,s\}$
+combination the same way GAH25's window pinned $\{f_\text{int},\tau\}$; falsified if
+the size distribution requires an RRKM-shaped, non-power-law switch-on.
+
+**A12 — Pickup is occupancy-capped (Langmuir site saturation), inert for ejection
+but required for resting-ion correctness (NEW 2026-06-21).** The pickup rate
+carries a blocking factor $\lambda_\text{attach}=\lambda_0(\rho_\text{He}/
+\rho_\text{bulk})(1-n/n^*)_+^{\,p}$ (§4): a sticking coefficient that falls
+smoothly as the first shell fills, $\to0$ at $n{=}n^*$. *Why needed:* the
+density-only form has no $n$-dependence, so termination of accretion is purely
+exit-driven — correct for the ejection problem (the ion always leaves), but a
+resting/slow-exit ion would accrete unboundedly ($n\to\infty$), which is
+unphysical and contradicts [Nat23]'s leveling-off of resting-Na⁺ accretion. The
+cap closes that gap. *Form choice (Langmuir, "Form B"):* caps the **rate**, never
+the per-event energetics — so it leaves the §6 invariant and the $G$-Lyapunov
+crossing (§6.11) untouched (each pickup still deposits a full rung of binding,
+$f_\text{ret}$ of it as heat) and only *strengthens* the freeze-out attractor by
+adding a second stabilizing route $\Pi(n)<1$ at $n\to n^*$ (§6.11). Rejected
+alternatives: a hard wall $\mathbb 1_{n<n^*}$ (makes the $\pm1$–2-uncertain $n^*$
+a discontinuous hard input, OQ4/OQ8; bad for the BAOAB/jump split) and a
+two-reservoir shell-2 routing ("Form C", faithful but doubles bookkeeping and
+reopens the cliff-timing OQ — deferred unless Tier-2 shows shell-2 population).
+*Inert for production:* the ion exits before the shell saturates, so $\Pi$ crosses
+1 via $\rho_\text{He}\to0$ first; Form B and density-only give identical ejection
+trajectories. It earns its keep only if the Tier-1 $21\to19\to14$ tail lingers
+near saturation, and for in-principle resting-ion validity. *Coupling (flagged):*
+the exponent $p$ and `ladder_steepness` $\kappa$ both encode first-shell abruptness
+from different observables (pickup shut-off vs binding cliff), so they are **not
+independent** — same situation as $s\leftrightarrow\kappa$ (A11). **Default: $p$
+tied to $\kappa$** (single shell-rigidity parameter, zero net new free knobs);
+split into an independent bounded/free $p$ only if the size distribution demands
+it (Tier-2). *Falsify/tighten:* a size distribution whose first-shell cutoff
+sharpness is inconsistent with the $\kappa$-implied $p$ would force the split;
+[Nat23] resting-ion saturation level bounds $n^*$ and $p$ jointly.
+
+**A13 — Integrator/mass-jump operator split: accuracy, ordering, and the
+momentum-reset invariant precondition (NEW 2026-06-21).** The continuous BAOAB
+integrator (DRAG doc) and the discrete mass-jump process (this doc, §4) meet once
+per step; their composition has three pieces, settled here as physics-definition
+ahead of the (later) jump implementation.
+
+*SQ1 — velocity-dependent drag in the O-step (built, accepted as-is).* The cubic
+gives a state-dependent effective friction $\gamma(v)=g\,b\,v^2/m$ ($[\gamma]=
+\text{ps}^{-1}$ ✓), so the O-step freezes $\gamma(v_\text{in})$ and applies
+$e^{-\gamma dt}$ rather than the exact nonlinear flow $v(t)=v_0/\sqrt{1+2(gb/m)v_0^2t}$.
+**Consequence:** the drag-on path is **globally $O(dt)$**, not $O(dt^2)$ — the
+BAOAB second-order/configurational-superconvergence claim holds only in the
+constant-$\gamma$/no-drag limit and **must not be claimed for production**. *Why
+the trade is correct here:* freezing $v_\text{in}$ buys two unconditional
+properties worth more than an order — (i) **exact dissipation bookkeeping**
+$\Delta E_\text{dissip}=\tfrac12 m(\|v_\text{in}\|^2-\|v_\text{out}\|^2)$ for any
+$dt$ (the invariant's drag term closes by construction, not to $O(dt^2)$), and
+(ii) **unconditional dissipativity** $\|v_\text{out}\|\le\|v_\text{in}\|$ since
+$e^{-\gamma dt}<1$, i.e. no large-$dt$ energy-injection blow-up on a stiff cubic.
+*Residual:* a **one-signed over-braking bias** (frozen $\gamma$ uses the largest
+$v$ in the step), monotone in $dt$, folded into R10 tolerance — so the $dt$
+convergence check should expect simulated peak $v$ slightly **below** TDDFT
+(Fig. 23) at fixed $dt$, and "tolerance-only" should note the bias has a sign.
+
+*SQ2 — mass-jump placement and the conservation precondition (spec; unbuilt).*
+(a) **Momentum-conserving velocity reset is mandatory, not an accuracy choice**
+(§4): $v^+=(m v^-+m_\text{He}u_\text{He})/(m\pm m_\text{He})$, He at rest. **The
+five-term invariant (§6) closure *presupposes* this reset** — $E_\text{mass\_transfer}$
+is *defined* as the reduced-mass KE defect it produces, $\tfrac12\tfrac{m\,m_\text{He}}
+{m+m_\text{He}}\|v^-{-}u_\text{He}\|^2$. Carrying $v$ through the jump as a mere
+label injects/removes KE and **voids the closure proof**; the integrator's reset
+and the invariant's $E_\text{mass\_transfer}$ term must use the *same* $v^+$.
+(b) **Jump-step order reduction is benign — record, don't fix.** A jump makes the
+step non-palindromic → locally $O(dt)$; but jump-steps number $\sim(\lambda+\nu)T$,
+**independent of $dt$**, so they are a vanishing fraction as $dt\to0$ and the
+global order is unchanged from the $O(dt)$ SQ1 already concedes. Precondition
+$\lambda dt,\nu dt\ll1$ holds ($\sim0.01$–$0.024$). (c) **Fixed ordering:** jump
+*then* O (so the O-step sees $v^+$ and $\gamma(v^+)$); the $[\mathcal L_M,\mathcal
+L_O]dt^2$ commutator is within tolerance. (d) **At most one mass event per step**
+(shed before pickup if both fire; §4).
+
+*SQ3 — post-jump mass in the O-step (spec; unbuilt, forced by SQ2).* Any O-step
+following a jump uses the **post-jump mass** $m^+$ in both friction and the FDT
+noise amplitude $\sqrt{(1-e^{-2\gamma dt})k_BT_\text{eff}/m^+}$, consistent with
+the $v^+$ it perturbs. Mismatch breaks FDT balance by $m^+/m^-$. Small (N2 bath
+noise is weak, §1.3a), but a definiteness requirement; the $1/m$ also correctly
+makes a heavier post-pickup complex receive a smaller thermal kick.
+
+*Net:* no structural defect — SQ1 is a documented accuracy-for-conservation trade,
+SQ2/SQ3 are now specified. **The Method's consistency proof closes conditional on
+the SQ2(a) momentum reset being implemented as specified** (the one item that, if
+missed, retroactively breaks §6). Tracked as an implementation precondition, not an
+open physics question. *Config:* §11 (`mass_jump_velocity_reset`,
+`he_capture_velocity`, `one_mass_event_per_step`, `jump_o_step_ordering`).
 
 ---
 
@@ -1368,19 +1803,21 @@ size distribution requires an RRKM-shaped, non-power-law switch-on.
 | Item | Symbol | Source / target | Tier |
 |---|---|---|---|
 | Pickup rate coefficient | $\lambda_0$ | OOM prior only ([GAH25] well-depth dep.); pin from I⁺ TDDFT + size dist. | 1 / 2 |
+| Pickup occupancy exponent | $p$ | **NEW 2026-06-21 (A12):** Langmuir cap $(1-n/n^*)_+^{\,p}$; **default tied to $\kappa$** (one shell-rigidity knob, 0 net new free); split to bounded/free only if size dist. demands; [Nat23] saturation bounds $n^*,p$ | 2 (conditional) |
+| Pickup↔gate order parameter | $\Pi(t)=\lambda(n)f_\text{ret}\tau$ | **NEW 2026-06-21, derived diagnostic (§6.11):** $\Pi{>}1$ shedding persists / $\Pi{<}1$ freeze; regime-axis spine (R1); $\Pi\to0$ at exit guarantees termination; reconstructable post-hoc like $t_\times$ | — |
 | First ladder rung | $D_0^{\,\mathrm{I^+}}(1)$ | **pinned (2026-06-17):** [IHe05] EPAPS fit, exact $J{=}0$ ZPE → $X_2$ **106.9 cm⁻¹** (0.01325 eV); mixture **74.4 cm⁻¹** (0.00923 eV); $\pm3$ cm⁻¹ | — (sourced) |
 | Ladder shape ($n>1$) | $\kappa$ (Form U sigmoid) | single steepness knob, gradual↔cliff; prior large (7.5× radial cliff, R3); co-fit w/ picture + $\{\nu,s\}$; discriminated by size dist. | 2 (Free) |
 | Ladder floor | $D_\text{floor}$ | $\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹ (7.15 K), bulk superfluid; picture-independent | — (sourced) |
-| Integrated ladder | $\sum_i D_0(i)$ | **numeric (2026-06-17):** $X_2$ 0.12–0.28 eV / mix 0.17–0.19 eV; nearly $\kappa$-independent; cross-check vs drag binding 0.117 eV ($\neq|S|=0.308$, collective) | derived |
+| Integrated ladder | $\sum_i D_0(i)$ | **Form U, corrected 2026-06-21:** $X_2$ **0.25–0.28** eV / mix 0.17–0.19 eV (pure $\kappa$-range, ~11%, nearly $\kappa$-independent); drag binding 0.117 eV and the crowding-reduced value are **separate cross-checks**, not band ends; $\neq|S|=0.308$ (collective UB) | derived |
 | Binding-release retained fraction | $f_\text{ret}$ | size distribution | 2 |
 | Newton-cooling relaxation time | $\tau_\text{dissip}$ | **sweep band $[2.6,16.5]$ ps** (R8), externally anchored; not pinned from this work's size dist. | sweep |
 | Newton-cooling asymptote (binding) | $E_\infty(N)=-|S(N)|$ | **occupancy-resolved (2026-06-17, split):** $E_\text{bind}^\text{pair}+E_\text{elec}$; full-shell $|S_{\mathrm{I^+}}|{=}0.308$ eV ([I2-notes]); GAH25 Na⁺ $-3424/-4144$ K calibrates form+$\tau$; OQ6 resolved | 2 (shape via $\kappa$) |
-| Onset Coulomb budget | $E_\text{avail}^\text{ion}$ | **pinned 2.70 eV (2026-06-17):** ½ of $e^2/R_e(\mathrm{I_2})=5.40$ eV ($R_e=2.666$ Å); per-ion convention; fixed reference | — (sourced) |
-| Onset partition fraction | $f_\text{int}$ | $E_\text{int}(0)=f_\text{int}E_\text{avail}^\text{ion}$ (§6.11/S2); **floor $\approx0.04$–$0.10$ ($X_2$, 2026-06-17),** picture-set & $\kappa$-indep; soft upper ~0.2; pin from size dist. | 2 |
+| Onset Coulomb budget | $E_\text{avail}^\text{ion}$ | **scenario-keyed (2026-06-21):** **0.80 eV** validation ($d{=}9$ Å, ½·14.40/9) / **2.70 eV** production ($R_e=2.666$ Å, ½·5.40); fixed reference, stamped to scenario guard | — (sourced) |
+| Onset partition fraction | $f_\text{int}$ | $E_\text{int}(0)=f_\text{int}E_\text{avail}^\text{ion}$ (§6.11/S2); **floor scenario-keyed (2026-06-21): 0.065 (mix)/0.09–0.10 ($X_2$) @ 2.70 eV; 0.21–0.24/0.31–0.35 @ 0.80 eV**, picture-set & $\kappa$-indep; soft upper ~0.2 (advisory, not a constraint); pin from size dist. | 2 |
 | Self-bound crossing time | $t_\times$ | **derived diagnostic, not fitted**; cross-check vs GAH25 ~5–6.5 ps (±factor-2) and size dist. (§6.11) | — |
 | Early-instability gate | **derived, not fitted** | self-bound criterion $E_\text{int}<\sum_i D_0(i)$ (R9); the ~several-ps onset is now a *prediction* vs [GAH25], cross-checked by size dist. | — |
 | RRK prefactor | $\nu$ | **pinned $2.42$ ps⁻¹ (2026-06-17):** $\omega_e=80.6$ cm⁻¹ from [IHe05] EPAPS $V''(R_e)=748.1$ cm⁻¹/Å² (§4); cross-check vs [I2-notes] cascade timing (OQ5) + size dist. | 2 |
-| RRK effective DOF | $s$ | **mode-counted $s=3n-6$, not free** (A11); effective-scalar override for sensitivity; calibrated *jointly* with `ladder_steepness` ($\kappa$) (A11 coupling) | derived |
+| RRK effective DOF | $s$ | **mode-counted $s=3n-3$ ($n\ge2$, full complex), not free** (corrected 2026-06-21 from $3n-6$; $n{=}1$ is direct dissociation $k=\nu$); effective-scalar override guarded $s\ge1$; joint with `ladder_steepness` ($\kappa$) (A11) | derived |
 | Pickup $v$-dependence (if needed) | sweeping/dwell | only if density-only fails Tier 1/2 | 1 / 2 |
 | Total-stripping limit (Calvo24) | terminal $n\to0$ | reachable far end of the biphasic regime axis (§6.11); **evaluated in secondary/sensitivity runs, not excluded, not default**; check vs size dist. (and OQ6) | secondary |
 
@@ -1454,12 +1891,18 @@ update on confirmation.**
   OQ1/OQ4) for the $S_{\mathrm{I^+}}=-3578$ K reference convention. Does not block
   Form U or the K2 split (both anchored on $D_0(1)$, floor, $n^*$, and the
   *shape* of $|S(N)|$); only sets the collective magnitude.
-- **OQ8 — I⁺ shell occupancy $n^*$ and the Tier-1 endpoint (NEW 2026-06-17,
-  LOW).** GAH25 $R_e$-scaling (I⁺ $R_e=3.25$ Å, 56% Rb⁺→Cs⁺ whose $n_1^e=18\to21$)
-  gives $n^*\approx20$, corroborating [I2-notes]'s 21 to ±1–2 but at the high
-  edge. Separately, the Tier-1 endpoint "14" in $21\to19\to14$ equals Na⁺'s
-  $n_1^e$ exactly — **confirm it is I⁺-specific from [I2-notes], not inherited
-  from a Na⁺ template.** Low stakes (geometry, not energetics), but a clean
+- **OQ8 — I⁺ shell occupancy $n^*$ and the Tier-1 endpoint (NEW 2026-06-17;
+  upgraded LOW→LOW–MEDIUM 2026-06-21).** GAH25 $R_e$-scaling (I⁺ $R_e=3.25$ Å, 56%
+  Rb⁺→Cs⁺ whose $n_1^e=18\to21$) gives $n^*\approx20$, corroborating [I2-notes]'s 21
+  to ±1–2 but at the high edge. **Stakes raised:** the $20$ vs $21$ ambiguity is
+  **no longer geometry-only** — it had leaked into the *energetics*, with the
+  per-atom collective binding quoted off $n^*{=}20$ ($124$ cm⁻¹/$179$ K) where the
+  cation value is $21$ ($118$ cm⁻¹/$170$ K); corrected throughout 2026-06-21 (K2,
+  R3, A8, see the 2026-06-21 revision item 1). Adopt $n^*=21$ for all per-atom
+  energetics. The Tier-1 endpoint "$14$" in $21\to19\to14$ (which equals Na⁺'s
+  $n_1^e$) is **author-confirmed I⁺-specific via direct exchange with the [I2-notes]
+  creators** (2026-06-21) — *not* a Na⁺ template; the absent §III.B.2 figure is not
+  a provenance gap. Remaining open: only the $n^*=20$-vs-$21$ scaling, a clean
   GAH25 cross-check to close.
 
 ---
@@ -1477,6 +1920,30 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
 - `SimConfig.pickup_rate_coefficient` — $\lambda_0$ ($\text{ps}^{-1}$).
 - `SimConfig.pickup_rate_form ∈ {density_only, sweeping, dwell_time}` — default
   `density_only` ([Nat23]-supported, §5).
+- `SimConfig.pickup_occupancy_cap ∈ {langmuir, none}` — default **`langmuir`**
+  (Form B, A12): multiplies $\lambda_\text{attach}$ by $(1-n/n^*)_+^{\,p}$, a
+  site-saturation factor → 0 at $n{=}n^*$. `none` recovers pure density-only
+  (identical for production ejection, which exits before saturation). Caps the
+  **rate** only; per-event energetics, the §6 invariant, and the §6.11 $G$-crossing
+  are untouched.
+- `SimConfig.pickup_occupancy_exponent` — $p\ge0$, the cap sharpness. **Default:
+  tied to `ladder_steepness` ($\kappa$)** as a single shell-rigidity parameter
+  (zero net new free knobs; A12 $p\!\leftrightarrow\!\kappa$ coupling); set to an
+  independent value only to split it as a bounded/free Tier-2 knob when the size
+  distribution's first-shell cutoff sharpness demands it.
+- `SimConfig.mass_jump_velocity_reset ∈ {momentum_conserving, label_only}` —
+  **must be `momentum_conserving`** (A13): $v^+=(m v^-\pm m_\text{He}u_\text{He})
+  /(m\pm m_\text{He})$. `label_only` (carry $v$ unchanged) is **forbidden in
+  production** — it voids the §6 invariant closure; retained only as a deliberate
+  diagnostic to *demonstrate* non-closure. The reset and the invariant's
+  `E_mass_transfer_eV` term share the same $v^+$.
+- `SimConfig.he_capture_velocity ∈ {at_rest, thermal}` — default **`at_rest`**
+  ($u_\text{He}=0$, droplet frame; matches cold-shed A8). `thermal` (sample
+  $u_\text{He}$) deferred — adds a second noise channel, re-touches FDT (A13).
+- `SimConfig.one_mass_event_per_step` — default **`true`** (A13): if both pickup
+  and shed Bernoulli draws fire in a step, apply shed then pickup (fixed order).
+- `SimConfig.jump_o_step_ordering` — fixed **jump-then-O** (A13): the post-jump
+  O-step uses $m^+$ and $\gamma(v^+)$ in both friction and the FDT noise amplitude.
 - `SimConfig.dissociation_ladder` — $D_0^{\,\mathrm{I^+}}(n)$, **Form U** (sigmoid,
   adopted 2026-06-17): $D_0(n)=D_\text{floor}+(D_0(1)-D_\text{floor})\,(1-\sigma(n))
   /(1-\sigma(1))$, $\sigma(n)=[1+e^{-\kappa(n-n^*-\tfrac12)}]^{-1}$. Anchors: first rung
@@ -1489,13 +1956,17 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
   prior large (7.5× geometric radial cliff, R3). Tier-2-arbitrated **jointly**
   with `ladder_electronic_picture` (not separable) and the RRK $\{\nu,s\}$.
   Replaces the retired discrete `ladder_shape ∈ {gradual, shell_structured}`.
-- `SimConfig.ladder_electronic_picture ∈ {statistical_mixture, x2_only}` —
-  `statistical_mixture` (equal-weight $X_2{+}I_1{+}I_0$, shallower; the
-  production default per A10, motivated by violent Coulomb-explosion birth) vs
-  `x2_only` (deep $X_2/³Π$ snowball, the [I2-notes]-consistent comparison). Sets
-  the rung *top* (74.4 vs 106.9 cm⁻¹; shared floor → mixture is more compressed at
-  fixed $\kappa$), hence $\sum_i D_0$, the gate, and $t_\times$. Default
-  provisional pending OQ1 (§10A).
+- `SimConfig.ladder_electronic_picture ∈ {statistical_mixture, x2_only,
+  cooling_relaxed}` — `statistical_mixture` (equal-weight $X_2{+}I_1{+}I_0$,
+  shallower; the production default per A10, motivated by violent
+  Coulomb-explosion birth) vs `x2_only` (deep $X_2/³Π$ snowball, the
+  [I2-notes]-consistent comparison) vs `cooling_relaxed` (**added 2026-06-21**:
+  rung between mixture and $X_2$, e.g. a relaxation-weighted blend — captures a
+  complex that cools toward the deepest curve rather than staying frozen in the
+  birth mixture; strictly inside the existing bracket, A10/§A5). Sets the rung
+  *top* (74.4 / 106.9 cm⁻¹, `cooling_relaxed` in between; shared floor → mixture
+  is more compressed at fixed $\kappa$), hence $\sum_i D_0$, the gate, and
+  $t_\times$. Default provisional pending OQ1 (§10A).
 - `SimConfig.internal_energy_retained_fraction` — $f_\text{ret}\in[0,1]$.
 - `SimConfig.internal_energy_cooling_tau_ps` — $\tau_\text{dissip}$, the
   Newton's-law-of-cooling relaxation time for $E_\text{solv.struct}$ (§6 K2;
@@ -1517,14 +1988,23 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
   the fraction of *this ion's* onset energy coupled into shell-internal modes;
   $E_\text{int}(0)=f_\text{int}\cdot E_\text{avail}^\text{ion}$ (§6.11/S2).
   Calibration target (§10), **bounded below by the self-unbound floor
-  $f_\text{int}^\text{floor}\approx0.04$–$0.10$ ($X_2$, 2026-06-17)** — picture-set,
-  $\kappa$-independent; soft upper ~0.2.
-- `SimConfig.coulomb_available_eV` — $E_\text{avail}^\text{ion}=\mathbf{2.70}$ eV
-  (**pinned 2026-06-17, per-ion convention**): half of the pair release
-  $e^2/R_{\mathrm{II}}=14.40/2.666=5.40$ eV at $R_{\mathrm{II}}=R_e(\mathrm{I_2})
-  =2.666$ Å. Fixed reference (sits in the uncalibrated $t^*$ window), not a fit
-  target. *Reversible:* set to the pair value 5.40 eV to use the old convention
-  (doubles the floor).
+  $f_\text{int}^\text{floor}=\sum_iD_0/E_\text{avail}^\text{ion}$** — scenario-keyed
+  (2026-06-21): **0.09–0.10 ($X_2$) / ~0.065 (mix) at 2.70 eV (production); 0.31–0.35
+  ($X_2$) / 0.21–0.24 (mix) at 0.80 eV ($d{=}9$ Å validation)** — picture-set,
+  $\kappa$-independent. Soft upper edge ~0.2 is a **velocity-consistency
+  plausibility bound, not a constraint** (Tier-2 may exceed it with a flag; S2).
+- `SimConfig.coulomb_available_eV` — $E_\text{avail}^\text{ion}$,
+  **scenario-keyed (2026-06-21):** $\mathbf{0.80}$ eV for **validation** (Tier 0/1,
+  ionization after drift to $d\approx9$ Å, $\tfrac12\cdot14.40/9$; the budget the
+  drag and 21→19→14 shell references were generated under, [I2-notes] §III.B.2,
+  author-confirmed) and $\mathbf{2.70}$ eV for **production** (vertical
+  double-ionization at $R_{\mathrm{II}}=R_e(\mathrm{I_2})=2.666$ Å,
+  $\tfrac12\cdot14.40/2.666=\tfrac12\cdot5.40$). Fixed reference (sits in the
+  uncalibrated $t^*$ window), not a fit target. **Stamped to the run's scenario tag
+  and tied to the DESIGN §6.5/§6.5.1 drag↔mass guard** — a 2.70-eV onset cannot run
+  against 0.80-eV-calibrated drag/shell references without tripping it. *Reversible:*
+  use the pair value (1.60 / 5.40 eV) for the old per-pair convention (doubles the
+  floor).
 - `SimConfig.internal_energy_initial_eV` — **retired** as a free field;
   derived as $f_\text{int}\cdot E_\text{avail}$. Retained only as an optional
   manual override (default: unset → use the derived value) for sensitivity
@@ -1534,9 +2014,13 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
   pinned from [IHe05] EPAPS $V''(R_e)$, §4), cross-checked vs [I2-notes] cascade
   timing (OQ5). Governs the shed rate once self-bound.
 - `SimConfig.evap_rrk_dof` — RRK effective DOF $s$, the exponent $s-1$ in the
-  rate (§4). **Derived by default as $s=3n-6$** (mode-count, $n$-dependent,
-  A11); set to a fixed scalar only to override for sensitivity. Calibrated
-  jointly with `ladder_steepness` ($\kappa$) (A11 coupling), not independently.
+  rate (§4). **Derived by default as $s=3n-3$** (full $n{+}1$-atom complex,
+  $n$-dependent; **corrected 2026-06-21** from $3n-6$, which went $\le0$ for
+  $n\le2$). **$n{=}1$ uses direct dissociation $k=\nu$** (no RRK bracket; single
+  vibrational mode). Override allowed as a fixed scalar but **guarded $s\ge1$ at
+  config-load** (a dissipativity-style bound — $s<1$ diverges at threshold and
+  reintroduces the avalanche). Calibrated jointly with `ladder_steepness`
+  ($\kappa$) (A11 coupling), not independently.
 - `SimConfig.evap_gate_onset_eV` — **retired** as a free knob (R9 resolved).
   The suppression threshold is now the *derived* integrated ladder
   $\sum_i D_0^{\,\mathrm{I^+}}(i)$. Retained only as an optional manual
@@ -1584,7 +2068,7 @@ to several ps with a concrete correctness constraint (R9). No mechanism change.
 - Transient free-extrapolation zone: §2.3, §6.7 (widened to several ps here, A7/R9).
 - External:
   - [Nat23] — Poisson rate 2.0/ps (Fig. 3b), energy-gated dissociation
-    (Methods, Eqs. 1–6), $D_0^\text{Na^+}(N)$ ladder (Extended Data Table 1),
+    (Methods, Eqs. 1–6), $D_0^{\mathrm{Na^+}}(N)$ ladder (Extended Data Table 1),
     cold-shed argument (Methods), dissociation timescale (Extended Data Fig. 4).
   - [Calvo24] — fragment-size distributions and violent-ejection vaporization
     (Fig. 4, p.4 text); fragment temperatures and outer-shell evaporation
