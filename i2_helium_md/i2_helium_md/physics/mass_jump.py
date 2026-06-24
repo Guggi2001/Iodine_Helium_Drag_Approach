@@ -1,0 +1,216 @@
+"""Cold-shed mass-jump operator for the Tier-1a anchored validation (Slice M, SQ2).
+
+Pure, stateless physics: the momentum-conserving velocity reset a single He shed
+applies to the I+He_n complex, the post-jump mass ``m+`` the variable-mass
+integrator needs (SQ3), and the exact reduced-mass energy increment the four-term
+ledger needs (Slice B). This is the second fully-independent Tier-1a build unit:
+it *consumes* a shed's pre-shed mass (e.g. a
+:class:`~i2_helium_md.physics.shell_schedule.ShedEvent.mass_before_amu` from
+Slice S) and a pre-shed velocity, and emits the reset triple. It performs **no**
+scheduling, **no** integration, and **no** drag evaluation -- those live in
+Slice S and the later integrator-wiring slice (I*).
+
+Locked physics (``TIER1A_IMPLEMENTATION_PLAN.md`` Sec.2)
+-------------------------------------------------------
+A cold shed removes one He atom *at rest* (``u_He = 0``), so the complex momentum
+``m * v`` is invariant across the instantaneous jump. With pre-shed mass ``m`` and
+``m_He`` the He mass::
+
+    v+  = m / (m - m_He) * v-                 (reset; direction preserved)
+    m+  = m - m_He                            (post-jump complex mass)
+    dE_mass_transfer = -0.5 * (m * m_He)/(m - m_He) * |v-|^2
+
+The energy term is the **negative** of the kinetic-energy rise the reset produces.
+That rise follows from the reset directly::
+
+    KE+ - KE- = 0.5*(m - m_He)*|v+|^2 - 0.5*m*|v-|^2
+              = 0.5*|v-|^2 * ( m^2/(m - m_He) - m )
+              = 0.5 * (m*m_He)/(m - m_He) * |v-|^2
+
+so booking ``dE_mass_transfer`` as its negative makes the four-term invariant
+``E_kin + E_pot + E_dissip + E_mass_transfer`` close by construction once the reset
+is the exact form (Slice B certifies this). The coefficient ``(m*m_He)/(m - m_He)``
+is the **exact** form, NOT the heavy-ion approximation ``0.5*m_He*|v-|^2`` (the two
+agree only as ``m -> inf``; at ``n = 1`` they differ by ~3 %, Sec.2 flag).
+
+Units / mass contract
+---------------------
+Mechanical amu throughout, matching ``baoab.py`` and ``shell_schedule.py``: ``m``
+in amu, ``v`` in A/ps, energy in ``amu*A^2/ps^2``. There is no kg and no eV here --
+the eV conversion of the ledger term is owned downstream (the ledger slice), the
+same split ``baoab.py`` uses for ``dE_dissip``. This module takes ``m`` only as the
+*shed* quantity; it is otherwise mass-agnostic and never sees the drag law.
+
+Run modes
+---------
+:func:`apply_shed` selects between the two Tier-1a A/B modes by a **function
+argument**, deliberately *not* the ``SimConfig.mass_scenario`` enum (that
+config-surface change is the integrator-wiring slice's work):
+
+* ``"fixed"`` -- the null: no reset, mass held, zero defect.
+* ``"anchored_discrete"`` -- the cold-shed reset above.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal
+
+import numpy as np
+
+from .constants import MASS_HE_AMU
+
+# The two Tier-1a A/B run modes, passed explicitly (NOT SimConfig.mass_scenario;
+# the config-surface enum change is deferred to the integrator-wiring slice).
+ShedMode = Literal["fixed", "anchored_discrete"]
+
+
+@dataclass(frozen=True)
+class ShedResult:
+    """The outcome of one (possibly null) mass-shed applied to a velocity.
+
+    Attributes
+    ----------
+    v_plus : np.ndarray
+        Post-shed velocity [A/ps], same shape as the input ``v_minus``. Under a
+        real shed this is ``kick * v_minus`` with ``kick = m/(m - m_He) > 1``
+        (direction preserved); under ``fixed`` it is an unchanged copy.
+    m_plus_amu : float
+        Post-shed complex mass [amu]: ``m - m_He`` under a real shed, the input
+        mass under ``fixed``. This is the ``m+`` the post-jump O-step (SQ3) reads.
+    dE_mass_transfer : float
+        The ledger increment [amu*A^2/ps^2], ``<= 0``: the negative of the reset's
+        kinetic-energy rise, ``-0.5*(m*m_He)/(m - m_He)*|v-|^2`` under a real shed,
+        ``0.0`` under ``fixed``.
+    """
+
+    v_plus: np.ndarray
+    m_plus_amu: float
+    dE_mass_transfer: float
+
+
+def kick_factor(m_minus_amu: float, m_he_amu: float = MASS_HE_AMU) -> float:
+    """Momentum-conserving speed kick ``m/(m - m_He)`` of one cold shed [dimensionless].
+
+    The factor by which the reset scales the speed (``|v+| = kick*|v-|``); equals
+    :attr:`~i2_helium_md.physics.shell_schedule.ShedEvent.kick_factor`. Raises
+    :class:`ValueError` unless ``m_he_amu > 0`` and ``m_minus_amu > m_he_amu`` (so
+    the post-shed mass is strictly positive).
+    """
+    _check_masses(m_minus_amu, m_he_amu)
+    return m_minus_amu / (m_minus_amu - m_he_amu)
+
+
+def cold_shed(
+    v_minus,
+    m_minus_amu: float,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+) -> ShedResult:
+    """Apply one momentum-conserving cold shed to a velocity (SQ2).
+
+    Parameters
+    ----------
+    v_minus : array_like
+        Pre-shed velocity vector [A/ps]. ``|v-|^2`` is the full sum of squares of
+        the components, so a 3-vector ``(vx, vy, vz)`` is the natural input; the
+        kick is a scalar multiply, so any shape is accepted and returned unchanged.
+    m_minus_amu : float
+        Pre-shed complex mass [amu] (e.g. a Slice-S ``mass_before_amu``). Must be
+        finite and ``> m_he_amu``.
+    m_he_amu : float, optional
+        Shed He mass [amu] (default :data:`~i2_helium_md.physics.constants.MASS_HE_AMU`).
+        Must be ``> 0``.
+
+    Returns
+    -------
+    ShedResult
+        ``v_plus = m/(m - m_He) * v_minus``, ``m_plus_amu = m - m_He``, and
+        ``dE_mass_transfer = -0.5*(m*m_He)/(m - m_He)*|v-|^2`` (``<= 0``).
+
+    Raises
+    ------
+    ValueError
+        If the masses violate ``m_he_amu > 0 < (m_minus_amu - m_he_amu)``, or if
+        ``v_minus`` / ``m_minus_amu`` contain non-finite values.
+    """
+    _check_masses(m_minus_amu, m_he_amu)
+    v = np.asarray(v_minus, dtype=float)
+    if not np.all(np.isfinite(v)):
+        raise ValueError(f"v_minus must be finite; got {v_minus!r}.")
+
+    m_plus = m_minus_amu - m_he_amu
+    kick = m_minus_amu / m_plus
+    v_plus = kick * v
+
+    speed_sq = float(v @ v) if v.ndim else float(v) ** 2
+    # Exact KE rise of the reset (reduced-mass form, NOT heavy-ion 0.5*m_He*v^2);
+    # booked negative so the four-term ledger closes by construction.
+    dE_mass_transfer = -0.5 * (m_minus_amu * m_he_amu) / m_plus * speed_sq
+
+    return ShedResult(v_plus=v_plus, m_plus_amu=m_plus, dE_mass_transfer=dE_mass_transfer)
+
+
+def apply_shed(
+    v_minus,
+    m_minus_amu: float,
+    *,
+    mode: ShedMode,
+    m_he_amu: float = MASS_HE_AMU,
+) -> ShedResult:
+    """Apply a shed under the selected Tier-1a A/B mode.
+
+    Parameters
+    ----------
+    v_minus : array_like
+        Pre-shed velocity [A/ps].
+    m_minus_amu : float
+        Current complex mass [amu].
+    mode : {"fixed", "anchored_discrete"}
+        ``"fixed"`` -- the null: returns an unchanged velocity copy, the mass held,
+        zero defect (no mass relationship is required). ``"anchored_discrete"`` --
+        delegates to :func:`cold_shed`.
+    m_he_amu : float, optional
+        Shed He mass [amu]; used only by ``"anchored_discrete"``.
+
+    Returns
+    -------
+    ShedResult
+
+    Raises
+    ------
+    ValueError
+        If ``mode`` is unknown, or (under ``"fixed"``) ``v_minus`` / ``m_minus_amu``
+        are non-finite, or (under ``"anchored_discrete"``) the :func:`cold_shed`
+        guards trip.
+    """
+    if mode == "anchored_discrete":
+        return cold_shed(v_minus, m_minus_amu, m_he_amu=m_he_amu)
+    if mode == "fixed":
+        v = np.asarray(v_minus, dtype=float)
+        if not np.all(np.isfinite(v)) or not np.isfinite(m_minus_amu):
+            raise ValueError(
+                f"fixed-mode inputs must be finite; got v_minus={v_minus!r}, "
+                f"m_minus_amu={m_minus_amu!r}."
+            )
+        return ShedResult(v_plus=v.copy(), m_plus_amu=float(m_minus_amu),
+                          dE_mass_transfer=0.0)
+    raise ValueError(
+        f"unknown shed mode {mode!r}; expected 'fixed' or 'anchored_discrete'."
+    )
+
+
+def _check_masses(m_minus_amu: float, m_he_amu: float) -> None:
+    """Fail loudly unless ``m_he_amu > 0`` and ``m_minus_amu - m_he_amu > 0``."""
+    if not (np.isfinite(m_minus_amu) and np.isfinite(m_he_amu)):
+        raise ValueError(
+            f"masses must be finite; got m_minus_amu={m_minus_amu!r}, "
+            f"m_he_amu={m_he_amu!r}."
+        )
+    if not (m_he_amu > 0.0):
+        raise ValueError(f"m_he_amu must be > 0; got {m_he_amu!r}.")
+    if not (m_minus_amu - m_he_amu > 0.0):
+        raise ValueError(
+            f"pre-shed mass must exceed the He mass so m+ = m - m_He > 0; got "
+            f"m_minus_amu={m_minus_amu!r}, m_he_amu={m_he_amu!r}."
+        )

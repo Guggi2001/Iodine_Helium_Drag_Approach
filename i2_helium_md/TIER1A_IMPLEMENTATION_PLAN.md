@@ -205,7 +205,7 @@ momentum bookkeeping. Removed; recorded so it is not re-litigated.
 > `ShedEvent`s. Constants `MASS_HE_AMU`, `MASS_I_ION_AMU=126.90` added to
 > `constants.py`. Oracle pytest `tests/test_shell_schedule.py` (50 tests) green; plot
 > `scripts/post_processing/plot_shell_schedule.py`. Full suite 787/0. Delivery detail:
-> `drag_migration_log.md` (Slice S record, 2026-06-24).
+> `drag_migration_log_tier1a.md` (Slice S record, 2026-06-24).
 
 **Purpose.** Turn the three anchors into the deterministic, monotone, sheds-only
 integer schedule and its 7 fire events. No physics, no state.
@@ -250,6 +250,16 @@ downward crossing ($\bar n=n-\tfrac12$).
 ---
 
 ### Slice M — Mass-jump operator & state (SQ2) *(stateful; mockable schedule)*
+
+> **IMPLEMENTED (2026-06-24).** `physics/mass_jump.py` — `cold_shed(v_minus,
+> m_minus_amu, *, m_he_amu=MASS_HE_AMU) → ShedResult` (the SQ2 reset, $m^+$, and the
+> exact reduced-mass `dE_mass_transfer`), `kick_factor(...)`, and `apply_shed(...,
+> mode=...)` (`fixed` null vs `anchored_discrete`; mode a function arg, **not** the
+> SimConfig enum). Pure/stateless, mechanical-amu, mass-agnostic to the drag law.
+> Oracle pytest `tests/test_mass_jump.py` (32 tests) green; full suite 819/0. The
+> SimConfig `mass_scenario` enum surgery, the v5→v6 schema bump, and the integrator
+> wiring stay deferred (see below / §8). Delivery detail: `drag_migration_log_tier1a.md`
+> (Slice M record, 2026-06-24).
 
 **Purpose.** Hold $m(t)$ and perform the SQ2 cold-shed reset; emit the increment the
 ledger needs and the $m^+$ the integrator needs (SQ3).
@@ -420,7 +430,7 @@ the numeric $R(t)$; build only after the time-anchored null is green).
   add `anchored_discrete`; **retire `scenario_A_accretion` and `scenario_B_stripping`**
   (superseded by `biphasic`; DESIGN §2.5/§2.8). Touch-points: the `MassScenario`
   literal, the `check_drag_config` non-`fixed` branch set (`config.py` ~417–448), and
-  any preset/test referencing A/B. Retirement recorded in `drag_migration_log.md`
+  any preset/test referencing A/B. Retirement recorded in `drag_migration_log_tier1a.md`
   (2026-06-23/24) and DESIGN §2.8 (updated 2026-06-24: A/B recorded as retired).
 - `anchor_mode` = `time` (NEW field; radial depth-anchored cross-check deferred, §6).
 - `coulomb_available_eV` = **0.80** (validation, $d{=}9$ Å), NEW field stamped to the

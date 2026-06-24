@@ -1091,7 +1091,7 @@ def write_shared_fit_parameters(
             "b0": fit.anchors[1],
             "provenance": (
                 "18A Method-A bundle only (9A Method-A artifact "
-                "provenance-broken, drag_migration_log.md 2026-06-11)"
+                "provenance-broken, drag_migration_log_tier0.md 2026-06-11)"
             ),
         },
         "objective": (

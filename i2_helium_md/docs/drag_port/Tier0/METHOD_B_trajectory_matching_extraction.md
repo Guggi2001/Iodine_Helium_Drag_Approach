@@ -7,7 +7,7 @@ reference — as opposed to Method A, which regresses the force-balance residual
 `F_drag` against speed directly. §1–§7 are the live method specification;
 §8–§10.7 record the outcomes (per-case fit → shared-form joint refit →
 alternative-form discrimination). The production law is `shared_pure_cubic`
-(`γ = g·b·v²`); full decision/delivery history is in `drag_migration_log.md`.
+(`γ = g·b·v²`); full decision/delivery history is in `drag_migration_log_tier0.md`.
 
 **Why it exists.** The Tier-0 investigation showed that hand-adjusting the fit
 parameters while comparing the forward-integrated MD against the smoothed
@@ -301,7 +301,7 @@ To have the same rigour as Method A, a B extraction produces:
 
 ---
 
-## 8. Per-case Method-B fit — outcome (superseded by §9; delivery record in `drag_migration_log.md`)
+## 8. Per-case Method-B fit — outcome (superseded by §9; delivery record in `drag_migration_log_tier0.md`)
 
 B was implemented as a named extraction method
 (`i2_helium_md/extraction/trajectory_matching.py`,
@@ -435,7 +435,7 @@ production candidate is `shared_pure_cubic` and the presets are wired to it
 
 ---
 
-## 9.7 Outcome — RAN 2026-06-11, verdict PASS (delivery record in `drag_migration_log.md`)
+## 9.7 Outcome — RAN 2026-06-11, verdict PASS (delivery record in `drag_migration_log_tier0.md`)
 
 Implemented and run the same day the pre-run clarifications were locked
 (N=50, seed 20260604, 20 ps @ 0.01 ps; anchors `a0=14.5556, b0=2.0534` from
@@ -478,7 +478,7 @@ by DRY_RUN).
 
 Defines the production candidate and the alternative-form discrimination phase
 (now complete — outcome §10.7). Decision/delivery records in
-`drag_migration_log.md`.
+`drag_migration_log_tier0.md`.
 
 ### 10.1 Decisions
 
@@ -566,7 +566,7 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
 - **Stage-2 shared joint fit per family**, same objective (per-case
   RMSE + escape penalty, then equal-weight mean), same windows, same
   N/seed/anchoring discipline. **Anchor sourcing (user decision
-  2026-06-12, Method-A future-role record in `drag_migration_log.md`):
+  2026-06-12, Method-A future-role record in `drag_migration_log_tier0.md`):
   the anchors are PRE-REGISTERED CONSTANTS** — values read off the
   Method-A bundles once (18 Å `linear_and_cubic` for the `{a, c}`-family
   scale; the `power/` export may inform the `{C, n}` scale) and locked
@@ -623,7 +623,7 @@ exposed via its **closed form**, never via `|F|/v` (the Slice-1 rule).
 ### 10.4.1 Pre-run constants — LOCKED (2026-06-12 pre-run session)
 
 First-runs rule satisfied: fixed before any form-phase run, not re-tuned
-after. Decision record in `drag_migration_log.md`. The driver scripts
+after. Decision record in `drag_migration_log_tier0.md`. The driver scripts
 carry these as named constants with this provenance in their USER
 SETTINGS blocks.
 
@@ -692,7 +692,7 @@ Decisions bound to these numbers (user, 2026-06-12):
 
 ### 10.6 Definition of done — complete
 
-All items done (delivery records in `drag_migration_log.md`): production
+All items done (delivery records in `drag_migration_log_tier0.md`): production
 candidate `shared_pure_cubic` chosen and presets re-wired (transitional §6.5.1
 hatch removed); the §10.4.1 pre-run constants locked; `linear_quadratic` and
 `power_law` realized behind the dispatch with guard arms, form-generic loader,
@@ -701,7 +701,7 @@ and nesting-identity/dissipativity/extraction-recovery/artifact tests (full suit
 `shared_pure_cubic` **confirmed** (§10.7, no escalation). Tier-1 start is now on
 the table.
 
-### 10.7 Outcome — RAN 2026-06-14, incumbent CONFIRMED (delivery record in `drag_migration_log.md`)
+### 10.7 Outcome — RAN 2026-06-14, incumbent CONFIRMED (delivery record in `drag_migration_log_tier0.md`)
 
 Both families ran through the §9 machinery (N=50, seed 20260604, 20 ps @ 0.01 ps;
 anchors the §10.4.1 LOCKED 18 Å-only constants passed explicitly — NOT the

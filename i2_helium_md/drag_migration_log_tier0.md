@@ -1,14 +1,18 @@
-# Drag-Model Port — Migration Log
+# Drag-Model Port — Migration Log: Tier 0 & extraction
 
-**Purpose.** This log is the **single home for the drag-model port's decision
-history** — the per-slice delivery records, the dated decision records, and the
-full Tier-0 diagnosis history including every withdrawn reading. The companion
-docs (`CLAUDE.md`, `METHOD_B_…`, `TIER0_FINDINGS.md`,
-`DRAG_PORT_DESIGN_DECISIONS.md`) carry only the **present state** plus the live
-rules/specs and point here for history. Consult this when you need to know *how*
-a decision was reached or *what was tried and withdrawn*.
+**Purpose.** This log is the **decision history for the drag-model port up to and
+including Tier 0** — the per-slice delivery records (Slices 1–4), the full Tier-0
+diagnosis history including every withdrawn reading, and the Method-B / shared-form
+/ §10 form-discrimination extraction records that settled the production drag law
+(`shared_pure_cubic`, `γ = g·b·v²`). Tier-1a history lives in its companion,
+`drag_migration_log_tier1a.md`. The other companion docs (`CLAUDE.md`, `METHOD_B_…`,
+`TIER0_FINDINGS.md`, `DRAG_PORT_DESIGN_DECISIONS.md`) carry only the **present
+state** plus the live rules/specs and point here for history. Consult this when you
+need to know *how* a Tier-0 / extraction decision was reached or *what was tried and
+withdrawn*.
 
-**Companion docs:** `DRAG_PORT_DESIGN_DECISIONS.md` (the frozen design),
+**Companion docs:** `drag_migration_log_tier1a.md` (Tier-1a history),
+`DRAG_PORT_DESIGN_DECISIONS.md` (the frozen design),
 `METHOD_B_trajectory_matching_extraction.md` (the active extraction method),
 `TIER0_FINDINGS.md` (the Tier-0 verdict + diagnosis), `TIER0_SCRIPTS.md`,
 `tier0_comparison_tasks_left.md`, and the per-slice specs
@@ -954,138 +958,3 @@ metrics demoted to diagnostics). Intro updated for the retired
 consistency-check → held-out-generalization role and the `shared_pure_cubic`
 production law. No code referenced by the doc changed beyond the gate switch
 above.
-
-## Tier-1a plan refinement — decision record (2026-06-23)
-
-Plan-doc refinement of `TIER1A_IMPLEMENTATION_PLAN.md` after a code + cross-doc
-audit. No code written (the `[PROCEED TO IMPLEMENTATION]` boundary holds); these are
-documentation + scoping decisions for the eventual build.
-
-- **SQ1 re-scoped as reused, not new.** The plan framed SQ1–SQ3 as the integrator
-  "work." Audit confirmed against MASS A13 ("SQ1 built, accepted as-is") and
-  `physics/baoab.py`: the O-step already applies `e^(−γ·dt/m)` with γ frozen at
-  `v_in`, books exact dissipation, and `make_ion_baoab_step` is rebuilt every step so
-  `m` can vary. Genuine Tier-1a integrator work is **SQ2 (mass-jump operator) + SQ3
-  (post-jump `m⁺`) + the `m(t)` plumbing** into the existing per-step rebuild. The
-  `fixed`-mode bit-for-bit regression is repositioned as the SQ1-untouched guard.
-
-- **Mass-scenario enum: `scenario_A_accretion` and `scenario_B_stripping` RETIRED;
-  `anchored_discrete` ADDED.** User decision (2026-06-23). New literal:
-  `MassScenario = {fixed, biphasic, anchored_discrete}`. A and B are superseded by the
-  locked `biphasic` mechanism (DESIGN §2.5/§2.8) — they were inert enum members read
-  only by the `check_drag_config` guard. **Build touch-points:** the `MassScenario`
-  literal in `config.py`; the guard's non-`fixed` branch set (`config.py` ~417–448) →
-  `{biphasic, anchored_discrete}`; any preset/test referencing the A/B names. DESIGN
-  §2.8 (which still says "A, B retained as baselines") to be updated at build time.
-  `anchored_discrete` is a non-`fixed` scenario → trips the §6.5 `time_resolved`
-  pairing guard structurally against the constant-`m_eff` Tier-0 coefficients → runs
-  under `allow_inconsistent_mass_pairing=True` on the §6.6 mid-window defence (R6).
-
-- **Checkpoint v5 → v6 delta clarified.** The four-term ledger arrays already exist
-  (`E_kin_eV`/`E_pot_eV`/`E_dissip_eV`, `(2N,T)`). v6 = rename
-  `E_mass_attach_defect_eV → E_mass_transfer_eV` (DESIGN §2.9), add per-atom
-  `n_shell (2N,T)`, drop the `mass_history_kg` non-decreasing assumption, add a
-  `mass_scenario` metadata field. No `E_int` at 1a.
-
-- **Three open items resolved (user, 2026-06-23):** (1) a numeric `t_star` is **not
-  required for Tier 1a** — the class verdict and segment-2 timings are `t*`-independent;
-  leave `t_star_ps` a config parameter with a placeholder. (2) **No new run-size
-  decision** — reuse the existing standard run preset, invoked with
-  `mass_scenario=anchored_discrete` (and `fixed` for the null). (3)
-  `coulomb_available_eV=0.80` is stamped **for provenance only — no hard refuse**.
-
-## Tier-1a plan refinement — decision record (2026-06-24)
-
-Second planning pass (study + discussion of CLAUDE.md / DESIGN / TIER1A plan). Still
-code-free; the `[PROCEED TO IMPLEMENTATION]` boundary holds. Three decisions, two of
-which **supersede** parts of the 2026-06-23 record above.
-
-- **Deliverable reframed — the telescoping boost is NOT the verdict (supersedes
-  2026-06-23 item).** The 2026-06-23 record left `t_star_ps` a placeholder on the
-  ground that "the class verdict (telescoping boost 1.153) … [is] `t*`-independent."
-  That conflates the *force-free* kinematic ceiling with the *full-force* trajectory:
-  1.153 telescopes timing-independently **only** when drag and Coulomb are off. Under
-  full drag+Coulomb each shed's firing *time* feeds back through the $\propto v^3$ drag
-  work, so $R(t)$, $|v(t)|$ and the endpoint are genuinely `t*`-sensitive. The 1.153
-  boost is demoted to a **force-free integration-test sanity ceiling**; the substantive
-  Tier-1a result is the trajectory's response to shed timing. (User correction.)
-
-- **`t*` sweep pinned to `{0.5, 5, 9}` ps (wide span; supersedes the 2026-06-23
-  placeholder).** Run matrix: one `fixed` null (t*-independent, no sheds) + three
-  `anchored_discrete` runs, one per swept `t*`. Values chosen for maximal contrast in
-  onset timing; physically-admissible window confirmed `t* ∈ (0,10)` ps (user).
-
-- **Checkpoint v6 = back-compat load shim (new detail).** v6 writer as before
-  (rename `E_mass_attach_defect_eV → E_mass_transfer_eV`, add `n_shell (2N,T)`, drop
-  the `mass_history_kg` non-decreasing assumption, add `mass_scenario` metadata). The
-  v6 **loader accepts legacy v5** — maps the renamed field and synthesizes an absent
-  `n_shell` (constant at the run's fixed shell count) — so the 14 existing v5 `ion.npz`
-  run dirs (incl. the Tier-0 `shared_pure_cubic` runs) still load instead of failing
-  the version check. (User decision.)
-
-- **Docs updated this pass:** `TIER1A_IMPLEMENTATION_PLAN.md` §1/§2/§8/§9/§11
-  (deliverable reframing, `t*` sweep + run matrix, back-compat shim note);
-  `DRAG_PORT_DESIGN_DECISIONS.md` §2.8 (A/B recorded as retired, not "retained").
-
----
-
-## Tier-1a Slice S — delivery record (2026-06-24): **first Tier-1a code, the schedule generator**
-
-The first Tier-1a build unit, behind the `[PROCEED TO IMPLEMENTATION]` trigger.
-Slice S only — Slices M / I⋆ / B, the `SimConfig` anchor/`t_star`/`anchored_discrete`
-fields, and the v5→v6 schema bump remain deferred. Plan: `TIER1A_IMPLEMENTATION_PLAN.md`
-§4 (Slice S), §10 (oracle).
-
-### Delivered (code)
-
-- **`physics/shell_schedule.py`** (new, pure/stateless): `build_shell_schedule(
-  t_star_ps, crossing_fraction=0.5)` → frozen `ShellSchedule`. Exposes **two distinct
-  shell quantities** (the clarification that drove the post-build fix):
-  - `n_bar(t)` — the **continuous** anchored loss curve (piecewise-linear interpolant
-    of the TDDFT waypoints `(t*,21),(10,19),(14,14)`). Fractional **by construction**;
-    its only role is to locate the half-integer downward crossings `n_bar = n−½` (the
-    S4 rule). It is *not* the physical count.
-  - `n_of_t(t)` — the **physical integer** shell count: a piecewise-constant staircase,
-    21 until the first shed, −1 at each of the 7 shed times, flat 14 past 14 ps. This —
-    never `n_bar` — is what the complex mass `m(t)=MASS_I_ION_AMU+n(t)·MASS_HE_AMU`
-    consumes downstream (mass jump, integrator).
-  - `events` — 7 ordered `ShedEvent`s (`time_ps`, `n_before→n_after`, pre/post mass,
-    `kick_factor = m/(m−m_He)`), solved analytically (no root-finding). Fail-loud guards
-    on `t_star_ps∈[0,10)`, `crossing_fraction∈(0,1)`, count==7, strict-increasing times
-    in `(t*,14]`. Mass-agnostic to the integrator (takes no `m` from outside).
-- **`physics/constants.py`** (additive): `MASS_HE_AMU = 4.0026`, `MASS_I_ION_AMU =
-  126.90` — the Tier-1a shell-schedule iodine-ion reference, **intentionally distinct**
-  from the rounded MD `MASS_I_AMU = 127.0` (commented; do not unify). Both exported via
-  `physics/__init__.py`.
-- **`scripts/post_processing/plot_shell_schedule.py`** (new, standalone — no run dir /
-  `SimConfig`): foregrounds the integer `n(t)` staircase for the `t*∈{0.5,5,9}` sweep,
-  `n_bar(t)` demoted to a thin dashed guide, sheds marked.
-- **`tests/test_shell_schedule.py`** (new, 50 tests): structure, segment-1/2 timing
-  (analytic, tight), masses/kicks vs §10, telescoping invariant, the integer-count
-  staircase, `n_bar` evaluator, fail-loud.
-
-### Oracle note (recorded — not a bug)
-
-The §10 **kick factors** (1.0193…1.0219) and **telescoping product** (1.1532) are
-ratios `m/(m−m_He)` and reproduce the table to its 4 printed decimals **exactly**
-(asserted tight) — they are the real oracle. The §10 **absolute pre-shed masses** are
-internally rounded: the `n=19` row is pinned to config `m_eff=202.953908` (precise
-iodine 126.9045) while the formula labels I⁺ as `126.90`, so the interior rows (n=16–19)
-sit ~0.0045 amu off the pure `126.90+n·4.0026` formula this module uses. Asserted
-against the formula tight and against the §10 table loose (~5e-3 amu); documented in the
-module/test docstrings.
-
-### Verification
-
-- `tests/test_shell_schedule.py`: 50 passed. Full suite: **787 passed, 0 failed** (no
-  regression; prior baseline 643/0, suite has since grown). Plot script runs headless
-  (Agg); generated PNG not committed (CLAUDE.md figure rule).
-
-### Post-build correction (same session)
-
-User flagged that a *fractional* shell count is unphysical. Resolved: `n_bar` is correct
-as the continuous loss-curve scaffolding, but the **integer** `n_of_t(t)` staircase was
-promoted to a first-class output and the plot reworked to foreground it. The two
-quantities are now explicitly separated in the module docstring (`|n − n_bar| ≤ ½` tie
-asserted in tests).
-

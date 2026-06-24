@@ -23,7 +23,8 @@ collision physics" forbidden-list rule.
 
 **Live status and full history are not duplicated here — consult the docs:**
 
-- `drag_migration_log.md` — canonical phase status + full decision / withdrawal history
+- `drag_migration_log_tier0.md` — Slices 1–4 + Tier-0 + extraction decision / withdrawal history
+- `drag_migration_log_tier1a.md` — Tier-1a decision + delivery history (current phase)
 - `DRAG_PORT_DESIGN_DECISIONS.md` — frozen architecture choices
 - `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` — live mass-model detail (locked mechanism, SQ1–SQ3 integrator/mass-jump split, R/A/OQ registers)
 - `TIER1A_IMPLEMENTATION_PLAN.md` — active build plan (anchored kinematic mass-dynamics validation)
@@ -73,7 +74,7 @@ Use these for every porting decision, code review, and cleanup:
    module.
 2. No dead code. Remove unused imports, commented-out blocks, and speculative
    branches. *Scoped exception:* the drag-config fields declared-but-not-yet-read
-   (the rule-2 exception table is in `drag_migration_log.md`; each field is
+   (the rule-2 exception table is in `drag_migration_log_tier0.md`; each field is
    removed from it by the slice/tier that activates it).
 3. Encode units and conventions in names: `mass_kg`, `time_ps`, `T_particles_K`,
    `R0_GS_angstrom`, etc.
@@ -162,8 +163,8 @@ config-load guard + coefficient loader, Slice 4 ion-driver rewiring incl. the
 `SLICE4_FIX` mass-consistency fix). Per-slice delivery records, the drag-config
 declared-but-unread field exception (rule 2), the full Tier-0 diagnosis history
 (including withdrawn readings), and the Method-B / shared-form / form-discrimination
-records all live in `drag_migration_log.md`. **Consult the log before assuming any
-status.**
+records all live in `drag_migration_log_tier0.md` (Tier-1a history in
+`drag_migration_log_tier1a.md`). **Consult the logs before assuming any status.**
 
 ### Validation hierarchy (sequential, not simultaneous)
 
@@ -195,7 +196,7 @@ A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at config-
 runs under `allow_inconsistent_mass_pairing=True`, defended by the §6.6 mid-window
 argument (anchored `m≈19 He = m_eff` mid-window; the `n=21`/`n=14` ends sit in the
 §6.7 free-zone). Histogram comparisons (Tier 2/3) default to the Wasserstein metric.
-Current tier status: `drag_migration_log.md` / `TIER0_FINDINGS.md`.
+Current tier status: `drag_migration_log_tier1a.md` / `TIER0_FINDINGS.md`.
 
 ## Post-Processing Comparison Layer
 

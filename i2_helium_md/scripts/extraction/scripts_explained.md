@@ -25,7 +25,7 @@ refit.
 
 - **All production runs are complete** (§8/§9 on 2026-06-11, the §10
   form-discrimination phase on 2026-06-14) and the verdicts are recorded in
-  the artifacts and in `drag_migration_log.md`. Per the **first-runs rule**
+  the artifacts and in `drag_migration_log_tier0.md`. Per the **first-runs rule**
   the pre-registered thresholds were fixed before the runs and the recorded
   verdicts stand — do not re-run a fit to "check" it.
 - **Outcome in one line each:** the per-case fits were in-window excellent

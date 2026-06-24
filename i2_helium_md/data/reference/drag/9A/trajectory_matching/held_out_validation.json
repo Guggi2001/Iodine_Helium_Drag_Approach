@@ -12,7 +12,7 @@
   },
   "vmi": "pending",
   "checks": {
-    "9A_A_vs_B_coefficient_agreement": "dropped: Method-A artifact provenance-broken (hand-edited); see drag_migration_log.md 2026-06-11",
+    "9A_A_vs_B_coefficient_agreement": "dropped: Method-A artifact provenance-broken (hand-edited); see drag_migration_log_tier0.md 2026-06-11",
     "residual_quality_asymmetry": {
       "rmse_ratio_9A_over_18A": 0.4226109053480479,
       "pass": true

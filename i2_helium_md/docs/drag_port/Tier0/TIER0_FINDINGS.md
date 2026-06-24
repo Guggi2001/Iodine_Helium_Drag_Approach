@@ -5,7 +5,7 @@ deterministic, fixed-`m_eff`, `linear_cubic` drag model reproduces against the
 TDDFT references in-window, and why the two cases diverge. This doc carries the
 **present-state findings only**; the chronological diagnosis (the withdrawn
 "frame systematic" / "windowing + bubble-mode" / "over-damping" readings and why
-each was withdrawn) lives in `drag_migration_log.md` → "Withdrawn Tier-0
+each was withdrawn) lives in `drag_migration_log_tier0.md` → "Withdrawn Tier-0
 readings". The final section folds in the **drag-form fit RMSE summary**
 (formerly `data/reference/drag/shared/trajectory_matching/rmse_summary.md`).
 
@@ -205,7 +205,7 @@ measurably worse: both lq variants collapse to the pure-quadratic corner
 9 Å prediction (0.699) fails. **Conclusion:** the trajectory objective
 discriminates the exponent and picks **n = 3** → `shared_pure_cubic` confirmed,
 no escalation, presets unchanged. (Full record: METHOD_B §10.7;
-`drag_migration_log.md`.)
+`drag_migration_log_tier0.md`.)
 
 ### Per-case single-curve fits (§8 + §10.8 — DIAGNOSTIC, never preset-wired)
 
@@ -250,4 +250,4 @@ biased low and contaminated; 18 Å unidentified). The §8 `linear_cubic` rows sh
 the same per-case-vs-cross-case pattern in the *linear* term: 18 Å's `a` is
 consistent with 0 (`a_err = a`) while 9 Å's is resolved (`a = 7.50`), yet the §9
 shared fit collapses `a → 0` jointly. Diagnostic only; the incumbent is
-unaffected. (Full record: METHOD_B §8 / §10.8; `drag_migration_log.md`.)
+unaffected. (Full record: METHOD_B §8 / §10.8; `drag_migration_log_tier0.md`.)

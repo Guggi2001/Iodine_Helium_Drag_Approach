@@ -25,7 +25,7 @@
   "anchors": {
     "a0": 14.555626399148123,
     "b0": 2.0534044239692157,
-    "provenance": "18A Method-A bundle only (9A Method-A artifact provenance-broken, drag_migration_log.md 2026-06-11)"
+    "provenance": "18A Method-A bundle only (9A Method-A artifact provenance-broken, drag_migration_log_tier0.md 2026-06-11)"
   },
   "objective": "equal_weight_mean_over_cases_of_in_window_rmse_mean_abs_v2_plus_escape_penalty",
   "objective_mean_Aps": 0.1292649398514104,

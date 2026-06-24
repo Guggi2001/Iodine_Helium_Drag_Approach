@@ -10,7 +10,7 @@ numbers are set at first-runs and recorded here with their rationale):
       its Method-B fit should land in the same coefficient region as the
       Method-A force-balance fit; a large drift is the overfit signature.
       The 9 A A<->B check is DROPPED: the 9 A Method-A artifact is
-      provenance-broken (hand-edited; recorded in drag_migration_log.md) per
+      provenance-broken (hand-edited; recorded in drag_migration_log_tier0.md) per
       the user decision of 2026-06-11.
 (ii)  **Residual-quality asymmetry.** The 9 A in-window RMSE is expected to
       exceed clean-radial 18 A (the model-dimensionality cost), but an
@@ -168,7 +168,7 @@ def main() -> int:
             "checks": {
                 "9A_A_vs_B_coefficient_agreement": (
                     "dropped: Method-A artifact provenance-broken "
-                    "(hand-edited); see drag_migration_log.md 2026-06-11"
+                    "(hand-edited); see drag_migration_log_tier0.md 2026-06-11"
                 ),
                 "residual_quality_asymmetry": {
                     "rmse_ratio_9A_over_18A": residual_ratio, "pass": check_ii,

@@ -33,7 +33,7 @@ Authoritative specs and records:
 - `METHOD_B_trajectory_matching_extraction.md` — the method (§1–§6), the
   per-case outcome (§8), the shared refit spec + outcome (§9, §9.7), and
   the follow-up phase (§10).
-- `drag_migration_log.md` — delivery records and user-locked decisions.
+- `drag_migration_log_tier0.md` — delivery records and user-locked decisions.
 - `docs/physics/drag_module.md`, `docs/physics/baoab.md` — the physics this
   module drives through (`γ(v)` and the BAOAB O-step).
 
