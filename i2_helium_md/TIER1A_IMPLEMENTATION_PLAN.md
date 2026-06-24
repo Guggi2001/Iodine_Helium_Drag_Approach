@@ -198,6 +198,15 @@ momentum bookkeeping. Removed; recorded so it is not re-litigated.
 
 ### Slice S — Schedule generator *(pure; fully independent)*
 
+> **IMPLEMENTED (2026-06-24).** `physics/shell_schedule.py` —
+> `build_shell_schedule(t_star_ps, crossing_fraction=0.5)` → frozen `ShellSchedule`
+> with the continuous `n_bar(t)` loss-curve evaluator, the **integer** shell-count
+> staircase `n_of_t(t)` (the physical count the mass consumes), and the 7 ordered
+> `ShedEvent`s. Constants `MASS_HE_AMU`, `MASS_I_ION_AMU=126.90` added to
+> `constants.py`. Oracle pytest `tests/test_shell_schedule.py` (50 tests) green; plot
+> `scripts/post_processing/plot_shell_schedule.py`. Full suite 787/0. Delivery detail:
+> `drag_migration_log.md` (Slice S record, 2026-06-24).
+
 **Purpose.** Turn the three anchors into the deterministic, monotone, sheds-only
 integer schedule and its 7 fire events. No physics, no state.
 

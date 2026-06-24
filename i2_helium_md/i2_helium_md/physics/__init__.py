@@ -10,7 +10,9 @@ from .constants import (
     EV_PER_WAVENUMBER,
     HC,
     K_B,
+    MASS_HE_AMU,
     MASS_I_AMU,
+    MASS_I_ION_AMU,
     U,
     droplet_radius_bulk_angstrom,
 )
@@ -25,7 +27,9 @@ __all__ = [
     "EV_PER_WAVENUMBER",
     "HC",
     "K_B",
+    "MASS_HE_AMU",
     "MASS_I_AMU",
+    "MASS_I_ION_AMU",
     "U",
     "droplet_radius_bulk_angstrom",
 ]

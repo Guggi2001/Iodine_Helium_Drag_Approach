@@ -1027,3 +1027,65 @@ which **supersede** parts of the 2026-06-23 record above.
   (deliverable reframing, `t*` sweep + run matrix, back-compat shim note);
   `DRAG_PORT_DESIGN_DECISIONS.md` §2.8 (A/B recorded as retired, not "retained").
 
+---
+
+## Tier-1a Slice S — delivery record (2026-06-24): **first Tier-1a code, the schedule generator**
+
+The first Tier-1a build unit, behind the `[PROCEED TO IMPLEMENTATION]` trigger.
+Slice S only — Slices M / I⋆ / B, the `SimConfig` anchor/`t_star`/`anchored_discrete`
+fields, and the v5→v6 schema bump remain deferred. Plan: `TIER1A_IMPLEMENTATION_PLAN.md`
+§4 (Slice S), §10 (oracle).
+
+### Delivered (code)
+
+- **`physics/shell_schedule.py`** (new, pure/stateless): `build_shell_schedule(
+  t_star_ps, crossing_fraction=0.5)` → frozen `ShellSchedule`. Exposes **two distinct
+  shell quantities** (the clarification that drove the post-build fix):
+  - `n_bar(t)` — the **continuous** anchored loss curve (piecewise-linear interpolant
+    of the TDDFT waypoints `(t*,21),(10,19),(14,14)`). Fractional **by construction**;
+    its only role is to locate the half-integer downward crossings `n_bar = n−½` (the
+    S4 rule). It is *not* the physical count.
+  - `n_of_t(t)` — the **physical integer** shell count: a piecewise-constant staircase,
+    21 until the first shed, −1 at each of the 7 shed times, flat 14 past 14 ps. This —
+    never `n_bar` — is what the complex mass `m(t)=MASS_I_ION_AMU+n(t)·MASS_HE_AMU`
+    consumes downstream (mass jump, integrator).
+  - `events` — 7 ordered `ShedEvent`s (`time_ps`, `n_before→n_after`, pre/post mass,
+    `kick_factor = m/(m−m_He)`), solved analytically (no root-finding). Fail-loud guards
+    on `t_star_ps∈[0,10)`, `crossing_fraction∈(0,1)`, count==7, strict-increasing times
+    in `(t*,14]`. Mass-agnostic to the integrator (takes no `m` from outside).
+- **`physics/constants.py`** (additive): `MASS_HE_AMU = 4.0026`, `MASS_I_ION_AMU =
+  126.90` — the Tier-1a shell-schedule iodine-ion reference, **intentionally distinct**
+  from the rounded MD `MASS_I_AMU = 127.0` (commented; do not unify). Both exported via
+  `physics/__init__.py`.
+- **`scripts/post_processing/plot_shell_schedule.py`** (new, standalone — no run dir /
+  `SimConfig`): foregrounds the integer `n(t)` staircase for the `t*∈{0.5,5,9}` sweep,
+  `n_bar(t)` demoted to a thin dashed guide, sheds marked.
+- **`tests/test_shell_schedule.py`** (new, 50 tests): structure, segment-1/2 timing
+  (analytic, tight), masses/kicks vs §10, telescoping invariant, the integer-count
+  staircase, `n_bar` evaluator, fail-loud.
+
+### Oracle note (recorded — not a bug)
+
+The §10 **kick factors** (1.0193…1.0219) and **telescoping product** (1.1532) are
+ratios `m/(m−m_He)` and reproduce the table to its 4 printed decimals **exactly**
+(asserted tight) — they are the real oracle. The §10 **absolute pre-shed masses** are
+internally rounded: the `n=19` row is pinned to config `m_eff=202.953908` (precise
+iodine 126.9045) while the formula labels I⁺ as `126.90`, so the interior rows (n=16–19)
+sit ~0.0045 amu off the pure `126.90+n·4.0026` formula this module uses. Asserted
+against the formula tight and against the §10 table loose (~5e-3 amu); documented in the
+module/test docstrings.
+
+### Verification
+
+- `tests/test_shell_schedule.py`: 50 passed. Full suite: **787 passed, 0 failed** (no
+  regression; prior baseline 643/0, suite has since grown). Plot script runs headless
+  (Agg); generated PNG not committed (CLAUDE.md figure rule).
+
+### Post-build correction (same session)
+
+User flagged that a *fractional* shell count is unphysical. Resolved: `n_bar` is correct
+as the continuous loss-curve scaffolding, but the **integer** `n_of_t(t)` staircase was
+promoted to a first-class output and the plot reworked to foreground it. The two
+quantities are now explicitly separated in the module docstring (`|n − n_bar| ≤ ½` tie
+asserted in tests).
+

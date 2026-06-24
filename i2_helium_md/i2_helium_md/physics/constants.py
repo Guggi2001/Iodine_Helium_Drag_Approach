@@ -93,6 +93,24 @@ MASS_I_AMU: float = 127.0                   # u           -- iodine atomic mass
 
 
 # ---------------------------------------------------------------------------
+# Helium / iodine-ion masses for the Tier-1a He-shell schedule
+#
+# These two values are the mass reference for the drag-port Tier-1a anchored
+# kinematic schedule (TIER1A_IMPLEMENTATION_PLAN.md §2, §10). The complex mass
+# at shell count n is ``MASS_I_ION_AMU + n * MASS_HE_AMU``.
+#
+# MASS_I_ION_AMU is intentionally 126.90, NOT the rounded ``MASS_I_AMU = 127.0``
+# used by the neutral / ion MD. The Tier-1a §10 golden oracle (pre-shed masses
+# 210.955 ... 182.936, kick factors, the 1.1532 telescoping invariant) is
+# authored at this precision; 127.0 would shift the absolute shell masses by
+# ~0.1 amu and break the oracle. Keep both: 127.0 stays the MD iodine mass,
+# 126.90 is the shell-schedule reference. Do not "unify" them.
+# ---------------------------------------------------------------------------
+MASS_HE_AMU: float = 4.0026                 # u           -- helium atomic mass
+MASS_I_ION_AMU: float = 126.90              # u           -- I+ mass (Tier-1a shell schedule)
+
+
+# ---------------------------------------------------------------------------
 # Coulomb helpers (distance input in Angstrom)
 # ---------------------------------------------------------------------------
 def coulomb_energy(r_angstrom: np.ndarray | float) -> np.ndarray | float:
