@@ -299,3 +299,78 @@ is `O(dt)` in mass and benign as `dt→0` (jumps are `dt`-independent in count; 
 - **B** is now the natural next build: M+I⋆ emit real `dE_mass_transfer`; B owns the
   v5→v6 schema bump (field rename, `n_shell`, back-compat shim) and the four-term
   closure module, then the integration-phase `t*`-sweep RMSE table.
+
+---
+
+## Tier-1a Slice B (core) — delivery record (2026-06-24): **checkpoint v6 + four-term closure gate**
+
+The fourth Tier-1a build unit, behind the `[PROCEED TO IMPLEMENTATION]` trigger.
+Scope was **Slice B core only** (user decision, 2026-06-24): the v5→v6 schema bump,
+the driver field writes, and the closure gate — **stopping before** the §5/§9
+`t*∈{0.5,5,9}` RMSE-table *run* deliverable (a later plan). Slice I⋆ was committed
+first (`bc93c16`) so B built on a clean base. Plan: `TIER1A_IMPLEMENTATION_PLAN.md`
+§4 (Slice B), §8 (config/schema contract).
+
+### Delivered (code)
+
+- **`simulation/checkpoint.py`** — `_ION_SCHEMA_VERSION` 5→6. `IonCheckpoint`
+  renames `E_mass_attach_defect_eV → E_mass_transfer_eV` (the channel now covers He
+  *shedding*, not only attachment; DESIGN §2.9), **adds** `n_shell (2N,T)` (per-atom
+  integer He-shell count) and a scalar `mass_scenario` metadata field, and **drops**
+  the `mass_history_kg` non-decreasing assumption (comment reworded — mass falls under
+  `anchored_discrete`). The loader gained a `str` coercion branch (for `mass_scenario`)
+  and a **migration hook**: `_load_checkpoint` now materializes the npz into a mutable
+  dict and applies an optional `migrate` callable *before* the strict version check.
+- **`simulation/checkpoint.py`** — **back-compat v5 shim** (`_migrate_ion_checkpoint`,
+  wired into `load_ion_checkpoint`): a v5 file is upgraded in-memory — maps the renamed
+  field, synthesizes `n_shell` from the present `mass_history_kg` via
+  `round((m/U − MASS_I_ION_AMU)/MASS_HE_AMU)` (the **unifying rule**, identical to the
+  live writer, so writer and shim agree by construction), defaults `mass_scenario="fixed"`.
+  Pre-v5 files still fail the version check. So the existing v5 `ion.npz` run dirs (incl.
+  the Tier-0 `shared_pure_cubic` runs) load under v6 instead of erroring.
+- **Driver/state field writes** — `ion_initial_state.py` (rename, allocate `n_shell`,
+  set col 0 from the initial mass via the same rule, stamp `cfg.mass_scenario`);
+  `ion_propagation_step.py` (the **`IonStepState`** transient field renamed end-to-end
+  for naming coherence — it serves both the collision-path attach defect and the
+  drag-path shed defect; `write_ion_state_to_checkpoint_column` fills `n_shell` from the
+  realized mass); `ion.py` (`_NUM_2N_T_ARRAYS_ION` 13→14, comment).
+- **`postprocess/energy_balance.py`** — `EnergyTotals`/`ion_energy_totals` swap the
+  defect term to `E_mass_transfer_eV`; **new** `LedgerClosure` + `ion_ledger_closure`
+  (reuses `ion_energy_totals`, plan §8) returning the running four-term invariant and
+  its peak residual vs t=0. A **wiring-correctness gate, not physics** — closure is by
+  construction once the SQ2 reset is the exact reduced-mass form; it exists to *catch* a
+  relabel-instead-of-reset miswire. Exported via `postprocess/__init__.py`.
+- **Scripts** — `plot_run_summary.py`, `plot_ion_energy_balance.py` read the renamed
+  `EnergyTotals` field. The cross-reference exporter reads the renamed `IonStepState`
+  attribute but **keeps the CSV column name `E_mass_attach_defect_eV`** as the
+  MATLAB data contract (matched by `matlab_forced.csv` / `compare_forced.py`).
+
+### Tests
+
+- **`tests/test_checkpoint.py`** — `_make_ion_checkpoint` fixture on v6 fields
+  (`mass_scenario="anchored_discrete"`); `test_ion_round_trip` asserts the renamed
+  field, `n_shell`, and the `str` `mass_scenario` round-trip; **new `TestIonSchemaV6`**:
+  `n_shell` wrong-shape rejected, `mass_scenario` defaults to `fixed`, **v5 back-compat
+  shim** (synthetic v5 npz → migrated), pre-v5 still rejected.
+- **`tests/test_energy_balance.py`** — fixture + reads renamed; **new
+  `TestLedgerClosure`**: closure holds on a conserving stream, a KE jump matched by a
+  negative `E_mass_transfer` closes, and a **relabel-without-reset fault is caught**
+  (residual diverges to the exact 1.0 eV/molecule jump).
+- **`tests/test_ion_drag_smoke.py`** — `schema_version == 6`; the anchored run asserts
+  the v6 `n_shell` field is the integer 21→14 staircase.
+- Rename propagated through the `IonCheckpoint`/`IonStepState` fixtures of ~14 test
+  files (postprocess + paper + tier0 + baoab/propagation-step).
+
+### Deferred (explicitly out of Slice B core scope)
+
+- The §5/§9 **`t*∈{0.5,5,9}` RMSE-table run script** (`fixed` null + 3
+  `anchored_discrete` runs vs smoothed 9 Å TDDFT) — the integration deliverable, a
+  separate later plan. `E_int` (out of all of Tier 1a) and any picture/ladder/κ/ν/s
+  knob (Tier 2) remain out by construction.
+
+### Verification
+
+- Targeted: `test_checkpoint.py` + `test_energy_balance.py` 32 passed; ion + postprocess
+  fixture tests 187 passed; smoke 19 passed. Full suite: **841 passed, 0 failed**
+  (no regression; prior baseline 834/0 after I⋆; +7 Slice B tests). No
+  figures/checkpoints/config generated.

@@ -537,11 +537,23 @@ MASS doc §11.
 
 ### 2.9 Schema and energy-bookkeeping changes  *(retained — shared infrastructure)*
 
+> **DELIVERED (2026-06-24, Tier-1a Slice B).** The v6 bump shipped: rename
+> `E\_mass\_attach\_defect\_eV`→`E\_mass\_transfer\_eV` (the channel now covers He
+> *shedding* under `anchored_discrete`, sign negative on a cold shed); **add**
+> per-atom `n\_shell (2N,T)` (the integer He-shell count, the 21→14 staircase) and
+> a scalar `mass\_scenario` metadata field; **drop** the `mass\_history\_kg`
+> non-decreasing assumption. A **back-compat v5 load shim** upgrades legacy v5
+> `ion.npz` in-memory (maps the renamed field, synthesizes `n\_shell` from
+> `mass\_history\_kg`, defaults `mass\_scenario=fixed`). The four-term closure is the
+> wiring-correctness gate `postprocess/energy_balance.py::ion_ledger_closure`. The
+> §10/§6 `t*`-sweep *run* deliverable stays deferred. Detail:
+> `drag_migration_log_tier1a.md` (Slice B record).
+
 **`IonCheckpoint` schema bump to v6** under any non-`fixed` scenario: rename
 `E\_mass\_attach\_defect\_eV`→`E\_mass\_transfer\_eV` (same `(2N,T)` shape, sign now
-covers accretion and stripping); drop the `mass\_history\_kg` monotonicity
-guarantee; add a scenario-metadata field. **Energy invariant** under continuous
-mass dynamics:
+covers shedding as well as attachment); drop the `mass\_history\_kg` monotonicity
+guarantee; add `n\_shell` and a scenario-metadata field. **Energy invariant** under
+continuous mass dynamics:
 $$E\_\\text{kin}+E\_\\text{pot}+E\_\\text{dissip}+E\_\\text{mass\_transfer}\\approx\\text{const}$$
 (modulo Verlet drift). **The MASS model extends this to a five-term invariant**
 by the $E\_\\text{int}$ reservoir:

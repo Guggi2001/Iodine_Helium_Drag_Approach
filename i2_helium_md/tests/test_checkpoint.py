@@ -71,11 +71,13 @@ def _make_ion_checkpoint(num_molecules: int = 5, num_steps: int = 10) -> IonChec
         E_kin_eV=rng.standard_normal((2 * N, T)),
         E_pot_eV=rng.standard_normal((2 * N, T)),
         E_dissip_eV=rng.standard_normal((2 * N, T)),
-        E_mass_attach_defect_eV=rng.standard_normal((2 * N, T)),
+        E_mass_transfer_eV=rng.standard_normal((2 * N, T)),
+        n_shell=rng.integers(14, 22, size=(2 * N, T)).astype(float),
         b_ion_outside=np.zeros(N, dtype=bool),
         relative_loss_per_ps=rng.standard_normal((2 * N, T)),
         number_of_collisions=np.zeros((2 * N, T), dtype=int),
         temperature_diagnostic=rng.standard_normal((T, 3)),
+        mass_scenario="anchored_discrete",
     )
 
 
@@ -102,9 +104,17 @@ class TestRoundTrip:
         path = save_ion_checkpoint(ckpt, tmp_path / "i.npz")
         loaded = load_ion_checkpoint(path)
         assert loaded.num_molecules == 3
+        assert loaded.schema_version == 6
         np.testing.assert_array_equal(loaded.positions_final_x,
                                        ckpt.positions_final_x)
         np.testing.assert_array_equal(loaded.b_ion_outside, ckpt.b_ion_outside)
+        # v6 fields round-trip: renamed mass-transfer channel, n_shell, and
+        # the scalar mass_scenario metadata (recovered as a Python str).
+        np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
+                                       ckpt.E_mass_transfer_eV)
+        np.testing.assert_array_equal(loaded.n_shell, ckpt.n_shell)
+        assert loaded.mass_scenario == "anchored_discrete"
+        assert isinstance(loaded.mass_scenario, str)
 
     def test_extension_added_automatically(self, tmp_path):
         """Saving without .npz extension should add it."""
@@ -216,3 +226,73 @@ class TestFileLayout:
         # compressed should be clearly smaller than raw (random data still
         # compresses ~10-20% with deflate)
         assert path.stat().st_size < raw_bytes
+
+
+# ===========================================================================
+# Ion schema v6 (Tier-1a mass dynamics) + v5 back-compat shim
+# ===========================================================================
+class TestIonSchemaV6:
+    def test_n_shell_wrong_shape_rejected(self, tmp_path):
+        """n_shell must be (2N, num_steps) like the other trajectory arrays."""
+        ckpt = _make_ion_checkpoint(num_molecules=3, num_steps=6)
+        # Corrupt n_shell to the wrong leading dimension (N instead of 2N).
+        ckpt.n_shell = np.zeros((ckpt.num_molecules, ckpt.time_ps.size))
+        save_ion_checkpoint(ckpt, tmp_path / "wrong.npz")
+        cfg = single_pulse_N2000(num_molecules=3)
+        with pytest.raises(ValueError, match="n_shell"):
+            load_ion_checkpoint(tmp_path / "wrong.npz", cfg=cfg)
+
+    def test_mass_scenario_defaults_to_fixed(self):
+        """A v6 checkpoint built without an explicit mass_scenario is 'fixed'."""
+        ckpt = IonCheckpoint(
+            **{k: v for k, v in _make_ion_checkpoint(2, 3).__dict__.items()
+               if k not in ("mass_scenario", "schema_version")}
+        )
+        assert ckpt.mass_scenario == "fixed"
+
+    def test_v5_backcompat_shim(self, tmp_path):
+        """A legacy v5 ion .npz loads under v6 via the migration shim.
+
+        The shim maps the renamed mass-transfer field, synthesizes n_shell
+        from mass_history_kg, and defaults mass_scenario to 'fixed'.
+        """
+        from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
+
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=5)
+        path = save_ion_checkpoint(ckpt, tmp_path / "legacy.npz")
+
+        # Rewrite the .npz to mimic a v5 file: old field name, no n_shell,
+        # no mass_scenario, schema_version=5.
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        data["E_mass_attach_defect_eV"] = data.pop("E_mass_transfer_eV")
+        data.pop("n_shell")
+        data.pop("mass_scenario", None)
+        data["schema_version"] = np.asarray(5)
+        np.savez_compressed(path, **data)
+
+        loaded = load_ion_checkpoint(path)
+
+        # Version upgraded; renamed field preserved verbatim.
+        assert loaded.schema_version == 6
+        np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
+                                       ckpt.E_mass_transfer_eV)
+        # mass_scenario defaulted; n_shell synthesized from mass_history_kg
+        # via the same rule the writer uses.
+        assert loaded.mass_scenario == "fixed"
+        assert loaded.n_shell.shape == loaded.E_mass_transfer_eV.shape
+        expected_n = np.rint(
+            (ckpt.mass_history_kg / U - MASS_I_ION_AMU) / MASS_HE_AMU
+        )
+        np.testing.assert_array_equal(loaded.n_shell, expected_n)
+
+    def test_pre_v5_still_rejected(self, tmp_path):
+        """The shim only upgrades v5; older versions still fail the check."""
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=3)
+        path = save_ion_checkpoint(ckpt, tmp_path / "v4.npz")
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        data["schema_version"] = np.asarray(4)
+        np.savez_compressed(path, **data)
+        with pytest.raises(ValueError, match="schema_version"):
+            load_ion_checkpoint(path)

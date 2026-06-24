@@ -17,9 +17,11 @@ from .compare_trajectories import (
 )
 from .energy_balance import (
     EnergyTotals,
+    LedgerClosure,
     MassSpectrum,
     PhiHistogram,
     ion_energy_totals,
+    ion_ledger_closure,
     mass_spectrum,
     neutral_energy_totals,
     phi_histogram,
@@ -123,6 +125,8 @@ __all__ = [
     "EnergyTotals",
     "neutral_energy_totals",
     "ion_energy_totals",
+    "LedgerClosure",
+    "ion_ledger_closure",
     "PhiHistogram",
     "phi_histogram",
     "MassSpectrum",

@@ -40,6 +40,7 @@ from typing import Any
 import numpy as np
 
 from ..config import SimConfig
+from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 
 
 # ===========================================================================
@@ -55,8 +56,10 @@ from ..config import SimConfig
 #   2 -- initial ion checkpoint shape, matching neutral v2.
 #   3 -- adds three fields needed for postprocess and diagnostics:
 #          * droplet_radii_angstrom (2N,)   -- droplet radius per atom
-#          * mass_history_kg        (2N, T) -- mass over time (changes
-#                                              as helium attaches)
+#          * mass_history_kg        (2N, T) -- mass over time (helium
+#                                              attaches OR sheds; NOT
+#                                              monotone under the Tier-1a
+#                                              anchored_discrete scenario)
 #          * E_dissip_eV            (2N, T) -- cumulative energy dissipated
 #                                              per atom (matches neutral)
 #   4 -- adds the mass-attachment kinetic-energy defect diagnostic that
@@ -74,9 +77,20 @@ from ..config import SimConfig
 #        averaged over the colliding atoms in each stored step. NaN
 #        in any row where no collision happened in that stored step.
 #          * temperature_diagnostic (T, 3)
+#   6 -- Tier-1a mass-dynamics. The mass-transfer channel now covers He
+#        shedding (anchored_discrete), not only attachment, so:
+#          * RENAME E_mass_attach_defect_eV -> E_mass_transfer_eV (same
+#            (2N, T); sign now also negative on a cold shed; DESIGN 2.9).
+#          * ADD n_shell (2N, num_steps) -- per-atom integer He-shell count.
+#          * ADD mass_scenario (scalar str) -- the run's mass scenario tag.
+#          * DROP the mass_history_kg non-decreasing assumption (mass may
+#            fall under anchored_discrete shedding).
+#        Back-compat: load_ion_checkpoint migrates legacy v5 files (maps the
+#        renamed field, synthesizes n_shell from mass_history_kg, defaults
+#        mass_scenario='fixed') so existing v5 ion.npz run dirs still load.
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 5
+_ION_SCHEMA_VERSION: int = 6
 
 
 # ===========================================================================
@@ -159,12 +173,14 @@ class IonCheckpoint:
     * ``velocities_final_z`` : (2 * num_molecules,)            Angstrom/ps
     * ``mass_kg``            : (2 * num_molecules,)            kg (initial mass)
     * ``mass_final_kg``      : (2 * num_molecules,)            kg (after possible mass attachment)
-    * ``mass_history_kg``    : (2 * num_molecules, num_steps)  kg (mass over time)
+    * ``mass_history_kg``    : (2 * num_molecules, num_steps)  kg (mass over time; may rise via attachment OR fall via anchored_discrete shedding -- not assumed monotone)
     * ``droplet_radii_angstrom``: (2 * num_molecules,)         Angstrom (per atom; same value for the two atoms of a molecule)
     * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
-    * ``E_mass_attach_defect_eV``: (2 * num_molecules, num_steps) eV (per-atom, cumulative)
+    * ``E_mass_transfer_eV`` : (2 * num_molecules, num_steps) eV (per-atom, cumulative; the mass-transfer kinetic-energy defect -- negative on a cold shed, per DESIGN 2.9; formerly ``E_mass_attach_defect_eV``)
+    * ``n_shell``            : (2 * num_molecules, num_steps) int-valued (per-atom He-shell count over time; constant under ``fixed``, the 21->14 staircase under ``anchored_discrete``)
+    * ``mass_scenario``      : scalar str                     (the run's mass scenario tag: ``fixed`` / ``anchored_discrete`` / ...)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
     * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
     * ``number_of_collisions``: (2 * num_molecules, num_steps) int (cumulative, per-atom)
@@ -176,9 +192,12 @@ class IonCheckpoint:
         ``diagnostic_array`` accumulator in
         ``vmi_sim_3d_ion_propa.m:683``.
 
-    Schema v5 (the current version) differs from v4 by adding
-    ``temperature_diagnostic``. Older files cannot be loaded; rerun
-    the ion stage to upgrade.
+    Schema v6 (the current version) differs from v5 by the Tier-1a
+    mass-dynamics changes: it renames ``E_mass_attach_defect_eV`` to
+    ``E_mass_transfer_eV`` (the channel now also covers shedding), adds
+    ``n_shell`` and the ``mass_scenario`` tag, and drops the
+    non-decreasing-mass assumption. Legacy v5 files are migrated on load
+    (see :func:`load_ion_checkpoint`); pre-v5 files cannot be loaded.
     """
 
     num_molecules: int
@@ -202,11 +221,13 @@ class IonCheckpoint:
     E_kin_eV: np.ndarray
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
-    E_mass_attach_defect_eV: np.ndarray
+    E_mass_transfer_eV: np.ndarray
+    n_shell: np.ndarray
     b_ion_outside: np.ndarray
     relative_loss_per_ps: np.ndarray
     number_of_collisions: np.ndarray
     temperature_diagnostic: np.ndarray
+    mass_scenario: str = "fixed"
     schema_version: int = _ION_SCHEMA_VERSION
 
 
@@ -272,13 +293,58 @@ def load_ion_checkpoint(
     path: str | Path,
     cfg: SimConfig | None = None,
 ) -> IonCheckpoint:
-    """Load an IonCheckpoint from a .npz file."""
+    """Load an IonCheckpoint from a .npz file.
+
+    Legacy v5 checkpoints are migrated transparently on load via
+    :func:`_migrate_ion_checkpoint` (the v5->v6 back-compat shim), so
+    existing v5 ``ion.npz`` run directories still load instead of failing
+    the version check.
+    """
     return _load_checkpoint(
         path,
         dataclass_type=IonCheckpoint,
         expected_version=_ION_SCHEMA_VERSION,
         cfg=cfg,
+        migrate=_migrate_ion_checkpoint,
     )
+
+
+def _migrate_ion_checkpoint(
+    raw: dict[str, np.ndarray],
+    version: int,
+) -> tuple[dict[str, np.ndarray], int]:
+    """Migrate a loaded ion checkpoint dict to the current schema.
+
+    Currently the only supported migration is **v5 -> v6** (the Tier-1a
+    mass-dynamics bump). It:
+
+    * maps ``E_mass_attach_defect_eV`` -> ``E_mass_transfer_eV`` (the
+      mass-transfer channel now also covers shedding; the array is
+      identical, only the name and sign-convention scope change);
+    * synthesizes the absent ``n_shell`` from the already-present
+      ``mass_history_kg`` via ``round((m/U - m_I+) / m_He)`` -- the same
+      derivation the live driver uses, so writer and shim agree by
+      construction. For a legacy fixed-mass run this is constant
+      (~19 He at ``m_eff``);
+    * defaults ``mass_scenario`` to ``"fixed"`` (every existing v5 run is
+      a fixed / Tier-0 run).
+
+    Any other version is returned unchanged (the caller's strict version
+    check then raises).
+    """
+    if version != 5:
+        return raw, version
+
+    raw = dict(raw)
+    if "E_mass_attach_defect_eV" in raw and "E_mass_transfer_eV" not in raw:
+        raw["E_mass_transfer_eV"] = raw.pop("E_mass_attach_defect_eV")
+    if "n_shell" not in raw and "mass_history_kg" in raw:
+        mass_amu = np.asarray(raw["mass_history_kg"], dtype=float) / U
+        raw["n_shell"] = np.rint((mass_amu - MASS_I_ION_AMU) / MASS_HE_AMU)
+    if "mass_scenario" not in raw:
+        raw["mass_scenario"] = np.asarray("fixed")
+    raw["schema_version"] = np.asarray(6)
+    return raw, 6
 
 
 # ===========================================================================
@@ -310,46 +376,64 @@ def _load_checkpoint(
     dataclass_type: type,
     expected_version: int,
     cfg: SimConfig | None,
+    migrate: Any = None,
 ) -> Any:
-    """Read a .npz file into a checkpoint dataclass."""
+    """Read a .npz file into a checkpoint dataclass.
+
+    ``migrate``, if given, is a callable ``(raw_dict, version) ->
+    (raw_dict, version)`` applied before the strict version check, so an
+    older on-disk schema can be upgraded in-memory to ``expected_version``
+    (the ion v5->v6 back-compat shim). It receives a mutable copy of the
+    loaded arrays and must return the migrated arrays plus the new version.
+    """
     p = Path(path)
     if p.suffix != ".npz":
         p = p.with_suffix(".npz")
     if not p.exists():
         raise FileNotFoundError(f"checkpoint not found: {p}")
 
+    # Materialize the .npz into a mutable dict so any migration can rename
+    # / synthesize fields after the file handle is closed.
     with np.load(p, allow_pickle=False) as npz:
-        # 1. Schema version check
         if "schema_version" not in npz.files:
             raise ValueError(
                 f"checkpoint at {p} has no schema_version field; "
                 "it was written by an older version. Re-run the simulation."
             )
         version = int(npz["schema_version"])
-        if version != expected_version:
-            raise ValueError(
-                f"checkpoint at {p} has schema_version={version}, "
-                f"this code expects {expected_version}. Re-run the simulation."
-            )
+        raw: dict[str, Any] = {k: npz[k] for k in npz.files}
 
-        # 2. Build kwargs for dataclass construction
-        expected_fields = {f.name for f in fields(dataclass_type)}
-        missing = expected_fields - set(npz.files)
-        if missing:
-            raise ValueError(
-                f"checkpoint at {p} is missing fields: {sorted(missing)}"
-            )
+    # 1. Migrate (if a shim is supplied) then enforce the version.
+    if version != expected_version and migrate is not None:
+        raw, version = migrate(raw, version)
+    if version != expected_version:
+        raise ValueError(
+            f"checkpoint at {p} has schema_version={version}, "
+            f"this code expects {expected_version}. Re-run the simulation."
+        )
 
-        kwargs: dict[str, Any] = {}
-        for f in fields(dataclass_type):
-            arr = npz[f.name]
-            # unwrap 0-d arrays for int / scalar fields
-            if f.type is int or f.name == "schema_version":
-                kwargs[f.name] = int(arr)
-            elif f.type is float:
-                kwargs[f.name] = float(arr)
-            else:
-                kwargs[f.name] = np.asarray(arr)
+    # 2. Build kwargs for dataclass construction
+    expected_fields = {f.name for f in fields(dataclass_type)}
+    missing = expected_fields - set(raw.keys())
+    if missing:
+        raise ValueError(
+            f"checkpoint at {p} is missing fields: {sorted(missing)}"
+        )
+
+    kwargs: dict[str, Any] = {}
+    for f in fields(dataclass_type):
+        arr = raw[f.name]
+        # unwrap 0-d arrays for scalar fields. Note: under
+        # ``from __future__ import annotations`` ``f.type`` is a string,
+        # so match the known scalar fields by name as well.
+        if f.name == "schema_version" or f.type is int:
+            kwargs[f.name] = int(arr)
+        elif f.type is float:
+            kwargs[f.name] = float(arr)
+        elif f.name == "mass_scenario" or f.type is str:
+            kwargs[f.name] = str(arr)
+        else:
+            kwargs[f.name] = np.asarray(arr)
 
     instance = dataclass_type(**kwargs)
 
@@ -416,7 +500,7 @@ def _validate_against_cfg(
         "positions_x", "positions_y", "positions_z",
         "velocities_x", "velocities_y", "velocities_z",
         "E_kin_eV", "E_pot_eV", "E_dissip_eV", "L_droplet_eV_ps",
-        "E_mass_attach_defect_eV",
+        "E_mass_transfer_eV", "n_shell",
         "relative_loss_per_ps", "number_of_collisions",
         "mass_history_kg",
     )

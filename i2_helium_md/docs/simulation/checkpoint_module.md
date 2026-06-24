@@ -102,8 +102,9 @@ The minimum sufficient set to:
 - Generate VMI images and momentum spectra (`positions_final_*`,
   `velocities_final_*`, `mass_final_kg`)
 - Reproduce ion-stage energy diagnostics, including the
-  `E_mass_attach_defect_eV` correction term that closes the
-  energy-conservation invariant when helium attaches
+  `E_mass_transfer_eV` correction term (renamed from
+  `E_mass_attach_defect_eV` at v6) that closes the energy-conservation
+  invariant when helium attaches or sheds
 - Track collisional history (`number_of_collisions`,
   `relative_loss_per_ps`, `b_ion_outside`)
 - Track per-atom mass over time (`mass_history_kg`) since helium
@@ -186,9 +187,25 @@ on read and refuses to load incompatible versions.
   `vmi_sim_3d_ion_propa.m:683`. Note this is the only ion-checkpoint
   array whose leading dimension is `num_steps` rather than `2N`.
   Older v4 files cannot be loaded; rerun the ion stage to upgrade.
+- `6` -- Tier-1a mass dynamics. **Renames** `E_mass_attach_defect_eV`
+  → `E_mass_transfer_eV` (same `(2N, T)`; the channel now also covers He
+  *shedding* under `anchored_discrete`, so the cumulative defect can go
+  negative). **Adds** `n_shell: (2N, num_steps)` (per-atom integer
+  He-shell count -- constant under `fixed`, the 21→14 staircase under
+  `anchored_discrete`) and a scalar `mass_scenario` metadata field.
+  **Drops** the `mass_history_kg` non-decreasing assumption (mass falls
+  on a shed). Unlike earlier bumps, **legacy v5 files still load**: a
+  back-compat shim (`_migrate_ion_checkpoint`, wired into
+  `load_ion_checkpoint`) upgrades them in-memory -- maps the renamed
+  field, synthesizes `n_shell` from `mass_history_kg` via
+  `round((m/U − MASS_I_ION_AMU)/MASS_HE_AMU)` (the same rule the live
+  writer uses), and defaults `mass_scenario` to `"fixed"`. Pre-v5 files
+  are still rejected.
 
 When bumping, update `_NEUTRAL_SCHEMA_VERSION` or `_ION_SCHEMA_VERSION` in
-`checkpoint.py` and document the change in `migration_log.md`.
+`checkpoint.py` and document the change in `migration_log.md`. To accept an
+older version instead of rejecting it, supply a `migrate` callable to
+`_load_checkpoint` (see the v5→v6 ion shim).
 
 ## Validation against `SimConfig`
 

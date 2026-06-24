@@ -64,8 +64,8 @@ def _build_figure(totals) -> plt.Figure:
     ax.plot(totals.time_ps, totals.E_pot_eV, label=r"$E_{pot}$", linewidth=1.5)
     ax.plot(totals.time_ps, totals.E_dissip_eV, label=r"$E_{dissip}$", linewidth=1.5)
     ax.plot(
-        totals.time_ps, totals.E_mass_attach_defect_eV,
-        label=r"$E_{mass\ attach\ defect}$", linewidth=1.5,
+        totals.time_ps, totals.E_mass_transfer_eV,
+        label=r"$E_{mass\ transfer}$", linewidth=1.5,
     )
     ax.plot(
         totals.time_ps, totals.E_system_eV,

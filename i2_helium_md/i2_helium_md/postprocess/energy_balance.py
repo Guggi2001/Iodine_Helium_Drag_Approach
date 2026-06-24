@@ -32,7 +32,7 @@ class EnergyTotals:
 
     All traces share the same ``time_ps`` axis. ``E_system`` is the
     sum of the other components (matches MATLAB ``E_system =
-    E_kin + E_pot + E_dissip [+ E_mass_attach_defect]``); it should be
+    E_kin + E_pot + E_dissip [+ E_mass_transfer]``); it should be
     ~flat over time within Verlet drift.
     """
     time_ps: np.ndarray
@@ -40,8 +40,10 @@ class EnergyTotals:
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
     E_system_eV: np.ndarray
-    # Only populated for the ion stage; ``None`` for neutral.
-    E_mass_attach_defect_eV: np.ndarray | None = None
+    # Only populated for the ion stage; ``None`` for neutral. Renamed from
+    # ``E_mass_attach_defect_eV`` at checkpoint schema v6 (the channel now
+    # also covers He shedding, not only attachment).
+    E_mass_transfer_eV: np.ndarray | None = None
 
 
 def neutral_energy_totals(ckpt: NeutralCheckpoint) -> EnergyTotals:
@@ -60,7 +62,7 @@ def neutral_energy_totals(ckpt: NeutralCheckpoint) -> EnergyTotals:
         E_pot_eV=e_pot,
         E_dissip_eV=e_dis,
         E_system_eV=e_kin + e_pot + e_dis,
-        E_mass_attach_defect_eV=None,
+        E_mass_transfer_eV=None,
     )
 
 
@@ -69,21 +71,75 @@ def ion_energy_totals(ckpt: IonCheckpoint) -> EnergyTotals:
 
     Mirrors ``vmi_sim_3d_ion_propa.m`` line 898 where each component
     is plotted as ``sum(E_*, 1) / num_molecules``. ``E_system``
-    includes ``E_mass_attach_defect`` so the total is conserved up
+    includes ``E_mass_transfer`` so the total is conserved up
     to Verlet drift.
     """
     n = float(ckpt.num_molecules)
     e_kin = np.sum(ckpt.E_kin_eV, axis=0) / n
     e_pot = np.sum(ckpt.E_pot_eV, axis=0) / n
     e_dis = np.sum(ckpt.E_dissip_eV, axis=0) / n
-    e_def = np.sum(ckpt.E_mass_attach_defect_eV, axis=0) / n
+    e_def = np.sum(ckpt.E_mass_transfer_eV, axis=0) / n
     return EnergyTotals(
         time_ps=ckpt.time_ps,
         E_kin_eV=e_kin,
         E_pot_eV=e_pot,
         E_dissip_eV=e_dis,
         E_system_eV=e_kin + e_pot + e_dis + e_def,
-        E_mass_attach_defect_eV=e_def,
+        E_mass_transfer_eV=e_def,
+    )
+
+
+# ===========================================================================
+# Four-term ledger closure (Tier-1a Slice B)
+# ===========================================================================
+@dataclass
+class LedgerClosure:
+    """Four-term energy-ledger closure for an ion run.
+
+    The Tier-1a invariant ``E_kin + E_pot + E_dissip + E_mass_transfer``
+    should hold constant over the run up to Verlet drift. ``residual_eV``
+    is the per-step deviation of that summed system energy from its t=0
+    value; ``max_abs_residual_eV`` is its peak.
+
+    This is a **wiring-correctness gate, not a physics result**: closure
+    is "by construction" once the cold-shed reset is the exact
+    reduced-mass form (``physics/mass_jump.py``). Its job is to *catch a
+    miswire* -- a label-only velocity rescale that bumps ``E_kin`` with no
+    matching ``E_mass_transfer`` increment makes the residual diverge. It
+    does NOT certify the energetics of shedding (unsourced at Tier 1a).
+    """
+    time_ps: np.ndarray
+    E_system_eV: np.ndarray
+    residual_eV: np.ndarray
+    max_abs_residual_eV: float
+
+
+def ion_ledger_closure(ckpt: IonCheckpoint) -> LedgerClosure:
+    """Four-term ledger closure trace for an ion run (Slice B gate).
+
+    Reuses :func:`ion_energy_totals` (so the four summed components match
+    the MATLAB energy-balance panel) and reports the running residual of
+    the system energy against its initial value.
+
+    Parameters
+    ----------
+    ckpt : IonCheckpoint
+
+    Returns
+    -------
+    LedgerClosure
+        ``residual_eV[t] = E_system_eV[t] - E_system_eV[0]`` and its peak
+        absolute value. A correct run keeps this within Verlet drift; a
+        relabel-instead-of-reset fault makes it diverge.
+    """
+    totals = ion_energy_totals(ckpt)
+    e_sys = totals.E_system_eV
+    residual = e_sys - e_sys[0]
+    return LedgerClosure(
+        time_ps=totals.time_ps,
+        E_system_eV=e_sys,
+        residual_eV=residual,
+        max_abs_residual_eV=float(np.max(np.abs(residual))),
     )
 
 

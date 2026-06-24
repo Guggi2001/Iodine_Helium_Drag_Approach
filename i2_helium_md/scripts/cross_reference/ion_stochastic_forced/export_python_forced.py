@@ -148,7 +148,7 @@ def main() -> None:
                 float(st.E_kin_eV[atom]),
                 float(st.E_pot_eV[atom]),
                 float(st.E_dissip_eV[atom]),
-                float(st.E_mass_attach_defect_eV[atom]),
+                float(st.E_mass_transfer_eV[atom]),  # CSV column name kept as MATLAB's E_mass_attach_defect_eV
                 int(st.number_of_collisions[atom]),
                 int(b_collision[atom]),
                 int(b_attach[atom]),

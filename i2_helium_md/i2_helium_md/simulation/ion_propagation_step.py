@@ -63,7 +63,7 @@ from ..physics.collisions import (
     velocity_dependent_cross_section,
 )
 from ..physics.baoab import BaoabStep
-from ..physics.constants import EV, MASS_HE_AMU, U
+from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.mass_jump import cold_shed_velocity_components
 from ..physics.shell_schedule import ShellSchedule
 from ..physics.drag import REALIZED_FORMS
@@ -100,15 +100,19 @@ class IonStepState:
         Per-atom potential energy in eV (ion-droplet + half partner Coulomb).
     E_dissip_eV : np.ndarray, shape (2N,)
         Cumulative energy dissipated per atom up to this state's time.
-    E_mass_attach_defect_eV : np.ndarray, shape (2N,)
-        Cumulative kinetic-energy defect introduced by helium mass
-        attachment, in eV. When 4 amu attaches at the atom's current
-        velocity, the recomputed E_kin is spuriously larger by
-        ``1/2 * dm * v^2``; this field accumulates the negative of
-        that increment so that
-        ``E_kin + E_pot + E_dissip + E_mass_attach_defect`` is
-        conserved (modulo Verlet drift). Mirrors MATLAB
-        ``E_mass_attach_defect`` at vmi_sim_3d_ion_propa.m:762.
+    E_mass_transfer_eV : np.ndarray, shape (2N,)
+        Cumulative kinetic-energy defect from helium mass transfer, in
+        eV -- attachment (collision path) OR a cold shed (Tier-1a
+        anchored_discrete drag path). When mass changes by ``dm`` at the
+        atom's current velocity, the recomputed E_kin shifts by
+        ``1/2 * dm * v^2``; this field accumulates the negative of that
+        increment so that
+        ``E_kin + E_pot + E_dissip + E_mass_transfer`` is conserved
+        (modulo Verlet drift). On the drag path the shed defect is the
+        exact reduced-mass form (``physics/mass_jump.py``); on the
+        collision path it mirrors MATLAB ``E_mass_attach_defect`` at
+        vmi_sim_3d_ion_propa.m:762 (renamed from ``E_mass_attach_defect_eV``
+        at schema v6).
     number_of_collisions : np.ndarray, shape (2N,)
         Cumulative number of hard-sphere collisions per atom.
     time_ps : float
@@ -133,7 +137,7 @@ class IonStepState:
     E_kin_eV: np.ndarray
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
-    E_mass_attach_defect_eV: np.ndarray
+    E_mass_transfer_eV: np.ndarray
     number_of_collisions: np.ndarray
     time_ps: float
     temperature_diagnostic: np.ndarray | None = None
@@ -277,11 +281,11 @@ def ion_propagation_step(
     # using the post-collision, post-attachment velocity. The sign is
     # negative because attaching mass at velocity v adds ``1/2 dm v^2``
     # of fictitious E_kin; the defect compensates so that the system
-    # invariant E_kin + E_pot + E_dissip + E_mass_attach_defect is
+    # invariant E_kin + E_pot + E_dissip + E_mass_transfer is
     # conserved up to Verlet drift.
     mass_diff_kg = new_mass_kg - state.mass_kg
     dE_defect_eV = -0.5 * mass_diff_kg * (v_post_sq * 100.0 ** 2) / EV
-    E_mass_attach_defect_new = state.E_mass_attach_defect_eV + dE_defect_eV
+    E_mass_transfer_new = state.E_mass_transfer_eV + dE_defect_eV
 
     return IonStepState(
         x=x1, y=y1, z=z1,
@@ -290,7 +294,7 @@ def ion_propagation_step(
         E_kin_eV=E_kin_new_eV,
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
-        E_mass_attach_defect_eV=E_mass_attach_defect_new,
+        E_mass_transfer_eV=E_mass_transfer_new,
         number_of_collisions=n_coll_new,
         time_ps=state.time_ps + dt,
         temperature_diagnostic=temperature_diagnostic_step,
@@ -335,7 +339,7 @@ def baoab_propagation_step(
     -------
     IonStepState
         The new state at ``state.time_ps + cfg.dt_ion``. At Tier 0: ``mass_kg``
-        unchanged (fixed mass), ``E_mass_attach_defect_eV`` and
+        unchanged (fixed mass), ``E_mass_transfer_eV`` and
         ``number_of_collisions`` carried unchanged (both 0 under the drag branch),
         and ``temperature_diagnostic`` an all-NaN ``(3,)`` sentinel (no collisions
         to diagnose).
@@ -370,7 +374,7 @@ def baoab_propagation_step(
         E_kin_eV=E_kin_new_eV,
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
-        E_mass_attach_defect_eV=state.E_mass_attach_defect_eV,  # stays 0 (no attach)
+        E_mass_transfer_eV=state.E_mass_transfer_eV,  # stays 0 (no attach)
         number_of_collisions=state.number_of_collisions,       # stays 0 (no collisions)
         time_ps=state.time_ps + dt,
         temperature_diagnostic=np.full(3, np.nan, dtype=float),
@@ -395,7 +399,7 @@ def shed_step(
     its analytic fire time is ``<= state.time_ps + dt`` -- apply the
     momentum-conserving cold-shed reset (:func:`cold_shed_velocity_components`)
     to **all** atoms' velocities, drop one He from the (uniform) complex mass,
-    book the per-atom reduced-mass defect into ``E_mass_attach_defect_eV``, and
+    book the per-atom reduced-mass defect into ``E_mass_transfer_eV``, and
     advance the pointer. **At most one shed per call** (the plan's ≤1/step rule):
     if the schedule is dense relative to ``dt`` the surplus events fire on the
     following steps, so the total shed count is ``len(events)`` independent of
@@ -448,7 +452,7 @@ def shed_step(
         state,
         vx=vx_p, vy=vy_p, vz=vz_p,
         mass_kg=np.full_like(state.mass_kg, m_plus_amu * U),
-        E_mass_attach_defect_eV=state.E_mass_attach_defect_eV + dE_eV,
+        E_mass_transfer_eV=state.E_mass_transfer_eV + dE_eV,
     )
     return new_state, next_shed_idx + 1
 
@@ -634,7 +638,7 @@ def ion_state_from_checkpoint_column(ckpt, t_id: int) -> IonStepState:
         E_kin_eV=ckpt.E_kin_eV[:, t_id].copy(),
         E_pot_eV=ckpt.E_pot_eV[:, t_id].copy(),
         E_dissip_eV=ckpt.E_dissip_eV[:, t_id].copy(),
-        E_mass_attach_defect_eV=ckpt.E_mass_attach_defect_eV[:, t_id].copy(),
+        E_mass_transfer_eV=ckpt.E_mass_transfer_eV[:, t_id].copy(),
         number_of_collisions=ckpt.number_of_collisions[:, t_id].copy(),
         time_ps=float(ckpt.time_ps[t_id]),
     )
@@ -656,6 +660,13 @@ def write_ion_state_to_checkpoint_column(
     ckpt.E_kin_eV[:, t_id] = state.E_kin_eV
     ckpt.E_pot_eV[:, t_id] = state.E_pot_eV
     ckpt.E_dissip_eV[:, t_id] = state.E_dissip_eV
-    ckpt.E_mass_attach_defect_eV[:, t_id] = state.E_mass_attach_defect_eV
+    ckpt.E_mass_transfer_eV[:, t_id] = state.E_mass_transfer_eV
+    # Per-atom integer He-shell count, derived from the realized mass via
+    # the same rule the v5->v6 load shim uses (so writer and shim agree):
+    # n = round((m/U - m_I+) / m_He). Constant under `fixed`; the 21->14
+    # staircase under `anchored_discrete`.
+    ckpt.n_shell[:, t_id] = np.rint(
+        (state.mass_kg / U - MASS_I_ION_AMU) / MASS_HE_AMU
+    )
     ckpt.number_of_collisions[:, t_id] = state.number_of_collisions
     ckpt.time_ps[t_id] = state.time_ps

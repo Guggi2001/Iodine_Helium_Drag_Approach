@@ -33,6 +33,7 @@ scripts/post_processing/
 ```python
 from i2_helium_md.postprocess import (
     EnergyTotals, neutral_energy_totals, ion_energy_totals,
+    LedgerClosure, ion_ledger_closure,
     PhiHistogram, phi_histogram,
     MassSpectrum, mass_spectrum,
 )
@@ -42,15 +43,27 @@ from i2_helium_md.postprocess import (
 
 Sum-over-atoms traces. Mirrors `vmi_sim_3d_neutral_propa_HeDFT_mimic.m`
 line 965: each component is `sum(E_*, 1)` and `E_system = E_kin +
-E_pot + E_dissip`. The `E_mass_attach_defect_eV` field is `None` for
+E_pot + E_dissip`. The `E_mass_transfer_eV` field is `None` for
 the neutral stage.
 
 ### `ion_energy_totals(ckpt)` → `EnergyTotals`
 
 Per-molecule traces (`sum / num_molecules`). Mirrors
 `vmi_sim_3d_ion_propa.m` line 898. `E_system` includes
-`E_mass_attach_defect_eV` so the running total is conserved up to
-Verlet symplectic drift.
+`E_mass_transfer_eV` (renamed from `E_mass_attach_defect_eV` at
+checkpoint v6; the channel now also covers He shedding) so the running
+total is conserved up to Verlet symplectic drift.
+
+### `ion_ledger_closure(ckpt)` → `LedgerClosure`
+
+Tier-1a Slice B four-term closure gate. Reuses `ion_energy_totals` and
+reports the running residual of `E_kin + E_pot + E_dissip +
+E_mass_transfer` against its `t=0` value (`residual_eV`,
+`max_abs_residual_eV`). A **wiring-correctness gate, not a physics
+result**: closure is by construction once the cold-shed reset is the
+exact reduced-mass form (`physics/mass_jump.py`); the gate exists to
+*catch a miswire* -- a label-only velocity rescale that bumps `E_kin`
+with no matching `E_mass_transfer` increment makes the residual diverge.
 
 ### `phi_histogram(ckpt, *, bin_width_rad=0.05, mass_amu=None, mass_tolerance_amu=0.5)` → `PhiHistogram`
 
@@ -85,8 +98,8 @@ the smoothing convention has a single source of truth.
 CLAUDE.md restricts changes to neutral and ion propagation physics.
 Because every input array (`E_kin_eV`, `E_pot_eV`, `E_dissip_eV`,
 `L_droplet_eV_ps` for neutral; the same plus
-`E_mass_attach_defect_eV` for ion) is already saved in the v2 / v4
-checkpoints, the energy-balance figures are reproducible without
+`E_mass_transfer_eV` for ion) is already saved in the neutral-v2 /
+ion-v6 checkpoints, the energy-balance figures are reproducible without
 touching the propagation modules.
 
 The temperature-diagnostic figure is the one exception: the legacy
@@ -104,8 +117,10 @@ and `docs/ion_propagation_step_module.md` for the capture path.
 
 `tests/test_energy_balance.py` covers:
 
-- `E_system == E_kin + E_pot + E_dissip[ + E_mass_attach_defect]`
+- `E_system == E_kin + E_pot + E_dissip[ + E_mass_transfer]`
   on synthetic checkpoints,
+- `ion_ledger_closure` residual ~0 on a conserving stream and a
+  relabel-without-reset fault caught (`TestLedgerClosure`),
 - per-molecule division for the ion totals,
 - uniform-angle phi histogram (bin count, density integrates to 1),
 - mass selection filter passes the right atoms,

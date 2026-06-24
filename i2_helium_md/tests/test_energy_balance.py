@@ -13,6 +13,7 @@ from i2_helium_md.physics.collisions import (
 from i2_helium_md.physics.constants import U
 from i2_helium_md.postprocess import (
     ion_energy_totals,
+    ion_ledger_closure,
     mass_spectrum,
     neutral_energy_totals,
     phi_histogram,
@@ -91,7 +92,8 @@ def _ion(
         E_kin_eV=rng.standard_normal((2 * n, t)),
         E_pot_eV=rng.standard_normal((2 * n, t)),
         E_dissip_eV=rng.standard_normal((2 * n, t)),
-        E_mass_attach_defect_eV=rng.standard_normal((2 * n, t)),
+        E_mass_transfer_eV=rng.standard_normal((2 * n, t)),
+        n_shell=np.zeros((2 * n, t)),
         b_ion_outside=np.zeros(n, dtype=bool),
         relative_loss_per_ps=np.zeros((2 * n, t)),
         number_of_collisions=np.zeros((2 * n, t), dtype=int),
@@ -111,7 +113,7 @@ class TestEnergyTotals:
             totals.E_kin_eV + totals.E_pot_eV + totals.E_dissip_eV,
         )
         assert totals.E_kin_eV.shape == (4,)
-        assert totals.E_mass_attach_defect_eV is None
+        assert totals.E_mass_transfer_eV is None
 
     def test_ion_totals_per_molecule_division(self):
         ckpt = _ion(n=2, t=4)
@@ -123,8 +125,74 @@ class TestEnergyTotals:
         np.testing.assert_allclose(
             totals.E_system_eV,
             totals.E_kin_eV + totals.E_pot_eV
-            + totals.E_dissip_eV + totals.E_mass_attach_defect_eV,
+            + totals.E_dissip_eV + totals.E_mass_transfer_eV,
         )
+
+
+# ===========================================================================
+# Four-term ledger closure (Tier-1a Slice B, wiring-correctness gate)
+# ===========================================================================
+class TestLedgerClosure:
+    @staticmethod
+    def _ion_with_energies(e_kin, e_pot, e_dissip, e_mt):
+        """An IonCheckpoint carrying the given (2N, t) energy streams."""
+        two_n, t = e_kin.shape
+        ck = _ion(n=two_n // 2, t=t)
+        ck.E_kin_eV = e_kin
+        ck.E_pot_eV = e_pot
+        ck.E_dissip_eV = e_dissip
+        ck.E_mass_transfer_eV = e_mt
+        return ck
+
+    def test_closure_holds_for_conserving_stream(self):
+        """A stream whose four terms sum to a constant has ~zero residual."""
+        two_n, t = 4, 5
+        ramp = np.tile(np.linspace(0.0, 1.0, t), (two_n, 1))
+        # E_kin rises, E_dissip falls by the same amount -> system constant.
+        ck = self._ion_with_energies(
+            e_kin=ramp,
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=-ramp,
+            e_mt=np.zeros((two_n, t)),
+        )
+        closure = ion_ledger_closure(ck)
+        assert closure.residual_eV[0] == 0.0
+        assert closure.max_abs_residual_eV < 1e-12
+        # Reuses ion_energy_totals: the system trace agrees.
+        np.testing.assert_allclose(
+            closure.E_system_eV, ion_energy_totals(ck).E_system_eV,
+        )
+
+    def test_mass_transfer_offsets_kinetic_jump(self):
+        """A KE rise matched by an equal negative E_mass_transfer closes."""
+        two_n, t = 4, 5
+        step = np.zeros((two_n, t))
+        step[:, t // 2:] = 0.5  # a kinetic boost from a shed
+        ck = self._ion_with_energies(
+            e_kin=step,
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=np.zeros((two_n, t)),
+            e_mt=-step,  # exact reduced-mass defect bookkeeping
+        )
+        assert ion_ledger_closure(ck).max_abs_residual_eV < 1e-12
+
+    def test_relabel_without_reset_is_caught(self):
+        """A KE jump with NO matching E_mass_transfer makes the residual diverge.
+
+        This is the fault the gate exists to catch: relabelling the mass
+        (bumping E_kin) without booking the reduced-mass defect.
+        """
+        two_n, t = 4, 5
+        step = np.zeros((two_n, t))
+        step[:, t // 2:] = 0.5
+        ck = self._ion_with_energies(
+            e_kin=step,
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=np.zeros((two_n, t)),
+            e_mt=np.zeros((two_n, t)),  # MISSING the offsetting defect
+        )
+        # 0.5 eV per atom * 4 atoms / 2 molecules = 1.0 eV/molecule jump.
+        assert ion_ledger_closure(ck).max_abs_residual_eV == pytest.approx(1.0)
 
 
 # ===========================================================================
@@ -310,7 +378,8 @@ class TestSchemaV5:
             "E_kin_eV": bad.E_kin_eV,
             "E_pot_eV": bad.E_pot_eV,
             "E_dissip_eV": bad.E_dissip_eV,
-            "E_mass_attach_defect_eV": bad.E_mass_attach_defect_eV,
+            "E_mass_transfer_eV": bad.E_mass_transfer_eV,
+            "n_shell": bad.n_shell,
             "b_ion_outside": bad.b_ion_outside,
             "relative_loss_per_ps": bad.relative_loss_per_ps,
             "number_of_collisions": bad.number_of_collisions,

@@ -370,9 +370,9 @@ def _section_ion_energy(ion) -> plt.Figure:
     ax.plot(totals.time_ps, totals.E_kin_eV, label=r"$E_{kin}$")
     ax.plot(totals.time_ps, totals.E_pot_eV, label=r"$E_{pot}$")
     ax.plot(totals.time_ps, totals.E_dissip_eV, label=r"$E_{dissip}$")
-    if totals.E_mass_attach_defect_eV is not None:
-        ax.plot(totals.time_ps, totals.E_mass_attach_defect_eV,
-                label=r"$E_{mass\,defect}$")
+    if totals.E_mass_transfer_eV is not None:
+        ax.plot(totals.time_ps, totals.E_mass_transfer_eV,
+                label=r"$E_{mass\,transfer}$")
     ax.plot(totals.time_ps, totals.E_system_eV, "k", label=r"$E_{system}$")
     ax.set(title="Ion energy balance (per molecule)",
            xlabel="t / ps", ylabel="E / eV")

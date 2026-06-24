@@ -29,7 +29,7 @@ def _state(time_ps, *, vx, vy=0.0, vz=0.0, mass_amu, n_atoms=2):
         vx=np.full(n_atoms, vx), vy=np.full(n_atoms, vy), vz=np.full(n_atoms, vz),
         mass_kg=np.full(n_atoms, mass_amu * U),
         E_kin_eV=z.copy(), E_pot_eV=z.copy(), E_dissip_eV=z.copy(),
-        E_mass_attach_defect_eV=z.copy(),
+        E_mass_transfer_eV=z.copy(),
         number_of_collisions=np.zeros(n_atoms, dtype=int),
         time_ps=time_ps,
     )
@@ -88,7 +88,7 @@ class TestShedStep:
         # SQ2: velocity scaled by the kick factor, direction preserved
         assert new.vx[0] == pytest.approx(e0.kick_factor * 1.0)
         # reduced-mass defect booked negative (in eV)
-        assert np.all(new.E_mass_attach_defect_eV < 0.0)
+        assert np.all(new.E_mass_transfer_eV < 0.0)
 
     def test_at_most_one_shed_per_call_under_dense_window(self):
         # A window wide enough to straddle two seg-2 events (0.8 ps apart) must

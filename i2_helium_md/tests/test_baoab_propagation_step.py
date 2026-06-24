@@ -35,7 +35,7 @@ def _make_state(n_atoms=4, mass_amu=200.0):
         mass_kg=np.full(n_atoms, mass_amu * U),
         E_kin_eV=z.copy(), E_pot_eV=z.copy(),
         E_dissip_eV=z.copy(),
-        E_mass_attach_defect_eV=z.copy(),
+        E_mass_transfer_eV=z.copy(),
         number_of_collisions=np.zeros(n_atoms, dtype=int),
         time_ps=0.0,
     )
@@ -98,7 +98,7 @@ class TestTierZeroFills:
         new = baoab_propagation_step(
             state, step=fake_step, cfg=cfg, droplet_radii=np.full(n, 30.0),
         )
-        np.testing.assert_array_equal(new.E_mass_attach_defect_eV, 0.0)
+        np.testing.assert_array_equal(new.E_mass_transfer_eV, 0.0)
         np.testing.assert_array_equal(new.number_of_collisions, 0)
         np.testing.assert_array_equal(new.mass_kg, state.mass_kg)  # fixed mass
         assert new.temperature_diagnostic.shape == (3,)

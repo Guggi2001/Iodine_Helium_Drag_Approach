@@ -345,6 +345,20 @@ analytic limits above.
 
 ### Slice B — Four-term bookkeeping & closure *(stateful; synthetic-stream testable)*
 
+> **IMPLEMENTED (2026-06-24, core only).** Checkpoint **v5→v6**
+> (`simulation/checkpoint.py`): `E_mass_attach_defect_eV → E_mass_transfer_eV`,
+> new `n_shell (2N,T)` + `mass_scenario` metadata, the non-decreasing-mass
+> assumption dropped, and a **back-compat v5 load shim** (synthesizes `n_shell`
+> from `mass_history_kg`, defaults `mass_scenario=fixed`) so existing v5 run dirs
+> still load. Driver/state write the new fields (`ion_initial_state.py`,
+> `ion_propagation_step.py`, `ion.py`). The closure gate is
+> `postprocess/energy_balance.py::ion_ledger_closure` (+ `LedgerClosure`), reusing
+> `ion_energy_totals`. Tests: `tests/test_checkpoint.py` (`TestIonSchemaV6` + v5
+> shim) and `tests/test_energy_balance.py` (`TestLedgerClosure` incl. relabel-fault
+> injection). Full suite 841/0. **Deferred to a later plan:** the §5/§9
+> `t*∈{0.5,5,9}` RMSE-table *run* deliverable. Delivery detail:
+> `drag_migration_log_tier1a.md` (Slice B record, 2026-06-24).
+
 **Purpose.** Accumulate the four-term ledger and assert closure.
 
 **Interface.** Consumes per-step $\Delta E_\text{dissip}$ (SQ1) and per-event

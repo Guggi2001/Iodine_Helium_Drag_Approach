@@ -130,10 +130,10 @@ def test_checkpoint_v5_round_trip(tmp_path, drag_cfg, neutral):
     ck = run_ion_propagation(drag_cfg, neutral)
     path = save_ion_checkpoint(ck, tmp_path / "ion_drag.npz")
     loaded = load_ion_checkpoint(path)
-    assert loaded.schema_version == 5
+    assert loaded.schema_version == 6
     np.testing.assert_array_equal(loaded.E_dissip_eV, ck.E_dissip_eV)
     # Tier-0 fills survive the round-trip:
-    assert np.all(loaded.E_mass_attach_defect_eV == 0.0)
+    assert np.all(loaded.E_mass_transfer_eV == 0.0)
     assert np.all(loaded.number_of_collisions == 0)
     assert np.all(np.isnan(loaded.temperature_diagnostic))
 
@@ -211,6 +211,12 @@ def test_anchored_discrete_runs_and_sheds_seven_he():
     assert np.all(np.diff(m_amu) <= 1e-9)
     levels = np.unique(np.round(m_amu, 4))
     assert levels.size == 8  # n = 21, 20, ..., 14
+    # The v6 n_shell field records the integer 21->14 staircase directly.
+    n_shell = ck.n_shell[0, :]
+    assert n_shell[0] == 21
+    assert n_shell[-1] == 14
+    assert np.all(np.diff(n_shell) <= 0)  # monotone non-increasing
+    assert np.array_equal(np.unique(n_shell), np.arange(14, 22))
 
 
 def test_anchored_discrete_four_term_ledger_closes():
@@ -222,13 +228,13 @@ def test_anchored_discrete_four_term_ledger_closes():
 
     def total4(col):
         return (ck.E_kin_eV[:, col] + ck.E_pot_eV[:, col]
-                + ck.E_dissip_eV[:, col] + ck.E_mass_attach_defect_eV[:, col]).sum()
+                + ck.E_dissip_eV[:, col] + ck.E_mass_transfer_eV[:, col]).sum()
 
     E0, E1 = total4(0), total4(-1)
     rel = abs(E1 - E0) / abs(E0)
     assert rel < 5e-2, f"four-term drift {rel * 100:.3f}% exceeds tolerance"
     # the defect channel actually carried energy (sheds happened, not a no-op)
-    assert ck.E_mass_attach_defect_eV[:, -1].sum() < 0.0
+    assert ck.E_mass_transfer_eV[:, -1].sum() < 0.0
 
 
 def test_scope_guard_accepts_m_eff_mass(drag_cfg):

@@ -72,10 +72,10 @@ from .run_directory import RunDirectory
 DEFAULT_MAX_CHECKPOINT_BYTES_ION: int = 1000000000
 
 #: Number of (2N, num_steps) trajectory/diagnostic arrays in an IonCheckpoint:
-#: 6 positions/velocities + E_kin + E_pot + E_dissip + E_mass_attach_defect
-#: + relative_loss_per_ps + number_of_collisions + mass_history_kg = 13.
+#: 6 positions/velocities + E_kin + E_pot + E_dissip + E_mass_transfer
+#: + n_shell + relative_loss_per_ps + number_of_collisions + mass_history_kg = 14.
 #: All are 8 bytes per cell (number_of_collisions is int64).
-_NUM_2N_T_ARRAYS_ION: int = 13
+_NUM_2N_T_ARRAYS_ION: int = 14
 
 
 # ===========================================================================

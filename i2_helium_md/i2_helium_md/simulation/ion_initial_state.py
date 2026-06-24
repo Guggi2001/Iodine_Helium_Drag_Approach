@@ -56,7 +56,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import SimConfig
-from ..physics.constants import EV, U
+from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.interactions import partner_interaction_ion
 from ..physics.potentials import droplet_potential
 from ..physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
@@ -209,7 +209,8 @@ def build_initial_ion_state(
     E_kin_eV = np.zeros((two_N, T))
     E_pot_eV = np.zeros((two_N, T))
     E_dissip_eV = np.zeros((two_N, T))
-    E_mass_attach_defect_eV = np.zeros((two_N, T))
+    E_mass_transfer_eV = np.zeros((two_N, T))
+    n_shell = np.zeros((two_N, T))
     relative_loss_per_ps = np.zeros((two_N, T))
     number_of_collisions = np.zeros((two_N, T), dtype=int)
     mass_history_kg = np.zeros((two_N, T))
@@ -223,9 +224,14 @@ def build_initial_ion_state(
 
     E_kin_eV[:, 0] = E_kin_t0
     E_pot_eV[:, 0] = E_pot_t0
-    # E_dissip, E_mass_attach_defect, relative_loss, n_collisions all
+    # E_dissip, E_mass_transfer, relative_loss, n_collisions all
     # start at 0 (already zeros).
     mass_history_kg[:, 0] = mass_kg_initial
+    # Per-atom He-shell count at t=0, from the initial mass via the same
+    # rule the driver writer and the v5->v6 load shim use.
+    n_shell[:, 0] = np.rint(
+        (mass_kg_initial / U - MASS_I_ION_AMU) / MASS_HE_AMU
+    )
 
     # 8. Static finals -- placeholder, the driver fills these at end.
     positions_final_x = np.zeros(two_N)
@@ -262,11 +268,13 @@ def build_initial_ion_state(
         E_kin_eV=E_kin_eV,
         E_pot_eV=E_pot_eV,
         E_dissip_eV=E_dissip_eV,
-        E_mass_attach_defect_eV=E_mass_attach_defect_eV,
+        E_mass_transfer_eV=E_mass_transfer_eV,
+        n_shell=n_shell,
         b_ion_outside=b_ion_outside,
         relative_loss_per_ps=relative_loss_per_ps,
         number_of_collisions=number_of_collisions,
         temperature_diagnostic=temperature_diagnostic,
+        mass_scenario=cfg.mass_scenario,
         schema_version=_ION_SCHEMA_VERSION,
     )
 
