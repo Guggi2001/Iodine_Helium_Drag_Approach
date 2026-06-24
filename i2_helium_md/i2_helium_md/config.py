@@ -201,7 +201,7 @@ class SimConfig:
     # -- Tier-1a anchored kinematic validation (Slice I*) --
     # Read only when mass_scenario == "anchored_discrete" (the driver builds the
     # He-shell schedule from t_star_ps); inert under `fixed`. The schedule sheds
-    # one He per event 21 -> 14 with a momentum-conserving cold-shed reset.
+    # one He per event 21 -> 14 with continuous velocity; cold-shed is diagnostic.
     t_star_ps: float = 5.0                # ps; schedule onset (n=21 held t<=t*; sweep {0.5,5,9})
     anchor_mode: AnchorMode = "time"      # time-anchored (radial cross-check deferred, plan §6)
     coulomb_available_eV: float = 0.80    # eV; provenance stamp (d=9A); NO hard refuse (plan §8)

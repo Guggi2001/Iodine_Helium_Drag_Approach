@@ -64,7 +64,7 @@ from ..physics.collisions import (
 )
 from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
-from ..physics.mass_jump import cold_shed_velocity_components
+from ..physics.mass_jump import continuous_velocity_shed_components
 from ..physics.shell_schedule import ShellSchedule
 from ..physics.drag import REALIZED_FORMS
 from ..physics.interactions import partner_interaction_ion
@@ -102,14 +102,14 @@ class IonStepState:
         Cumulative energy dissipated per atom up to this state's time.
     E_mass_transfer_eV : np.ndarray, shape (2N,)
         Cumulative kinetic-energy defect from helium mass transfer, in
-        eV -- attachment (collision path) OR a cold shed (Tier-1a
+        eV -- attachment (collision path) OR a scheduled shed (Tier-1a
         anchored_discrete drag path). When mass changes by ``dm`` at the
         atom's current velocity, the recomputed E_kin shifts by
         ``1/2 * dm * v^2``; this field accumulates the negative of that
         increment so that
         ``E_kin + E_pot + E_dissip + E_mass_transfer`` is conserved
         (modulo Verlet drift). On the drag path the shed defect is the
-        exact reduced-mass form (``physics/mass_jump.py``); on the
+        continuous-velocity co-moving-He form (``physics/mass_jump.py``); on the
         collision path it mirrors MATLAB ``E_mass_attach_defect`` at
         vmi_sim_3d_ion_propa.m:762 (renamed from ``E_mass_attach_defect_eV``
         at schema v6).
@@ -382,7 +382,7 @@ def baoab_propagation_step(
 
 
 # ===========================================================================
-# Tier-1a cold-shed pre-step (SQ2 + SQ3) -- variable-mass drag path
+# Tier-1a continuous-velocity shed pre-step (SQ2 + SQ3) -- variable-mass drag path
 # ===========================================================================
 def shed_step(
     state: IonStepState,
@@ -392,15 +392,14 @@ def shed_step(
     *,
     m_he_amu: float = MASS_HE_AMU,
 ) -> tuple[IonStepState, int]:
-    """Apply at most one scheduled cold shed *before* the BAOAB step (SQ2/SQ3).
+    """Apply at most one scheduled continuous-velocity shed before BAOAB.
 
     The Tier-1a ``anchored_discrete`` pre-step. If the next pending shed
     (``schedule.events[next_shed_idx]``) fires within this step's window --
-    its analytic fire time is ``<= state.time_ps + dt`` -- apply the
-    momentum-conserving cold-shed reset (:func:`cold_shed_velocity_components`)
-    to **all** atoms' velocities, drop one He from the (uniform) complex mass,
-    book the per-atom reduced-mass defect into ``E_mass_transfer_eV``, and
-    advance the pointer. **At most one shed per call** (the plan's ≤1/step rule):
+    its analytic fire time is ``<= state.time_ps + dt`` -- copy **all** atoms'
+    velocities unchanged, drop one He from the (uniform) complex mass, book the
+    per-atom co-moving-He kinetic energy into ``E_mass_transfer_eV``, and advance
+    the pointer. **At most one shed per call** (the plan's <=1/step rule):
     if the schedule is dense relative to ``dt`` the surplus events fire on the
     following steps, so the total shed count is ``len(events)`` independent of
     ``dt`` (the jump-step measure-zero property).
@@ -441,7 +440,7 @@ def shed_step(
     if event.time_ps > state.time_ps + dt:
         return state, next_shed_idx
 
-    vx_p, vy_p, vz_p, m_plus_amu, dE_amu = cold_shed_velocity_components(
+    vx_p, vy_p, vz_p, m_plus_amu, dE_amu = continuous_velocity_shed_components(
         state.vx, state.vy, state.vz, event.mass_before_amu, m_he_amu=m_he_amu,
     )
     # amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U, A/ps->m/s via 100,

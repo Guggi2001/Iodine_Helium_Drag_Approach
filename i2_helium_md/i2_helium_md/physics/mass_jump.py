@@ -1,37 +1,26 @@
-"""Cold-shed mass-jump operator for the Tier-1a anchored validation (Slice M, SQ2).
+"""Mass-shed operators for Tier-1a anchored validation.
 
-Pure, stateless physics: the momentum-conserving velocity reset a single He shed
-applies to the I+He_n complex, the post-jump mass ``m+`` the variable-mass
-integrator needs (SQ3), and the exact reduced-mass energy increment the four-term
-ledger needs (Slice B). This is the second fully-independent Tier-1a build unit:
-it *consumes* a shed's pre-shed mass (e.g. a
-:class:`~i2_helium_md.physics.shell_schedule.ShedEvent.mass_before_amu` from
-Slice S) and a pre-shed velocity, and emits the reset triple. It performs **no**
-scheduling, **no** integration, and **no** drag evaluation -- those live in
-Slice S and the later integrator-wiring slice (I*).
+Pure, stateless physics: a single He shed consumes a pre-shed velocity and mass
+and emits the post-shed velocity, post-shed mass, and mechanical ledger term. It
+performs no scheduling, integration, or drag evaluation; those live in
+``shell_schedule.py`` and the ion driver.
 
-Locked physics (``TIER1A_IMPLEMENTATION_PLAN.md`` Sec.2)
--------------------------------------------------------
-A cold shed removes one He atom *at rest* (``u_He = 0``), so the complex momentum
-``m * v`` is invariant across the instantaneous jump. With pre-shed mass ``m`` and
-``m_He`` the He mass::
+The production Tier-1a ``anchored_discrete`` path uses a continuous-velocity
+shed. The shed He leaves co-moving with the tracked complex at the instant of
+bookkeeping::
 
-    v+  = m / (m - m_He) * v-                 (reset; direction preserved)
-    m+  = m - m_He                            (post-jump complex mass)
-    dE_mass_transfer = -0.5 * (m * m_He)/(m - m_He) * |v-|^2
+    v+  = v-
+    m+  = m - m_He
+    dE_mass_transfer = +0.5 * m_He * |v-|^2
 
-The energy term is the **negative** of the kinetic-energy rise the reset produces.
-That rise follows from the reset directly::
+The tracked complex loses the kinetic energy carried away by the removed He, so
+the positive ledger term keeps ``E_kin + E_pot + E_dissip + E_mass_transfer``
+closed.
 
-    KE+ - KE- = 0.5*(m - m_He)*|v+|^2 - 0.5*m*|v-|^2
-              = 0.5*|v-|^2 * ( m^2/(m - m_He) - m )
-              = 0.5 * (m*m_He)/(m - m_He) * |v-|^2
-
-so booking ``dE_mass_transfer`` as its negative makes the four-term invariant
-``E_kin + E_pot + E_dissip + E_mass_transfer`` close by construction once the reset
-is the exact form (Slice B certifies this). The coefficient ``(m*m_He)/(m - m_He)``
-is the **exact** form, NOT the heavy-ion approximation ``0.5*m_He*|v-|^2`` (the two
-agree only as ``m -> inf``; at ``n = 1`` they differ by ~3 %, Sec.2 flag).
+The older cold-shed reset is retained only as a diagnostic upper bound. It
+removes one He atom at rest, so the remaining complex receives the scalar kick
+``m/(m - m_He)`` and the ledger term is the negative of that reset's kinetic
+energy rise.
 
 Units / mass contract
 ---------------------
@@ -48,7 +37,7 @@ argument**, deliberately *not* the ``SimConfig.mass_scenario`` enum (that
 config-surface change is the integrator-wiring slice's work):
 
 * ``"fixed"`` -- the null: no reset, mass held, zero defect.
-* ``"anchored_discrete"`` -- the cold-shed reset above.
+* ``"anchored_discrete"`` -- the continuous-velocity shed above.
 """
 
 from __future__ import annotations
@@ -72,16 +61,14 @@ class ShedResult:
     Attributes
     ----------
     v_plus : np.ndarray
-        Post-shed velocity [A/ps], same shape as the input ``v_minus``. Under a
-        real shed this is ``kick * v_minus`` with ``kick = m/(m - m_He) > 1``
-        (direction preserved); under ``fixed`` it is an unchanged copy.
+        Post-shed velocity [A/ps], same shape as the input ``v_minus``.
     m_plus_amu : float
         Post-shed complex mass [amu]: ``m - m_He`` under a real shed, the input
         mass under ``fixed``. This is the ``m+`` the post-jump O-step (SQ3) reads.
     dE_mass_transfer : float
-        The ledger increment [amu*A^2/ps^2], ``<= 0``: the negative of the reset's
-        kinetic-energy rise, ``-0.5*(m*m_He)/(m - m_He)*|v-|^2`` under a real shed,
-        ``0.0`` under ``fixed``.
+        The ledger increment [amu*A^2/ps^2]. For the production continuous shed
+        this is ``+0.5*m_He*|v-|^2``; for the cold-shed bound this is the negative
+        of the reset's kinetic-energy rise.
     """
 
     v_plus: np.ndarray
@@ -165,6 +152,33 @@ def cold_shed(
     return ShedResult(v_plus=v_plus, m_plus_amu=m_plus, dE_mass_transfer=dE_mass_transfer)
 
 
+def continuous_velocity_shed(
+    v_minus,
+    m_minus_amu: float,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+) -> ShedResult:
+    """Apply one production Tier-1a co-moving He shed to a velocity.
+
+    The velocity is copied unchanged, the complex mass drops by one He, and the
+    mass-transfer channel receives the positive kinetic energy carried away by
+    the removed co-moving He.
+    """
+    _check_masses(m_minus_amu, m_he_amu)
+    v = np.asarray(v_minus, dtype=float)
+    if not np.all(np.isfinite(v)):
+        raise ValueError(f"v_minus must be finite; got {v_minus!r}.")
+
+    m_plus = m_minus_amu - m_he_amu
+    speed_sq = float(np.sum(v ** 2))
+    dE_mass_transfer = 0.5 * m_he_amu * speed_sq
+    return ShedResult(
+        v_plus=v.copy(),
+        m_plus_amu=m_plus,
+        dE_mass_transfer=dE_mass_transfer,
+    )
+
+
 def cold_shed_velocity_components(
     vx: np.ndarray,
     vy: np.ndarray,
@@ -219,6 +233,33 @@ def cold_shed_velocity_components(
     return vx_plus, vy_plus, vz_plus, m_plus, dE_mass_transfer
 
 
+def continuous_velocity_shed_components(
+    vx: np.ndarray,
+    vy: np.ndarray,
+    vz: np.ndarray,
+    m_minus_amu: float,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray]:
+    """Per-atom vectorized production shed over velocity component arrays.
+
+    Velocity components are copied unchanged. The scalar post-shed mass is
+    ``m - m_He`` and the per-atom ledger increment is
+    ``+0.5*m_He*|v_i|^2`` [amu*A^2/ps^2].
+    """
+    _check_masses(m_minus_amu, m_he_amu)
+    vxf = np.asarray(vx, dtype=float)
+    vyf = np.asarray(vy, dtype=float)
+    vzf = np.asarray(vz, dtype=float)
+    if not (np.all(np.isfinite(vxf)) and np.all(np.isfinite(vyf)) and np.all(np.isfinite(vzf))):
+        raise ValueError("velocity components must be finite.")
+
+    m_plus = m_minus_amu - m_he_amu
+    speed_sq = vxf ** 2 + vyf ** 2 + vzf ** 2
+    dE_mass_transfer = 0.5 * m_he_amu * speed_sq
+    return vxf.copy(), vyf.copy(), vzf.copy(), m_plus, dE_mass_transfer
+
+
 def apply_shed(
     v_minus,
     m_minus_amu: float,
@@ -237,7 +278,7 @@ def apply_shed(
     mode : {"fixed", "anchored_discrete"}
         ``"fixed"`` -- the null: returns an unchanged velocity copy, the mass held,
         zero defect (no mass relationship is required). ``"anchored_discrete"`` --
-        delegates to :func:`cold_shed`.
+        delegates to :func:`continuous_velocity_shed`.
     m_he_amu : float, optional
         Shed He mass [amu]; used only by ``"anchored_discrete"``.
 
@@ -249,11 +290,11 @@ def apply_shed(
     ------
     ValueError
         If ``mode`` is unknown, or (under ``"fixed"``) ``v_minus`` / ``m_minus_amu``
-        are non-finite, or (under ``"anchored_discrete"``) the :func:`cold_shed`
+        are non-finite, or (under ``"anchored_discrete"``) the production shed
         guards trip.
     """
     if mode == "anchored_discrete":
-        return cold_shed(v_minus, m_minus_amu, m_he_amu=m_he_amu)
+        return continuous_velocity_shed(v_minus, m_minus_amu, m_he_amu=m_he_amu)
     if mode == "fixed":
         v = np.asarray(v_minus, dtype=float)
         if not np.all(np.isfinite(v)) or not np.isfinite(m_minus_amu):

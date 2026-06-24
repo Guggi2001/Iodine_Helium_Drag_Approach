@@ -220,9 +220,8 @@ def test_anchored_discrete_runs_and_sheds_seven_he():
 
 
 def test_anchored_discrete_four_term_ledger_closes():
-    """With the reduced-mass defect booked (into the existing defect field), the
-    four-term sum E_kin + E_pot + E_dissip + E_mass_transfer is conserved -- the
-    Slice-M reset is the exact form, not a relabel (closure is a wiring gate)."""
+    """With co-moving-He kinetic energy booked into the existing transfer field,
+    the four-term sum E_kin + E_pot + E_dissip + E_mass_transfer is conserved."""
     neutral = _synthetic_neutral(num_molecules=2, mass_amu=210.9546)
     ck = run_ion_propagation(_anchored_cfg(), neutral)
 
@@ -234,7 +233,37 @@ def test_anchored_discrete_four_term_ledger_closes():
     rel = abs(E1 - E0) / abs(E0)
     assert rel < 5e-2, f"four-term drift {rel * 100:.3f}% exceeds tolerance"
     # the defect channel actually carried energy (sheds happened, not a no-op)
-    assert ck.E_mass_transfer_eV[:, -1].sum() < 0.0
+    assert ck.E_mass_transfer_eV[:, -1].sum() > 0.0
+
+
+def test_anchored_discrete_has_no_cold_shed_velocity_kicks():
+    """The production anchored path drops mass without the cold-shed velocity reset.
+
+    The full BAOAB step can still change velocity through forces and drag; this
+    smoke check only rules out the old event-local scalar kick by verifying that
+    the stored transition ratios are not the cold-shed factors at the mass-drop
+    columns.
+    """
+    from i2_helium_md.physics.shell_schedule import build_shell_schedule
+
+    neutral = _synthetic_neutral(num_molecules=2, mass_amu=210.9546)
+    cfg = _anchored_cfg()
+    ck = run_ion_propagation(cfg, neutral)
+    sched = build_shell_schedule(cfg.t_star_ps)
+
+    n_shell = ck.n_shell[0, :]
+    drop_cols = np.flatnonzero(np.diff(n_shell) < 0) + 1
+    assert drop_cols.size == len(sched.events)
+
+    speed = np.sqrt(
+        ck.velocities_x ** 2 + ck.velocities_y ** 2 + ck.velocities_z ** 2
+    )
+    for col, ev in zip(drop_cols, sched.events):
+        before = speed[:, col - 1]
+        after = speed[:, col]
+        mask = before > 1e-9
+        ratios = after[mask] / before[mask]
+        assert not np.allclose(ratios, ev.kick_factor, rtol=1e-4, atol=1e-6)
 
 
 def test_scope_guard_accepts_m_eff_mass(drag_cfg):

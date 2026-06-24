@@ -80,7 +80,7 @@ from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 #   6 -- Tier-1a mass-dynamics. The mass-transfer channel now covers He
 #        shedding (anchored_discrete), not only attachment, so:
 #          * RENAME E_mass_attach_defect_eV -> E_mass_transfer_eV (same
-#            (2N, T); sign now also negative on a cold shed; DESIGN 2.9).
+#            (2N, T); positive for continuous-velocity shedding).
 #          * ADD n_shell (2N, num_steps) -- per-atom integer He-shell count.
 #          * ADD mass_scenario (scalar str) -- the run's mass scenario tag.
 #          * DROP the mass_history_kg non-decreasing assumption (mass may
@@ -178,7 +178,7 @@ class IonCheckpoint:
     * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
-    * ``E_mass_transfer_eV`` : (2 * num_molecules, num_steps) eV (per-atom, cumulative; the mass-transfer kinetic-energy defect -- negative on a cold shed, per DESIGN 2.9; formerly ``E_mass_attach_defect_eV``)
+    * ``E_mass_transfer_eV`` : (2 * num_molecules, num_steps) eV (per-atom, cumulative; mass-transfer bookkeeping, positive for Tier-1a continuous-velocity shedding; formerly ``E_mass_attach_defect_eV``)
     * ``n_shell``            : (2 * num_molecules, num_steps) int-valued (per-atom He-shell count over time; constant under ``fixed``, the 21->14 staircase under ``anchored_discrete``)
     * ``mass_scenario``      : scalar str                     (the run's mass scenario tag: ``fixed`` / ``anchored_discrete`` / ...)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet

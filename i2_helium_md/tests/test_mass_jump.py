@@ -1,17 +1,9 @@
-"""Tests for i2_helium_md/physics/mass_jump.py (Tier-1a Slice M, SQ2).
+"""Tests for i2_helium_md/physics/mass_jump.py.
 
-Slice M is the pure, stateless **cold-shed mass-jump operator**: the
-momentum-conserving velocity reset a single He shed applies, the post-jump mass
-``m+`` the integrator (SQ3) needs, and the exact reduced-mass energy increment the
-four-term ledger (Slice B) needs. No SimConfig, no integrator, no drag -- every
-test here is an oracle / analytic-identity comparison (no reference-data files),
-mirroring ``test_shell_schedule.py``.
-
-Locked physics (``TIER1A_IMPLEMENTATION_PLAN.md`` Sec.2):
-
-* reset           ``v+ = m/(m - m_He) * v-``         (He leaves at rest; m*v invariant)
-* post-jump mass  ``m+ = m - m_He``
-* ledger term     ``dE_mass_transfer = -0.5 * (m*m_He)/(m - m_He) * |v-|^2``
+The production Tier-1a ``anchored_discrete`` path uses a continuous-velocity
+mass shed: one co-moving He atom is removed from the tracked complex while
+``v+ = v-``. The older cold-shed reset remains as an explicit diagnostic bound:
+He leaves at rest, the remaining complex receives the telescoping speed kick.
 
 Units are mechanical amu throughout: ``m`` in amu, ``v`` in A/ps, energy in
 ``amu*A^2/ps^2`` (matching ``baoab.py``'s ``dE_dissip`` and ``shell_schedule.py``);
@@ -28,6 +20,7 @@ from i2_helium_md.physics.mass_jump import (
     ShedResult,
     apply_shed,
     cold_shed,
+    continuous_velocity_shed,
     kick_factor,
 )
 from i2_helium_md.physics.shell_schedule import (
@@ -47,9 +40,54 @@ M_EFF_AMU = 202.953908                           # config m_eff (= 19-He complex
 
 
 # ---------------------------------------------------------------------------
-# Momentum-conserving reset
+# Continuous-velocity production shed
 # ---------------------------------------------------------------------------
-class TestReset:
+class TestContinuousVelocityShed:
+    def test_velocity_is_unchanged_exactly_and_mass_drops_one_he(self):
+        m = complex_mass_amu(21)
+        res = continuous_velocity_shed(V_MINUS, m)
+        np.testing.assert_array_equal(res.v_plus, V_MINUS)
+        assert res.m_plus_amu == pytest.approx(m - MASS_HE_AMU, abs=1e-12)
+
+    def test_total_momentum_with_removed_co_moving_he_is_conserved(self):
+        m = complex_mass_amu(21)
+        res = continuous_velocity_shed(V_MINUS, m)
+        before = m * V_MINUS
+        after = res.m_plus_amu * res.v_plus + MASS_HE_AMU * V_MINUS
+        np.testing.assert_allclose(after, before, rtol=0.0, atol=1e-12)
+
+    def test_tracked_complex_ke_drop_is_carried_by_removed_he(self):
+        m = complex_mass_amu(21)
+        res = continuous_velocity_shed(V_MINUS, m)
+        speed_sq = float(V_MINUS @ V_MINUS)
+        ke_before = 0.5 * m * speed_sq
+        ke_after_tracked = 0.5 * res.m_plus_amu * float(res.v_plus @ res.v_plus)
+        removed_he_ke = 0.5 * MASS_HE_AMU * speed_sq
+        assert (ke_before - ke_after_tracked) == pytest.approx(removed_he_ke, rel=1e-12)
+        assert res.dE_mass_transfer == pytest.approx(removed_he_ke, rel=1e-12)
+
+    def test_total_ke_with_removed_co_moving_he_is_conserved(self):
+        m = complex_mass_amu(21)
+        res = continuous_velocity_shed(V_MINUS, m)
+        speed_sq = float(V_MINUS @ V_MINUS)
+        ke_before = 0.5 * m * speed_sq
+        ke_after = (
+            0.5 * res.m_plus_amu * float(res.v_plus @ res.v_plus)
+            + 0.5 * MASS_HE_AMU * speed_sq
+        )
+        assert ke_after == pytest.approx(ke_before, rel=1e-12)
+
+    def test_returns_independent_array(self):
+        v = V_MINUS.copy()
+        res = continuous_velocity_shed(v, complex_mass_amu(21))
+        res.v_plus[0] = 999.0
+        assert v[0] == V_MINUS[0]
+
+
+# ---------------------------------------------------------------------------
+# Cold-shed diagnostic bound
+# ---------------------------------------------------------------------------
+class TestColdShedBound:
     @pytest.mark.parametrize("n_before", range(ANCHOR_N_START, ANCHOR_N_END, -1))
     def test_momentum_conserved_to_machine_precision(self, n_before):
         m = complex_mass_amu(n_before)
@@ -152,7 +190,7 @@ class TestEnergyIncrement:
 
 
 # ---------------------------------------------------------------------------
-# Mode wrapper: fixed (null) vs anchored_discrete (reset)
+# Mode wrapper: fixed (null) vs anchored_discrete (continuous-velocity shed)
 # ---------------------------------------------------------------------------
 class TestModeWrapper:
     def test_fixed_mode_is_a_no_op(self):
@@ -161,10 +199,10 @@ class TestModeWrapper:
         assert res.m_plus_amu == M_EFF_AMU                   # mass held (m_eff)
         assert res.dE_mass_transfer == 0.0                   # zero defect
 
-    def test_anchored_discrete_matches_cold_shed(self):
+    def test_anchored_discrete_matches_continuous_velocity_shed(self):
         m = complex_mass_amu(21)
         a = apply_shed(V_MINUS, m, mode="anchored_discrete")
-        b = cold_shed(V_MINUS, m)
+        b = continuous_velocity_shed(V_MINUS, m)
         np.testing.assert_array_equal(a.v_plus, b.v_plus)
         assert a.m_plus_amu == b.m_plus_amu
         assert a.dE_mass_transfer == b.dE_mass_transfer
@@ -185,16 +223,25 @@ class TestGuards:
             cold_shed(V_MINUS, MASS_HE_AMU)            # m+ would be 0
         with pytest.raises(ValueError, match="m_he"):
             cold_shed(V_MINUS, 0.5 * MASS_HE_AMU)      # m+ would be negative
+        with pytest.raises(ValueError, match="m_he"):
+            continuous_velocity_shed(V_MINUS, MASS_HE_AMU)
 
     def test_non_positive_he_mass_raises(self):
         with pytest.raises(ValueError):
             cold_shed(V_MINUS, complex_mass_amu(21), m_he_amu=0.0)
+        with pytest.raises(ValueError):
+            continuous_velocity_shed(V_MINUS, complex_mass_amu(21), m_he_amu=0.0)
 
     def test_non_finite_inputs_raise(self):
         with pytest.raises(ValueError):
             cold_shed(np.array([1.0, np.nan, 0.0]), complex_mass_amu(21))
         with pytest.raises(ValueError):
             cold_shed(V_MINUS, np.inf)
+        with pytest.raises(ValueError):
+            continuous_velocity_shed(np.array([1.0, np.nan, 0.0]), complex_mass_amu(21))
+        with pytest.raises(ValueError):
+            continuous_velocity_shed(V_MINUS, np.inf)
 
     def test_returns_shedresult_type(self):
         assert isinstance(cold_shed(V_MINUS, complex_mass_amu(21)), ShedResult)
+        assert isinstance(continuous_velocity_shed(V_MINUS, complex_mass_amu(21)), ShedResult)

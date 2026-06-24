@@ -15,8 +15,8 @@
 ## 0. Status and intent
 
 Tier 1a asks **one** question: *does mass dynamics change the ion's translational
-trajectory relative to a constant-mass ion, and if so, in the direction and
-magnitude the cold-shed momentum signature predicts?*
+trajectory relative to a constant-mass ion, and if so, how does that change appear
+in the anchored 9 Å comparison?*
 
 The He shell schedule $n(t)$ is **anchored** to the 9 Å TDDFT loss curve (read in,
 not generated), so the kinetics — electronic picture, ladder $D_0$, $\kappa$, $\nu$,
@@ -26,7 +26,10 @@ is therefore a **controlled A/B comparison**:
 
 - **`fixed`** — constant $m_\text{eff}$ (the null).
 - **`anchored_discrete`** — anchored variable $m(t)$, losing one He per shed event with a
-  momentum-conserving cold-shed reset.
+  **continuous velocity** (`v^+=v^-`). **Status after Slice C:** this is now the
+  physical Tier-1a anchored-mass comparison. The older cold-shed reset is retained
+  only as an explicitly labelled diagnostic upper-bound / stress-test because it
+  needs the full `E_int` energy-gated tier to be physically meaningful.
 
 The comparison isolates the *influence of mass dynamics* on $R(t)$, $|v(t)|$, and on
 whether the kinematic energy/momentum bookkeeping closes. It does **not** test the
@@ -39,8 +42,8 @@ applies `e^{-γ·dt/m}` with `γ` frozen at the step-entry velocity, books exact
 dissipation, and — critically — `make_ion_baoab_step` is **rebuilt every step** by
 the driver expressly so the mass can change (docstring, `baoab.py:94–97`). So the
 substance of this build is **not** a from-scratch O-step. The genuine new work is
-**SQ2** (the momentum-conserving mass-jump operator), **SQ3** (the post-jump O-step
-reading `m⁺`), and the **`m(t)` plumbing** that feeds the schedule-driven mass into
+**SQ2** (the scheduled mass-shed operator; continuous-velocity in the current
+Tier-1a driver), **SQ3** (the post-jump O-step reading `m⁺`), and the **`m(t)` plumbing** that feeds the schedule-driven mass into
 the existing per-step rebuild. SQ1's mechanism is **reused**; the constant-mass
 bit-for-bit regression (§9) is its untouched-guard, not a re-derivation.
 
@@ -59,17 +62,19 @@ bit-for-bit regression (§9) is its untouched-guard, not a re-derivation.
   $E_\text{kin}+E_\text{pot}+E_\text{dissip}+E_\text{mass\_transfer}=\text{const}$.
 - The **trajectory response to shed timing**: a `t*` sweep ($t^*\in\{0.5,5,9\}$ ps)
   under full drag+Coulomb, comparing how $R(t)$ and $|v(t)|$ of `anchored_discrete`
-  move relative to the `fixed` null. The force-free $|v|\propto 1/m$ telescoping boost
-  (1.153) is a **sanity ceiling** the force-free integration test must hit — **not**
-  the verdict (it is timing-insensitive only when drag and Coulomb are off; see §2).
+  move relative to the `fixed` null. After Slice C the shed event itself does **not**
+  inject a speed kick; any trajectory change comes from the post-shed mass feeding
+  subsequent conservative and drag dynamics. The old force-free $|v|\propto1/m$
+  telescoping boost (1.153) is now a cold-shed-bound diagnostic only.
 
 **Does NOT test (out of scope by agreement — do not let these leak in):**
 
 - The biphasic **generative mechanism** (Poisson pickup + RRK + self-bound gate).
   Anchoring the schedule bypasses it; unfalsified until Tier 2.
-- The **internal-energy reservoir** $E_\text{int}$. Dropped for 1a. Consequence: the
-  shed velocity boost is energetically *unsourced* in the ledger — acceptable here
-  precisely because the generative mechanism is out of scope.
+- The **internal-energy reservoir** $E_\text{int}$. Dropped for 1a. Consequence:
+  true cold-shed evaporation is not modeled as the Tier-1a physical path. The
+  current production path removes a co-moving He atom without a velocity boost;
+  cold-shed waits for the full energy-gated tier or remains a labelled bound.
 - Any **picture/ladder/$\kappa$/$\nu$/$s$** value. Bypassed.
 - **Shell-timing prediction ("1b").** Rejected: TDDFT is not ground truth
   (experiment arbitrates at Tier 2), and a timing match would calibrate the
@@ -101,32 +106,29 @@ $[a_\text{drag}]=\text{Å/ps}^2$ ✓. The force *value* is Tier-0; how it enters
 O-step under a changing $m(t)$ is SQ1 (below). The lighter post-shed complex
 decelerates *harder* per unit drag force.
 
-**Cold-shed reset (momentum-conserving, $u_\text{He}=0$).**
-$$v^+=\frac{m}{m-m_\text{He}}\,v^-$$
-Shed He leaves at rest, so complex momentum $mv$ is **invariant across the
-instantaneous jump**; the velocity vector is scaled, direction preserved. Ratio ×
-Å/ps = Å/ps ✓.
+**Production Tier-1a shed (continuous velocity; co-moving He).**
+$$v^+=v^- ,\qquad m^+=m-m_\text{He}$$
+The removed He is booked as leaving co-moving with the complex at the instant of
+the mass update. Total momentum and kinetic energy of "remaining complex + removed
+He" are conserved, while the tracked complex alone loses the kinetic energy carried
+away by the removed atom.
 
-**Force-free telescoping ceiling (sanity check, NOT the verdict).** Because $mv$ is
-conserved per shed, the cumulative *free-flight* **speed** boost collapses to the
-endpoint mass ratio:
-$$\prod_{k}\frac{m_k}{m_k-m_\text{He}}=\frac{m(t^*)}{m(\text{end})}=\frac{210.955}{182.936}=\mathbf{1.153}$$
-i.e. $|v|\propto 1/m$, with $R(t)$ its integral. This **~15.3 %** boost is
-independent of the shed count and placement (S4) **only in the force-free limit** —
-it is the ceiling the force-free integration test (§7) must hit. Under full
-drag+Coulomb the boost is *eroded* by the $1/m(t)$ drag-acceleration and the firing
-*times* feed back through the $\propto v^3$ drag work, so the trajectory $R(t)$,
-$|v(t)|$ **and** the endpoint become genuinely $t^*$-sensitive. The Tier-1a result is
-therefore the **$t^*$ sweep** ($\{0.5,5,9\}$ ps, §8) showing that timing response —
-not the single telescoping number.
+**Production mass-transfer ledger term.**
+$$\Delta E_\text{mass\_transfer}=+\tfrac12\,m_\text{He}\,\lVert v^-\rVert^2$$
+amu·Å²/ps² = energy ✓. The sign is positive because the tracked complex's
+post-shed `E_kin` drops by exactly this amount when its mass changes at unchanged
+velocity, and the ledger term compensates that drop. The downstream eV conversion is
+the same mechanical-units path used for drag dissipation.
 
-**Mass-transfer ledger term (reduced-mass defect).** Per shed the complex KE rises
-by the reduced-mass defect; with $E_\text{int}$ dropped it is booked as a negative
-increment so the ledger closes by construction:
-$$\Delta E_\text{mass\_transfer}=-\tfrac12\,\frac{m\,m_\text{He}}{m-m_\text{He}}\,\lVert v^-\rVert^2$$
-amu·Å²/ps² = energy ✓. **Exact reduced-mass form, not the heavy-ion approximation
-$\tfrac12 m_\text{He}v^2$** (~3 % closure error at $n{=}1$; `MASS` SQ2). A label-only
-$v$ — relabelling mass without the reset — voids invariant closure.
+**Cold-shed diagnostic bound (not the production Tier-1a path).**
+$$v^+=\frac{m}{m-m_\text{He}}\,v^- ,\qquad
+\Delta E_\text{mass\_transfer}=-\tfrac12\,\frac{m\,m_\text{He}}{m-m_\text{He}}\,\lVert v^-\rVert^2$$
+This reset corresponds to He leaving at rest and gives the force-free telescoping
+speed ceiling
+$$\prod_{k}\frac{m_k}{m_k-m_\text{He}}=\frac{210.955}{182.936}=\mathbf{1.153}.$$
+Slice R showed that applying this bound as the Tier-1a production model creates
+unphysical discontinuous `|v2|` jumps because `E_int` is absent. It is retained as a
+diagnostic upper bound and deferred to the later full energy-gated evaporation tier.
 
 ### The SQ upgrade — fixed-mass BAOAB → variable-mass-correct
 
@@ -144,8 +146,9 @@ driver-side change, not an O-step rewrite.
   bias (R10). **The only Tier-1a change is that the `m` passed to each per-step
   rebuild now follows the schedule** — no `_o_step` edit. The constant-mass regression
   (§9) proves this path is byte-identical under `fixed`.
-- **SQ2 — momentum-conserving jump, new.** The reset + reduced-mass defect above —
-  the **invariant-closure precondition** (A13). Ordering inside the step:
+- **SQ2 — scheduled mass shed, new.** The continuous-velocity mass update above —
+  the **invariant-closure precondition** for the current Tier-1a production path.
+  The cold-shed reset remains available only as a diagnostic bound. Ordering inside the step:
   **jump-then-O**, **at most one mass event per step** (sheds-only at 1a). Jump-step
   order reduction is benign (jumps are $dt$-independent in count → measure-zero as
   $dt\to0$).
@@ -181,6 +184,10 @@ momentum bookkeeping. Removed; recorded so it is not re-litigated.
   rebuild; insert the mass jump jump-then-O at ≤1/step (SQ2, calling M); the post-jump
   rebuild reads $m^+$ (SQ3). The reused SQ1 O-step is unchanged.
 - **Slice B** — four-term energy/momentum ledger and closure gate.
+- **Slice R** — Tier-1a run orchestration, RMSE table, and trajectory diagnostics.
+- **Slice C** — continuous-velocity Tier-1a shedding; supersedes cold-shed as the
+  production `anchored_discrete` driver path and retags anchored runs to avoid stale
+  cold-shed artifacts.
 
 **Testing philosophy (every new slice):**
 
@@ -189,6 +196,8 @@ momentum bookkeeping. Removed; recorded so it is not re-litigated.
   stream) with neighbours **mocked**.
 - I⋆ tested on analytic limits (constant-mass reduction, single-jump) before any
   real run.
+- R tested on temporary run dirs / synthetic checkpoints; production `data/runs`
+  generation stays out of pytest.
 - No new slice's suite depends on another's implementation; shared fixtures in §10.
 - Integration (§7) composes only **accepted** modules.
 
@@ -259,10 +268,13 @@ downward crossing ($\bar n=n-\tfrac12$).
 > Oracle pytest `tests/test_mass_jump.py` (32 tests) green; full suite 819/0. The
 > SimConfig `mass_scenario` enum surgery, the v5→v6 schema bump, and the integrator
 > wiring stay deferred (see below / §8). Delivery detail: `drag_migration_log_tier1a.md`
-> (Slice M record, 2026-06-24).
+> (Slice M record, 2026-06-24). **Superseded for the production driver by Slice C:**
+> cold-shed remains as a diagnostic bound; `anchored_discrete` now uses
+> continuous-velocity shedding.
 
-**Purpose.** Hold $m(t)$ and perform the SQ2 cold-shed reset; emit the increment the
-ledger needs and the $m^+$ the integrator needs (SQ3).
+**Purpose.** Originally held $m(t)$ and performed the SQ2 cold-shed reset; after
+Slice C the same module also owns the production continuous-velocity shed. It emits
+the increment the ledger needs and the $m^+$ the integrator needs (SQ3).
 
 **Interface.** Consumes a (mockable) fire event + current state; emits
 $m^+=m-m_\text{He}$, $v^+=\tfrac{m}{m-m_\text{He}}v^-$, and
@@ -301,6 +313,9 @@ integrator, no drag.
 > `tests/test_ion_drag_smoke.py`. Full suite 834/0. The v5→v6 schema bump, the
 > field rename, and the `t*`-sweep RMSE table stay with **Slice B**. Delivery
 > detail: `drag_migration_log_tier1a.md` (Slice I⋆ record, 2026-06-24).
+> **Superseded for the production driver by Slice C:** the seam/timing/mass plumbing
+> remains, but `shed_step` now applies the continuous-velocity primitive instead of
+> `cold_shed_velocity_components`.
 
 **Purpose.** Wire the schedule-driven $m(t)$ and the mass jump into the existing
 per-step BAOAB rebuild. The drag O-step itself (SQ1) is reused unchanged; the work is
@@ -355,8 +370,7 @@ analytic limits above.
 > `postprocess/energy_balance.py::ion_ledger_closure` (+ `LedgerClosure`), reusing
 > `ion_energy_totals`. Tests: `tests/test_checkpoint.py` (`TestIonSchemaV6` + v5
 > shim) and `tests/test_energy_balance.py` (`TestLedgerClosure` incl. relabel-fault
-> injection). Full suite 841/0. **Deferred to a later plan:** the §5/§9
-> `t*∈{0.5,5,9}` RMSE-table *run* deliverable. Delivery detail:
+> injection). Full suite 841/0. Delivery detail:
 > `drag_migration_log_tier1a.md` (Slice B record, 2026-06-24).
 
 **Purpose.** Accumulate the four-term ledger and assert closure.
@@ -388,6 +402,108 @@ deliberate relabel-instead-of-reset fault is **caught** (residual diverges).
 
 ---
 
+### Slice R — RMSE table + Tier-1a trajectory diagnostics *(reporting; consumes accepted S/M/I⋆/B)*
+
+> **IMPLEMENTED (2026-06-24).** The deferred §5/§9 reporting layer is delivered:
+> `scripts/tier1a_common.py`, `scripts/gen_tier1a_runs.py`, and
+> `scripts/post_processing/tier1a_rmse_table.py`, with coverage in
+> `tests/test_tier1a_scripts.py`. Full suite after the final plotting change:
+> **846 passed, 1 expected warning** (the intentional `anchored_discrete`
+> constant-coefficient pairing warning). Delivery detail:
+> `drag_migration_log_tier1a.md` (Slice R record, 2026-06-24).
+
+**Purpose.** Generate and inspect the four-run Tier-1a matrix: one `fixed` null plus
+`anchored_discrete` at `t*={0.5,5.0,9.0}` ps, all on the 9 Å
+`shared_pure_cubic` production law. The code reports diagnostics only; it does not
+rank, threshold, or adjudicate the physics.
+
+**Implemented surface.**
+
+- `scripts/tier1a_common.py` reuses `scripts.tier0_common.build_drag_cfg` and the
+  Tier-0 run-name convention, adding only the anchored-discrete config mutation and
+  `tier1a_run_tag` / `tier1a_run_dir_name`.
+- `scripts/gen_tier1a_runs.py` writes the four self-describing run dirs under
+  `data/runs/`, defaulting to `CASE="9A"`, `VARIANT="shared_pure_cubic"`, `N=50`,
+  `ION_TIME_PS=30.0`, `DT_ION_PS=0.01`.
+- `scripts/post_processing/tier1a_rmse_table.py` emits a rich table with traceability
+  columns (`case`, `variant`, `N`, `run_tag`, `scenario`, `t_star_ps`, scored-window
+  endpoints), raw `R` RMSE, same-smoothed I2 `|v2|` RMSE, `v2` mean ratio,
+  `ledger_max_resid_eV`, and `n_shell` start/end/shed count. It can optionally save
+  CSV, export Tier-0-format mean-series CSVs, and build diagnostic figures.
+
+**Visualization behavior.** The trajectory figure is intentionally narrower than the
+original all-run overlay: it plots **only `|v2|`**, comparing the `fixed` run against
+one user-selected anchored case (`PLOT_T_STAR_PS`, default `5.0`). This avoids hiding
+pre-window anchored data under overlapping curves and directly shows the effect of
+the selected shed schedule. Optional positions, energy, and radial-force figures
+remain available for deeper inspection.
+
+**Result and conclusion.** The generated Tier-1a checkpoints are full-length
+trajectories (`0.0→29.99` ps for the default 30 ps ion run), and all anchored `|v2|`
+traces are finite before the 2.67 ps scoring window. The clarified `|v2|` plots show
+large discontinuous jumps at the scheduled shed events. Those jumps are the expected
+mathematical consequence of the cold-shed reset `v⁺=m/(m−m_He)v⁻`, but they are **not
+physically acceptable as the main Tier-1a anchored comparison** because Tier 1a
+omits `E_int`. The cold-shed operator is therefore reclassified for Tier 1a as a
+diagnostic upper-bound / stress-test; the physical anchored-mass Tier-1a comparison
+should use a continuous-velocity mass update and defer true cold-shed evaporation to
+the full energy-gated tier. **Slice C implements that correction; Slice R's cold-shed
+run artifacts are now stale and must be regenerated under the `continuous` run tags.**
+
+**Tests.** `tests/test_tier1a_scripts.py` covers anchored cfg validation, shared run
+naming, rich scorer rows and CSV output, selected-`t*` `|v2|` plotting, and
+mean-series export using temporary/synthetic data.
+
+---
+
+### Slice C — Continuous-velocity Tier-1a shedding *(physics correction; completed)*
+
+> **IMPLEMENTED (2026-06-24).** The production `anchored_discrete` shed primitive
+> now keeps velocity continuous at each scheduled mass event. The anchored schedule
+> remains unchanged (`n=21→14` at the same TDDFT-anchored event times), BAOAB is
+> still rebuilt after the mass update, and cold-shed helpers remain available only
+> as an explicit diagnostic bound.
+
+**Purpose.** Supersede the unphysical Tier-1a cold-shed production path exposed by
+Slice R, without changing the shell schedule, Tier-0 drag law, checkpoints, or
+integrator structure.
+
+**Implemented behavior.**
+
+- `physics/mass_jump.py` adds `continuous_velocity_shed(...)` and
+  `continuous_velocity_shed_components(...)`.
+- `apply_shed(..., mode="anchored_discrete")` delegates to the continuous-velocity
+  primitive.
+- `simulation/ion_propagation_step.py::shed_step` calls the continuous vectorized
+  primitive, copies `vx/vy/vz` unchanged across the shed event, drops mass by one He,
+  and books `+0.5*m_He*|v|^2` into `E_mass_transfer_eV`.
+- `cold_shed(...)`, `cold_shed_velocity_components(...)`, and `kick_factor(...)`
+  remain tested as the cold-shed diagnostic bound; they are no longer the Tier-1a
+  driver path.
+- `scripts/tier1a_common.py` retags anchored runs as
+  `tier1a_anchored_continuous_t{...}`. Old cold-shed run dirs are left untouched but
+  are no longer selected by the generator/scorer naming convention.
+
+**Tests.**
+
+- `tests/test_mass_jump.py`: continuous-velocity primitive invariants (velocity
+  unchanged, one-He mass drop, total momentum/KE of remaining complex + removed
+  co-moving He conserved, tracked-complex KE drop exactly booked positive).
+- `tests/test_ion_variable_mass.py`: driver-facing `shed_step` leaves velocities
+  unchanged, preserves the <=1 shed-per-step rule, keeps event count invariant under
+  `dt`, and no longer has a telescoping speed boost.
+- `tests/test_ion_drag_smoke.py`: anchored run still sheds 7 He (`n=21→14`), ledger
+  closes with positive mass-transfer bookkeeping, and the old cold-shed velocity
+  kick is absent from shed transitions.
+- `tests/test_tier1a_scripts.py`: scorer/generator naming uses the new continuous
+  anchored run tags, and selected-`t*` `|v2|` plotting remains fixed plus one
+  anchored case.
+
+**Acceptance.** Targeted Slice C suite green: 76 passed, 1 expected warning. Full
+suite after this slice: 855 passed, 1 expected warning.
+
+---
+
 ## 5. Plug-in components (existing — no build)
 
 - **Drag force law (Tier-0).** $\gamma(v)=g\,b\,v^2$, $a_\text{drag}=-\gamma v/m$
@@ -395,12 +511,10 @@ deliberate relabel-instead-of-reset fault is **caught** (residual diverges).
 - **Drag O-step (SQ1).** The frozen-$\gamma$ damping + exact dissipation in
   `physics/baoab.py`. Built and accepted (A13); reused unchanged. Slice I⋆ only feeds
   it the schedule-driven $m(t)$.
-- **Validation scripts.** RMSE($R$), RMSE($|v|$) vs the smoothed TDDFT curve, per
-  mode. The output is an **RMSE table emitted for user evaluation — no automated
-  verdict** (no pass/fail threshold, and the relative ranking is *reported, not
-  adjudicated* by the code; Tier-0's absolute floor does not transfer). Report RMSE
-  over the full window *and* the post-free-zone window (excluding the first several
-  ps, §6.7) as a **reporting split**, not an acceptance gate. Plugged in as-is.
+- **Tier-1a validation/reporting scripts.** Slice R now owns the run matrix,
+  same-smoothed I2 `|v2|` metric, raw `R` metric, ledger diagnostic, table output,
+  mean-series export, and selected-`t*` trajectory visualization. The output remains
+  **reported, not adjudicated** by code; Tier-0's absolute floor does not transfer.
 
 > **Note.** The BAOAB O-step (SQ1) *is* a plug-in above. What Slice I⋆ adds is the
 > jump branch (SQ2), the post-jump mass (SQ3), and the `m(t)` plumbing into the
@@ -418,14 +532,16 @@ contract layer (data shapes + §2 constants)            ← shared, behaviourles
    │    │
    └────┴──► I⋆ (SQ2–SQ3 + m(t) plumbing; reuses existing kicks + drag eval + SQ1 O-step)
               │
-        integration (§7): S+M+I⋆+B  →  validation scripts (plug-in)
+        integration (§7): S+M+I⋆+B  →  R (run matrix + RMSE table + diagnostics)
 ```
 
 **Independent (parallelizable):** S, M, B — each behind its interface, others
 mocked.
 **Core composed build:** I⋆ (SQ2–SQ3 + `m(t)` plumbing) over S + M + the reused
 fixed-mass skeleton (incl. the SQ1 O-step). 
-**Plug-in:** drag force evaluation, validation. 
+**Plug-in:** drag force evaluation. 
+**Delivered reporting:** Slice R consumes accepted checkpoints and postprocess APIs; it
+does not change physics.
 **Deferred:** radial depth-anchored cross-check (fire sheds at TDDFT $R$-values via
 the numeric $R(t)$; build only after the time-anchored null is green).
 
@@ -435,14 +551,16 @@ the numeric $R(t)$; build only after the time-anchored null is green).
 
 - **Constant-mass regression** (`fixed`): I⋆ reproduces the legacy fixed-mass
   trajectory exactly — proves the upgrade is non-destructive.
-- **Force-free anchored run** (Coulomb = drag = 0, `anchored_discrete`): $|v(t)|$ a pure
-  7-step staircase; endpoint speed = initial × 1.153; ledger closes. Isolates the
-  mass channel end-to-end.
-- **Drag-only anchored run** (Coulomb = 0): the ~15.3 % kick ceiling is *eroded* by
-  the $1/m(t)$ drag-acceleration; net boost $<15.3\%$ and monotone in drag strength.
-- **Full 1a A/B run** (Coulomb + drag + schedule), `fixed` vs `anchored_discrete`: produce
-  $R(t)$, $|v(t)|$, ledger; hand to validation. Modes separated by the boost; closure
-  holds in both.
+- **Force-free anchored run** (Coulomb = drag = 0, `anchored_discrete`): velocity is
+  unchanged through all 7 sheds, mass follows the 21→14 staircase, and the ledger
+  closes with positive co-moving-He bookkeeping. Isolates the mass channel end-to-end.
+- **Drag-only anchored run** (Coulomb = 0): trajectory changes only through the
+  post-shed mass entering the drag acceleration, not through event-local speed kicks.
+- **Full 1a A/B run** (Coulomb + drag + schedule), `fixed` vs `anchored_discrete`:
+  produce $R(t)$, `|v2|`, ledger, RMSE table, and selected-`t*` trajectory figure.
+  **Delivered result:** the cold-shed realization runs and closes its four-term
+  wiring ledger, but the selected-`t*` `|v2|` plot reveals unphysical discontinuous
+  velocity jumps; cold-shed is therefore only a Tier-1a diagnostic bound.
 
 ---
 
@@ -503,11 +621,11 @@ the numeric $R(t)$; build only after the time-anchored null is green).
 ## 9. Acceptance criteria
 
 > **Scientific deliverable (not a code-side gate).** The end product of a Tier-1a
-> run is a **single RMSE evaluation table** — `fixed` null plus the three
-> `anchored_discrete` $t^*$ runs, RMSE($R$) and RMSE($|v|$) vs smoothed 9 Å TDDFT,
-> full-window *and* post-free-zone columns (§5, §6.7) — **emitted and left to the
-> user**. The code asserts **no** verdict on which mode is better. The criteria
-> below are **wiring-correctness gates only** (build acceptance), not the scientific
+> run is a **reported diagnostic package** — `fixed` null plus the three
+> `anchored_discrete` $t^*$ runs, a rich RMSE table, mean-series exports, and a
+> selected-`t*` `|v2|` figure — **emitted and left to the user**. The code asserts
+> **no** verdict on which mode is better. The criteria below are
+> **wiring-correctness / reporting-completeness gates only**, not the scientific
 > conclusion.
 
 **Per slice:** the slice's own suite (§4) green with all other slices mocked.
@@ -516,19 +634,22 @@ the numeric $R(t)$; build only after the time-anchored null is green).
 
 - Constant-mass regression exact — the **SQ1-untouched guard** (`fixed` reproduces
   the current fixed-mass trajectory bit-for-bit; proves the reused O-step is unchanged).
-- New code demonstrated on analytic limits: SQ2 (jump-then-O, ≤1/step, reduced-mass
-  reset/defect), SQ3 (post-jump $m^+$); SQ1 (reused) re-confirmed under a running $m$.
+- New code demonstrated on analytic limits: SQ2 (jump-then-O, ≤1/step,
+  continuous-velocity shed and positive co-moving-He transfer), SQ3 (post-jump $m^+$);
+  SQ1 (reused) re-confirmed under a running $m$. Cold-shed reset tests are retained
+  as diagnostic-bound coverage only.
 
 **Integration:**
 
 - Four-term ledger closes to the Verlet-drift bound in both modes.
 - Relabel-instead-of-reset fault caught by Slice B.
 - The $t^*$ sweep ($\{0.5,5,9\}$ ps) **runs to completion and emits the RMSE table**
-  (§5 deliverable) — `anchored_discrete` vs the `fixed` null in $R(t)$/$|v(t)|$ across
-  shed timings. This is a *production gate* (the table is produced), **not** an
-  automated comparison verdict — the ranking is left to the user. The force-free
-  telescoping boost (1.153) is a *ceiling* — eroded by drag and a *floor* given the
-  flat-$n=14$ tail (opposing effects) — reported as a sanity bound, not the verdict.
+  plus the selected-`t*` `|v2|` figure (Slice R). This is a reporting gate, **not**
+  an automated comparison verdict.
+- **Post-Slice-C scientific conclusion:** the force-free telescoping boost (1.153)
+  and the cold-shed velocity reset are diagnostic-bound only. The physical
+  anchored-mass Tier-1a comparison is the continuous-velocity mass update; cold-shed
+  waits for the full `E_int` / energy-gated evaporation tier.
 
 **Out-of-scope guard:** any code path that reads a $D_0$ rung, $\kappa$, $\nu$, $s$,
 the electronic picture, an $E_\text{int}$ value, or a continuous mass-loss term
@@ -560,22 +681,24 @@ tie-break-independent).
 
 ## 11. Interpretation guardrails (carry into every run report)
 
-- **Opposing effects.** Shed kicks raise $|v|$ ($\propto 1/m$); the $1/m(t)$
-  drag-acceleration lowers it. "Reproduces $R,|v|$" tests the **superposition**, not
-  the kicks alone. The 1.153 boost is a *kick-only ceiling*.
+- **No event-local speed kicks in production Tier 1a.** The current
+  `anchored_discrete` driver path keeps `v^+=v^-` at each shed; any trajectory change
+  comes from the lower post-shed mass in subsequent Coulomb/drag dynamics. The
+  cold-shed reset raises $|v|$ discontinuously ($\propto1/m$) and remains a
+  **kick-only upper-bound diagnostic**, not the physical Tier-1a mass-dynamics model.
 - **Transverse contamination is common-mode.** The non-radial 9 Å signal inflates
   RMSE($R$) and RMSE($|v|$) for both modes roughly equally (same Coulomb + drag, only
   mass differs), so it cancels in the **ranking**. A large absolute RMSE is not a
   failed run; the verdict is the relative order.
-- **One-signed tail.** Flat $n=14$ past 14 ps omits any continuing cascade ⇒ boost is
-  a **floor**.
+- **One-signed tail.** Flat $n=14$ past 14 ps omits any continuing cascade. This
+  remains a limitation of the anchored schedule.
 - **Closure is wiring, not physics.** Four-term closure is by construction once the
-  SQ2 reset is correct; it certifies plumbing, not the energetics of shedding
-  (unsourced at 1a).
+  SQ2 bookkeeping matches the selected shed primitive; it certifies plumbing. The
+  full cold-shed evaporation interpretation still requires the `E_int` reservoir
+  and five-term invariant of the later energy-gated tier.
 - **Verdict scope.** There is **no automated pass/fail on fidelity.** The run emits
-  the §5/§9 RMSE table (`fixed` vs `anchored_discrete` across the $t^*$ sweep) and the
-  **user evaluates it** — the code's only gates are wiring-correctness (§9). What the
-  table can speak to is the **influence of mass dynamics on the kinematics** (does
-  $R(t)$/$|v(t)|$ move off the null, and how with shed timing), *not* the biphasic
-  generative mechanism (unfalsified until Tier 2). The telescoping boost is a
-  force-free sanity ceiling, not the verdict.
+  the §5/§9 RMSE table (`fixed` vs `anchored_discrete` across the $t^*$ sweep) and a
+  selected-`t*` `|v2|` figure for user evaluation. What the delivered table can now
+  speak to is the continuous-velocity anchored-mass response, while the cold-shed
+  diagnostic bound remains separate and the biphasic generative mechanism remains
+  unfalsified until Tier 2.

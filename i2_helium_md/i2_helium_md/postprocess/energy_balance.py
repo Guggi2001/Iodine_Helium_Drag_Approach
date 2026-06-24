@@ -102,11 +102,11 @@ class LedgerClosure:
     value; ``max_abs_residual_eV`` is its peak.
 
     This is a **wiring-correctness gate, not a physics result**: closure
-    is "by construction" once the cold-shed reset is the exact
-    reduced-mass form (``physics/mass_jump.py``). Its job is to *catch a
-    miswire* -- a label-only velocity rescale that bumps ``E_kin`` with no
-    matching ``E_mass_transfer`` increment makes the residual diverge. It
-    does NOT certify the energetics of shedding (unsourced at Tier 1a).
+    is "by construction" once the mass-transfer term matches the selected
+    shed primitive (continuous-velocity in production Tier 1a; cold-shed
+    only as a diagnostic bound). Its job is to *catch a miswire* -- a
+    mass/velocity change with no matching ``E_mass_transfer`` increment
+    makes the residual diverge.
     """
     time_ps: np.ndarray
     E_system_eV: np.ndarray

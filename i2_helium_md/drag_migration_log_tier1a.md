@@ -374,3 +374,150 @@ first (`bc93c16`) so B built on a clean base. Plan: `TIER1A_IMPLEMENTATION_PLAN.
   fixture tests 187 passed; smoke 19 passed. Full suite: **841 passed, 0 failed**
   (no regression; prior baseline 834/0 after I⋆; +7 Slice B tests). No
   figures/checkpoints/config generated.
+
+---
+
+## Tier-1a Slice R — delivery record (2026-06-24): **RMSE table + Tier-1a trajectory diagnostics**
+
+The previously deferred §5/§9 reporting deliverable was implemented after Slice B.
+This is a post-processing / run-orchestration layer only: no physics, integrator,
+checkpoint, or Tier-0 script was changed. It reuses the locked Tier-0 drag bundle
+and the v6 `IonCheckpoint` comparison surface to generate and inspect the
+`fixed` null plus the `anchored_discrete` `t*∈{0.5,5.0,9.0}` sweep.
+
+### Delivered (code)
+
+- **`scripts/tier1a_common.py`** — shared Tier-1a run wiring:
+  `build_anchored_cfg(...)` wraps `scripts/tier0_common.build_drag_cfg(...)` and
+  switches only the Tier-1a fields (`mass_scenario="anchored_discrete"`,
+  `t_star_ps`, `anchor_mode="time"`, `coulomb_available_eV=0.80`,
+  `allow_inconsistent_mass_pairing=True`, and metadata-consistent
+  `mass_initial_amu=complex_mass_amu(21)`). `tier1a_run_tag(...)` and
+  `tier1a_run_dir_name(...)` keep the generator and scorer on the same
+  Tier-0-style run-name convention.
+- **`scripts/gen_tier1a_runs.py`** — production generator for four run dirs under
+  `data/runs/`: one `fixed` null and three `anchored_discrete` runs with
+  `t*=0.5,5.0,9.0` ps. Defaults: `CASE="9A"`,
+  `VARIANT="shared_pure_cubic"`, `N=50`, `ION_TIME_PS=30.0`,
+  `DT_ION_PS=0.01`.
+- **`scripts/post_processing/tier1a_rmse_table.py`** — scorer and visual inspector:
+  emits the rich RMSE table with traceability columns (`case`, `variant`, `N`,
+  `scenario`, `t_star_ps`, window endpoints, raw `R` RMSE, same-smoothed I2
+  `|v2|` RMSE, `v2` mean ratio, ledger residual, and `n_shell` start/end/shed
+  count). It also mirrors the useful Tier-0 diagnostic surface: optional CSV table
+  export, per-run mean-series export, optional positions/energy/force figures, and
+  a focused `|v2|` plot comparing `fixed` against one user-selected anchored
+  `PLOT_T_STAR_PS` case (default `5.0`) plus the HeDFT / CEEMDAN+SG references.
+- **`tests/test_tier1a_scripts.py`** — new coverage for config construction,
+  shared naming, scorer rows/CSV, selected-`t*` `|v2|` plotting, and mean-series
+  export. Tests use temporary run dirs / synthetic checkpoints, not production
+  `data/runs`.
+
+### Run result and diagnostic finding
+
+The four Tier-1a run dirs were generated locally and load as full-length ion
+trajectories (`time_ps=0.0→29.99` ps, 3000 samples). The scorer/plotter confirmed
+that all anchored runs carry finite pre-window `|v2|` data; any apparent missing
+pre-2.67 ps trace was a plotting-overlap issue, corrected by plotting only `|v2|`
+for `fixed` plus one selected anchored `t*` at a time.
+
+The clarified plots exposed the more important result: the current
+`anchored_discrete` realization produces large discontinuous `|v2|` jumps at every
+scheduled shedding event. Those jumps are the direct consequence of borrowing the
+full Method's cold-shed momentum reset (`v⁺=m/(m−m_He)v⁻`) into Tier 1a while Tier
+1a explicitly omits the `E_int` reservoir and five-term energy invariant. The
+four-term ledger closes as a wiring check, but that closure does **not** make the
+Tier-1a shed energetics physical.
+
+### New conclusion (supersedes the Tier-1a physical interpretation of cold-shed)
+
+- The cold-shed reset remains a valid paper-derived ingredient of the **full**
+  energy-gated evaporation model only when coupled to `E_int`, the dissociation
+  ladder, the self-bound gate, and the five-term invariant described in
+  `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md`.
+- In Tier 1a, where `E_int` is intentionally absent and the shell schedule is
+  externally anchored, the cold-shed reset should be treated as a **diagnostic
+  upper-bound / stress-test**, not as the physical anchored-mass comparison.
+- The next Tier-1a refinement should introduce a Tier-1a-specific
+  continuous-velocity mass update (`v⁺=v⁻`, mass changes only) for the main
+  anchored comparison. That isolates the influence of `m(t)` on subsequent drag
+  and conservative acceleration without injecting unsourced velocity impulses.
+  The cold-shed reset should be deferred to the full energy-gated tier or retained
+  only as an explicitly labelled bound.
+
+### Verification
+
+- Red/green TDD for the new script layer: missing-module tests failed first, then
+  passed after implementation.
+- Targeted script tests: `tests/test_tier1a_scripts.py` and
+  `tests/test_tier0_common.py` passed.
+- Full suite after the final plotting change: **846 passed, 1 expected warning**
+  (the intentional `anchored_discrete` constant-coefficient pairing warning).
+
+---
+
+## Tier-1a Slice C — delivery record (2026-06-24): **continuous-velocity shedding correction**
+
+Slice R exposed that using the full Method cold-shed reset directly in Tier 1a
+produced discontinuous `|v2|` jumps at every anchored shed event. That behavior is
+scientifically useful as a bound, but not as the physical Tier-1a comparison because
+Tier 1a intentionally omits `E_int`, the dissociation ladder, the RRK gate, and the
+five-term invariant. Slice C supersedes that production path while preserving the
+anchored schedule and the already-delivered reporting layer.
+
+### Delivered (code)
+
+- **`physics/mass_jump.py`** — added `continuous_velocity_shed(...)` and
+  `continuous_velocity_shed_components(...)`. The production primitive keeps
+  `v⁺=v⁻`, drops the complex mass by one He, and books
+  `+0.5*m_He*|v|²` in mechanical units so the tracked-complex KE drop is closed by
+  `E_mass_transfer`. `apply_shed(..., mode="anchored_discrete")` now delegates to
+  this continuous-velocity primitive.
+- **Cold-shed preserved as bound** — `cold_shed(...)`,
+  `cold_shed_velocity_components(...)`, and `kick_factor(...)` remain in place and
+  tested, but their documentation and tests now label them as the diagnostic
+  cold-shed bound rather than the Tier-1a physical driver path.
+- **`simulation/ion_propagation_step.py`** — `shed_step(...)` now calls the
+  continuous vectorized primitive. Event timing, one-He mass drops, the <=1 shed per
+  step rule, and the BAOAB rebuild after the mass update are unchanged. Velocity
+  components are copied unchanged across the shed event; subsequent dynamics see
+  the lower mass.
+- **Run-tag hygiene** — `scripts/tier1a_common.py` now names anchored runs
+  `tier1a_anchored_continuous_t{...}`. The generator and scorer therefore stop
+  selecting stale cold-shed run dirs while leaving those artifacts untouched.
+- **Inline docs** — config/checkpoint/energy-ledger comments were updated so active
+  surfaces no longer describe `anchored_discrete` as a cold-shed reset.
+
+### Tests
+
+- **`tests/test_mass_jump.py`** — continuous-velocity primitive invariants:
+  velocity unchanged, one-He mass drop, total momentum and KE of
+  "remaining complex + removed co-moving He" conserved, tracked-complex KE drop
+  exactly equals the positive mass-transfer bookkeeping.
+- **`tests/test_ion_variable_mass.py`** — driver-facing `shed_step` leaves
+  velocities unchanged, still fires at most one event per step, preserves the total
+  seven-event count under `dt` refinement, and removes the old telescoping speed
+  boost from the production path.
+- **`tests/test_ion_drag_smoke.py`** — full anchored smoke still sheds seven He
+  (`n=21→14`), ledger closes with positive mass-transfer energy, and the old
+  cold-shed velocity kick is absent at shed transitions.
+- **`tests/test_tier1a_scripts.py`** — scorer/generator naming uses
+  `tier1a_anchored_continuous_t...`; selected-`t*` `|v2|` plotting remains fixed
+  plus one anchored case.
+
+### Result and conclusion
+
+The physical Tier-1a anchored comparison is now "same schedule, continuous velocity":
+it isolates how the lower post-shed mass changes later Coulomb and drag dynamics
+without injecting an unsourced event-local velocity impulse. Existing cold-shed
+Tier-1a run dirs are stale for physical interpretation and must be regenerated with
+the new `continuous` tags before reading the RMSE table. The cold-shed helpers remain
+valid only as an explicitly labelled upper-bound diagnostic until the later full
+energy-gated evaporation tier wires `E_int` and the five-term invariant.
+
+### Verification
+
+- Targeted Slice C suite:
+  `tests/test_mass_jump.py tests/test_ion_variable_mass.py tests/test_ion_drag_smoke.py tests/test_tier1a_scripts.py`
+  passed: **76 passed, 1 expected warning**.
+- Full suite after Slice C: **855 passed, 1 expected warning**.
