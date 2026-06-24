@@ -527,8 +527,11 @@ Density-only $\\lambda\_\\text{attach}\\propto\\rho\_\\text{He}$ confirmed as pr
 
 ### 2.8 Interchangeability surface
 
-`SimConfig.mass\_scenario` — production `biphasic\_energy\_gated`; `fixed`, `A`, `B`
-retained as comparison/regression baselines. Field-level config (pickup rate,
+`SimConfig.mass\_scenario` — production `biphasic\_energy\_gated`; `fixed` and
+`anchored\_discrete` (Tier 1a) as comparison/regression baselines. **`scenario\_A\_accretion`
+and `scenario\_B\_stripping` are retired** (2026-06-23/24; superseded by the locked
+`biphasic` mechanism, §2.5) — the literal is now
+`{fixed, biphasic, anchored\_discrete}`. Field-level config (pickup rate,
 $f\_\\text{ret}$, $f\_\\text{int}$, $\\nu$, $s$, ladder shape, electronic picture, …):
 MASS doc §11.
 

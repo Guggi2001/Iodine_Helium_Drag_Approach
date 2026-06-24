@@ -955,3 +955,75 @@ consistency-check → held-out-generalization role and the `shared_pure_cubic`
 production law. No code referenced by the doc changed beyond the gate switch
 above.
 
+## Tier-1a plan refinement — decision record (2026-06-23)
+
+Plan-doc refinement of `TIER1A_IMPLEMENTATION_PLAN.md` after a code + cross-doc
+audit. No code written (the `[PROCEED TO IMPLEMENTATION]` boundary holds); these are
+documentation + scoping decisions for the eventual build.
+
+- **SQ1 re-scoped as reused, not new.** The plan framed SQ1–SQ3 as the integrator
+  "work." Audit confirmed against MASS A13 ("SQ1 built, accepted as-is") and
+  `physics/baoab.py`: the O-step already applies `e^(−γ·dt/m)` with γ frozen at
+  `v_in`, books exact dissipation, and `make_ion_baoab_step` is rebuilt every step so
+  `m` can vary. Genuine Tier-1a integrator work is **SQ2 (mass-jump operator) + SQ3
+  (post-jump `m⁺`) + the `m(t)` plumbing** into the existing per-step rebuild. The
+  `fixed`-mode bit-for-bit regression is repositioned as the SQ1-untouched guard.
+
+- **Mass-scenario enum: `scenario_A_accretion` and `scenario_B_stripping` RETIRED;
+  `anchored_discrete` ADDED.** User decision (2026-06-23). New literal:
+  `MassScenario = {fixed, biphasic, anchored_discrete}`. A and B are superseded by the
+  locked `biphasic` mechanism (DESIGN §2.5/§2.8) — they were inert enum members read
+  only by the `check_drag_config` guard. **Build touch-points:** the `MassScenario`
+  literal in `config.py`; the guard's non-`fixed` branch set (`config.py` ~417–448) →
+  `{biphasic, anchored_discrete}`; any preset/test referencing the A/B names. DESIGN
+  §2.8 (which still says "A, B retained as baselines") to be updated at build time.
+  `anchored_discrete` is a non-`fixed` scenario → trips the §6.5 `time_resolved`
+  pairing guard structurally against the constant-`m_eff` Tier-0 coefficients → runs
+  under `allow_inconsistent_mass_pairing=True` on the §6.6 mid-window defence (R6).
+
+- **Checkpoint v5 → v6 delta clarified.** The four-term ledger arrays already exist
+  (`E_kin_eV`/`E_pot_eV`/`E_dissip_eV`, `(2N,T)`). v6 = rename
+  `E_mass_attach_defect_eV → E_mass_transfer_eV` (DESIGN §2.9), add per-atom
+  `n_shell (2N,T)`, drop the `mass_history_kg` non-decreasing assumption, add a
+  `mass_scenario` metadata field. No `E_int` at 1a.
+
+- **Three open items resolved (user, 2026-06-23):** (1) a numeric `t_star` is **not
+  required for Tier 1a** — the class verdict and segment-2 timings are `t*`-independent;
+  leave `t_star_ps` a config parameter with a placeholder. (2) **No new run-size
+  decision** — reuse the existing standard run preset, invoked with
+  `mass_scenario=anchored_discrete` (and `fixed` for the null). (3)
+  `coulomb_available_eV=0.80` is stamped **for provenance only — no hard refuse**.
+
+## Tier-1a plan refinement — decision record (2026-06-24)
+
+Second planning pass (study + discussion of CLAUDE.md / DESIGN / TIER1A plan). Still
+code-free; the `[PROCEED TO IMPLEMENTATION]` boundary holds. Three decisions, two of
+which **supersede** parts of the 2026-06-23 record above.
+
+- **Deliverable reframed — the telescoping boost is NOT the verdict (supersedes
+  2026-06-23 item).** The 2026-06-23 record left `t_star_ps` a placeholder on the
+  ground that "the class verdict (telescoping boost 1.153) … [is] `t*`-independent."
+  That conflates the *force-free* kinematic ceiling with the *full-force* trajectory:
+  1.153 telescopes timing-independently **only** when drag and Coulomb are off. Under
+  full drag+Coulomb each shed's firing *time* feeds back through the $\propto v^3$ drag
+  work, so $R(t)$, $|v(t)|$ and the endpoint are genuinely `t*`-sensitive. The 1.153
+  boost is demoted to a **force-free integration-test sanity ceiling**; the substantive
+  Tier-1a result is the trajectory's response to shed timing. (User correction.)
+
+- **`t*` sweep pinned to `{0.5, 5, 9}` ps (wide span; supersedes the 2026-06-23
+  placeholder).** Run matrix: one `fixed` null (t*-independent, no sheds) + three
+  `anchored_discrete` runs, one per swept `t*`. Values chosen for maximal contrast in
+  onset timing; physically-admissible window confirmed `t* ∈ (0,10)` ps (user).
+
+- **Checkpoint v6 = back-compat load shim (new detail).** v6 writer as before
+  (rename `E_mass_attach_defect_eV → E_mass_transfer_eV`, add `n_shell (2N,T)`, drop
+  the `mass_history_kg` non-decreasing assumption, add `mass_scenario` metadata). The
+  v6 **loader accepts legacy v5** — maps the renamed field and synthesizes an absent
+  `n_shell` (constant at the run's fixed shell count) — so the 14 existing v5 `ion.npz`
+  run dirs (incl. the Tier-0 `shared_pure_cubic` runs) still load instead of failing
+  the version check. (User decision.)
+
+- **Docs updated this pass:** `TIER1A_IMPLEMENTATION_PLAN.md` §1/§2/§8/§9/§11
+  (deliverable reframing, `t*` sweep + run matrix, back-compat shim note);
+  `DRAG_PORT_DESIGN_DECISIONS.md` §2.8 (A/B recorded as retired, not "retained").
+
