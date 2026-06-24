@@ -49,6 +49,7 @@ from ..physics.baoab import make_ion_baoab_step
 from ..physics.constants import U
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
+from ..physics.shell_schedule import build_shell_schedule
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
 from .ion_initial_state import build_initial_ion_state
 from .ion_propagation_step import (
@@ -56,6 +57,7 @@ from .ion_propagation_step import (
     baoab_propagation_step,
     ion_propagation_step,
     ion_state_from_checkpoint_column,
+    shed_step,
     write_ion_state_to_checkpoint_column,
     _check_drag_scope,
 )
@@ -173,6 +175,7 @@ def run_ion_propagation(
     # Allocate constants used inside the loop once.
     charge = np.ones(2 * cfg.num_molecules, dtype=float)
     droplet_radii = ckpt.droplet_radii_angstrom
+    dt = cfg.dt_ion   # ps; the internal step (the schedule shed-window is (t, t+dt])
 
     # Dispatch once per run (D3): a validated drag-coefficient bundle routes the
     # ion stage onto the BAOAB drag path; otherwise the hard-sphere collision
@@ -181,6 +184,8 @@ def run_ion_propagation(
     # Slice 3 check_drag_config: consistency + dissipativity + form agreement).
     use_drag = cfg.drag_coefficients is not None
     gamma_fn = None
+    schedule = None
+    next_shed_idx = 0
     if use_drag:
         # Pass the *realized* initial ion mass (ckpt.mass_kg, downstream of the
         # build_initial_ion_state m_eff override) so the scope guard's mass
@@ -193,6 +198,11 @@ def run_ion_propagation(
         gamma_fn = partial(
             drag_gamma, coeffs=cfg.drag_coefficients, steepness=gate_steepness,
         )
+        # Tier-1a: the anchored He-shell schedule drives the variable mass m(t).
+        # Built once; queried per step (shed_step). Absent under `fixed`, so the
+        # fixed-mass path below is byte-for-byte the Tier-0 path (regression guard).
+        if cfg.mass_scenario == "anchored_discrete":
+            schedule = build_shell_schedule(cfg.t_star_ps)
 
     state = ion_state_from_checkpoint_column(ckpt, 0)
     prev_dist: np.ndarray | None = None
@@ -200,9 +210,17 @@ def run_ion_propagation(
 
     for internal_id in range(1, num_internal_steps):
         if use_drag:
+            # SQ2/SQ3 (anchored_discrete only): apply at most one scheduled cold
+            # shed BEFORE rebuilding the closure, so the rebuild reads the
+            # post-shed mass m+ for both the conservative kicks and the O-step.
+            if schedule is not None:
+                state, next_shed_idx = shed_step(
+                    state, schedule, next_shed_idx, dt,
+                )
             # Rebuild the BAOAB closure every step, matching the make_ion_step
-            # rebuild pattern (Tier-1-ready though Tier-0 mass is fixed). Mass
-            # enters here in amu (kg -> amu via U); noise dormant (T_eff=0).
+            # rebuild pattern. Mass enters here in amu (kg -> amu via U); under
+            # `fixed` it is constant, under `anchored_discrete` it follows the
+            # shed schedule. Noise dormant (T_eff=0).
             acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
             step = make_ion_baoab_step(
                 state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,

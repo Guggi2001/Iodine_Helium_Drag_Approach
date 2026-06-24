@@ -99,7 +99,7 @@ string values.
 |---|---|---|
 | `DragForm` | `linear_cubic`, `linear_quadratic`, `threshold`, `power_law` | `linear_cubic` |
 | `DragSpatialGate` | `density_proportional`, `erf_tied`, `erf_independent`, `sharp` | `density_proportional` |
-| `MassScenario` | `fixed`, `scenario_A_accretion`, `scenario_B_stripping`, `biphasic` | `fixed` |
+| `MassScenario` | `fixed`, `biphasic`, `anchored_discrete` | `fixed` |
 | `NoiseForm` | `none`, `multiplicative_local_fdt`, `empirical_residual` | `none` |
 | `NoiseCalibration` | `hard_sphere_variance`, `tddft_residual`, `strict_fdt_bath` | `hard_sphere_variance` |
 | `NoiseGeometry` | `longitudinal`, `isotropic`, `anisotropic` | `longitudinal` |
@@ -110,7 +110,7 @@ string values.
 > **Default policy:** every form-selector defaults to its **inert** member, not
 > the design's "primary." The design's "primary" means "first hypothesis to
 > run," not "default when unspecified." So `mass_scenario=fixed` (not
-> `scenario_A_accretion`) and `noise_form=none` (not `multiplicative_local_fdt`)
+> `anchored_discrete`) and `noise_form=none` (not `multiplicative_local_fdt`)
 > by default.
 
 > **The `Literal`-over-`enum.Enum` tradeoff and its recovery.** A `Literal`
@@ -227,7 +227,7 @@ coefficients re-extracted under that scenario's `m(t)`. So `mass_scenario` and
 mass_scenario == fixed:
     require extraction_mass_model == "constant"
     require |extraction_mass_amu − m_eff_amu| ≤ _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU
-mass_scenario ∈ {scenario_A_accretion, scenario_B_stripping, biphasic}:
+mass_scenario ∈ {biphasic, anchored_discrete}:
     require extraction_mass_model == "time_resolved"
 inconsistent  →  raise ValueError
               →  (or warnings.warn, if allow_inconsistent_mass_pairing=True)
@@ -242,13 +242,13 @@ set is written and tested now — that is the slice's reason for existing.
 > coefficients yet, the only way to reach the non-`fixed` arm before Slice 4 is
 > to hand-build a config: an evolving `mass_scenario` paired with a `constant`
 > bundle (`_constant_coeffs()` in the tests). Both forks are asserted:
-> - **refuse** — `mass_scenario="scenario_B_stripping"` + constant coeffs →
+> - **refuse** — `mass_scenario="anchored_discrete"` + constant coeffs →
 >   `ValueError` (matches `"time_resolved"`);
-> - **override → warn** — `mass_scenario="scenario_A_accretion"` + constant
+> - **override → warn** — `mass_scenario="biphasic"` + constant
 >   coeffs + `allow_inconsistent_mass_pairing=True` → `RuntimeWarning`, no raise.
 >
-> The two cover two of the three evolving members; `biphasic` takes the identical
-> code path. The dispatch's final `else: raise "unknown mass_scenario"` is the
+> The two cover both evolving members. (Tier-1a's `anchored_discrete` run takes
+> the override→warn arm in production, on the §6.6 mid-window defence.) The dispatch's final `else: raise "unknown mass_scenario"` is the
 > `mass_scenario` analogue of the `drag_form` typo arm; it is unreachable given
 > the `Literal` members and is marked `# pragma: no cover`.
 

@@ -59,6 +59,7 @@ from ..config import SimConfig
 from ..physics.constants import EV, U
 from ..physics.interactions import partner_interaction_ion
 from ..physics.potentials import droplet_potential
+from ..physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
 from .checkpoint import IonCheckpoint, NeutralCheckpoint, _ION_SCHEMA_VERSION
 
 
@@ -162,6 +163,12 @@ def build_initial_ion_state(
         # field semantics clean for Tier 1 (where the two diverge). Do NOT
         # "restore" the inherited neutral mass here -- the override is the fix.
         mass_kg_initial = np.full(two_N, cfg.mass_initial_amu * U)
+    elif cfg.drag_coefficients is not None and cfg.mass_scenario == "anchored_discrete":
+        # Tier-1a anchored_discrete starts at the n=21 complex mass (held for
+        # t <= t*); the He-shell schedule sheds it down to n=14 over the run.
+        # NOT m_eff (= the n=19 mid-window mass) and NOT the inherited bare-I+
+        # neutral mass -- the schedule's onset count is the physical start.
+        mass_kg_initial = np.full(two_N, complex_mass_amu(ANCHOR_N_START) * U)
     else:
         mass_kg_initial = neutral_ckpt.mass_kg.copy()
     droplet_radii_angstrom = neutral_ckpt.droplet_radii.copy()

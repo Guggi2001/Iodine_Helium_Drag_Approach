@@ -289,6 +289,19 @@ integrator, no drag.
 
 ### Slice I⋆ — Variable-mass integrator wiring (SQ2–SQ3 + `m(t)` plumbing) *(composes S, M)*
 
+> **IMPLEMENTED (2026-06-24).** Jump applied at the **step seam** (jump-then-BAOAB;
+> `baoab.py` untouched, SQ1 reused). `physics/mass_jump.py` gains the per-atom
+> `cold_shed_velocity_components`; `simulation/ion_propagation_step.py` gains
+> `shed_step` (SQ2/SQ3, ≤1/step, books the defect into the existing
+> `E_mass_attach_defect_eV` — schema-neutral); `simulation/ion.py` builds the
+> schedule and calls it per step; `simulation/ion_initial_state.py` starts
+> `anchored_discrete` at the n=21 mass; `config.py` retires A/B, adds
+> `anchored_discrete` + `t_star_ps`/`anchor_mode`/`coulomb_available_eV`. Tests:
+> `tests/test_ion_variable_mass.py` (11) + run-level additions in
+> `tests/test_ion_drag_smoke.py`. Full suite 834/0. The v5→v6 schema bump, the
+> field rename, and the `t*`-sweep RMSE table stay with **Slice B**. Delivery
+> detail: `drag_migration_log_tier1a.md` (Slice I⋆ record, 2026-06-24).
+
 **Purpose.** Wire the schedule-driven $m(t)$ and the mass jump into the existing
 per-step BAOAB rebuild. The drag O-step itself (SQ1) is reused unchanged; the work is
 the jump branch, the post-jump mass, and feeding $m(t)$ through the seam that

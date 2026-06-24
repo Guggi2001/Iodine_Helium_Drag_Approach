@@ -216,3 +216,86 @@ I⋆ imports directly). No constants added (Slice S already landed `MASS_HE_AMU`
   + the integrator-rebuild `m(t)` plumbing + SQ3 post-jump `m⁺`). **B** remains
   independently buildable but is better sequenced once M emits real
   `dE_mass_transfer` into a ledger, and it owns the v5→v6 schema bump.
+
+---
+
+## Tier-1a Slice I⋆ — delivery record (2026-06-24): **variable-mass integrator wiring (SQ2–SQ3 + `m(t)` plumbing)**
+
+The third Tier-1a build unit, behind the `[PROCEED TO IMPLEMENTATION]` trigger.
+Composes the finished S + M into the existing per-step BAOAB rebuild and carries the
+config-surface enum surgery deferred from M. Plan: `TIER1A_IMPLEMENTATION_PLAN.md`
+§4 (Slice I⋆), §2 (SQ upgrade), §8 (config contract).
+
+### Design point resolved — jump at the **step seam** (not inside B-A-O-A-B)
+
+The plan's §2 "B/A → jump → O" ideal is realized as **jump-then-(BAOAB)** at step
+granularity: the cold shed is applied to `(v, m)` **before** the per-step
+`make_ion_baoab_step` rebuild, so the rebuilt closure reads `m⁺` for *both* the
+conservative kicks and the drag O-step (SQ3). `baoab.py` is **untouched** (SQ1
+reused verbatim). The order reduction (first half-kick uses `m⁺` rather than `m⁻`)
+is `O(dt)` in mass and benign as `dt→0` (jumps are `dt`-independent in count; plan
+§2). This is the recommended locus from the plan's open-question.
+
+### Delivered (code)
+
+- **`physics/mass_jump.py`** (additive): `cold_shed_velocity_components(vx, vy, vz,
+  m_minus_amu, *, m_he_amu)` — the per-atom `(2N,)` vectorization of `cold_shed`
+  (uniform scalar mass/kick across atoms, per-atom `|v_i|²` defect), and a shared
+  `_reduced_mass_defect_coeff` so the exact reduced-mass form lives in **one** place
+  (scalar `cold_shed` refactored to use it; numerically identical, M's 32 tests
+  unchanged). Mass-agnostic to the drag law.
+- **`simulation/ion_propagation_step.py`** — `shed_step(state, schedule,
+  next_shed_idx, dt)` (the SQ2/SQ3 pre-step): fires **≤1** scheduled shed per step
+  (next pending event with `time ≤ t+dt`), applies the momentum-conserving reset,
+  emits `m⁺` and books the per-atom reduced-mass defect (eV) into the **existing**
+  `E_mass_attach_defect_eV` field (semantic generalization — **no schema change**;
+  the rename is Slice B). `_check_drag_scope` relaxed to admit `anchored_discrete`
+  (still refuses `biphasic`); the realized-mass `m_eff` trip-wire scoped to `fixed`
+  only (anchored mass legitimately runs n=21→14, defended by §6.6, not the band).
+- **`simulation/ion.py`** — driver builds the schedule once
+  (`build_shell_schedule(cfg.t_star_ps)`, `anchored_discrete` only) and calls
+  `shed_step` before each rebuild; the `fixed` path is byte-for-byte the Tier-0 path
+  (schedule never built → regression guard).
+- **`simulation/ion_initial_state.py`** — `anchored_discrete` initial mass override
+  to the n=21 complex mass (210.955 amu), distinct from the `fixed` m_eff override
+  and the inherited neutral mass.
+- **`config.py`** — `MassScenario = {fixed, biphasic, anchored_discrete}`
+  (`scenario_A_accretion`/`scenario_B_stripping` **retired**); `_EVOLVING_MASS_SCENARIOS
+  = (biphasic, anchored_discrete)`; new `AnchorMode` alias; new fields `t_star_ps`
+  (default 5.0; sweep {0.5,5,9}), `anchor_mode="time"`, `coulomb_available_eV=0.80`
+  (provenance stamp, **no hard refuse**). The guard routes `anchored_discrete` into
+  the `time_resolved`-requiring arm → trips against constant m_eff coeffs → runs
+  under `allow_inconsistent_mass_pairing=True` (R6, §6.6).
+
+### Tests
+
+- **`tests/test_ion_variable_mass.py`** (new, 11): vectorized cold shed vs the
+  scalar M oracle; `shed_step` SQ2 reset / SQ3 `m⁺` / ≤1-per-step under a dense
+  window / no-fire identity / exhausted-schedule no-op; jump-step **measure-zero**
+  (7 sheds invariant to `dt∈{0.001,0.01,0.1}`); **telescoping** speed boost ×1.1532.
+- **`tests/test_ion_drag_smoke.py`** (+3): `fixed` run independent of `t_star_ps`
+  (SQ1-untouched regression); a full `anchored_discrete` run sheds 7 He n=21→14;
+  the **four-term ledger closes** (`E_kin+E_pot+E_dissip+E_mass_transfer`, <5e-2) with
+  the defect channel carrying energy — the M reset is the exact form, not a relabel.
+- **`tests/test_ion_initial_state.py`** (+1): `anchored_discrete` starts at the
+  n=21 mass. Retired A/B names updated in `test_drag_config.py`,
+  `test_ion_drag_smoke.py`, `test_ion_initial_state.py`, `test_mass_jump.py`.
+
+### Deferred (explicitly out of Slice I⋆ scope — to Slice B)
+
+- The `E_mass_attach_defect_eV → E_mass_transfer_eV` rename, the per-atom `n_shell`
+  array, the `IonCheckpoint` v5→v6 bump + back-compat v5 load shim, the standalone
+  four-term ledger module, and the full `t*`-sweep RMSE table (the §7/§9 integration
+  phase). I⋆ stays schema-neutral (still writes/loads v5).
+
+### Verification
+
+- `tests/test_ion_variable_mass.py`: 11 passed; targeted config/init/smoke: 117
+  passed. Full suite: **834 passed, 0 failed** (no regression; prior baseline
+  819/0 after Slice M; +15). No figures/checkpoints/config generated.
+
+### Follow-up (next slice)
+
+- **B** is now the natural next build: M+I⋆ emit real `dE_mass_transfer`; B owns the
+  v5→v6 schema bump (field rename, `n_shell`, back-compat shim) and the four-term
+  closure module, then the integration-phase `t*`-sweep RMSE table.

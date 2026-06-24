@@ -295,7 +295,7 @@ class TestMassConsistencyGuard:
 
     def test_evolving_scenario_with_constant_coeffs_refused(self):
         cfg = SimConfig(
-            mass_scenario="scenario_B_stripping",
+            mass_scenario="anchored_discrete",
             drag_coefficients=_constant_coeffs(),  # constant, not time_resolved
         )
         with pytest.raises(ValueError, match="time_resolved"):
@@ -303,7 +303,7 @@ class TestMassConsistencyGuard:
 
     def test_evolving_scenario_inconsistency_can_be_overridden(self):
         cfg = SimConfig(
-            mass_scenario="scenario_A_accretion",
+            mass_scenario="biphasic",
             drag_coefficients=_constant_coeffs(),
             allow_inconsistent_mass_pairing=True,
         )
@@ -643,7 +643,7 @@ class TestEnumCompleteness:
             "density_proportional", "erf_tied", "erf_independent", "sharp"
         }
         assert set(typing.get_args(MassScenario)) == {
-            "fixed", "scenario_A_accretion", "scenario_B_stripping", "biphasic"
+            "fixed", "biphasic", "anchored_discrete"
         }
         assert set(typing.get_args(NoiseForm)) == {
             "none", "multiplicative_local_fdt", "empirical_residual"

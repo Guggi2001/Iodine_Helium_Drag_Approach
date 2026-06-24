@@ -51,7 +51,7 @@ checkpoint.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -63,7 +63,9 @@ from ..physics.collisions import (
     velocity_dependent_cross_section,
 )
 from ..physics.baoab import BaoabStep
-from ..physics.constants import EV, U
+from ..physics.constants import EV, MASS_HE_AMU, U
+from ..physics.mass_jump import cold_shed_velocity_components
+from ..physics.shell_schedule import ShellSchedule
 from ..physics.drag import REALIZED_FORMS
 from ..physics.interactions import partner_interaction_ion
 from ..physics.leapfrog import make_ion_step
@@ -376,6 +378,82 @@ def baoab_propagation_step(
 
 
 # ===========================================================================
+# Tier-1a cold-shed pre-step (SQ2 + SQ3) -- variable-mass drag path
+# ===========================================================================
+def shed_step(
+    state: IonStepState,
+    schedule: ShellSchedule,
+    next_shed_idx: int,
+    dt: float,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+) -> tuple[IonStepState, int]:
+    """Apply at most one scheduled cold shed *before* the BAOAB step (SQ2/SQ3).
+
+    The Tier-1a ``anchored_discrete`` pre-step. If the next pending shed
+    (``schedule.events[next_shed_idx]``) fires within this step's window --
+    its analytic fire time is ``<= state.time_ps + dt`` -- apply the
+    momentum-conserving cold-shed reset (:func:`cold_shed_velocity_components`)
+    to **all** atoms' velocities, drop one He from the (uniform) complex mass,
+    book the per-atom reduced-mass defect into ``E_mass_attach_defect_eV``, and
+    advance the pointer. **At most one shed per call** (the plan's ≤1/step rule):
+    if the schedule is dense relative to ``dt`` the surplus events fire on the
+    following steps, so the total shed count is ``len(events)`` independent of
+    ``dt`` (the jump-step measure-zero property).
+
+    Applying the jump here, at the step seam, means the rebuilt
+    :func:`~i2_helium_md.physics.baoab.make_ion_baoab_step` closure reads the
+    post-shed mass ``m+`` for *both* the conservative kicks and the drag O-step
+    (SQ3) -- the BAOAB O-step itself (SQ1) is reused unchanged. The order
+    reduction vs an in-step "B/A -> jump -> O" placement is ``O(dt)`` in the
+    first half-kick's mass and benign as ``dt -> 0`` (jumps are ``dt``-independent
+    in count; plan §2).
+
+    Parameters
+    ----------
+    state : IonStepState
+        Current state (read only; not mutated). Its ``mass_kg`` is uniform across
+        atoms under the anchored schedule.
+    schedule : ShellSchedule
+        The anchored He-shell schedule (Slice S), source of the fire times and the
+        per-event pre-shed mass.
+    next_shed_idx : int
+        Index of the next not-yet-fired event in ``schedule.events``.
+    dt : float
+        Ion timestep [ps] (``cfg.dt_ion``).
+    m_he_amu : float, optional
+        Shed He mass [amu] (default :data:`MASS_HE_AMU`).
+
+    Returns
+    -------
+    (new_state, new_next_shed_idx) : tuple[IonStepState, int]
+        The post-shed state and the advanced pointer. When no shed fires this
+        step, ``state`` and ``next_shed_idx`` are returned unchanged.
+    """
+    events = schedule.events
+    if next_shed_idx >= len(events):
+        return state, next_shed_idx
+    event = events[next_shed_idx]
+    if event.time_ps > state.time_ps + dt:
+        return state, next_shed_idx
+
+    vx_p, vy_p, vz_p, m_plus_amu, dE_amu = cold_shed_velocity_components(
+        state.vx, state.vy, state.vz, event.mass_before_amu, m_he_amu=m_he_amu,
+    )
+    # amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U, A/ps->m/s via 100,
+    # J->eV via EV) -- the same path baoab_propagation_step uses for dE_dissip, so
+    # the booked defect stays in a consistent eV with E_kin/E_pot/E_dissip.
+    dE_eV = dE_amu * U * (100.0 ** 2) / EV
+    new_state = replace(
+        state,
+        vx=vx_p, vy=vy_p, vz=vz_p,
+        mass_kg=np.full_like(state.mass_kg, m_plus_amu * U),
+        E_mass_attach_defect_eV=state.E_mass_attach_defect_eV + dE_eV,
+    )
+    return new_state, next_shed_idx + 1
+
+
+# ===========================================================================
 # Internal helpers
 # ===========================================================================
 def _depth(x, y, z, droplet_radii):
@@ -453,9 +531,11 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
         unsupported.append(
             f"noise_form={cfg.noise_form!r} (active Langevin noise is Tier 3)"
         )
-    if cfg.mass_scenario != "fixed":
+    if cfg.mass_scenario not in ("fixed", "anchored_discrete"):
         unsupported.append(
-            f"mass_scenario={cfg.mass_scenario!r} (mass dynamics is Tier 1)"
+            f"mass_scenario={cfg.mass_scenario!r} (drag branch supports 'fixed' and "
+            "the Tier-1a 'anchored_discrete'; 'biphasic' is the Tier-2 generative "
+            "mechanism, not yet wired)"
         )
     if cfg.drag_form not in REALIZED_FORMS:
         unsupported.append(
@@ -479,9 +559,14 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
             "realised drag_form (METHOD_B §10 form phase)."
         )
 
-    # Realized-mass trip-wire: the integration mass must equal the drag law's
-    # extraction mass m_eff within the §6.5 mass-insensitivity band. Per-atom
-    # (max), since the override fills uniformly.
+    # Realized-mass trip-wire: under `fixed`, the integration mass must equal the
+    # drag law's extraction mass m_eff within the §6.5 mass-insensitivity band.
+    # Per-atom (max), since the override fills uniformly. Skipped for
+    # `anchored_discrete`: its mass legitimately runs n=21 -> 14 (210.955 ->
+    # 182.936 amu, off m_eff by more than the band by construction), defended by
+    # the §6.6 mid-window argument rather than the m_eff band.
+    if cfg.mass_scenario != "fixed":
+        return
     max_mass_gap_amu = float(np.max(np.abs(initial_mass_kg / U - cfg.m_eff_amu)))
     if max_mass_gap_amu > _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU:
         raise NotImplementedError(

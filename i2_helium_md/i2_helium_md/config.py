@@ -46,7 +46,8 @@ CollisionMode = Literal[1, 2, 3]
 # ---------------------------------------------------------------------------
 DragForm = Literal["linear_cubic", "linear_quadratic", "threshold", "power_law"]
 DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
-MassScenario = Literal["fixed", "scenario_A_accretion", "scenario_B_stripping", "biphasic"]
+MassScenario = Literal["fixed", "biphasic", "anchored_discrete"]
+AnchorMode = Literal["time"]   # Tier-1a schedule anchor; radial cross-check deferred (plan §6)
 NoiseForm = Literal["none", "multiplicative_local_fdt", "empirical_residual"]
 NoiseCalibration = Literal["hard_sphere_variance", "tddft_residual", "strict_fdt_bath"]
 NoiseGeometry = Literal["longitudinal", "isotropic", "anisotropic"]
@@ -62,10 +63,12 @@ ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
 _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU = 8.0
 
 # The non-``fixed`` mass scenarios (those requiring time-resolved coefficients).
+# A/B retired 2026-06-23/24 (superseded by `biphasic`); `anchored_discrete` is the
+# Tier-1a anchored kinematic scenario (runs against the constant-m_eff coefficients
+# under the §6.6 mid-window defence, i.e. allow_inconsistent_mass_pairing=True).
 _EVOLVING_MASS_SCENARIOS = (
-    "scenario_A_accretion",
-    "scenario_B_stripping",
     "biphasic",
+    "anchored_discrete",
 )
 
 # Recognised drag-form members (reuses the drag.py tags -- no duplicate string
@@ -194,6 +197,14 @@ class SimConfig:
     allow_inconsistent_mass_pairing: bool = False        # refuse -> warn downgrade
     allow_unvalidated_binding_pairing: bool = False      # §6.5.1 refuse -> warn downgrade
     drag_low_v_floor: float = 0.0         # A/ps; inert for linear_cubic (power_law n<0 only)
+
+    # -- Tier-1a anchored kinematic validation (Slice I*) --
+    # Read only when mass_scenario == "anchored_discrete" (the driver builds the
+    # He-shell schedule from t_star_ps); inert under `fixed`. The schedule sheds
+    # one He per event 21 -> 14 with a momentum-conserving cold-shed reset.
+    t_star_ps: float = 5.0                # ps; schedule onset (n=21 held t<=t*; sweep {0.5,5,9})
+    anchor_mode: AnchorMode = "time"      # time-anchored (radial cross-check deferred, plan §6)
+    coulomb_available_eV: float = 0.80    # eV; provenance stamp (d=9A); NO hard refuse (plan §8)
 
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3

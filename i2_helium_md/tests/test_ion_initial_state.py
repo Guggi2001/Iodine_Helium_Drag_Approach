@@ -156,14 +156,35 @@ class TestDragFixedMassOverride:
         np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
 
     def test_no_override_for_non_fixed_drag_scenario(self, small_neutral_run):
+        # `biphasic` is non-fixed and has no initial-mass override, so it inherits
+        # the neutral mass. (`anchored_discrete` DOES override -> tested separately.)
         cfg, neutral = small_neutral_run
         drag_cfg = replace(
             self._drag_cfg(cfg),
-            mass_scenario="scenario_A_accretion",
+            mass_scenario="biphasic",
             allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
         )
         ion = build_initial_ion_state(drag_cfg, neutral, num_steps_ion=10)
         np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
+
+    def test_anchored_discrete_starts_at_n21_mass(self, small_neutral_run):
+        # Tier-1a anchored_discrete overrides the initial mass to the n=21 complex
+        # mass (210.955 amu), NOT m_eff and NOT the inherited neutral mass.
+        from i2_helium_md.physics.shell_schedule import (
+            ANCHOR_N_START,
+            complex_mass_amu,
+        )
+
+        cfg, neutral = small_neutral_run
+        drag_cfg = replace(
+            self._drag_cfg(cfg),
+            mass_scenario="anchored_discrete",
+            t_star_ps=5.0,
+            allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
+        )
+        ion = build_initial_ion_state(drag_cfg, neutral, num_steps_ion=10)
+        expected_kg = complex_mass_amu(ANCHOR_N_START) * U
+        np.testing.assert_allclose(ion.mass_kg, expected_kg)
 
 
 # ===========================================================================

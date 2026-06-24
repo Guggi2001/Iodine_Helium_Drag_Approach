@@ -170,8 +170,10 @@ class TestModeWrapper:
         assert a.dE_mass_transfer == b.dE_mass_transfer
 
     def test_unknown_mode_raises(self):
+        # `biphasic` is a real SimConfig mass scenario but NOT a valid ShedMode
+        # (apply_shed only accepts 'fixed' / 'anchored_discrete').
         with pytest.raises(ValueError, match="mode"):
-            apply_shed(V_MINUS, M_EFF_AMU, mode="scenario_A_accretion")
+            apply_shed(V_MINUS, M_EFF_AMU, mode="biphasic")
 
 
 # ---------------------------------------------------------------------------

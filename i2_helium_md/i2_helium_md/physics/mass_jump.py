@@ -101,6 +101,20 @@ def kick_factor(m_minus_amu: float, m_he_amu: float = MASS_HE_AMU) -> float:
     return m_minus_amu / (m_minus_amu - m_he_amu)
 
 
+def _reduced_mass_defect_coeff(
+    m_minus_amu: float, m_plus_amu: float, m_he_amu: float
+) -> float:
+    """Reduced-mass energy-defect coefficient ``-0.5*(m*m_He)/(m - m_He)`` [amu].
+
+    The single source of the exact reduced-mass form (NOT the heavy-ion
+    ``0.5*m_He`` approximation). Multiplying by ``|v-|^2`` gives the (negative)
+    ledger increment ``dE_mass_transfer``. Shared by the scalar :func:`cold_shed`
+    and the per-atom :func:`cold_shed_velocity_components` so the formula lives
+    in exactly one place (CLAUDE.md rule 1).
+    """
+    return -0.5 * (m_minus_amu * m_he_amu) / m_plus_amu
+
+
 def cold_shed(
     v_minus,
     m_minus_amu: float,
@@ -146,9 +160,63 @@ def cold_shed(
     speed_sq = float(v @ v) if v.ndim else float(v) ** 2
     # Exact KE rise of the reset (reduced-mass form, NOT heavy-ion 0.5*m_He*v^2);
     # booked negative so the four-term ledger closes by construction.
-    dE_mass_transfer = -0.5 * (m_minus_amu * m_he_amu) / m_plus * speed_sq
+    dE_mass_transfer = _reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
 
     return ShedResult(v_plus=v_plus, m_plus_amu=m_plus, dE_mass_transfer=dE_mass_transfer)
+
+
+def cold_shed_velocity_components(
+    vx: np.ndarray,
+    vy: np.ndarray,
+    vz: np.ndarray,
+    m_minus_amu: float,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray]:
+    """Per-atom vectorized cold shed over ``(2N,)`` velocity component arrays.
+
+    The driver-facing form of :func:`cold_shed`: the same momentum-conserving
+    reset applied independently to every atom's velocity, with a **uniform**
+    pre-shed complex mass ``m_minus_amu`` (the anchored Tier-1a schedule sheds
+    one He from every ion at the same instant, so the kick factor and ``m+`` are
+    scalar across atoms; only the per-atom ``|v_i|^2`` -- and hence the defect --
+    differs). Reuses :func:`kick_factor` and :func:`_reduced_mass_defect_coeff`,
+    so the physics is identical to the scalar :func:`cold_shed` (the single-atom
+    oracle in the tests); this routine only vectorizes its application.
+
+    Parameters
+    ----------
+    vx, vy, vz : np.ndarray, shape (2N,)
+        Pre-shed velocity components [A/ps].
+    m_minus_amu : float
+        Uniform pre-shed complex mass [amu]; must be finite and ``> m_he_amu``.
+    m_he_amu : float, optional
+        Shed He mass [amu] (default :data:`MASS_HE_AMU`).
+
+    Returns
+    -------
+    (vx_plus, vy_plus, vz_plus, m_plus_amu, dE_mass_transfer) : tuple
+        Kicked components (each ``(2N,)``), the scalar post-shed mass
+        ``m+ = m - m_He`` [amu], and the per-atom ledger increment ``(2N,)``
+        ``-0.5*(m*m_He)/(m - m_He)*|v_i|^2`` [amu*A^2/ps^2], ``<= 0``.
+
+    Raises
+    ------
+    ValueError
+        If the masses violate ``m_he_amu > 0 < (m_minus_amu - m_he_amu)``.
+    """
+    _check_masses(m_minus_amu, m_he_amu)
+    m_plus = m_minus_amu - m_he_amu
+    kick = m_minus_amu / m_plus
+    vxf = np.asarray(vx, dtype=float)
+    vyf = np.asarray(vy, dtype=float)
+    vzf = np.asarray(vz, dtype=float)
+    vx_plus = kick * vxf
+    vy_plus = kick * vyf
+    vz_plus = kick * vzf
+    speed_sq = vxf ** 2 + vyf ** 2 + vzf ** 2
+    dE_mass_transfer = _reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
+    return vx_plus, vy_plus, vz_plus, m_plus, dE_mass_transfer
 
 
 def apply_shed(

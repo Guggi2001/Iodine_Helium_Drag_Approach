@@ -145,9 +145,11 @@ def test_scope_guard_rejects_active_noise(drag_cfg, neutral):
 
 
 def test_scope_guard_rejects_mass_scenario(drag_cfg, neutral):
+    # `biphasic` (the Tier-2 generative mechanism) is still refused by the drag
+    # scope guard; `anchored_discrete` is now admitted (Tier-1a, Slice I*).
     bad = replace(
         drag_cfg,
-        mass_scenario="scenario_A_accretion",
+        mass_scenario="biphasic",
         allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
     )
     with pytest.raises(NotImplementedError, match="mass_scenario"):
@@ -166,6 +168,67 @@ def test_scope_guard_rejects_wrong_realized_mass(drag_cfg):
     mass_iodine_kg = np.full(4, 126.9 * U)  # bare I+, not m_eff
     with pytest.raises(NotImplementedError, match="m_eff"):
         _check_drag_scope(drag_cfg, mass_iodine_kg)
+
+
+# ===========================================================================
+# Tier-1a Slice I* -- variable-mass (anchored_discrete) run-level composition
+# ===========================================================================
+def test_fixed_run_independent_of_t_star(drag_cfg, neutral):
+    """Regression guard: under `fixed` the schedule is never built, so t_star_ps
+    is inert and the trajectory is byte-for-byte the Tier-0 fixed-mass run."""
+    base = run_ion_propagation(drag_cfg, neutral)
+    shifted = run_ion_propagation(replace(drag_cfg, t_star_ps=9.0), neutral)
+    for name in ("velocities_x", "velocities_y", "velocities_z",
+                 "positions_x", "E_dissip_eV", "mass_history_kg"):
+        np.testing.assert_array_equal(
+            getattr(base, name), getattr(shifted, name), err_msg=name
+        )
+
+
+def _anchored_cfg():
+    """A long-enough anchored_discrete drag run to capture all 7 sheds."""
+    return single_pulse_N2000_drag(
+        num_molecules=2, ion_simulation_time=14.5, dt_ion=0.01, seed=0,
+        mass_scenario="anchored_discrete",
+        t_star_ps=0.5,
+        allow_inconsistent_mass_pairing=True,  # §6.6 mid-window defence (R6)
+    )
+
+
+def test_anchored_discrete_runs_and_sheds_seven_he():
+    """The anchored_discrete run completes, starts at the n=21 mass, and sheds one
+    He at each of the 7 events down to n=14."""
+    from i2_helium_md.physics.shell_schedule import complex_mass_amu
+
+    neutral = _synthetic_neutral(num_molecules=2, mass_amu=210.9546)
+    ck = run_ion_propagation(_anchored_cfg(), neutral)
+
+    assert np.all(np.isfinite(ck.velocities_x))
+    m_amu = ck.mass_history_kg[0, :] / U
+    # starts at n=21, ends at n=14, monotone non-increasing, 8 distinct levels
+    assert m_amu[0] == pytest.approx(complex_mass_amu(21))
+    assert m_amu[-1] == pytest.approx(complex_mass_amu(14))
+    assert np.all(np.diff(m_amu) <= 1e-9)
+    levels = np.unique(np.round(m_amu, 4))
+    assert levels.size == 8  # n = 21, 20, ..., 14
+
+
+def test_anchored_discrete_four_term_ledger_closes():
+    """With the reduced-mass defect booked (into the existing defect field), the
+    four-term sum E_kin + E_pot + E_dissip + E_mass_transfer is conserved -- the
+    Slice-M reset is the exact form, not a relabel (closure is a wiring gate)."""
+    neutral = _synthetic_neutral(num_molecules=2, mass_amu=210.9546)
+    ck = run_ion_propagation(_anchored_cfg(), neutral)
+
+    def total4(col):
+        return (ck.E_kin_eV[:, col] + ck.E_pot_eV[:, col]
+                + ck.E_dissip_eV[:, col] + ck.E_mass_attach_defect_eV[:, col]).sum()
+
+    E0, E1 = total4(0), total4(-1)
+    rel = abs(E1 - E0) / abs(E0)
+    assert rel < 5e-2, f"four-term drift {rel * 100:.3f}% exceeds tolerance"
+    # the defect channel actually carried energy (sheds happened, not a no-op)
+    assert ck.E_mass_attach_defect_eV[:, -1].sum() < 0.0
 
 
 def test_scope_guard_accepts_m_eff_mass(drag_cfg):
