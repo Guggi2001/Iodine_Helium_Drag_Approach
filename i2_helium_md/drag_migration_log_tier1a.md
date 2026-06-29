@@ -521,3 +521,42 @@ energy-gated evaporation tier wires `E_int` and the five-term invariant.
   `tests/test_mass_jump.py tests/test_ion_variable_mass.py tests/test_ion_drag_smoke.py tests/test_tier1a_scripts.py`
   passed: **76 passed, 1 expected warning**.
 - Full suite after Slice C: **855 passed, 1 expected warning**.
+
+---
+
+## Tier-1a Task 8 — delivery record (2026-06-29): **onset-violent stripping stress diagnostics**
+
+Task 8 adds a separate Tier-1a stress/sensitivity family for abrupt onset stripping.
+It does **not** replace or reinterpret the physical Tier-1a
+anchored-continuous RMSE table delivered by Slices R/C.
+
+### Delivered
+
+- **Separate schedule family** — `anchor_mode="onset_strip"` routes to an
+  onset-strip schedule with `t_strip=0.5 ps` and stress endpoints
+  `anchor_n_final in {14,2,1,0}`.
+- **Continuous-velocity batch shedding** — velocity is unchanged at the onset event;
+  batch mass transfer is positive; no cold-shed boost is introduced.
+- **Stress generator** — `scripts/gen_tier1a_stress_runs.py` creates stress configs
+  and run tags such as `tier1a_stress_onset_strip_n0_t0.5`.
+- **Stress scorer/plotter** —
+  `scripts/post_processing/tier1a_stress_table.py` writes a stress table separate
+  from the physical Tier-1a table, validates cfg/ion metadata fail-closed, keeps the
+  fixed null only for comparison plot/export, and supports the selected-`n_final`
+  `|v2|` diagnostic plot.
+- **Run-level smoke** — coverage verifies the 21→0 two-level staircase, positive
+  mass transfer, and finite velocities.
+
+### Verification
+
+- Focused verification after the final fix:
+  `pytest tests/test_tier1a_scripts.py tests/test_ion_drag_smoke.py -q` →
+  **64 passed, 17 warnings**.
+- `py_compile` for the stress generator and stress scorer passed.
+- Full suite is still pending Task 9; do not claim it for this delivery.
+
+### Interpretation status
+
+Existing production stress run artifacts still need to be generated before any
+stress table or plot should be interpreted. Task 8 delivered the stress machinery
+and focused verification only; it did not run production generation.

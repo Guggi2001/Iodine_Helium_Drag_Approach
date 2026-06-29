@@ -188,6 +188,9 @@ momentum bookkeeping. Removed; recorded so it is not re-litigated.
 - **Slice C** — continuous-velocity Tier-1a shedding; supersedes cold-shed as the
   production `anchored_discrete` driver path and retags anchored runs to avoid stale
   cold-shed artifacts.
+- **Slice V** — onset-violent stripping stress diagnostics; separate
+  `onset_strip` schedule family for sensitivity/stress runs, not a replacement for
+  the physical anchored-continuous Tier-1a RMSE table.
 
 **Testing philosophy (every new slice):**
 
@@ -504,6 +507,45 @@ suite after this slice: 855 passed, 1 expected warning.
 
 ---
 
+### Slice V — Onset-violent stripping stress diagnostics *(diagnostic; completed)*
+
+> **IMPLEMENTED (2026-06-29).** A separate `onset_strip` diagnostic schedule family
+> now stress-tests abrupt early stripping at `t_strip=0.5 ps` with endpoint
+> `n_final in {14,2,1,0}`. This does **not** supersede the physical Tier-1a
+> anchored-continuous comparison or its RMSE table; it is a stress/sensitivity
+> family for probing onset-violent stripping behavior.
+
+**Purpose.** Exercise extreme stripping endpoints under the existing drag/Coulomb
+driver and ledger checks, while keeping the physical Tier-1a TDDFT-anchored schedule
+and continuous-velocity interpretation separate.
+
+**Implemented behavior.**
+
+- Config accepts `anchor_mode="onset_strip"` plus `anchor_n_final`; the driver routes
+  onset-strip schedules independently from the TDDFT-anchored `time` schedule.
+- The onset event keeps velocity continuous, so there is no cold-shed boost at
+  `t_strip`; batch mass transfer is positive and accounts for the co-moving removed
+  He atoms.
+- `scripts/gen_tier1a_stress_runs.py` generates stress run configs/tags such as
+  `tier1a_stress_onset_strip_n0_t0.5`.
+- `scripts/post_processing/tier1a_stress_table.py` scores stress rows only, validates
+  cfg/ion metadata fail-closed, keeps the fixed null only for comparison
+  plot/export, and provides the selected-`n_final` `|v2|` diagnostic plot.
+
+**Tests.**
+
+- Run-level smoke verifies the 21→0 two-level staircase, positive mass transfer, and
+  finite velocities.
+- Stress script coverage verifies cfg validation, metadata validation, stress-only
+  table rows, fixed-null comparison handling, and selected-`n_final` plotting.
+
+**Acceptance.** Focused verification after the final fix:
+`pytest tests/test_tier1a_scripts.py tests/test_ion_drag_smoke.py -q` passed
+(`64 passed, 17 warnings`). `py_compile` for the stress generator and scorer passed.
+The full suite remains pending Task 9, so no full-suite claim is made here.
+
+---
+
 ## 5. Plug-in components (existing — no build)
 
 - **Drag force law (Tier-0).** $\gamma(v)=g\,b\,v^2$, $a_\text{drag}=-\gamma v/m$
@@ -515,6 +557,9 @@ suite after this slice: 855 passed, 1 expected warning.
   same-smoothed I2 `|v2|` metric, raw `R` metric, ledger diagnostic, table output,
   mean-series export, and selected-`t*` trajectory visualization. The output remains
   **reported, not adjudicated** by code; Tier-0's absolute floor does not transfer.
+- **Tier-1a stress diagnostics.** Slice V owns the separate onset-strip stress
+  generator/scorer surface. Its table is intentionally separate from the physical
+  Tier-1a anchored-continuous RMSE table.
 
 > **Note.** The BAOAB O-step (SQ1) *is* a plug-in above. What Slice I⋆ adds is the
 > jump branch (SQ2), the post-jump mass (SQ3), and the `m(t)` plumbing into the
@@ -578,6 +623,10 @@ the numeric $R(t)$; build only after the time-anchored null is green).
   any preset/test referencing A/B. Retirement recorded in `drag_migration_log_tier1a.md`
   (2026-06-23/24) and DESIGN §2.8 (updated 2026-06-24: A/B recorded as retired).
 - `anchor_mode` = `time` (NEW field; radial depth-anchored cross-check deferred, §6).
+- Diagnostic `anchor_mode="onset_strip"` is separate from the physical
+  TDDFT-anchored `time` mode. It uses `anchor_n_final` and the fixed
+  `t_strip=0.5 ps` onset event for stress endpoints `n_final∈{14,2,1,0}`; it is not
+  used to populate the physical Tier-1a RMSE table.
 - `coulomb_available_eV` = **0.80** (validation, $d{=}9$ Å), NEW field stamped to the
   scenario tag **for provenance only**. **No hard refuse** — the value is recorded,
   not enforced as a load-time gate (DESIGN §6.5/§6.5.1 context).
@@ -650,6 +699,8 @@ the numeric $R(t)$; build only after the time-anchored null is green).
   and the cold-shed velocity reset are diagnostic-bound only. The physical
   anchored-mass Tier-1a comparison is the continuous-velocity mass update; cold-shed
   waits for the full `E_int` / energy-gated evaporation tier.
+- **Stress diagnostics:** onset-strip runs are reported in their own stress table
+  and plots. They are sensitivity checks, not physical Tier-1a verdict rows.
 
 **Out-of-scope guard:** any code path that reads a $D_0$ rung, $\kappa$, $\nu$, $s$,
 the electronic picture, an $E_\text{int}$ value, or a continuous mass-loss term
@@ -702,3 +753,7 @@ tie-break-independent).
   speak to is the continuous-velocity anchored-mass response, while the cold-shed
   diagnostic bound remains separate and the biphasic generative mechanism remains
   unfalsified until Tier 2.
+- **Onset-strip stress scope.** `onset_strip` is an intentionally separate diagnostic
+  family: stress rows stay out of the physical anchored-continuous RMSE table, the
+  fixed null appears only as a comparison baseline for plots/exports, and production
+  stress artifacts must be generated before interpreting any stress result.
