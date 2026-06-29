@@ -233,7 +233,7 @@ class TestBatchContinuousVelocityShed:
         ke_after = 0.5 * res.m_plus_amu * speed_sq + 0.5 * removed_mass * speed_sq
         assert ke_after == pytest.approx(ke_before, rel=1e-12)
 
-    @pytest.mark.parametrize("bad_n_removed", [0, -1, 22])
+    @pytest.mark.parametrize("bad_n_removed", [0, -1, 100])
     def test_rejects_invalid_batch_removed_count(self, bad_n_removed):
         with pytest.raises(ValueError, match="n_removed"):
             continuous_velocity_shed(V_MINUS, complex_mass_amu(21), n_removed=bad_n_removed)
@@ -276,12 +276,15 @@ Expected: fail with `unexpected keyword argument 'n_removed'`.
 
 - [ ] **Step 3: Implement batch support in scalar and vector helpers**
 
-In `i2_helium_md/physics/mass_jump.py`, add:
+In `i2_helium_md/physics/mass_jump.py`, add the mass-agnostic count validator below.
+It must not infer shell count from iodine mass; shell-count legality is owned by the
+schedule layer. This helper validates only the count type, positivity, and positive
+post-shed mass.
 
 ```python
 def _check_removed_count(n_removed: int, m_minus_amu: float, m_he_amu: float) -> int:
     """Return validated integer removed-He count."""
-    if int(n_removed) != n_removed:
+    if isinstance(n_removed, (bool, np.bool_)) or not isinstance(n_removed, (int, np.integer)):
         raise ValueError(f"n_removed must be an integer; got {n_removed!r}.")
     n = int(n_removed)
     if n <= 0:
