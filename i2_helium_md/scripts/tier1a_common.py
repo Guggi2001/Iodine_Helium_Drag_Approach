@@ -9,6 +9,8 @@ regenerated physical Tier-1a runs are not confused with stale cold-shed runs.
 from __future__ import annotations
 
 from dataclasses import replace
+import math
+from numbers import Integral
 from typing import Mapping, Optional
 
 from i2_helium_md.config import SimConfig
@@ -21,6 +23,34 @@ TIER1A_FIXED_TAG = "tier1a_fixed"
 TIER1A_T_STAR_VALUES_PS: tuple[float, ...] = (0.5, 5.0, 9.0)
 TIER1A_STRESS_T_STRIP_PS = 0.5
 TIER1A_STRESS_N_FINAL_VALUES: tuple[int, ...] = (14, 2, 1, 0)
+
+
+def _validate_tier1a_stress_inputs(
+    n_final: int,
+    t_strip_ps: float,
+) -> tuple[int, float]:
+    if isinstance(n_final, bool) or not isinstance(n_final, Integral):
+        raise ValueError(f"n_final must be an integer; got {n_final!r}.")
+    if int(n_final) not in TIER1A_STRESS_N_FINAL_VALUES:
+        raise ValueError(
+            "n_final must be one of "
+            f"{TIER1A_STRESS_N_FINAL_VALUES}; got {n_final!r}."
+        )
+
+    try:
+        t_strip_ps_value = float(t_strip_ps)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"t_strip_ps must be finite; got {t_strip_ps!r}.") from exc
+    if (
+        not math.isfinite(t_strip_ps_value)
+        or t_strip_ps_value != TIER1A_STRESS_T_STRIP_PS
+    ):
+        raise ValueError(
+            "t_strip_ps must be the Tier-1a stress catalog value "
+            f"{TIER1A_STRESS_T_STRIP_PS}; got {t_strip_ps!r}."
+        )
+
+    return int(n_final), t_strip_ps_value
 
 
 def build_anchored_cfg(
@@ -85,6 +115,10 @@ def build_onset_strip_cfg(
     e_bind_override: Optional[float] = None,
 ) -> SimConfig:
     """Build a diagnostic Tier-1a onset-strip stress config."""
+    n_final_value, t_strip_ps_value = _validate_tier1a_stress_inputs(
+        n_final,
+        t_strip_ps,
+    )
     fixed_cfg = build_drag_cfg(
         case,
         variant,
@@ -98,9 +132,9 @@ def build_onset_strip_cfg(
     cfg = replace(
         fixed_cfg,
         mass_scenario="anchored_discrete",
-        t_star_ps=float(t_strip_ps),
+        t_star_ps=t_strip_ps_value,
         anchor_mode="onset_strip",
-        anchor_n_final=int(n_final),
+        anchor_n_final=n_final_value,
         coulomb_available_eV=0.80,
         allow_inconsistent_mass_pairing=True,
         mass_initial_amu=complex_mass_amu(21),
@@ -143,7 +177,11 @@ def tier1a_run_dir_name(
 
 def tier1a_stress_run_tag(*, n_final: int, t_strip_ps: float) -> str:
     """Return the run-tag suffix for onset-strip stress runs."""
-    return f"tier1a_stress_onset_strip_n{int(n_final)}_t{float(t_strip_ps):.1f}"
+    n_final_value, t_strip_ps_value = _validate_tier1a_stress_inputs(
+        n_final,
+        t_strip_ps,
+    )
+    return f"tier1a_stress_onset_strip_n{n_final_value}_t{t_strip_ps_value:.1f}"
 
 
 def tier1a_stress_run_dir_name(

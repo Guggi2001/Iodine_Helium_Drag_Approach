@@ -162,6 +162,40 @@ def test_build_onset_strip_cfg_sets_stress_fields():
     assert cfg.allow_inconsistent_mass_pairing is True
 
 
+@pytest.mark.parametrize("n_final", [True, "2", 2.9, -1, 21])
+def test_build_onset_strip_cfg_rejects_invalid_n_final(n_final):
+    from scripts.tier1a_common import build_onset_strip_cfg
+
+    with pytest.raises(ValueError, match="n_final"):
+        build_onset_strip_cfg(
+            "9A",
+            "shared_pure_cubic",
+            n_final=n_final,
+            t_strip_ps=0.5,
+            num_molecules=2,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+
+
+@pytest.mark.parametrize("t_strip_ps", [-1, math.nan, math.inf, 0.51])
+def test_build_onset_strip_cfg_rejects_invalid_t_strip_ps(t_strip_ps):
+    from scripts.tier1a_common import build_onset_strip_cfg
+
+    with pytest.raises(ValueError, match="t_strip_ps"):
+        build_onset_strip_cfg(
+            "9A",
+            "shared_pure_cubic",
+            n_final=2,
+            t_strip_ps=t_strip_ps,
+            num_molecules=2,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+
+
 def test_tier1a_run_names_share_tier0_convention():
     from scripts.tier1a_common import tier1a_run_dir_name, tier1a_run_tag
 
@@ -184,6 +218,22 @@ def test_tier1a_stress_run_names_are_distinct():
         tier1a_stress_run_dir_name("9A", "shared_pure_cubic", 50, n_final=0, t_strip_ps=0.5)
         == "9A_drag_shared_pure_cubic_N50_tier1a_stress_onset_strip_n0_t0.5"
     )
+
+
+@pytest.mark.parametrize("n_final", [True, "2", 2.9, -1, 21])
+def test_tier1a_stress_run_tag_rejects_invalid_n_final(n_final):
+    from scripts.tier1a_common import tier1a_stress_run_tag
+
+    with pytest.raises(ValueError, match="n_final"):
+        tier1a_stress_run_tag(n_final=n_final, t_strip_ps=0.5)
+
+
+@pytest.mark.parametrize("t_strip_ps", [-1, math.nan, math.inf, 0.51])
+def test_tier1a_stress_run_tag_rejects_invalid_t_strip_ps(t_strip_ps):
+    from scripts.tier1a_common import tier1a_stress_run_tag
+
+    with pytest.raises(ValueError, match="t_strip_ps"):
+        tier1a_stress_run_tag(n_final=2, t_strip_ps=t_strip_ps)
 
 
 def test_score_tier1a_run_emits_rich_table_row(tmp_path):
