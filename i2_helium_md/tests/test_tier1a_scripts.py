@@ -374,6 +374,74 @@ def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
     assert row["n_removed"] == 7
 
 
+def test_collect_tier1a_stress_records_rejects_cfg_metadata_mismatch(tmp_path, monkeypatch):
+    from scripts.post_processing import tier1a_stress_table as script
+    from scripts.tier1a_common import (
+        build_onset_strip_cfg,
+        tier1a_run_dir_name,
+        tier1a_stress_run_dir_name,
+    )
+    from scripts.tier0_common import build_drag_cfg
+
+    case = "9A"
+    variant = "shared_pure_cubic"
+    n = 1
+    run_root = tmp_path / "data" / "runs"
+    ion = _tiny_ion_checkpoint()
+
+    fixed = RunDirectory(
+        run_root / tier1a_run_dir_name(case, variant, n, "fixed", None)
+    )
+    fixed.save_ion(ion)
+    fixed.save_cfg(
+        build_drag_cfg(
+            case,
+            variant,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    )
+
+    mismatched = RunDirectory(
+        run_root
+        / tier1a_stress_run_dir_name(case, variant, n, n_final=0, t_strip_ps=0.5)
+    )
+    mismatched.save_ion(ion)
+    cfg = build_onset_strip_cfg(
+        case,
+        variant,
+        n_final=2,
+        t_strip_ps=0.5,
+        num_molecules=1,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=123,
+    )
+    mismatched.save_cfg(cfg)
+
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="tier1a_stress_onset_strip_n0_t0.5.*anchor_n_final",
+    ):
+        script.collect_tier1a_stress_records(
+            project_root=tmp_path,
+            case=case,
+            variant=variant,
+            n=n,
+            n_final_values=(0,),
+            t_strip_ps=0.5,
+            window_start_ps=1.0,
+        )
+
+
 def test_build_tier1a_trajectory_figure_plots_only_selected_v2_traces():
     import matplotlib
 

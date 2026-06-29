@@ -131,9 +131,53 @@ def _shell_summary(n_shell: np.ndarray) -> tuple[int, int, int]:
         raise ValueError(
             f"n_shell must have shape (2N, T) with T > 0, got {n_shell.shape}"
         )
+    starts = np.rint(n_shell[:, 0]).astype(int)
+    ends = np.rint(n_shell[:, -1]).astype(int)
+    if not np.all(starts == starts[0]):
+        raise ValueError(f"n_shell start values are not uniform: {starts.tolist()}")
+    if not np.all(ends == ends[0]):
+        raise ValueError(f"n_shell end values are not uniform: {ends.tolist()}")
     n_start = int(round(float(n_shell[0, 0])))
     n_end = int(round(float(n_shell[0, -1])))
     return n_start, n_end, max(0, n_start - n_end)
+
+
+def _raise_cfg_mismatch(run_tag: str, field: str, expected: Any, actual: Any) -> None:
+    raise ValueError(
+        f"{run_tag} cfg metadata mismatch: {field} expected {expected!r}, "
+        f"got {actual!r}"
+    )
+
+
+def _validate_fixed_cfg(run_tag: str, cfg: SimConfig | None) -> None:
+    if cfg is None:
+        return
+    if cfg.mass_scenario != "fixed":
+        _raise_cfg_mismatch(run_tag, "mass_scenario", "fixed", cfg.mass_scenario)
+
+
+def _validate_stress_cfg(
+    run_tag: str,
+    cfg: SimConfig | None,
+    *,
+    n_final: int,
+    t_strip_ps: float,
+) -> None:
+    if cfg is None:
+        return
+    if cfg.mass_scenario != "anchored_discrete":
+        _raise_cfg_mismatch(
+            run_tag,
+            "mass_scenario",
+            "anchored_discrete",
+            cfg.mass_scenario,
+        )
+    if cfg.anchor_mode != "onset_strip":
+        _raise_cfg_mismatch(run_tag, "anchor_mode", "onset_strip", cfg.anchor_mode)
+    if cfg.anchor_n_final != int(n_final):
+        _raise_cfg_mismatch(run_tag, "anchor_n_final", int(n_final), cfg.anchor_n_final)
+    if not np.isclose(float(cfg.t_star_ps), float(t_strip_ps)):
+        _raise_cfg_mismatch(run_tag, "t_star_ps", float(t_strip_ps), cfg.t_star_ps)
 
 
 def score_tier1a_stress_run(
@@ -212,6 +256,8 @@ def collect_tier1a_stress_records(
     fixed_run = RunDirectory(
         run_root / tier1a_run_dir_name(case, variant, n, "fixed", None)
     )
+    fixed_cfg = fixed_run.load_cfg() if fixed_run.has_cfg() else None
+    _validate_fixed_cfg(fixed_tag, fixed_cfg)
     records = [
         Tier1aStressRunRecord(
             label=_run_label(None),
@@ -219,7 +265,7 @@ def collect_tier1a_stress_records(
             n_final=None,
             t_strip_ps=None,
             ion=fixed_run.load_ion(),
-            cfg=fixed_run.load_cfg() if fixed_run.has_cfg() else None,
+            cfg=fixed_cfg,
             row={},
         )
     ]
@@ -239,6 +285,14 @@ def collect_tier1a_stress_records(
                 t_strip_ps=float(t_strip_ps),
             )
         )
+        cfg = run.load_cfg() if run.has_cfg() else None
+        _validate_stress_cfg(
+            run_tag,
+            cfg,
+            n_final=int(n_final),
+            t_strip_ps=float(t_strip_ps),
+        )
+        ion = run.load_ion()
         row = score_tier1a_stress_run(
             run,
             case=case,
@@ -257,8 +311,8 @@ def collect_tier1a_stress_records(
                 run_tag=run_tag,
                 n_final=int(n_final),
                 t_strip_ps=float(t_strip_ps),
-                ion=run.load_ion(),
-                cfg=run.load_cfg() if run.has_cfg() else None,
+                ion=ion,
+                cfg=cfg,
                 row=row,
             )
         )
