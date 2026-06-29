@@ -84,6 +84,42 @@ class TestContinuousVelocityShed:
         assert v[0] == V_MINUS[0]
 
 
+class TestBatchContinuousVelocityShed:
+    @pytest.mark.parametrize("n_after", [14, 2, 1, 0])
+    def test_batch_velocity_unchanged_mass_drop_and_energy(self, n_after):
+        m = complex_mass_amu(21)
+        n_removed = 21 - n_after
+        res = continuous_velocity_shed(V_MINUS, m, n_removed=n_removed)
+
+        np.testing.assert_array_equal(res.v_plus, V_MINUS)
+        assert res.m_plus_amu == pytest.approx(complex_mass_amu(n_after), abs=1e-12)
+        speed_sq = float(V_MINUS @ V_MINUS)
+        assert res.dE_mass_transfer == pytest.approx(
+            0.5 * n_removed * MASS_HE_AMU * speed_sq,
+            rel=1e-12,
+        )
+
+    def test_batch_total_momentum_and_ke_with_removed_co_moving_he_conserved(self):
+        m = complex_mass_amu(21)
+        n_removed = 21
+        res = continuous_velocity_shed(V_MINUS, m, n_removed=n_removed)
+        removed_mass = n_removed * MASS_HE_AMU
+
+        momentum_before = m * V_MINUS
+        momentum_after = res.m_plus_amu * res.v_plus + removed_mass * V_MINUS
+        np.testing.assert_allclose(momentum_after, momentum_before, rtol=0.0, atol=1e-12)
+
+        speed_sq = float(V_MINUS @ V_MINUS)
+        ke_before = 0.5 * m * speed_sq
+        ke_after = 0.5 * res.m_plus_amu * speed_sq + 0.5 * removed_mass * speed_sq
+        assert ke_after == pytest.approx(ke_before, rel=1e-12)
+
+    @pytest.mark.parametrize("bad_n_removed", [0, -1, 22])
+    def test_rejects_invalid_batch_removed_count(self, bad_n_removed):
+        with pytest.raises(ValueError, match="n_removed"):
+            continuous_velocity_shed(V_MINUS, complex_mass_amu(21), n_removed=bad_n_removed)
+
+
 # ---------------------------------------------------------------------------
 # Cold-shed diagnostic bound
 # ---------------------------------------------------------------------------

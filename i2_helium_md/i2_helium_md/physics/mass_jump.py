@@ -47,7 +47,7 @@ from typing import Literal
 
 import numpy as np
 
-from .constants import MASS_HE_AMU
+from .constants import MASS_HE_AMU, MASS_I_ION_AMU
 
 # The two Tier-1a A/B run modes, passed explicitly (NOT SimConfig.mass_scenario;
 # the config-surface enum change is deferred to the integrator-wiring slice).
@@ -157,21 +157,23 @@ def continuous_velocity_shed(
     m_minus_amu: float,
     *,
     m_he_amu: float = MASS_HE_AMU,
+    n_removed: int = 1,
 ) -> ShedResult:
     """Apply one production Tier-1a co-moving He shed to a velocity.
 
-    The velocity is copied unchanged, the complex mass drops by one He, and the
-    mass-transfer channel receives the positive kinetic energy carried away by
-    the removed co-moving He.
+    The velocity is copied unchanged, the complex mass drops by ``n_removed`` He,
+    and the mass-transfer channel receives the positive kinetic energy carried
+    away by the removed co-moving He.
     """
     _check_masses(m_minus_amu, m_he_amu)
+    n = _check_removed_count(n_removed, m_minus_amu, m_he_amu)
     v = np.asarray(v_minus, dtype=float)
     if not np.all(np.isfinite(v)):
         raise ValueError(f"v_minus must be finite; got {v_minus!r}.")
 
-    m_plus = m_minus_amu - m_he_amu
+    m_plus = m_minus_amu - n * m_he_amu
     speed_sq = float(np.sum(v ** 2))
-    dE_mass_transfer = 0.5 * m_he_amu * speed_sq
+    dE_mass_transfer = 0.5 * n * m_he_amu * speed_sq
     return ShedResult(
         v_plus=v.copy(),
         m_plus_amu=m_plus,
@@ -240,23 +242,25 @@ def continuous_velocity_shed_components(
     m_minus_amu: float,
     *,
     m_he_amu: float = MASS_HE_AMU,
+    n_removed: int = 1,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray]:
     """Per-atom vectorized production shed over velocity component arrays.
 
     Velocity components are copied unchanged. The scalar post-shed mass is
-    ``m - m_He`` and the per-atom ledger increment is
-    ``+0.5*m_He*|v_i|^2`` [amu*A^2/ps^2].
+    ``m - n_removed*m_He`` and the per-atom ledger increment is
+    ``+0.5*n_removed*m_He*|v_i|^2`` [amu*A^2/ps^2].
     """
     _check_masses(m_minus_amu, m_he_amu)
+    n = _check_removed_count(n_removed, m_minus_amu, m_he_amu)
     vxf = np.asarray(vx, dtype=float)
     vyf = np.asarray(vy, dtype=float)
     vzf = np.asarray(vz, dtype=float)
     if not (np.all(np.isfinite(vxf)) and np.all(np.isfinite(vyf)) and np.all(np.isfinite(vzf))):
         raise ValueError("velocity components must be finite.")
 
-    m_plus = m_minus_amu - m_he_amu
+    m_plus = m_minus_amu - n * m_he_amu
     speed_sq = vxf ** 2 + vyf ** 2 + vzf ** 2
-    dE_mass_transfer = 0.5 * m_he_amu * speed_sq
+    dE_mass_transfer = 0.5 * n * m_he_amu * speed_sq
     return vxf.copy(), vyf.copy(), vzf.copy(), m_plus, dE_mass_transfer
 
 
@@ -266,6 +270,7 @@ def apply_shed(
     *,
     mode: ShedMode,
     m_he_amu: float = MASS_HE_AMU,
+    n_removed: int = 1,
 ) -> ShedResult:
     """Apply a shed under the selected Tier-1a A/B mode.
 
@@ -294,7 +299,12 @@ def apply_shed(
         guards trip.
     """
     if mode == "anchored_discrete":
-        return continuous_velocity_shed(v_minus, m_minus_amu, m_he_amu=m_he_amu)
+        return continuous_velocity_shed(
+            v_minus,
+            m_minus_amu,
+            m_he_amu=m_he_amu,
+            n_removed=n_removed,
+        )
     if mode == "fixed":
         v = np.asarray(v_minus, dtype=float)
         if not np.all(np.isfinite(v)) or not np.isfinite(m_minus_amu):
@@ -323,3 +333,23 @@ def _check_masses(m_minus_amu: float, m_he_amu: float) -> None:
             f"pre-shed mass must exceed the He mass so m+ = m - m_He > 0; got "
             f"m_minus_amu={m_minus_amu!r}, m_he_amu={m_he_amu!r}."
         )
+
+
+def _check_removed_count(n_removed: int, m_minus_amu: float, m_he_amu: float) -> int:
+    """Return validated integer removed-He count."""
+    if int(n_removed) != n_removed:
+        raise ValueError(f"n_removed must be an integer; got {n_removed!r}.")
+    n = int(n_removed)
+    if n <= 0:
+        raise ValueError(f"n_removed must be > 0; got {n_removed!r}.")
+    n_present = int(np.rint((m_minus_amu - MASS_I_ION_AMU) / m_he_amu))
+    if n > n_present:
+        raise ValueError(
+            f"n_removed={n} exceeds available He count {n_present} "
+            f"for m_minus_amu={m_minus_amu!r}."
+        )
+    if not (m_minus_amu - n * m_he_amu > 0.0):
+        raise ValueError(
+            f"n_removed={n} removes too much mass from m_minus_amu={m_minus_amu!r}."
+        )
+    return n

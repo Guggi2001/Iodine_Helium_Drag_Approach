@@ -11,7 +11,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from i2_helium_md.physics.constants import U
+from i2_helium_md.physics.constants import MASS_HE_AMU, U
 from i2_helium_md.physics.mass_jump import (
     cold_shed,
     cold_shed_velocity_components,
@@ -94,6 +94,21 @@ class TestVectorizedContinuousVelocityShed:
         np.testing.assert_array_equal(vyp, vy)
         np.testing.assert_array_equal(vzp, vz)
         assert np.all(dE > 0.0)
+
+    def test_batch_vectorized_energy_uses_removed_count(self):
+        m = complex_mass_amu(21)
+        vx = np.array([2.0])
+        vy = np.array([0.0])
+        vz = np.array([0.0])
+        vxp, vyp, vzp, m_plus, dE = continuous_velocity_shed_components(
+            vx, vy, vz, m, n_removed=21,
+        )
+
+        np.testing.assert_array_equal(vxp, vx)
+        np.testing.assert_array_equal(vyp, vy)
+        np.testing.assert_array_equal(vzp, vz)
+        assert m_plus == pytest.approx(complex_mass_amu(0))
+        assert dE[0] == pytest.approx(0.5 * 21 * MASS_HE_AMU * 4.0)
 
     def test_guard_rejects_mass_below_he(self):
         with pytest.raises(ValueError, match="m_he|pre-shed"):
