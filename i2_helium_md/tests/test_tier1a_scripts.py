@@ -847,14 +847,19 @@ def test_build_tier1a_trajectory_figure_plots_only_selected_v2_traces():
         title="Tier-1a test",
     )
 
-    assert len(fig.axes) == 1
+    assert len(fig.axes) == 2
     velocity_labels = {line.get_label() for line in fig.axes[0].lines}
+    shell_labels = {line.get_label() for line in fig.axes[1].lines}
     assert "CEEMDAN+SG |v2|" in velocity_labels
     assert "HeDFT |v2|" in velocity_labels
     assert "fixed MD mean |v2|" in velocity_labels
     assert "anchored t*=5.0 MD mean |v2|" in velocity_labels
     assert "anchored t*=0.5 MD mean |v2|" not in velocity_labels
     assert all("|v1|" not in label and " R" not in label for label in velocity_labels)
+    assert "fixed He shell n" in shell_labels
+    assert "anchored t*=5.0 He shell n" in shell_labels
+    assert "anchored t*=0.5 He shell n" not in shell_labels
+    assert fig.axes[1].get_ylabel() == "He shell count n"
 
 
 def test_build_tier1a_stress_figure_plots_fixed_plus_selected_case():
@@ -907,10 +912,16 @@ def test_build_tier1a_stress_figure_plots_fixed_plus_selected_case():
         title="Tier-1a stress test",
     )
 
-    labels = {line.get_label() for line in fig.axes[0].lines}
-    assert "fixed MD mean |v2|" in labels
-    assert "onset strip n=0 MD mean |v2|" in labels
-    assert "onset strip n=2 MD mean |v2|" not in labels
+    assert len(fig.axes) == 2
+    velocity_labels = {line.get_label() for line in fig.axes[0].lines}
+    shell_labels = {line.get_label() for line in fig.axes[1].lines}
+    assert "fixed MD mean |v2|" in velocity_labels
+    assert "onset strip n=0 MD mean |v2|" in velocity_labels
+    assert "onset strip n=2 MD mean |v2|" not in velocity_labels
+    assert "fixed He shell n" in shell_labels
+    assert "onset strip n=0 He shell n" in shell_labels
+    assert "onset strip n=2 He shell n" not in shell_labels
+    assert fig.axes[1].get_ylabel() == "He shell count n"
 
 
 def test_export_tier1a_mean_series_writes_one_csv_per_record(tmp_path):

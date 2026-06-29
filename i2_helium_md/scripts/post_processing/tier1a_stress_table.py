@@ -33,7 +33,8 @@ CASE = "9A"
 VARIANT = "shared_pure_cubic"
 N = 50
 WINDOW_START_PS = 2.67
-PLOT_N_FINAL = 0
+N_FINAL = [0,1,2,14]
+PLOT_N_FINAL = N_FINAL[0]
 
 SAVE_CSV_PATH = None  # e.g. PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "tier1a_stress_table.csv"
 EXPORT_MEAN_SERIES_DIR = PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "tier1a_stress"
@@ -489,20 +490,29 @@ def build_stress_trajectory_figure(
 ):
     """Build a Tier-1a stress |v2| comparison for one selected endpoint."""
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
 
     selected = _selected_velocity_records(records, selected_n_final)
-    fig, ax_v = plt.subplots(figsize=(9.5, 4.8), constrained_layout=True)
+    fig, (ax_v, ax_n) = plt.subplots(
+        2,
+        1,
+        figsize=(9.5, 6.2),
+        sharex=True,
+        constrained_layout=True,
+        gridspec_kw={"height_ratios": [3.0, 1.25]},
+    )
     t_start, t_end = window
 
     for record in selected:
         t_md, _, _, v2_md = ensemble_mean_series(record.ion)
-        ax_v.plot(
+        (line,) = ax_v.plot(
             t_md,
             v2_md,
             lw=1.4,
             ls="--",
             label=f"{record.label} MD mean |v2|",
         )
+        _plot_shell_count(ax_n, record.ion, record.label, color=line.get_color())
 
     ax_v.plot(
         smoothed.time_ps,
@@ -521,11 +531,17 @@ def build_stress_trajectory_figure(
         label="HeDFT |v2|",
     )
     ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12, label="scored window")
+    ax_n.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
     ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
-    ax_v.set_xlabel("t / ps")
+    ax_n.set_ylabel("He shell count n")
+    ax_n.set_xlabel("t / ps")
     ax_v.legend(frameon=False, ncol=2)
+    ax_n.legend(frameon=False, ncol=2)
+    ax_n.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax_v.spines["top"].set_visible(False)
     ax_v.spines["right"].set_visible(False)
+    ax_n.spines["top"].set_visible(False)
+    ax_n.spines["right"].set_visible(False)
     fig.suptitle(
         title
         or (
@@ -534,6 +550,28 @@ def build_stress_trajectory_figure(
         )
     )
     return fig
+
+
+def _plot_shell_count(ax, ion: IonCheckpoint, label: str, *, color: str) -> None:
+    """Plot the actual checkpoint He-shell count as a staircase."""
+    n_shell = np.mean(ion.n_shell, axis=0)
+    ax.plot(
+        ion.time_ps,
+        n_shell,
+        lw=1.4,
+        drawstyle="steps-post",
+        color=color,
+        label=f"{label} He shell n",
+    )
+    drop_cols = np.flatnonzero(np.diff(n_shell) < 0) + 1
+    if drop_cols.size:
+        ax.scatter(
+            ion.time_ps[drop_cols],
+            n_shell[drop_cols],
+            s=20,
+            color=color,
+            zorder=3,
+        )
 
 
 def _format_value(value: Any) -> str:
