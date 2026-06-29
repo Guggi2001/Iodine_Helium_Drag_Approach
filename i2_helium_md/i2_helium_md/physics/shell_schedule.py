@@ -135,7 +135,7 @@ class ShellSchedule:
         for ``t > 14``; the two interior segments carry the anchored loss slopes.
         """
         t = np.asarray(t_ps, dtype=float)
-        if len(self.events) == 1 and self.crossing_fraction == 1.0:
+        if _is_onset_strip_schedule(self):
             event = self.events[0]
             n = np.where(t < event.time_ps, float(event.n_before), float(event.n_after))
             return float(n) if np.ndim(t_ps) == 0 else n
@@ -169,7 +169,7 @@ class ShellSchedule:
         itself, and is the quantity downstream slices (mass jump, integrator) consume.
         """
         t = np.asarray(t_ps, dtype=float)
-        if len(self.events) == 1 and self.crossing_fraction == 1.0:
+        if _is_onset_strip_schedule(self):
             event = self.events[0]
             n = np.where(t < event.time_ps, event.n_before, event.n_after)
             return int(n) if np.ndim(t_ps) == 0 else n.astype(int)
@@ -193,6 +193,30 @@ def _crossing_time_ps(crossing: float, t_star_ps: float) -> float:
     # segment 2: 19 - slope2*(t - 10)
     slope2 = (ANCHOR_N_MID - ANCHOR_N_END) / (ANCHOR_T_END_PS - ANCHOR_T_MID_PS)
     return ANCHOR_T_MID_PS + (ANCHOR_N_MID - crossing) / slope2
+
+
+def _is_onset_strip_schedule(schedule: ShellSchedule) -> bool:
+    """The one-event crossing_fraction=1 sentinel marks diagnostic onset-strip mode."""
+    return len(schedule.events) == 1 and schedule.crossing_fraction == 1.0
+
+
+def _validate_onset_strip_n_final(n_final) -> int:
+    message = f"n_final must be an integer in [0, {ANCHOR_N_START - 1}], got {n_final!r}."
+    if isinstance(n_final, (bool, np.bool_)) or np.ndim(n_final) != 0:
+        raise ValueError(message)
+
+    try:
+        n_value = float(n_final)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+
+    if not np.isfinite(n_value) or not n_value.is_integer():
+        raise ValueError(message)
+
+    n_after = int(n_value)
+    if not (0 <= n_after < ANCHOR_N_START):
+        raise ValueError(message)
+    return n_after
 
 
 def build_shell_schedule(
@@ -290,12 +314,7 @@ def build_onset_strip_schedule(
     """
     if not np.isfinite(t_strip_ps) or t_strip_ps < 0.0:
         raise ValueError(f"t_strip_ps must be finite and >= 0; got {t_strip_ps!r}.")
-    if int(n_final) != n_final or not (0 <= int(n_final) < ANCHOR_N_START):
-        raise ValueError(
-            f"n_final must be an integer in [0, {ANCHOR_N_START - 1}], got {n_final!r}."
-        )
-
-    n_after = int(n_final)
+    n_after = _validate_onset_strip_n_final(n_final)
     mass_before = complex_mass_amu(ANCHOR_N_START)
     mass_after = complex_mass_amu(n_after)
     event = ShedEvent(

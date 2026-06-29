@@ -53,7 +53,10 @@ TELESCOPING = 1.1532
 # One-event onset-strip stress schedule
 # ---------------------------------------------------------------------------
 class TestOnsetStripSchedule:
-    @pytest.mark.parametrize("n_final,n_removed", [(14, 7), (2, 19), (1, 20), (0, 21)])
+    @pytest.mark.parametrize(
+        "n_final,n_removed",
+        [(20, 1), (14, 7), (2, 19), (1, 20), (0, 21)],
+    )
     def test_one_event_at_onset_with_requested_endpoint(self, n_final, n_removed):
         sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=n_final)
 
@@ -70,7 +73,7 @@ class TestOnsetStripSchedule:
         assert event.mass_before_amu == pytest.approx(complex_mass_amu(21))
         assert event.mass_after_amu == pytest.approx(complex_mass_amu(n_final))
 
-    @pytest.mark.parametrize("n_final", [14, 2, 1, 0])
+    @pytest.mark.parametrize("n_final", [20, 14, 2, 1, 0])
     def test_n_of_t_jumps_directly_at_onset(self, n_final):
         sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=n_final)
 
@@ -85,7 +88,19 @@ class TestOnsetStripSchedule:
         assert sched.n_bar(0.5) == pytest.approx(2.0)
         assert sched.n_bar(30.0) == pytest.approx(2.0)
 
-    @pytest.mark.parametrize("bad_n_final", [-1, 21, 22])
+    def test_vectorized_step_outputs_preserve_shape(self):
+        sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=2)
+        t = np.array([0.0, 0.499999, 0.5, 1.0, 30.0])
+
+        np.testing.assert_allclose(sched.n_bar(t), [21.0, 21.0, 2.0, 2.0, 2.0])
+        n = sched.n_of_t(t)
+        assert isinstance(n, np.ndarray) and n.shape == t.shape
+        np.testing.assert_array_equal(n, [21, 21, 2, 2, 2])
+
+    @pytest.mark.parametrize(
+        "bad_n_final",
+        [-1, 21, 22, True, 2.5, float("inf"), float("nan"), None, [1]],
+    )
     def test_rejects_invalid_endpoint(self, bad_n_final):
         with pytest.raises(ValueError, match="n_final"):
             build_onset_strip_schedule(t_strip_ps=0.5, n_final=bad_n_final)
