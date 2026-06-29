@@ -202,18 +202,10 @@ def _is_onset_strip_schedule(schedule: ShellSchedule) -> bool:
 
 def _validate_onset_strip_n_final(n_final) -> int:
     message = f"n_final must be an integer in [0, {ANCHOR_N_START - 1}], got {n_final!r}."
-    if isinstance(n_final, (bool, np.bool_)) or np.ndim(n_final) != 0:
+    if isinstance(n_final, (bool, np.bool_)) or not isinstance(n_final, (int, np.integer)):
         raise ValueError(message)
 
-    try:
-        n_value = float(n_final)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(message) from exc
-
-    if not np.isfinite(n_value) or not n_value.is_integer():
-        raise ValueError(message)
-
-    n_after = int(n_value)
+    n_after = int(n_final)
     if not (0 <= n_after < ANCHOR_N_START):
         raise ValueError(message)
     return n_after

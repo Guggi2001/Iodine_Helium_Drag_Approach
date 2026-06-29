@@ -99,7 +99,7 @@ class TestOnsetStripSchedule:
 
     @pytest.mark.parametrize(
         "bad_n_final",
-        [-1, 21, 22, True, 2.5, float("inf"), float("nan"), None, [1]],
+        [-1, 21, 22, True, 2.0, 2.5, "2", float("inf"), float("nan"), None, [1]],
     )
     def test_rejects_invalid_endpoint(self, bad_n_final):
         with pytest.raises(ValueError, match="n_final"):
