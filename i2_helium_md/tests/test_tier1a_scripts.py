@@ -236,6 +236,65 @@ def test_tier1a_stress_run_tag_rejects_invalid_t_strip_ps(t_strip_ps):
         tier1a_stress_run_tag(n_final=2, t_strip_ps=t_strip_ps)
 
 
+def test_tier1a_stress_generator_refuses_existing_outputs(tmp_path, monkeypatch):
+    from scripts import gen_tier1a_stress_runs as script
+
+    run_dir = tmp_path / "existing_run"
+    run_dir.mkdir()
+    (run_dir / "cfg.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(script, "OVERWRITE_EXISTING_RUN", False)
+
+    with pytest.raises(FileExistsError, match="OVERWRITE_EXISTING_RUN"):
+        script._run_one("existing", object(), run_dir)
+
+
+def test_tier1a_stress_generator_main_schedules_expected_runs(tmp_path, monkeypatch):
+    from scripts import gen_tier1a_stress_runs as script
+    from scripts.tier1a_common import (
+        TIER1A_STRESS_N_FINAL_VALUES,
+        TIER1A_STRESS_T_STRIP_PS,
+        tier1a_run_dir_name,
+        tier1a_stress_run_dir_name,
+    )
+
+    scheduled = []
+
+    def capture_run(label, cfg, run_dir):
+        scheduled.append((label, cfg, run_dir))
+
+    monkeypatch.setattr(script, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(script, "_run_one", capture_run)
+
+    assert script.main() == 0
+
+    expected_dirs = [
+        tmp_path
+        / "data"
+        / "runs"
+        / tier1a_run_dir_name(script.CASE, script.VARIANT, script.N, "fixed", None)
+    ]
+    expected_dirs.extend(
+        tmp_path
+        / "data"
+        / "runs"
+        / tier1a_stress_run_dir_name(
+            script.CASE,
+            script.VARIANT,
+            script.N,
+            n_final=n_final,
+            t_strip_ps=TIER1A_STRESS_T_STRIP_PS,
+        )
+        for n_final in TIER1A_STRESS_N_FINAL_VALUES
+    )
+
+    assert [run_dir for _, _, run_dir in scheduled] == expected_dirs
+    assert scheduled[0][1].mass_scenario == "fixed"
+    assert [cfg.anchor_n_final for _, cfg, _ in scheduled[1:]] == list(
+        TIER1A_STRESS_N_FINAL_VALUES
+    )
+    assert all(cfg.anchor_mode == "onset_strip" for _, cfg, _ in scheduled[1:])
+
+
 def test_score_tier1a_run_emits_rich_table_row(tmp_path):
     from scripts.post_processing.tier1a_rmse_table import (
         TIER1A_TABLE_COLUMNS,

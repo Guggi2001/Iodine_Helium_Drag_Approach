@@ -3,6 +3,10 @@
 Produces one fixed null and four diagnostic onset-strip stress run directories
 under ``data/runs``. These are sensitivity tests, not TDDFT-anchored physical
 Tier-1a runs.
+
+Usage::
+
+    python scripts/gen_tier1a_stress_runs.py
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ N = 50
 ION_TIME_PS = 30.0
 DT_ION_PS = 0.01
 SEED = 20260604
+OVERWRITE_EXISTING_RUN = False
 
 COEFF_OVERRIDES: dict[str, float] = {}
 E_BIND_OVERRIDE = None
@@ -48,18 +53,44 @@ from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E40
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
+_PROTECTED_OUTPUTS = ("cfg.json", "neutral.npz", "ion.npz")
+
+
+def _raise_if_existing_outputs(run_dir: Path) -> None:
+    """Protect production run outputs from accidental overwrite."""
+    if OVERWRITE_EXISTING_RUN:
+        return
+
+    existing = [name for name in _PROTECTED_OUTPUTS if (run_dir / name).exists()]
+    if existing:
+        existing_text = ", ".join(existing)
+        raise FileExistsError(
+            f"Refusing to overwrite existing run directory {run_dir}: "
+            f"found {existing_text}. Set OVERWRITE_EXISTING_RUN = True to rerun."
+        )
+
+
 def _run_one(label: str, cfg, run_dir: Path) -> None:
     """Write one run directory using the standard pipeline."""
+    _raise_if_existing_outputs(run_dir)
     cfg.validate()
     run = RunDirectory(run_dir)
     run.save_cfg(cfg)
+
+    scenario_text = f"scenario={cfg.mass_scenario}"
+    if cfg.mass_scenario != "fixed" and cfg.anchor_mode == "onset_strip":
+        scenario_text = (
+            f"{scenario_text} anchor_mode={cfg.anchor_mode} "
+            f"t_strip={cfg.t_star_ps:.3f} ps"
+        )
+        if cfg.anchor_n_final is not None:
+            scenario_text = f"{scenario_text} n_final={cfg.anchor_n_final}"
 
     print(
         f"[{label}] form={cfg.drag_form} "
         f"coeffs={dict(cfg.drag_coefficients.coefficients)} "
         f"E_bind={cfg.binding_energy_I_ion_eV:.4f} eV "
-        f"scenario={cfg.mass_scenario} anchor_mode={cfg.anchor_mode} "
-        f"t_strip={cfg.t_star_ps:.3f} ps"
+        f"{scenario_text}"
     )
     print(f"[{label}] neutral propagation ...")
     neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
