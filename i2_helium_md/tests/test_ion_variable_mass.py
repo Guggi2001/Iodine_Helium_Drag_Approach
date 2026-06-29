@@ -11,7 +11,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from i2_helium_md.physics.constants import MASS_HE_AMU, U
+from i2_helium_md.physics.constants import EV, MASS_HE_AMU, U
 from i2_helium_md.physics.mass_jump import (
     cold_shed,
     cold_shed_velocity_components,
@@ -168,7 +168,8 @@ class TestShedStep:
         assert new.vx[0] == pytest.approx(3.0)
         assert new.vy[0] == pytest.approx(4.0)
         assert new.vz[0] == pytest.approx(0.0)
-        assert np.all(new.E_mass_transfer_eV > 0.0)
+        expected_eV = 0.5 * 21 * MASS_HE_AMU * 25.0 * U * (100.0 ** 2) / EV
+        np.testing.assert_allclose(new.E_mass_transfer_eV, expected_eV)
 
     def test_at_most_one_shed_per_call_under_dense_window(self):
         # A window wide enough to straddle two seg-2 events (0.8 ps apart) must

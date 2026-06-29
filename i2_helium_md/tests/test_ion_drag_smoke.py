@@ -219,6 +219,24 @@ def test_anchored_discrete_runs_and_sheds_seven_he():
     assert np.array_equal(np.unique(n_shell), np.arange(14, 22))
 
 
+def test_onset_strip_anchor_reaches_requested_final_shell():
+    from i2_helium_md.physics.shell_schedule import complex_mass_amu
+
+    neutral = _synthetic_neutral(num_molecules=2, mass_amu=210.9546)
+    cfg = replace(
+        _anchored_cfg(),
+        anchor_mode="onset_strip",
+        anchor_n_final=0,
+        t_star_ps=0.5,
+    )
+    ck = run_ion_propagation(cfg, neutral)
+
+    assert ck.n_shell[0, -1] == 0
+    assert ck.mass_history_kg[0, -1] == pytest.approx(complex_mass_amu(0) * U)
+    for name in ("velocities_x", "velocities_y", "velocities_z"):
+        assert np.all(np.isfinite(getattr(ck, name))), name
+
+
 def test_anchored_discrete_four_term_ledger_closes():
     """With co-moving-He kinetic energy booked into the existing transfer field,
     the four-term sum E_kin + E_pot + E_dissip + E_mass_transfer is conserved."""

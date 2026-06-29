@@ -504,14 +504,14 @@ def _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg):
 
 
 def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
-    """Refuse to run the drag branch outside the deterministic fixed-mass envelope.
+    """Refuse to run the drag branch outside the deterministic mass envelope.
 
     The drag-branch analog of :func:`_check_scope`. ``_check_scope`` demands
     collision mode 3, which is irrelevant under drag; the drag path instead
-    asserts the deterministic / fixed-mass / realised-form envelope
-    (``DRAG_PORT_DESIGN_DECISIONS.md`` §6.4, form set widened by the METHOD_B
-    §10 form phase) so an out-of-scope drag config fails at the driver, not
-    deep in a half-implemented path.
+    asserts the deterministic / realised-form envelope for ``fixed`` and the
+    Tier-1a ``anchored_discrete`` schedule (``DRAG_PORT_DESIGN_DECISIONS.md``
+    §6.4, form set widened by the METHOD_B §10 form phase) so an out-of-scope
+    drag config fails at the driver, not deep in a half-implemented path.
 
     Distinct from ``config.check_drag_config``: that validates the config's
     *internal consistency* (form agreement, dissipativity, mass<->coefficient
@@ -562,11 +562,11 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
 
     if unsupported:
         raise NotImplementedError(
-            "drag-branch ion propagation is deterministic fixed-mass only "
-            "and does not support: "
+            "drag-branch ion propagation supports deterministic fixed and "
+            "Tier-1a anchored_discrete mass scenarios, and does not support: "
             + ", ".join(unsupported)
-            + ". Envelope = mass_scenario='fixed', noise_form='none', a "
-            "realised drag_form (METHOD_B §10 form phase)."
+            + ". Envelope = mass_scenario in ('fixed', 'anchored_discrete'), "
+            "noise_form='none', a realised drag_form (METHOD_B §10 form phase)."
         )
 
     # Realized-mass trip-wire: under `fixed`, the integration mass must equal the
