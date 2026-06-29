@@ -31,6 +31,7 @@ from i2_helium_md.physics.shell_schedule import (
     ANCHOR_T_END_PS,
     ANCHOR_T_MID_PS,
     NUM_SHED_EVENTS,
+    build_onset_strip_schedule,
     build_shell_schedule,
     complex_mass_amu,
 )
@@ -46,6 +47,52 @@ ORACLE_PRESHED_MASSES = (
     210.955, 206.952, 202.954, 198.951, 194.949, 190.946, 186.939,
 )
 TELESCOPING = 1.1532
+
+
+# ---------------------------------------------------------------------------
+# One-event onset-strip stress schedule
+# ---------------------------------------------------------------------------
+class TestOnsetStripSchedule:
+    @pytest.mark.parametrize("n_final,n_removed", [(14, 7), (2, 19), (1, 20), (0, 21)])
+    def test_one_event_at_onset_with_requested_endpoint(self, n_final, n_removed):
+        sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=n_final)
+
+        assert sched.t_star_ps == pytest.approx(0.5)
+        assert sched.crossing_fraction == pytest.approx(1.0)
+        assert len(sched.events) == 1
+
+        event = sched.events[0]
+        assert event.index == 1
+        assert event.time_ps == pytest.approx(0.5)
+        assert event.n_before == ANCHOR_N_START
+        assert event.n_after == n_final
+        assert event.n_before - event.n_after == n_removed
+        assert event.mass_before_amu == pytest.approx(complex_mass_amu(21))
+        assert event.mass_after_amu == pytest.approx(complex_mass_amu(n_final))
+
+    @pytest.mark.parametrize("n_final", [14, 2, 1, 0])
+    def test_n_of_t_jumps_directly_at_onset(self, n_final):
+        sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=n_final)
+
+        assert sched.n_of_t(0.499999) == 21
+        assert sched.n_of_t(0.5) == n_final
+        assert sched.n_of_t(30.0) == n_final
+
+    def test_n_bar_matches_step_for_stress_schedule(self):
+        sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=2)
+
+        assert sched.n_bar(0.0) == pytest.approx(21.0)
+        assert sched.n_bar(0.5) == pytest.approx(2.0)
+        assert sched.n_bar(30.0) == pytest.approx(2.0)
+
+    @pytest.mark.parametrize("bad_n_final", [-1, 21, 22])
+    def test_rejects_invalid_endpoint(self, bad_n_final):
+        with pytest.raises(ValueError, match="n_final"):
+            build_onset_strip_schedule(t_strip_ps=0.5, n_final=bad_n_final)
+
+    def test_rejects_negative_strip_time(self):
+        with pytest.raises(ValueError, match="t_strip_ps"):
+            build_onset_strip_schedule(t_strip_ps=-0.1, n_final=0)
 
 
 # ---------------------------------------------------------------------------

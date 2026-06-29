@@ -135,6 +135,11 @@ class ShellSchedule:
         for ``t > 14``; the two interior segments carry the anchored loss slopes.
         """
         t = np.asarray(t_ps, dtype=float)
+        if len(self.events) == 1 and self.crossing_fraction == 1.0:
+            event = self.events[0]
+            n = np.where(t < event.time_ps, float(event.n_before), float(event.n_after))
+            return float(n) if np.ndim(t_ps) == 0 else n
+
         ts = self.t_star_ps
         slope1 = (ANCHOR_N_START - ANCHOR_N_MID) / (ANCHOR_T_MID_PS - ts)
         slope2 = (ANCHOR_N_MID - ANCHOR_N_END) / (ANCHOR_T_END_PS - ANCHOR_T_MID_PS)
@@ -164,6 +169,11 @@ class ShellSchedule:
         itself, and is the quantity downstream slices (mass jump, integrator) consume.
         """
         t = np.asarray(t_ps, dtype=float)
+        if len(self.events) == 1 and self.crossing_fraction == 1.0:
+            event = self.events[0]
+            n = np.where(t < event.time_ps, event.n_before, event.n_after)
+            return int(n) if np.ndim(t_ps) == 0 else n.astype(int)
+
         fire_times = np.array([e.time_ps for e in self.events])
         shed_count = np.count_nonzero(t[..., None] >= fire_times, axis=-1)
         n = ANCHOR_N_START - shed_count
@@ -265,4 +275,41 @@ def build_shell_schedule(
         t_star_ps=t_star_ps,
         crossing_fraction=crossing_fraction,
         events=tuple(events),
+    )
+
+
+def build_onset_strip_schedule(
+    *,
+    t_strip_ps: float = 0.5,
+    n_final: int,
+) -> ShellSchedule:
+    """Build a one-event onset-violent stripping stress schedule.
+
+    This is a diagnostic stress schedule, not a TDDFT-anchored physical loss curve.
+    It strips directly from n=21 to ``n_final`` at ``t_strip_ps``.
+    """
+    if not np.isfinite(t_strip_ps) or t_strip_ps < 0.0:
+        raise ValueError(f"t_strip_ps must be finite and >= 0; got {t_strip_ps!r}.")
+    if int(n_final) != n_final or not (0 <= int(n_final) < ANCHOR_N_START):
+        raise ValueError(
+            f"n_final must be an integer in [0, {ANCHOR_N_START - 1}], got {n_final!r}."
+        )
+
+    n_after = int(n_final)
+    mass_before = complex_mass_amu(ANCHOR_N_START)
+    mass_after = complex_mass_amu(n_after)
+    event = ShedEvent(
+        index=1,
+        crossing=float(n_after),
+        time_ps=float(t_strip_ps),
+        n_before=ANCHOR_N_START,
+        n_after=n_after,
+        mass_before_amu=mass_before,
+        mass_after_amu=mass_after,
+        kick_factor=mass_before / mass_after,
+    )
+    return ShellSchedule(
+        t_star_ps=float(t_strip_ps),
+        crossing_fraction=1.0,
+        events=(event,),
     )
