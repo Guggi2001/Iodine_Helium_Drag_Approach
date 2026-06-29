@@ -131,14 +131,28 @@ def _shell_summary(n_shell: np.ndarray) -> tuple[int, int, int]:
         raise ValueError(
             f"n_shell must have shape (2N, T) with T > 0, got {n_shell.shape}"
         )
-    starts = np.rint(n_shell[:, 0]).astype(int)
-    ends = np.rint(n_shell[:, -1]).astype(int)
+    start_values = np.asarray(n_shell[:, 0], dtype=float)
+    end_values = np.asarray(n_shell[:, -1], dtype=float)
+    if not np.all(np.isfinite(start_values)) or not np.all(np.isfinite(end_values)):
+        raise ValueError("n_shell start/end values must be finite")
+    start_rounded = np.rint(start_values)
+    end_rounded = np.rint(end_values)
+    if not np.allclose(start_values, start_rounded, rtol=0.0, atol=1e-9):
+        raise ValueError(
+            f"n_shell start values must be integer-valued: {start_values.tolist()}"
+        )
+    if not np.allclose(end_values, end_rounded, rtol=0.0, atol=1e-9):
+        raise ValueError(
+            f"n_shell end values must be integer-valued: {end_values.tolist()}"
+        )
+    starts = start_rounded.astype(int)
+    ends = end_rounded.astype(int)
     if not np.all(starts == starts[0]):
         raise ValueError(f"n_shell start values are not uniform: {starts.tolist()}")
     if not np.all(ends == ends[0]):
         raise ValueError(f"n_shell end values are not uniform: {ends.tolist()}")
-    n_start = int(round(float(n_shell[0, 0])))
-    n_end = int(round(float(n_shell[0, -1])))
+    n_start = int(starts[0])
+    n_end = int(ends[0])
     return n_start, n_end, max(0, n_start - n_end)
 
 
@@ -307,14 +321,15 @@ def score_tier1a_stress_run(
         n_final=n_final,
         t_strip_ps=t_strip_ps,
     )
-    if cfg is not None:
-        _validate_stress_cfg(
-            run_tag,
-            cfg,
-            n_final=n_final_value,
-            t_strip_ps=t_strip_ps_value,
-        )
     run_dir = run if isinstance(run, RunDirectory) else RunDirectory(run)
+    if cfg is None:
+        cfg = _load_required_cfg(run_dir, run_tag)
+    _validate_stress_cfg(
+        run_tag,
+        cfg,
+        n_final=n_final_value,
+        t_strip_ps=t_strip_ps_value,
+    )
     ion = run_dir.load_ion(cfg=cfg)
     shell_summary = _validate_stress_ion(
         run_tag,

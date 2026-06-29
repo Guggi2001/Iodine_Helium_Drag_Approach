@@ -362,9 +362,22 @@ def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
         TIER1A_STRESS_TABLE_COLUMNS,
         score_tier1a_stress_run,
     )
+    from scripts.tier1a_common import build_onset_strip_cfg
 
     run = RunDirectory(tmp_path / "stress")
     run.save_ion(_tiny_ion_checkpoint())
+    run.save_cfg(
+        build_onset_strip_cfg(
+            "9A",
+            "shared_pure_cubic",
+            n_final=14,
+            t_strip_ps=0.5,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    )
 
     row = score_tier1a_stress_run(
         run,
@@ -384,6 +397,27 @@ def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
     assert row["n_final_requested"] == 14
     assert row["t_strip_ps"] == 0.5
     assert row["n_removed"] == 7
+
+
+def test_score_tier1a_stress_run_requires_cfg_json(tmp_path):
+    from scripts.post_processing.tier1a_stress_table import score_tier1a_stress_run
+
+    run = RunDirectory(tmp_path / "stress")
+    run.save_ion(_tiny_ion_checkpoint())
+
+    with pytest.raises(ValueError, match="missing cfg.json"):
+        score_tier1a_stress_run(
+            run,
+            case="9A",
+            variant="shared_pure_cubic",
+            n=1,
+            run_tag="tier1a_stress_onset_strip_n14_t0.5",
+            n_final=14,
+            t_strip_ps=0.5,
+            hedft=_hedft_reference(),
+            smoothed=_smoothed_reference(),
+            window_start_ps=1.0,
+        )
 
 
 def _write_tier1a_stress_collect_fixture(
@@ -622,14 +656,64 @@ def test_collect_tier1a_stress_records_preserves_strict_input_validation(
 
 def test_score_tier1a_stress_run_rejects_nonuniform_shell_endpoint(tmp_path):
     from scripts.post_processing.tier1a_stress_table import score_tier1a_stress_run
+    from scripts.tier1a_common import build_onset_strip_cfg
 
     ion = _tiny_ion_checkpoint_with_shell_end(0)
     n_shell = ion.n_shell.copy()
     n_shell[1, -1] = 1
     run = RunDirectory(tmp_path / "stress")
     run.save_ion(replace(ion, n_shell=n_shell))
+    run.save_cfg(
+        build_onset_strip_cfg(
+            "9A",
+            "shared_pure_cubic",
+            n_final=0,
+            t_strip_ps=0.5,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    )
 
     with pytest.raises(ValueError, match="n_shell end values are not uniform"):
+        score_tier1a_stress_run(
+            run,
+            case="9A",
+            variant="shared_pure_cubic",
+            n=1,
+            run_tag="tier1a_stress_onset_strip_n0_t0.5",
+            n_final=0,
+            t_strip_ps=0.5,
+            hedft=_hedft_reference(),
+            smoothed=_smoothed_reference(),
+            window_start_ps=1.0,
+        )
+
+
+def test_score_tier1a_stress_run_rejects_fractional_shell_endpoint(tmp_path):
+    from scripts.post_processing.tier1a_stress_table import score_tier1a_stress_run
+    from scripts.tier1a_common import build_onset_strip_cfg
+
+    ion = _tiny_ion_checkpoint_with_shell_end(0)
+    n_shell = ion.n_shell.copy()
+    n_shell[:, -1] = 0.25
+    run = RunDirectory(tmp_path / "stress")
+    run.save_ion(replace(ion, n_shell=n_shell))
+    run.save_cfg(
+        build_onset_strip_cfg(
+            "9A",
+            "shared_pure_cubic",
+            n_final=0,
+            t_strip_ps=0.5,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    )
+
+    with pytest.raises(ValueError, match="n_shell end values must be integer-valued"):
         score_tier1a_stress_run(
             run,
             case="9A",

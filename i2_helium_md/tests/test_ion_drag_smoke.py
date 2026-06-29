@@ -231,8 +231,12 @@ def test_onset_strip_anchor_reaches_requested_final_shell():
     )
     ck = run_ion_propagation(cfg, neutral)
 
-    assert ck.n_shell[0, -1] == 0
+    n_shell = ck.n_shell[0, :]
+    assert n_shell[0] == 21
+    assert n_shell[-1] == 0
+    assert np.array_equal(np.unique(n_shell), np.array([0, 21]))
     assert ck.mass_history_kg[0, -1] == pytest.approx(complex_mass_amu(0) * U)
+    assert ck.E_mass_transfer_eV[:, -1].sum() > 0.0
     for name in ("velocities_x", "velocities_y", "velocities_z"):
         assert np.all(np.isfinite(getattr(ck, name))), name
 
