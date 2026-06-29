@@ -139,6 +139,28 @@ def test_build_anchored_cfg_validates_and_sets_tier1a_fields():
     assert cfg.mass_initial_amu == pytest.approx(complex_mass_amu(21))
 
 
+def test_build_onset_strip_cfg_sets_stress_fields():
+    from scripts.tier1a_common import build_onset_strip_cfg
+
+    cfg = build_onset_strip_cfg(
+        "9A",
+        "shared_pure_cubic",
+        n_final=2,
+        t_strip_ps=0.5,
+        num_molecules=2,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=123,
+    )
+
+    assert cfg.mass_scenario == "anchored_discrete"
+    assert cfg.anchor_mode == "onset_strip"
+    assert cfg.anchor_n_final == 2
+    assert cfg.t_star_ps == 0.5
+    assert cfg.mass_initial_amu == pytest.approx(complex_mass_amu(21))
+    assert cfg.allow_inconsistent_mass_pairing is True
+
+
 def test_tier1a_run_names_share_tier0_convention():
     from scripts.tier1a_common import tier1a_run_dir_name, tier1a_run_tag
 
@@ -147,6 +169,19 @@ def test_tier1a_run_names_share_tier0_convention():
     assert (
         tier1a_run_dir_name("9A", "shared_pure_cubic", 50, "anchored_discrete", 5.0)
         == "9A_drag_shared_pure_cubic_N50_tier1a_anchored_continuous_t5.0"
+    )
+
+
+def test_tier1a_stress_run_names_are_distinct():
+    from scripts.tier1a_common import tier1a_stress_run_dir_name, tier1a_stress_run_tag
+
+    assert (
+        tier1a_stress_run_tag(n_final=0, t_strip_ps=0.5)
+        == "tier1a_stress_onset_strip_n0_t0.5"
+    )
+    assert (
+        tier1a_stress_run_dir_name("9A", "shared_pure_cubic", 50, n_final=0, t_strip_ps=0.5)
+        == "9A_drag_shared_pure_cubic_N50_tier1a_stress_onset_strip_n0_t0.5"
     )
 
 

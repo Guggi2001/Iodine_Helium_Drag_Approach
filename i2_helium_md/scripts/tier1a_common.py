@@ -19,6 +19,8 @@ from scripts.tier0_common import M_EFF_AMU, build_drag_cfg, run_dir_name
 
 TIER1A_FIXED_TAG = "tier1a_fixed"
 TIER1A_T_STAR_VALUES_PS: tuple[float, ...] = (0.5, 5.0, 9.0)
+TIER1A_STRESS_T_STRIP_PS = 0.5
+TIER1A_STRESS_N_FINAL_VALUES: tuple[int, ...] = (14, 2, 1, 0)
 
 
 def build_anchored_cfg(
@@ -69,6 +71,44 @@ def build_anchored_cfg(
     return cfg
 
 
+def build_onset_strip_cfg(
+    case: str,
+    variant: str,
+    *,
+    n_final: int,
+    t_strip_ps: float,
+    num_molecules: int,
+    ion_time_ps: float,
+    dt_ion_ps: float,
+    seed: int,
+    coeff_overrides: Optional[Mapping[str, float]] = None,
+    e_bind_override: Optional[float] = None,
+) -> SimConfig:
+    """Build a diagnostic Tier-1a onset-strip stress config."""
+    fixed_cfg = build_drag_cfg(
+        case,
+        variant,
+        num_molecules=num_molecules,
+        ion_time_ps=ion_time_ps,
+        dt_ion_ps=dt_ion_ps,
+        seed=seed,
+        coeff_overrides=coeff_overrides,
+        e_bind_override=e_bind_override,
+    )
+    cfg = replace(
+        fixed_cfg,
+        mass_scenario="anchored_discrete",
+        t_star_ps=float(t_strip_ps),
+        anchor_mode="onset_strip",
+        anchor_n_final=int(n_final),
+        coulomb_available_eV=0.80,
+        allow_inconsistent_mass_pairing=True,
+        mass_initial_amu=complex_mass_amu(21),
+    )
+    cfg.validate()
+    return cfg
+
+
 def tier1a_run_tag(scenario: str, t_star_ps: float | None) -> str:
     """Return the run-tag suffix shared by the generator and scorer."""
     if scenario == "fixed":
@@ -101,11 +141,38 @@ def tier1a_run_dir_name(
     )
 
 
+def tier1a_stress_run_tag(*, n_final: int, t_strip_ps: float) -> str:
+    """Return the run-tag suffix for onset-strip stress runs."""
+    return f"tier1a_stress_onset_strip_n{int(n_final)}_t{float(t_strip_ps):.1f}"
+
+
+def tier1a_stress_run_dir_name(
+    case: str,
+    variant: str,
+    n: int,
+    *,
+    n_final: int,
+    t_strip_ps: float,
+) -> str:
+    """Return the Tier-0-style run directory basename for an onset-strip stress run."""
+    return run_dir_name(
+        case,
+        variant,
+        n,
+        run_tag=tier1a_stress_run_tag(n_final=n_final, t_strip_ps=t_strip_ps),
+    )
+
+
 __all__ = [
     "M_EFF_AMU",
     "TIER1A_FIXED_TAG",
+    "TIER1A_STRESS_N_FINAL_VALUES",
+    "TIER1A_STRESS_T_STRIP_PS",
     "TIER1A_T_STAR_VALUES_PS",
     "build_anchored_cfg",
+    "build_onset_strip_cfg",
     "tier1a_run_dir_name",
     "tier1a_run_tag",
+    "tier1a_stress_run_dir_name",
+    "tier1a_stress_run_tag",
 ]
