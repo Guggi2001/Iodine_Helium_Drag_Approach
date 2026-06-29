@@ -18,7 +18,11 @@ from i2_helium_md.physics.mass_jump import (
     continuous_velocity_shed,
     continuous_velocity_shed_components,
 )
-from i2_helium_md.physics.shell_schedule import build_shell_schedule, complex_mass_amu
+from i2_helium_md.physics.shell_schedule import (
+    build_onset_strip_schedule,
+    build_shell_schedule,
+    complex_mass_amu,
+)
 from i2_helium_md.simulation.ion_propagation_step import IonStepState, shed_step
 
 
@@ -152,6 +156,18 @@ class TestShedStep:
         assert new.vy[0] == pytest.approx(0.0)
         assert new.vz[0] == pytest.approx(0.0)
         # Co-moving He kinetic energy is booked positive (in eV).
+        assert np.all(new.E_mass_transfer_eV > 0.0)
+
+    def test_batch_event_updates_mass_and_keeps_velocity(self):
+        sched = build_onset_strip_schedule(t_strip_ps=0.5, n_final=0)
+        st = _state(0.495, vx=3.0, vy=4.0, mass_amu=complex_mass_amu(21))
+        new, idx = shed_step(st, sched, 0, dt=0.01)
+
+        assert idx == 1
+        assert new.mass_kg[0] == pytest.approx(complex_mass_amu(0) * U)
+        assert new.vx[0] == pytest.approx(3.0)
+        assert new.vy[0] == pytest.approx(4.0)
+        assert new.vz[0] == pytest.approx(0.0)
         assert np.all(new.E_mass_transfer_eV > 0.0)
 
     def test_at_most_one_shed_per_call_under_dense_window(self):

@@ -49,7 +49,7 @@ from ..physics.baoab import make_ion_baoab_step
 from ..physics.constants import U
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
-from ..physics.shell_schedule import build_shell_schedule
+from ..physics.shell_schedule import build_onset_strip_schedule, build_shell_schedule
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
 from .ion_initial_state import build_initial_ion_state
 from .ion_propagation_step import (
@@ -202,7 +202,15 @@ def run_ion_propagation(
         # Built once; queried per step (shed_step). Absent under `fixed`, so the
         # fixed-mass path below is byte-for-byte the Tier-0 path (regression guard).
         if cfg.mass_scenario == "anchored_discrete":
-            schedule = build_shell_schedule(cfg.t_star_ps)
+            if cfg.anchor_mode == "time":
+                schedule = build_shell_schedule(cfg.t_star_ps)
+            elif cfg.anchor_mode == "onset_strip":
+                schedule = build_onset_strip_schedule(
+                    t_strip_ps=cfg.t_star_ps,
+                    n_final=cfg.anchor_n_final,
+                )
+            else:
+                raise NotImplementedError(f"unsupported anchor_mode={cfg.anchor_mode!r}")
 
     state = ion_state_from_checkpoint_column(ckpt, 0)
     prev_dist: np.ndarray | None = None

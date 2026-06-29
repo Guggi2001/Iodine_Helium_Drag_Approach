@@ -397,9 +397,10 @@ def shed_step(
     The Tier-1a ``anchored_discrete`` pre-step. If the next pending shed
     (``schedule.events[next_shed_idx]``) fires within this step's window --
     its analytic fire time is ``<= state.time_ps + dt`` -- copy **all** atoms'
-    velocities unchanged, drop one He from the (uniform) complex mass, book the
-    per-atom co-moving-He kinetic energy into ``E_mass_transfer_eV``, and advance
-    the pointer. **At most one shed per call** (the plan's <=1/step rule):
+    velocities unchanged, drop the scheduled number of He atoms from the
+    (uniform) complex mass, book the per-atom co-moving-He kinetic energy into
+    ``E_mass_transfer_eV``, and advance the pointer. **At most one shed per
+    call** (the plan's <=1/step rule):
     if the schedule is dense relative to ``dt`` the surplus events fire on the
     following steps, so the total shed count is ``len(events)`` independent of
     ``dt`` (the jump-step measure-zero property).
@@ -440,8 +441,14 @@ def shed_step(
     if event.time_ps > state.time_ps + dt:
         return state, next_shed_idx
 
+    n_removed = event.n_before - event.n_after
     vx_p, vy_p, vz_p, m_plus_amu, dE_amu = continuous_velocity_shed_components(
-        state.vx, state.vy, state.vz, event.mass_before_amu, m_he_amu=m_he_amu,
+        state.vx,
+        state.vy,
+        state.vz,
+        event.mass_before_amu,
+        m_he_amu=m_he_amu,
+        n_removed=n_removed,
     )
     # amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U, A/ps->m/s via 100,
     # J->eV via EV) -- the same path baoab_propagation_step uses for dE_dissip, so

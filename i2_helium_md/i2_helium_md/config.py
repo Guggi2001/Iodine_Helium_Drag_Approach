@@ -14,6 +14,8 @@ import warnings
 from dataclasses import dataclass, field
 from typing import Literal, Optional
 
+import numpy as np
+
 from .physics.constants import EV, K_B
 from .physics.drag import (
     DragCoefficients,
@@ -47,7 +49,7 @@ CollisionMode = Literal[1, 2, 3]
 DragForm = Literal["linear_cubic", "linear_quadratic", "threshold", "power_law"]
 DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
 MassScenario = Literal["fixed", "biphasic", "anchored_discrete"]
-AnchorMode = Literal["time"]   # Tier-1a schedule anchor; radial cross-check deferred (plan §6)
+AnchorMode = Literal["time", "onset_strip"]   # Tier-1a schedule anchor; radial cross-check deferred (plan §6)
 NoiseForm = Literal["none", "multiplicative_local_fdt", "empirical_residual"]
 NoiseCalibration = Literal["hard_sphere_variance", "tddft_residual", "strict_fdt_bath"]
 NoiseGeometry = Literal["longitudinal", "isotropic", "anisotropic"]
@@ -204,6 +206,7 @@ class SimConfig:
     # one He per event 21 -> 14 with continuous velocity; cold-shed is diagnostic.
     t_star_ps: float = 5.0                # ps; schedule onset (n=21 held t<=t*; sweep {0.5,5,9})
     anchor_mode: AnchorMode = "time"      # time-anchored (radial cross-check deferred, plan §6)
+    anchor_n_final: int = 14              # endpoint for onset_strip stress only
     coulomb_available_eV: float = 0.80    # eV; provenance stamp (d=9A); NO hard refuse (plan §8)
 
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
@@ -277,6 +280,24 @@ class SimConfig:
             raise ValueError("timesteps must be positive")
         if self.hard_sphere_collision_mode not in (1, 2, 3):
             raise ValueError("hard_sphere_collision_mode must be 1, 2, or 3")
+        if self.anchor_mode not in ("time", "onset_strip"):
+            raise ValueError(
+                f"unknown anchor_mode {self.anchor_mode!r}; expected one of "
+                "('time', 'onset_strip')"
+            )
+        if self.anchor_mode == "onset_strip":
+            if (
+                isinstance(self.anchor_n_final, (bool, np.bool_))
+                or not isinstance(self.anchor_n_final, (int, np.integer))
+            ):
+                raise ValueError(
+                    f"anchor_n_final must be an integer; got {self.anchor_n_final!r}."
+                )
+            if not (0 <= int(self.anchor_n_final) < 21):
+                raise ValueError(
+                    f"anchor_n_final must be in [0, 20] for onset_strip; "
+                    f"got {self.anchor_n_final!r}."
+                )
         check_drag_config(self)
 
 
