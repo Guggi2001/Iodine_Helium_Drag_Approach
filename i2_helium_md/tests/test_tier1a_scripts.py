@@ -345,6 +345,35 @@ def test_score_tier1a_run_emits_rich_table_row(tmp_path):
     assert rows[0]["RMSE_v2_smoothed_Aps"] == str(row["RMSE_v2_smoothed_Aps"])
 
 
+def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
+    from scripts.post_processing.tier1a_stress_table import (
+        TIER1A_STRESS_TABLE_COLUMNS,
+        score_tier1a_stress_run,
+    )
+
+    run = RunDirectory(tmp_path / "stress")
+    run.save_ion(_tiny_ion_checkpoint())
+
+    row = score_tier1a_stress_run(
+        run,
+        case="9A",
+        variant="shared_pure_cubic",
+        n=1,
+        run_tag="tier1a_stress_onset_strip_n0_t0.5",
+        n_final=0,
+        t_strip_ps=0.5,
+        hedft=_hedft_reference(),
+        smoothed=_smoothed_reference(),
+        window_start_ps=1.0,
+    )
+
+    assert list(row) == TIER1A_STRESS_TABLE_COLUMNS
+    assert row["stress_family"] == "onset_strip"
+    assert row["n_final_requested"] == 0
+    assert row["t_strip_ps"] == 0.5
+    assert row["n_removed"] == 7
+
+
 def test_build_tier1a_trajectory_figure_plots_only_selected_v2_traces():
     import matplotlib
 
@@ -403,6 +432,62 @@ def test_build_tier1a_trajectory_figure_plots_only_selected_v2_traces():
     assert "anchored t*=5.0 MD mean |v2|" in velocity_labels
     assert "anchored t*=0.5 MD mean |v2|" not in velocity_labels
     assert all("|v1|" not in label and " R" not in label for label in velocity_labels)
+
+
+def test_build_tier1a_stress_figure_plots_fixed_plus_selected_case():
+    import matplotlib
+
+    matplotlib.use("Agg")
+
+    from scripts.post_processing.tier1a_stress_table import (
+        Tier1aStressRunRecord,
+        build_stress_trajectory_figure,
+    )
+
+    ion = _tiny_ion_checkpoint()
+    records = [
+        Tier1aStressRunRecord(
+            label="fixed",
+            run_tag="tier1a_fixed",
+            n_final=None,
+            t_strip_ps=None,
+            ion=ion,
+            cfg=None,
+            row={},
+        ),
+        Tier1aStressRunRecord(
+            label="onset strip n=0",
+            run_tag="tier1a_stress_onset_strip_n0_t0.5",
+            n_final=0,
+            t_strip_ps=0.5,
+            ion=ion,
+            cfg=None,
+            row={},
+        ),
+        Tier1aStressRunRecord(
+            label="onset strip n=2",
+            run_tag="tier1a_stress_onset_strip_n2_t0.5",
+            n_final=2,
+            t_strip_ps=0.5,
+            ion=ion,
+            cfg=None,
+            row={},
+        ),
+    ]
+
+    fig = build_stress_trajectory_figure(
+        records,
+        _hedft_reference(),
+        _smoothed_reference(),
+        window=(1.0, 3.0),
+        selected_n_final=0,
+        title="Tier-1a stress test",
+    )
+
+    labels = {line.get_label() for line in fig.axes[0].lines}
+    assert "fixed MD mean |v2|" in labels
+    assert "onset strip n=0 MD mean |v2|" in labels
+    assert "onset strip n=2 MD mean |v2|" not in labels
 
 
 def test_export_tier1a_mean_series_writes_one_csv_per_record(tmp_path):
