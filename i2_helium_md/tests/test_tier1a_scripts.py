@@ -157,6 +157,7 @@ def test_build_onset_strip_cfg_sets_stress_fields():
     assert cfg.anchor_mode == "onset_strip"
     assert cfg.anchor_n_final == 2
     assert cfg.t_star_ps == 0.5
+    assert cfg.coulomb_available_eV == 0.80
     assert cfg.mass_initial_amu == pytest.approx(complex_mass_amu(21))
     assert cfg.allow_inconsistent_mass_pairing is True
 
