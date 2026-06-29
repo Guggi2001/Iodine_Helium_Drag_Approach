@@ -149,22 +149,39 @@ def _raise_cfg_mismatch(run_tag: str, field: str, expected: Any, actual: Any) ->
     )
 
 
-def _validate_fixed_cfg(run_tag: str, cfg: SimConfig | None) -> None:
-    if cfg is None:
-        return
+def _raise_ion_mismatch(run_tag: str, field: str, expected: Any, actual: Any) -> None:
+    raise ValueError(
+        f"{run_tag} ion metadata mismatch: {field} expected {expected!r}, "
+        f"got {actual!r}"
+    )
+
+
+def _load_required_cfg(run: RunDirectory, run_tag: str) -> SimConfig:
+    if not run.has_cfg():
+        raise ValueError(
+            f"{run_tag} missing cfg.json in {run.root}; refusing to score from "
+            "path metadata alone."
+        )
+    return run.load_cfg()
+
+
+def _validate_fixed_cfg(run_tag: str, cfg: SimConfig) -> None:
     if cfg.mass_scenario != "fixed":
         _raise_cfg_mismatch(run_tag, "mass_scenario", "fixed", cfg.mass_scenario)
 
 
+def _validate_fixed_ion(run_tag: str, ion: IonCheckpoint) -> None:
+    if ion.mass_scenario != "fixed":
+        _raise_ion_mismatch(run_tag, "ion.mass_scenario", "fixed", ion.mass_scenario)
+
+
 def _validate_stress_cfg(
     run_tag: str,
-    cfg: SimConfig | None,
+    cfg: SimConfig,
     *,
     n_final: int,
     t_strip_ps: float,
 ) -> None:
-    if cfg is None:
-        return
     if cfg.mass_scenario != "anchored_discrete":
         _raise_cfg_mismatch(
             run_tag,
@@ -180,8 +197,46 @@ def _validate_stress_cfg(
         _raise_cfg_mismatch(run_tag, "t_star_ps", float(t_strip_ps), cfg.t_star_ps)
 
 
-def score_tier1a_stress_run(
-    run: RunDirectory | str | Path,
+def _validate_stress_call_metadata(
+    *,
+    run_tag: str,
+    n_final: int,
+    t_strip_ps: float,
+) -> tuple[int, float]:
+    expected_run_tag = tier1a_stress_run_tag(
+        n_final=n_final,
+        t_strip_ps=t_strip_ps,
+    )
+    if run_tag != expected_run_tag:
+        raise ValueError(
+            f"{run_tag} stress metadata mismatch: run_tag expected "
+            f"{expected_run_tag!r} for n_final={n_final!r}, "
+            f"t_strip_ps={t_strip_ps!r}"
+        )
+    return int(n_final), float(t_strip_ps)
+
+
+def _validate_stress_ion(
+    run_tag: str,
+    ion: IonCheckpoint,
+    *,
+    n_final: int,
+) -> tuple[int, int, int]:
+    if ion.mass_scenario != "anchored_discrete":
+        _raise_ion_mismatch(
+            run_tag,
+            "ion.mass_scenario",
+            "anchored_discrete",
+            ion.mass_scenario,
+        )
+    n_shell_start, n_shell_end, n_removed = _shell_summary(ion.n_shell)
+    if n_shell_end != int(n_final):
+        _raise_ion_mismatch(run_tag, "n_shell_end", int(n_final), n_shell_end)
+    return n_shell_start, n_shell_end, n_removed
+
+
+def _score_tier1a_stress_ion(
+    ion: IonCheckpoint,
     *,
     case: str,
     variant: str,
@@ -191,11 +246,9 @@ def score_tier1a_stress_run(
     t_strip_ps: float,
     hedft: HedftTrajectory,
     smoothed: SmoothedSpeedReference,
-    window_start_ps: float = WINDOW_START_PS,
+    window_start_ps: float,
+    shell_summary: tuple[int, int, int] | None = None,
 ) -> dict[str, Any]:
-    """Score one finished Tier-1a onset-strip stress run."""
-    run_dir = run if isinstance(run, RunDirectory) else RunDirectory(run)
-    ion = run_dir.load_ion()
     window_end_ps = float(smoothed.time_ps[-1])
     window = (float(window_start_ps), window_end_ps)
 
@@ -208,7 +261,9 @@ def score_tier1a_stress_run(
         window=window,
     )
     closure = ion_ledger_closure(ion)
-    n_shell_start, n_shell_end, n_removed = _shell_summary(ion.n_shell)
+    if shell_summary is None:
+        shell_summary = _shell_summary(ion.n_shell)
+    n_shell_start, n_shell_end, n_removed = shell_summary
 
     return {
         "case": case,
@@ -230,6 +285,55 @@ def score_tier1a_stress_run(
         "n_shell_start": n_shell_start,
         "n_shell_end": n_shell_end,
     }
+
+
+def score_tier1a_stress_run(
+    run: RunDirectory | str | Path,
+    *,
+    case: str,
+    variant: str,
+    n: int,
+    run_tag: str,
+    n_final: int,
+    t_strip_ps: float,
+    hedft: HedftTrajectory,
+    smoothed: SmoothedSpeedReference,
+    window_start_ps: float = WINDOW_START_PS,
+    cfg: SimConfig | None = None,
+) -> dict[str, Any]:
+    """Score one finished Tier-1a onset-strip stress run."""
+    n_final_value, t_strip_ps_value = _validate_stress_call_metadata(
+        run_tag=run_tag,
+        n_final=n_final,
+        t_strip_ps=t_strip_ps,
+    )
+    if cfg is not None:
+        _validate_stress_cfg(
+            run_tag,
+            cfg,
+            n_final=n_final_value,
+            t_strip_ps=t_strip_ps_value,
+        )
+    run_dir = run if isinstance(run, RunDirectory) else RunDirectory(run)
+    ion = run_dir.load_ion(cfg=cfg)
+    shell_summary = _validate_stress_ion(
+        run_tag,
+        ion,
+        n_final=n_final_value,
+    )
+    return _score_tier1a_stress_ion(
+        ion,
+        case=case,
+        variant=variant,
+        n=n,
+        run_tag=run_tag,
+        n_final=n_final_value,
+        t_strip_ps=t_strip_ps_value,
+        hedft=hedft,
+        smoothed=smoothed,
+        window_start_ps=window_start_ps,
+        shell_summary=shell_summary,
+    )
 
 
 def _run_label(n_final: int | None) -> str:
@@ -256,15 +360,17 @@ def collect_tier1a_stress_records(
     fixed_run = RunDirectory(
         run_root / tier1a_run_dir_name(case, variant, n, "fixed", None)
     )
-    fixed_cfg = fixed_run.load_cfg() if fixed_run.has_cfg() else None
+    fixed_cfg = _load_required_cfg(fixed_run, fixed_tag)
     _validate_fixed_cfg(fixed_tag, fixed_cfg)
+    fixed_ion = fixed_run.load_ion(cfg=fixed_cfg)
+    _validate_fixed_ion(fixed_tag, fixed_ion)
     records = [
         Tier1aStressRunRecord(
             label=_run_label(None),
             run_tag=fixed_tag,
             n_final=None,
             t_strip_ps=None,
-            ion=fixed_run.load_ion(),
+            ion=fixed_ion,
             cfg=fixed_cfg,
             row={},
         )
@@ -272,8 +378,13 @@ def collect_tier1a_stress_records(
 
     for n_final in n_final_values:
         run_tag = tier1a_stress_run_tag(
-            n_final=int(n_final),
-            t_strip_ps=float(t_strip_ps),
+            n_final=n_final,
+            t_strip_ps=t_strip_ps,
+        )
+        n_final_value, t_strip_ps_value = _validate_stress_call_metadata(
+            run_tag=run_tag,
+            n_final=n_final,
+            t_strip_ps=t_strip_ps,
         )
         run = RunDirectory(
             run_root
@@ -281,36 +392,42 @@ def collect_tier1a_stress_records(
                 case,
                 variant,
                 n,
-                n_final=int(n_final),
-                t_strip_ps=float(t_strip_ps),
+                n_final=n_final,
+                t_strip_ps=t_strip_ps,
             )
         )
-        cfg = run.load_cfg() if run.has_cfg() else None
+        cfg = _load_required_cfg(run, run_tag)
         _validate_stress_cfg(
             run_tag,
             cfg,
-            n_final=int(n_final),
-            t_strip_ps=float(t_strip_ps),
+            n_final=n_final_value,
+            t_strip_ps=t_strip_ps_value,
         )
-        ion = run.load_ion()
-        row = score_tier1a_stress_run(
-            run,
+        ion = run.load_ion(cfg=cfg)
+        shell_summary = _validate_stress_ion(
+            run_tag,
+            ion,
+            n_final=n_final_value,
+        )
+        row = _score_tier1a_stress_ion(
+            ion,
             case=case,
             variant=variant,
             n=n,
             run_tag=run_tag,
-            n_final=int(n_final),
-            t_strip_ps=float(t_strip_ps),
+            n_final=n_final_value,
+            t_strip_ps=t_strip_ps_value,
             hedft=hedft,
             smoothed=smoothed,
             window_start_ps=window_start_ps,
+            shell_summary=shell_summary,
         )
         records.append(
             Tier1aStressRunRecord(
-                label=_run_label(int(n_final)),
+                label=_run_label(n_final_value),
                 run_tag=run_tag,
-                n_final=int(n_final),
-                t_strip_ps=float(t_strip_ps),
+                n_final=n_final_value,
+                t_strip_ps=t_strip_ps_value,
                 ion=ion,
                 cfg=cfg,
                 row=row,

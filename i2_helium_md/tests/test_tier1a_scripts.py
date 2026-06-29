@@ -8,6 +8,7 @@ that the scripts call.
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 import math
 
 import numpy as np
@@ -81,6 +82,17 @@ def _tiny_ion_checkpoint() -> IonCheckpoint:
         temperature_diagnostic=np.zeros((time.size, 3)),
         mass_scenario="anchored_discrete",
     )
+
+
+def _tiny_ion_checkpoint_with_shell_end(
+    n_final: int,
+    *,
+    mass_scenario: str = "anchored_discrete",
+) -> IonCheckpoint:
+    ion = _tiny_ion_checkpoint()
+    n_shell = ion.n_shell.copy()
+    n_shell[:, -1] = n_final
+    return replace(ion, n_shell=n_shell, mass_scenario=mass_scenario)
 
 
 def _hedft_reference() -> HedftTrajectory:
@@ -359,8 +371,8 @@ def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
         case="9A",
         variant="shared_pure_cubic",
         n=1,
-        run_tag="tier1a_stress_onset_strip_n0_t0.5",
-        n_final=0,
+        run_tag="tier1a_stress_onset_strip_n14_t0.5",
+        n_final=14,
         t_strip_ps=0.5,
         hedft=_hedft_reference(),
         smoothed=_smoothed_reference(),
@@ -369,9 +381,267 @@ def test_score_tier1a_stress_run_emits_stress_columns(tmp_path):
 
     assert list(row) == TIER1A_STRESS_TABLE_COLUMNS
     assert row["stress_family"] == "onset_strip"
-    assert row["n_final_requested"] == 0
+    assert row["n_final_requested"] == 14
     assert row["t_strip_ps"] == 0.5
     assert row["n_removed"] == 7
+
+
+def _write_tier1a_stress_collect_fixture(
+    tmp_path,
+    *,
+    stress_ion: IonCheckpoint | None = None,
+    stress_cfg=None,
+    fixed_ion: IonCheckpoint | None = None,
+    fixed_cfg=None,
+    write_fixed_cfg: bool = True,
+    write_stress_cfg: bool = True,
+):
+    from scripts.tier1a_common import (
+        build_onset_strip_cfg,
+        tier1a_run_dir_name,
+        tier1a_stress_run_dir_name,
+    )
+    from scripts.tier0_common import build_drag_cfg
+
+    case = "9A"
+    variant = "shared_pure_cubic"
+    n = 1
+    run_root = tmp_path / "data" / "runs"
+
+    if fixed_ion is None:
+        fixed_ion = replace(_tiny_ion_checkpoint(), mass_scenario="fixed")
+    if fixed_cfg is None:
+        fixed_cfg = build_drag_cfg(
+            case,
+            variant,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    fixed = RunDirectory(
+        run_root / tier1a_run_dir_name(case, variant, n, "fixed", None)
+    )
+    fixed.save_ion(fixed_ion)
+    if write_fixed_cfg:
+        fixed.save_cfg(fixed_cfg)
+
+    if stress_ion is None:
+        stress_ion = _tiny_ion_checkpoint_with_shell_end(0)
+    if stress_cfg is None:
+        stress_cfg = build_onset_strip_cfg(
+            case,
+            variant,
+            n_final=0,
+            t_strip_ps=0.5,
+            num_molecules=1,
+            ion_time_ps=0.02,
+            dt_ion_ps=0.01,
+            seed=123,
+        )
+    stress = RunDirectory(
+        run_root
+        / tier1a_stress_run_dir_name(case, variant, n, n_final=0, t_strip_ps=0.5)
+    )
+    stress.save_ion(stress_ion)
+    if write_stress_cfg:
+        stress.save_cfg(stress_cfg)
+
+    return case, variant, n
+
+
+def _collect_stress_fixture(script, tmp_path, case, variant, n, **kwargs):
+    return script.collect_tier1a_stress_records(
+        project_root=tmp_path,
+        case=case,
+        variant=variant,
+        n=n,
+        n_final_values=kwargs.pop("n_final_values", (0,)),
+        t_strip_ps=kwargs.pop("t_strip_ps", 0.5),
+        window_start_ps=1.0,
+        **kwargs,
+    )
+
+
+@pytest.mark.parametrize(
+    "missing_cfg_kwargs, match",
+    [
+        ({"write_fixed_cfg": False}, "missing cfg.json.*tier1a_fixed"),
+        ({"write_stress_cfg": False}, "missing cfg.json.*tier1a_stress_onset_strip_n0_t0.5"),
+    ],
+)
+def test_collect_tier1a_stress_records_requires_cfg_json(
+    tmp_path,
+    monkeypatch,
+    missing_cfg_kwargs,
+    match,
+):
+    from scripts.post_processing import tier1a_stress_table as script
+
+    case, variant, n = _write_tier1a_stress_collect_fixture(
+        tmp_path,
+        **missing_cfg_kwargs,
+    )
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(ValueError, match=match):
+        _collect_stress_fixture(script, tmp_path, case, variant, n)
+
+
+@pytest.mark.parametrize(
+    "ion_kwargs, match",
+    [
+        (
+            {"stress_ion": _tiny_ion_checkpoint_with_shell_end(0, mass_scenario="fixed")},
+            "tier1a_stress_onset_strip_n0_t0.5.*ion.mass_scenario",
+        ),
+        (
+            {"fixed_ion": replace(_tiny_ion_checkpoint(), mass_scenario="anchored_discrete")},
+            "tier1a_fixed.*ion.mass_scenario",
+        ),
+    ],
+)
+def test_collect_tier1a_stress_records_rejects_ion_mass_scenario_mismatch(
+    tmp_path,
+    monkeypatch,
+    ion_kwargs,
+    match,
+):
+    from scripts.post_processing import tier1a_stress_table as script
+
+    case, variant, n = _write_tier1a_stress_collect_fixture(
+        tmp_path,
+        **ion_kwargs,
+    )
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(ValueError, match=match):
+        _collect_stress_fixture(script, tmp_path, case, variant, n)
+
+
+def test_collect_tier1a_stress_records_rejects_shell_endpoint_mismatch(
+    tmp_path,
+    monkeypatch,
+):
+    from scripts.post_processing import tier1a_stress_table as script
+
+    ion = _tiny_ion_checkpoint_with_shell_end(0)
+    n_shell = ion.n_shell.copy()
+    n_shell[:, -1] = 2
+    case, variant, n = _write_tier1a_stress_collect_fixture(
+        tmp_path,
+        stress_ion=replace(ion, n_shell=n_shell),
+    )
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="tier1a_stress_onset_strip_n0_t0.5.*n_shell_end",
+    ):
+        _collect_stress_fixture(script, tmp_path, case, variant, n)
+
+
+@pytest.mark.parametrize(
+    "cfg_patch, match",
+    [
+        ({"anchor_mode": "time"}, "anchor_mode"),
+        ({"t_star_ps": 5.0}, "t_star_ps"),
+    ],
+)
+def test_collect_tier1a_stress_records_rejects_anchor_cfg_mismatch(
+    tmp_path,
+    monkeypatch,
+    cfg_patch,
+    match,
+):
+    from scripts.post_processing import tier1a_stress_table as script
+    from scripts.tier1a_common import build_onset_strip_cfg
+
+    cfg = build_onset_strip_cfg(
+        "9A",
+        "shared_pure_cubic",
+        n_final=0,
+        t_strip_ps=0.5,
+        num_molecules=1,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=123,
+    )
+    case, variant, n = _write_tier1a_stress_collect_fixture(
+        tmp_path,
+        stress_cfg=replace(cfg, **cfg_patch),
+    )
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(ValueError, match=match):
+        _collect_stress_fixture(script, tmp_path, case, variant, n)
+
+
+@pytest.mark.parametrize(
+    "collect_kwargs, match",
+    [
+        ({"n_final_values": (True,)}, "n_final"),
+        ({"n_final_values": ("0",)}, "n_final"),
+        ({"t_strip_ps": math.nan}, "t_strip_ps"),
+    ],
+)
+def test_collect_tier1a_stress_records_preserves_strict_input_validation(
+    tmp_path,
+    monkeypatch,
+    collect_kwargs,
+    match,
+):
+    from scripts.post_processing import tier1a_stress_table as script
+
+    case, variant, n = _write_tier1a_stress_collect_fixture(tmp_path)
+    monkeypatch.setattr(
+        script,
+        "_load_references",
+        lambda project_root, case: (_hedft_reference(), _smoothed_reference()),
+    )
+
+    with pytest.raises(ValueError, match=match):
+        _collect_stress_fixture(script, tmp_path, case, variant, n, **collect_kwargs)
+
+
+def test_score_tier1a_stress_run_rejects_nonuniform_shell_endpoint(tmp_path):
+    from scripts.post_processing.tier1a_stress_table import score_tier1a_stress_run
+
+    ion = _tiny_ion_checkpoint_with_shell_end(0)
+    n_shell = ion.n_shell.copy()
+    n_shell[1, -1] = 1
+    run = RunDirectory(tmp_path / "stress")
+    run.save_ion(replace(ion, n_shell=n_shell))
+
+    with pytest.raises(ValueError, match="n_shell end values are not uniform"):
+        score_tier1a_stress_run(
+            run,
+            case="9A",
+            variant="shared_pure_cubic",
+            n=1,
+            run_tag="tier1a_stress_onset_strip_n0_t0.5",
+            n_final=0,
+            t_strip_ps=0.5,
+            hedft=_hedft_reference(),
+            smoothed=_smoothed_reference(),
+            window_start_ps=1.0,
+        )
 
 
 def test_collect_tier1a_stress_records_rejects_cfg_metadata_mismatch(tmp_path, monkeypatch):
@@ -387,12 +657,13 @@ def test_collect_tier1a_stress_records_rejects_cfg_metadata_mismatch(tmp_path, m
     variant = "shared_pure_cubic"
     n = 1
     run_root = tmp_path / "data" / "runs"
-    ion = _tiny_ion_checkpoint()
+    fixed_ion = _tiny_ion_checkpoint_with_shell_end(14, mass_scenario="fixed")
+    stress_ion = _tiny_ion_checkpoint_with_shell_end(0)
 
     fixed = RunDirectory(
         run_root / tier1a_run_dir_name(case, variant, n, "fixed", None)
     )
-    fixed.save_ion(ion)
+    fixed.save_ion(fixed_ion)
     fixed.save_cfg(
         build_drag_cfg(
             case,
@@ -408,7 +679,7 @@ def test_collect_tier1a_stress_records_rejects_cfg_metadata_mismatch(tmp_path, m
         run_root
         / tier1a_stress_run_dir_name(case, variant, n, n_final=0, t_strip_ps=0.5)
     )
-    mismatched.save_ion(ion)
+    mismatched.save_ion(stress_ion)
     cfg = build_onset_strip_cfg(
         case,
         variant,
