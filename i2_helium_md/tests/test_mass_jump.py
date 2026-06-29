@@ -83,6 +83,16 @@ class TestContinuousVelocityShed:
         res.v_plus[0] = 999.0
         assert v[0] == V_MINUS[0]
 
+    def test_default_shed_accepts_non_shell_mass_and_drops_one_he(self):
+        res = continuous_velocity_shed(V_MINUS, M_EFF_AMU)
+        np.testing.assert_array_equal(res.v_plus, V_MINUS)
+        assert res.m_plus_amu == pytest.approx(M_EFF_AMU - MASS_HE_AMU, abs=1e-12)
+        speed_sq = float(V_MINUS @ V_MINUS)
+        assert res.dE_mass_transfer == pytest.approx(
+            0.5 * MASS_HE_AMU * speed_sq,
+            rel=1e-12,
+        )
+
 
 class TestBatchContinuousVelocityShed:
     @pytest.mark.parametrize("n_after", [14, 2, 1, 0])
@@ -114,8 +124,16 @@ class TestBatchContinuousVelocityShed:
         ke_after = 0.5 * res.m_plus_amu * speed_sq + 0.5 * removed_mass * speed_sq
         assert ke_after == pytest.approx(ke_before, rel=1e-12)
 
-    @pytest.mark.parametrize("bad_n_removed", [0, -1, 22])
+    @pytest.mark.parametrize("bad_n_removed", [0, -1, 100])
     def test_rejects_invalid_batch_removed_count(self, bad_n_removed):
+        with pytest.raises(ValueError, match="n_removed"):
+            continuous_velocity_shed(V_MINUS, complex_mass_amu(21), n_removed=bad_n_removed)
+
+    @pytest.mark.parametrize(
+        "bad_n_removed",
+        [1.5, 2.0, True, None, "2", np.array([1, 2])],
+    )
+    def test_rejects_non_integer_removed_count(self, bad_n_removed):
         with pytest.raises(ValueError, match="n_removed"):
             continuous_velocity_shed(V_MINUS, complex_mass_amu(21), n_removed=bad_n_removed)
 

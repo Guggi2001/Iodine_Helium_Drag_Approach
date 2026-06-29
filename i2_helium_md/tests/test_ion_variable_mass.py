@@ -110,6 +110,17 @@ class TestVectorizedContinuousVelocityShed:
         assert m_plus == pytest.approx(complex_mass_amu(0))
         assert dE[0] == pytest.approx(0.5 * 21 * MASS_HE_AMU * 4.0)
 
+    @pytest.mark.parametrize("bad_n_removed", [1.5, 2.0, True, None, "2", np.array([1, 2])])
+    def test_batch_vectorized_rejects_non_integer_removed_count(self, bad_n_removed):
+        with pytest.raises(ValueError, match="n_removed"):
+            continuous_velocity_shed_components(
+                np.array([1.0]),
+                np.array([0.0]),
+                np.array([0.0]),
+                complex_mass_amu(21),
+                n_removed=bad_n_removed,
+            )
+
     def test_guard_rejects_mass_below_he(self):
         with pytest.raises(ValueError, match="m_he|pre-shed"):
             continuous_velocity_shed_components(

@@ -1,13 +1,13 @@
 """Mass-shed operators for Tier-1a anchored validation.
 
-Pure, stateless physics: a single He shed consumes a pre-shed velocity and mass
+Pure, stateless physics: a He shed consumes a pre-shed velocity and mass
 and emits the post-shed velocity, post-shed mass, and mechanical ledger term. It
 performs no scheduling, integration, or drag evaluation; those live in
 ``shell_schedule.py`` and the ion driver.
 
 The production Tier-1a ``anchored_discrete`` path uses a continuous-velocity
-shed. The shed He leaves co-moving with the tracked complex at the instant of
-bookkeeping::
+shed. Removed He leaves co-moving with the tracked complex at the instant of
+bookkeeping; for the default one-He shed::
 
     v+  = v-
     m+  = m - m_He
@@ -47,7 +47,7 @@ from typing import Literal
 
 import numpy as np
 
-from .constants import MASS_HE_AMU, MASS_I_ION_AMU
+from .constants import MASS_HE_AMU
 
 # The two Tier-1a A/B run modes, passed explicitly (NOT SimConfig.mass_scenario;
 # the config-surface enum change is deferred to the integrator-wiring slice).
@@ -337,17 +337,11 @@ def _check_masses(m_minus_amu: float, m_he_amu: float) -> None:
 
 def _check_removed_count(n_removed: int, m_minus_amu: float, m_he_amu: float) -> int:
     """Return validated integer removed-He count."""
-    if int(n_removed) != n_removed:
+    if isinstance(n_removed, (bool, np.bool_)) or not isinstance(n_removed, (int, np.integer)):
         raise ValueError(f"n_removed must be an integer; got {n_removed!r}.")
     n = int(n_removed)
     if n <= 0:
         raise ValueError(f"n_removed must be > 0; got {n_removed!r}.")
-    n_present = int(np.rint((m_minus_amu - MASS_I_ION_AMU) / m_he_amu))
-    if n > n_present:
-        raise ValueError(
-            f"n_removed={n} exceeds available He count {n_present} "
-            f"for m_minus_amu={m_minus_amu!r}."
-        )
     if not (m_minus_amu - n * m_he_amu > 0.0):
         raise ValueError(
             f"n_removed={n} removes too much mass from m_minus_amu={m_minus_amu!r}."
