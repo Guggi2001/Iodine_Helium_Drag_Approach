@@ -21,30 +21,50 @@ in a helium bubble. The post-processing surface is the stable comparison layer
 for the new physics. This phase is the scoped exception to the "do not change
 collision physics" forbidden-list rule.
 
-**Live status and full history are not duplicated here — consult the docs:**
+**Live status and full history are not duplicated here — consult the docs
+(actual paths shown; root unless a directory is given):**
 
-- `drag_migration_log_tier0.md` — Slices 1–4 + Tier-0 + extraction decision / withdrawal history
-- `drag_migration_log_tier1a.md` — Tier-1a decision + delivery history (current phase)
-- `DRAG_PORT_DESIGN_DECISIONS.md` — frozen architecture choices
+Repo root:
 - `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` — live mass-model detail (locked mechanism, SQ1–SQ3 integrator/mass-jump split, R/A/OQ registers)
-- `TIER1A_IMPLEMENTATION_PLAN.md` — active build plan (anchored kinematic mass-dynamics validation)
-- `PHYSICS_BASELINE.md` — MD baseline
-- `METHOD_B_trajectory_matching_extraction.md` — extraction method + held-out validation
+- `DRAG_PORT_DESIGN_DECISIONS.md` — frozen architecture choices
+- `CALIBRATION_MAP.md` — cross-doc parameter index (Sourced/Bounded/Free/Derived classes, Tier anchors, identifiability)
+
+`docs/drag_port/Tier0/`:
+- `drag_migration_log_tier0.md` — Slices 1–4 + Tier-0 + extraction decision / withdrawal history
 - `TIER0_FINDINGS.md` — Tier-0 verdict
-- `Drag_extraction_code.md` — upstream drag-law extraction pipeline
+- `METHOD_B_trajectory_matching_extraction.md` — extraction method + held-out validation
 - `SLICE{1..4}_GOALS_*.md` — per-slice goal docs
+
+`docs/drag_port/Tier1/`:
+- `drag_migration_log_tier1a.md` — Tier-1a decision + delivery history (delivered)
+- `TIER1A_IMPLEMENTATION_PLAN.md` — Tier-1a build plan (anchored kinematic mass-dynamics validation; delivered)
+
+`docs/drag_port/Tier2/` (current phase — the active goal documents):
+- `drag_migration_log_tier2.md` — Tier-2 decision + delivery log
+- `TIER2_IMPLEMENTATION_PLAN.md` — program overview (11 slices / 6 phases A–F)
+- per-phase detail plans: `TIER2_PHASE_{A,B,C,D}_IMPLEMENTATION_PLAN.md`, `PHASE_E_IMPLEMENTATION_PLAN.md`, `PHASE_F_IMPLEMENTATION_PLAN.md`
+
+`docs/matlab_port/`:
+- `PHYSICS_BASELINE.md` — MD baseline
 
 Compact state (verify against the log before relying on it): production law is
 `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the shared bundle; drag
 form is settled (pure-cubic); **Tier 0 is complete** (18 Å clean pass, 9 Å
-non-radial flag). **The current goal is the Tier 1a build** — anchored kinematic
-mass-dynamics validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT
-loss curve, and a controlled `fixed` vs `discrete`-mass A/B tests the influence of
-mass dynamics on the trajectory. The work is the variable-mass integrator upgrade
-(SQ1–SQ3). Tier 1a is in the planning→implementation stage and stays behind the
-`[PROCEED TO IMPLEMENTATION]` trigger. Noise (Tier 3) stays stubbed/inert behind its
-enum; the `IonCheckpoint` schema bump is activated by Tier 1a (`n(t)` + the four-term
-ledger fields, **no `E_int` field yet**).
+non-radial flag). **Tier 1a is delivered** — anchored kinematic mass-dynamics
+validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT loss curve and a
+controlled `fixed` vs `anchored_discrete` A/B was built (variable-mass integrator
+SQ1–SQ3, v6 checkpoint, four-term ledger; continuous-velocity shed is the physical
+path, cold-shed retained as a diagnostic bound). **The current goal is the Tier 2
+build** — the *generative* `biphasic_energy_gated` mass mechanism (Poisson pickup +
+energy-gated RRK evaporation + `E_int` reservoir + Newton cooling, **5-term**
+invariant) arbitrated against the experimental I⁺Heₙ size distribution
+(`data/reference/integrated_i_he_abundance.csv`). Plan + slices live under
+`docs/drag_port/Tier2/` (`TIER2_IMPLEMENTATION_PLAN.md` overview + per-phase A–F
+detail plans; 11 slices / 6 phases; full program, validation-first at 0.80 eV then
+2.70 eV production, with a generative-vs-anchored bridge). Tier 2 is
+in the planning→implementation stage and stays behind the `[PROCEED TO
+IMPLEMENTATION]` trigger. Noise (Tier 3) stays stubbed/inert behind its enum; the
+`IonCheckpoint` schema bump to **v7** adds the `E_int` field at Tier 2.
 
 ## Current Scope
 
@@ -173,30 +193,37 @@ before introducing the next unknown:
 
 - **Tier 0 — COMPLETE.** Drag form, deterministic, fixed mass, in-window TDDFT
   traces. Locked: `shared_pure_cubic` (18 Å clean pass, 9 Å non-radial flag).
-- **Tier 1a — ACTIVE (current goal).** Anchored kinematic mass-dynamics validation.
+- **Tier 1a — DELIVERED.** Anchored kinematic mass-dynamics validation.
   The shell schedule `n(t)` is *anchored* to the 9 Å TDDFT loss curve
-  (~21→19→14 He), not generated; the run is a controlled `fixed` vs `discrete`-mass
-  A/B that tests whether drag + variable mass reproduce `R(t)`, `|v(t)|` and whether
-  the four-term §2.9 ledger closes. Discriminates the mass-model *class* via the
-  `|v|∝1/m` cold-shed signature. **OQ-independent** — picture/ladder/κ/ν/s are
-  bypassed by the anchor. The build is the variable-mass integrator upgrade
-  (SQ1–SQ3: drag O-step under `m(t)`; momentum-conserving cold-shed jump; post-jump
-  `m⁺`). The predictive shell-timing variant ("1b") is **rejected** (TDDFT is not
-  ground truth — experiment arbitrates at Tier 2). Plan + slices:
+  (~21→19→14 He), not generated; the run is a controlled `fixed` vs
+  `anchored_discrete` A/B that tests whether drag + variable mass reproduce `R(t)`,
+  `|v(t)|` and whether the four-term §2.9 ledger closes. **OQ-independent** —
+  picture/ladder/κ/ν/s are bypassed by the anchor. Built the variable-mass
+  integrator upgrade (SQ1–SQ3: drag O-step under `m(t)`; post-jump `m⁺`), with the
+  continuous-velocity shed as the physical path and cold-shed retained as a
+  diagnostic bound. The predictive shell-timing variant ("1b") is **rejected**
+  (TDDFT is not ground truth — experiment arbitrates at Tier 2). Plan + slices:
   `TIER1A_IMPLEMENTATION_PLAN.md`.
-- **Tier 2 — terminal I⁺(He)ₙ size distribution** vs. experimental detector data —
-  the only observable that separates the mass scenarios *and* arbitrates the two
-  genuinely-free knobs (ladder shape + electronic picture). The biphasic *generative*
-  mechanism (Poisson pickup + RRK + gate) is unfalsified until here.
+- **Tier 2 — ACTIVE (current goal). Terminal I⁺(He)ₙ size distribution** vs.
+  experimental detector data — the only observable that separates the mass scenarios
+  *and* arbitrates the two genuinely-free knobs (ladder shape + electronic picture).
+  This is where the biphasic *generative* mechanism (Poisson pickup + energy-gated
+  RRK evaporation + `E_int` reservoir + Newton cooling, **5-term** invariant) is
+  built and falsified. Plan + slices: `TIER2_IMPLEMENTATION_PLAN.md` (11 slices /
+  6 phases; full program, validation-first 0.80 eV → 2.70 eV production, with a
+  generative-vs-anchored bridge). Schema bumps to **v7** (`E_int` field). Stays
+  behind the `[PROCEED TO IMPLEMENTATION]` trigger.
 - **Tier 3 — ensemble second moments** (noise) vs. VMI references.
 
 A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at config-load
 (§6.5): constant-mass coefficients are self-consistent only with
-`mass_scenario=fixed`. The Tier-1a `discrete` run trips this guard structurally and
-runs under `allow_inconsistent_mass_pairing=True`, defended by the §6.6 mid-window
-argument (anchored `m≈19 He = m_eff` mid-window; the `n=21`/`n=14` ends sit in the
-§6.7 free-zone). Histogram comparisons (Tier 2/3) default to the Wasserstein metric.
-Current tier status: `drag_migration_log_tier1a.md` / `TIER0_FINDINGS.md`.
+`mass_scenario=fixed`. Both the Tier-1a `anchored_discrete` run and the Tier-2
+`biphasic` production run trip this guard structurally and run under
+`allow_inconsistent_mass_pairing=True`, defended by the §6.6 mid-window argument
+(`m≈19 He = m_eff` mid-window; the `n=21`/`n=14` ends sit in the §6.7 free-zone).
+Histogram comparisons (Tier 2/3) default to the Wasserstein metric.
+Current tier status: `drag_migration_log_tier2.md` (active) /
+`drag_migration_log_tier1a.md` / `TIER0_FINDINGS.md`.
 
 ## Post-Processing Comparison Layer
 
