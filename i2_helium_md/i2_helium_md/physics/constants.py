@@ -111,6 +111,31 @@ MASS_I_ION_AMU: float = 126.90              # u           -- I+ mass (Tier-1a sh
 
 
 # ---------------------------------------------------------------------------
+# Tier-2 Phase-A dissociation ladder (Slice L)
+#
+# The Form-U single-rung dissociation cost D_0(n) for I+He_n interpolates a
+# picture-keyed first rung D_0(1) down to the bulk-He floor across a sigmoid
+# cliff centred at n* + 1/2. The first rung and the floor are *sourced* anchors
+# (cm^-1, as the IHe05 EPAPS / MASS doc give them); the module converts to eV
+# via EV_PER_WAVENUMBER. These are new sourced anchors for the drag-port phase,
+# NOT edits to the MD physical-constants table.
+#   Provenance: docs/drag_port/Tier2/TIER2_PHASE_A_IMPLEMENTATION_PLAN.md §2.1;
+#   MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md R3 / A10.
+# ---------------------------------------------------------------------------
+N_STAR: int = 21                            # count -- first-shell I+ cation occupancy (MASS OQ8)
+
+D0_1_X2_WAVENUMBER: float = 106.9           # cm^-1 -- IHe05 EPAPS exact J=0 ZPE (MASS R3, +/-3 cm^-1)
+D0_1_MIX_WAVENUMBER: float = 74.4           # cm^-1 -- statistical SO mixture (X2+I1+I0)/3 (MASS A10)
+# Provisional cooling_relaxed first rung: a rule-2 declared-but-unread stub. The
+# source leaves it unpinned ("e.g. a relaxation-weighted blend", strictly between
+# mix and X2; MASS rev-2026-06-21 #3); Phase A ships the arithmetic mean of the
+# two pinned pictures so the ordering mix < cooling_relaxed < X2 holds, and pins
+# the concrete blend at Phase F. Do NOT treat as a 4-figure oracle.
+D0_1_COOLING_RELAXED_WAVENUMBER: float = 0.5 * (D0_1_X2_WAVENUMBER + D0_1_MIX_WAVENUMBER)  # 90.65 cm^-1
+D_FLOOR_WAVENUMBER: float = 4.97            # cm^-1 -- bulk-He chemical potential |mu_He^bulk| (MASS R3)
+
+
+# ---------------------------------------------------------------------------
 # Coulomb helpers (distance input in Angstrom)
 # ---------------------------------------------------------------------------
 def coulomb_energy(r_angstrom: np.ndarray | float) -> np.ndarray | float:

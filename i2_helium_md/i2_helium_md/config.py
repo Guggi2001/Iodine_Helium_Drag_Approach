@@ -57,6 +57,14 @@ NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
 MassRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
 
+# Tier-2 Phase-A dissociation ladder (Slice L). ``LadderElectronicPicture`` must
+# list exactly the picture keys of ``physics.dissociation_ladder._FIRST_RUNG_EV``
+# (the single source of truth for D_0(1); enforced by a parity test). The
+# ``cooling_relaxed`` arm ships a provisional-average stub (rule-2; pinned at
+# Phase F). ``LadderForm`` selects the Form-U sigmoid vs the tabulated fallback.
+LadderForm = Literal["form_u", "tabulated"]
+LadderElectronicPicture = Literal["statistical_mixture", "x2_only", "cooling_relaxed"]
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -209,6 +217,16 @@ class SimConfig:
     anchor_n_final: int = 14              # endpoint for onset_strip stress only
     coulomb_available_eV: float = 0.80    # eV; provenance stamp (d=9A); NO hard refuse (plan §8)
 
+    # -- Tier-2 Phase-A dissociation ladder (Slice L) --
+    # The Form-U ladder D_0(n) + its cumulative gate threshold Sigma(n). Read by
+    # physics/dissociation_ladder.py (kappa, picture, selector) and by
+    # check_ladder_config below (picture / selector reject + D_0(1) > D_floor).
+    # All three fields are LIVE at Slice L (removed from the rule-2 exception
+    # table). ladder_steepness kappa stays a Free knob (Phase-F calibration).
+    dissociation_ladder: LadderForm = "form_u"                 # Form-U sigmoid vs tabulated fallback
+    ladder_steepness: float = 1.0                              # kappa [per-unit-n]; Free (Phase-F fit)
+    ladder_electronic_picture: LadderElectronicPicture = "statistical_mixture"  # sets D_0(1)
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -299,6 +317,72 @@ class SimConfig:
                     f"got {self.anchor_n_final!r}."
                 )
         check_drag_config(self)
+        check_ladder_config(self)
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-A dissociation-ladder config-load guard (Slice L)
+# ---------------------------------------------------------------------------
+# Known ladder selector forms (mirrors _KNOWN_DRAG_FORMS): Literal is not
+# runtime-enforced, so this is the typo-recovery set the guard rejects against.
+_KNOWN_LADDER_FORMS = ("form_u", "tabulated")
+
+
+def check_ladder_config(cfg: "SimConfig") -> None:
+    """Validate the dissociation-ladder surface of ``cfg`` at config-load (Slice L).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. It is a
+    load-time fail-loud check (no silent clamp):
+
+    1. **Selector reject** -- ``cfg.dissociation_ladder`` must be a known Form-U /
+       tabulated selector (mirrors the ``drag_form`` typo-recovery arm).
+    2. **Steepness positivity** -- ``cfg.ladder_steepness`` (kappa) must be > 0. A
+       non-positive steepness inverts/flattens the Form-U cliff and drives the rung
+       normalisation ``(1 - sigma(1))`` to zero (inf rungs), so it is refused at
+       load (CLAUDE.md principle 4). This is the field's live read at Slice L.
+    3. **Picture reject** -- ``cfg.ladder_electronic_picture`` must be a recognised
+       electronic picture (resolved via ``dissociation_ladder.first_rung_d0_eV``,
+       which raises ``ValueError`` on an unknown key; mirrors the ``mass_scenario``
+       reject arm).
+    4. **D_0(1) > D_floor** -- the resolved first rung must exceed the bulk-He floor
+       for the configured picture. Defensive: the three sourced pictures all
+       satisfy it, but a future picture / floor edit that violated it would be a
+       physics error, caught loudly here rather than producing a non-dissipative
+       inverted ladder.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ladder selector, a non-positive ``ladder_steepness``, an
+        unrecognised electronic picture, or a resolved ``D_0(1)`` that does not
+        exceed ``D_floor``.
+    """
+    # Local import avoids a module-load cycle (dissociation_ladder imports only
+    # constants; config is imported widely) and keeps the guard self-contained.
+    from .physics.dissociation_ladder import D_FLOOR_EV, first_rung_d0_eV
+
+    if cfg.dissociation_ladder not in _KNOWN_LADDER_FORMS:
+        raise ValueError(
+            f"unknown dissociation_ladder {cfg.dissociation_ladder!r}; expected "
+            f"one of {_KNOWN_LADDER_FORMS}"
+        )
+
+    if not (cfg.ladder_steepness > 0.0):
+        raise ValueError(
+            f"ladder_steepness (kappa) must be > 0 (a non-positive steepness "
+            f"inverts/flattens the Form-U cliff and diverges the rung "
+            f"normalisation); got {cfg.ladder_steepness!r}"
+        )
+
+    # Picture reject (raises ValueError on an unknown key) + resolved first rung.
+    d0_1_eV = first_rung_d0_eV(cfg.ladder_electronic_picture)
+
+    if not (d0_1_eV > D_FLOOR_EV):
+        raise ValueError(
+            f"ladder first rung D_0(1)={d0_1_eV!r} eV must exceed the bulk-He "
+            f"floor D_floor={D_FLOOR_EV!r} eV (picture="
+            f"{cfg.ladder_electronic_picture!r})"
+        )
 
 
 # ---------------------------------------------------------------------------

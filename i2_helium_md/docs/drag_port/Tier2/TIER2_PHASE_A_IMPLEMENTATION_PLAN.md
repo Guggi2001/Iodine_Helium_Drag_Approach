@@ -40,9 +40,17 @@ trajectory fidelity.
   `shell_schedule.py` / `mass_jump.py` precedent and the L/K/U independence in the Tier-2
   dependency graph):
   - `physics/dissociation_ladder.py` — Slice L,
-  - `physics/internal_energy_cooling.py` — Slice K,
+  - `physics/solvation_cooling.py` — Slice K (cools `E_solv.struct`; `E_int` is only one
+    additive term inside it — the module is named for the variable it relaxes, MASS §K2),
   - `physics/internal_energy_budget.py` — Slice U.
 - New sourced constants land in `physics/constants.py`; new knobs in `config.py`.
+- **Full K/U surface built in Phase A (decision 2026-06-30):** `newton_cool_step` (K) and
+  `reconstruct_e_int_eV` (U) are built and oracle-tested here even though their first
+  *composing* caller is the Phase-C driver — Phase A stays self-contained.
+- **`cooling_relaxed` ladder picture ships as a rule-2 declared-but-unread stub
+  (decision 2026-06-30):** the source leaves its first rung unpinned (MASS §rev-2026-06-21 #3
+  "e.g. a relaxation-weighted blend", *strictly between* mix and X₂), so Phase A asserts only
+  the ordering and pins the concrete blend at Phase F.
 
 ---
 
@@ -86,7 +94,7 @@ They are the oracles the Phase-A pytest suites assert against.
 |---|---|---|---|
 | `D0_1_X2` | 106.9  ( = **0.013254 eV** = 13.3 meV) | cm⁻¹ | IHe05 EPAPS exact J=0 ZPE; MASS R3 (pinned ±3 cm⁻¹) |
 | `D0_1_MIX` | 74.4  ( = **0.009224 eV** = 9.23 meV) | cm⁻¹ | IHe05 statistical SO mixture (X₂+I₁+I₀)/3; MASS A10 |
-| `D0_1_COOLING_RELAXED` | ∈ (74.4, 106.9) | cm⁻¹ | relaxation-weighted blend; MASS rev 2026-06-21 #3 |
+| `D0_1_COOLING_RELAXED` | ∈ (74.4, 106.9) — **unpinned in Phase A** (rule-2 stub; concrete blend at Phase F) | cm⁻¹ | relaxation-weighted blend; MASS rev 2026-06-21 #3 |
 | `D_FLOOR` | 4.97  ( = **6.16e-4 eV** = 7.15 K) | cm⁻¹ | bulk-He chemical potential \|μ_He^bulk\|; MASS R3 |
 | `N_STAR` | 21 | count | I2-notes first-shell cation; MASS OQ8 (`21⁺⁰₋₁`) |
 | `NU_EVAP_PER_PS` | 2.42 | ps⁻¹ | IHe05 X₂ well curvature ω_e=80.6 cm⁻¹; MASS A11 (read by Slice Q, Phase B) |
@@ -155,6 +163,11 @@ contracts* (final names settle at build), vectorized scalar-in/array-in followin
 
 ### Slice L — Dissociation ladder + integrated gate *(pure; fully independent)*
 
+> **Status: DELIVERED (2026-06-30).** Built test-first + reviewed/hardened; Slice-L
+> suites 104 green, full suite 1045/0. Full delivery record, the four ExitPlanMode
+> resolutions as applied, and the review-pass fixes are in
+> `drag_migration_log_tier2.md` ("Slice L DELIVERED" + "review + test-hardening pass").
+
 **Module.** `physics/dissociation_ladder.py`
 
 **Purpose.** The Form U sigmoid ladder `D_0(n)` and its cumulative sum `Σ(n)` (the
@@ -174,12 +187,16 @@ tested first.
 **Encoded form.** §2.2 (L).
 
 **Knobs (config §5):** `ladder_electronic_picture ∈ {statistical_mixture(default),
-x2_only, cooling_relaxed}` (sets `D_0(1)` = 74.4 / 106.9 / between); `ladder_steepness` κ
-(Free knob); `D_floor`, `n*` sourced; `dissociation_ladder` selects Form U vs tabulated.
+x2_only, cooling_relaxed}` (sets `D_0(1)` = 74.4 / 106.9 / **between, unpinned**);
+`ladder_steepness` κ (Free knob); `D_floor`, `n*` sourced; `dissociation_ladder` selects
+Form U vs tabulated. The `cooling_relaxed` arm is a **rule-2 declared-but-unread stub** in
+Phase A — its concrete first rung (a relaxation-weighted blend) is pinned at Phase F; Phase A
+only enforces strict betweenness.
 
 **Oracle values.**
 - First rung: `x2_only` → 106.9 cm⁻¹ = 0.013254 eV; `statistical_mixture` → 74.4 cm⁻¹ =
-  0.009224 eV; `cooling_relaxed` strictly between.
+  0.009224 eV (both 4-figure oracles). `cooling_relaxed` → **ordering oracle only**
+  (`statistical_mixture < cooling_relaxed < x2_only`), no pinned value in Phase A.
 - Floor: 4.97 cm⁻¹ = 6.16e-4 eV; cliff at `n*+½ = 21.5`.
 - Integrated first-shell sum `Σ(21)`: **X₂ 0.25–0.28 eV / mixture 0.17–0.19 eV**, varying
   only ~11% over κ∈[0.3,5] — the **near-κ-independence / decoupling** check (the gate
@@ -192,7 +209,9 @@ x2_only, cooling_relaxed}` (sets `D_0(1)` = 74.4 / 106.9 / between); `ladder_ste
 mock it.
 
 **Test spec (`tests/test_dissociation_ladder.py`).**
-- Rungs/sums match oracle to 4 figures across κ∈[0.3,5] and all 3 pictures.
+- Rungs/sums match oracle to 4 figures across κ∈[0.3,5] for the two pinned pictures
+  (`x2_only`, `statistical_mixture`); `cooling_relaxed` is asserted by ordering only
+  (`statistical_mixture < cooling_relaxed < x2_only`), not against a 4-figure value.
 - `Σ(21)` lands in the X₂ / mixture bands and stays within ~11% across the κ range
   (decoupling assertion).
 - Cliff geometry: `D_0(n*) ≈ D_0(1)` (full-depth in-shell), `D_0(n*+1) → D_floor` for
@@ -208,7 +227,12 @@ hand-built ladder.
 
 ### Slice K — Newton cooling + occupancy-resolved asymptote *(pure; mocks L)*
 
-**Module.** `physics/internal_energy_cooling.py`
+**Module.** `physics/solvation_cooling.py`
+
+> **Naming (decision 2026-06-30).** The module is named for the variable it relaxes,
+> `E_solv.struct = E_bind + E_int` (MASS §K2, lines 334/837/848). `E_int` is one additive
+> term *inside* that variable, owned by Slice U (`internal_energy_budget.py`) — so this
+> module is *not* `internal_energy_cooling.py`.
 
 **Purpose.** The cooling **driver** for `E_solv.struct` and the binding split it cools
 toward. A pure analytic step — **no integrator state**; the per-step closed-form
@@ -244,7 +268,7 @@ inspection).
 
 **Independence.** Mocks L's `ladder_cumsum` with a known stub; no integrator, no state.
 
-**Test spec (`tests/test_internal_energy_cooling.py`).**
+**Test spec (`tests/test_solvation_cooling.py`).**
 - `e_infinity_eV` monotone in N and `→ 0` at `N = 0`.
 - `e_electrostriction_eV ≤ 0` everywhere; equals `−(|S(N)| − Σ(N))`.
 - `s_collective_eV(n*) = |S| = 0.308 eV`; `|S(n*)|/n* = 118 cm⁻¹` to 4 figures.
@@ -252,6 +276,10 @@ inspection).
   at `E_solv.struct = E_∞`; `dt`-robust (same endpoint via one big step vs many small).
 - Cold-shed neutrality identity holds to machine precision on a synthetic
   `(N → N−1, E_int −= D_0)` micro-case.
+- **`E_int^eq = 0` is a split-consistency (tautology) check, not independent corroboration:**
+  with `E_int` *defined* as the residual `E_solv.struct − E_bind^pair − E_elec` and
+  `E_∞(N) = E_bind^pair + E_elec`, the residual is identically 0 at equilibrium by
+  construction (MASS line 881). Assert it, but do not read it as a measured anchor.
 
 **Acceptance.** Newton step + split match oracle; neutrality identity holds; `E_∞`
 monotone and reaches 0.
@@ -341,7 +369,11 @@ is removed from the exception table when its slice activates it.
 - **K:** `internal_energy_cooling_tau_ps` τ.
 - **U:** `internal_energy_partition_fraction` f_int,
   `internal_energy_retained_fraction` f_ret. (`coulomb_available_eV` already exists,
-  `config.py:210` — scenario-keyed 0.80 / 2.70.)
+  `config.py:210` — scenario-keyed 0.80 / 2.70.) Phase A ships `f_int` as a
+  **declared-but-unread** knob (rule-2): only the `f_int_floor` *helper* is exercised here;
+  the committed default is a **Phase-F calibration output**, not pinned in Phase A (the floor
+  is scenario-split — 0.21–0.35 @ 0.80 eV vs 0.065–0.10 @ 2.70 eV — so no single
+  "just-above-floor" default serves both budgets).
 
 **Validators.** Reuse the existing config-load guard scaffolding (`check_drag_config`,
 `config.py:~314+`) for any Phase-A checks: the `ladder_electronic_picture` enum reject arm
@@ -380,7 +412,7 @@ Mirror Tier-1a's pure-function discipline (validation steps 1–2):
   and `E_int^eq`.
 - **No figures, no checkpoints, no RNG** in pytest.
 
-Suites: `tests/test_dissociation_ladder.py`, `tests/test_internal_energy_cooling.py`,
+Suites: `tests/test_dissociation_ladder.py`, `tests/test_solvation_cooling.py`,
 `tests/test_internal_energy_budget.py`. Run the narrowest first, then the full suite.
 Interpreter (Python may not be on PATH):
 
@@ -415,6 +447,11 @@ B / C / Tier 3.
   `statistical_mixture` (do not hard-collapse), and `E_bind` is not cited as independent
   support for the mixture. Provenance remains pending author contact; revisit only if a
   resolution arrives.
+- **`cooling_relaxed` ladder picture — carried rule-2 stub (decision 2026-06-30).** The
+  source leaves its first rung unpinned (MASS rev-2026-06-21 #3, "e.g. a relaxation-weighted
+  blend", *strictly between* mix and X₂; CALIBRATION row 20). Phase A ships the enum arm
+  declared-but-unread, asserts ordering only, and removes it from the rule-2 exception table
+  when Phase F pins the concrete blend. Do **not** hard-pin a value in Phase A.
 - **Mechanism locked, values open** — Phase A encodes *forms* and *sourced* anchors only;
   κ, f_int, f_ret, τ stay knobs. **No fitting in Phase A** (that is the Phase F campaign).
 - **`|S|` is an upper bound, not a rung-sum target** (R3/R12) — rungs are never calibrated

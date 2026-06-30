@@ -58,7 +58,7 @@ knobs. New surfaces are **orchestration scripts + report assemblers + figures**
 
 Phase F runs **last** — it composes accepted modules from every earlier phase:
 
-- **A** — `physics/dissociation_ladder.py` (L), `internal_energy_cooling.py` (K),
+- **A** — `physics/dissociation_ladder.py` (L), `solvation_cooling.py` (K),
   `internal_energy_budget.py` (U).
 - **B** — `physics/helium_density.py` (ρ), `pickup.py` (P), `evaporation.py` (Q),
   `mass_jump.capture`.

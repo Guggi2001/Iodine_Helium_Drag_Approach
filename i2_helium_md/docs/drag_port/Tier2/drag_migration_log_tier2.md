@@ -292,3 +292,123 @@ Calvo24 total-strip runs, and all CLI/scoreboard/figure scripts Phase E deferred
   (inert), Tier-0 drag law / neutral propagation / RNG draw order / mechanism, and the
   R6/p↔κ conditional triggers (document-only). Identifiability of 8+ quantities on one
   observable is the central reported dependency (CALIBRATION_MAP "Anchor coverage").
+
+---
+
+## Phase A — three open questions resolved (2026-06-30)
+
+A review pass over `TIER2_PHASE_A_IMPLEMENTATION_PLAN.md`, cross-referenced against
+`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` and `CALIBRATION_MAP.md`, surfaced
+five open questions; three needed a user call and are resolved (decision owner: user).
+No code — the `[PROCEED TO IMPLEMENTATION]` boundary still holds; docs-only amendment.
+
+- **1. `cooling_relaxed` ladder picture → rule-2 declared-but-unread stub.** The source
+  leaves the third electronic-picture first rung **unpinned** (MASS rev-2026-06-21 #3:
+  "e.g. a relaxation-weighted blend", *strictly between* mix 74.4 and X₂ 106.9 cm⁻¹;
+  CALIBRATION row 20: "one selection, between mix & X₂"). Phase A ships the enum arm
+  declared-but-unread, asserts **ordering only** (`statistical_mixture < cooling_relaxed
+  < x2_only`), no 4-figure oracle; the concrete blend is pinned at Phase F (removed from
+  the rule-2 exception table then). Defer-as-stub is faithful to source, not a shortcut.
+- **2. Slice K module renamed `internal_energy_cooling.py` → `solvation_cooling.py`.**
+  K2 cools the GAH25 variable **`E_solv.struct = E_bind + E_int`** (MASS lines
+  334/837/848); `E_int` is only one additive term *inside* it, owned by Slice U
+  (`internal_energy_budget.py`). The module is now named for the variable it relaxes
+  (Quality Principle 6). The config knob name `internal_energy_cooling_tau_ps` is the
+  sourced MASS §11 name and is **unchanged**. Sibling-doc filename references updated for
+  drift (PHASE_C `newton_cool_step` path, PHASE_F Phase-A module list); the historical
+  Phase-A-delivered entry above (2026-06-29) predates the rename.
+- **3. Full K/U surface built in Phase A.** `newton_cool_step` (K) and
+  `reconstruct_e_int_eV` (U) are built and oracle-tested in Phase A even though their
+  first *composing* caller is the Phase-C driver (G) — keeps Phase A self-contained.
+
+Two further points flagged for a clarifying comment only (no fork):
+- **`E_int^eq = 0` is a split-consistency (tautology) check, not independent
+  corroboration** — with `E_int` defined as the residual after subtracting the pair +
+  electrostriction split, it is identically 0 at equilibrium by construction (MASS line
+  881). Annotated in the Slice K test spec.
+- **No default `f_int` lands in Phase A** — only the `f_int_floor` helper is exercised;
+  the committed default is a Phase-F calibration output (the floor is scenario-split,
+  0.21–0.35 @ 0.80 eV vs 0.065–0.10 @ 2.70 eV, so no single default serves both budgets).
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. Knob classes
+match (κ + picture **Free** rows 19/20; τ/f_int/f_ret **Bounded** rows 11/13/14;
+D₀(1)/D_floor/n\*/|S| **Sourced** rows 18/23/22/12; Σ(21) **Derived** row 21); config field
+names match MASS §11; |S|=0.308 / drag-binding 0.1168 confirmed as "separate cross-checks,
+not band ends" (row 21).
+
+---
+
+## Phase A — Slice L DELIVERED (2026-06-30)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN), oracle asserts against the plan §2/§4 golden values; pure,
+stateless, mass-agnostic (no `γ`, no `m`, no RNG, no integrator).
+
+**Build (4 files):**
+- `physics/constants.py` — new **sourced** anchors (cm⁻¹, converted via
+  `EV_PER_WAVENUMBER`): `N_STAR=21`, `D0_1_X2_WAVENUMBER=106.9`,
+  `D0_1_MIX_WAVENUMBER=74.4`, `D0_1_COOLING_RELAXED_WAVENUMBER=90.65`,
+  `D_FLOOR_WAVENUMBER=4.97`. Additions, **not** edits to the MD constants table.
+- `physics/dissociation_ladder.py` — `sigma`, `d0_of_n`, `ladder_cumsum`,
+  `gate_threshold` (alias), `first_rung_d0_eV` resolver, `tabulated_ladder` /
+  `TabulatedLadder` fallback, module-level `D_FLOOR_EV` / `CLIFF_CENTER` /
+  `_FIRST_RUNG_EV` (the single source of truth for picture keying).
+- `config.py` — `LadderForm` / `LadderElectronicPicture` literals; live fields
+  `dissociation_ladder` (`form_u`), `ladder_steepness` κ (`1.0`, Free),
+  `ladder_electronic_picture` (`statistical_mixture`); `check_ladder_config` guard
+  (selector reject + picture reject + `D_0(1) > D_floor`) wired into `validate()`.
+- `tests/test_dissociation_ladder.py` (57) + `tests/test_ladder_config.py` (9).
+
+**ExitPlanMode resolutions applied at build (user, 2026-06-30):**
+- **(b) `cooling_relaxed` ships a provisional value = arithmetic mean** of mix and
+  X₂ (90.65 cm⁻¹ = 0.011240 eV). This **refines** planning-decision #1 above: the
+  arm is *not* unread — it returns the provisional blend, which the **ordering**
+  oracle (`mix < cooling_relaxed < x2_only`) reads; there is no 4-figure value
+  oracle for it, and the concrete relaxation-weighted blend is still pinned at
+  Phase F (strict betweenness preserved; faithful to MASS rev-2026-06-21 #3).
+- **τ knob name kept** `internal_energy_cooling_tau_ps` (decision #2 / Slice K).
+- **`tabulated_ladder` fallback built + round-trip tested** in Phase A (not deferred).
+- f_int default → `Optional[float] = None`, config-silent until Phase F — a **Slice
+  U** concern, recorded here, not built at L.
+
+**Oracle cross-validation.** First rungs match to 4 figures and are κ-independent
+(Form-U normalisation pins `D_0(1)` = source exactly). `Σ(21)` lands in the plan
+2-decimal bands (mix 0.17–0.19, X₂ 0.25–0.28 eV) across κ∈[0.3,5] with ~10–11%
+spread (the decoupling property); the κ=5 mixture endpoint computes to **0.19306 eV
+→ 0.19** and the κ=0.3 X₂ endpoint to **0.24973 → 0.25**, so band membership is
+asserted at the plan's stated two-decimal precision (`round(value, 2)`), not an
+ad-hoc epsilon — the rounded endpoints *are* the computed values.
+
+**Rule-2 table.** L's three config fields are **born live** (read by the module /
+guard on arrival) — nothing to remove from the Tier-0 exception table. The only
+Phase-A rule-2 carry is the `cooling_relaxed` *concrete blend* (provisional-average
+placeholder until Phase F), tracked in the plan §9 notes.
+
+**Tests:** `test_dissociation_ladder.py` + `test_ladder_config.py` = 66 green; full
+suite **1007 passed, 0 failed** (17 warnings = pre-existing `anchored_discrete`
+mass-pairing, unrelated).
+
+### Slice L — review + test-hardening pass (2026-06-30)
+
+A high-recall review (8 angles, run inline — small self-authored diff) surfaced
+three edge/robustness items; all fixed test-first. No silently-wrong physics in the
+sourced κ∈[0.3,5] range was found (the oracles stand).
+
+- **κ positivity guard (was missing).** `d0_of_n` divides by `(1 − σ(1))`; κ ≤ 0
+  inverts/flattens the cliff → near-zero denominator → inf rungs (κ = 0 → degenerate
+  flat ladder). `check_ladder_config` now refuses `ladder_steepness ≤ 0` (CLAUDE.md
+  principle 4). This is also the field's **genuine config-level read** — before the
+  guard, `ladder_steepness` was declared-but-unread (module took κ as a param), so
+  the "LIVE at Slice L" claim is now actually true.
+- **σ overflow → tanh form.** `sigma` reimplemented as the identical
+  `0.5·(1 + tanh(x/2))`; saturates instead of forming an `inf` intermediate at sharp
+  κ (no `RuntimeWarning`, no oracle change).
+- **`ladder_cumsum` fractional-n guard.** Rejects a genuinely fractional occupancy
+  loudly (was a cryptic `cum[float]` `IndexError`); integer-valued floats accepted.
+- **Test-side fix:** the σ-monotonicity assertion was over-strict (σ saturates
+  exactly to 0/1 in the tails → consecutive-equal); corrected to non-decreasing
+  globally + strictly-increasing across the unsaturated cliff window.
+
+**Tests after hardening:** Slice-L suites **104 green** (66 → +38); full suite
+**1045 passed, 0 failed** (same 17 unrelated warnings). Next: Slice K
+(`solvation_cooling.py`).

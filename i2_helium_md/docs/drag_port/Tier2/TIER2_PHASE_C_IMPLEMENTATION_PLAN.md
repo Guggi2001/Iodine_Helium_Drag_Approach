@@ -228,7 +228,7 @@ contract.
   IonStepState` — runs §2.3 steps 1–5 and returns the advanced `IonStepState` (with updated
   `vx/vy/vz`, `mass_kg`, `n_shell`-carrying state, `E_int_eV`, `E_mass_transfer_eV`,
   `E_dissip_eV`, `time_ps`). Composes:
-  - `physics/internal_energy_cooling.newton_cool_step` (K2),
+  - `physics/solvation_cooling.newton_cool_step` (K2),
   - `physics/evaporation.evaporation_step` (Q) and `physics/pickup.pickup_step` (P) under
     the **shed-then-pickup** order, each calling the `mass_jump` reset,
   - the existing `shed_step`/capture **seam** + `make_ion_baoab_step` **SQ1 O-step rebuilt
