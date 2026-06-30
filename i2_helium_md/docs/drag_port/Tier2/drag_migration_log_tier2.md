@@ -507,3 +507,114 @@ surfaced one hardening gap + several coverage gaps; all addressed.
 
 **Tests after hardening:** Slice-K suites **177 green** (141 → +36); full suite **1222
 passed, 0 failed** (same 17 unrelated warnings). Next: Slice U (`internal_energy_budget.py`).
+
+---
+
+## Phase A — Slice U DELIVERED (2026-06-30) — Phase A COMPLETE
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN); pure, stateless, mass-agnostic (no `γ`, no `m`, no RNG, no
+integrator, no `E_int` *state* — the reservoir is Phase C). Oracle asserts against the
+MASS §6 budget rules + the plan §2/§4 golden values. Four open questions (OQ-U1–U4)
+were resolved by the user *before* coding, then a final MASS/CALIBRATION cross-check
+ran clean.
+
+**Build (4 files):**
+- `physics/internal_energy_budget.py` — `e_int_onset_eV` (S2 `f_int·E_avail`),
+  `dE_int_pickup_eV` (S1 `+f_ret·D_0(n+1)`) + `pickup_bath_release_eV`
+  (`(1−f_ret)·D_0(n+1)`), `dE_int_shed_eV` (K1 `−D_0(n)`), `reconstruct_e_int_eV`
+  (A9 `E_solv.struct − E_bind^pair − E_elec`, **raises** when `post_crossing=False`),
+  `f_int_floor` (`Σ(n*)/E_avail`, `e_avail>0` guard). Consumes L (`d0_of_n` /
+  `ladder_cumsum`) and K (`e_bind_pair_eV` / `e_electrostriction_eV`). No new constants.
+- `config.py` — two fields `internal_energy_partition_fraction` (f_int) and
+  `internal_energy_retained_fraction` (f_ret), both `Optional[float] = None`;
+  `check_internal_energy_budget_config` guard (**bounded-when-set** `0 ≤ f ≤ 1`; None →
+  no-op) wired into `validate()`.
+- `tests/test_internal_energy_budget.py` (294) + `tests/test_internal_energy_budget_config.py` (21).
+
+**OQ-U1–U4 resolved (user, 2026-06-30, before coding):**
+1. **U1 — config surface.** Both `f_int` and `f_ret` land as `Optional[float] = None`
+   declared-but-unread (the *module* takes them as kwargs; the Phase-C driver reads the
+   config), MASS §11 names. Guard = **bounded-when-set** `[0,1]` (hard cap, CALIBRATION
+   rows 14/13); the soft ~0.2 ceiling + the self-unbound floor stay advisory, NOT
+   enforced.
+2. **U2 — `reconstruct_e_int_eV`.** `post_crossing` is a **required** keyword (no
+   default); `False`/omitted raises (A9 — static reconstruction errs pre-t×). Composes
+   the **real** K split; tests stub it.
+3. **U3 — `f_int_floor`.** Bare scalar `ladder_cumsum(N_STAR,…)/e_avail_eV`, takes
+   `e_avail_eV` explicitly (config-agnostic), `e_avail>0` guard, no headroom extras.
+4. **U4 — onset does not enforce the floor.** `e_int_onset_eV` is pure arithmetic; a
+   sub-floor `f_int` is accepted (MASS S2 / CALIBRATION row 14: advisory, not a
+   constraint). `f_int_floor` is diagnostic only.
+
+**As-built refinements vs plan §3:**
+- The plan's "fail-loud: L's negative/fractional-n guards reach U" maps onto the
+  **`reconstruct`→K→`ladder_cumsum`** path (negative/fractional `N` raises). The
+  d0-based `dE_int_pickup_eV`/`dE_int_shed_eV` inherit L's *smooth, deliberately
+  unguarded* `d0_of_n` (only the cumulative/indexed path guards) — consistent with L's
+  design, so no negative-n guard was added to the thin wrappers.
+- f_int floor band asserts use **`round(floor, 2)`** band-membership (the Slice-L
+  precedent): the κ-endpoints round to the MASS-stated edges (e.g. κ=5 mix
+  Σ(21)=0.19306 → /0.80 = 0.2413 → 0.24). The 2.70 eV mix band is MASS's "~0.065" at
+  two decimals → [0.06, 0.07].
+- `e_int_onset_eV` is **config-agnostic** (no `f_int`/`e_avail` guard in the module),
+  mirroring K's deliberate non-guard stance — bounds are caught at config-load.
+- `E_int^eq = 0` asserted but annotated as a split-consistency **tautology** (MASS line
+  881), not an independent anchor (carries the Slice-K annotation forward to U).
+
+**Oracle cross-validation.** S2 onset exact (`0.3·0.80 = 0.24`); S1 split closes to
+machine precision (`f_ret·D_0 + (1−f_ret)·D_0 = D_0`); K1 = `−D_0(n)`; shed pair+E_int
+sub-sum neutral to 1e-15 (jump-consistency); reconstruction matches the split exactly
+and recovers `E_int^eq = 0` at equilibrium; f_int floor lands in every scenario×picture
+band (X₂ 0.31–0.35 / mix 0.21–0.24 @ 0.80 eV; X₂ 0.09–0.10 / mix ~0.065 @ 2.70 eV).
+Independence test stubs `d0_of_n` to prove pickup/shed compose L only through the rung.
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. f_int/f_ret
+**Bounded** (rows 14/13); config field names match MASS §11 (lines 1987/1970); the soft
+~0.2 ceiling + scenario-keyed floor confirmed advisory (row 14); reconstruction post-t×
+only (A9).
+
+**Rule-2 table.** Slice U **adds two declared-but-unread carries** —
+`internal_energy_partition_fraction` (f_int) and `internal_energy_retained_fraction`
+(f_ret) — read by the Phase-C generative driver, not by Phase A. They join the
+`cooling_relaxed` *concrete blend* (Slice L; pinned at Phase F) as the standing Phase-A
+rule-2 entries. (L's and K's own fields were born-live; U's are the first Phase-A fields
+that are genuinely deferred.)
+
+**Tests:** Slice-U suites **315 green** (`test_internal_energy_budget.py` 294 +
+`test_internal_energy_budget_config.py` 21); full suite **1537 passed, 0 failed** (same
+17 unrelated `anchored_discrete` warnings).
+
+### Slice U — review + test-hardening pass (2026-06-30)
+
+An inline review (independent numerical re-verification of every §6 oracle on a fresh
+interpreter — onset, S1 pickup/bath/split, K1 shed, the f_int floor across κ/picture/
+budget, and `E_int^eq=0`, all matched to machine precision — plus a multi-angle
+correctness/edge/vectorisation/independence sweep) **confirmed the physics with no bug**
+and surfaced only coverage gaps; all closed test-first.
+
+- **No physics bug, no code change.** The module was correct and complete; the
+  hardening is regression/coverage locks (mirrors the Slice-K review stance).
+- **De-speculated the `e_int_onset_eV` array branch (rule 2).** It was unread → now
+  exercised by vectorised tests (array `f_int`; scalar-`f_int`/array-budget Phase-F
+  sweep). Kept (not removed) — consistent with the module's vectorisation contract.
+- **Coverage added (+16 tests):** vectorised reconstruction over `N` + scalar
+  float-return discipline; a **stub-independence** lock proving `reconstruct` composes K
+  *only* through `e_bind_pair_eV` + `e_electrostriction_eV`; the deliberate
+  **module-level non-guard** lock (out-of-`[0,1]` `f_int` is *computed*, not rejected —
+  the bound is a config-load concern, mirroring K); `f_int_floor` **negative**-budget
+  guard (only zero was covered); return-`ndarray` dtype locks on the vectorised helpers;
+  the `cooling_relaxed` picture-ordering carry on the S1 increment
+  (mix < cooling_relaxed < x2); and config-guard both-set paths (both-valid pass,
+  offender-named on a mixed set, `[0,1]` inclusive endpoints).
+- **Deliberate non-findings (consistent with L/K, not gaps):** the d0-based
+  `pickup`/`shed` wrappers stay **unguarded** for negative/fractional/zero `n` —
+  they inherit L's *smooth* `d0_of_n` by design (only the cumulative/indexed path
+  guards); a guard would diverge from L. `e_int_onset_eV` stays **config-agnostic**
+  (no `f_int`/`e_avail` range check in the module) — bounds caught at config-load.
+
+**Tests after hardening:** Slice-U suites **331 green** (315 → +16:
+`test_internal_energy_budget.py` 307 + `test_internal_energy_budget_config.py` 24); full
+suite **1553 passed, 0 failed** (same 17 unrelated `anchored_discrete` warnings).
+**Phase A (L + K + U) is complete.** Next: Phase B (Slice ρ `helium_density.py`, then
+P/Q) — `TIER2_PHASE_B_IMPLEMENTATION_PLAN.md`.

@@ -299,6 +299,16 @@ monotone and reaches 0.
 
 ### Slice U — `E_int` budget bookkeeping rules *(pure; mocks L, K)*
 
+> **Status: DELIVERED + REVIEWED (2026-06-30).** Built test-first (test→RED→GREEN);
+> oracle asserts against MASS §6 + the plan §4 golden values. Reviewed + hardened
+> (independent numerical re-verification of every oracle on a fresh interpreter — no
+> physics bug — plus +16 coverage/regression locks). Slice-U suites **331 green**
+> (`test_internal_energy_budget.py` 307 + `test_internal_energy_budget_config.py` 24);
+> full suite **1553/0**. OQ-U1–U4 resolved before coding; the two config fields ship
+> as `Optional=None` declared-but-unread rule-2 carries. Delivery + review records and
+> the as-built refinements are in `drag_migration_log_tier2.md` ("Slice U DELIVERED" +
+> "review + test-hardening pass"). **Phase A is now complete (L + K + U all delivered).**
+
 **Module.** `physics/internal_energy_budget.py`
 
 **Purpose.** The per-channel ΔE_int helpers + the post-t× reconstruction — the bricks the

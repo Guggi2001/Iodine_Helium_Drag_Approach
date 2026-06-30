@@ -237,6 +237,19 @@ class SimConfig:
     solv_struct_asymptote_eV: float = S_ABS_EV     # |S|; Sourced (MASS K2), eV-primary 0.308
     internal_energy_cooling_tau_ps: float = 6.55   # tau [ps]; Bounded, geometric-mid of [2.6,16.5]
 
+    # -- Tier-2 Phase-A internal-energy budget (Slice U) --
+    # S2 onset partition f_int and S1 pickup retained fraction f_ret. Both Bounded
+    # [0,1] (CALIBRATION rows 14/13). DECLARED-BUT-UNREAD in Phase A (rule-2): the
+    # E_int budget *module* (physics/internal_energy_budget.py) takes them as kwargs;
+    # the Phase-C generative driver reads these config fields. Defaults stay None --
+    # the committed values are Phase-F calibration outputs (the f_int floor is
+    # scenario-split, 0.21-0.35 @ 0.80 eV vs 0.065-0.10 @ 2.70 eV, so no single
+    # default serves both budgets; f_ret is fit from the 9/18 A density contrast).
+    # check_internal_energy_budget_config below bounds them to [0,1] WHEN set (the
+    # soft ~0.2 f_int ceiling and the self-unbound floor are advisory, NOT enforced).
+    internal_energy_partition_fraction: Optional[float] = None  # f_int; Bounded [0,1], Phase-F
+    internal_energy_retained_fraction: Optional[float] = None   # f_ret; Bounded [0,1], Phase-F
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -347,6 +360,7 @@ class SimConfig:
         check_drag_config(self)
         check_ladder_config(self)
         check_solvation_cooling_config(self)
+        check_internal_energy_budget_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -450,6 +464,47 @@ def check_solvation_cooling_config(cfg: "SimConfig") -> None:
             f"asymptote inverts the binding split); got "
             f"{cfg.solv_struct_asymptote_eV!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-A internal-energy-budget config-load guard (Slice U)
+# ---------------------------------------------------------------------------
+def check_internal_energy_budget_config(cfg: "SimConfig") -> None:
+    """Validate the E_int-budget surface of ``cfg`` at config-load (Slice U).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. The two
+    partition fractions are **declared-but-unread** in Phase A (rule-2): the budget
+    *module* takes them as kwargs; the Phase-C driver reads the config. Their defaults
+    are ``None`` (committed values are Phase-F calibration outputs), so the guard is a
+    **bounded-when-set** load-time fail-loud check:
+
+    * ``None`` -> no-op (the field is not yet pinned).
+    * set -> must satisfy ``0 <= f <= 1`` (the hard cap; MASS S2 / CALIBRATION rows
+      14 (f_int) and 13 (f_ret)).
+
+    The soft ~0.2 ``f_int`` ceiling and the self-unbound floor ``Sigma(n*)/E_avail``
+    are **advisory, not constraints** (MASS S2) and are deliberately NOT enforced --
+    Tier 2 may probe sub-floor / above-ceiling values.
+
+    Raises
+    ------
+    ValueError
+        On an ``internal_energy_partition_fraction`` or
+        ``internal_energy_retained_fraction`` outside ``[0, 1]`` when set.
+    """
+    for name in (
+        "internal_energy_partition_fraction",
+        "internal_energy_retained_fraction",
+    ):
+        value = getattr(cfg, name)
+        if value is None:
+            continue
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(
+                f"{name} must be in [0, 1] when set (a partition fraction; the "
+                f"~0.2 ceiling and self-unbound floor are advisory, not enforced); "
+                f"got {value!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
