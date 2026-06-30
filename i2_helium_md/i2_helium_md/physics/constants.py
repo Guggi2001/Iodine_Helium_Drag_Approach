@@ -134,6 +134,14 @@ D0_1_MIX_WAVENUMBER: float = 74.4           # cm^-1 -- statistical SO mixture (X
 D0_1_COOLING_RELAXED_WAVENUMBER: float = 0.5 * (D0_1_X2_WAVENUMBER + D0_1_MIX_WAVENUMBER)  # 90.65 cm^-1
 D_FLOOR_WAVENUMBER: float = 4.97            # cm^-1 -- bulk-He chemical potential |mu_He^bulk| (MASS R3)
 
+# Collective first-shell solvation magnitude |S| for the I+ cation (Tier-2 Phase-A
+# Slice K). The cooling asymptote is E_inf(N) = -|S(N)| with the occupancy-resolved
+# |S(N)| = |S| * Sigma(N)/Sigma(n*). Sourced eV-primary (the DFT source is native eV);
+# = 2484 cm^-1 total, 118 cm^-1/atom (170 K) at n* = 21. A *sourced* anchor (CALIBRATION
+# row 12, never tuned); the config field ``solv_struct_asymptote_eV`` defaults to it.
+#   Provenance: TIER2_PHASE_A_IMPLEMENTATION_PLAN.md §2.1; MASS K2.
+S_ABS_EV: float = 0.308                     # eV -- |S|, DFT first-shell solvation of I+ (MASS K2)
+
 
 # ---------------------------------------------------------------------------
 # Coulomb helpers (distance input in Angstrom)

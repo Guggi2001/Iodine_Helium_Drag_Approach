@@ -412,3 +412,98 @@ sourced κ∈[0.3,5] range was found (the oracles stand).
 **Tests after hardening:** Slice-L suites **104 green** (66 → +38); full suite
 **1045 passed, 0 failed** (same 17 unrelated warnings). Next: Slice K
 (`solvation_cooling.py`).
+
+---
+
+## Phase A — Slice K DELIVERED (2026-06-30)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (plan approved in
+plan mode). TDD throughout (test→RED→GREEN); pure, stateless, mass-agnostic (no
+`γ`, no `m`, no RNG, no integrator). Four open points were resolved by the user
+*before* coding (see below).
+
+**Build (4 files):**
+- `physics/constants.py` — new **sourced** anchor `S_ABS_EV = 0.308` (eV-primary;
+  = 2484 cm⁻¹ total, 118 cm⁻¹/atom @ n*=21; DFT first-shell solvation, MASS K2).
+  Addition, **not** an edit to the MD constants table.
+- `physics/solvation_cooling.py` — `s_collective_eV` (`|S(N)|=|S|·Σ(N)/Σ(n*)`),
+  `e_infinity_eV` (`−|S(N)|`), `e_bind_pair_eV` (`−Σ(N)`, wraps L), `e_electrostriction_eV`
+  (`−(|S(N)|−Σ(N))≤0`), `newton_cool_step` (exact `e^{−dt/τ}` relaxation, `dt`-robust,
+  fail-loud on `τ≤0`). Consumes L's `ladder_cumsum`.
+- `config.py` — fields `solv_struct_asymptote_eV` (`=S_ABS_EV`, single-source) and
+  `internal_energy_cooling_tau_ps` (`6.55`, geometric mid of [2.6,16.5]); derived
+  `electrostriction_binding_eV` **@property** (`E_elec(n*)` for inspection);
+  `check_solvation_cooling_config` guard (`τ>0`, `|S|>0`) wired into `validate()`.
+- `tests/test_solvation_cooling.py` + `tests/test_solvation_cooling_config.py`.
+
+**Four open questions resolved (user, 2026-06-30, before coding):**
+1. **Config surface = all three fields** (plan §5 literal): `solv_struct_asymptote_eV`,
+   `electrostriction_binding_eV` (derived property), `internal_energy_cooling_tau_ps`.
+2. **τ default = geometric mid 6.55 ps** (`√(2.6·16.5)`), in the R8 band.
+3. **τ guard = `τ>0` only**; the [2.6,16.5] band stays a soft prior, not enforced.
+4. **|S| = eV-primary `0.308`**, surfaced as a config field backed by one
+   `constants.py` anchor (honors Sourced class, CALIBRATION row 12).
+
+**Plan refinements recorded (as-built vs plan §2/§3/§5):**
+- Plan §2.1 listed `S_ABS_eV` as a constant; it ships as a **config field defaulting
+  to a single `constants.py` anchor** (the value lives once; field is the override/
+  inspection surface). |S| stays **Sourced** — never tuned (the field is not a Free knob).
+- Plan §5 filed `solv_struct_asymptote`/`electrostriction_binding` under **L's** bullet,
+  but L did not land them — they are **K's** (where consumed). L delivered only its three
+  ladder fields. `electrostriction_binding` ships as a **derived @property**, not a stored
+  field (it is N-/picture-/κ-dependent).
+- **Cold-shed neutrality clarified** to the **pair + `E_int` sub-sum** form
+  (`Δ(−Σ + E_int) = +D₀ − D₀ = 0`, machine precision); the collective electrostriction
+  marginal (`|S| > Σ(n*)`) is the A8 bath booking, intentionally excluded from the identity.
+- **`E_int^eq = 0`** asserted but annotated as a split-consistency **tautology** (MASS
+  line 881), not an independent anchor.
+
+**Oracle cross-validation.** `s_collective_eV(n*) = |S| = 0.308 eV` exactly for any
+picture/κ (ratio 1); `|S|/n* = 118.3 cm⁻¹` (3 figs); `E_∞(0) = 0` (OQ6); `E_elec ≤ 0`
+everywhere; split closes `E_∞ = E_bind_pair + E_elec`; `newton_cool_step` exact decay
+factor + fixed point + `dt`-robust; neutrality identity = 0 to 1e-15. Independence test
+stubs `ladder_cumsum` (Σ(n)=n) to prove K composes L only through the gate.
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. |S| Sourced
+(row 12); τ Bounded (row 11), default in-band; the config field name
+`internal_energy_cooling_tau_ps` keeps the sourced MASS §11 name even though the module
+is `solvation_cooling.py` (the 2026-06-30 rename kept the knob name).
+
+**Rule-2 table.** K's two fields are **born live** (read by the module / guard on
+arrival); nothing to remove from the exception table. The only Phase-A rule-2 carry
+remains the `cooling_relaxed` *concrete blend* (Slice L; pinned at Phase F).
+
+**Tests:** Slice-K suites **141 green**; full suite **1186 passed, 0 failed** (same 17
+unrelated `anchored_discrete` warnings).
+
+### Slice K — review + test-hardening pass (2026-06-30)
+
+An inline review (independent numerical re-verification of every oracle on a fresh
+interpreter, plus an 8-angle correctness/edge sweep) confirmed the physics and
+surfaced one hardening gap + several coverage gaps; all addressed.
+
+- **Stronger-than-planned result (locked as a regression).** `E_elec ≤ 0` is a
+  **structural guarantee for all κ>0**, not just the sourced [0.3,5] band: `Σ(n*) ≤
+  n*·D_0(1) = 0.278 eV (X₂) / 0.194 eV (mix)`, both always `< |S| = 0.308`. Verified to
+  κ=100 and asserted via `test_sigma_at_nstar_below_S_abs_for_all_kappa` +
+  `test_electrostriction_nonpositive_for_all_kappa`.
+- **`newton_cool_step` `dt < 0` guard (was missing).** A negative step gives
+  `exp(+|dt|/τ) > 1` — silent anti-cooling away from `E_∞`. Now fail-loud (principle 4),
+  added test-first (RED→GREEN); `dt = 0` remains a valid no-op. This complements the
+  existing `τ > 0` guard.
+- **Coverage extended (+36 tests, regression locks on already-correct behavior):**
+  picture-correct asymptote targeting, long-time convergence to `E_∞`, array-N/scalar-E
+  and dt=0 edges, scalar→float / array→ndarray return discipline on the cooling step,
+  `s_abs_eV` override through `e_infinity_eV`, and **fail-loud propagation** of L's
+  negative/fractional-N guard through all four consumers + the cooling step.
+- **Deliberate non-finding.** The plan §3 "electrostriction ≈4.7× pair-at-radius ~25
+  cm⁻¹/atom" parenthetical stays **unencoded** — there is no sourced 25 cm⁻¹ anchor in the
+  codebase, so asserting it would test a doc aside, not physics. The encoded electrostriction
+  oracles are sign (`≤0`), the split-definition equality, and `|S|/n* = 118 cm⁻¹`.
+- **Deliberate non-guard.** Module functions do **not** guard `s_abs_eV > 0` (only the
+  config guard does) — the module stays config-agnostic by design (plan §3); `τ`/`dt` are
+  guarded because they crash (div-by-zero) or silently invert the cooling, `|S|<0` only
+  mis-signs and is caught at config-load.
+
+**Tests after hardening:** Slice-K suites **177 green** (141 → +36); full suite **1222
+passed, 0 failed** (same 17 unrelated warnings). Next: Slice U (`internal_energy_budget.py`).

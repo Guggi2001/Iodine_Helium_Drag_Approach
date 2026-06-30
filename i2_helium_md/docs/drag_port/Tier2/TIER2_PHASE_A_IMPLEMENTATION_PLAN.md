@@ -227,6 +227,17 @@ hand-built ladder.
 
 ### Slice K — Newton cooling + occupancy-resolved asymptote *(pure; mocks L)*
 
+> **Status: DELIVERED (2026-06-30).** Built test-first; reviewed + test-hardened
+> (Slice-K suites 177 green, full suite 1222/0; added a `newton_cool_step` `dt<0`
+> guard and locked `E_elec≤0` as a structural-for-all-κ regression). Four open
+> points were resolved before coding (config surface =
+> all three fields; τ default 6.55 ps; τ>0 guard only; |S| eV-primary 0.308 config
+> field). As-built refinements vs this plan (§2.1 |S| ships as a config field backed by
+> one `constants.py` anchor; §5 `solv_struct_asymptote`/`electrostriction_binding` are
+> **K's**, not L's, and `electrostriction_binding` is a derived **@property**; cold-shed
+> neutrality is on the **pair + `E_int` sub-sum**) are recorded in
+> `drag_migration_log_tier2.md` ("Slice K DELIVERED").
+
 **Module.** `physics/solvation_cooling.py`
 
 > **Naming (decision 2026-06-30).** The module is named for the variable it relaxes,

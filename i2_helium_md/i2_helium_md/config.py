@@ -16,7 +16,7 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from .physics.constants import EV, K_B
+from .physics.constants import EV, K_B, S_ABS_EV
 from .physics.drag import (
     DragCoefficients,
     LINEAR_CUBIC,
@@ -227,6 +227,16 @@ class SimConfig:
     ladder_steepness: float = 1.0                              # kappa [per-unit-n]; Free (Phase-F fit)
     ladder_electronic_picture: LadderElectronicPicture = "statistical_mixture"  # sets D_0(1)
 
+    # -- Tier-2 Phase-A solvation cooling (Slice K) --
+    # Newton cooling of E_solv.struct toward the occupancy-resolved asymptote
+    # E_inf(N) = -|S(N)|, with the pair/electrostriction binding split. Read by
+    # physics/solvation_cooling.py and by check_solvation_cooling_config below.
+    # |S| is Sourced (defaults to the constants.py anchor, single source); tau is
+    # Bounded -- the [2.6,16.5] ps R8 band is a soft prior (NOT guard-enforced),
+    # default = its geometric mid (Phase-F sweeps tau).
+    solv_struct_asymptote_eV: float = S_ABS_EV     # |S|; Sourced (MASS K2), eV-primary 0.308
+    internal_energy_cooling_tau_ps: float = 6.55   # tau [ps]; Bounded, geometric-mid of [2.6,16.5]
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -278,6 +288,24 @@ class SimConfig:
         v = self.v_limit_angstrom_per_ps * 100.0          # back to m/s
         return (MASS_I_AMU * U) * v ** 2 / 2.0 / EV
 
+    @property
+    def electrostriction_binding_eV(self) -> float:
+        """Full-shell electrostriction binding ``E_elec(n*)`` [eV] (derived).
+
+        Surfaced for inspection only (Slice K): the non-positive collective binding
+        marginal at full occupancy, ``-(|S| - Sigma(n*))``, computed from the
+        configured picture/kappa/|S|. Not a stored or tunable field -- it is N-,
+        picture- and kappa-dependent, hence a derived property.
+        """
+        from .physics.constants import N_STAR
+        from .physics.solvation_cooling import e_electrostriction_eV
+        return e_electrostriction_eV(
+            N_STAR,
+            picture=self.ladder_electronic_picture,
+            kappa=self.ladder_steepness,
+            s_abs_eV=self.solv_struct_asymptote_eV,
+        )
+
     # ==================================================================
     # Validation
     # ==================================================================
@@ -318,6 +346,7 @@ class SimConfig:
                 )
         check_drag_config(self)
         check_ladder_config(self)
+        check_solvation_cooling_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -382,6 +411,44 @@ def check_ladder_config(cfg: "SimConfig") -> None:
             f"ladder first rung D_0(1)={d0_1_eV!r} eV must exceed the bulk-He "
             f"floor D_floor={D_FLOOR_EV!r} eV (picture="
             f"{cfg.ladder_electronic_picture!r})"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-A solvation-cooling config-load guard (Slice K)
+# ---------------------------------------------------------------------------
+def check_solvation_cooling_config(cfg: "SimConfig") -> None:
+    """Validate the solvation-cooling surface of ``cfg`` at config-load (Slice K).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. Both are
+    load-time fail-loud checks (no silent clamp):
+
+    1. **tau positivity** -- ``cfg.internal_energy_cooling_tau_ps`` must be > 0. A
+       non-positive relaxation time is unphysical and inverts the Newton cooling.
+       The cooling-time band [2.6, 16.5] ps is a *soft* R8 prior and is deliberately
+       NOT enforced (decision 2026-06-30) -- Phase F may probe its edges.
+    2. **|S| positivity** -- ``cfg.solv_struct_asymptote_eV`` must be > 0. A
+       non-positive collective asymptote inverts the binding split (the
+       electrostriction marginal ``-(|S(N)| - Sigma(N))`` would flip sign).
+
+    Raises
+    ------
+    ValueError
+        On a non-positive ``internal_energy_cooling_tau_ps`` or
+        ``solv_struct_asymptote_eV``.
+    """
+    if not (cfg.internal_energy_cooling_tau_ps > 0.0):
+        raise ValueError(
+            f"internal_energy_cooling_tau_ps (tau) must be > 0 (a non-positive "
+            f"relaxation time is unphysical and inverts the cooling); got "
+            f"{cfg.internal_energy_cooling_tau_ps!r}"
+        )
+
+    if not (cfg.solv_struct_asymptote_eV > 0.0):
+        raise ValueError(
+            f"solv_struct_asymptote_eV (|S|) must be > 0 (a non-positive collective "
+            f"asymptote inverts the binding split); got "
+            f"{cfg.solv_struct_asymptote_eV!r}"
         )
 
 
