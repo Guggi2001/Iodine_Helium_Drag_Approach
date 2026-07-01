@@ -208,19 +208,31 @@ fallback.
 
 **Interface (decided — refinement 2026-06-30, see §3.1).**
 - `_erf_complement(depth, steepness) -> ndarray` — the **single source** for
-  `½(1−erf(depth/steepness))`, **extracted** to a neutral location (proposed
-  `physics/_gates.py`; final placement settles at build). Fail-loud on `steepness ≤ 0`.
+  `½(1−erf(depth/steepness))`, **extracted** to a neutral location
+  (**locked `physics/_gates.py`** — user 2026-07-01; a gate-specific neutral home so ρ
+  never imports `drag.py`, preserving ρ's drag-independent role). Fail-loud on `steepness ≤ 0`.
   `drag.spatial_gate` is **rewired to call it** — a Tier-0 *no-behavior-change* refactor
   (identical output), guarded by a parity regression test (CLAUDE.md rule 1: one formula,
   one place; not a physics change to the locked drag law).
 - `rho_he_ratio(depth, *, steepness) -> ndarray` — the erf-complement ratio in `[0,1]`,
   routed through `_erf_complement`. **No default steepness** (mirrors `drag.spatial_gate`,
-  which has none); the driver passes `cfg.drag_gate_steepness` so density and drag see the
-  **one consistent surface**. Module stays config-agnostic (Phase-A precedent).
+  which has none); the driver passes **`_drag_gate_steepness(cfg)`** (the `simulation/ion.py`
+  resolver — user 2026-07-01) so density and drag see the **one consistent surface** *across
+  all gate modes*. NB: the resolver returns `cfg.potential_steepness` under the production
+  `density_proportional`/`erf_tied` gate and `cfg.drag_gate_steepness` only under G3
+  `erf_independent`; threading the **resolver** (not the raw `drag_gate_steepness` field)
+  guarantees ρ tracks whatever surface drag actually uses — and matches CALIBRATION_MAP row 5
+  (source = confining-potential steepness = `potential_steepness`). Module stays
+  config-agnostic (Phase-A precedent).
 - `tabulated_density_profile(...)` — interpolation machinery returning the same `[0,1]`
   ratio contract. **Built + round-trip tested in Phase B** on a hand-built profile (mirrors
   the Slice-L `tabulated_ladder` precedent); the **sourced baseline/TDDFT `ρ_He(r)` data
   array is a deferred rule-2 carry** (CALIBRATION row 8; pinned when the profile exists).
+  **Interface locked (user 2026-07-01):** takes a hand-built `(depth_grid, ratio_grid)`,
+  **linear interpolation on `depth`** (not `r`), round-trip exact at the grid nodes, and
+  **clamps out-of-range `depth` to the tail values** (`1.0` inside for `depth < grid.min`,
+  `0.0` outside for `depth > grid.max`) rather than raising — matching the erf-complement
+  asymptotes so the two `HeliumDensityProfile` arms share the same `[0,1]` boundary contract.
 
 **Encoded form.** §2.2 (ρ).
 
@@ -229,7 +241,8 @@ and field `helium_density_profile: HeliumDensityProfile = "erf_complement"` — 
 the existing `Optional[object]` placeholder (`config.py:261`; its `# future G4 density
 profile` comment is **rewritten** — ρ stays **G2**, this is the surface-density gate, not a
 G2→G4 promotion). Reject-arm guard mirrors `mass_scenario` / `check_ladder_config`. Steepness
-is **not** a new ρ field — the driver passes `drag_gate_steepness` (14.2 Å).
+is **not** a new ρ field — the driver passes `_drag_gate_steepness(cfg)` (14.2 Å; the
+resolver, = `potential_steepness` in production — see the interface note above).
 
 **Oracle values.** ratio = 1 at `depth≪0`, **0.5 at `depth=0`**, →0 at `depth≫0`;
 monotone non-increasing in `depth`; identical to `drag.spatial_gate(depth, 14.2)` (both
@@ -264,8 +277,14 @@ deferred fallback). Docs-only; `[PROCEED TO IMPLEMENTATION]` boundary holds.
    the `spatial_gate` rewire is a **Tier-0 no-behavior-change refactor** guarded by a parity
    regression test (build-time edit to a locked module, output identical).
 2. **No default steepness** on `rho_he_ratio` — caller passes it, exactly as
-   `drag.spatial_gate` does. Driver supplies `cfg.drag_gate_steepness` (14.2 Å), so density
-   and drag share the **identical surface**. No new `POTENTIAL_STEEPNESS_ANGSTROM` constant
+   `drag.spatial_gate` does. Driver supplies **`_drag_gate_steepness(cfg)`** (14.2 Å) — the
+   `simulation/ion.py` resolver, **not** the raw `drag_gate_steepness` field — so density and
+   drag share the **identical surface across all gate modes** (the resolver returns
+   `potential_steepness` under the production `density_proportional`/`erf_tied` gate,
+   `drag_gate_steepness` only under G3 `erf_independent`). This matches CALIBRATION_MAP row 5
+   (source = confining-potential steepness = `potential_steepness`). **Corrected 2026-07-01**
+   (was "`cfg.drag_gate_steepness`", which only matches the drag surface in the G3 branch or
+   while the two fields happen to be equal). No new `POTENTIAL_STEEPNESS_ANGSTROM` constant
    (avoids a 4th home for 14.2; `potential_steepness` / `potential_steepness_molecule` /
    `drag_gate_steepness` already exist).
 3. **Explicit `HeliumDensityProfile` Literal selector** (`erf_complement` default /
@@ -521,7 +540,8 @@ not silent clamps.
 - **ρ:** new `HeliumDensityProfile = Literal["erf_complement","tabulated"]`; field
   `helium_density_profile` **repurposes** the `Optional[object]` placeholder (`config.py:261`,
   stale `# future G4` comment rewritten — ρ stays **G2**) → default `erf_complement`. Steepness
-  is **not** a new ρ field; the driver passes `drag_gate_steepness` (14.2 Å). See §3.1.
+  is **not** a new ρ field; the driver passes `_drag_gate_steepness(cfg)` (14.2 Å; the resolver,
+  = `potential_steepness` in production — CALIBRATION row 5). See §3.1.
 - **P:** `pickup_rate_coefficient` λ_0 (**atomic rename** of `mass_rate_coefficient`
   `:259`), `pickup_rate_form` (rename of `mass_rate_form` `:258`), `pickup_occupancy_cap ∈
   {langmuir, none}`, `pickup_occupancy_exponent` p (**fixed default `1.0`**, not `p=κ`),

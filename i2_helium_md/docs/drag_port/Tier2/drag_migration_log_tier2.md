@@ -743,3 +743,156 @@ diagnostic) is a Phase-C driver branch Phase B never implements.
 - **Docs touched:** Phase-B plan Slice P knobs (he_capture_velocity note) + §5 (new "A13
   integrator-policy fields are Phase C" boundary note); Phase-C plan §4 (split "added here"
   vs "activated here, declared at P"). No code; boundary holds.
+
+### Phase B — Slice ρ pre-build open questions resolved (2026-07-01)
+
+A final discussion pass over the Slice ρ spec before the `[PROCEED TO IMPLEMENTATION]`
+trigger, grounded in a code-surface re-audit (`physics/drag.py::spatial_gate`,
+`simulation/ion.py::_drag_gate_steepness`, `config.py:261`) and cross-checked against
+CALIBRATION_MAP rows 5/8 + MASS §4/§5. No code — boundary holds; docs-only amendment to the
+Phase-B plan (interface bullets, §3.1 item 2, §5). Three calls resolved (decision owner: user).
+
+- **1. Steepness source corrected → `_drag_gate_steepness(cfg)`, not `drag_gate_steepness`.**
+  The prior wording had the Phase-C driver thread the raw `cfg.drag_gate_steepness` field to
+  `rho_he_ratio` "so density and drag share one surface." **But the live drag path does not
+  read that field in production:** `simulation/ion.py::_drag_gate_steepness` returns
+  `cfg.potential_steepness` under the default/production `density_proportional` (and
+  `erf_tied`) gate, and `cfg.drag_gate_steepness` **only** under G3 `erf_independent`. Both
+  default to 14.2 so it is numerically identical today, but threading the raw field would let
+  ρ and drag silently diverge if the two were ever set unequal — the exact failure the "one
+  surface" decision exists to prevent. **Fix:** the driver threads the **resolver**
+  `_drag_gate_steepness(cfg)`, which tracks whatever surface drag actually uses across all
+  gate modes. Confirmed against **CALIBRATION row 5** (gate source = "confining-potential
+  steepness (14.2 Å)" = `potential_steepness`), which the resolver returns in production; the
+  raw `drag_gate_steepness` field is the G3 override, not the sourced anchor. ρ module stays
+  config-agnostic (takes `steepness` as an arg — unchanged).
+- **2. `_erf_complement` home locked → `physics/_gates.py`.** The plan's "final placement
+  settles at build" is resolved now: a gate-specific neutral module so ρ never imports
+  `drag.py` (preserving ρ's drag-independent role — the whole reason extraction beat
+  delegate-to-drag). `drag.spatial_gate` is rewired to call it (Tier-0 no-behavior-change
+  refactor, parity-regression-locked).
+- **3. `tabulated_density_profile` interface locked.** Takes a hand-built
+  `(depth_grid, ratio_grid)`, **linear interpolation on `depth`** (not `r`), round-trip exact
+  at grid nodes, and **clamps out-of-range `depth` to the tail values** (`1.0` inside, `0.0`
+  outside) rather than raising — matching the erf-complement asymptotes so both
+  `HeliumDensityProfile` arms share one `[0,1]` boundary contract. Machinery built + round-trip
+  tested in Phase B (Slice-L `tabulated_ladder` precedent); the sourced TDDFT `ρ_He(r)` array
+  stays the deferred rule-2 carry (CALIBRATION row 8).
+
+**Cross-reference verdict:** no contradictions. Row 5 (Derived/G2, erf-tied, source
+`potential_steepness` 14.2 Å) actively supports the resolver fix; row 8 (Sourced ρ_He, deferred
+fallback) matches the tabulated-data deferral; MASS §4/§5 say nothing about the ρ gate steepness
+(its `steepness` hits are all the ladder κ). **Slice ρ is build-ready** — next step is the
+Phase-B build under the `[PROCEED TO IMPLEMENTATION]` trigger (ρ first, then {P, Q}).
+
+---
+
+## Phase B — Slice ρ DELIVERED (2026-07-01)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN); pure, stateless, config-agnostic, mass-agnostic (depth + steepness
+only — no `n`, no Langmuir cap, no `γ`, no mass, no RNG, no integrator, no `E_int`
+state). Oracle asserts against the plan §2.2 (ρ) / §3.1 / §4 golden values.
+
+**Build (5 files):**
+- `physics/_gates.py` — **new leaf module.** `_erf_complement(depth, steepness)`, the
+  single source of `0.5·(1−erf(depth/steepness))` with the `steepness>0` fail-loud
+  guard. A neutral home so `helium_density` never imports the drag law and `drag`
+  never imports a Phase-B module — both import this leaf (rule 1). Depends only on
+  numpy + `scipy.special.erf`.
+- `physics/drag.py` — **rewired** `spatial_gate` to `return _erf_complement(depth,
+  steepness)` (dropped the local `erf` import + inlined arithmetic + guard). Tier-0
+  **no-behaviour-change** refactor: output byte-identical, locked by parity regression
+  tests from *both* sides (`test_drag.py::TestSpatialGateSingleSource` +
+  `test_helium_density.py::TestSpatialGateParity`).
+- `physics/helium_density.py` — **new module.** `rho_he_ratio(depth, *, steepness)`
+  (the erf-complement gate, no default steepness, scalar→float/array→ndarray);
+  `TabulatedDensityProfile` + `tabulated_density_profile(depth_grid, ratio_grid)` (the
+  declared sourced-profile fallback: `np.interp` linear-on-`depth`, tail-clamped to
+  endpoint ratios, fail-loud on length mismatch / non-increasing depth / ratio∉[0,1] /
+  empty). Data array deferred (rule-2; CALIBRATION row 8).
+- `config.py` — `HeliumDensityProfile = Literal["erf_complement","tabulated"]`; field
+  `helium_density_profile` **repurposed** from the `Optional[object]=None` G4
+  placeholder → `"erf_complement"` default (stale `# future G4 density profile` comment
+  rewritten — ρ stays **G2**); `check_helium_density_config` enum reject-arm guard
+  (mirrors `check_ladder_config`) wired into `validate()`.
+- `tests/test_helium_density.py` (19) + `tests/test_helium_density_config.py` (6) +
+  2 parity asserts appended to `tests/test_drag.py`.
+
+**As-built notes:**
+- **Steepness resolver deferred to the caller.** `rho_he_ratio` has **no default
+  steepness** (mirrors `spatial_gate`); the plan's `_drag_gate_steepness(cfg)` threading
+  is a **Phase-C driver** concern — Slice ρ is config-agnostic and takes `steepness` as
+  a kwarg, so nothing here reads `cfg`. The one config touchpoint is the profile-selector
+  guard.
+- **`ion.py::_drag_gate_steepness` docstring de-drifted** (docstring only, no behaviour):
+  the stale "at Tier 0 no `helium_density_profile` exists" line now states the field is
+  the *pickup* G2 occupancy gate, separate from the drag gate (no G4 promotion), sharing
+  the resolver's steepness.
+- **Scalar/array discipline** follows the `shell_schedule`/`dissociation_ladder` idiom
+  (`float(out) if np.ndim(depth)==0 else out`); `_erf_complement` returns the raw np
+  result (0-d for scalar) so `spatial_gate` stays byte-identical.
+
+**Oracle cross-validation.** ratio = 0.5 at depth 0; **exact** 1.0 inside / 0.0 outside
+at the far tails (erf saturates in float — no epsilon); monotone non-increasing; ρ ==
+`spatial_gate` to machine precision on a 201-pt grid (single-source lock); both callers
+fail-loud on `steepness ≤ 0`; tabulated round-trips grid nodes exactly, interpolates
+linearly (0.5 at the midpoint), clamps tails, and rejects malformed tables.
+
+**Rule-2 table.** `helium_density_profile` is **born live** (read by
+`check_helium_density_config` on arrival) — nothing added to the exception table. The
+sourced **TDDFT `ρ_He(r)` data array** is the one Slice-ρ rule-2 carry (machinery built +
+round-trip tested; concrete array pinned when the profile exists; CALIBRATION row 8).
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. Gate stays
+Derived/**G2** (row 5, source = confining-potential steepness); ρ_He profile **Sourced**
+(row 8, deferred fallback). ρ is purely geometric (depth + steepness) — no `n`, no cap,
+no `γ`, no mass.
+
+**Tests:** Slice-ρ suites **27 green** (`test_helium_density.py` 19 +
+`test_helium_density_config.py` 6 + 2 `test_drag.py` parity asserts); full suite **1580
+passed, 0 failed** (was 1553; +27; same 17 unrelated `anchored_discrete` warnings).
+
+### Slice ρ — review + test-hardening pass (2026-07-01)
+
+An inline adversarial review (10-angle correctness / edge / vectorisation / independence /
+import / doc-drift sweep over the small self-authored diff) confirmed the physics and
+surfaced **two genuine robustness/placement gaps** plus coverage gaps; all closed test-first
+(the guard gap test→RED→GREEN, the rest regression/characterisation locks).
+
+- **Genuine gap 1 — `TabulatedDensityProfile` direct construction bypassed validation.**
+  Only the `tabulated_density_profile` *builder* validated; constructing the frozen dataclass
+  directly with an unsorted `depth_grid` (or a ratio ∉[0,1], length mismatch, empty table)
+  passed silently, and `np.interp` on unsorted `xp` returns **silently-wrong** values (worse
+  than a crash; principle 4). **Fix:** validation **centralised in `__post_init__`** (the
+  single source for both the builder and any direct construction); the builder is now a thin
+  coercion wrapper. Test-first (4 direct-construction guard tests → RED → GREEN).
+- **Genuine gap 2 — config field placement drift.** `helium_density_profile` was born-live
+  (read by `check_helium_density_config`) but sat under the `# -- Deferred (no Tier-0
+  reader) --` block. **Fix:** relocated to a dedicated `# -- Tier-2 Phase-B helium density
+  gate (Slice rho) --` section beside the Phase-A L/K/U live blocks. No-behaviour-change field
+  reorder among defaulted fields; `test_run_directory` round-trips confirm serialisation
+  unaffected.
+- **Coverage added (+8 regression/characterisation locks):** `ratio()` array-in→ndarray;
+  **deliberate non-guards locked** — a **non-monotone ratio_grid is accepted** (a sourced
+  TDDFT profile may show a near-surface density lip; only the *depth* axis must be sorted for
+  `np.interp`) and a **single-node table is a valid constant profile** (matches
+  `tabulated_ladder`'s ≥1 contract); **NaN steepness rejected** by the single guard (both
+  callers, since `not (nan > 0)` is True); scalar-return discipline across
+  python-int / 0-d-array / list / ndarray inputs to `rho_he_ratio`.
+- **`ion.py::_drag_gate_steepness` docstring de-drift** (from the delivery pass) retained —
+  docstring only, no behaviour.
+- **Deliberate non-findings:** NaN/inf `depth` is **not** guarded (an upstream bug if it
+  occurs; the drag `spatial_gate` never guarded it either — consistency); `ratio()`
+  rebuilding arrays from the stored tuples per call is an accepted micro-cost for a lookup
+  helper; no `__init__.py` export added (Slice P imports the module directly).
+
+**Import audit.** Removing `from scipy.special import erf` from `drag.py` (now routed through
+`_gates`) strands no importer — every `physics.drag` consumer imports only the public symbols
+(`spatial_gate` / `drag_force` / `drag_gamma` / `DragCoefficients` / form tags /
+`REALIZED_FORMS` / `_REQUIRED_COEFF_KEYS`), grep-verified.
+
+**Tests after hardening:** Slice-ρ suites **39 green** (`test_helium_density.py` 31 +
+`test_helium_density_config.py` 6 + 2 `test_drag.py` parity asserts); full suite **1592
+passed, 0 failed** (1580 → +12; same 17 unrelated `anchored_discrete` warnings). Next:
+Slice P (`physics/pickup.py` + `mass_jump.capture`) / Slice Q (`physics/evaporation.py`).

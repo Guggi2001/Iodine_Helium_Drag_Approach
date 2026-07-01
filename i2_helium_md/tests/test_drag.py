@@ -502,3 +502,27 @@ class TestDragCoefficientsType:
                 200.0,
                 effective_binding_energy_I_ion_eV=0.0,
             )
+
+
+class TestSpatialGateSingleSource:
+    """Slice-rho single-source regression: ``spatial_gate`` routes through the
+    shared ``_gates._erf_complement`` helper (no re-inlined erf formula), so the
+    drag gate and the Tier-2 ``rho_He/rho_bulk`` density gate stay one formula in
+    one place. Locks the Tier-0 no-behaviour-change refactor from the drag side.
+    """
+
+    def test_spatial_gate_equals_erf_complement_on_grid(self):
+        from i2_helium_md.physics._gates import _erf_complement
+
+        depth = np.linspace(-60.0, 60.0, 241)
+        np.testing.assert_array_equal(
+            np.asarray(spatial_gate(depth, STEEPNESS_A)),
+            np.asarray(_erf_complement(depth, STEEPNESS_A)),
+        )
+
+    def test_spatial_gate_still_fails_loud_on_nonpositive_steepness(self):
+        # The guard moved into _erf_complement; spatial_gate must still raise.
+        with pytest.raises(ValueError):
+            spatial_gate(0.0, 0.0)
+        with pytest.raises(ValueError):
+            spatial_gate(0.0, -1.0)

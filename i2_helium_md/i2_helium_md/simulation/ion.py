@@ -304,11 +304,14 @@ def _check_scope_ion_driver(cfg: SimConfig) -> None:
 def _drag_gate_steepness(cfg: SimConfig) -> float:
     """Resolve the spatial-gate steepness for the drag branch (§5.5 collapse).
 
-    At Tier 0 no ``helium_density_profile`` exists, so ``density_proportional``
-    (G4, the default) collapses to the erf complement (G2) -- identical to
-    ``erf_tied`` -- and both use ``cfg.potential_steepness``. ``erf_independent``
-    (G3) uses its own ``cfg.drag_gate_steepness`` (which itself defaults to
-    ``potential_steepness``). The discarded sharp boolean gate (G1) has no
+    The drag gate stays G2: ``density_proportional`` (the default) collapses to
+    the erf complement (G2) -- identical to ``erf_tied`` -- and both use
+    ``cfg.potential_steepness``. ``erf_independent`` (G3) uses its own
+    ``cfg.drag_gate_steepness`` (which itself defaults to ``potential_steepness``).
+    (The Tier-2 ``cfg.helium_density_profile`` is the *pickup* occupancy gate, a
+    separate G2 surface-density quantity -- **not** a drag-gate G4 promotion; the
+    Slice-rho density gate reuses this resolver's steepness so the two share one
+    surface.) The discarded sharp boolean gate (G1) has no
     continuous implementation in ``physics/drag.py`` and is rejected here so the
     default preset cannot silently fall through with no gate.
     """

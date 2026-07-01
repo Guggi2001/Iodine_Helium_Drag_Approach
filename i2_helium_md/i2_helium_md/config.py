@@ -57,6 +57,14 @@ NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
 MassRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
 
+# Tier-2 Phase-B helium-density gate (Slice rho). Selects the ``rho_He/rho_bulk``
+# profile that gates pickup: ``erf_complement`` (default) reuses the drag
+# erf-complement surface via ``physics.helium_density.rho_he_ratio``; ``tabulated``
+# is the declared sourced-profile (baseline/TDDFT) fallback whose machinery is built
+# but whose data array is deferred (rule-2; CALIBRATION_MAP row 8). rho stays G2 --
+# this is the surface-density occupancy gate, NOT a G2->G4 drag-gate promotion.
+HeliumDensityProfile = Literal["erf_complement", "tabulated"]
+
 # Tier-2 Phase-A dissociation ladder (Slice L). ``LadderElectronicPicture`` must
 # list exactly the picture keys of ``physics.dissociation_ladder._FIRST_RUNG_EV``
 # (the single source of truth for D_0(1); enforced by a parity test). The
@@ -250,6 +258,15 @@ class SimConfig:
     internal_energy_partition_fraction: Optional[float] = None  # f_int; Bounded [0,1], Phase-F
     internal_energy_retained_fraction: Optional[float] = None   # f_ret; Bounded [0,1], Phase-F
 
+    # -- Tier-2 Phase-B helium density gate (Slice rho) --
+    # The rho_He/rho_bulk occupancy profile that gates pickup. Read by
+    # check_helium_density_config below (enum reject arm) -- LIVE at Slice rho
+    # (repurposed from the former Optional[object] G4 placeholder; NOT on the
+    # rule-2 exception table). rho stays G2: this is the surface-density gate, not
+    # a G2->G4 drag-gate promotion. Steepness is NOT a field here -- the Phase-C
+    # driver passes _drag_gate_steepness(cfg) so density and drag share one surface.
+    helium_density_profile: HeliumDensityProfile = "erf_complement"  # Slice rho (G2 gate)
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -258,7 +275,6 @@ class SimConfig:
     mass_rate_form: MassRateForm = "density_only"        # Tier 1 (scenario != fixed)
     mass_rate_coefficient: float = 0.0    # kappa0/eta0; Tier 1
     mass_relaxation_tau_ps: float = 0.0   # ps; biphasic only; Tier 1
-    helium_density_profile: Optional[object] = None      # future G4 density profile
     validation_histogram_metric: ValidationHistogramMetric = "wasserstein"  # Tier 2
 
     # ------------------------------------------------------------------
@@ -361,6 +377,7 @@ class SimConfig:
         check_ladder_config(self)
         check_solvation_cooling_config(self)
         check_internal_energy_budget_config(self)
+        check_helium_density_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -425,6 +442,40 @@ def check_ladder_config(cfg: "SimConfig") -> None:
             f"ladder first rung D_0(1)={d0_1_eV!r} eV must exceed the bulk-He "
             f"floor D_floor={D_FLOOR_EV!r} eV (picture="
             f"{cfg.ladder_electronic_picture!r})"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-B helium-density config-load guard (Slice rho)
+# ---------------------------------------------------------------------------
+# Known density-profile selectors (mirrors _KNOWN_LADDER_FORMS): Literal is not
+# runtime-enforced, so this is the typo-recovery set the guard rejects against.
+_KNOWN_HELIUM_DENSITY_PROFILES = ("erf_complement", "tabulated")
+
+
+def check_helium_density_config(cfg: "SimConfig") -> None:
+    """Validate the helium-density-gate surface of ``cfg`` at config-load (Slice rho).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. It is a
+    load-time fail-loud enum reject arm (no silent clamp): ``cfg.helium_density_profile``
+    must be a known ``erf_complement`` / ``tabulated`` selector (mirrors the
+    ``dissociation_ladder`` / ``drag_form`` typo-recovery arms). This is the field's
+    live read at Slice rho -- it repurposes the former ``Optional[object]`` G4
+    placeholder into the born-live G2 surface-density selector.
+
+    The steepness is **not** a helium-density field: the Phase-C driver passes
+    ``_drag_gate_steepness(cfg)`` so the density and drag gates share one surface
+    (CALIBRATION_MAP row 5); there is nothing steepness-related to guard here.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``helium_density_profile`` selector.
+    """
+    if cfg.helium_density_profile not in _KNOWN_HELIUM_DENSITY_PROFILES:
+        raise ValueError(
+            f"unknown helium_density_profile {cfg.helium_density_profile!r}; "
+            f"expected one of {_KNOWN_HELIUM_DENSITY_PROFILES}"
         )
 
 

@@ -61,7 +61,8 @@ from dataclasses import dataclass
 from typing import Mapping
 
 import numpy as np
-from scipy.special import erf
+
+from ._gates import _erf_complement
 
 
 # Drag-form tags. LINEAR_CUBIC (Slice 1), LINEAR_QUADRATIC and POWER_LAW
@@ -231,11 +232,16 @@ def spatial_gate(depth, steepness: float) -> np.ndarray:
     ------
     ValueError
         If ``steepness`` is not positive.
+
+    Notes
+    -----
+    Routed through the single-source :func:`i2_helium_md.physics._gates._erf_complement`
+    (Slice rho) so this drag gate and the Tier-2 ``rho_He/rho_bulk`` density gate are
+    one formula in one place (CLAUDE.md rule 1). No-behaviour-change refactor:
+    arithmetic and the ``steepness > 0`` guard are identical to the former in-lined
+    form, locked by the parity regression tests.
     """
-    if not (steepness > 0):
-        raise ValueError(f"steepness must be positive, got {steepness!r}")
-    depth = np.asarray(depth, dtype=float)
-    return 0.5 * (1.0 - erf(depth / steepness))
+    return _erf_complement(depth, steepness)
 
 
 def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarray:
