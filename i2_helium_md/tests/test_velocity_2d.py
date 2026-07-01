@@ -43,6 +43,7 @@ def _make_ion(*, vx, vy, vz, masses_amu, num_steps=4):
         E_pot_eV=diag_zero,
         E_dissip_eV=diag_zero,
         E_mass_transfer_eV=diag_zero,
+        E_int_eV=diag_zero,
         n_shell=diag_zero,
         b_ion_outside=np.ones(n, dtype=bool),
         relative_loss_per_ps=diag_zero,

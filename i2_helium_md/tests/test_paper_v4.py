@@ -57,6 +57,7 @@ def _make_ion(
         E_pot_eV=zeros.copy(),
         E_dissip_eV=zeros.copy(),
         E_mass_transfer_eV=zeros.copy(),
+        E_int_eV=zeros.copy(),
         n_shell=zeros.copy(),
         b_ion_outside=b_outside.astype(bool),
         relative_loss_per_ps=zeros.copy(),

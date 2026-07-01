@@ -130,10 +130,12 @@ def test_checkpoint_v5_round_trip(tmp_path, drag_cfg, neutral):
     ck = run_ion_propagation(drag_cfg, neutral)
     path = save_ion_checkpoint(ck, tmp_path / "ion_drag.npz")
     loaded = load_ion_checkpoint(path)
-    assert loaded.schema_version == 6
+    assert loaded.schema_version == 7
     np.testing.assert_array_equal(loaded.E_dissip_eV, ck.E_dissip_eV)
     # Tier-0 fills survive the round-trip:
     assert np.all(loaded.E_mass_transfer_eV == 0.0)
+    # The Tier-2 E_int reservoir is present and all-zero on a fixed Tier-0 run:
+    assert np.all(loaded.E_int_eV == 0.0)
     assert np.all(loaded.number_of_collisions == 0)
     assert np.all(np.isnan(loaded.temperature_diagnostic))
 

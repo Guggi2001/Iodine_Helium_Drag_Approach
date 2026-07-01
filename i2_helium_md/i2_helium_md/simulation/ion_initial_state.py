@@ -210,6 +210,10 @@ def build_initial_ion_state(
     E_pot_eV = np.zeros((two_N, T))
     E_dissip_eV = np.zeros((two_N, T))
     E_mass_transfer_eV = np.zeros((two_N, T))
+    # Tier-2 internal-energy reservoir (schema v7). All-zero at allocation;
+    # it stays zero on the fixed / anchored_discrete paths and is filled by
+    # the biphasic generative driver via the S1/S2/K1/K2 budget.
+    E_int_eV = np.zeros((two_N, T))
     n_shell = np.zeros((two_N, T))
     relative_loss_per_ps = np.zeros((two_N, T))
     number_of_collisions = np.zeros((two_N, T), dtype=int)
@@ -269,6 +273,7 @@ def build_initial_ion_state(
         E_pot_eV=E_pot_eV,
         E_dissip_eV=E_dissip_eV,
         E_mass_transfer_eV=E_mass_transfer_eV,
+        E_int_eV=E_int_eV,
         n_shell=n_shell,
         b_ion_outside=b_ion_outside,
         relative_loss_per_ps=relative_loss_per_ps,

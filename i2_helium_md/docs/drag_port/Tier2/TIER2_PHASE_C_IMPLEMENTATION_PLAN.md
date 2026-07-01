@@ -177,8 +177,11 @@ to five — the detector that catches a G miswire from S onward.
 - *checkpoint:* add `E_int_eV: np.ndarray` to `IonCheckpoint`; `_ION_SCHEMA_VERSION = 7`;
   extend `_migrate_ion_checkpoint` with the **v6→v7** arm (synthesize+flag); add `E_int_eV`
   to the `trajectory_2N_T_fields` validation tuple.
-- *energy_balance:* add `E_int_eV` to `EnergyTotals` (optional, `None` for neutral / a
-  v6-origin run); `ion_energy_totals` sums it into `E_system_eV`; `ion_ledger_closure`
+- *energy_balance:* add `E_int_eV` to `EnergyTotals` (optional, `None` for neutral;
+  **zeros, not `None`, for a v6-origin run** — the v6→v7 shim synthesizes an all-zero
+  array, so `ion_energy_totals` sums `E_int_eV` unconditionally for any ion checkpoint
+  and the `None` branch is neutral-only; F3 correction);
+  `ion_energy_totals` sums it into `E_system_eV`; `ion_ledger_closure`
   then reports the **5-term** residual unchanged in shape (reuses the same machinery —
   this is the "extend in place" decision).
 - *step state:* add `E_int_eV: np.ndarray (2N,)` to `IonStepState` (the per-step carrier G

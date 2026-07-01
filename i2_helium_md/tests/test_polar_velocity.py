@@ -59,6 +59,7 @@ def _make_ion(
         E_pot_eV=diag_zero,
         E_dissip_eV=diag_zero,
         E_mass_transfer_eV=diag_zero,
+        E_int_eV=diag_zero,
         n_shell=diag_zero,
         b_ion_outside=b_outside,
         relative_loss_per_ps=diag_zero,

@@ -35,6 +35,7 @@ def _state(time_ps, *, vx, vy=0.0, vz=0.0, mass_amu, n_atoms=2):
         mass_kg=np.full(n_atoms, mass_amu * U),
         E_kin_eV=z.copy(), E_pot_eV=z.copy(), E_dissip_eV=z.copy(),
         E_mass_transfer_eV=z.copy(),
+        E_int_eV=z.copy(),
         number_of_collisions=np.zeros(n_atoms, dtype=int),
         time_ps=time_ps,
     )

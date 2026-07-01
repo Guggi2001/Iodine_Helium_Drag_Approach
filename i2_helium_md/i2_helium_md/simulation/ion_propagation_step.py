@@ -113,6 +113,12 @@ class IonStepState:
         collision path it mirrors MATLAB ``E_mass_attach_defect`` at
         vmi_sim_3d_ion_propa.m:762 (renamed from ``E_mass_attach_defect_eV``
         at schema v6).
+    E_int_eV : np.ndarray, shape (2N,)
+        Per-atom internal-energy reservoir in eV (the Tier-2 fifth
+        invariant term, checkpoint schema v7). Zero on the ``fixed`` /
+        ``anchored_discrete`` paths (carried through untouched); it
+        evolves only under the ``biphasic`` generative driver via the
+        S1/S2/K1/K2 budget.
     number_of_collisions : np.ndarray, shape (2N,)
         Cumulative number of hard-sphere collisions per atom.
     time_ps : float
@@ -138,6 +144,7 @@ class IonStepState:
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
     E_mass_transfer_eV: np.ndarray
+    E_int_eV: np.ndarray
     number_of_collisions: np.ndarray
     time_ps: float
     temperature_diagnostic: np.ndarray | None = None
@@ -295,6 +302,7 @@ def ion_propagation_step(
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
         E_mass_transfer_eV=E_mass_transfer_new,
+        E_int_eV=state.E_int_eV,  # untouched on the collision/attach path
         number_of_collisions=n_coll_new,
         time_ps=state.time_ps + dt,
         temperature_diagnostic=temperature_diagnostic_step,
@@ -375,6 +383,7 @@ def baoab_propagation_step(
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
         E_mass_transfer_eV=state.E_mass_transfer_eV,  # stays 0 (no attach)
+        E_int_eV=state.E_int_eV,  # stays 0 (no E_int reservoir on the drag/Tier-0 path)
         number_of_collisions=state.number_of_collisions,       # stays 0 (no collisions)
         time_ps=state.time_ps + dt,
         temperature_diagnostic=np.full(3, np.nan, dtype=float),
@@ -645,6 +654,7 @@ def ion_state_from_checkpoint_column(ckpt, t_id: int) -> IonStepState:
         E_pot_eV=ckpt.E_pot_eV[:, t_id].copy(),
         E_dissip_eV=ckpt.E_dissip_eV[:, t_id].copy(),
         E_mass_transfer_eV=ckpt.E_mass_transfer_eV[:, t_id].copy(),
+        E_int_eV=ckpt.E_int_eV[:, t_id].copy(),
         number_of_collisions=ckpt.number_of_collisions[:, t_id].copy(),
         time_ps=float(ckpt.time_ps[t_id]),
     )
@@ -667,6 +677,7 @@ def write_ion_state_to_checkpoint_column(
     ckpt.E_pot_eV[:, t_id] = state.E_pot_eV
     ckpt.E_dissip_eV[:, t_id] = state.E_dissip_eV
     ckpt.E_mass_transfer_eV[:, t_id] = state.E_mass_transfer_eV
+    ckpt.E_int_eV[:, t_id] = state.E_int_eV
     # Per-atom integer He-shell count, derived from the realized mass via
     # the same rule the v5->v6 load shim uses (so writer and shim agree):
     # n = round((m/U - m_I+) / m_He). Constant under `fixed`; the 21->14

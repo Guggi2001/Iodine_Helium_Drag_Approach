@@ -75,6 +75,7 @@ def _tiny_ion_checkpoint() -> IonCheckpoint:
         E_pot_eV=zeros.copy(),
         E_dissip_eV=zeros.copy(),
         E_mass_transfer_eV=zeros.copy(),
+        E_int_eV=zeros.copy(),
         n_shell=n_shell,
         b_ion_outside=np.zeros(1, dtype=bool),
         relative_loss_per_ps=zeros.copy(),

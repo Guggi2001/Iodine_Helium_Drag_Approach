@@ -33,6 +33,7 @@ backward-compatible.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -90,7 +91,7 @@ from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 #        mass_scenario='fixed') so existing v5 ion.npz run dirs still load.
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 6
+_ION_SCHEMA_VERSION: int = 7
 
 
 # ===========================================================================
@@ -179,6 +180,7 @@ class IonCheckpoint:
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
     * ``E_mass_transfer_eV`` : (2 * num_molecules, num_steps) eV (per-atom, cumulative; mass-transfer bookkeeping, positive for Tier-1a continuous-velocity shedding; formerly ``E_mass_attach_defect_eV``)
+    * ``E_int_eV``           : (2 * num_molecules, num_steps) eV (per-atom; the Tier-2 internal-energy reservoir added at schema v7. All-zero for ``fixed`` / ``anchored_discrete`` runs and for v6-origin files migrated on load; evolves only under the ``biphasic`` generative driver via the S1/S2/K1/K2 budget)
     * ``n_shell``            : (2 * num_molecules, num_steps) int-valued (per-atom He-shell count over time; constant under ``fixed``, the 21->14 staircase under ``anchored_discrete``)
     * ``mass_scenario``      : scalar str                     (the run's mass scenario tag: ``fixed`` / ``anchored_discrete`` / ...)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
@@ -192,12 +194,16 @@ class IonCheckpoint:
         ``diagnostic_array`` accumulator in
         ``vmi_sim_3d_ion_propa.m:683``.
 
-    Schema v6 (the current version) differs from v5 by the Tier-1a
-    mass-dynamics changes: it renames ``E_mass_attach_defect_eV`` to
-    ``E_mass_transfer_eV`` (the channel now also covers shedding), adds
-    ``n_shell`` and the ``mass_scenario`` tag, and drops the
-    non-decreasing-mass assumption. Legacy v5 files are migrated on load
-    (see :func:`load_ion_checkpoint`); pre-v5 files cannot be loaded.
+    Schema v6 differs from v5 by the Tier-1a mass-dynamics changes: it
+    renames ``E_mass_attach_defect_eV`` to ``E_mass_transfer_eV`` (the
+    channel now also covers shedding), adds ``n_shell`` and the
+    ``mass_scenario`` tag, and drops the non-decreasing-mass assumption.
+    Schema v7 (the current version) adds the Tier-2 ``E_int_eV`` internal-
+    energy reservoir. Legacy v5 and v6 files are migrated on load
+    (v5->v6->v7; see :func:`load_ion_checkpoint` and
+    :func:`_migrate_ion_checkpoint`); a v6-origin file gets an all-zero
+    synthesized ``E_int_eV`` plus a load-time warning. Pre-v5 files cannot
+    be loaded.
     """
 
     num_molecules: int
@@ -222,6 +228,7 @@ class IonCheckpoint:
     E_pot_eV: np.ndarray
     E_dissip_eV: np.ndarray
     E_mass_transfer_eV: np.ndarray
+    E_int_eV: np.ndarray
     n_shell: np.ndarray
     b_ion_outside: np.ndarray
     relative_loss_per_ps: np.ndarray
@@ -315,8 +322,11 @@ def _migrate_ion_checkpoint(
 ) -> tuple[dict[str, np.ndarray], int]:
     """Migrate a loaded ion checkpoint dict to the current schema.
 
-    Currently the only supported migration is **v5 -> v6** (the Tier-1a
-    mass-dynamics bump). It:
+    Migrations are applied **stepwise** so any surviving legacy file walks
+    up to the current schema (v5 -> v6 -> v7); the arms are chained (each
+    falls through to the next) rather than exclusive.
+
+    **v5 -> v6** (the Tier-1a mass-dynamics bump):
 
     * maps ``E_mass_attach_defect_eV`` -> ``E_mass_transfer_eV`` (the
       mass-transfer channel now also covers shedding; the array is
@@ -329,22 +339,45 @@ def _migrate_ion_checkpoint(
     * defaults ``mass_scenario`` to ``"fixed"`` (every existing v5 run is
       a fixed / Tier-0 run).
 
-    Any other version is returned unchanged (the caller's strict version
-    check then raises).
-    """
-    if version != 5:
-        return raw, version
+    **v6 -> v7** (the Tier-2 internal-energy reservoir): synthesizes an
+    all-zero ``E_int_eV`` (same shape as ``E_mass_transfer_eV``) because the
+    file predates the reservoir, and emits a ``UserWarning`` recording that
+    provenance. A file that predates ``E_int`` is 4-term-equivalent: an
+    all-zero reservoir leaves the ledger closure unchanged. (The v5->v6 arm
+    stays silent, as delivered; only the v6->v7 arm warns.)
 
+    Any other version is returned unchanged (the caller's strict version
+    check then raises). A genuine v7 file missing ``E_int_eV`` is therefore
+    **not** repaired here -- it fails the ``missing fields`` check loudly
+    rather than being silently zero-filled.
+    """
     raw = dict(raw)
-    if "E_mass_attach_defect_eV" in raw and "E_mass_transfer_eV" not in raw:
-        raw["E_mass_transfer_eV"] = raw.pop("E_mass_attach_defect_eV")
-    if "n_shell" not in raw and "mass_history_kg" in raw:
-        mass_amu = np.asarray(raw["mass_history_kg"], dtype=float) / U
-        raw["n_shell"] = np.rint((mass_amu - MASS_I_ION_AMU) / MASS_HE_AMU)
-    if "mass_scenario" not in raw:
-        raw["mass_scenario"] = np.asarray("fixed")
-    raw["schema_version"] = np.asarray(6)
-    return raw, 6
+    if version == 5:
+        if "E_mass_attach_defect_eV" in raw and "E_mass_transfer_eV" not in raw:
+            raw["E_mass_transfer_eV"] = raw.pop("E_mass_attach_defect_eV")
+        if "n_shell" not in raw and "mass_history_kg" in raw:
+            mass_amu = np.asarray(raw["mass_history_kg"], dtype=float) / U
+            raw["n_shell"] = np.rint((mass_amu - MASS_I_ION_AMU) / MASS_HE_AMU)
+        if "mass_scenario" not in raw:
+            raw["mass_scenario"] = np.asarray("fixed")
+        raw["schema_version"] = np.asarray(6)
+        version = 6
+    if version == 6:
+        if "E_int_eV" not in raw and "E_mass_transfer_eV" in raw:
+            raw["E_int_eV"] = np.zeros_like(
+                np.asarray(raw["E_mass_transfer_eV"], dtype=float)
+            )
+            warnings.warn(
+                "ion checkpoint predates the Tier-2 E_int internal-energy "
+                "reservoir (schema v6); synthesizing an all-zero E_int_eV. "
+                "The energy-ledger closure for this file stays 4-term-"
+                "equivalent.",
+                UserWarning,
+                stacklevel=2,
+            )
+        raw["schema_version"] = np.asarray(7)
+        version = 7
+    return raw, version
 
 
 # ===========================================================================
@@ -500,7 +533,7 @@ def _validate_against_cfg(
         "positions_x", "positions_y", "positions_z",
         "velocities_x", "velocities_y", "velocities_z",
         "E_kin_eV", "E_pot_eV", "E_dissip_eV", "L_droplet_eV_ps",
-        "E_mass_transfer_eV", "n_shell",
+        "E_mass_transfer_eV", "E_int_eV", "n_shell",
         "relative_loss_per_ps", "number_of_collisions",
         "mass_history_kg",
     )

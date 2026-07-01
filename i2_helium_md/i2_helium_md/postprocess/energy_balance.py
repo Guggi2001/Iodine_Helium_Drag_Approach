@@ -32,7 +32,7 @@ class EnergyTotals:
 
     All traces share the same ``time_ps`` axis. ``E_system`` is the
     sum of the other components (matches MATLAB ``E_system =
-    E_kin + E_pot + E_dissip [+ E_mass_transfer]``); it should be
+    E_kin + E_pot + E_dissip [+ E_mass_transfer + E_int]``); it should be
     ~flat over time within Verlet drift.
     """
     time_ps: np.ndarray
@@ -44,6 +44,12 @@ class EnergyTotals:
     # ``E_mass_attach_defect_eV`` at checkpoint schema v6 (the channel now
     # also covers He shedding, not only attachment).
     E_mass_transfer_eV: np.ndarray | None = None
+    # The Tier-2 internal-energy reservoir summed over atoms, added to
+    # ``E_system`` at checkpoint schema v7 (the fifth invariant term). Only
+    # populated for the ion stage; ``None`` for neutral. All-zero for
+    # ``fixed`` / ``anchored_discrete`` and v6-origin runs, so the 5-term
+    # closure reduces to the 4-term baseline for those.
+    E_int_eV: np.ndarray | None = None
 
 
 def neutral_energy_totals(ckpt: NeutralCheckpoint) -> EnergyTotals:
@@ -63,6 +69,7 @@ def neutral_energy_totals(ckpt: NeutralCheckpoint) -> EnergyTotals:
         E_dissip_eV=e_dis,
         E_system_eV=e_kin + e_pot + e_dis,
         E_mass_transfer_eV=None,
+        E_int_eV=None,
     )
 
 
@@ -71,42 +78,52 @@ def ion_energy_totals(ckpt: IonCheckpoint) -> EnergyTotals:
 
     Mirrors ``vmi_sim_3d_ion_propa.m`` line 898 where each component
     is plotted as ``sum(E_*, 1) / num_molecules``. ``E_system``
-    includes ``E_mass_transfer`` so the total is conserved up
-    to Verlet drift.
+    includes ``E_mass_transfer`` and the Tier-2 ``E_int`` reservoir so the
+    five-term total is conserved up to Verlet drift (MASS §6 eq. line 935).
+    For ``fixed`` / ``anchored_discrete`` and v6-origin runs ``E_int`` is
+    all-zero, so the sum reduces to the Tier-1a four-term total.
     """
     n = float(ckpt.num_molecules)
     e_kin = np.sum(ckpt.E_kin_eV, axis=0) / n
     e_pot = np.sum(ckpt.E_pot_eV, axis=0) / n
     e_dis = np.sum(ckpt.E_dissip_eV, axis=0) / n
     e_def = np.sum(ckpt.E_mass_transfer_eV, axis=0) / n
+    e_int = np.sum(ckpt.E_int_eV, axis=0) / n
     return EnergyTotals(
         time_ps=ckpt.time_ps,
         E_kin_eV=e_kin,
         E_pot_eV=e_pot,
         E_dissip_eV=e_dis,
-        E_system_eV=e_kin + e_pot + e_dis + e_def,
+        E_system_eV=e_kin + e_pot + e_dis + e_def + e_int,
         E_mass_transfer_eV=e_def,
+        E_int_eV=e_int,
     )
 
 
 # ===========================================================================
-# Four-term ledger closure (Tier-1a Slice B)
+# Energy-ledger closure (Tier-1a Slice B four-term; Tier-2 Slice X five-term)
 # ===========================================================================
 @dataclass
 class LedgerClosure:
-    """Four-term energy-ledger closure for an ion run.
+    """Energy-ledger closure for an ion run.
 
-    The Tier-1a invariant ``E_kin + E_pot + E_dissip + E_mass_transfer``
-    should hold constant over the run up to Verlet drift. ``residual_eV``
-    is the per-step deviation of that summed system energy from its t=0
-    value; ``max_abs_residual_eV`` is its peak.
+    The invariant
+    ``E_kin + E_pot + E_dissip + E_mass_transfer + E_int`` should hold
+    constant over the run up to Verlet drift (MASS §6 eq. line 935).
+    ``residual_eV`` is the per-step deviation of that summed system energy
+    from its t=0 value; ``max_abs_residual_eV`` is its peak. The fifth
+    ``E_int`` term (checkpoint schema v7, Tier 2) is all-zero for ``fixed``
+    / ``anchored_discrete`` and v6-origin runs, so the closure reduces to
+    the Tier-1a four-term invariant for those.
 
     This is a **wiring-correctness gate, not a physics result**: closure
     is "by construction" once the mass-transfer term matches the selected
     shed primitive (continuous-velocity in production Tier 1a; cold-shed
-    only as a diagnostic bound). Its job is to *catch a miswire* -- a
-    mass/velocity change with no matching ``E_mass_transfer`` increment
-    makes the residual diverge.
+    only as a diagnostic bound) and the ``E_int`` increments match the
+    S1/S2/K1/K2 budget (Tier 2). Its job is to *catch a miswire* -- a
+    mass/velocity change with no matching ``E_mass_transfer`` increment, or
+    an ``E_int`` deposit/drain with no offsetting term, makes the residual
+    diverge.
     """
     time_ps: np.ndarray
     E_system_eV: np.ndarray
@@ -115,11 +132,14 @@ class LedgerClosure:
 
 
 def ion_ledger_closure(ckpt: IonCheckpoint) -> LedgerClosure:
-    """Four-term ledger closure trace for an ion run (Slice B gate).
+    """Ledger closure trace for an ion run (Slice B / Slice X gate).
 
-    Reuses :func:`ion_energy_totals` (so the four summed components match
-    the MATLAB energy-balance panel) and reports the running residual of
-    the system energy against its initial value.
+    Reuses :func:`ion_energy_totals` (so the summed components match the
+    MATLAB energy-balance panel and include the Tier-2 ``E_int`` reservoir)
+    and reports the running residual of the system energy against its
+    initial value. The machinery is unchanged from the Tier-1a four-term
+    gate -- ``ion_energy_totals`` folds ``E_int`` into ``E_system_eV`` --
+    so this extends the invariant to five terms in place.
 
     Parameters
     ----------

@@ -1279,3 +1279,241 @@ surfaced **one genuine dead-code / wrong-comment item**; fixed, plus +10 deeper 
 unrelated `anchored_discrete` warnings). **Phase B (ρ + P + Q) is complete.** Next: Phase C
 (Slice X checkpoint v6→v7 + 5-term invariant, then Slice G generative driver) —
 `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md`.
+
+---
+
+## Phase C — Slice X pre-build decisions (2026-07-01)
+
+A pre-build discussion pass over the Slice X spec (checkpoint **v6→v7** + `IonStepState`
+extension + the **5-term** invariant closure) in `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md`,
+grounded in a code-surface audit of `simulation/checkpoint.py`
+(`_ION_SCHEMA_VERSION`, `_migrate_ion_checkpoint`, `_validate_against_cfg`
+`trajectory_2N_T_fields`), `postprocess/energy_balance.py` (`EnergyTotals` /
+`ion_energy_totals` / `ion_ledger_closure`), and `simulation/ion_propagation_step.py`
+(`IonStepState`, the `ion_state_from_checkpoint_column` / `write_ion_state_to_checkpoint_column`
+seams). No code — the `[PROCEED TO IMPLEMENTATION]` boundary holds; docs-only amendment. Three
+design calls resolved (decision owner: user) plus five code-audit findings.
+
+**Five code-audit findings.**
+- **F1 — Slice X necessarily touches the fixed/anchored driver seams.**
+  `ion_state_from_checkpoint_column` (`ion_propagation_step.py:636`) and
+  `write_ion_state_to_checkpoint_column` (`:653`) are the read/write seams the *current*
+  (non-biphasic) driver uses, and `IonCheckpoint` is allocated in `ion.py`. Once `E_int_eV`
+  is a v7 field a `fixed` / `anchored_discrete` run must still emit a **valid all-zero v7**
+  (plan §7 acceptance). So X is not purely additive on the dataclasses — it threads a zeros
+  array through both seams + the driver allocation. The `E_int` *evolution* stays in G; only
+  the zeros plumbing is X.
+- **F2 — the shim is single-hop today.** `_migrate_ion_checkpoint` handles only `version==5→6`
+  and is checked once; v7 needs either a cascade or a v7-only arm. Plan §2.2 left this "decide
+  at build".
+- **F3 — two distinct "no real E_int" representations.** Neutral → `None` (no field); a
+  migrated v6-origin ion file → **zeros array** (not `None`). So `ion_energy_totals` sums
+  `E_int_eV` unconditionally for any ion checkpoint (always present post-shim); the `None`
+  branch is neutral-only. The plan's "None for a v6-origin run" wording is corrected here to
+  **zeros, not None**.
+- **F4 — `n_shell` "genuine state" is a G concern, not X.** The field already exists at v6; X
+  changes nothing about it (the v6 derivation / writer rule stays intact).
+- **F5 — draw-order lock is docs-only in X.** No driver exists yet to enforce it; CLAUDE.md
+  already forbids "changing random-number draw order" generically, so X only *records* the
+  specific shed-then-pickup order in `DRAG_PORT_DESIGN_DECISIONS.md` + this log.
+
+**Three design calls resolved (user, 2026-07-01).**
+1. **v5 handling → chain v5→v6→v7.** `_migrate_ion_checkpoint` is restructured to apply
+   migrations **stepwise** (the existing v5→v6 arm returns 6, a new v6→v7 arm then runs) so all
+   surviving Tier-0/1a v5 **and** v6 `ion.npz` stay loadable. Chosen over v7-only/reject-v5
+   (which would strand pre-Tier-1a artifacts) — cost is trivial.
+2. **`E_int_eV` discipline → required field, wire zeros now.** `E_int_eV` lands as a
+   **required** field on both `IonStepState` (`(2N,)`) and `IonCheckpoint` (`(2N,T)`), mirroring
+   `E_mass_transfer_eV` (no `Optional`/`None` debt). X updates the two column seams + the
+   `IonCheckpoint` allocation in `ion.py` so `fixed` / `anchored_discrete` runs emit a valid
+   all-zero v7 — satisfying the plan §7 acceptance ("fixed runs produce an all-zero `E_int_eV`")
+   literally. Chosen over `Optional=None` (defers plumbing to G but scatters None-checks through
+   `energy_balance` + the seams).
+3. **Migration provenance → load-time `warnings.warn`.** The v6→v7 arm synthesizes
+   `np.zeros_like(E_mass_transfer_eV)` and emits a **warning** that the file predates the
+   `E_int` reservoir — faithful to the plan's "flag" without an unplanned persisted schema
+   field. (The v5→v6 arm stays silent, as delivered.) Chosen over silent-zeros (drops the
+   provenance signal) and a persisted marker field (unplanned v7 schema addition).
+
+**Resulting Slice-X build spec.**
+- `checkpoint.py`: `_ION_SCHEMA_VERSION 6→7`; add `E_int_eV (2N,T)` to `IonCheckpoint`; cascade
+  shim (v5→v6 arm returns 6, new v6→v7 arm synthesizes zeros + warns); add `E_int_eV` to the
+  `trajectory_2N_T_fields` shape-check tuple.
+- `energy_balance.py`: `E_int_eV` added to `EnergyTotals` (`None` = neutral only);
+  `ion_energy_totals` sums it into `E_system_eV` (per-molecule `/n`, additive `+` per MASS §6
+  eq. line 935); `ion_ledger_closure` reports the 5-term residual with unchanged machinery
+  (extend-in-place, the `E_mass_transfer` precedent).
+- `ion_propagation_step.py`: `IonStepState.E_int_eV` required; both column seams read/write it.
+- `ion.py`: allocate the zeros `E_int_eV` array in the checkpoint assembly.
+- Docs: freeze the shed-then-pickup RNG draw order (forbidden-list item) in
+  `DRAG_PORT_DESIGN_DECISIONS.md` + this log.
+- Tests: v7 round-trip; v5→v6→v7 and v6→v7 migration (zeros + warning asserted); missing
+  `E_int_eV` on a genuine v7 raises; wrong-shape `E_int_eV` rejected; 5-term closure flat on a
+  balanced synthetic stream / divergent on a miswire / neutral-`None` unaffected; the `fixed`
+  regression (all-zero `E_int_eV`, 4-term residual unchanged).
+
+**Boundary holds — no code.** Next: the MASS / CALIBRATION_MAP cross-check of the Phase-C plan
+(below), then the Slice-X build under the `[PROCEED TO IMPLEMENTATION]` trigger (X before G, §5).
+
+### Phase C — MASS / CALIBRATION_MAP cross-check of the Phase-C plan (2026-07-01)
+
+A cross-reference pass over `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` (X + G) against
+`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` §6/§7/§11 + A13 + §8 R2/R4 and
+`CALIBRATION_MAP.md` (parameter classes + row 169 A13). No code — docs-only. **Verdict: the
+plan is faithful on all physics / schema / config substance; Phase C adds no new calibration
+parameter** (the four integrator flags are non-parameters per CALIBRATION row 169). Verified:
+the 5-term invariant (MASS §6 eq. line 938), the reduced-mass capture defect (§6 943–951, *not*
+`½m_He·v²`), the per-channel closure table (drag / pickup S1 / cold-shed K1 / K2), the four
+integrator flags (§11 1946–1958), jump-then-O / one-event shed-then-pickup (A13 1786–1789), the
+`§6.5` pairing guard + `s≥1` guard, and the R2 (constructed-reservoir, HIGH, bounded-by-ladder)
+/ R4 (double-count) framings — all match line-by-line.
+
+**Four discrepancies surfaced; three actioned as NB annotations (annotation-not-rewrite, the
+`p=κ` precedent — locked values/mechanism untouched), one no-action.**
+- **D1 (version slot) — annotated.** MASS §7 line 1132 ("`IonCheckpoint → v6`") and §6.11 line
+  983 ("already in the v6 schema") predate the Tier-1a v6 use of the slot; the live build bumps
+  **v6→v7** for `E_int_eV`. NB added at both sites pointing to the Phase-C plan §2.2/§8 + this
+  log (version numbers only; mechanism unchanged). Already flagged as a reconcile in the plan §8.
+- **D2 (scenario literal) — annotated.** MASS §11 line 1920–1921 still names
+  `biphasic_energy_gated` as the production literal with `scenario_A_accretion` /
+  `scenario_B_stripping` / `biphasic` as legacy; the delivered `MassScenario` set is
+  **`{fixed, biphasic, anchored_discrete}`** (production value = `biphasic`; the A/B scenarios
+  were superseded by `anchored_discrete`, never implemented). NB added at §11 (main) and §7
+  (scenario-metadata bullet, cross-pointer). Config literal names only; §11 knobs unchanged.
+- **D3 (Tier-2 observable) — annotated.** CALIBRATION "Validation tiers" Tier-2 line still reads
+  "size distribution (+ per-fragment velocity histograms)"; Phase E **cut** the velocity
+  comparison (aggregate `vmi_summary/*.csv`, not per-n). NB added pointing to
+  `PHASE_E_IMPLEMENTATION_PLAN.md`.
+- **D4 (R4 wording) — no action.** The plan calls R4 the "chief energy risk" while §8 tags it
+  MEDIUM, but §6 line 933 itself calls it "the chief energy-balance risk" — the plan is faithful
+  to MASS's own framing.
+
+**Files touched (annotations only):** `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` §7
+(D1 + D2 pointer), §6.11 (D1), §11 (D2); `CALIBRATION_MAP.md` Tier-2 validation line (D3). No
+code; boundary holds. **Next:** the Slice-X build under the `[PROCEED TO IMPLEMENTATION]`
+trigger (X before G, §5).
+
+---
+
+## Phase C — Slice X DELIVERED (2026-07-01)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN). Pure schema + closure extension — **no RNG, no integrator, no new
+channel physics**; composes nothing stochastic (the pre-build spec, §2.2/§3). The three
+Slice-X design calls (v5→v6→v7 cascade; `E_int_eV` **required** field, wire zeros now;
+load-time `warnings.warn` provenance) and the five code-audit findings (F1–F5) carried
+straight through to the build.
+
+**Build (production, 4 files):**
+- `simulation/checkpoint.py` — `_ION_SCHEMA_VERSION 6→7`; **add required
+  `E_int_eV (2N,T)`** to `IonCheckpoint` (placed after `E_mass_transfer_eV`, before the
+  defaulted `mass_scenario`/`schema_version`); `_migrate_ion_checkpoint` **restructured to a
+  stepwise cascade** — the v5 arm now *falls through* (no early return) into a new v6→v7 arm
+  that synthesizes `E_int_eV = zeros_like(E_mass_transfer_eV)` and emits a `UserWarning`
+  (the v5→v6 arm stays silent, as delivered); `E_int_eV` added to the
+  `trajectory_2N_T_fields` shape-check tuple. `import warnings` added. Docstring updated
+  (field bullet + the v6/v7 schema paragraph).
+- `postprocess/energy_balance.py` — **5-term closure extended in place.** `E_int_eV`
+  added to `EnergyTotals` (`None` = neutral only); `ion_energy_totals` sums
+  `e_int = Σ E_int_eV / n` into `E_system_eV` (per-molecule `/n`, additive `+`, MASS §6
+  eq. line 935); `neutral_energy_totals` passes `E_int_eV=None`; `ion_ledger_closure`
+  machinery **unchanged** (reads the now-5-term `E_system`). `LedgerClosure` /
+  `ion_ledger_closure` docstrings updated four-term→five-term.
+- `simulation/ion_propagation_step.py` — **required `E_int_eV (2N,)`** on `IonStepState`
+  (after `E_mass_transfer_eV`); both column seams read/write it
+  (`ion_state_from_checkpoint_column`, `write_ion_state_to_checkpoint_column`); the two
+  fresh `IonStepState(...)` constructions (`baoab_propagation_step`, the Tier-0 drag step)
+  carry `E_int_eV=state.E_int_eV` through untouched. `shed_step` uses `replace(...)` so it
+  carries the field for free. Docstring updated.
+- `simulation/ion_initial_state.py` — allocate the all-zero `E_int_eV (2N,T)` in the
+  `build_initial_ion_state` checkpoint assembly (the plan's "ion.py allocation"; the actual
+  production builder is `ion_initial_state.py`).
+
+**Design calls as-built (unchanged from the 2026-07-01 pre-build record):**
+1. **v5→v6→v7 cascade.** The shim reads the stored `schema_version` (via `_load_checkpoint`,
+   called only when `version != expected`), so a v5 file walks v5→v6→v7, a v6 file runs the
+   v6→v7 arm only, and a genuine v7 skips migration → a v7 file missing `E_int_eV` hits the
+   `missing fields` raise (never zero-filled). The v5→v6 output stays byte-identical
+   (regression-locked by the pre-existing v5-shim + Tier-1a reset tests).
+2. **`E_int_eV` required (no `Optional`/`None` debt).** Mirrors `E_mass_transfer_eV`; cascaded
+   to **every** `IonCheckpoint` / `IonStepState` construction site (1 production builder +
+   ~17 test builders, incl. one dict-style `bad_dict` the kwarg grep missed).
+3. **Load-time `warnings.warn` (UserWarning).** The v6→v7 arm flags synthesized zeros; the
+   v5→v6 arm silent. A v6-origin file is 4-term-equivalent (all-zero reservoir), so the
+   `EnergyTotals.E_int_eV` for a migrated file is **zeros, not `None`** (F3) — the `None`
+   branch is neutral-only.
+
+**RNG draw-order lock (F5, docs-only in X).** The shed-then-pickup order is **frozen** as a
+forbidden-list item in `DRAG_PORT_DESIGN_DECISIONS.md` §2.9 (Slice-X DELIVERED block).
+Enforcement lands with the Slice-G driver (none exists yet); X only records it.
+
+**Oracle cross-validation.** v7 round-trips `E_int_eV` bit-for-bit; v6→v7 and v5→…→v7
+synthesize all-zero `E_int_eV` + warn (`pytest.warns(UserWarning, match="E_int")`); a genuine
+v7 missing the field raises `missing fields`; a wrong-shape `(N,T)` `E_int_eV` is rejected by
+`_validate_against_cfg`. 5-term closure: flat residual (≤1e-12) on a balanced stream, reduces
+to the 4-term baseline when `E_int≡0`, an `E_int` deposit offset by an equal `E_dissip` drain
+closes, and an **un-offset** `E_int` deposit diverges (0.6 eV/molecule, caught in five terms).
+`fixed` Tier-0 run round-trips a present, all-zero `E_int_eV` (`test_ion_drag_smoke`).
+
+**Doc drift fixed.** Phase-C plan §3 F3 line (v6-origin → **zeros, not None**);
+`test_ion_drag_smoke::test_checkpoint_v5_round_trip` assert `6→7` + an all-zero `E_int_eV`
+check (it round-trips a freshly-produced current-schema checkpoint, not a real v5 file).
+
+**Rule-2 table.** Slice X adds **no config field** (schema/closure only) — nothing to add to
+or remove from the exception table. `_ION_SCHEMA_VERSION = 7`.
+
+**New warnings (expected, not failures).** 8 `UserWarning`s now fire in the suite where real
+**v6-origin** reference `ion.npz` fixtures are loaded (`test_compare_trajectories` real-9A,
+the legacy-debug / paper_cov plot smokes) — the v6→v7 provenance shim working as designed. The
+17 pre-existing `anchored_discrete` mass-pairing `RuntimeWarning`s are unchanged.
+
+**Tests:** new coverage = `test_checkpoint.py::TestIonSchemaV7` (4) + the extended v5-shim
+assert + `test_energy_balance.py::TestLedgerClosure` 5-term (3) + the totals-sum + smoke
+assert. Full suite **1742 passed, 0 failed** (was 1735; +7 net), 25 warnings (17 pre-existing
+`anchored_discrete` + 8 new v6→v7 shim). **Next:** Slice G — the `biphasic_step` generative
+driver (`simulation/ion_propagation_step.py`), composing A {K,U} + B {ρ,P,Q} + the Tier-1a
+seam behind the now-ready 5-term invariant (`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §3 Slice G).
+
+### Slice X — review + test-hardening pass (2026-07-01)
+
+An extended adversarial review (8 angles — line-by-line diff scan / removed-behavior /
+cross-file tracer / reuse / simplification / efficiency / altitude / CLAUDE.md-conventions,
+run **inline** over the small self-authored diff per the delivered-slice precedent)
+**confirmed the physics/schema with no correctness bug** and surfaced only coverage gaps;
+all closed test-first (characterisation/regression locks).
+
+- **No production bug, no code change.** The v6→v7 bump is a faithful in-place mirror of the
+  Tier-1a `E_mass_transfer_eV` precedent. Verified: the migration cascade preserves the
+  v5→v6 sub-transform byte-for-byte (falls through instead of returning), a genuine v7
+  missing `E_int_eV` raises rather than zero-fills (migrate never runs at `version==expected`),
+  the two step-state carry-throughs (`E_int_eV=state.E_int_eV`, no copy) match the baoab
+  `E_mass_transfer` precedent and are read-only within the step chain (the column read seam
+  `.copy()`s), and the drop of the early `if version != 5: return` re-establishes the
+  "unknown version → returned for the strict check to raise" invariant via the cascade tail.
+- **Cross-file surface clean (verified).** `EnergyTotals` is only ever **keyword**-constructed
+  (both sites in `energy_balance.py`) — the new defaulted `E_int_eV` field breaks no positional
+  caller; **no** `IonCheckpoint(` / `IonStepState(` / `EnergyTotals(` construction exists under
+  `scripts/` (production builds go through `build_initial_ion_state`), so the required-field
+  cascade is fully covered by the 1 production + ~18 test builders already updated.
+- **Coverage gaps closed (+3 locks):** (1) the per-molecule `/n` division of `E_int` in
+  `ion_energy_totals` was only exercised **all-zero** (the closure tests zero `E_int`) → a
+  nonzero value-lock on `totals.E_int_eV == ΣE_int/n` + its inclusion in `E_system`; (2) the
+  two v7 **column seams** (`ion_state_from_checkpoint_column` /
+  `write_ion_state_to_checkpoint_column`) had **no direct test** (only the all-zero driver
+  path) → a nonzero round-trip lock on an **isolated** checkpoint copy (`replace(ion,
+  E_int_eV=…copy())`, so the module-scoped fixture is never polluted) that also asserts the
+  read-side `.copy()` independence; (3) `neutral_energy_totals` `E_int_eV is None` lock.
+- **Deliberate non-finding.** `warnings.warn(..., stacklevel=2)` points at the
+  `_load_checkpoint` migrate call rather than the user's `load_ion_checkpoint(...)` (4 wrapper
+  frames deep); left as-is — a fixed larger stacklevel is brittle (breaks if `_load_checkpoint`
+  is called directly), the delivered v5→v6 arm set no stacklevel at all, and the category +
+  message are the load-bearing signal (asserted by `pytest.warns(UserWarning, match="E_int")`).
+- **Deliberate non-guards (consistent with the delivered schema code):** the v6→v7 arm skips
+  synthesis when `E_mass_transfer_eV` is absent (a corrupt v6) and lets the `missing fields`
+  check raise, rather than KeyError-ing inside `np.zeros_like`; non-finite `E_int` is an
+  upstream-bug concern, not guarded at the schema layer.
+
+**Tests after hardening:** narrow suites (`test_energy_balance` + `test_ion_propagation_step` +
+`test_checkpoint`) **62 green**; full suite **1745 passed, 0 failed** (1742 → +3), same 25
+warnings (17 pre-existing `anchored_discrete` + 8 v6→v7 shim). **Next:** Slice G — the
+`biphasic_step` generative driver (`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §3 Slice G).

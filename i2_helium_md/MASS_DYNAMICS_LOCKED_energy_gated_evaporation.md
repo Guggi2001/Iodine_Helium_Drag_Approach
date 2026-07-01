@@ -981,7 +981,8 @@ $E_\text{int}>\sum_i D_0 \Leftrightarrow E_\text{bind}+E_\text{int}>0$ — the
 loose analog of $t_0$; it is the same quantity, and GAH25 **measured** it
 (Na⁺: $t_0 = 5.0\pm0.1$ ps shell-2, $6.53\pm0.06$ ps shell-1, Table III).
 $t_\times$ is reconstructable post-hoc from the `E_int_eV` $(2N,T)$ array
-already in the v6 schema (§7), so it carries **zero schema cost**. Cross-check
+already in the v6 schema (§7; **v6→v7** in the live build — see the §7 NB), so
+it carries **zero schema cost** beyond the `E_int_eV` field itself. Cross-check
 it, in increasing authority:
 1. a broad sanity band — flag only if absurd ($t_\times<1$ ps or $>15$ ps);
 2. the GAH25 $t_0$ = 5.0–6.5 ps as a **±factor-2 prior** — but note this is a
@@ -1131,12 +1132,23 @@ The first equation has units of $\mathrm{ps}^{-1}$ and the second of $\mathrm{eV
 
 - **`IonCheckpoint` → v6** (already required by §2.9 for any non-`fixed`
   scenario). Additional to the §2.9 changes:
+  *(NB 2026-07-01, Tier-2 Phase-C reconcile: the live schema slot **v6** was
+  already consumed by the Tier-1a mass-dynamics bump, so `E_int_eV` actually
+  lands at **v6→v7** — a v6→v7 back-compat shim synthesizes zeros (+ a load-time
+  warning) for pre-reservoir files. The "→ v6" wording here predates the Tier-1a
+  v6 use of the slot; **version numbers only, mechanism unchanged**. See
+  `docs/drag_port/Tier2/TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §2.2/§8 +
+  `docs/drag_port/Tier2/drag_migration_log_tier2.md`.)*
   - new per-step field `E_int_eV (2N, T)` — internal-energy trajectory;
   - `mass_history_kg` monotonicity guarantee **dropped** (non-monotone by
     construction);
   - `E_mass_attach_defect_eV` → `E_mass_transfer_eV` (sign covers gain and loss);
   - scenario-metadata field records `mass_scenario = biphasic_energy_gated` so
     downstream tools interpret the arrays correctly.
+    *(NB 2026-07-01, Tier-2 Phase-C: the production **config literal is
+    `biphasic`** — `biphasic_energy_gated` is the documentation-only full name;
+    the delivered `MassScenario` set is `{fixed, biphasic, anchored_discrete}`.
+    See the §11 NB below.)*
 - Do **not** silently overload existing fields (baseline §12).
 
 ---
@@ -1920,6 +1932,15 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
 - `SimConfig.mass_scenario` gains value `biphasic_energy_gated` (production).
   Existing `fixed`, `scenario_A_accretion`, `scenario_B_stripping`, `biphasic`
   retained for comparison/regression.
+  *(NB 2026-07-01, Tier-2 Phase-C reconcile: the delivered `MassScenario` literal
+  set is **`{fixed, biphasic, anchored_discrete}`** — the production value is
+  **`biphasic`** (kept as the literal; `biphasic_energy_gated` is the
+  documentation-only full name), and `scenario_A_accretion` /
+  `scenario_B_stripping` were superseded by the Tier-1a `anchored_discrete`
+  scenario and never implemented. **Config literal names only; the §11 knobs and
+  mechanism are unchanged.** See
+  `docs/drag_port/Tier2/TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §0/§8 +
+  `docs/drag_port/Tier2/drag_migration_log_tier2.md`.)*
 - `SimConfig.mass_initial_amu` — initial physical mass; for
   `biphasic_energy_gated` defaults to the measured ion-stage-onset shell
   (~21 He ≈ 211 amu, design §2.1), distinct from $m_\text{eff}\approx203$ amu.

@@ -549,6 +549,25 @@ MASS doc §11.
 > §10/§6 `t*`-sweep *run* deliverable stays deferred. Detail:
 > `drag_migration_log_tier1a.md` (Slice B record).
 
+> **DELIVERED (2026-07-01, Tier-2 Phase-C Slice X).** The **v6→v7** bump shipped:
+> **add** per-atom `E\_int\_eV (2N,T)` (the internal-energy reservoir), a **required**
+> field on `IonCheckpoint` and `IonStepState` (all-zero on the `fixed` /
+> `anchored_discrete` paths, evolved only by the Tier-2 `biphasic` driver). A
+> **stepwise v5→v6→v7 shim** cascades legacy files (the v5 arm falls through into a
+> new v6→v7 arm that synthesizes an all-zero `E\_int\_eV` + emits a `UserWarning`
+> recording the file predates the reservoir; a genuine v7 missing the field raises,
+> not zero-fills). The four-term closure is **extended in place** to the **5-term
+> invariant** `E\_kin+E\_pot+E\_dissip+E\_mass\_transfer+E\_int≈const` in
+> `ion_energy_totals`/`ion_ledger_closure` (folds `E\_int` into `E\_system`; reduces
+> to the four-term baseline when `E\_int≡0`). **RNG draw-order lock (forbidden-list,
+> recorded here):** within a `biphasic` step the mass-event Bernoullis are drawn
+> **shed (Q) then pickup (P)**, and if both fire they apply in that same
+> **shed-then-pickup** order (A13 one-event-per-step). Changing this sequence is a
+> forbidden-list change (needs explicit approval), on top of CLAUDE.md's generic
+> "changing random-number draw order" rule. The *enforcement* lives in the Slice-G
+> driver; X only freezes the order (no driver exists yet). Detail:
+> `drag_migration_log_tier2.md` (Slice X record).
+
 **`IonCheckpoint` schema bump to v6** under any non-`fixed` scenario: rename
 `E\_mass\_attach\_defect\_eV`→`E\_mass\_transfer\_eV` (same `(2N,T)` shape, sign now
 covers shedding as well as attachment); drop the `mass\_history\_kg` monotonicity

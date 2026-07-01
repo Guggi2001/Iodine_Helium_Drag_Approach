@@ -109,6 +109,7 @@ def _ion_from_mean_series(t, dist, v1, v2) -> IonCheckpoint:
         droplet_radii_angstrom=np.full(2, 27.936),
         E_kin_eV=zeros.copy(), E_pot_eV=zeros.copy(),
         E_dissip_eV=zeros.copy(), E_mass_transfer_eV=zeros.copy(),
+        E_int_eV=zeros.copy(),
         n_shell=zeros.copy(),
         b_ion_outside=np.zeros(1, dtype=bool),
         relative_loss_per_ps=zeros.copy(),

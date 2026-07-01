@@ -36,6 +36,7 @@ def _make_state(n_atoms=4, mass_amu=200.0):
         E_kin_eV=z.copy(), E_pot_eV=z.copy(),
         E_dissip_eV=z.copy(),
         E_mass_transfer_eV=z.copy(),
+        E_int_eV=z.copy(),
         number_of_collisions=np.zeros(n_atoms, dtype=int),
         time_ps=0.0,
     )

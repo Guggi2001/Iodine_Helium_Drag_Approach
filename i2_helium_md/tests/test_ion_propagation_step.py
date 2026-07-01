@@ -11,6 +11,8 @@ from i2_helium_md.simulation.ion_initial_state import build_initial_ion_state
 from i2_helium_md.simulation.ion_propagation_step import (
     IonStepState,
     ion_propagation_step,
+    ion_state_from_checkpoint_column,
+    write_ion_state_to_checkpoint_column,
 )
 from i2_helium_md.simulation.neutral import run_neutral_propagation
 
@@ -41,12 +43,45 @@ def setup_ion_state():
         E_pot_eV=ion.E_pot_eV[:, 0].copy(),
         E_dissip_eV=np.zeros(two_N),
         E_mass_transfer_eV=np.zeros(two_N),
+        E_int_eV=np.zeros(two_N),
         number_of_collisions=np.zeros(two_N, dtype=int),
         time_ps=0.0,
     )
     charge = np.ones(two_N)
     droplet_radii = ion.droplet_radii_angstrom.copy()
     return cfg, state, charge, droplet_radii, ion
+
+
+class TestCheckpointColumnSeamsEint:
+    """The v7 E_int_eV read/write column seams (Slice X).
+
+    The seam lines are exercised all-zero by the driver smoke tests; these
+    lock the nonzero round-trip and the read-side copy independence.
+    """
+
+    def test_E_int_round_trips_through_column_seams(self, setup_ion_state):
+        _, _, _, _, ion_shared = setup_ion_state
+        # Work on an isolated copy so the module-scoped checkpoint (and
+        # every other test that reads it) is never mutated.
+        ion = replace(ion_shared, E_int_eV=ion_shared.E_int_eV.copy())
+        two_N = ion.E_int_eV.shape[0]
+
+        # Read seam: a known nonzero E_int column reaches the state verbatim.
+        ion.E_int_eV[:, 0] = np.linspace(0.1, 1.0, two_N)
+        state = ion_state_from_checkpoint_column(ion, 0)
+        np.testing.assert_array_equal(state.E_int_eV, ion.E_int_eV[:, 0])
+
+        # The read is a copy: mutating the state must not touch the checkpoint.
+        state.E_int_eV[:] += 5.0
+        assert not np.array_equal(state.E_int_eV, ion.E_int_eV[:, 0])
+
+        # Write seam: a different E_int written to another column reads back equal.
+        target = np.linspace(-2.0, 3.0, two_N)
+        state2 = replace(state, E_int_eV=target.copy())
+        write_ion_state_to_checkpoint_column(state2, ion, 1)
+        np.testing.assert_array_equal(ion.E_int_eV[:, 1], target)
+        back = ion_state_from_checkpoint_column(ion, 1)
+        np.testing.assert_array_equal(back.E_int_eV, target)
 
 
 @pytest.fixture(scope="module")
@@ -83,6 +118,7 @@ def warm_state(setup_ion_state):
         E_pot_eV=state.E_pot_eV.copy(),
         E_dissip_eV=np.zeros(n),
         E_mass_transfer_eV=np.zeros(n),
+        E_int_eV=np.zeros(n),
         number_of_collisions=np.zeros(n, dtype=int),
         time_ps=0.0,
     )
@@ -479,6 +515,7 @@ class TestVelocityDependentSigma:
             E_pot_eV=state.E_pot_eV.copy(),
             E_dissip_eV=state.E_dissip_eV.copy(),
             E_mass_transfer_eV=state.E_mass_transfer_eV.copy(),
+            E_int_eV=state.E_int_eV.copy(),
             number_of_collisions=state.number_of_collisions.copy(),
             time_ps=state.time_ps,
         )

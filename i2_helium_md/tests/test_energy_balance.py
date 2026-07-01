@@ -93,6 +93,7 @@ def _ion(
         E_pot_eV=rng.standard_normal((2 * n, t)),
         E_dissip_eV=rng.standard_normal((2 * n, t)),
         E_mass_transfer_eV=rng.standard_normal((2 * n, t)),
+        E_int_eV=np.zeros((2 * n, t)),
         n_shell=np.zeros((2 * n, t)),
         b_ion_outside=np.zeros(n, dtype=bool),
         relative_loss_per_ps=np.zeros((2 * n, t)),
@@ -125,8 +126,34 @@ class TestEnergyTotals:
         np.testing.assert_allclose(
             totals.E_system_eV,
             totals.E_kin_eV + totals.E_pot_eV
-            + totals.E_dissip_eV + totals.E_mass_transfer_eV,
+            + totals.E_dissip_eV + totals.E_mass_transfer_eV
+            + totals.E_int_eV,
         )
+
+    def test_ion_E_int_summed_per_molecule_into_system(self):
+        """E_int is summed over atoms, divided per molecule, folded into E_system.
+
+        The `_ion` builder starts E_int at zero, so this overrides it with a
+        nonzero stream to lock the per-molecule `/n` division (otherwise only
+        exercised all-zero by the closure tests).
+        """
+        ck = _ion(n=2, t=4)
+        ck.E_int_eV = np.random.default_rng(7).standard_normal((4, 4))
+        totals = ion_energy_totals(ck)
+        np.testing.assert_allclose(
+            totals.E_int_eV, np.sum(ck.E_int_eV, axis=0) / 2.0,
+        )
+        np.testing.assert_allclose(
+            totals.E_system_eV,
+            totals.E_kin_eV + totals.E_pot_eV
+            + totals.E_dissip_eV + totals.E_mass_transfer_eV
+            + totals.E_int_eV,
+        )
+
+    def test_neutral_E_int_is_none(self):
+        """The neutral stage has no E_int reservoir (None, like E_mass_transfer)."""
+        totals = neutral_energy_totals(_neutral(n=2, t=3))
+        assert totals.E_int_eV is None
 
 
 # ===========================================================================
@@ -134,14 +161,21 @@ class TestEnergyTotals:
 # ===========================================================================
 class TestLedgerClosure:
     @staticmethod
-    def _ion_with_energies(e_kin, e_pot, e_dissip, e_mt):
-        """An IonCheckpoint carrying the given (2N, t) energy streams."""
+    def _ion_with_energies(e_kin, e_pot, e_dissip, e_mt, e_int=None):
+        """An IonCheckpoint carrying the given (2N, t) energy streams.
+
+        ``e_int`` defaults to all-zero so existing four-term tests are
+        unaffected (the fifth term reduces out); pass a stream to drive the
+        Tier-2 five-term closure.
+        """
         two_n, t = e_kin.shape
         ck = _ion(n=two_n // 2, t=t)
         ck.E_kin_eV = e_kin
         ck.E_pot_eV = e_pot
         ck.E_dissip_eV = e_dissip
         ck.E_mass_transfer_eV = e_mt
+        if e_int is not None:
+            ck.E_int_eV = e_int
         return ck
 
     def test_closure_holds_for_conserving_stream(self):
@@ -193,6 +227,61 @@ class TestLedgerClosure:
         )
         # 0.5 eV per atom * 4 atoms / 2 molecules = 1.0 eV/molecule jump.
         assert ion_ledger_closure(ck).max_abs_residual_eV == pytest.approx(1.0)
+
+    def test_zero_E_int_reduces_to_four_term_baseline(self):
+        """With an all-zero E_int the residual matches the four-term gate.
+
+        The v7 fifth term must not perturb `fixed` / v6-origin runs.
+        """
+        two_n, t = 4, 5
+        ramp = np.tile(np.linspace(0.0, 1.0, t), (two_n, 1))
+        ck = self._ion_with_energies(
+            e_kin=ramp,
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=-ramp,
+            e_mt=np.zeros((two_n, t)),
+            e_int=np.zeros((two_n, t)),
+        )
+        closure = ion_ledger_closure(ck)
+        assert closure.residual_eV[0] == 0.0
+        assert closure.max_abs_residual_eV < 1e-12
+
+    def test_E_int_deposit_offset_by_dissip_closes(self):
+        """An E_int deposit matched by an equal E_dissip drain closes (5-term).
+
+        Mirrors the S1/K2 booking where binding/cooling energy moves into
+        the reservoir out of another term at fixed total.
+        """
+        two_n, t = 4, 5
+        deposit = np.zeros((two_n, t))
+        deposit[:, t // 2:] = 0.3  # energy accumulates in the reservoir
+        ck = self._ion_with_energies(
+            e_kin=np.zeros((two_n, t)),
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=-deposit,      # drained from the bath channel
+            e_mt=np.zeros((two_n, t)),
+            e_int=deposit,          # into the internal-energy reservoir
+        )
+        assert ion_ledger_closure(ck).max_abs_residual_eV < 1e-12
+
+    def test_E_int_deposit_without_offset_is_caught(self):
+        """An E_int deposit with NO offsetting term makes the residual diverge.
+
+        This is the Tier-2 miswire the fifth term extends the gate to catch:
+        depositing into the reservoir without draining another channel.
+        """
+        two_n, t = 4, 5
+        deposit = np.zeros((two_n, t))
+        deposit[:, t // 2:] = 0.3
+        ck = self._ion_with_energies(
+            e_kin=np.zeros((two_n, t)),
+            e_pot=np.zeros((two_n, t)),
+            e_dissip=np.zeros((two_n, t)),  # MISSING the offsetting drain
+            e_mt=np.zeros((two_n, t)),
+            e_int=deposit,
+        )
+        # 0.3 eV per atom * 4 atoms / 2 molecules = 0.6 eV/molecule jump.
+        assert ion_ledger_closure(ck).max_abs_residual_eV == pytest.approx(0.6)
 
 
 # ===========================================================================
@@ -379,6 +468,7 @@ class TestSchemaV5:
             "E_pot_eV": bad.E_pot_eV,
             "E_dissip_eV": bad.E_dissip_eV,
             "E_mass_transfer_eV": bad.E_mass_transfer_eV,
+            "E_int_eV": bad.E_int_eV,
             "n_shell": bad.n_shell,
             "b_ion_outside": bad.b_ion_outside,
             "relative_loss_per_ps": bad.relative_loss_per_ps,

@@ -118,6 +118,11 @@ cooling, ladder, early window). Physics-Definition only; no code.
   sensitivity layer.
 - **Tier 2** — terminal I⁺Heₙ **size distribution** (+ per-fragment velocity
   histograms) vs experiment. The sharp arbiter for mass parameters.
+  *(NB 2026-07-01, Tier-2 Phase-E scope: the delivered observable is the
+  **integer-n size distribution only** — per-fragment velocity histograms were
+  **cut** (the `vmi_summary/*.csv` references are aggregate I⁺He / I⁺-gas
+  distributions, not per-n). See
+  `docs/drag_port/Tier2/PHASE_E_IMPLEMENTATION_PLAN.md`.)*
 - **Tier 3** — ensemble second moments: final-velocity histogram **width** +
   (if applicable) VMI angular spread. Isolates the noise model.
 

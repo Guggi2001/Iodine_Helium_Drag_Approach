@@ -72,6 +72,7 @@ def _make_ion_checkpoint(num_molecules: int = 5, num_steps: int = 10) -> IonChec
         E_pot_eV=rng.standard_normal((2 * N, T)),
         E_dissip_eV=rng.standard_normal((2 * N, T)),
         E_mass_transfer_eV=rng.standard_normal((2 * N, T)),
+        E_int_eV=rng.standard_normal((2 * N, T)),
         n_shell=rng.integers(14, 22, size=(2 * N, T)).astype(float),
         b_ion_outside=np.zeros(N, dtype=bool),
         relative_loss_per_ps=rng.standard_normal((2 * N, T)),
@@ -104,14 +105,16 @@ class TestRoundTrip:
         path = save_ion_checkpoint(ckpt, tmp_path / "i.npz")
         loaded = load_ion_checkpoint(path)
         assert loaded.num_molecules == 3
-        assert loaded.schema_version == 6
+        assert loaded.schema_version == 7
         np.testing.assert_array_equal(loaded.positions_final_x,
                                        ckpt.positions_final_x)
         np.testing.assert_array_equal(loaded.b_ion_outside, ckpt.b_ion_outside)
-        # v6 fields round-trip: renamed mass-transfer channel, n_shell, and
-        # the scalar mass_scenario metadata (recovered as a Python str).
+        # v6/v7 fields round-trip: renamed mass-transfer channel, the v7
+        # E_int reservoir, n_shell, and the scalar mass_scenario metadata
+        # (recovered as a Python str).
         np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
                                        ckpt.E_mass_transfer_eV)
+        np.testing.assert_array_equal(loaded.E_int_eV, ckpt.E_int_eV)
         np.testing.assert_array_equal(loaded.n_shell, ckpt.n_shell)
         assert loaded.mass_scenario == "anchored_discrete"
         assert isinstance(loaded.mass_scenario, str)
@@ -251,10 +254,11 @@ class TestIonSchemaV6:
         assert ckpt.mass_scenario == "fixed"
 
     def test_v5_backcompat_shim(self, tmp_path):
-        """A legacy v5 ion .npz loads under v6 via the migration shim.
+        """A legacy v5 ion .npz cascades v5->v6->v7 via the migration shim.
 
         The shim maps the renamed mass-transfer field, synthesizes n_shell
-        from mass_history_kg, and defaults mass_scenario to 'fixed'.
+        from mass_history_kg, defaults mass_scenario to 'fixed' (v5->v6),
+        and synthesizes an all-zero E_int_eV with a warning (v6->v7).
         """
         from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 
@@ -262,19 +266,22 @@ class TestIonSchemaV6:
         path = save_ion_checkpoint(ckpt, tmp_path / "legacy.npz")
 
         # Rewrite the .npz to mimic a v5 file: old field name, no n_shell,
-        # no mass_scenario, schema_version=5.
+        # no mass_scenario, no E_int_eV, schema_version=5.
         with np.load(path, allow_pickle=False) as z:
             data = {k: z[k] for k in z.files}
         data["E_mass_attach_defect_eV"] = data.pop("E_mass_transfer_eV")
         data.pop("n_shell")
         data.pop("mass_scenario", None)
+        data.pop("E_int_eV")
         data["schema_version"] = np.asarray(5)
         np.savez_compressed(path, **data)
 
-        loaded = load_ion_checkpoint(path)
+        # The v6->v7 arm warns about the synthesized reservoir.
+        with pytest.warns(UserWarning, match="E_int"):
+            loaded = load_ion_checkpoint(path)
 
-        # Version upgraded; renamed field preserved verbatim.
-        assert loaded.schema_version == 6
+        # Version walked all the way to v7; renamed field preserved verbatim.
+        assert loaded.schema_version == 7
         np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
                                        ckpt.E_mass_transfer_eV)
         # mass_scenario defaulted; n_shell synthesized from mass_history_kg
@@ -285,6 +292,12 @@ class TestIonSchemaV6:
             (ckpt.mass_history_kg / U - MASS_I_ION_AMU) / MASS_HE_AMU
         )
         np.testing.assert_array_equal(loaded.n_shell, expected_n)
+        # E_int reservoir synthesized as all-zero, same shape as the other
+        # (2N, T) trajectory arrays (4-term-equivalent).
+        assert loaded.E_int_eV.shape == loaded.E_mass_transfer_eV.shape
+        np.testing.assert_array_equal(
+            loaded.E_int_eV, np.zeros_like(loaded.E_mass_transfer_eV)
+        )
 
     def test_pre_v5_still_rejected(self, tmp_path):
         """The shim only upgrades v5; older versions still fail the check."""
@@ -296,3 +309,70 @@ class TestIonSchemaV6:
         np.savez_compressed(path, **data)
         with pytest.raises(ValueError, match="schema_version"):
             load_ion_checkpoint(path)
+
+
+# ===========================================================================
+# Ion schema v7 (Tier-2 E_int reservoir) + v6 back-compat shim
+# ===========================================================================
+class TestIonSchemaV7:
+    def _write_v6_file(self, tmp_path):
+        """Save a current checkpoint, then strip it back to a v6 on-disk file.
+
+        Drops ``E_int_eV`` (absent before v7) and stamps ``schema_version``
+        back to 6, mimicking a Tier-1a-era ``ion.npz``.
+        """
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=5)
+        path = save_ion_checkpoint(ckpt, tmp_path / "v6.npz")
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        data.pop("E_int_eV")
+        data["schema_version"] = np.asarray(6)
+        np.savez_compressed(path, **data)
+        return ckpt, path
+
+    def test_v7_round_trip_preserves_E_int(self, tmp_path):
+        """A genuine v7 file round-trips E_int_eV bit-for-bit."""
+        ckpt = _make_ion_checkpoint(num_molecules=3, num_steps=7)
+        path = save_ion_checkpoint(ckpt, tmp_path / "v7.npz")
+        loaded = load_ion_checkpoint(path)
+        assert loaded.schema_version == 7
+        np.testing.assert_array_equal(loaded.E_int_eV, ckpt.E_int_eV)
+
+    def test_v6_backcompat_shim_synthesizes_zeros_and_warns(self, tmp_path):
+        """A v6 ion .npz loads under v7 with an all-zero E_int_eV + a warning."""
+        ckpt, path = self._write_v6_file(tmp_path)
+        with pytest.warns(UserWarning, match="E_int"):
+            loaded = load_ion_checkpoint(path)
+        assert loaded.schema_version == 7
+        # Every v6 field survives verbatim; the reservoir is synthesized zeros.
+        np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
+                                       ckpt.E_mass_transfer_eV)
+        assert loaded.E_int_eV.shape == ckpt.E_mass_transfer_eV.shape
+        np.testing.assert_array_equal(
+            loaded.E_int_eV, np.zeros_like(ckpt.E_mass_transfer_eV)
+        )
+
+    def test_genuine_v7_missing_E_int_raises(self, tmp_path):
+        """A file stamped v7 but missing E_int_eV must fail loudly, not zero-fill.
+
+        The migration only synthesizes zeros for pre-v7 files; a genuine v7
+        that lost the field is a corrupt/incomplete write and must raise.
+        """
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=4)
+        path = save_ion_checkpoint(ckpt, tmp_path / "broken_v7.npz")
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        data.pop("E_int_eV")  # schema_version stays 7
+        np.savez_compressed(path, **data)
+        with pytest.raises(ValueError, match="missing fields"):
+            load_ion_checkpoint(path)
+
+    def test_wrong_shape_E_int_rejected(self, tmp_path):
+        """E_int_eV must be (2N, num_steps) like the other trajectory arrays."""
+        ckpt = _make_ion_checkpoint(num_molecules=3, num_steps=6)
+        # Corrupt E_int_eV to the wrong leading dimension (N instead of 2N).
+        ckpt.E_int_eV = np.zeros((ckpt.num_molecules, ckpt.time_ps.size))
+        save_ion_checkpoint(ckpt, tmp_path / "wrong.npz")
+        cfg = single_pulse_N2000(num_molecules=3)
+        with pytest.raises(ValueError, match="E_int_eV"):
+            load_ion_checkpoint(tmp_path / "wrong.npz", cfg=cfg)
