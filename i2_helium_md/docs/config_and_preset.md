@@ -104,7 +104,9 @@ string values.
 | `NoiseCalibration` | `hard_sphere_variance`, `tddft_residual`, `strict_fdt_bath` | `hard_sphere_variance` |
 | `NoiseGeometry` | `longitudinal`, `isotropic`, `anisotropic` | `longitudinal` |
 | `NoiseLowVBehavior` | `vanish`, `blend_to_isotropic` | `vanish` |
-| `MassRateForm` | `density_only`, `sweeping`, `dwell_time` | `density_only` |
+| `PickupRateForm` | `density_only`, `sweeping`, `dwell_time` | `density_only` |
+| `PickupOccupancyCap` | `langmuir`, `none` | `langmuir` |
+| `HeCaptureVelocity` | `at_rest`, `thermal` | `at_rest` |
 | `ValidationHistogramMetric` | `wasserstein`, `chi2`, `ks` | `wasserstein` |
 
 > **Default policy:** every form-selector defaults to its **inert** member, not
@@ -149,8 +151,10 @@ string values.
 **Deferred** — declared now, no Tier-0 reader; activated by a later slice:
 
 `noise_form`, `noise_calibration`, `noise_geometry`, `noise_low_v_behavior`
-(Tier 3); `mass_rate_form`, `mass_rate_coefficient`, `mass_relaxation_tau_ps`
-(Tier 1); `helium_density_profile` (`None`; future G4 density profile);
+(Tier 3); `pickup_rate_coefficient` (λ₀), `pickup_occupancy_exponent` (p)
+(Tier-2 Phase-B Slice P; read by the Phase-C driver — the enum selectors
+`pickup_rate_form` / `pickup_occupancy_cap` / `he_capture_velocity` and
+`helium_density_profile` are **live** at their slice via the config-load guards);
 `validation_histogram_metric` (Tier 2).
 
 > `mass_initial_amu` defaults to `m_eff_amu` (the value correct for the only

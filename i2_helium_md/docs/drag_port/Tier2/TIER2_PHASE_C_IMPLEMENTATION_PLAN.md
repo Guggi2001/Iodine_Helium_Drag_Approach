@@ -238,6 +238,19 @@ contract.
   `shed_step` per stored step) — dispatch to `biphasic_step` when
   `cfg.mass_scenario == "biphasic"`.
 
+**Deferred-from-Phase-B invariant — `m ↔ n` consistency (owned here, Slice G).** The
+Phase-B channel primitives advance the ion **mass** and the integer **shell count `n`** as
+*independent* quantities: `pickup.capture` returns `m⁺ = m + m_He` (mass-based reduced-mass
+reset) while `pickup_step` separately increments `n → n+1` (and `evaporation_step` /
+`cold_shed` the loss counterparts). By Phase-B design (no state persistence, no closure) the
+relation `m == m_I⁺ + n·m_He` is **documented but not enforced** in the primitives — recorded
+here (Slice P decision, user 2026-07-01) so the guard has a single owner. **G is where it is
+tied:** `biphasic_step` is the first place a persistent `(n_shell, mass)` state co-evolves
+across steps, so G asserts the `m == m_I⁺ + n·m_He` consistency (within float tolerance) as a
+per-step invariant alongside the 5-term energy closure — a cheap structural check that the two
+book-keepings never drift. The Phase-B primitives stay mass-based (never derive `m` from `n`)
+so `capture`/`cold_shed` remain the single source of the reduced-mass reset (rule 1).
+
 **Encoded form.** §2.3 (step composition); the channel forms are MASS §4 (Phase B).
 
 **Knobs (config §4):** consumes the full Phase-A/B surface (κ, picture, |S|, τ, f_int,

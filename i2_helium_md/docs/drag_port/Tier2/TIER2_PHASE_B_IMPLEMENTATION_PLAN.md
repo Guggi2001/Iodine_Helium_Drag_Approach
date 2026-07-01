@@ -322,21 +322,47 @@ defect coefficient stays in one place.
   `CaptureResult` (not `ShedResult`) is used so the type name matches the gain semantics.
   **Shared-coeff refactor:** `_reduced_mass_defect_coeff` is changed to return the **unsigned
   magnitude** `0.5·(m·m_He)/m_plus`; `cold_shed` applies the `−`, `capture` the `+` — one
-  formula, one place (rule 1), signs at the call sites. `cold_shed` output stays byte-identical
-  (regression test locks it).
+  formula, one place (rule 1), signs at the call sites. **Two existing negating call sites**
+  (2026-07-01 audit): `cold_shed` (`mass_jump.py:150`) **and** `cold_shed_velocity_components`
+  (`:234`) both consume the coeff, so both get the sign moved to the call site and the coeff
+  docstring is rewritten (currently reads `−0.5·…`). `cold_shed` **and** the components variant
+  stay byte-identical (regression tests lock both).
 - *In `pickup.py`:*
   - `attach_probability(lambda_attach, dt_ps) -> P_attach` (`1−e^{−λ dt}`).
   - `lambda_attach(rho_ratio, n, *, lambda0, n_star, p, cap)` — the rate with the Langmuir
     factor (`cap="langmuir"` applies `(1−n/n*)_+^p`; `"none"` recovers density-only).
-  - `pickup_step(state, *, rng, rho_ratio, lambda0, f_ret, picture, kappa, ...)` — draw one
-    Bernoulli; on fire compose `mass_jump.capture` (reset/mass/defect) +
+  - `pickup_step(*, rng, n, v, m_amu, rho_ratio, lambda0, f_ret, picture, kappa, ...)` — draw
+    one Bernoulli; on fire compose `mass_jump.capture` (reset/mass/defect) +
     `internal_energy_budget.dE_int_pickup_eV(n, f_ret=…, picture=…, kappa=…)` (S1 heat, `n` =
-    **pre-pickup**); return post-event `(n', m', v', ΔE_int, ΔE_mass_transfer, fired)`. Consumes
-    ρ (gate), U (S1). **`picture`+`kappa` are threaded** (both required by U's `d0_of_n`).
+    **pre-pickup**); return a **`PickupResult` dataclass** `(n_plus, m_plus_amu, v_plus,
+    dE_int_eV, dE_mass_transfer, fired)` (symmetric to `ShedResult`/`CaptureResult`, not a bare
+    tuple — Q1, user 2026-07-01). **Inputs are loose kwargs, not a state dataclass** — the
+    persistent `(n, E_int, v, m)` carrier is G's `IonStepState` (Phase C); P takes only the
+    scalars it reads. Consumes ρ (gate), U (S1). **`picture`+`kappa` are threaded** (both
+    required by U's `d0_of_n`).
+  - **Vectorized-over-ensemble form built in Phase B (Q2, user 2026-07-01).** A
+    `pickup_step_components(...)` variant over the `(2N,)` / N-ion arrays (per-ion `n`,
+    `rho_ratio`, `v` components) mirroring `mass_jump.cold_shed_velocity_components` — one
+    vectorized Bernoulli draw per step, per-ion independence. Chosen over a scalar-only
+    primitive + driver loop because the Poisson-moment and cross-ion-independence oracles (§4)
+    exercise the ensemble directly; the scalar `pickup_step` is the single-ion oracle the
+    components form is checked against.
+  - **RNG draw convention (Q5, user 2026-07-01; documented here, *locked* at Slice X).** One
+    vectorized uniform draw per step, `rng.random(size=n_ions)`, fire on `draw < P_attach`. The
+    **shed-then-pickup order** across the two channels is documented for one-event-per-step
+    bookkeeping (A13) but is not frozen until the Phase-C schema/driver (the forbidden-list
+    draw-order lock lands at X, not here).
   - **`pickup_rate_form`: only `density_only` is built**; `sweeping`/`dwell_time` are
     **declared-but-unread rule-2 arms** (enum present; raise a clear `NotImplementedError`
     until Tier-1/2 demands them — MASS §5 locks density-only, CALIBRATION R7). Same for
     `he_capture_velocity`: `at_rest` built, `thermal` a rule-2 arm.
+  - **Unbuilt-arm error placement (Q4, user 2026-07-01): at point-of-use, not config-load.**
+    `sweeping`/`dwell_time`/`thermal` are *valid* enum literals, so `validate()`'s enum
+    reject-arm **accepts** them (a config carrying them still round-trips — the rule-2
+    declared-but-unread contract); the `NotImplementedError` fires **lazily** inside
+    `lambda_attach` / `pickup_step` / `capture` when the arm is actually selected. The
+    config-load guard rejects only genuinely-*invalid* values (typos), never a valid-but-unbuilt
+    member.
 
 **Encoded form.** §2.2 (P).
 
@@ -568,9 +594,13 @@ declared here (Slice P, owning `capture`) and *activated* at C — the one field
 B/C boundary, resolved by the declare-at-P / read-at-C split above.
 
 **Rename note (build-time).** `mass_rate_coefficient` / `mass_rate_form` /
-`mass_relaxation_tau_ps` have **zero readers** (grep-verified) → **atomic rename to
+`mass_relaxation_tau_ps` have **zero *package* readers** (grep-verified) → **atomic rename to
 `pickup_*`, no back-compat alias**, and **`mass_relaxation_tau_ps` removed** (superseded by
-Slice-K `internal_energy_cooling_tau_ps`); record in `drag_migration_log_tier2.md`. The
+Slice-K `internal_energy_cooling_tau_ps`); record in `drag_migration_log_tier2.md`. **Two
+non-package readers cascade** (2026-07-01 re-audit — "zero readers" was package-only):
+`tests/test_drag_config.py:92` (`assert cfg.mass_rate_form == "density_only"` → migrate the
+assert to `pickup_rate_form`) and `docs/config_and_preset.md:152` (deferred-field list →
+update the names). The atomic rename must touch both; no alias is retained. The
 `biphasic` vs `biphasic_energy_gated` `MassScenario` naming reconcile stays a **Phase C**
 concern (Tier-2 plan §5) — do not touch here.
 

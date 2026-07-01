@@ -33,7 +33,7 @@ from i2_helium_md.config import (
     NoiseCalibration,
     NoiseGeometry,
     NoiseLowVBehavior,
-    MassRateForm,
+    PickupRateForm,
     ValidationHistogramMetric,
     check_drag_config,
     _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU,
@@ -89,7 +89,7 @@ class TestInertDefaults:
         assert cfg.noise_form == "none"
         # form-selector deferred fields default to their inert member
         assert cfg.drag_spatial_gate == "density_proportional"
-        assert cfg.mass_rate_form == "density_only"
+        assert cfg.pickup_rate_form == "density_only"
         assert cfg.validation_histogram_metric == "wasserstein"
 
     def test_mass_initial_defaults_to_m_eff(self):
@@ -655,7 +655,7 @@ class TestEnumCompleteness:
             "longitudinal", "isotropic", "anisotropic"
         }
         assert set(typing.get_args(NoiseLowVBehavior)) == {"vanish", "blend_to_isotropic"}
-        assert set(typing.get_args(MassRateForm)) == {
+        assert set(typing.get_args(PickupRateForm)) == {
             "density_only", "sweeping", "dwell_time"
         }
         assert set(typing.get_args(ValidationHistogramMetric)) == {

@@ -155,7 +155,10 @@ the feedback loop between accretion and the self-bound gate.
    ($n\to n^*$ as well as exit). **Inert for production** (the ion exits before
    saturation; Form B ≡ density-only for ejection) — added for resting-ion
    correctness, reviewer-defensibility, and the Tier-1-tail case. Costs the exponent
-   $p$, **default tied to $\kappa$** (both encode first-shell abruptness — not
+   $p$, **default tied to $\kappa$** *(NB 2026-07-01: an **inverse** tie — rigid
+   shell = large $\kappa$ = sharper cutoff = **smaller** $p$; **not** a literal
+   $p=\kappa$. Phase B holds $p=1$ fixed; see the §11 config NB / A12 / Tier-2 §3.2.)*
+   (both encode first-shell abruptness — not
    independent, like $s\!\leftrightarrow\!\kappa$), so **zero net new free
    parameters** unless the size distribution forces the split. Rejected: hard wall
    (discontinuous; makes the $\pm1$–2-uncertain $n^*$ a hard input) and shell-2
@@ -1735,8 +1738,11 @@ near saturation, and for in-principle resting-ion validity. *Coupling (flagged):
 the exponent $p$ and `ladder_steepness` $\kappa$ both encode first-shell abruptness
 from different observables (pickup shut-off vs binding cliff), so they are **not
 independent** — same situation as $s\leftrightarrow\kappa$ (A11). **Default: $p$
-tied to $\kappa$** (single shell-rigidity parameter, zero net new free knobs);
-split into an independent bounded/free $p$ only if the size distribution demands
+tied to $\kappa$** (single shell-rigidity parameter, zero net new free knobs).
+*NB 2026-07-01 (Tier-2 Phase-B §3.2): this tie is **inverse** — a rigid shell =
+large $\kappa$ = **smaller** $p$ — so it is **not** a literal $p=\kappa$; if ever
+tied, match cutoff **slopes**, not values. Phase B holds $p=1$ fixed.* Split into
+an independent bounded/free $p$ only if the size distribution demands
 it (Tier-2). *Falsify/tighten:* a size distribution whose first-shell cutoff
 sharpness is inconsistent with the $\kappa$-implied $p$ would force the split;
 [Nat23] resting-ion saturation level bounds $n^*$ and $p$ jointly.
@@ -1803,7 +1809,7 @@ open physics question. *Config:* §11 (`mass_jump_velocity_reset`,
 | Item | Symbol | Source / target | Tier |
 |---|---|---|---|
 | Pickup rate coefficient | $\lambda_0$ | OOM prior only ([GAH25] well-depth dep.); pin from I⁺ TDDFT + size dist. | 1 / 2 |
-| Pickup occupancy exponent | $p$ | **NEW 2026-06-21 (A12):** Langmuir cap $(1-n/n^*)_+^{\,p}$; **default tied to $\kappa$** (one shell-rigidity knob, 0 net new free); split to bounded/free only if size dist. demands; [Nat23] saturation bounds $n^*,p$ | 2 (conditional) |
+| Pickup occupancy exponent | $p$ | **NEW 2026-06-21 (A12):** Langmuir cap $(1-n/n^*)_+^{\,p}$; **default tied to $\kappa$** (one shell-rigidity knob, 0 net new free) — **NB 2026-07-01: the tie is *inverse* (large $\kappa$ → sharper cutoff → *smaller* $p$), NOT literal $p=\kappa$; Phase-B holds $p=1$ fixed (§3.2)**; split to bounded/free only if size dist. demands; [Nat23] saturation bounds $n^*,p$ | 2 (conditional) |
 | Pickup↔gate order parameter | $\Pi(t)=\lambda(n)f_\text{ret}\tau$ | **NEW 2026-06-21, derived diagnostic (§6.11):** $\Pi{>}1$ shedding persists / $\Pi{<}1$ freeze; regime-axis spine (R1); $\Pi\to0$ at exit guarantees termination; reconstructable post-hoc like $t_\times$ | — |
 | First ladder rung | $D_0^{\,\mathrm{I^+}}(1)$ | **pinned (2026-06-17):** [IHe05] EPAPS fit, exact $J{=}0$ ZPE → $X_2$ **106.9 cm⁻¹** (0.01325 eV); mixture **74.4 cm⁻¹** (0.00923 eV); $\pm3$ cm⁻¹ | — (sourced) |
 | Ladder shape ($n>1$) | $\kappa$ (Form U sigmoid) | single steepness knob, gradual↔cliff; prior large (7.5× radial cliff, R3); co-fit w/ picture + $\{\nu,s\}$; discriminated by size dist. | 2 (Free) |

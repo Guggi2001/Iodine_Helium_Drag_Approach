@@ -54,8 +54,18 @@ NoiseForm = Literal["none", "multiplicative_local_fdt", "empirical_residual"]
 NoiseCalibration = Literal["hard_sphere_variance", "tddft_residual", "strict_fdt_bath"]
 NoiseGeometry = Literal["longitudinal", "isotropic", "anisotropic"]
 NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
-MassRateForm = Literal["density_only", "sweeping", "dwell_time"]
+PickupRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
+
+# Tier-2 Phase-B pickup channel (Slice P). ``PickupOccupancyCap`` selects the
+# Langmuir shell-saturation factor ``(1 - n/n*)_+^p`` (``langmuir``, default) vs the
+# density-only limit (``none``, cap inert). ``HeCaptureVelocity`` selects the incoming
+# He velocity in the momentum-conserving capture reset: ``at_rest`` (default, ``u_He=0``)
+# vs ``thermal`` (a Tier-3 rule-2 arm -- declared-but-unbuilt; the pickup step raises
+# ``NotImplementedError`` if it is selected). Full member sets are declared now so the
+# enum-reject guard and the deferred arms both have types to reference.
+PickupOccupancyCap = Literal["langmuir", "none"]
+HeCaptureVelocity = Literal["at_rest", "thermal"]
 
 # Tier-2 Phase-B helium-density gate (Slice rho). Selects the ``rho_He/rho_bulk``
 # profile that gates pickup: ``erf_complement`` (default) reuses the drag
@@ -267,14 +277,30 @@ class SimConfig:
     # driver passes _drag_gate_steepness(cfg) so density and drag share one surface.
     helium_density_profile: HeliumDensityProfile = "erf_complement"  # Slice rho (G2 gate)
 
+    # -- Tier-2 Phase-B pickup channel (Slice P) --
+    # The Poisson He-capture gain channel. ``pickup_rate_form`` /
+    # ``pickup_occupancy_cap`` / ``he_capture_velocity`` are read at config-load by
+    # check_pickup_config (enum reject) -- LIVE at Slice P. ``pickup_rate_coefficient``
+    # (lambda_0, ps^-1) and ``pickup_occupancy_exponent`` (p) are DECLARED-BUT-UNREAD in
+    # Phase B (rule-2): the pickup *module* (physics/pickup.py) takes them as kwargs; the
+    # Phase-C generative driver reads these config fields. ``pickup_rate_coefficient``
+    # defaults to 0.0 (inert -- no pickup until a scenario sets it); lambda_0 is a
+    # Sourced+Bounded prior (~0.7-1.1 ps^-1, GAH25) pinned at Phase F, not here.
+    # ``pickup_occupancy_exponent`` p is held fixed at 1.0 (NOT p=kappa -- the A12 tie is
+    # physically inverse; freed at Phase F only if the size-dist first-shell edge demands
+    # it). Renamed atomically from the retired Tier-1 mass_rate_* fields (no alias);
+    # mass_relaxation_tau_ps was dead (superseded by internal_energy_cooling_tau_ps).
+    pickup_rate_form: PickupRateForm = "density_only"        # Slice P (LIVE, enum guard)
+    pickup_rate_coefficient: float = 0.0    # lambda_0 [ps^-1]; Bounded; Phase-C reader
+    pickup_occupancy_cap: PickupOccupancyCap = "langmuir"    # Slice P (LIVE, enum guard)
+    pickup_occupancy_exponent: float = 1.0  # p; fixed (not p=kappa); Phase-C reader
+    he_capture_velocity: HeCaptureVelocity = "at_rest"       # Slice P declared / Phase-C read
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
     noise_geometry: NoiseGeometry = "longitudinal"       # Tier 3
     noise_low_v_behavior: NoiseLowVBehavior = "vanish"   # Tier 3 (anisotropic only)
-    mass_rate_form: MassRateForm = "density_only"        # Tier 1 (scenario != fixed)
-    mass_rate_coefficient: float = 0.0    # kappa0/eta0; Tier 1
-    mass_relaxation_tau_ps: float = 0.0   # ps; biphasic only; Tier 1
     validation_histogram_metric: ValidationHistogramMetric = "wasserstein"  # Tier 2
 
     # ------------------------------------------------------------------
@@ -378,6 +404,7 @@ class SimConfig:
         check_solvation_cooling_config(self)
         check_internal_energy_budget_config(self)
         check_helium_density_config(self)
+        check_pickup_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +503,59 @@ def check_helium_density_config(cfg: "SimConfig") -> None:
         raise ValueError(
             f"unknown helium_density_profile {cfg.helium_density_profile!r}; "
             f"expected one of {_KNOWN_HELIUM_DENSITY_PROFILES}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-B pickup-channel config-load guard (Slice P)
+# ---------------------------------------------------------------------------
+# Known selectors (mirrors _KNOWN_LADDER_FORMS / _KNOWN_HELIUM_DENSITY_PROFILES):
+# Literal is not runtime-enforced, so these are the typo-recovery sets the guard
+# rejects against. NOTE the sets include the valid-but-unbuilt rule-2 arms
+# (sweeping/dwell_time, thermal): a config carrying them round-trips (the
+# declared-but-unread contract); the NotImplementedError fires LAZILY at point-of-use
+# in physics/pickup.py, never at config-load. The guard rejects only genuine typos.
+_KNOWN_PICKUP_RATE_FORMS = ("density_only", "sweeping", "dwell_time")
+_KNOWN_PICKUP_OCCUPANCY_CAPS = ("langmuir", "none")
+_KNOWN_HE_CAPTURE_VELOCITIES = ("at_rest", "thermal")
+
+
+def check_pickup_config(cfg: "SimConfig") -> None:
+    """Validate the pickup-channel surface of ``cfg`` at config-load (Slice P).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. It is a
+    load-time fail-loud enum reject arm (no silent clamp) over the three pickup
+    selectors -- ``pickup_rate_form``, ``pickup_occupancy_cap``, ``he_capture_velocity``
+    -- mirroring the ``dissociation_ladder`` / ``helium_density_profile`` typo-recovery
+    arms. These are the fields' live reads at Slice P.
+
+    The guard accepts the **valid-but-unbuilt** rule-2 arms (``sweeping`` / ``dwell_time``
+    / ``thermal``): they are legal enum members, so a config carrying them round-trips;
+    the ``NotImplementedError`` fires lazily inside :mod:`physics.pickup` when the arm is
+    actually selected (the declared-but-unread contract). Only genuine typos are refused
+    here. ``pickup_rate_coefficient`` (lambda_0) and ``pickup_occupancy_exponent`` (p)
+    carry no load-time bound -- they are Phase-C driver reads, priored/pinned at Phase F.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``pickup_rate_form``, ``pickup_occupancy_cap``, or
+        ``he_capture_velocity`` selector.
+    """
+    if cfg.pickup_rate_form not in _KNOWN_PICKUP_RATE_FORMS:
+        raise ValueError(
+            f"unknown pickup_rate_form {cfg.pickup_rate_form!r}; "
+            f"expected one of {_KNOWN_PICKUP_RATE_FORMS}"
+        )
+    if cfg.pickup_occupancy_cap not in _KNOWN_PICKUP_OCCUPANCY_CAPS:
+        raise ValueError(
+            f"unknown pickup_occupancy_cap {cfg.pickup_occupancy_cap!r}; "
+            f"expected one of {_KNOWN_PICKUP_OCCUPANCY_CAPS}"
+        )
+    if cfg.he_capture_velocity not in _KNOWN_HE_CAPTURE_VELOCITIES:
+        raise ValueError(
+            f"unknown he_capture_velocity {cfg.he_capture_velocity!r}; "
+            f"expected one of {_KNOWN_HE_CAPTURE_VELOCITIES}"
         )
 
 

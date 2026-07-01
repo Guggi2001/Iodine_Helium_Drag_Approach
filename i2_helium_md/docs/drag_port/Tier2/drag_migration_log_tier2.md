@@ -896,3 +896,197 @@ surfaced **two genuine robustness/placement gaps** plus coverage gaps; all close
 `test_helium_density_config.py` 6 + 2 `test_drag.py` parity asserts); full suite **1592
 passed, 0 failed** (1580 → +12; same 17 unrelated `anchored_discrete` warnings). Next:
 Slice P (`physics/pickup.py` + `mass_jump.capture`) / Slice Q (`physics/evaporation.py`).
+
+---
+
+## Phase B — Slice P pre-build interface decisions (2026-07-01)
+
+A pre-build discussion pass over the Slice P spec before the `[PROCEED TO IMPLEMENTATION]`
+trigger, grounded in a code-surface audit (`physics/mass_jump.py`,
+`physics/internal_energy_budget.py` U signatures, `config.py:275–277` `mass_rate_*` fields).
+No code — the boundary holds; docs-only amendment (Slice P interface bullets §3, §5 rename
+note, `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §4 for the deferred `m↔n` guard). Five interface
+calls resolved (decision owner: user) plus two code-audit corrections to the plan.
+
+- **Q1 — `PickupResult` dataclass out, loose kwargs in.** `pickup_step` returns a
+  `PickupResult(n_plus, m_plus_amu, v_plus, dE_int_eV, dE_mass_transfer, fired)` dataclass
+  (symmetric to `ShedResult`/the new `CaptureResult`, not a bare 6-tuple). Inputs are loose
+  scalar kwargs — the persistent `(n, E_int, v, m)` carrier is G's `IonStepState` (Phase C),
+  not a Phase-B state container.
+- **Q2 — vectorized-over-ensemble form built in Phase B.** A `pickup_step_components(...)`
+  variant over the `(2N,)`/N-ion arrays (mirroring `cold_shed_velocity_components`), one
+  vectorized Bernoulli draw per step. Chosen over scalar-only + driver-loop because the
+  Poisson-moment + cross-ion-independence oracles exercise the ensemble directly; the scalar
+  `pickup_step` is the single-ion oracle the components form is checked against.
+- **Q3 — `m↔n` consistency deferred to G, documented there.** The Phase-B primitives advance
+  mass (`capture`: `m⁺=m+m_He`) and integer `n` (`pickup_step`: `n→n+1`) independently;
+  `m == m_I⁺ + n·m_He` is documented-but-not-enforced in the primitives (no Phase-B
+  persistence/closure). Recorded in `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §4 (Slice G) as a
+  per-step structural invariant G asserts alongside the 5-term energy closure — G owns the
+  guard (first place a persistent `(n_shell, mass)` state co-evolves). Primitives stay
+  mass-based so `capture`/`cold_shed` remain the single reduced-mass reset source (rule 1).
+- **Q4 — unbuilt-arm `NotImplementedError` at point-of-use, not config-load.**
+  `sweeping`/`dwell_time`/`thermal` are *valid* enum literals → `validate()` accepts them (a
+  carrying config round-trips, the rule-2 declared-but-unread contract); the error fires lazily
+  inside `lambda_attach`/`pickup_step`/`capture`. The enum reject-arm rejects only invalid
+  typos, never a valid-but-unbuilt member. (Best-practice call, user-delegated.)
+- **Q5 — RNG draw convention (documented here, locked at X).** One vectorized uniform draw per
+  step, `rng.random(size=n_ions)`, fire on `draw < P_attach`; shed-then-pickup channel order
+  documented for one-event-per-step (A13) but frozen only at the Phase-C schema/driver
+  (forbidden-list draw-order lock lands at Slice X).
+
+**Two code-audit corrections to the plan (were inaccurate, now fixed in the Phase-B plan):**
+- **"zero readers" was package-only.** The atomic `mass_rate_*→pickup_*` rename (no alias)
+  cascades to **two non-package readers**: `tests/test_drag_config.py:92`
+  (`assert cfg.mass_rate_form == "density_only"` → migrate to `pickup_rate_form`) and
+  `docs/config_and_preset.md:152`. Both must be touched at the P build.
+- **The coeff refactor has two call sites.** `_reduced_mass_defect_coeff` is consumed by
+  `cold_shed` (`mass_jump.py:150`) **and** `cold_shed_velocity_components` (`:234`); moving the
+  sign to the call site means negating at both, plus rewriting the coeff docstring. Both stay
+  byte-identical (regression-locked from both sides).
+
+**Cross-reference verdict:** these are software-interface decisions (result-shape,
+vectorisation, error placement, RNG draw), not physics-parameter changes — no MASS/CALIBRATION
+value is touched. The `m↔n` (Q3) and draw-order (Q5) items are consistent with A13
+(one-event-per-step, jump-then-O) and the 5-term invariant ownership already in the Phase-C
+plan. **Slice P is build-ready** pending the `[PROCEED TO IMPLEMENTATION]` trigger (P, then Q).
+
+### Phase B — Slice P pre-build open question resolved (2026-07-01)
+
+A final discussion pass before the trigger, grounded in a code-surface re-audit
+(`physics/mass_jump.py::_check_masses`, `_reduced_mass_defect_coeff` call sites,
+`config.py:57/275–277`, `tests/test_drag_config.py:36/92/658`). One genuine physics-guard
+fork surfaced; resolved (decision owner: user). No code at decision time — boundary held.
+
+- **`capture` mass guard → dedicated positivity-only guard (not shared `_check_masses`).**
+  The plan test-spec said "reuse `_check_masses`", but that guard imposes the *shed*
+  precondition `m_minus − m_He > 0` (post-shed mass positive), which a **capture does not
+  have** — a capture *adds* mass (`m⁺ = m + m_He`, always positive). Reuse never wrongly
+  fires for a physical I⁺ (127 ≫ 4 amu He) but would fail loud for the *wrong reason* on a
+  light ion. **Decision:** a new `_check_masses_gain` requiring only finite + positive
+  `m_minus`/`m_He` (CLAUDE.md principle 4 — fail loud for the right reason). `cold_shed`
+  keeps `_check_masses` unchanged.
+- **Rename cascade correction.** The plan's §5 "two non-package readers" undercounted: the
+  atomic `mass_rate_*→pickup_*` rename also renames the **type alias itself**
+  (`config.py:57` `MassRateForm → PickupRateForm`), cascading to `test_drag_config.py:36`
+  (import) and `:658` (members assert) in addition to `:92` (field assert) and
+  `docs/config_and_preset.md`. All migrated at build.
+
+---
+
+## Phase B — Slice P DELIVERED (2026-07-01)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. Pure-ish stochastic
+primitive: injected RNG, per-event mass/velocity resets, **no** integrator, no `E_int`
+state persistence, no schema I/O, no 5-term closure (all Phase C). Mass-agnostic in the
+drag sense — no Phase-P function evaluates `γ`; `m` enters only as the captured quantity in
+the reset. Oracle asserts against the plan §2.2 (P) / §4 golden values.
+
+**Build (files):**
+- `physics/mass_jump.py` — **extended.** New `CaptureResult` dataclass (the +He gain
+  counterpart of `ShedResult`); `capture(v_minus, m_minus_amu, *, m_he_amu, u_he=0.0)`
+  (`v⁺ = (m·v⁻ + m_He·u_He)/(m+m_He)`, `m⁺ = m+m_He`, defect `+½(m·m_He)/(m+m_He)·|v⁻−u_He|²
+  > 0`) + `capture_velocity_components` (per-ion array form, **per-ion mass** since fires
+  diverge — unlike the scalar-mass `cold_shed_velocity_components`); `_check_masses_gain`
+  (positivity-only guard, per the resolved open question). **Coeff refactor:**
+  `_reduced_mass_defect_coeff` now returns the **unsigned magnitude** `0.5·(m·m_He)/m_plus`;
+  the `−` is applied at both shed call sites (`cold_shed`, `cold_shed_velocity_components`),
+  the `+` at both capture call sites — one reduced-mass formula, signs at the call site
+  (rule 1). `cold_shed` / `cold_shed_velocity_components` output **byte-identical**
+  (locked by the pre-existing Tier-1a reset/energy tests, all green).
+- `physics/pickup.py` — **new module.** `attach_probability` (`1−e^{−λdt}`), `lambda_attach`
+  (`λ₀·ρ·(1−n/n*)_+^p`, Langmuir/`none` cap), `pickup_step` → `PickupResult(n_plus,
+  m_plus_amu, v_plus, dE_int_eV, dE_mass_transfer, fired)` (composes `mass_jump.capture` +
+  `internal_energy_budget.dE_int_pickup_eV`, `n` = pre-pickup, picture/kappa threaded), and
+  `pickup_step_components` (one vectorized `rng.random(size=M)` draw, per-ion independence,
+  `np.where` fire-mask). Rule-2 arms (`sweeping`/`dwell_time` rate form, `thermal` capture
+  velocity) raise `NotImplementedError` **lazily at point-of-use** (Q4), never at config-load.
+- `config.py` — atomic rename (no alias) `MassRateForm→PickupRateForm`,
+  `mass_rate_form→pickup_rate_form`, `mass_rate_coefficient→pickup_rate_coefficient`;
+  **removed** dead `mass_relaxation_tau_ps` (superseded by `internal_energy_cooling_tau_ps`).
+  New Literals `PickupOccupancyCap`/`HeCaptureVelocity`; new fields `pickup_occupancy_cap`
+  (langmuir), `pickup_occupancy_exponent` (p=1.0), `he_capture_velocity` (at_rest). New
+  `check_pickup_config` enum-reject guard (accepts valid-but-unbuilt rule-2 members, rejects
+  only typos) wired into `validate()`.
+- `tests/` — `test_pickup.py` (33) + `test_pickup_config.py` (9) new; capture asserts added
+  to `test_mass_jump.py` (+10); rename cascade migrated in `test_drag_config.py` (import +
+  field assert + members assert); `docs/config_and_preset.md` type table + deferred list
+  updated (also de-drifted the stale `helium_density_profile` "None; future G4" doc line to
+  its live G2 status).
+
+**Oracle cross-validation.** Capture reset exact to machine precision (`v⁺`, `m⁺`, defect);
+defect **> 0** and sign-opposite to `cold_shed`; reduced-mass form cross-checked by hand;
+`u_He≠0` conserves centre-of-mass momentum. `attach_probability` matches `1−e^{−λdt}` and
+`→ λdt` small; Langmuir cap `→0` at `n=n*=21` and clamps `≥ n*`; density-only/`none`
+equivalence at `n=0`; `p=1` linear, `p>1` sharpens. Poisson moment: fire count over 40 000
+seeded steps within a 5σ band of `λt`; ensemble fraction fired within 5σ of `P` over 200 000
+ions; components form matches the scalar oracle ion-by-ion (all-fire), leaves non-fired ions
+untouched (mixed pattern), and is identity under no-fire. S1 heat `= +f_ret·D_0(n+1)`
+composed from the real U, picture/kappa threaded.
+
+**Rule-2 table.** `pickup_rate_form` / `pickup_occupancy_cap` / `he_capture_velocity` are
+**born live** (read by `check_pickup_config`). `pickup_rate_coefficient` (λ₀) and
+`pickup_occupancy_exponent` (p) are the two Slice-P **declared-but-unread** carries (read by
+the Phase-C driver — the f_int/f_ret precedent). `he_capture_velocity` is declared here (owns
+`capture`) and *activated* at Phase-C G (passes `u_he`). The `sweeping`/`dwell_time`/`thermal`
+enum arms and the sourced TDDFT `ρ_He` array (Slice ρ) remain the standing Phase-B rule-2
+carries; the `cooling_relaxed` concrete blend (Slice L) is still pinned at Phase F.
+
+**Carried follow-up — RESOLVED (user OK 2026-07-01).** The `p=κ` wording clarification (§3.2
+item 2) is applied: every bare "default tied to κ" in MASS was annotated with the **inverse-tie
+NB** (rigid shell = large κ = *smaller* p; **not** literal `p=κ`; Phase-B holds `p=1` fixed) —
+MASS lines ~158 (A12 Form-B rationale), ~1737 (A12 coupling discussion), ~1806 (§11 knob-index
+row); the §11 config block (~1934) and CALIBRATION row 7p / line 83 already carried it. Locked
+values untouched (annotation only, not a rewrite); `p=1.0` remains the Phase-B default and is
+freed only at Phase F if the size-dist first-shell edge demands it.
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. Capture defect is
+the exact reduced-mass counterpart of the cold-shed defect (rule 1, one formula); λ₀
+Sourced+Bounded (row 7), f_ret Bounded (row 13), p held fixed (A12). No `γ`/drag-law read, no
+integrator, no `E_int` state — the out-of-scope guard holds.
+
+**Tests:** Slice-P suites **52 green** (`test_pickup.py` 33 + `test_pickup_config.py` 9 +
+`test_mass_jump.py` capture asserts 10); full suite **1644 passed, 0 failed** (1592 → +52;
+same 17 unrelated `anchored_discrete` warnings).
+
+### Slice P — review + test-hardening pass (2026-07-01)
+
+An inline adversarial review (correctness / edge / vectorisation / independence / guard /
+import angles over the small self-authored diff) **confirmed the physics with no bug** and
+surfaced one genuine guard gap plus coverage gaps; all closed test-first (the guard gap
+RED→GREEN, the rest characterisation/regression locks).
+
+- **Genuine gap — `lambda_attach` silent inf/nan on pathological knobs.** The Langmuir
+  factor `np.maximum(0, 1−n/n*)**p` gives `0**neg = inf` for `p<0` (at `n≥n*`) and `0/0 =
+  nan` for `n_star<=0` (at `n=0`) — a silently-wrong *fire-every-step* rate. No config guard
+  protects `p` (declared-but-unread until Phase C), so the module is the only defence. **Fix:**
+  fail-loud on `p<0` / `n_star<=0` **inside the langmuir branch only** (both unused under
+  `cap="none"`, which stays truly p/n\*-independent). Same div-by-zero/inf-producer philosophy
+  as the Slice-K/L `τ>0` / `κ>0` guards (bounds that *crash or silently invert* are guarded;
+  advisory bounds are caught at config-load).
+- **Doc nuance (not a bug):** `attach_probability` can return exactly `1.0` (float underflow
+  at large `λ·dt`), so the "[0,1)" docstring was corrected to "[0,1], saturating to 1 in the
+  fire-every-step limit; non-decreasing in λ".
+- **Coverage added (+15 characterisation/regression locks):** capture **energy-conservation
+  identity** (`dE_mass_transfer == KE_before − KE_after` for the mechanical/COM channel, both
+  `u_He=0` and a moving non-axis-aligned He); zero-relative-velocity → zero defect; components
+  **scalar-mass broadcast** + per-ion momentum conservation with a moving He; `attach_probability`
+  monotone/bounded + `dt=0` no-fire; `lambda_attach` monotone-non-increasing in `n` + zero-gate
+  (`ρ=0`) → zero rate; and the physically-important **step-level gate properties** — a closed
+  gate (`ρ=0`, the ion-exit termination) and a full shell under Langmuir **never fire even with
+  a fire-forcing RNG**, while `cap="none"` lets a full shell still capture.
+- **Deliberate non-guards (consistent with the sibling reset modules):** per-ion array-length
+  mismatch in `pickup_step_components` is unguarded (parity with `cold_shed_velocity_components`,
+  which trusts the caller); negative `dt_ps` / negative `n` are treated as upstream bugs (the
+  drag/shed modules never guarded them either). `pickup_step` is documented single-ion (an array
+  `rho_ratio`/`n` would trip `bool(array)` — a misuse, not a supported path).
+
+**Import audit.** `pickup.py` imports only public symbols (`capture` /
+`capture_velocity_components` from `mass_jump`, `dE_int_pickup_eV` from
+`internal_energy_budget`, `MASS_HE_AMU`/`N_STAR` from `constants`); no cycle (config imports
+physics lazily), no `__init__` export added (the Phase-C driver will import the module
+directly — the Slice-ρ precedent).
+
+**Tests after hardening:** Slice-P suites **67 green** (52 → +15); full suite **1659 passed,
+0 failed** (1644 → +15; same 17 unrelated `anchored_discrete` warnings). Next: Slice Q
+(`physics/evaporation.py`).

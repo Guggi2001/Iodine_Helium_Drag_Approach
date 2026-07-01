@@ -17,9 +17,13 @@ import pytest
 
 from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU
 from i2_helium_md.physics.mass_jump import (
+    CaptureResult,
     ShedResult,
     apply_shed,
+    capture,
+    capture_velocity_components,
     cold_shed,
+    cold_shed_velocity_components,
     continuous_velocity_shed,
     kick_factor,
 )
@@ -299,3 +303,146 @@ class TestGuards:
     def test_returns_shedresult_type(self):
         assert isinstance(cold_shed(V_MINUS, complex_mass_amu(21)), ShedResult)
         assert isinstance(continuous_velocity_shed(V_MINUS, complex_mass_amu(21)), ShedResult)
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Slice P -- momentum-conserving He capture (the +He counterpart of cold_shed)
+# ---------------------------------------------------------------------------
+class TestCapture:
+    def test_capture_reset_exact(self):
+        """v+ = m/(m+m_He)*v-, m+ = m+m_He, defect = +0.5*(m*m_He)/(m+m_He)*|v-|^2."""
+        m = M_EFF_AMU
+        res = capture(V_MINUS, m)
+        assert isinstance(res, CaptureResult)
+        m_plus = m + MASS_HE_AMU
+        np.testing.assert_allclose(res.v_plus, (m / m_plus) * V_MINUS, rtol=0, atol=1e-13)
+        assert res.m_plus_amu == pytest.approx(m_plus, rel=0, abs=1e-13)
+        expected = 0.5 * (m * MASS_HE_AMU) / m_plus * 169.0   # |V_MINUS|^2 = 169
+        assert res.dE_mass_transfer == pytest.approx(expected, rel=0, abs=1e-12)
+        assert res.dE_mass_transfer > 0.0
+
+    def test_capture_mass_is_a_gain(self):
+        res = capture(V_MINUS, M_EFF_AMU)
+        assert res.m_plus_amu > M_EFF_AMU
+
+    def test_capture_defect_sign_opposite_cold_shed(self):
+        """Same |v|, same reduced-mass magnitude family: capture > 0, cold_shed < 0."""
+        cap = capture(V_MINUS, M_EFF_AMU)
+        shed = cold_shed(V_MINUS, M_EFF_AMU)
+        assert cap.dE_mass_transfer > 0.0
+        assert shed.dE_mass_transfer < 0.0
+
+    def test_capture_defect_matches_reduced_mass_form(self):
+        """Cross-check the exact reduced-mass coefficient against a hand computation."""
+        m, m_he = 100.0, MASS_HE_AMU
+        v = np.array([1.0, 2.0, 2.0])          # |v|^2 = 9
+        res = capture(v, m, m_he_amu=m_he)
+        mu = m * m_he / (m + m_he)
+        assert res.dE_mass_transfer == pytest.approx(0.5 * mu * 9.0, rel=0, abs=1e-13)
+
+    def test_capture_with_moving_he_conserves_momentum(self):
+        """u_He != 0: v+ is the exact centre-of-mass velocity; defect uses |v- - u_He|^2."""
+        m, m_he = 50.0, MASS_HE_AMU
+        v = np.array([6.0, 0.0, 0.0])
+        u = np.array([1.0, 0.0, 0.0])
+        res = capture(v, m, m_he_amu=m_he, u_he=u)
+        m_plus = m + m_he
+        # momentum: m*v- + m_He*u_He == m_plus * v+
+        np.testing.assert_allclose(m * v + m_he * u, m_plus * res.v_plus, atol=1e-11)
+        mu = m * m_he / m_plus
+        assert res.dE_mass_transfer == pytest.approx(0.5 * mu * 25.0, rel=0, abs=1e-12)
+
+    def test_capture_allows_mass_below_he_mass(self):
+        """Unlike a shed, a capture has no m > m_He precondition (it only adds mass)."""
+        res = capture(V_MINUS, 2.0, m_he_amu=MASS_HE_AMU)   # m_minus < m_He: fine
+        assert res.m_plus_amu == pytest.approx(2.0 + MASS_HE_AMU)
+        # cold_shed on the same masses must reject (post-shed mass would be negative)
+        with pytest.raises(ValueError):
+            cold_shed(V_MINUS, 2.0, m_he_amu=MASS_HE_AMU)
+
+    def test_capture_guards(self):
+        with pytest.raises(ValueError):
+            capture(V_MINUS, 0.0)                       # non-positive complex mass
+        with pytest.raises(ValueError):
+            capture(V_MINUS, -1.0)
+        with pytest.raises(ValueError):
+            capture(V_MINUS, M_EFF_AMU, m_he_amu=0.0)   # non-positive He mass
+        with pytest.raises(ValueError):
+            capture(np.array([1.0, np.nan, 0.0]), M_EFF_AMU)
+        with pytest.raises(ValueError):
+            capture(V_MINUS, np.inf)
+
+    def test_capture_components_match_scalar_per_ion(self):
+        """Vectorized per-ion capture == scalar capture applied ion-by-ion."""
+        rng = np.random.default_rng(0)
+        m = np.array([50.0, 202.953908, 300.0])
+        vx = rng.normal(size=3)
+        vy = rng.normal(size=3)
+        vz = rng.normal(size=3)
+        vx_p, vy_p, vz_p, m_p, dE = capture_velocity_components(vx, vy, vz, m)
+        for i in range(3):
+            res = capture(np.array([vx[i], vy[i], vz[i]]), m[i])
+            np.testing.assert_allclose([vx_p[i], vy_p[i], vz_p[i]], res.v_plus, atol=1e-12)
+            assert m_p[i] == pytest.approx(res.m_plus_amu)
+            assert dE[i] == pytest.approx(res.dE_mass_transfer, rel=0, abs=1e-12)
+
+    def test_capture_components_guard(self):
+        with pytest.raises(ValueError):
+            capture_velocity_components(
+                np.array([1.0]), np.array([1.0]), np.array([1.0]),
+                np.array([-1.0]),
+            )
+
+    def test_round_trip_capture_then_cold_shed_restores_mass(self):
+        """capture (+m_He) then cold_shed (-m_He) returns the original complex mass."""
+        m = M_EFF_AMU
+        cap = capture(V_MINUS, m)
+        shed = cold_shed(cap.v_plus, cap.m_plus_amu)
+        assert shed.m_plus_amu == pytest.approx(m, rel=0, abs=1e-12)
+
+    def test_defect_equals_mechanical_ke_loss(self):
+        """dE_mass_transfer == KE removed from the mechanical (COM) channel (u_He=0)."""
+        m, m_he = 150.0, MASS_HE_AMU
+        res = capture(V_MINUS, m, m_he_amu=m_he)
+        ke_before = 0.5 * m * float(V_MINUS @ V_MINUS)          # He at rest adds 0
+        ke_after = 0.5 * res.m_plus_amu * float(res.v_plus @ res.v_plus)
+        assert res.dE_mass_transfer == pytest.approx(ke_before - ke_after, rel=0, abs=1e-11)
+
+    def test_defect_equals_mechanical_ke_loss_moving_he(self):
+        """Same identity with a moving (non-axis-aligned) He: dE = KE_before - KE_after."""
+        m, m_he = 80.0, MASS_HE_AMU
+        v = np.array([2.0, -3.0, 6.0])
+        u = np.array([0.5, 1.0, -1.0])
+        res = capture(v, m, m_he_amu=m_he, u_he=u)
+        ke_before = 0.5 * m * float(v @ v) + 0.5 * m_he * float(u @ u)
+        ke_after = 0.5 * res.m_plus_amu * float(res.v_plus @ res.v_plus)
+        assert res.dE_mass_transfer == pytest.approx(ke_before - ke_after, rel=0, abs=1e-11)
+
+    def test_zero_relative_velocity_zero_defect(self):
+        """He co-moving with the complex: no relative KE, zero defect, v unchanged."""
+        v = np.array([1.0, 2.0, 3.0])
+        res = capture(v, 100.0, u_he=v)          # u_He == v- exactly
+        assert res.dE_mass_transfer == pytest.approx(0.0, abs=1e-13)
+        np.testing.assert_allclose(res.v_plus, v, atol=1e-13)
+
+    def test_components_accept_scalar_mass_broadcast(self):
+        """capture_velocity_components broadcasts a scalar complex mass over the ensemble."""
+        vx = np.array([1.0, 2.0, 3.0])
+        vy = np.zeros(3)
+        vz = np.zeros(3)
+        vx_p, vy_p, vz_p, m_p, dE = capture_velocity_components(vx, vy, vz, 100.0)
+        m_plus = 100.0 + MASS_HE_AMU
+        np.testing.assert_allclose(vx_p, (100.0 / m_plus) * vx, atol=1e-13)
+        # scalar mass -> m_p broadcasts to the same post-capture mass for every ion
+        np.testing.assert_allclose(np.broadcast_to(m_p, (3,)), m_plus)
+        np.testing.assert_allclose(dE, 0.5 * (100.0 * MASS_HE_AMU) / m_plus * vx ** 2, atol=1e-13)
+
+    def test_components_momentum_conserved_per_ion(self):
+        """m_plus * v_plus == m * v- + m_He * u_He, per ion, with a moving He."""
+        m = np.array([50.0, 120.0])
+        vx = np.array([6.0, -2.0])
+        u = 0.5
+        vx_p, _, _, m_p, _ = capture_velocity_components(
+            vx, np.zeros(2), np.zeros(2), m, u_he=u,
+        )
+        np.testing.assert_allclose(m_p * vx_p, m * vx + MASS_HE_AMU * u, atol=1e-11)

@@ -76,6 +76,34 @@ class ShedResult:
     dE_mass_transfer: float
 
 
+@dataclass(frozen=True)
+class CaptureResult:
+    """The outcome of one momentum-conserving He capture applied to a velocity.
+
+    The +He counterpart of :class:`ShedResult`: the complex *gains* mass and a
+    strictly-positive kinetic-energy defect (KE lost to the internal reservoir as the
+    incoming He merges). The name matches the gain semantics (``m_plus_amu`` is larger,
+    ``dE_mass_transfer > 0``), so a capture is never mistaken for a shed at the call site.
+
+    Attributes
+    ----------
+    v_plus : np.ndarray
+        Post-capture centre-of-mass velocity [A/ps], same shape as the input
+        ``v_minus``: ``(m*v- + m_He*u_He)/(m + m_He)``.
+    m_plus_amu : float
+        Post-capture complex mass [amu]: ``m + m_He`` (a **gain**).
+    dE_mass_transfer : float
+        The ledger increment [amu*A^2/ps^2], ``+0.5*(m*m_He)/(m + m_He)*|v- - u_He|^2``
+        (**> 0** for a non-zero relative velocity). This is the KE that leaves the
+        mechanical channel and books into ``E_mass_transfer`` at Phase C -- the exact
+        reduced-mass counterpart of the (negative) cold-shed defect.
+    """
+
+    v_plus: np.ndarray
+    m_plus_amu: float
+    dE_mass_transfer: float
+
+
 def kick_factor(m_minus_amu: float, m_he_amu: float = MASS_HE_AMU) -> float:
     """Momentum-conserving speed kick ``m/(m - m_He)`` of one cold shed [dimensionless].
 
@@ -91,15 +119,20 @@ def kick_factor(m_minus_amu: float, m_he_amu: float = MASS_HE_AMU) -> float:
 def _reduced_mass_defect_coeff(
     m_minus_amu: float, m_plus_amu: float, m_he_amu: float
 ) -> float:
-    """Reduced-mass energy-defect coefficient ``-0.5*(m*m_He)/(m - m_He)`` [amu].
+    """Unsigned reduced-mass energy-defect coefficient ``0.5*(m*m_He)/m_plus`` [amu].
 
     The single source of the exact reduced-mass form (NOT the heavy-ion
-    ``0.5*m_He`` approximation). Multiplying by ``|v-|^2`` gives the (negative)
-    ledger increment ``dE_mass_transfer``. Shared by the scalar :func:`cold_shed`
-    and the per-atom :func:`cold_shed_velocity_components` so the formula lives
-    in exactly one place (CLAUDE.md rule 1).
+    ``0.5*m_He`` approximation), returned as an **unsigned magnitude**. Multiplying
+    by ``|v-|^2`` gives the magnitude of the ledger increment ``|dE_mass_transfer|``;
+    the **sign is applied at the call site** -- ``cold_shed`` negates it (energy is
+    booked negative so the shed ledger closes), ``capture`` keeps it positive (KE is
+    absorbed into the merged complex). ``m_plus`` is the post-event complex mass:
+    ``m - m_He`` for a shed, ``m + m_He`` for a capture, so the same reduced-mass
+    coefficient serves both channels with one formula (CLAUDE.md rule 1). Shared by
+    :func:`cold_shed`, :func:`cold_shed_velocity_components`, :func:`capture`, and
+    :func:`capture_velocity_components`.
     """
-    return -0.5 * (m_minus_amu * m_he_amu) / m_plus_amu
+    return 0.5 * (m_minus_amu * m_he_amu) / m_plus_amu
 
 
 def cold_shed(
@@ -146,8 +179,9 @@ def cold_shed(
 
     speed_sq = float(v @ v) if v.ndim else float(v) ** 2
     # Exact KE rise of the reset (reduced-mass form, NOT heavy-ion 0.5*m_He*v^2);
-    # booked negative so the four-term ledger closes by construction.
-    dE_mass_transfer = _reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
+    # booked negative (the coeff is now an unsigned magnitude -- sign at the call
+    # site) so the four-term ledger closes by construction.
+    dE_mass_transfer = -_reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
 
     return ShedResult(v_plus=v_plus, m_plus_amu=m_plus, dE_mass_transfer=dE_mass_transfer)
 
@@ -231,7 +265,137 @@ def cold_shed_velocity_components(
     vy_plus = kick * vyf
     vz_plus = kick * vzf
     speed_sq = vxf ** 2 + vyf ** 2 + vzf ** 2
+    # Sign at the call site (the coeff is an unsigned magnitude): shed books negative.
+    dE_mass_transfer = -_reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
+    return vx_plus, vy_plus, vz_plus, m_plus, dE_mass_transfer
+
+
+def capture(
+    v_minus,
+    m_minus_amu,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+    u_he: float = 0.0,
+) -> CaptureResult:
+    """Apply one momentum-conserving He capture to a velocity (Tier-2 pickup reset).
+
+    The +He counterpart of :func:`cold_shed`: an incoming He atom (velocity ``u_he``,
+    zero under the production ``at_rest`` arm) merges with the complex, the centre of
+    mass conserves momentum, and the kinetic energy lost to the merge books into the
+    positive mass-transfer defect. Shares :func:`_reduced_mass_defect_coeff` with the
+    shed resets so the exact reduced-mass form lives in one place (CLAUDE.md rule 1);
+    the sign is applied here (``+``).
+
+    Parameters
+    ----------
+    v_minus : array_like
+        Pre-capture complex velocity vector [A/ps]. ``|v- - u_He|^2`` is the full sum
+        of squares over the components; any shape is accepted (the kick is a scalar
+        multiply on ``v- - u_He``) and returned unchanged.
+    m_minus_amu : float
+        Pre-capture complex mass [amu]. Must be finite and ``> 0`` (a capture only
+        *adds* mass, so -- unlike a shed -- no ``m > m_He`` precondition applies;
+        :func:`_check_masses_gain` enforces positivity only).
+    m_he_amu : float, optional
+        Captured He mass [amu] (default :data:`MASS_HE_AMU`). Must be ``> 0``.
+    u_he : float, optional
+        Incoming He velocity [A/ps], broadcast against ``v_minus`` (default ``0.0`` --
+        the production ``he_capture_velocity="at_rest"`` arm). A ``thermal`` He velocity
+        is a Tier-3 rule-2 arm resolved by the caller, not here.
+
+    Returns
+    -------
+    CaptureResult
+        ``v_plus = (m*v- + m_He*u_He)/(m + m_He)``, ``m_plus_amu = m + m_He``, and
+        ``dE_mass_transfer = +0.5*(m*m_He)/(m + m_He)*|v- - u_He|^2`` (``>= 0``).
+
+    Raises
+    ------
+    ValueError
+        If ``m_he_amu <= 0`` or ``m_minus_amu <= 0`` (or either non-finite), or if
+        ``v_minus`` / ``u_he`` contain non-finite values.
+    """
+    _check_masses_gain(m_minus_amu, m_he_amu)
+    v = np.asarray(v_minus, dtype=float)
+    u = np.asarray(u_he, dtype=float)
+    if not (np.all(np.isfinite(v)) and np.all(np.isfinite(u))):
+        raise ValueError(f"v_minus and u_he must be finite; got {v_minus!r}, {u_he!r}.")
+
+    m_plus = m_minus_amu + m_he_amu
+    v_rel = v - u
+    v_plus = (m_minus_amu * v + m_he_amu * u) / m_plus
+
+    speed_sq = float(v_rel @ v_rel) if v_rel.ndim else float(v_rel) ** 2
+    # Exact KE absorbed by the merge (reduced-mass form); booked positive (the coeff
+    # is an unsigned magnitude -- sign at the call site) into the mass-transfer channel.
     dE_mass_transfer = _reduced_mass_defect_coeff(m_minus_amu, m_plus, m_he_amu) * speed_sq
+
+    return CaptureResult(v_plus=v_plus, m_plus_amu=m_plus, dE_mass_transfer=dE_mass_transfer)
+
+
+def capture_velocity_components(
+    vx: np.ndarray,
+    vy: np.ndarray,
+    vz: np.ndarray,
+    m_minus_amu,
+    *,
+    m_he_amu: float = MASS_HE_AMU,
+    u_he: float = 0.0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Per-ion vectorized He capture over ``(M,)`` velocity component arrays.
+
+    The ensemble-facing form of :func:`capture`: the same momentum-conserving reset
+    applied independently per ion. Unlike :func:`cold_shed_velocity_components` (which
+    takes a *uniform* scalar complex mass, since the anchored Tier-1a schedule sheds
+    from every ion at one instant), pickup fires per ion independently, so
+    ``m_minus_amu`` may be a **per-ion array**; scalar and array both broadcast.
+    Reuses :func:`_reduced_mass_defect_coeff`, so the physics is identical to the
+    scalar :func:`capture` (the single-ion oracle in the tests).
+
+    Parameters
+    ----------
+    vx, vy, vz : np.ndarray, shape (M,)
+        Pre-capture velocity components [A/ps].
+    m_minus_amu : float or np.ndarray
+        Pre-capture complex mass(es) [amu]; finite and ``> 0`` (scalar or ``(M,)``).
+    m_he_amu : float, optional
+        Captured He mass [amu] (default :data:`MASS_HE_AMU`).
+    u_he : float, optional
+        Incoming He velocity [A/ps] (default ``0.0``, the ``at_rest`` arm).
+
+    Returns
+    -------
+    (vx_plus, vy_plus, vz_plus, m_plus_amu, dE_mass_transfer) : tuple
+        Merged components (each ``(M,)``), the post-capture mass ``m + m_He``
+        (scalar or ``(M,)`` matching ``m_minus_amu``), and the per-ion defect ``(M,)``
+        ``+0.5*(m*m_He)/(m + m_He)*|v_i - u_He|^2`` [amu*A^2/ps^2], ``>= 0``.
+
+    Raises
+    ------
+    ValueError
+        If any mass is non-positive/non-finite or a velocity component is non-finite.
+    """
+    _check_masses_gain(m_minus_amu, m_he_amu)
+    vxf = np.asarray(vx, dtype=float)
+    vyf = np.asarray(vy, dtype=float)
+    vzf = np.asarray(vz, dtype=float)
+    u = np.asarray(u_he, dtype=float)
+    if not (
+        np.all(np.isfinite(vxf)) and np.all(np.isfinite(vyf))
+        and np.all(np.isfinite(vzf)) and np.all(np.isfinite(u))
+    ):
+        raise ValueError("velocity components and u_he must be finite.")
+
+    m_plus = np.asarray(m_minus_amu, dtype=float) + m_he_amu
+    coeff = _reduced_mass_defect_coeff(np.asarray(m_minus_amu, dtype=float), m_plus, m_he_amu)
+    vrx = vxf - u
+    vry = vyf - u
+    vrz = vzf - u
+    vx_plus = (np.asarray(m_minus_amu, dtype=float) * vxf + m_he_amu * u) / m_plus
+    vy_plus = (np.asarray(m_minus_amu, dtype=float) * vyf + m_he_amu * u) / m_plus
+    vz_plus = (np.asarray(m_minus_amu, dtype=float) * vzf + m_he_amu * u) / m_plus
+    speed_sq = vrx ** 2 + vry ** 2 + vrz ** 2
+    dE_mass_transfer = coeff * speed_sq
     return vx_plus, vy_plus, vz_plus, m_plus, dE_mass_transfer
 
 
@@ -332,6 +496,28 @@ def _check_masses(m_minus_amu: float, m_he_amu: float) -> None:
         raise ValueError(
             f"pre-shed mass must exceed the He mass so m+ = m - m_He > 0; got "
             f"m_minus_amu={m_minus_amu!r}, m_he_amu={m_he_amu!r}."
+        )
+
+
+def _check_masses_gain(m_minus_amu, m_he_amu: float) -> None:
+    """Fail loudly unless ``m_he_amu > 0`` and every ``m_minus_amu > 0`` (a gain).
+
+    The capture counterpart of :func:`_check_masses`. A capture *adds* mass
+    (``m+ = m + m_He``), so the shed precondition ``m_minus - m_He > 0`` does not
+    apply -- only positivity and finiteness are required (CLAUDE.md principle 4: fail
+    loud for the right reason). ``m_minus_amu`` may be a scalar or a per-ion array.
+    """
+    m = np.asarray(m_minus_amu, dtype=float)
+    if not (np.all(np.isfinite(m)) and np.isfinite(m_he_amu)):
+        raise ValueError(
+            f"masses must be finite; got m_minus_amu={m_minus_amu!r}, "
+            f"m_he_amu={m_he_amu!r}."
+        )
+    if not (m_he_amu > 0.0):
+        raise ValueError(f"m_he_amu must be > 0; got {m_he_amu!r}.")
+    if not np.all(m > 0.0):
+        raise ValueError(
+            f"pre-capture complex mass must be > 0; got m_minus_amu={m_minus_amu!r}."
         )
 
 
