@@ -226,36 +226,41 @@ def cold_shed_velocity_components(
     """Per-atom vectorized cold shed over ``(2N,)`` velocity component arrays.
 
     The driver-facing form of :func:`cold_shed`: the same momentum-conserving
-    reset applied independently to every atom's velocity, with a **uniform**
-    pre-shed complex mass ``m_minus_amu`` (the anchored Tier-1a schedule sheds
-    one He from every ion at the same instant, so the kick factor and ``m+`` are
-    scalar across atoms; only the per-atom ``|v_i|^2`` -- and hence the defect --
-    differs). Reuses :func:`kick_factor` and :func:`_reduced_mass_defect_coeff`,
-    so the physics is identical to the scalar :func:`cold_shed` (the single-atom
-    oracle in the tests); this routine only vectorizes its application.
+    reset applied independently to every atom's velocity. ``m_minus_amu`` may be a
+    **uniform scalar** (the anchored Tier-1a schedule sheds one He from every ion at
+    the same instant, so the kick factor and ``m+`` are scalar across atoms; only the
+    per-atom ``|v_i|^2`` -- and hence the defect -- differs) **or a per-ion array**
+    (the Tier-2 generative evaporation channel fires per ion independently, so masses
+    diverge -- the symmetric counterpart of :func:`capture_velocity_components`). The
+    arithmetic (``m+``, ``kick``, the reduced-mass coefficient) broadcasts either way,
+    so the scalar path is byte-identical to before. Reuses
+    :func:`_reduced_mass_defect_coeff`, so the physics is identical to the scalar
+    :func:`cold_shed` (the single-atom oracle in the tests); this routine only
+    vectorizes its application.
 
     Parameters
     ----------
     vx, vy, vz : np.ndarray, shape (2N,)
         Pre-shed velocity components [A/ps].
-    m_minus_amu : float
-        Uniform pre-shed complex mass [amu]; must be finite and ``> m_he_amu``.
+    m_minus_amu : float or np.ndarray
+        Pre-shed complex mass(es) [amu]; a uniform scalar (Tier-1a) or a per-ion
+        ``(2N,)`` array (Tier-2 evaporation). Finite and ``> m_he_amu`` (every element).
     m_he_amu : float, optional
         Shed He mass [amu] (default :data:`MASS_HE_AMU`).
 
     Returns
     -------
     (vx_plus, vy_plus, vz_plus, m_plus_amu, dE_mass_transfer) : tuple
-        Kicked components (each ``(2N,)``), the scalar post-shed mass
-        ``m+ = m - m_He`` [amu], and the per-atom ledger increment ``(2N,)``
-        ``-0.5*(m*m_He)/(m - m_He)*|v_i|^2`` [amu*A^2/ps^2], ``<= 0``.
+        Kicked components (each ``(2N,)``), the post-shed mass ``m+ = m - m_He`` [amu]
+        (scalar or ``(2N,)`` matching ``m_minus_amu``), and the per-atom ledger
+        increment ``(2N,)`` ``-0.5*(m*m_He)/(m - m_He)*|v_i|^2`` [amu*A^2/ps^2], ``<= 0``.
 
     Raises
     ------
     ValueError
-        If the masses violate ``m_he_amu > 0 < (m_minus_amu - m_he_amu)``.
+        If any mass violates ``m_he_amu > 0 < (m_minus_amu - m_he_amu)``.
     """
-    _check_masses(m_minus_amu, m_he_amu)
+    _check_masses_shed(m_minus_amu, m_he_amu)
     m_plus = m_minus_amu - m_he_amu
     kick = m_minus_amu / m_plus
     vxf = np.asarray(vx, dtype=float)
@@ -518,6 +523,32 @@ def _check_masses_gain(m_minus_amu, m_he_amu: float) -> None:
     if not np.all(m > 0.0):
         raise ValueError(
             f"pre-capture complex mass must be > 0; got m_minus_amu={m_minus_amu!r}."
+        )
+
+
+def _check_masses_shed(m_minus_amu, m_he_amu: float) -> None:
+    """Fail loudly unless ``m_he_amu > 0`` and every ``m_minus_amu - m_He > 0``.
+
+    The array-aware form of :func:`_check_masses` (which is scalar-only). A cold shed
+    *removes* mass, so the post-shed mass ``m+ = m - m_He`` must stay strictly positive
+    for **every** ion (CLAUDE.md principle 4). ``m_minus_amu`` may be a scalar or a
+    per-ion array; the scalar path reduces to exactly the :func:`_check_masses` checks,
+    so :func:`cold_shed_velocity_components` stays byte-identical for uniform scalar mass
+    (the Tier-1a contract) while also accepting the per-ion masses the Tier-2 generative
+    evaporation channel produces (fires diverge, so masses differ across ions).
+    """
+    m = np.asarray(m_minus_amu, dtype=float)
+    if not (np.all(np.isfinite(m)) and np.isfinite(m_he_amu)):
+        raise ValueError(
+            f"masses must be finite; got m_minus_amu={m_minus_amu!r}, "
+            f"m_he_amu={m_he_amu!r}."
+        )
+    if not (m_he_amu > 0.0):
+        raise ValueError(f"m_he_amu must be > 0; got {m_he_amu!r}.")
+    if not np.all(m - m_he_amu > 0.0):
+        raise ValueError(
+            f"every pre-shed mass must exceed the He mass so m+ = m - m_He > 0; "
+            f"got m_minus_amu={m_minus_amu!r}, m_he_amu={m_he_amu!r}."
         )
 
 

@@ -421,21 +421,42 @@ at `n*`; S1 sign correct.
 **Purpose.** The loss channel: the parameter-free self-bound gate, then the saturating RRK
 shed of the top rung; on fire reuse `mass_jump.cold_shed` and report the K1 drain.
 
-**Interface (decided — refinement 2026-07-01, see §3.2).**
+**Interface (decided — refinement 2026-07-01, see §3.2; P-consistency reconcile §3.3).**
 - `rrk_rate(E_int_eV, n, *, nu, picture, kappa) -> k_per_ps` — the RRK rate with the
   `effective_dof(n)` bracket for `n≥2`, the **`n=1` direct `k=ν`** branch, and `k=0` below
   threshold; consumes L's `d0_of_n`.
 - `shed_probability(k_per_ps, dt_ps) -> P_shed` (`1−e^{−k dt}`).
-- `is_self_bound(E_int_eV, n, *, picture, kappa) -> bool` — the gate `E_int > Σ(n)`
-  (suppress while True); consumes L's `ladder_cumsum`.
-- `gate_margin_eV(E_int_eV, n, *, picture, kappa) -> ndarray` — the **signed diagnostic**
-  `G = E_int − Σ(n)` (`is_self_bound` is `G > 0`). Pure/cheap; the mechanism's natural
-  readout. Q exposes the helper here; the *trajectory record* of `Σ(n,t)` / `G(t)` (alongside
-  `t×` and `Π`) is written by the Phase-C driver / Phase-E diagnostics, **not** in Phase B.
-- `evaporation_step(state, *, rng, nu, picture, kappa, ...)` — if self-unbound, return
-  no-shed; else draw one Bernoulli, and on fire compose `mass_jump.cold_shed` (reset/mass/
-  defect) + `internal_energy_budget.dE_int_shed_eV(n, picture=…, kappa=…)` (K1 drain `−D_0(n)`,
-  `n` = **pre-shed**); return post-event tuple.
+- `is_self_bound(E_int_eV, n, *, picture, kappa) -> bool` — the gate returns **`E_int < Σ(n)`**
+  (equivalently `gate_margin_eV < 0`): **True = self-bound = evaporation *enabled*** (MASS
+  §R9 "once self-bound … the top rung sheds"; the complex is net **self-unbound** and
+  shedding is **suppressed** when `E_int > Σ(n)`). `evaporation_step` sheds only where
+  `is_self_bound` is True. Consumes L's `ladder_cumsum`. *(Corrected §3.3 — the earlier
+  "gate `E_int > Σ(n)`, suppress while True" wording had the boolean inverted relative to
+  its name and to §2.2/§4/MASS; the direction of the physics is unchanged.)*
+- `gate_margin_eV(E_int_eV, n, *, picture, kappa) -> ndarray` — the **signed self-unbound
+  margin** `G = E_int − Σ(n)` (`is_self_bound` is `G < 0`). Pure/cheap; the mechanism's
+  natural readout. Q exposes the helper here; the *trajectory record* of `Σ(n,t)` / `G(t)`
+  (alongside `t×` and `Π`) is written by the Phase-C driver / Phase-E diagnostics, **not** in
+  Phase B.
+- `evaporation_step(*, rng, E_int_eV, n, v, m_amu, nu, picture, kappa, dt_ps,
+  evap_rrk_dof=None, ...)` — **loose scalar kwargs** (not a `state` container; the persistent
+  `(n, E_int, v, m)` carrier is G's `IonStepState`, Phase C — the P Q1 precedent). **Draws one
+  Bernoulli unconditionally** (`k=0`/`P_shed=0` under suppression, so a suppressed ion
+  structurally never fires but still consumes one draw), so the scalar form and
+  `evaporation_step_components` consume the RNG **identically** — the scalar stays the exact
+  ion-by-ion oracle for the components form (the P precedent; matters for the Slice-X
+  draw-order lock). On fire compose `mass_jump.cold_shed` (reset/mass/defect) +
+  `internal_energy_budget.dE_int_shed_eV(n, picture=…, kappa=…)` (K1 drain `−D_0(n)`, `n` =
+  **pre-shed**); return a **`EvaporationResult` dataclass** `(n_plus, m_plus_amu, v_plus,
+  dE_int_eV, dE_mass_transfer, fired)` — symmetric to `PickupResult`/`ShedResult`, keeping the
+  `n_plus`/`m_plus_amu` "post-event" names even though this is a loss (`n_plus = n−1`,
+  `m_plus_amu = m − m_He`).
+- `evaporation_step_components(*, rng, E_int_eV, n, vx, vy, vz, m_amu, ...)` — **the
+  vectorized ensemble form**, built in Phase B (the P Q2 precedent): one
+  `rng.random(size=M)` draw, per-ion gate + `draw < P_shed` fire mask, composing
+  `mass_jump.cold_shed_velocity_components` (per-ion mass, since fires diverge) +
+  `dE_int_shed_eV`. Non-fired / suppressed ions keep their state and receive zero increments.
+  Returns the `(M,)`-array tuple mirroring `pickup_step_components`.
 - `effective_dof(n)` — **`n==2 → 4`** (linear 3-atom `3N−5`; I⁺He₂ = ion + 2 He = 3 atoms),
   **`3n−3` for `n≥3`** (nonlinear full complex), `n=1` is the direct branch (no bracket).
   The **config-load `s≥1` guard** applies to any effective-scalar override (rejects `s<1`, the
@@ -446,9 +467,11 @@ shed of the top rung; on fire reuse `mass_jump.cold_shed` and report the K1 drai
 **Knobs (config §6):** `evap_rate_prefactor_per_ps` ν (Sourced, pinned 2.42) defaulting to a
 **new `NU_EVAP_PER_PS = 2.42` `constants.py` anchor** (the Slice-K `|S|` single-source
 precedent — the plan's "ν lands with Phase A" was inaccurate; Phase A added only `N_STAR` /
-`D0_*` / `D_FLOOR` / `S_ABS_EV`, so **Q adds `NU_EVAP_PER_PS`**). `evap_rrk_dof` s
-(`Optional[float] = None`: None → per-`n` `effective_dof`; a set float → effective-scalar
-override, **guarded `s≥1`** *when set*, the f_int=None precedent). **Gate onset (3 facets):**
+`D0_*` / `D_FLOOR` / `S_ABS_EV`, so **Q adds `NU_EVAP_PER_PS`**). `NU_EVAP_PER_PS` is a
+**rate-primary float [ps⁻¹]** (2.42 directly, *not* wavenumber-converted like the ladder
+anchors). `evap_rrk_dof` s (`Optional[float] = None`: None → per-`n` `effective_dof`; a set
+float → effective-scalar override for the **`n≥2` bracket only** (`n=1` stays the direct
+`k=ν` branch regardless), **guarded `s≥1`** *when set*, the f_int=None precedent). **Gate onset (3 facets):**
 (1) **no calibration knob** — the gate is `Σ(n)`, parameter-free (MASS R9), stays **Derived**;
 (2) the signed **gate margin `G`** is a *diagnostic output* (helper above; recorded at C/E);
 (3) an optional **`gate_onset_override_eV: Optional[float] = None`** for sensitivity/
@@ -534,6 +557,57 @@ Cross-checked against MASS §4/§5 + dim-table, §11 config, A11/A12, and CALIBR
 **Drift fixed:** stale config line refs (`:217/:218` → `:258/:259`); the "ν lands with Phase
 A" gap; the reused-`ShedResult`-for-a-gain semantic mismatch; the `p=κ` ambiguity.
 
+#### §3.3 Slice Q pre-build interface decisions (user, 2026-07-01)
+
+A pre-build discussion pass over the Slice Q spec before the `[PROCEED TO IMPLEMENTATION]`
+trigger, grounded in a code-surface audit (`physics/pickup.py` as the delivered P pattern,
+`internal_energy_budget.dE_int_shed_eV`, `dissociation_ladder.d0_of_n`/`ladder_cumsum`,
+`mass_jump.cold_shed`/`ShedResult`, `config.py` `check_pickup_config` /
+`allow_unvalidated_binding_pairing` guards) and cross-checked against MASS §R9 + §2.2/§4.
+The Slice-Q interface text predated the P delivery decisions and carried drift; eight calls
+resolved (decision owner: user). No code — the boundary holds; docs-only amendment.
+
+1. **Gate boolean corrected (the one physics-critical fix).** The spec was self-contradictory:
+   line 432 defined `is_self_bound(...) -> E_int > Σ(n)` ("suppress while True"), but §2.2/§4
+   and line 466 say `gate_margin_eV = E_int − Σ(n) < 0` "exactly when self-bound". **MASS §R9
+   is unambiguous:** `G ≡ E_int − Σ(n)` is the **self-*un*bound margin**; evaporation is
+   *suppressed* while net **self-unbound** (`E_int > Σ(n)`, `G > 0`) and *enabled* once
+   **self-bound** (`E_int < Σ(n)`, `G < 0`). The **physics direction was always right**; only
+   the `is_self_bound` helper had the boolean inverted relative to its name. **Resolved:**
+   `is_self_bound` returns **`E_int < Σ(n)`** (True = self-bound = shed enabled),
+   `gate_margin_eV = E_int − Σ(n)` (negative when self-bound), and `evaporation_step` sheds
+   only where `is_self_bound` is True.
+2. **`EvaporationResult` dataclass, not the "post-event tuple"** — symmetric to the delivered
+   `PickupResult`/`ShedResult`/`CaptureResult`; keeps `n_plus`/`m_plus_amu` "post-event" names
+   though evaporation is a loss (`n_plus = n−1`, `m_plus_amu = m − m_He`).
+3. **Loose scalar kwargs, not a `state` container** (the P Q1 precedent): `evaporation_step(*,
+   rng, E_int_eV, n, v, m_amu, nu, picture, kappa, dt_ps, evap_rrk_dof=None, …)`; the
+   persistent carrier is G's `IonStepState` (Phase C).
+4. **Build `evaporation_step_components` in Phase B** (the P Q2 precedent): the vectorized
+   `(M,)`-ensemble form, one `rng.random(size=M)` draw, per-ion gate + `draw < P_shed` fire
+   mask, composing `cold_shed_velocity_components` (per-ion mass, fires diverge) + `dE_int_shed_eV`.
+5. **Unconditional Bernoulli draw for scalar↔components RNG parity.** The scalar form draws one
+   uniform every step (`k=0`/`P_shed=0` under suppression → structurally never fires but still
+   consumes the draw), so scalar and components consume the RNG identically and the scalar stays
+   the exact ion-by-ion oracle. Minor deviation from the plan's literal "if self-unbound return
+   no-shed *before* drawing"; chosen for the Slice-X draw-order lock. (Outcome is unchanged:
+   suppressed ⇒ no fire regardless of the draw value.)
+6. **`NU_EVAP_PER_PS = 2.42`** added to `constants.py` as a **rate-primary float [ps⁻¹]** (not
+   wavenumber-converted); `evap_rate_prefactor_per_ps` defaults to it (Q7, locked).
+7. **`evap_rrk_dof` override scope = `n≥2` bracket only** (`n=1` stays the direct `k=ν` branch);
+   `s≥1` guard fires at config-load only when the override is set (None → per-`n` `effective_dof`,
+   naturally ≥1, unguarded).
+8. **New `check_evaporation_config` guard** (mirrors `check_pickup_config`): the `evap_rrk_dof`
+   `s≥1`-when-set check + the `gate_onset_override_eV` ↔ `allow_gate_onset_override` provenance
+   refuse. **Knob-name reconcile flagged** (MASS `evap_gate_onset_eV` vs the plan's
+   `gate_onset_override_eV`): plan name at build, MASS annotated not rewritten (the `p=κ`
+   precedent).
+
+**Drift fixed by §3.3:** the inverted `is_self_bound` boolean; the "post-event tuple" (→
+`EvaporationResult`); the `state`-container signature (→ loose kwargs); the missing components
+form; the scalar/components RNG-parity gap; and the undocumented override scope + knob-name
+reconcile.
+
 ---
 
 ## 4. Golden-oracle fixtures (single source of locked values)
@@ -578,9 +652,14 @@ not silent clamps.
   when set), `gate_onset_override_eV` (`Optional=None`, **parameter-free by default**) +
   `allow_gate_onset_override` (loud provenance guard).
 - **Validators:** `helium_density_profile`, `pickup_rate_form`, `pickup_occupancy_cap`, and
-  `he_capture_velocity` enum-reject arms (mirror `mass_scenario` / `check_ladder_config`); the
-  `evap_rrk_dof` `s≥1` load guard (when set); the `gate_onset_override_eV` ↔
-  `allow_gate_onset_override` provenance refuse (mirrors `allow_unvalidated_binding_pairing`).
+  `he_capture_velocity` enum-reject arms (mirror `mass_scenario` / `check_ladder_config`); a
+  **new `check_evaporation_config` guard** wired into `validate()` beside `check_pickup_config`,
+  carrying the `evap_rrk_dof` `s≥1` load guard (when set) and the `gate_onset_override_eV` ↔
+  `allow_gate_onset_override` provenance refuse (mirrors the `allow_unvalidated_binding_pairing`
+  refuse→warn arm in `check_drag_config`, `config.py:846`). **Knob-name reconcile:** MASS §R9
+  names the override knob `evap_gate_onset_eV`; this plan uses `gate_onset_override_eV` (the
+  name conveys the diagnostic-override, non-production intent). The plan name is used at build;
+  the reconcile is recorded, MASS not silently rewritten (the `p=κ` annotation precedent).
 
 **A13 integrator-policy fields are Phase C, not Phase B (MASS §11 reconcile).** The A13 knobs
 `mass_jump_velocity_reset ∈ {momentum_conserving, label_only}`, `one_mass_event_per_step`, and

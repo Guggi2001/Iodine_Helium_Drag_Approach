@@ -1090,3 +1090,192 @@ directly — the Slice-ρ precedent).
 **Tests after hardening:** Slice-P suites **67 green** (52 → +15); full suite **1659 passed,
 0 failed** (1644 → +15; same 17 unrelated `anchored_discrete` warnings). Next: Slice Q
 (`physics/evaporation.py`).
+
+---
+
+## Phase B — Slice Q pre-build interface decisions (2026-07-01)
+
+A pre-build discussion pass over the Slice Q (evaporation) spec before the
+`[PROCEED TO IMPLEMENTATION]` trigger, grounded in a code-surface audit (`physics/pickup.py`
+as the delivered P pattern, `internal_energy_budget.dE_int_shed_eV`,
+`dissociation_ladder.d0_of_n`/`ladder_cumsum`, `mass_jump.cold_shed`/`ShedResult`, and the
+`config.py` `check_pickup_config` / `allow_unvalidated_binding_pairing` guards) and
+cross-checked against MASS §R9 + the plan §2.2/§4. The Slice-Q interface text predated the
+P delivery decisions and carried drift; **eight calls resolved** (decision owner: user). No
+code — the boundary holds; docs-only amendment to the Phase-B plan (Slice Q interface bullets,
+Knobs, §5 validators, new §3.3 record).
+
+- **1. Gate boolean corrected — the one physics-critical fix.** The spec was
+  self-contradictory: line 432 defined `is_self_bound(...) -> E_int > Σ(n)` ("suppress while
+  True"), but §2.2/§4 + line 466 say `gate_margin_eV = E_int − Σ(n) < 0` "exactly when
+  self-bound". **MASS §R9 settles it:** `G ≡ E_int − Σ(n)` is the **self-*un*bound margin**;
+  evaporation is *suppressed* while net self-unbound (`E_int > Σ(n)`, `G > 0`) and *enabled*
+  once self-bound (`E_int < Σ(n)`, `G < 0`). The **physics direction was always right** (it
+  matches the encoded form); only the `is_self_bound` helper had its boolean inverted vs its
+  name. **Resolved as recommended:** `is_self_bound` returns **`E_int < Σ(n)`** (True =
+  self-bound = shed enabled), `gate_margin_eV = E_int − Σ(n)`, and `evaporation_step` sheds
+  only where `is_self_bound` is True.
+- **2. `EvaporationResult` dataclass**, not the plan's "post-event tuple" — symmetric to the
+  delivered `PickupResult`/`ShedResult`/`CaptureResult`; keeps `n_plus`/`m_plus_amu`
+  "post-event" names though evaporation is a loss (`n_plus = n−1`, `m_plus_amu = m − m_He`).
+- **3. Loose scalar kwargs, not a `state` container** (the P Q1 precedent): `evaporation_step(*,
+  rng, E_int_eV, n, v, m_amu, nu, picture, kappa, dt_ps, evap_rrk_dof=None, …)`; the persistent
+  `(n, E_int, v, m)` carrier is G's `IonStepState` (Phase C).
+- **4. Build `evaporation_step_components` in Phase B** (the P Q2 precedent): the vectorized
+  `(M,)`-ensemble form (one `rng.random(size=M)` draw, per-ion gate + `draw < P_shed` fire
+  mask, `cold_shed_velocity_components` with per-ion mass since fires diverge + `dE_int_shed_eV`).
+- **5. Unconditional Bernoulli draw for scalar↔components RNG parity.** The scalar form draws
+  one uniform every step (`k=0`/`P_shed=0` under suppression → never fires but still consumes
+  the draw), so scalar and components consume the RNG identically and the scalar stays the
+  exact ion-by-ion oracle. A minor deviation from the plan's literal "if self-unbound return
+  no-shed before drawing"; chosen for the Slice-X draw-order lock (outcome unchanged).
+- **6. `NU_EVAP_PER_PS = 2.42`** added to `constants.py` as a **rate-primary float [ps⁻¹]** (not
+  wavenumber-converted like the ladder anchors); `evap_rate_prefactor_per_ps` defaults to it
+  (Q7, locked).
+- **7. `evap_rrk_dof` override scope = `n≥2` bracket only** (`n=1` stays the direct `k=ν`
+  branch); the `s≥1` load guard fires only when the override is set (None → per-`n`
+  `effective_dof`, naturally ≥1, unguarded).
+- **8. New `check_evaporation_config` guard** (mirrors `check_pickup_config`): the `evap_rrk_dof`
+  `s≥1`-when-set check + the `gate_onset_override_eV` ↔ `allow_gate_onset_override` provenance
+  refuse (mirrors the `allow_unvalidated_binding_pairing` refuse→warn arm, `config.py:846`).
+  **Knob-name reconcile flagged:** MASS §R9 names it `evap_gate_onset_eV`; the plan uses
+  `gate_onset_override_eV` (conveys the diagnostic-override intent). Plan name at build; MASS
+  annotated not silently rewritten (the `p=κ` annotation precedent).
+
+**Cross-reference verdict:** these are software-interface + one boolean-direction fix; no
+MASS/CALIBRATION *value* is touched. The gate-direction correction *aligns* the helper with
+MASS §R9 (self-unbound margin `G`, suppress while `G>0`) — the encoded physics was already
+correct. ν pinned (Sourced), `s` Derived (row 10, n=2-linear), gate parameter-free (R9,
+Derived). **Slice Q is build-ready** pending the `[PROCEED TO IMPLEMENTATION]` trigger.
+
+---
+
+## Phase B — Slice Q DELIVERED (2026-07-01) — Phase B COMPLETE
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN): the suites were written first and confirmed RED (missing
+`NU_EVAP_PER_PS` / `check_evaporation_config` / `physics.evaporation`), then the module
+made them GREEN. Pure-ish stochastic primitive: injected RNG, per-event mass/velocity
+reset, **no** integrator, no `E_int` state persistence, no schema I/O, no 5-term closure
+(all Phase C). Mass-agnostic in the drag sense — no Phase-Q function evaluates `γ`; `m`
+enters only as the shed quantity in the reset. Oracle asserts against the plan §2.2 (Q) /
+§4 golden values, composed against the **real** L (`d0_of_n`/`ladder_cumsum`), U
+(`dE_int_shed_eV`), and `mass_jump.cold_shed` neighbours.
+
+**Physics resolved at build (the §3.3 gate-direction fix carried through):** MASS §4
+locks the shed band `D_0(n) < E_int < Σ(n)` — the upper bound is the self-bound gate
+(`is_self_bound == E_int < Σ(n)`, True = self-bound = shed enabled), the lower is
+RRK-bracket positivity. **`n=1` is the degenerate diatomic** (the band collapses,
+`s=3n−3=0`), so it is the **direct-dissociation** special case with the *inverted* gate
+`E_int > D_0(1)`, `k=ν` (MASS A11 boundary-of-validity). The fire path therefore keys on
+`rrk_rate` (which encodes *both* the n≥2 self-bound gate and the n=1 direct gate);
+`is_self_bound` / `gate_margin_eV` are the n≥2 diagnostics only (documented as **not** the
+fire predictor at n=1).
+
+**Build (files):**
+- `physics/constants.py` — new **rate-primary** anchor `NU_EVAP_PER_PS = 2.42` [ps⁻¹]
+  (2.42 directly, *not* wavenumber-converted like the ladder anchors; Sourced/pinned,
+  MASS A11). Addition, not an edit to the MD constants table.
+- `physics/evaporation.py` — **new module.** `EvaporationResult` dataclass (post-event
+  names, a loss); `effective_dof(n)` (`n=2→4` linear, `3n−3` for `n≥3`, **fail-loud
+  `ValueError` for `n<2`** — the direct branch owns n=1); `shed_probability` (`1−e^{−k dt}`,
+  the shed counterpart of `pickup.attach_probability`); `gate_margin_eV`
+  (`G=E_int−Σ(n)`); `is_self_bound` (`E_int < Σ(n)`, Python-bool scalar / bool-ndarray);
+  `rrk_rate` (the full gated rate — n≥2 saturating RRK in-band + self-bound gate, n=1
+  direct, `k=0` for n≤0; bounded `[0,ν)`; guarded so **no `0**0` / `0**neg` /
+  divide-by-zero** is ever formed; module-level `s≥1` defense on the `evap_rrk_dof`
+  override mirroring pickup's `p<0` guard); `evaporation_step` (**loose kwargs**,
+  **unconditional draw**, composes `cold_shed` + `dE_int_shed_eV`, `n`=pre-shed →
+  `EvaporationResult`); `evaporation_step_components` (vectorized `(M,)` ensemble, one
+  `rng.random(size=M)` draw, per-ion gate + `draw < P_shed` mask). Optional diagnostic
+  `gate_onset_eV` threading (n≥2 gate only; n=1 keeps its `D_0(1)` onset).
+- `physics/mass_jump.py` — **`cold_shed_velocity_components` generalized to per-ion mass**
+  (the symmetric counterpart of the Slice-P `capture_velocity_components`): its scalar
+  `_check_masses` guard swapped for a new array-aware `_check_masses_shed`; the arithmetic
+  (`m+`, `kick`, `_reduced_mass_defect_coeff`) already broadcasts, so **the scalar path is
+  byte-identical** (Tier-1a contract; all delivered mass_jump/reset tests stay green). This
+  is the honest resolution of the §3.3 decision-#4 "per-ion mass, fires diverge" note (the
+  function previously took a *uniform* scalar mass; one cold-shed-components function now
+  serves both the Tier-1a uniform schedule and the Tier-2 per-ion ensemble — rule 1).
+- `config.py` — new fields `evap_rate_prefactor_per_ps` (ν, defaults to the
+  `NU_EVAP_PER_PS` anchor — single source), `evap_rrk_dof` (`Optional=None`),
+  `gate_onset_override_eV` (`Optional=None`), `allow_gate_onset_override` (`False`); new
+  `check_evaporation_config` guard (the `evap_rrk_dof` `s≥1`-when-set check + the
+  `gate_onset_override_eV` ↔ `allow_gate_onset_override` **refuse→warn** provenance guard
+  mirroring `allow_unvalidated_binding_pairing`) wired into `validate()`.
+- `tests/` — `test_evaporation.py` (42 + 8 hardening = 50) + `test_evaporation_config.py`
+  (16); `docs/config_and_preset.md` deferred-field list extended with the three Slice-Q
+  driver-read fields.
+
+**Oracle cross-validation.** `effective_dof` = 4/6/60 at n=2/3/21, fail-loud <2;
+`shed_probability` = `1−e^{−k dt}` (→`k dt` small, saturates to `1.0`); `rrk_rate` `=0`
+below threshold and while self-unbound, `∈(0,ν)` strictly across the whole in-band sweep
+for n∈{2,3,7,15,21} (no avalanche), monotone↑ in `E_int`, `=ν` for the n=1 hot direct
+branch and `=0` when cold; the `evap_rrk_dof` override applies to n≥2 only (n=1 stays
+direct) and `s<1` fails loud; `gate_onset_eV` shifts the n≥2 gate but never n=1;
+`gate_margin_eV`/`is_self_bound` sign + zero-crossing; the scalar step's fire path matches
+`cold_shed` (v/m/defect) + `dE_int_shed_eV` (`−D_0(n)`) exactly, no-fire is a defensive
+copy, suppressed/below-threshold never fire even under a fire-forcing RNG, one draw
+consumed **unconditionally**; the components form matches the scalar oracle ion-by-ion
+(all-fire), leaves non-fired ions untouched, draws once (size M) with **RNG consumption
+parity** to the scalar loop, and reproduces the seeded Bernoulli fire fraction within 5σ
+over 200 000 ions. The per-ion `cold_shed_velocity_components` matches the scalar
+`cold_shed` ion-by-ion and fails loud on an underweight ion.
+
+**Rule-2 table.** `evap_rate_prefactor_per_ps` (ν), `evap_rrk_dof` (s), and
+`gate_onset_override_eV` are the three Slice-Q **declared-but-unread** carries (read by the
+Phase-C driver / evaporation module; `allow_gate_onset_override` and the `s≥1` guard are
+born-live via `check_evaporation_config`). They join the standing Phase-B carries
+(`sweeping`/`dwell_time`/`thermal` pickup arms, the sourced TDDFT `ρ_He` array) and the
+Slice-L `cooling_relaxed` concrete blend (pinned at Phase F).
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. ν pinned
+(Sourced, A11), `s` Derived (row 10, n=2-linear applied), the self-bound gate
+parameter-free (R9, Derived), the override a guarded R10 diagnostic-lever. No `γ`/drag-law
+read, no integrator, no `E_int` state — the out-of-scope guard holds.
+
+**Tests:** Slice-Q suites **66 green** (`test_evaporation.py` 50 + `test_evaporation_config.py`
+16); full suite **1725 passed, 0 failed** (1659 → +66; same 17 unrelated `anchored_discrete`
+warnings). **Phase B (ρ + P + Q) is complete.** Next: Phase C (Slice X checkpoint v6→v7 +
+5-term invariant, then Slice G generative driver) — `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md`.
+
+### Slice Q — extended review + test pass (2026-07-01)
+
+An extended adversarial review (correctness / edge / vectorisation / independence / guard /
+RNG-parity / doc-drift angles over the self-authored diff, plus a re-audit of the touched
+`mass_jump` function's callers) **confirmed the physics with no correctness bug** and
+surfaced **one genuine dead-code / wrong-comment item**; fixed, plus +10 deeper locks.
+
+- **Dead exponent clamp removed (rule 2).** `rrk_rate` computed the RRK bracket exponent as
+  `np.maximum(s - 1.0, 0.0)`, but `s` is **always ≥ 1** — per-`n` `effective_dof(max(n,2)) ≥ 4`,
+  and the override is guarded `s ≥ 1` in the same function — so the clamp **never activated**,
+  and its comment misdescribed *why* (it claimed the n<2 lanes get a negative `s`, but they get
+  `effective_dof(2)=4` via the `max(n,2)` clamp). Simplified to `base_safe ** (s - 1.0)`; the
+  `base > 0` mask remains the sole (sufficient) protection against `0**0`/`0**neg`, and `E_safe`
+  keeps the division safe. Comment rewritten to state the true invariant. No behaviour change
+  (the clamp was provably inert) — full suite unchanged.
+- **Caller re-audit (mass_jump generalization).** The `cold_shed_velocity_components`
+  per-ion-mass generalization has **no production callers** (the driver is Phase C) — only
+  `tests/test_mass_jump.py` and `tests/test_ion_variable_mass.py`. The latter's guard-reject
+  test (`match="m_he|pre-shed"`) still passes: `_check_masses_shed`'s message carries "pre-shed",
+  and the scalar-mass reject path is unchanged. Scalar byte-identity is now **explicitly**
+  locked (uniform-array == scalar-mass result) in addition to the pre-existing Tier-1a tests.
+- **+10 extended locks (all green, several bug-catching):** RNG-stream parity **with a
+  suppressed ion** (the load-bearing unconditional-draw property — a suppressed ion still
+  consumes its components draw, matching the scalar loop); non-finite `E_int` characterisation
+  (NaN → `k=0` no crash; `inf` → shell suppressed / `n=1` direct fires); `n=0` has no rung
+  (`k=0`, scalar + vectorized); negative `n` fails loud via `ladder_cumsum`; the `s=1` override
+  edge (flat `k=ν` in-band, still `0` below-threshold / suppressed); the override **respects the
+  gate** (never un-suppresses); vectorized gate diagnostics with the `gate_onset_eV` override;
+  the fire booking **two distinct channels** (K1 eV drain vs the mechanical cold-shed defect,
+  no double-count); and the scalar↔uniform-array `cold_shed_velocity_components` equality.
+- **Deliberate non-guards (consistent with pickup/drag):** non-finite `E_int`/`v` is treated as
+  an upstream bug (characterised → `k=0`/no-fire, not guarded); `evaporation_step` is documented
+  single-ion (an array `E_int`/`n` would trip `bool(...)` — a misuse, not a supported path); the
+  components form trusts caller array-length parity (parity with `pickup_step_components`).
+
+**Tests after the review pass:** Slice-Q suites **76 green** (`test_evaporation.py` 60 +
+`test_evaporation_config.py` 16); full suite **1735 passed, 0 failed** (1725 → +10; same 17
+unrelated `anchored_discrete` warnings). **Phase B (ρ + P + Q) is complete.** Next: Phase C
+(Slice X checkpoint v6→v7 + 5-term invariant, then Slice G generative driver) —
+`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md`.

@@ -16,7 +16,7 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from .physics.constants import EV, K_B, S_ABS_EV
+from .physics.constants import EV, K_B, NU_EVAP_PER_PS, S_ABS_EV
 from .physics.drag import (
     DragCoefficients,
     LINEAR_CUBIC,
@@ -296,6 +296,25 @@ class SimConfig:
     pickup_occupancy_exponent: float = 1.0  # p; fixed (not p=kappa); Phase-C reader
     he_capture_velocity: HeCaptureVelocity = "at_rest"       # Slice P declared / Phase-C read
 
+    # -- Tier-2 Phase-B evaporation channel (Slice Q) --
+    # The energy-gated, RRK-rate-limited He-loss channel. ``evap_rate_prefactor_per_ps``
+    # (nu) defaults to the sourced/pinned NU_EVAP_PER_PS constants anchor (single source,
+    # the Slice-K |S| precedent); Sourced, never tuned. ``evap_rrk_dof`` (s) is an OPTIONAL
+    # effective-scalar override of the per-n effective_dof(n): None -> per-n mode count
+    # (n=2->4, n>=3->3n-3), a set float -> a fixed s applied to the n>=2 bracket only (n=1
+    # stays the direct k=nu branch), GUARDED s>=1 WHEN SET by check_evaporation_config
+    # (s<1 diverges the rate). ``gate_onset_override_eV`` forces a fixed self-bound gate
+    # threshold in place of the parameter-free Sigma(n): None -> Derived Sigma(n)
+    # (production); a float is a DIAGNOSTIC / falsification lever that can never silently
+    # enter production -- check_evaporation_config REFUSES it unless allow_gate_onset_override
+    # is explicitly True (a refuse->warn provenance guard mirroring
+    # allow_unvalidated_binding_pairing; R10 diagnostic-lever). All three are read by the
+    # Phase-C generative driver / the evaporation module (declared-but-unread in Phase B).
+    evap_rate_prefactor_per_ps: float = NU_EVAP_PER_PS  # nu [ps^-1]; Sourced (=constants anchor)
+    evap_rrk_dof: Optional[float] = None          # s override; None=per-n; guarded s>=1 when set
+    gate_onset_override_eV: Optional[float] = None      # None=parameter-free Sigma(n); else diagnostic
+    allow_gate_onset_override: bool = False             # provenance guard for the override above
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -405,6 +424,7 @@ class SimConfig:
         check_internal_energy_budget_config(self)
         check_helium_density_config(self)
         check_pickup_config(self)
+        check_evaporation_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -557,6 +577,57 @@ def check_pickup_config(cfg: "SimConfig") -> None:
             f"unknown he_capture_velocity {cfg.he_capture_velocity!r}; "
             f"expected one of {_KNOWN_HE_CAPTURE_VELOCITIES}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Phase-B evaporation-channel config-load guard (Slice Q)
+# ---------------------------------------------------------------------------
+def check_evaporation_config(cfg: "SimConfig") -> None:
+    """Validate the evaporation-channel surface of ``cfg`` at config-load (Slice Q).
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. Two
+    load-time fail-loud checks (no silent clamp):
+
+    1. **RRK dof ``s >= 1`` (when set).** ``cfg.evap_rrk_dof`` is an *optional*
+       effective-scalar override of the per-``n`` mode count; ``None`` is the production
+       path (no check). When set it must satisfy ``s >= 1`` -- ``s < 1`` makes the RRK
+       bracket exponent ``s - 1 < 0`` diverge the rate as ``E_int -> D_0`` (the
+       divergent-rate regime). The nu prefactor and the parameter-free ``Sigma(n)`` gate
+       carry no bound here (nu is Sourced/pinned, the gate is Derived).
+
+    2. **Gate-onset override provenance refuse.** ``cfg.gate_onset_override_eV`` forces a
+       fixed self-bound threshold in place of the parameter-free ``Sigma(n)``. It is a
+       diagnostic / falsification lever (R10), **not** a production knob, so a non-``None``
+       value is **refused** unless ``cfg.allow_gate_onset_override`` is explicitly ``True``
+       -- and even then the refusal only downgrades to a ``RuntimeWarning`` (mirroring the
+       §6.5.1 ``allow_unvalidated_binding_pairing`` refuse->warn arm), so a forced gate can
+       never *silently* enter a production / Tier-2-lock run.
+
+    Raises
+    ------
+    ValueError
+        On ``evap_rrk_dof < 1`` when set, or a non-``None`` ``gate_onset_override_eV``
+        without ``allow_gate_onset_override``.
+    """
+    if cfg.evap_rrk_dof is not None and not (cfg.evap_rrk_dof >= 1.0):
+        raise ValueError(
+            f"evap_rrk_dof (s) must be >= 1 when set (s < 1 diverges the RRK rate as "
+            f"E_int -> D_0); got {cfg.evap_rrk_dof!r}. Leave it None for the per-n "
+            f"effective_dof(n) default."
+        )
+
+    if cfg.gate_onset_override_eV is not None:
+        msg = (
+            f"gate_onset_override_eV={cfg.gate_onset_override_eV!r} forces a fixed "
+            f"self-bound gate threshold in place of the parameter-free Sigma(n); it is a "
+            f"diagnostic / falsification lever (R10), not a production knob"
+        )
+        if cfg.allow_gate_onset_override:
+            warnings.warn(msg, RuntimeWarning)
+        else:
+            raise ValueError(
+                msg + " (set allow_gate_onset_override=True to override)"
+            )
 
 
 # ---------------------------------------------------------------------------

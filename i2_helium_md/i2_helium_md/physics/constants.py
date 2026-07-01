@@ -144,6 +144,22 @@ S_ABS_EV: float = 0.308                     # eV -- |S|, DFT first-shell solvati
 
 
 # ---------------------------------------------------------------------------
+# Tier-2 Phase-B evaporation channel (Slice Q)
+#
+# The RRK unimolecular shed prefactor nu for the energy-gated evaporation
+# channel: k(E_int, n) = nu * (1 - D_0(n)/E_int)^(s-1) for n >= 2 (saturating,
+# bounded to [0, nu)); k = nu for the n=1 direct-dissociation branch. Unlike the
+# ladder anchors (sourced in cm^-1 and converted to eV), nu is a *rate*, sourced
+# and pinned directly in ps^-1 -- a rate-primary float, NOT wavenumber-converted.
+# The config field ``evap_rate_prefactor_per_ps`` defaults to this anchor (the
+# Slice-K |S| single-source precedent). Sourced/pinned ([IHe05] curvature, MASS
+# A11); never tuned. Provenance: TIER2_PHASE_B_IMPLEMENTATION_PLAN.md §2.1;
+# MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md A11.
+# ---------------------------------------------------------------------------
+NU_EVAP_PER_PS: float = 2.42                 # ps^-1 -- RRK evaporation prefactor (MASS A11, pinned)
+
+
+# ---------------------------------------------------------------------------
 # Coulomb helpers (distance input in Angstrom)
 # ---------------------------------------------------------------------------
 def coulomb_energy(r_angstrom: np.ndarray | float) -> np.ndarray | float:

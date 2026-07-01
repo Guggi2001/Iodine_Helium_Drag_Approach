@@ -155,7 +155,11 @@ string values.
 (Tier-2 Phase-B Slice P; read by the Phase-C driver — the enum selectors
 `pickup_rate_form` / `pickup_occupancy_cap` / `he_capture_velocity` and
 `helium_density_profile` are **live** at their slice via the config-load guards);
-`validation_histogram_metric` (Tier 2).
+`evap_rate_prefactor_per_ps` (ν, Sourced = `NU_EVAP_PER_PS`), `evap_rrk_dof` (s
+override), `gate_onset_override_eV` (Tier-2 Phase-B Slice Q; read by the Phase-C
+driver / evaporation module — the `evap_rrk_dof` `s ≥ 1`-when-set guard and the
+`gate_onset_override_eV` ↔ `allow_gate_onset_override` provenance refuse are **live**
+at Slice Q via `check_evaporation_config`); `validation_histogram_metric` (Tier 2).
 
 > `mass_initial_amu` defaults to `m_eff_amu` (the value correct for the only
 > Tier-0-runnable scenario, `fixed`) rather than `None`, to avoid an
