@@ -1931,6 +1931,12 @@ Extends `DRAG_PORT_DESIGN_DECISIONS.md` §2.8:
   (zero net new free knobs; A12 $p\!\leftrightarrow\!\kappa$ coupling); set to an
   independent value only to split it as a bounded/free Tier-2 knob when the size
   distribution's first-shell cutoff sharpness demands it.
+  *(NB 2026-07-01, Tier-2 Phase-B refinement: the $p\!\leftrightarrow\!\kappa$ tie is
+  **inverse** — a rigid shell = large $\kappa$ = sharper cutoff = **smaller** $p$ — so it is
+  **NOT** a literal $p=\kappa$; if ever tied, match cutoff **slopes**, not values. The
+  Phase-B production default is **$p=1$ held fixed**, freed at Phase F only if the size-dist
+  first-shell edge can't be met with $p=1$ + $\kappa$. See
+  `docs/drag_port/Tier2/TIER2_PHASE_B_IMPLEMENTATION_PLAN.md` §3.2.)*
 - `SimConfig.mass_jump_velocity_reset ∈ {momentum_conserving, label_only}` —
   **must be `momentum_conserving`** (A13): $v^+=(m v^-\pm m_\text{He}u_\text{He})
   /(m\pm m_\text{He})$. `label_only` (carry $v$ unchanged) is **forbidden in

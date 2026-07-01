@@ -294,10 +294,15 @@ behavior; the pairing guard + `s≥1` guard fire as specified; **no noise amplit
 Most knobs are declared in Phase A/B (rule-2 exception); Phase C **activates** them by
 wiring G, and adds the integrator flags. Validators reuse `check_drag_config`.
 
-- **Integrator (G):** `one_mass_event_per_step` (default `true`), `jump_o_step_ordering`
-  (fixed `jump_then_O`), `mass_jump_velocity_reset ∈ {momentum_conserving(default),
-  label_only}` (forbid `label_only` in production), `he_capture_velocity ∈ {at_rest(default),
-  thermal}` (thermal deferred — Tier 3 noise coupling).
+- **Integrator (G) — added here:** `one_mass_event_per_step` (default `true`),
+  `jump_o_step_ordering` (fixed `jump_then_O`), `mass_jump_velocity_reset ∈
+  {momentum_conserving(default), label_only}` (forbid `label_only` in production). These three
+  are A13 **driver policy** with no Phase-B reader (Phase-B resets are momentum-conserving by
+  construction), so they land + activate here.
+- **Activated here, declared at Slice P:** `he_capture_velocity ∈ {at_rest(default), thermal}`
+  (thermal deferred — Tier 3 noise coupling). The field is declared with the `capture`
+  primitive at Phase-B Slice P (declared-but-unread there); the G driver reads it and passes
+  `u_he` (the f_int/f_ret declare-at-owner / activate-at-C pattern).
 - **Scenario:** `mass_scenario` keeps the literal **`biphasic`** as the production value
   (full name `biphasic_energy_gated`, MASS §11 — documented, not renamed). It already sits
   in `_EVOLVING_MASS_SCENARIOS`, so the §6.5 `time_resolved` requirement + the

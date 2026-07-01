@@ -618,3 +618,128 @@ and surfaced only coverage gaps; all closed test-first.
 suite **1553 passed, 0 failed** (same 17 unrelated `anchored_discrete` warnings).
 **Phase A (L + K + U) is complete.** Next: Phase B (Slice ρ `helium_density.py`, then
 P/Q) — `TIER2_PHASE_B_IMPLEMENTATION_PLAN.md`.
+
+---
+
+## Phase B — Slice ρ refinement decisions (2026-06-30)
+
+A pre-build refinement pass over the Slice ρ spec in
+`TIER2_PHASE_B_IMPLEMENTATION_PLAN.md`, cross-referenced against
+`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` §4/§5 + dim-table and
+`CALIBRATION_MAP.md` rows 5/8, plus a code-surface audit (`physics/drag.py::spatial_gate`,
+`config.py`, `constants.py`). No code — the `[PROCEED TO IMPLEMENTATION]` boundary holds;
+docs-only amendment (Slice ρ §3.1 record + §5 config bullet/validators). The spec carried
+four drift items and three genuinely-open design calls; all resolved (decision owner: user).
+
+- **1. Single-source erf → extract `_erf_complement`.** Both `drag.spatial_gate` and the
+  new `rho_he_ratio` route through one extracted helper (proposed `physics/_gates.py`).
+  Chosen over delegate-to-drag (would make ρ import the drag module, muddying its
+  independent role + tautologizing the parity test) and over an independent mirror
+  (duplicate formula). The `spatial_gate` rewire is a **Tier-0 no-behavior-change refactor**
+  guarded by a parity regression test — a build-time edit to a locked module with identical
+  output, *not* a drag-law physics change.
+- **2. No default steepness on `rho_he_ratio`.** Mirrors `spatial_gate` (which has none);
+  the Phase-C driver passes `cfg.drag_gate_steepness` (14.2 Å) so density and drag share the
+  identical surface. No new `POTENTIAL_STEEPNESS_ANGSTROM` constant (the planned default
+  referenced a constant that does not exist; 14.2 already lives as `potential_steepness` /
+  `potential_steepness_molecule` / `drag_gate_steepness`). Module stays config-agnostic.
+- **3. Explicit `HeliumDensityProfile` Literal selector.** New
+  `Literal["erf_complement","tabulated"]`, default `erf_complement`, enum reject-arm guard
+  (mirrors `mass_scenario` / `check_ladder_config`), repurposing the `Optional[object]`
+  placeholder at `config.py:261` (stale `# future G4 density profile` comment rewritten — ρ
+  stays **G2**, no G2→G4 promotion). Tabulated **machinery built + round-trip tested in
+  Phase B** (Slice-L `tabulated_ladder` precedent); the **sourced TDDFT data array deferred
+  rule-2** (CALIBRATION row 8); tabulated data passed as a module arg, not a config field.
+
+**Drift fixed:** stale `config.py:220`→`:261`; misleading `# future G4` comment;
+non-existent `POTENTIAL_STEEPNESS_ANGSTROM`; the "tabulated not built vs round-trip tested"
+tension (machinery built, data deferred); the self-contradictory "shared helper" + "two
+forms diverging" parity framing (now a single-source regression lock).
+
+**Cross-reference verdict:** no contradictions. Gate is **Derived/G2** (row 5, erf-tied
+until ρ_He profile exists), source = 14.2 Å steepness; ρ_He profile is **Sourced** (row 8),
+the deferred fallback. ρ is purely geometric (depth + steepness only) — no `n`, no Langmuir
+cap (that is P), no `γ`/drag-law read, no mass. **Next:** Slice P/Q refinement, then the
+Phase-B build under the `[PROCEED TO IMPLEMENTATION]` trigger (ρ first).
+
+---
+
+## Phase B — Slice P/Q refinement decisions (2026-07-01)
+
+A pre-build refinement pass over the Slice P (pickup + `mass_jump.capture`) and Slice Q
+(evaporation) specs in `TIER2_PHASE_B_IMPLEMENTATION_PLAN.md`, cross-referenced against
+MASS §4/§5 + dim-table + §11 config + A11/A12/R9/R10, CALIBRATION rows 7/8/10/13, and a
+code-surface audit (`physics/mass_jump.py`, `internal_energy_budget.py`,
+`dissociation_ladder.py`, `config.py`, `constants.py`). No code — the
+`[PROCEED TO IMPLEMENTATION]` boundary holds; docs-only amendment (Slice P/Q Interface/Knobs/
+Oracle/Test-spec, §2.1/§2.2, §3.2 record, §4 table, §5 config). Seven design calls resolved
+(decision owner: user).
+
+**Slice P**
+- **1. New `CaptureResult` dataclass** (not a reused `ShedResult`) — the type name matches the
+  +He *gain* (`m⁺ = m+m_He`, `dE_mass_transfer > 0` into `E_mass_transfer`).
+  `_reduced_mass_defect_coeff` is refactored to the **unsigned magnitude** `0.5·(m·m_He)/m_plus`;
+  `cold_shed` applies the `−`, `capture` the `+` (rule 1, one formula, signs at the call site);
+  `cold_shed` output stays byte-identical (regression lock). The S1 heat (`+f_ret·D_0(n+1)` into
+  `E_int`) and the capture KE defect (into `E_mass_transfer`) are **two distinct injections** —
+  no double-count; the 5-term closure combining them is Phase C.
+- **2. `pickup_occupancy_exponent` p = fixed `1.0`, NOT `p=κ`.** The A12 p↔κ tie is **physically
+  inverse** (rigid shell = large κ = sharper cutoff = *smaller* p), so a literal `p=κ` inverts
+  it. Hold p=1 for calibration; free p at Phase F only if the size-dist first-shell edge can't
+  be met with p=1 + κ (if ever tied, match cutoff *slopes*). ⚠ **MASS §11 "p default tied to κ"
+  + CALIBRATION row 7 flagged for a clarifying annotation** — decision recorded, locked docs not
+  silently rewritten (pending user OK).
+- **3. Atomic rename, no alias; `mass_relaxation_tau_ps` retired.** `mass_rate_form` /
+  `mass_rate_coefficient` / `mass_relaxation_tau_ps` have **zero readers** in the package
+  (grep-verified) → `→ pickup_*` atomically; the τ field is dead (Tier-2 cooling is the
+  Slice-K `internal_energy_cooling_tau_ps`) → removed at the P build.
+- **4. `density_only` + `at_rest` built; `sweeping`/`dwell_time`/`thermal` are rule-2 arms**
+  (raise `NotImplementedError`) — MASS §5 locks density-only, CALIBRATION R7 defers the rest.
+- **U-signature confirmed:** `dE_int_pickup_eV(n, *, f_ret, picture, kappa)` takes `n` =
+  pre-pickup and returns `+f_ret·D_0(n+1)`; `picture`+`kappa` are threaded through `pickup_step`.
+
+**Slice Q**
+- **5. `effective_dof`: `n=2 → 4`** (linear 3-atom `3N−5`; CALIBRATION row-10 "n=2 linear +1"
+  applied), `3n−3` for `n≥3`, `n=1` direct `k=ν`. The uniform `3n−3` is no longer used at n=2
+  (n=2 bracket exponent `s−1 = 3`, was 2).
+- **6. Gate onset — 3 facets:** (a) **no calibration knob** (Derived, gate = `Σ(n)`,
+  parameter-free, MASS R9); (b) **diagnostic** signed margin `gate_margin_eV = E_int − Σ(n)`
+  exposed as a pure Q helper — the record of `Σ(n,t)` / `G(t)` alongside `t×` / `Π` is written by
+  the Phase-C driver / Phase-E diagnostics, not in Phase B; (c) **`gate_onset_override_eV:
+  None`** with a **loud provenance guard** (`allow_gate_onset_override`, mirroring
+  `allow_unvalidated_binding_pairing`) so a forced threshold can never silently enter a
+  production / Tier-2-lock run (R10 diagnostic-lever, not a knob).
+- **7. `NU_EVAP_PER_PS = 2.42` is added by Q** (constants anchor + `evap_rate_prefactor_per_ps`
+  defaulting to it) — the plan's "ν lands with Phase A" was **inaccurate** (Phase A shipped
+  `N_STAR` / `D0_*` / `D_FLOOR` / `S_ABS_EV` only). `evap_rrk_dof` lands `Optional[float] = None`
+  (per-`n` default; `s≥1` guard fires only when set).
+- **U-signature confirmed:** `dE_int_shed_eV(n, *, picture, kappa)` takes `n` = pre-shed and
+  returns `−D_0(n)`; Q reuses the **real** `cold_shed` (no second copy of the reduced-mass form).
+
+**Drift fixed:** stale config line refs (`:217/:218` → `:258/:259`); the "ν lands with Phase A"
+gap; the reused-`ShedResult`-for-a-gain semantic mismatch; the `p=κ` ambiguity.
+
+**Cross-reference verdict:** consistent with MASS/CALIBRATION **except** the flagged `p` wording
+(§3.2 item 2) — a clarifying annotation to MASS §11 + CALIBRATION row 7 is the one carried
+follow-up (awaiting user OK). ν pinned (row —/Sourced), λ_0 Sourced+Bounded (row 7), f_ret
+Bounded (row 13), `s` Derived (row 10, n=2-linear now applied). **Next:** the Phase-B build
+under the `[PROCEED TO IMPLEMENTATION]` trigger — ρ → {P, Q}.
+
+### Phase B/C boundary — `mass_jump_velocity_reset` reconcile (2026-07-01)
+
+A follow-up check on the MASS §11 config block found `mass_jump_velocity_reset ∈
+{momentum_conserving, label_only}` (line 1940) absent from the Phase-B config map. **Verdict:
+correctly so — it is Phase C, not a Phase-B omission.** It is A13 *driver/integrator policy*
+and already owned by `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §4 ("Integrator (G)"), alongside
+`one_mass_event_per_step` and `jump_o_step_ordering`. Phase-B `capture`/`cold_shed` are
+momentum-conserving **by construction**, so `label_only` (the non-closing §6-invariant
+diagnostic) is a Phase-C driver branch Phase B never implements.
+
+- **Real drift found + fixed:** `he_capture_velocity` was **double-listed** (Phase-B Slice P
+  *and* Phase-C §4 "integrator flags"). Resolved via the f_int/f_ret pattern — **declared at
+  Slice P** (it owns the `capture` primitive; declared-but-unread in Phase B) and **activated
+  by the Phase-C G driver** (reads the field, passes `u_he`). Both plan docs updated so the
+  field has one declaring owner (P) and one activator (C), no double-add.
+- **Docs touched:** Phase-B plan Slice P knobs (he_capture_velocity note) + §5 (new "A13
+  integrator-policy fields are Phase C" boundary note); Phase-C plan §4 (split "added here"
+  vs "activated here, declared at P"). No code; boundary holds.
