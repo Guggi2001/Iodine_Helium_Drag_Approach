@@ -243,6 +243,12 @@ unchanged from the 4-term baseline.
 > cooling drains `E_int` below `Σ(n)`); `E_int` evolves additively (`reconstruct` stays a
 > post-t× diagnostic); frozen draw order = evaporation then pickup (shed-then-pickup if both).
 
+> **As-built NB (2026-07-02, G re-review).** The item-(4) guard grew to **four checks**:
+> f_int/f_ret non-None, drag-bundle required, **non-negative λ₀ *and* ν** (sign refuse),
+> plus the λ₀==0 structurally-inert advisory warn — per the G review and the Phase-B
+> post-delivery external review (ν refuse); see `check_biphasic_config` in `config.py`
+> and the log's "Follow-ups for Slices X/G" item 1.
+
 **Module.** `simulation/ion_propagation_step.py` (new `biphasic_step` seam).
 
 > **As-built (2026-07-02, DELIVERED — see log).** The §2.1 `E_pot += D_0 / −D_0` bookings that
@@ -292,6 +298,11 @@ f_ret, λ_0, p, ν, s, the cap/form/reset enums). New **integrator** flags:
 `one_mass_event_per_step=true`, `jump_o_step_ordering=jump_then_O`,
 `mass_jump_velocity_reset=momentum_conserving` (forbid `label_only` in production),
 `he_capture_velocity=at_rest`.
+
+> **As-built NB (2026-07-02, G re-review).** The three integrator "flags" landed as
+> **structural policy hard-coded in `biphasic_step`**, *not* as config fields (rule 2:
+> no reader would ever vary them; pre-build resolution + delivery record in the log).
+> Only `he_capture_velocity` is a real config field (read by the G driver).
 
 **Config guards (§6.5 / A11 / Tier 3).**
 - `mass_scenario=biphasic` is already in `_EVOLVING_MASS_SCENARIOS` → requires
@@ -345,7 +356,9 @@ wiring G, and adds the integrator flags. Validators reuse `check_drag_config`.
   `jump_o_step_ordering` (fixed `jump_then_O`), `mass_jump_velocity_reset ∈
   {momentum_conserving(default), label_only}` (forbid `label_only` in production). These three
   are A13 **driver policy** with no Phase-B reader (Phase-B resets are momentum-conserving by
-  construction), so they land + activate here.
+  construction), so they land + activate here. *As-built NB (2026-07-02, G re-review): they
+  landed as structural policy hard-coded in `biphasic_step` — **no config fields were added**
+  (rule 2; pre-build resolution + delivery record in the log).*
 - **Activated here, declared at Slice P:** `he_capture_velocity ∈ {at_rest(default), thermal}`
   (thermal deferred — Tier 3 noise coupling). The field is declared with the `capture`
   primitive at Phase-B Slice P (declared-but-unread there); the G driver reads it and passes

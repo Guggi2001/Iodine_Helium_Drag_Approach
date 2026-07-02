@@ -749,13 +749,17 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
        priors* (lambda_0 pinned at Phase F, nu Sourced 2.42), not the sign;
        ``physics.pickup.lambda_attach`` and ``physics.evaporation.rrk_rate`` carry
        the mirroring module-level defenses.
-    4. **Pickup-inert warning (advisory, not a refuse).** ``pickup_rate_coefficient
+    4. **Rate-zero inert warnings (advisory, not refuses).** ``pickup_rate_coefficient
        == 0.0`` (the default) -> the Poisson pickup channel is structurally inert
        (``P_attach = 0``). That is a *legitimate* biphasic run -- the
        evaporation-only cascade from the seeded ``n_0`` shell (close cousin of the
        Phase-E relaxation stage) -- so it warns rather than raises (Slice-G decision
-       #5, user 2026-07-01). The genuinely-undefined knobs (f_int/f_ret) fail loud;
-       the merely-inert one is advisory.
+       #5, user 2026-07-01). ``evap_rate_prefactor_per_ps == 0.0`` mirrors it
+       symmetrically (Slice-G re-review fix 2026-07-02): the evaporation channel is
+       structurally inert (``k = 0``, ``P_shed = 0``), the run is pickup-only growth
+       -- and since nu defaults to the Sourced 2.42 an explicit 0 is a deliberate
+       diagnostic, warned so it can never pass silently. The genuinely-undefined
+       knobs (f_int/f_ret) fail loud; the merely-inert ones are advisory.
 
     Raises
     ------
@@ -812,6 +816,16 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
             "He-pickup channel is structurally inert (P_attach=0), so this run is an "
             "evaporation-only cascade from the seeded n_0 shell. Set "
             "pickup_rate_coefficient>0 to enable pickup.",
+            UserWarning,
+        )
+
+    if cfg.evap_rate_prefactor_per_ps == 0.0:
+        warnings.warn(
+            "mass_scenario='biphasic' with evap_rate_prefactor_per_ps=0.0: the "
+            "energy-gated RRK evaporation channel is structurally inert (k=0, "
+            "P_shed=0), so this run is pickup-only growth from the seeded n_0 "
+            "shell. nu defaults to the Sourced NU_EVAP_PER_PS=2.42; an explicit 0 "
+            "is a diagnostic configuration.",
             UserWarning,
         )
 

@@ -2147,3 +2147,115 @@ suites green (`test_checkpoint` 23, `test_biphasic_step` 33,
 (1813 → +3 new tests; env-dependent data present on this machine, so the 9
 data-gated tests ran), 27 warnings (all pre-existing §6.5 mass-pairing /
 v6→v7 migration).
+
+## Phase C — Slice G post-upstream re-review (2026-07-02)
+
+After the Phase A/B post-delivery external review pass (`ae68ba5`) changed the
+upstream physics modules `biphasic_step` composes, and the Slice-X re-review
+(`17b21b0`) touched `checkpoint.py` + `test_biphasic_step.py`, Slice G was
+re-reviewed at HEAD by **two parallel review subagents**: (1) interface /
+behavior consistency of the full `d5a2028..HEAD` diff against the current
+Slice-G call sites (incl. RNG draw-order and 5-term-ledger verification +
+test runs), (2) the five recorded X/G follow-ups + doc alignment + rule-2
+carry audit.
+
+**Verdict: Slice G still sound — no Critical or Important code findings.**
+The upstream pass was purely guard-additive + doc-corrective: not one numeric
+path a valid biphasic configuration exercises changed. Verified specifically:
+
+- **No new guard is reachable from the production biphasic path.** The ν<0
+  refuses (config + `rrk_rate`), the ρ<0 refuse in `lambda_attach`, the
+  `_gate_threshold_eV` override-path integer-`n` validation, the
+  `effective_dof` fractional-n refuse, and the `helium_density` finiteness
+  guard all fire only on invalid config or diagnostic inputs (driver values:
+  default ν=2.42; erf-complement ρ∈[0,1]; `np.rint`-seeded ±1-evolved
+  integer-valued `n`).
+- **Frozen shed-then-pickup RNG contract intact:** each channel still consumes
+  exactly one unconditional `rng.random(size=M)` per step; every new guard
+  raises (killing the step) rather than skipping a draw. The `ae68ba5`
+  `dissociation_ladder="tabulated"` refusal in `biphasic_step` raises *before*
+  any draw — and closed a genuine Slice-G hole (that enum previously validated
+  at load then silently ran Form-U energetics).
+- **5-term ledger sources byte-untouched** (K2 drain, K1 drain, S1 split,
+  capture/shed reduced-mass defects, eV conversion); the m↔n consistency
+  assert intact; `TestIsolatedEventClosure` still closes at 1e-12.
+- `ion.py` / `ion_initial_state.py` byte-identical since `d5a2028`;
+  `mass_jump.py` / `_gates.py` / `constants.py` changes are docstring-only.
+- **A/B follow-up register re-audited:** 2/3/4/5 exactly as the X-review
+  register states; **1 was optimistic** — the guard, its docstring, and its
+  tests are complete (four checks: f_int/f_ret, bundle require, λ₀ *and* ν
+  sign refuse, λ₀==0 advisory), but the Phase-C plan's item-(4) enumeration
+  still described the two-check pre-build guard. Fixed this pass (see below);
+  follow-up 1 now **fully satisfied**.
+- **Rule-2 carry ledger coherent:** `noise_*` (×4), `validation_histogram_metric`
+  (Phase-E activation scheduled), `drag_low_v_floor`, the unbuilt enum arms
+  (`sweeping`/`dwell_time`, `thermal`, tabulated density/ladder — all
+  point-of-use refusals), and the two non-field carries all recorded; neither
+  review commit added, removed, or silently activated a config field; all
+  Slice-G retirements verified live in code.
+
+**Doc fixes applied (this pass, docs-only — no code or test changes):**
+
+1. `docs/simulation/ion_module.md` `_check_drag_scope` table de-drifted (was
+   stale since Tier-1a and contradicted the pseudocode in the same file):
+   `mass_scenario ∉ {fixed, anchored_discrete, biphasic}`,
+   `drag_form ∉ REALIZED_FORMS`, mass trip-wire marked `fixed`-only (§6.6
+   skip), + a note on the `ion._check_scope_ion_driver` biphasic-bundle
+   re-check (G-review fix).
+2. `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` — as-built NB after the Slice-G
+   decision box counting the guard's **four** checks (closes follow-up 1).
+3. `TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` — as-built NBs (§Slice-G knobs +
+   §4 config contract): the three integrator flags landed as structural
+   policy hard-coded in `biphasic_step`, **not** config fields (rule 2); only
+   `he_capture_velocity` is a real field.
+
+**Deliberate non-fixes (recorded, below the bar):** the ν=0 / λ₀=0 advisory
+asymmetry in `check_biphasic_config` (λ₀=0 warns, ν=0 silent — defensible:
+ν defaults to 2.42 so 0 must be deliberate, λ₀ defaults to 0.0); the private
+name `_gate_threshold_eV` leaking into the `_as_integer_occupancy` ValueError
+context string reached from public entry points; log entry :1974-1975 citing
+already-retired carries as guard-live examples (append-only history, accurate
+for the Phase-B era it describes).
+
+**A/B follow-up register after this pass:** **1 satisfied (doc gap closed
+this pass)**, 2 honored (standing rule), 3 closed (`ae68ba5`), 4 closed
+(`17b21b0`), 5 open by design (Tier 3).
+
+**Tests (re-run by the review, no code changed):** targeted slice-G +
+upstream suites **361 passed, 0 failed** (2 expected §6.5 pairing warnings);
+full suite **1816 passed, 0 failed**, 27 warnings (all pre-existing §6.5
+mass-pairing / v6→v7 migration).
+
+### Re-review nits implemented (2026-07-02, user `[PROCEED TO IMPLEMENTATION]`)
+
+The two "deliberate non-fixes" above were promoted to fixes on user request
+(test-first; both watched RED → GREEN):
+
+1. **ν=0 inert advisory (symmetry fix).** `check_biphasic_config` now warns
+   (does not raise) on `evap_rate_prefactor_per_ps == 0.0`, mirroring the
+   λ₀==0 pickup-inert advisory: the RRK channel is structurally inert (k=0,
+   P_shed=0), the run is pickup-only growth from n₀ — legitimate as a
+   diagnostic, but ν defaults to the Sourced 2.42 so an explicit 0 can no
+   longer pass silently. Docstring item 4 renamed to "Rate-zero inert
+   warnings" covering both rates. No default-config behavior change (λ₀
+   defaults 0.0 → still exactly one advisory; ν default 2.42 → silent). The
+   driver-level `test_nu_prefactor_threads_to_evaporation` is unaffected (it
+   constructs `SimConfig` directly, no `validate()`).
+2. **Private-name leak in the override-path error.** `_gate_threshold_eV` now
+   calls `_as_integer_occupancy(n, context="gate threshold")` (was the private
+   helper name, which leaked into the `ValueError` a caller of the public
+   `rrk_rate`/`is_self_bound`/`gate_margin_eV` sees). Wording locked by
+   tightening the two fractional-n matches in `test_evaporation.py` to
+   `"gate threshold requires integer occupancy"` (consistent with the
+   neighboring `"gate threshold requires n >= 0"`).
+
+**Files.** Production: `config.py` (ν=0 advisory + docstring item 4),
+`physics/evaporation.py` (context string). Tests: `test_biphasic_config.py`
+(+2, `TestEvapInertWarns`; module docstring), `test_evaporation.py` (2
+matches tightened, RED→GREEN with fix 2).
+
+**Tests:** touched suites (`test_biphasic_config`, `test_evaporation`,
+`test_biphasic_step`, `test_dissociation_ladder`) **211 passed**; full suite
+**1818 passed, 0 failed** (1816 → +2 new tests), 27 warnings (all
+pre-existing §6.5 mass-pairing / v6→v7 migration — the new ν=0 advisory
+fires in no existing test's `validate()` path).

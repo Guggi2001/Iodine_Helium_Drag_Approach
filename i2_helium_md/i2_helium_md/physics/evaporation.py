@@ -172,7 +172,9 @@ def _gate_threshold_eV(n, *, picture: str, kappa: float, gate_onset_eV):
         n_arr = np.asarray(n)
         if np.any(n_arr < 0):
             raise ValueError(f"gate threshold requires n >= 0; got {n!r}")
-        _as_integer_occupancy(n, context="_gate_threshold_eV")
+        # Public-facing context: callers reach this from rrk_rate / is_self_bound /
+        # gate_margin_eV and have never seen the private helper name.
+        _as_integer_occupancy(n, context="gate threshold")
         return float(gate_onset_eV)
     return ladder_cumsum(n, picture=picture, kappa=kappa)
 

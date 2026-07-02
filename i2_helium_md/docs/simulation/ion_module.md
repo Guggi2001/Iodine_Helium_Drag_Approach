@@ -260,9 +260,12 @@ On the **drag branch**, an additional Tier-0 envelope guard runs before the loop
 | Condition | Reason |
 |---|---|
 | `noise_form != "none"` | active Langevin noise is Tier 3 |
-| `mass_scenario != "fixed"` | mass dynamics is Tier 1 |
-| `drag_form != "linear_cubic"` | other forms not yet realised in `drag.py` |
-| realized `mass_kg` not within ~8 amu of `m_eff_amu` | the `fixed` scenario must integrate at the drag-law extraction mass (§6.5) |
+| `mass_scenario ∉ {"fixed", "anchored_discrete", "biphasic"}` | drag branch supports `fixed`, the Tier-1a anchored schedule, and the Tier-2 generative mechanism only |
+| `drag_form ∉ REALIZED_FORMS` (`linear_cubic`, `linear_quadratic`, `power_law`) | `threshold` is reserved and raises in `physics/drag.py` |
+| realized `mass_kg` not within ~8 amu of `m_eff_amu` (**`fixed` only**; skipped for `anchored_discrete`/`biphasic`, whose mass legitimately departs m_eff — §6.6) | the `fixed` scenario must integrate at the drag-law extraction mass (§6.5) |
+
+On the biphasic path, `ion._check_scope_ion_driver` additionally re-checks the
+biphasic config bundle before the loop (Slice-G review fix).
 
 ## What's inside
 

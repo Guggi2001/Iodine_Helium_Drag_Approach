@@ -8,8 +8,9 @@ fixes) a **drag_coefficients bundle** (biphasic is a drag-path scenario; a bundl
 config would silently dispatch onto the hard-sphere collision path) and a
 **non-negative** ``pickup_rate_coefficient`` (a negative lambda_0 gives P_attach < 0,
 silently disabling pickup). It **warns (does not raise)** when
-``pickup_rate_coefficient`` (lambda_0) is exactly ``0.0`` (pickup structurally inert;
-the evaporation-only-from-n0 limit is a legitimate run). f_int/f_ret are still
+``pickup_rate_coefficient`` (lambda_0) or ``evap_rate_prefactor_per_ps`` (nu) is
+exactly ``0.0`` (the channel is structurally inert; the evaporation-only-from-n0 /
+pickup-only-growth limits are legitimate diagnostic runs). f_int/f_ret are still
 range-checked by ``check_internal_energy_budget_config``; this guard only enforces
 their *presence* under ``biphasic``.
 
@@ -153,4 +154,32 @@ class TestPickupInertWarns:
             check_biphasic_config(cfg)
         assert not any(
             "pickup_rate_coefficient" in str(w.message) for w in caught
+        )
+
+
+class TestEvapInertWarns:
+    """Slice-G re-review fix (2026-07-02): nu == 0.0 mirrors the lambda_0 == 0.0
+    advisory -- the evaporation channel is structurally inert (k = nu * (...) = 0,
+    P_shed = 0), so the run is pickup-only growth from n_0. Legitimate as a
+    diagnostic, but nu defaults to the Sourced 2.42, so an explicit 0 deserves the
+    same warn-not-raise treatment as the pickup side (no silent asymmetry)."""
+
+    def test_nu_zero_warns_not_raises(self):
+        cfg = _biphasic_cfg(evap_rate_prefactor_per_ps=0.0)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            check_biphasic_config(cfg)  # must not raise
+        assert any(
+            issubclass(w.category, UserWarning)
+            and "evap_rate_prefactor_per_ps" in str(w.message)
+            for w in caught
+        )
+
+    def test_default_nu_does_not_warn(self):
+        cfg = _biphasic_cfg()  # NU_EVAP_PER_PS = 2.42 default
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            check_biphasic_config(cfg)
+        assert not any(
+            "evap_rate_prefactor_per_ps" in str(w.message) for w in caught
         )

@@ -657,7 +657,10 @@ class TestReviewExtensions:
                      gate_onset_eV=1.0)
 
     def test_fractional_n_fails_loud_with_gate_override(self):
-        with pytest.raises(ValueError, match="integer occupancy"):
+        # Message wording locked public-facing (Slice-G re-review fix 2026-07-02):
+        # the context is "gate threshold", not the private helper name
+        # _gate_threshold_eV a caller of rrk_rate has never seen.
+        with pytest.raises(ValueError, match="gate threshold requires integer occupancy"):
             rrk_rate(0.05, 2.5, nu=NU_EVAP_PER_PS, picture=PIC, kappa=KAPPA,
                      gate_onset_eV=1.0)
 
@@ -666,7 +669,7 @@ class TestReviewExtensions:
         # _gate_threshold_eV); locked here for all three entry points.
         with pytest.raises(ValueError, match="n >= 0"):
             is_self_bound(0.05, -1, picture=PIC, kappa=KAPPA, gate_onset_eV=1.0)
-        with pytest.raises(ValueError, match="integer occupancy"):
+        with pytest.raises(ValueError, match="gate threshold requires integer occupancy"):
             gate_margin_eV(0.05, 2.5, picture=PIC, kappa=KAPPA, gate_onset_eV=1.0)
 
     def test_cold_shed_components_scalar_and_uniform_array_agree(self):
