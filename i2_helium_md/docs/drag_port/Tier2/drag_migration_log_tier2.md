@@ -2259,3 +2259,110 @@ matches tightened, RED→GREEN with fix 2).
 **1818 passed, 0 failed** (1816 → +2 new tests), 27 warnings (all
 pre-existing §6.5 mass-pairing / v6→v7 migration — the new ν=0 advisory
 fires in no existing test's `validate()` path).
+
+---
+
+## Phase D — Slice Z pre-build decisions (2026-07-02)
+
+A pre-build refinement session on `TIER2_PHASE_D_IMPLEMENTATION_PLAN.md` (plan-only; no
+code — the `[PROCEED TO IMPLEMENTATION]` trigger has not been given for Slice Z). The
+plan's interface assumptions were verified against the delivered surfaces (Phase-C driver,
+v7 `E_int_eV`/`n_shell` fields, `ladder_cumsum` / `lambda_attach` / `compare_*` /
+`ion_ledger_closure` signatures, `tier1a_common` scaffolding) — all sound. Both CE
+fragments are ions (`ion_initial_state` seeds all 2N rows at the n=21 complex mass), so
+"mean over ions" = mean over all 2N rows with no row-selection convention. Seven decisions
+locked by the user; two analytical findings folded into the plan:
+
+1. **Π oracle corrected (plan §2.2/§3 — the headline finding).** The plan's
+   "Π > 1 during dense traversal" acceptance oracle is wrong at the 9 Å / 0.80 eV priored
+   central point: `Π(n) = λ₀·ρ_ratio·(1−n/n*)₊·f_ret·τ` is **0 at gate-open** (n = 21 = n*
+   zeroes the Langmuir cap) and **≤ ~0.2 for the whole 21→14 decline** at central values
+   (λ₀ 0.9/ps, f_ret 0.1, τ 6.5 ps; even n = 14 gives factor 1/3). Π > 1 needs the upper
+   corner of every band simultaneously (f_ret ≳ 0.4, τ → 16.5, λ₀ → 1.1) — the *strip* end
+   of the MASS §6.11 regime axis, exactly what the gentle 9 Å condition is not. Corrected
+   expectation: **freeze side** — Π = 0 at gate-open, Π < 1 throughout (the 21→14 decline
+   is the initial-`E_int` cascade, not pickup-sustained shedding), Π → 0 at exit; a
+   computed Π > 1 is itself a flag. Condition-specific: not to be carried to 2.70 eV.
+2. **`t×` has a closed form — the check upgraded from editorial to sharp.** Pre-crossing
+   dynamics are fully deterministic (evaporation gate shut; pickup dead at n = n*), so
+   `t× = τ·ln(f_int·E_avail/Σ(21))` exactly, identical for every ion. The helper returns
+   the **per-ion array** (all-agree = wiring check); the bridge checks the reconstruction
+   against the analytic value; and `f_int` ↔ GAH25-prior are recognized as coupled choices.
+3. **Staircase target = the deterministic schedule family**, `build_shell_schedule(t★)` for
+   t★ ∈ {0.5, 5.0, 9.0} as an overlay band, **t★ = 5.0 primary** — numerically identical to
+   the delivered anchored artifacts' `n_shell` but with zero dependence on
+   gitignored/machine-local run dirs. "Loaded, not regenerated" honored in spirit.
+4. **Representative priored point pinned:** λ₀ = 0.9/ps, τ = 6.5 ps (geometric mid of
+   [2.6, 16.5], coinciding with GAH25 shell-1 t₀), **f_int = 0.5** (lands
+   t× ≈ 4.8–5.6 ps over the mixture Σ(21) band 0.17–0.19 eV; f_int just above the
+   0.21–0.24 floor would give ~1.9 ps, factor ~3 under the prior), f_ret = 0.1,
+   picture = `statistical_mixture`, **κ = 1.0** (config default / Slice-L oracle center);
+   ν = 2.42/ps, s = 3n−3 Sourced/Derived. Demonstration choice, not calibration (Phase F).
+5. **Π helper contract:** `regime_parameter(ckpt, cfg)` **re-derives ρ_ratio(t)** from
+   checkpoint positions + `droplet_radii_angstrom` + the cfg density-gate steepness (the
+   plan previously took `rho_ratio` as an unspecified input), then `lambda_attach·f_ret·τ`
+   per ion; reported mean ± envelope.
+6. **Run parameters inherit Tier-1a exactly** (N50 → 100 ions, 30 ps, Tier-0 dt/seed/drag
+   bundle, `allow_inconsistent_mass_pairing=True`); only `mass_scenario="biphasic"` + knob
+   values differ. Deliverable shape settled: helpers in new `postprocess/bridge_diagnostics.py`
+   (Phase-E D2 generalizes it), orchestration mirroring `gen_tier1a_runs`, report script under
+   `scripts/post_processing/`, editorial verdict in `TIER2_PHASE_D_BRIDGE_FINDINGS.md` +
+   this log.
+7. **Phase-C follow-up #4 retired (record correction).** The "still open" config→module
+   threading test in the Phase-A/B review-pass follow-ups list is **already delivered** —
+   `test_gate_onset_override_threads_to_evaporation` and
+   `test_nu_prefactor_threads_to_evaporation` landed in `tests/test_biphasic_step.py`
+   during the Slice-G re-review pass. Phase D adds no duplicate.
+
+Plan doc updated in place (`TIER2_PHASE_D_IMPLEMENTATION_PLAN.md` §0/§2/§3/§4/§5/§7/§8).
+Slice Z remains behind the `[PROCEED TO IMPLEMENTATION]` trigger.
+
+### Phase D — MASS / CALIBRATION_MAP cross-check of the refined plan (2026-07-02)
+
+A final internal-consistency pass of the refined Phase-D plan against
+`MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` and `CALIBRATION_MAP.md`
+(precedent: the Phase-C cross-check above). **Verified consistent:**
+
+- **`t×` chain:** the `t× ≡ GAH25 t₀` identity, the [1, 15] ps sanity band, the
+  ±factor-2 prior / factor-10 flag are verbatim MASS §6.11. Every assumption
+  behind the closed form holds in the delivered code: gate suppressed while
+  `E_int > Σ(n)` (§6.11 Lyapunov — the gate *always* opens, so the helper's
+  NaN arm is an edge guard only); pickup dead at `n(0) = 21 = n*`
+  (`ANCHOR_N_START = 21 = N_STAR`; `pickup_occupancy_cap` defaults `langmuir`,
+  `p = 1.0`, driver threads `cap=cfg.pickup_occupancy_cap`); K2 per-step drain
+  `E_int·(1−e^{−dt/τ})` compounds to an exact exponential; cooling precedes the
+  draw; noise inert. Σ(21) mixture 0.17–0.19 eV (row 21; ~11% κ-independent
+  over [0.3, 5]) → t× ≈ 4.8–5.6 ps at the pinned point.
+- **Π regime reading:** the boxed §6.11 `Π(n) = λ(n)·f_ret·τ` and the
+  freeze/shed criterion match; the corrected freeze-side oracle is exactly
+  MASS's gentle-9 Å regime ("self-binds early → retains a shell"), with Π = 0
+  at gate-open being the §6.11 *filling-driven* stabilizing route and Π → 0 at
+  exit the *exit-driven* one; the superseded "Π > 1 persists" reading is the
+  [Calvo24] strip end.
+- **Pinned point vs the map:** λ₀ = 0.9 ∈ central 0.7–1.1 (row 7, "not 2.0
+  Na⁺"); τ = 6.5 ∈ [2.6, 16.5] (row 11), geometric mid, coincides with GAH25
+  shell-1 t₀ 6.53; f_ret = 0.1 = "prior small" (row 13); ν = 2.42 pinned
+  (row 9); s = 3n−3 Derived (row 10); E_avail 0.80 = ½·14.40/9, scenario-keyed
+  and guard-stamped (row 15 / MASS A7). **κ = 1.0 is clean:** row 19's "7.5×
+  radial cliff" prior is the *physical* shell-1→shell-2 binding drop (R3,
+  encoded in Form U's `D₀(1)/D_floor`), not a κ value; κ only shapes the cliff
+  sharpness, and 1.0 is the config default / log-center of the oracle sweep.
+- **Schema/config/scope:** v7 `E_int_eV` (MASS §7 NB), the `biphasic` config
+  literal (§11 NB), no new fields, and the §6.11 mean-field ODE staying
+  excluded from D all line up.
+
+**Two findings:**
+
+1. **Plan §8 f_int note completed (fixed in place).** The note cited only the
+   "~0.2 soft upper"; MASS A7 (2026-06-21 rework) states the operative
+   scenario-invariant **velocity-consistency ceiling ~0.6**
+   (`E_trans/E_avail ≈ 40%` at both budgets), so the derived 0.80 eV window is
+   [0.21–0.24, ~0.6] and the pinned f_int = 0.5 sits *inside* it (the ~0.2
+   advisory is vacuous at 0.80 eV — the floor exceeds it). Strengthens the
+   pinned choice; note reworded.
+2. **Cross-doc wording drift (reported, not fixed):** CALIBRATION_MAP row 14
+   condenses the f_int upper edge as "soft upper ~0.2 is advisory" and omits
+   the ~0.6 ceiling MASS A7 states alongside it; MASS A7's own paragraph
+   carries both numbers with drafting ambiguity, flagged "provisional pending
+   OQ2". Not a Phase-D blocker (D fits nothing); a one-line row-14 touch is
+   suggested whenever that row is next edited.

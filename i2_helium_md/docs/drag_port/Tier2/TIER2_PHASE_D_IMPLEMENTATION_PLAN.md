@@ -56,6 +56,43 @@ cheaply, with the actionable lever attached, before the costly experimental tier
 - **Targets are loaded, not regenerated.** The Tier-1a anchored `n(t)` artifact and the
   frozen 9 Å TDDFT curve are read as fixed comparison targets (no anchored-artifact churn).
 
+**Locked decisions (2026-07-02, pre-build refinement — supersede where they overlap).**
+- **Staircase target = the schedule family, not a run artifact.** The anchored `n(t)` is a
+  *deterministic schedule*, numerically identical to the delivered run artifacts' `n_shell`
+  (which are gitignored / machine-local). The bridge evaluates
+  `build_shell_schedule(t★)` for **t★ ∈ {0.5, 5.0, 9.0} ps** as an overlay *family* (band),
+  with **t★ = 5.0 primary** (the generative `t×` at the pinned point lands ≈ 5.2 ps, aligning
+  with it). This honors "loaded, not regenerated" with zero artifact fragility.
+- **Representative priored point pinned (§4):** λ₀ = 0.9/ps, τ = 6.5 ps (geometric mid of
+  [2.6, 16.5]; coincides with GAH25's shell-1 `t₀`), **f_int = 0.5**, f_ret = 0.1,
+  picture = `statistical_mixture`, **κ = 1.0** (the config default and the Slice-L oracle
+  sweep center); ν = 2.42/ps and s = 3n−3 are Sourced/Derived (no choice). `f_int` is chosen
+  to land `t×` in the GAH25 window (see §2.2's closed form) — "just above the 0.21–0.24
+  mixture floor" (f_int ≈ 0.3) would give `t×` ≈ 1.9 ps, a factor ~3 below the prior; the
+  existence demonstration deliberately takes the point that lands the prior.
+- **`t×` is per-ion and has a sharp analytic oracle** (§2.2): the helper returns the per-ion
+  first-crossing array; in the bridge run all ions must agree (pre-crossing dynamics are
+  deterministic), and the value has a closed form — the check is *sharp*, not editorial.
+- **Π oracle corrected** (§2.2): at the 9 Å / 0.80 eV priored central point the expected
+  regime is **Π < 1 throughout** (freeze side; gentle shell-retaining regime), **Π = 0 at
+  gate-open** (full-shell Langmuir cap), **Π → 0 at exit**. The earlier "Π > 1 during dense
+  traversal" expectation belongs to the strip end of the regime axis and is *wrong* here.
+- **Π helper re-derives `ρ_ratio(t)`** from checkpoint positions + `droplet_radii_angstrom`
+  + the cfg density-gate steepness — the reconstruction step is part of the helper contract,
+  not an unspecified input.
+- **Run parameters inherit Tier-1a exactly** (N = 50 molecules → 100 ions, 30 ps, Tier-0
+  dt/seed/drag bundle, `allow_inconsistent_mass_pairing=True`); only `mass_scenario` and the
+  knob values differ.
+- **Deliverable shape:** helpers in a new `postprocess/bridge_diagnostics.py` (Phase-E D2
+  generalizes it); orchestration script mirroring `gen_tier1a_runs.py`; a report script
+  emitting overlay figures into the run dir + the numeric summary; the editorial verdict in
+  `TIER2_PHASE_D_BRIDGE_FINDINGS.md` + the tier2 log (TIER0_FINDINGS precedent).
+- **Carry pickup — already closed upstream.** The Phase-C follow-up #4 (config→module
+  threading test for `gate_onset_override_eV` / ν) was found to be **already delivered**
+  (`test_gate_onset_override_threads_to_evaporation` + `test_nu_prefactor_threads_to_evaporation`
+  in `tests/test_biphasic_step.py`, landed in the Slice-G re-review pass). Phase D adds no
+  duplicate; the follow-up is retired in the log.
+
 ---
 
 ## 1. Scope lock — what Phase D does and does not do
@@ -68,9 +105,10 @@ cheaply, with the actionable lever attached, before the costly experimental tier
 - extract the **emergent mean `n(t)`** (average of the v7 `n_shell` array over the run's
   ions), and reconstruct **`t×`** (first `E_int(t) < Σ(n)`) and **`Π(t) = λ(n)·f_ret·τ`**
   with two tiny helpers;
-- **compare** against the *loaded* targets — the anchored 21→19→14 staircase, the 9 Å
-  TDDFT loss curve, the GAH25 `t×` 5–6.5 ps prior, and the Π>1-during-dense-traversal
-  expectation — reusing `compare_distance` / `compare_velocity_magnitude` for `R(t)`/`|v(t)|`;
+- **compare** against the *fixed* targets — the anchored 21→19→14 staircase family
+  (schedule-evaluated, §2.1), the 9 Å TDDFT loss curve, the GAH25 `t×` prior + the §2.2
+  closed form, and the corrected freeze-side `Π` expectation (§2.2) — reusing
+  `compare_distance` / `compare_velocity_magnitude` for `R(t)`/`|v(t)|`;
 - confirm the **5-term invariant closes** (reuse `ion_ledger_closure`, now 5-term from
   Phase C);
 - emit a **written diagnostic report** with the actionable lever attached to any miss.
@@ -96,7 +134,7 @@ is read against.
 
 | Target | Value / source | Read against |
 |---|---|---|
-| anchored shell decline | **21 → 19 → 14** He over the 9 Å traversal (Tier-1a anchored `n(t)`, read from the delivered run artifact) | emergent mean `n(t)` |
+| anchored shell decline | **21 → 19 → 14** He over the 9 Å traversal — the deterministic anchored schedule family `build_shell_schedule(t★)`, **t★ ∈ {0.5, 5.0, 9.0} ps** overlaid as a band, **t★ = 5.0 primary** (numerically identical to the delivered run artifacts' `n_shell`, which are gitignored/machine-local) | emergent mean `n(t)` |
 | 9 Å TDDFT trace | `R(t)`, `|v(t)|` from `data/reference/9A_All_Data.csv` (the frozen reference) | `compare_distance` / `compare_velocity_magnitude` |
 | `t×` prior (GAH25 `t₀`) | **5.0–6.5 ps**, treated as a **±factor-2** prior (Na⁺ number; I⁺ is Rb⁺-like, so a factor-2 offset is unsurprising; a factor-10 miss is the genuine flag) | reconstructed `t×` |
 | budget | `E_avail^ion = 0.80 eV` (`d = 9 Å`, the budget the drag + shell refs were generated under) | scenario-stamped config |
@@ -111,14 +149,45 @@ reconstructed post-hoc from the v7 `E_int_eV (2N,T)` array + the Phase-A ladder 
 `Σ(n)` (Slice L). Zero schema cost. *Sanity band:* flag only if absurd (`t× < 1 ps` or
 `> 15 ps`).
 
+**Closed-form expected value (2026-07-02 refinement — the check is sharp, not editorial).**
+Before the gate opens there is *no stochasticity at all*: evaporation is suppressed
+(`E_int > Σ`), and pickup is dead because `n(0) = 21 = n*` zeroes the Langmuir cap. So
+`E_int` evolves under pure K2 Newton cooling, identically for every ion, and
+$$
+t_\times \;=\; \tau \,\ln\!\frac{f_\text{int}\,E_\text{avail}^\text{ion}}{\Sigma(21)}
+$$
+exactly (up to `dt` discreteness and the cooling-before-draw step ordering). At the pinned
+point (f_int = 0.5, τ = 6.5 ps, mixture Σ(21) ≈ 0.17–0.19 eV): **t× ≈ 4.8–5.6 ps ≈ 5.2 ps**
+— inside the GAH25 window by construction. Consequences: (a) the helper returns the
+**per-ion** first-crossing array, and in the bridge run all ions must agree — disagreement
+is a wiring flag, not physics; (b) the bridge smoke checks the reconstructed `t×` against
+this analytic value, a *sharp* oracle upgraded from the editorial band; (c) `f_int` and the
+GAH25 prior are **coupled choices** — the pinned point deliberately lands the prior.
+
 **Regime order parameter `Π` (MASS §6.11):**
 $$
 \Pi(n) \equiv \lambda(n)\,f_\text{ret}\,\tau\quad(\text{dimensionless}),\qquad
 \Pi>1\ \text{shedding persists},\ \Pi<1\ \text{freeze},
 $$
-with `λ(n)` the pickup rate (Phase B). The bridge checks the *qualitative* behaviour:
-`Π > 1` during the dense-droplet traversal, `Π → 0` at exit (`ρ_He → 0`, termination on
-every trajectory).
+with `λ(n)` the pickup rate (Phase B). **Corrected qualitative expectation (2026-07-02;
+supersedes the earlier "Π > 1 during dense traversal" wording, which belongs to the *strip*
+end of the regime axis and is wrong at this condition):** at the 9 Å / 0.80 eV priored
+central point the expected regime is the **freeze side** —
+- `Π = 0` at gate-open (`n = 21 = n*` → the Langmuir factor is 0);
+- `Π < 1` throughout (even at `n = 14` the occupancy factor is 1/3, giving
+  `Π ≈ 0.9 · ⅓ · 0.1 · 6.5 ≈ 0.2` at the pinned point — the 21→14 decline is driven by the
+  *initial `E_int` cascade* after gate-open, not by pickup-sustained quasi-steady shedding,
+  consistent with MASS §6.11's "self-binds early → retains a shell" gentle-9 Å regime);
+- `Π → 0` at exit (`ρ_He → 0`, termination on every trajectory).
+
+A *computed* `Π > 1` at this point would itself be a flag (it requires the upper corner of
+every band simultaneously: `f_ret ≳ 0.4`, `τ → 16.5`, `λ₀ → 1.1`). The `Π(t)` trace is
+reported either way — it remains the regime-axis diagnostic Phase E generalizes.
+
+*Reconstruction contract:* `λ(n)` needs `ρ_ratio(t)` at each ion's position; the helper
+**re-derives it** from the checkpoint positions + `droplet_radii_angstrom` + the cfg
+density-gate steepness (same profile the run used), then evaluates `lambda_attach`
+per ion. Reported as mean ± envelope over the ions.
 
 ### 2.3 Invariant (reused, Phase C)
 
@@ -132,41 +201,55 @@ is a **miswire**, surfaced *before* any kinematic interpretation.
 
 ### Slice Z — Bridge self-consistency check *(run + compare + report; composes only delivered modules)*
 
-**Modules.** A `scripts/` orchestration entry (mirroring `gen_tier1a_runs`) + two tiny
-reconstruction helpers placed in `postprocess/` where Phase-E Slice D2 will later generalize
-them (e.g. `postprocess/time_resolved.py` or a small `bridge_diagnostics` helper — final
-home settles at build). **No new physics module.**
+**Modules.** A `scripts/` orchestration entry (mirroring `gen_tier1a_runs`) + the two tiny
+reconstruction helpers in a **new `postprocess/bridge_diagnostics.py`** (settled 2026-07-02;
+Phase-E Slice D2 generalizes this module rather than re-implementing) + a report script under
+`scripts/post_processing/` emitting the overlay figures into the run dir and the numeric
+summary. **No new physics module.**
 
 **Purpose.** Demonstrate that the generative mechanism *can* reproduce the 9 Å kinematics at
 a single priored point — the de-risk gate before the experimental tier.
 
-**Interface (proposed).**
+**Interface (settled 2026-07-02).**
 - *Orchestration:* a script that builds the **9 Å / 0.80 eV `biphasic`** config (reuse the
   Tier-1a conditions + `tier1a_common` scaffolding; swap `mass_scenario="biphasic"`; set the
-  representative priored knobs), runs the Phase-C driver into a self-describing run dir.
-- *Reconstruction helpers:*
-  - `crossing_time_ps(E_int_eV, n_shell, *, picture, kappa) -> t×` (first `E_int < Σ(n)`,
-    consumes Slice L's `ladder_cumsum`);
-  - `regime_parameter(n, *, lambda0, rho_ratio, f_ret, tau, ...) -> Π(t)` (consumes the
-    Phase-B `lambda_attach`).
-- *Comparison + report:* mean `n(t) = mean(n_shell, over ions)`; `compare_distance` /
-  `compare_velocity_magnitude` for `R(t)`/`|v(t)|` vs the 9 Å CSV; `ion_ledger_closure` for
-  the invariant; assemble a written diagnostic (overlay numbers + the `t×`/`Π`/residual
-  summary + the actionable-lever note).
+  pinned priored knobs), runs the Phase-C driver into a self-describing run dir. Run
+  parameters inherit Tier-1a exactly: N = 50 molecules (100 ions — both CE fragments are
+  ions, so "mean over ions" = mean over all 2N rows), 30 ps, Tier-0 dt/seed/drag bundle,
+  `allow_inconsistent_mass_pairing=True`.
+- *Reconstruction helpers (`postprocess/bridge_diagnostics.py`):*
+  - `crossing_time_ps(E_int_eV, n_shell, time_ps, *, picture, kappa) -> per-ion t× array`
+    (first index with `E_int < Σ(n)`, consuming Slice L's `ladder_cumsum`; NaN where the gate
+    never opens in-window; all-ions-agree is a bridge wiring check, §2.2);
+  - `regime_parameter(ckpt, cfg) -> Π(t) per ion` — re-derives `ρ_ratio(t)` from positions +
+    `droplet_radii_angstrom` + the cfg density-gate steepness, then `lambda_attach(...)·f_ret·τ`
+    (§2.2 reconstruction contract); reported mean ± envelope.
+- *Comparison + report:* mean `n(t) = mean(n_shell, over the 2N ion rows)` overlaid on the
+  `build_shell_schedule(t★)` family (t★ ∈ {0.5, 5.0, 9.0}, t★ = 5.0 primary);
+  `compare_distance` / `compare_velocity_magnitude` for `R(t)`/`|v(t)|` vs the 9 Å CSV;
+  `ion_ledger_closure` for the invariant; assemble the written diagnostic (overlay numbers +
+  the `t×`/`Π`/residual summary + the actionable-lever note) into
+  `TIER2_PHASE_D_BRIDGE_FINDINGS.md` + the tier2 log entry.
 
 **Encoded form.** §2.2 (`t×`, `Π`); the run physics is the Phase-C driver.
 
-**Knobs (config §4):** consumes the full A/B/C surface at a **single representative priored
-point** — `coulomb_available_eV = 0.80` (scenario-stamped), `λ₀` central (~0.9/ps), `τ`
-mid-band, nominal `f_int` (above the 0.80 eV self-unbound floor 0.21–0.35) and small
-`f_ret`, default picture (`statistical_mixture`) + a representative `κ`. **No knob is
-fitted** — they are set to demonstrate existence.
+**Knobs (config §4):** consumes the full A/B/C surface at the **pinned representative
+priored point** (2026-07-02) — `coulomb_available_eV = 0.80` (scenario-stamped),
+**λ₀ = 0.9/ps** (central of 0.7–1.1), **τ = 6.5 ps** (geometric mid of [2.6, 16.5]),
+**f_int = 0.5** (well above the 0.21–0.24 mixture floor; chosen so the closed-form `t×`
+lands the GAH25 window, §2.2), **f_ret = 0.1** (prior small, nonzero to exercise S1),
+picture = **`statistical_mixture`**, **κ = 1.0** (config default / Slice-L oracle center);
+ν = 2.42/ps and s = 3n−3 are Sourced/Derived. **No knob is fitted** — the point is chosen,
+not calibrated, to demonstrate existence.
 
-**Oracle / acceptance values (reported, not auto-verdict).**
-- emergent mean `n(t)` overlaps the anchored 21→19→14 staircase within a **loose
+**Oracle / acceptance values (reported, not auto-verdict — except where marked sharp).**
+- emergent mean `n(t)` overlaps the anchored 21→19→14 staircase family within a **loose
   early-window tolerance** (a qualitative staircase overlay, not a tight metric);
-- `t× ∈ [1, 15] ps` and near the GAH25 5–6.5 ps prior (±factor-2);
-- `Π(t) > 1` during dense traversal, `→ 0` at exit;
+- `t×`: **sharp** — per-ion values all agree, and match the §2.2 closed form
+  `τ·ln(f_int·0.80/Σ(21)) ≈ 5.2 ps` (up to dt discreteness); also inside the [1, 15] ps
+  sanity band and the GAH25 5–6.5 ps prior (±factor-2) by construction of the pinned point;
+- `Π(t)`: **corrected expectation (§2.2)** — `Π = 0` at gate-open, `Π < 1` throughout
+  (freeze side, ≈ 0.2 max at the pinned point), `Π → 0` at exit; a computed `Π > 1` is a flag;
 - 5-term invariant closes to Verlet drift.
 - A **miss is framed with its lever:** mean `n(t)` decays too fast → λ₀ too low or
   evaporation too aggressive; `t×` too late → f_int too high or τ too long. The bridge
@@ -177,10 +260,18 @@ fitted** — they are set to demonstrate existence.
 Phases E/F.
 
 **Test spec (`tests/test_bridge_diagnostics.py` + a tiny driver smoke).**
-- `crossing_time_ps` on a synthetic `E_int(t)` ramp returns the exact first-crossing index;
-  raises/flag-NaNs if the gate never opens within the window.
-- `regime_parameter` reproduces `λ·f_ret·τ` on known inputs; `→ 0` as `ρ_ratio → 0`.
+- `crossing_time_ps` on a synthetic `E_int(t)` ramp returns the exact first-crossing index
+  per ion; flag-NaNs if the gate never opens within the window.
+- `crossing_time_ps` against the **§2.2 analytic oracle** on a tiny cooling-only synthetic
+  (pure Newton decay at fixed `n = 21`): the reconstructed `t×` matches
+  `τ·ln(E_int(0)/Σ(21))` to dt discreteness.
+- `regime_parameter` reproduces `λ·f_ret·τ` on known inputs; `→ 0` as `ρ_ratio → 0`; the
+  `ρ_ratio` re-derivation matches a direct `helium_density` call on hand-built positions.
 - mean-`n(t)` reduction matches a hand-average on a tiny synthetic `n_shell` array.
+- config→module threading (Phase-C follow-up #4): **already covered upstream** by
+  `test_gate_onset_override_threads_to_evaporation` / `test_nu_prefactor_threads_to_evaporation`
+  in `tests/test_biphasic_step.py` — do not duplicate; verify they pass in the pre-build
+  suite run.
 - a **few-step** generative smoke run closes the 5-term invariant (reuse the Phase-C gate);
   **no production-sized run, no figures** in pytest.
 
@@ -194,7 +285,9 @@ pass their unit tests; the smoke invariant closes. The kinematic "pass" is edito
 No new `SimConfig` fields. Phase D **selects values** on the existing A/B/C surface:
 - `mass_scenario = "biphasic"`; `coulomb_available_eV = 0.80` (scenario-stamped → trips the
   §6.5 pairing guard structurally → runs under `allow_inconsistent_mass_pairing=True`, R6);
-- the representative priored point (λ₀, τ, f_int, f_ret, κ, picture) — chosen, not fitted;
+- the pinned representative priored point (2026-07-02): λ₀ = 0.9/ps, τ = 6.5 ps,
+  f_int = 0.5, f_ret = 0.1, κ = 1.0, picture = `statistical_mixture` — chosen, not fitted
+  (rationale in §0/§3);
 - noise stays inert (Tier 3); the `s≥1` and pairing guards are the Phase-B/C ones, unchanged.
 
 The two reconstruction helpers read config (picture, κ, λ₀, f_ret, τ) but **add no field**.
@@ -206,12 +299,13 @@ The two reconstruction helpers read config (picture, κ, λ₀, f_ret, τ) but *
 ```
 (delivered) Phase C biphasic driver + 5-term invariant
         │
-        ├─ helper: crossing_time_ps(E_int, n_shell; L.ladder_cumsum)   ── unit-tested first
-        ├─ helper: regime_parameter(n; B.lambda_attach)
+        ├─ helper: crossing_time_ps(E_int, n_shell, t; L.ladder_cumsum) ── unit-tested first
+        ├─ helper: regime_parameter(ckpt, cfg; rho-ratio re-derivation + B.lambda_attach)
         │
         ▼
-Slice Z: 9A/0.80 eV biphasic run  ->  mean n(t) + t_x + Pi(t)
-         compare vs anchored staircase + 9A TDDFT (compare_*) + GAH25 t_x prior
+Slice Z: 9A/0.80 eV biphasic run  ->  mean n(t) + per-ion t_x + Pi(t)
+         compare vs anchored schedule family (t* in {0.5,5,9}, 5.0 primary)
+         + 9A TDDFT (compare_*) + closed-form t_x (sharp) + GAH25 prior
          -> written diagnostic report (reported, not gated)
 ```
 
@@ -245,9 +339,11 @@ narrowest first, then the full suite. Interpreter (Python may not be on PATH):
 **Slice Z (Phase D overall):**
 - the two reconstruction helpers pass their unit tests; the few-step driver smoke closes the
   5-term invariant;
-- a real bridge run at 9 Å / 0.80 eV produces the **written diagnostic report**: mean `n(t)`
-  overlay vs the anchored 21→19→14 staircase + 9 Å TDDFT, the reconstructed `t×` vs the
-  GAH25 prior, the `Π(t)` regime trace, and the invariant residual;
+- a real bridge run at 9 Å / 0.80 eV produces the **written diagnostic report**
+  (`TIER2_PHASE_D_BRIDGE_FINDINGS.md` + tier2 log entry): mean `n(t)` overlay vs the
+  anchored staircase family (t★ ∈ {0.5, 5.0, 9.0}, t★ = 5.0 primary) + 9 Å TDDFT, the
+  reconstructed per-ion `t×` vs the §2.2 closed form and the GAH25 prior, the `Π(t)` regime
+  trace (corrected freeze-side expectation), and the invariant residual;
 - the report carries the **actionable-lever** framing for any miss.
 - The kinematic "pass" is **editorial, not a pytest gate** (mirrors the Tier-1a reporting
   stance). A miss is a *flag* that localizes a mechanism/parameter bug before Phase E/F.
@@ -279,3 +375,13 @@ artifact.
   diagnostic. Keep them small and reusable so D2 extends rather than re-implements.
 - **Mechanism locked, values open** — the bridge *selects* priored values to demonstrate
   existence; it fits nothing. Calibration is Phase F.
+- **`f_int = 0.5` is a demonstration choice, not a finding.** It is picked so the closed-form
+  `t×` lands the GAH25 prior — and it sits *inside* the derived 0.80 eV window: above the
+  mixture floor 0.21–0.24, below the MASS A7 **scenario-invariant velocity-consistency
+  ceiling ~0.6** (`E_trans/E_avail ≈ 40%` at both budgets). The older "soft upper ~0.2"
+  advisory (CALIBRATION_MAP row 14 wording) is vacuous at 0.80 eV — the floor sits above
+  it (the known A7 margin compression); the ~0.6 ceiling is the operative upper edge,
+  provisional pending OQ2. Phase F owns the real value.
+- **The freeze-side Π expectation is condition-specific.** At 2.70 eV production (Phase E/F)
+  the regime question re-opens; do not carry "Π < 1" forward as a general oracle — it is the
+  9 Å / 0.80 eV priored-central-point expectation only.
