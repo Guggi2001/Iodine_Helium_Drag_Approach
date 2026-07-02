@@ -27,7 +27,7 @@ import numpy as np
 from scipy.special import erf
 
 
-def _erf_complement(depth, steepness: float) -> np.ndarray:
+def _erf_complement(depth, steepness: float) -> float | np.ndarray:
     """Erf-complement gate ``0.5 * (1 - erf(depth/steepness))`` in ``[0, 1]``.
 
     1 deep inside (``depth << 0``), 0.5 at the nominal surface (``depth = 0``),
@@ -44,9 +44,11 @@ def _erf_complement(depth, steepness: float) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray
-        Dimensionless gate factor in ``[0, 1]`` (0-d for scalar ``depth``,
-        matching the historical ``spatial_gate`` return exactly).
+    float or np.ndarray
+        Dimensionless gate factor in ``[0, 1]``. For scalar ``depth`` the erf
+        ufunc collapses the 0-d array to a ``np.float64`` scalar -- matching the
+        historical ``spatial_gate`` return exactly (doc fix 2026-07-02; behaviour
+        unchanged).
 
     Raises
     ------

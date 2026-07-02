@@ -593,8 +593,11 @@ def check_evaporation_config(cfg: "SimConfig") -> None:
        effective-scalar override of the per-``n`` mode count; ``None`` is the production
        path (no check). When set it must satisfy ``s >= 1`` -- ``s < 1`` makes the RRK
        bracket exponent ``s - 1 < 0`` diverge the rate as ``E_int -> D_0`` (the
-       divergent-rate regime). The nu prefactor and the parameter-free ``Sigma(n)`` gate
-       carry no bound here (nu is Sourced/pinned, the gate is Derived).
+       divergent-rate regime). The nu *value* prior and the parameter-free ``Sigma(n)``
+       gate carry no bound here (nu is Sourced/pinned, the gate is Derived); the nu
+       *sign* guard lives in :func:`check_biphasic_config` plus the
+       ``physics.evaporation.rrk_rate`` module defense (Phase-B post-review fix
+       2026-07-02).
 
     2. **Gate-onset override provenance refuse.** ``cfg.gate_onset_override_eV`` forces a
        fixed self-bound threshold in place of the parameter-free ``Sigma(n)``. It is a
@@ -736,13 +739,16 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
        evolves ``E_int`` or re-applies the E_pot binding fold and the seeded
        column-0 physics corrupts the ledger. Refused here (earliest) and again at
        the driver (``ion._check_scope_ion_driver``) for non-validated configs.
-    3. **Non-negative pickup rate (fail-loud; Slice-G review fix).** A negative
-       ``pickup_rate_coefficient`` (lambda_0) gives ``P_attach < 0``, so the
-       channel silently never fires (draws live in ``[0, 1)``) -- unphysical and
-       indistinguishable from "pickup on" without this refusal. The Slice-P
-       decision that lambda_0 carries no load-time bound covers the *value prior*
-       (pinned at Phase F), not the sign; ``physics.pickup.lambda_attach`` carries
-       the mirroring module-level defense.
+    3. **Non-negative channel rates (fail-loud; Slice-G review fix + Phase-B
+       post-review fix 2026-07-02).** A negative ``pickup_rate_coefficient``
+       (lambda_0) gives ``P_attach < 0`` and a negative
+       ``evap_rate_prefactor_per_ps`` (nu) gives ``P_shed < 0``, so the channel
+       silently never fires (draws live in ``[0, 1)``) -- unphysical and
+       indistinguishable from "channel on" without this refusal. The Slice-P/Q
+       decisions that lambda_0 / nu carry no load-time bound cover the *value
+       priors* (lambda_0 pinned at Phase F, nu Sourced 2.42), not the sign;
+       ``physics.pickup.lambda_attach`` and ``physics.evaporation.rrk_rate`` carry
+       the mirroring module-level defenses.
     4. **Pickup-inert warning (advisory, not a refuse).** ``pickup_rate_coefficient
        == 0.0`` (the default) -> the Poisson pickup channel is structurally inert
        (``P_attach = 0``). That is a *legitimate* biphasic run -- the
@@ -756,7 +762,8 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
     ValueError
         When ``mass_scenario == "biphasic"`` and ``internal_energy_partition_
         fraction`` or ``internal_energy_retained_fraction`` is ``None``, or
-        ``drag_coefficients`` is ``None``, or ``pickup_rate_coefficient < 0``.
+        ``drag_coefficients`` is ``None``, or ``pickup_rate_coefficient < 0``, or
+        ``evap_rate_prefactor_per_ps < 0``.
     """
     if cfg.mass_scenario != "biphasic":
         return
@@ -789,6 +796,14 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
             "pickup_rate_coefficient (lambda_0) must be >= 0: a negative rate "
             "gives P_attach = 1 - exp(+|lambda_0|*dt) < 0, so the pickup channel "
             f"silently never fires; got {cfg.pickup_rate_coefficient!r}."
+        )
+
+    if cfg.evap_rate_prefactor_per_ps < 0.0:
+        raise ValueError(
+            "evap_rate_prefactor_per_ps (nu) must be >= 0: a negative RRK "
+            "prefactor gives k < 0 -> P_shed < 0, so the evaporation channel "
+            "silently never fires (the lambda_0 sign class; Phase-B post-review "
+            f"fix 2026-07-02); got {cfg.evap_rate_prefactor_per_ps!r}."
         )
 
     if cfg.pickup_rate_coefficient == 0.0:

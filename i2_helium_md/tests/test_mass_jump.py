@@ -393,6 +393,24 @@ class TestCapture:
                 np.array([-1.0]),
             )
 
+    def test_reduced_mass_defect_coeff_is_unsigned_magnitude(self):
+        """Direct golden lock on the shared coefficient (post-review, 2026-07-02).
+
+        The plan's test spec names this explicitly: the refactored
+        ``_reduced_mass_defect_coeff`` returns the *unsigned* magnitude
+        ``0.5*(m*m_He)/m_plus`` (signs live at the call sites). Bit-exact against the
+        literal expression in the implementation's operation order, for both the shed
+        (m_plus = m - m_He) and capture (m_plus = m + m_He) directions.
+        """
+        from i2_helium_md.physics.mass_jump import _reduced_mass_defect_coeff
+
+        m, m_he = 202.953908, MASS_HE_AMU
+        c_shed = _reduced_mass_defect_coeff(m, m - m_he, m_he)
+        assert c_shed == 0.5 * (m * m_he) / (m - m_he)          # bit-exact, > 0
+        c_cap = _reduced_mass_defect_coeff(m, m + m_he, m_he)
+        assert c_cap == 0.5 * (m * m_he) / (m + m_he)           # bit-exact, > 0
+        assert c_shed > 0.0 and c_cap > 0.0
+
     def test_round_trip_capture_then_cold_shed_restores_mass(self):
         """capture (+m_He) then cold_shed (-m_He) returns the original complex mass."""
         m = M_EFF_AMU

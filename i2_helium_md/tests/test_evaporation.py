@@ -75,7 +75,6 @@ class _ArrayRNG:
         return self.values.reshape(size)
 
 
-_ALWAYS = _ConstRNG(0.0)                 # draw 0 < any P>0 -> fire
 _NEVER = _ConstRNG(0.9999999999)         # draw ~1, P<1 -> no fire
 
 
@@ -118,6 +117,21 @@ class TestEffectiveDof:
     def test_raises_on_array_with_bad_element(self):
         with pytest.raises(ValueError, match="n >= 2"):
             effective_dof(np.array([2, 1, 3]))
+
+    def test_fractional_n_rejected_scalar(self):
+        # Post-review fix (2026-07-02): a fractional n silently truncated the scalar
+        # path (int(4.5) = 4) while the array path kept 4.5 -- now both fail loud,
+        # mirroring the ladder_cumsum integer-occupancy contract.
+        with pytest.raises(ValueError, match="integer occupancy"):
+            effective_dof(2.5)
+
+    def test_fractional_n_rejected_array(self):
+        with pytest.raises(ValueError, match="integer occupancy"):
+            effective_dof(np.array([2.5, 3.0]))
+
+    def test_integer_valued_float_accepted(self):
+        # Integer-valued floats cast cleanly (the ladder_cumsum contract).
+        assert effective_dof(3.0) == 6
 
 
 # ---------------------------------------------------------------------------
@@ -348,7 +362,7 @@ def _step_components(rng, E, n, vx, vy, vz, m, **kw):
 
 class TestEvaporationStepComponents:
     def _ensemble(self):
-        n = np.array([10, 10, 8])                        # third is self-unbound-eligible
+        n = np.array([10, 10, 8])                        # three in-band ions (n=10,10,8)
         E = np.array([
             0.5 * (_d0(10) + _sigma(10)),                # in band
             0.5 * (_d0(10) + _sigma(10)),                # in band
@@ -618,6 +632,42 @@ class TestReviewExtensions:
         assert res.dE_int_eV < 0.0
         assert res.dE_mass_transfer < 0.0
         assert res.dE_int_eV != res.dE_mass_transfer      # eV vs amu*A^2/ps^2 -- not the same
+
+    def test_negative_nu_rejected(self):
+        # Post-review fix (2026-07-02, Phase-B review): nu < 0 gives k < 0 ->
+        # P_shed < 0, so evaporation silently never fires (draws live in [0, 1)) --
+        # the same silent-shut-off class as the pickup lambda0 < 0 guard. Module-level
+        # defense mirroring the config-load check (config.check_biphasic_config).
+        with pytest.raises(ValueError, match="nu must be >= 0"):
+            rrk_rate(0.05, 10, nu=-1.0, picture=PIC, kappa=KAPPA)
+
+    def test_negative_nu_rejected_through_step(self):
+        with pytest.raises(ValueError, match="nu must be >= 0"):
+            evaporation_step(
+                rng=_ConstRNG(0.0), E_int_eV=0.05, n=10, v=V, m_amu=M,
+                nu=-1.0, picture=PIC, kappa=KAPPA, dt_ps=0.01,
+            )
+
+    def test_negative_n_fails_loud_with_gate_override(self):
+        # Post-review fix (2026-07-02): the gate_onset_eV override used to bypass the
+        # ladder_cumsum n-validation entirely (silent k = 0 for n = -1); both threshold
+        # sources now validate n identically.
+        with pytest.raises(ValueError, match="n >= 0"):
+            rrk_rate(0.05, -1, nu=NU_EVAP_PER_PS, picture=PIC, kappa=KAPPA,
+                     gate_onset_eV=1.0)
+
+    def test_fractional_n_fails_loud_with_gate_override(self):
+        with pytest.raises(ValueError, match="integer occupancy"):
+            rrk_rate(0.05, 2.5, nu=NU_EVAP_PER_PS, picture=PIC, kappa=KAPPA,
+                     gate_onset_eV=1.0)
+
+    def test_gate_diagnostics_validate_n_with_override(self):
+        # The bypass also covered is_self_bound / gate_margin_eV (they share
+        # _gate_threshold_eV); locked here for all three entry points.
+        with pytest.raises(ValueError, match="n >= 0"):
+            is_self_bound(0.05, -1, picture=PIC, kappa=KAPPA, gate_onset_eV=1.0)
+        with pytest.raises(ValueError, match="integer occupancy"):
+            gate_margin_eV(0.05, 2.5, picture=PIC, kappa=KAPPA, gate_onset_eV=1.0)
 
     def test_cold_shed_components_scalar_and_uniform_array_agree(self):
         # Lock the mass_jump generalization: the byte-identical scalar-mass path and the

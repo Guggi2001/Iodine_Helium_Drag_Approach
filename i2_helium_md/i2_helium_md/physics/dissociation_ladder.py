@@ -30,10 +30,11 @@ Electronic picture (the Tier-2 co-fit knob, OQ1 carry-both)
 
 * ``statistical_mixture`` (default) -- 74.4 cm^-1, the SO-statistical (X2+I1+I0)/3;
 * ``x2_only``                       -- 106.9 cm^-1, the X2 exact J=0 ZPE;
-* ``cooling_relaxed``               -- a **provisional** average of the two, a
-  rule-2 declared-but-unread stub whose concrete relaxation-weighted blend is
-  pinned at Phase F. Only the ordering mix < cooling_relaxed < X2 is asserted in
-  Phase A; do not read its value as a 4-figure oracle.
+* ``cooling_relaxed``               -- live but **provisional**: the arithmetic
+  mean of the two pinned rungs. The rule-2 carry is the concrete
+  relaxation-weighted blend *value* (pinned at Phase F), not the enum arm --
+  the arm is read. Only the ordering mix < cooling_relaxed < X2 is asserted;
+  do not read its value as a 4-figure oracle.
 
 Units follow the package convention: energies in eV (``*_eV``); ``n`` and
 ``kappa`` are dimensionless (``kappa`` is per-unit-``n``). Vectorised scalar-in
@@ -135,6 +136,24 @@ def d0_of_n(n, *, picture: str = "statistical_mixture", kappa: float):
     return float(out) if np.ndim(n) == 0 else out
 
 
+def _as_integer_occupancy(n, *, context: str) -> np.ndarray:
+    """Coerce occupancy ``n`` to an integer ndarray (fail-loud on fractional).
+
+    A cumulative/indexed ladder lookup is defined over integer occupancy only:
+    integer-valued floats are accepted and cast; a genuinely fractional ``n``
+    raises a loud ``ValueError`` (a bare integer-indexed table lookup would die
+    with numpy's cryptic ``IndexError`` instead). Shared by the Form-U
+    :func:`ladder_cumsum` and both :class:`TabulatedLadder` lookups so the
+    fail-loud contract stays single-source.
+    """
+    n_arr = np.asarray(n)
+    if not np.issubdtype(n_arr.dtype, np.integer):
+        if np.any(n_arr != np.floor(n_arr)):
+            raise ValueError(f"{context} requires integer occupancy n; got {n!r}")
+        n_arr = n_arr.astype(int)
+    return n_arr
+
+
 @lru_cache(maxsize=64)
 def _sigma_prefix_table(picture: str, kappa: float, n_top: int) -> np.ndarray:
     """Cached ``Sigma`` prefix table ``cum[k] = Sigma(k)`` for ``k in [0, n_top]``.
@@ -147,6 +166,12 @@ def _sigma_prefix_table(picture: str, kappa: float, n_top: int) -> np.ndarray:
     times per step for a ``(picture, kappa)`` pair fixed over the whole run
     (~1e5 steps); the whole output space is a ~22-entry table. Read-only (the
     cached array is shared across callers).
+
+    Cache-coherence hazard: the key is ``(picture, kappa, n_top)`` only, but the
+    table is built through this module's global ``d0_of_n`` / ``_FIRST_RUNG_EV``.
+    Monkeypatching either *in this module's namespace* after a table is cached
+    serves stale values -- patch the consumer module's namespace instead (as the
+    suites do), or call ``_sigma_prefix_table.cache_clear()``.
     """
     rungs = np.atleast_1d(
         d0_of_n(np.arange(1, n_top + 1), picture=picture, kappa=kappa)
@@ -173,15 +198,7 @@ def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float):
     n_arr = np.asarray(n)
     if np.any(n_arr < 0):
         raise ValueError(f"ladder_cumsum requires n >= 0; got {n!r}")
-    if not np.issubdtype(n_arr.dtype, np.integer):
-        # Sigma(n) is a cumulative sum over integer occupancy; a genuinely
-        # fractional n is rejected loudly (a bare cum[float] would raise a
-        # cryptic IndexError). Integer-valued floats are accepted and cast.
-        if np.any(n_arr != np.floor(n_arr)):
-            raise ValueError(
-                f"ladder_cumsum requires integer occupancy n; got {n!r}"
-            )
-        n_arr = n_arr.astype(int)
+    n_arr = _as_integer_occupancy(n, context="ladder_cumsum")
     n_max = int(n_arr.max(initial=0))
     # cum[k] = Sigma(k): prepend 0 so cum[0] == 0, then index by n. The table is
     # padded to a fixed height so the hot path reuses one cache entry.
@@ -207,8 +224,12 @@ class TabulatedLadder:
     rungs_eV: tuple[float, ...]
 
     def d0_of_n(self, n):
-        """``D_0(n)`` [eV] by table lookup (1-indexed). Raises on out-of-range n."""
-        n_arr = np.asarray(n)
+        """``D_0(n)`` [eV] by table lookup (1-indexed).
+
+        Raises on out-of-range or fractional ``n`` (integer-valued floats are
+        accepted and cast -- the :func:`ladder_cumsum` contract).
+        """
+        n_arr = _as_integer_occupancy(n, context="TabulatedLadder.d0_of_n")
         if np.any(n_arr < 1) or np.any(n_arr > len(self.rungs_eV)):
             raise ValueError(
                 f"n must be in [1, {len(self.rungs_eV)}] for this tabulated "
@@ -219,8 +240,12 @@ class TabulatedLadder:
         return float(out) if np.ndim(n) == 0 else out
 
     def ladder_cumsum(self, n):
-        """``Sigma(n)`` [eV] by cumulative table lookup; ``Sigma(0) = 0``."""
-        n_arr = np.asarray(n)
+        """``Sigma(n)`` [eV] by cumulative table lookup; ``Sigma(0) = 0``.
+
+        Raises on out-of-range or fractional ``n`` (integer-valued floats are
+        accepted and cast -- the :func:`ladder_cumsum` contract).
+        """
+        n_arr = _as_integer_occupancy(n, context="TabulatedLadder.ladder_cumsum")
         if np.any(n_arr < 0) or np.any(n_arr > len(self.rungs_eV)):
             raise ValueError(
                 f"n must be in [0, {len(self.rungs_eV)}] for this tabulated "

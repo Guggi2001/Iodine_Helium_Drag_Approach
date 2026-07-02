@@ -559,7 +559,10 @@ def biphasic_step(
         If ``state.n_shell`` is ``None`` (biphasic requires genuine occupancy state).
     NotImplementedError
         If ``cfg.helium_density_profile`` selects the declared-but-unbuilt
-        ``'tabulated'`` arm (lazy point-of-use refusal; rule-2 contract).
+        ``'tabulated'`` arm, or ``cfg.dissociation_ladder`` selects the
+        ``'tabulated'`` fallback (the biphasic energetics compose the Form-U
+        module functions directly; a :class:`TabulatedLadder` has no config
+        data path). Both are lazy point-of-use refusals (rule-2 contract).
     AssertionError
         If the post-step ``m == m_I+ + n*m_He`` consistency drifts beyond
         :data:`_M_N_CONSISTENCY_TOL_AMU` (the deferred Phase-B Q3 guard).
@@ -568,6 +571,20 @@ def biphasic_step(
         raise ValueError(
             "biphasic_step requires genuine n_shell state on the IonStepState "
             "(got None); the biphasic driver reads it from the v7 checkpoint column."
+        )
+
+    # Ladder-form refusal at point-of-use: every energetics call below (K2
+    # cooling, evaporation gate/drain, pickup heat/bath) composes the Form-U
+    # module functions; the 'tabulated' fallback is a module-level
+    # TabulatedLadder object with no config data path, so selecting it would
+    # otherwise silently run the Form-U ladder -- the same lazy rule-2 contract
+    # as helium_density_profile='tabulated' below.
+    if cfg.dissociation_ladder != "form_u":
+        raise NotImplementedError(
+            f"dissociation_ladder={cfg.dissociation_ladder!r} is not wired into "
+            "the biphasic driver; only the 'form_u' ladder is composed "
+            "(physics/dissociation_ladder.py -- the TabulatedLadder fallback "
+            "has no config data path yet)."
         )
 
     dt = cfg.dt_ion

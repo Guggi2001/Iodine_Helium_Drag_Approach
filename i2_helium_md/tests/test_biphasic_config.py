@@ -115,6 +115,25 @@ class TestNegativeLambda0Rejected:
             check_biphasic_config(_biphasic_cfg(pickup_rate_coefficient=-0.5))
 
 
+class TestNegativeNuRejected:
+    """Post-review fix (2026-07-02, Phase-B review): nu < 0 gives k < 0 -> P_shed < 0,
+    so the evaporation channel silently never fires -- the same silent-shut-off class
+    as the lambda_0 sign guard above. The Slice-Q decision that nu carries no load-time
+    bound covers the *value* (Sourced/pinned 2.42), not the sign;
+    ``physics.evaporation.rrk_rate`` carries the mirroring module-level defense."""
+
+    def test_negative_nu_rejected(self):
+        with pytest.raises(ValueError, match="evap_rate_prefactor_per_ps"):
+            check_biphasic_config(_biphasic_cfg(evap_rate_prefactor_per_ps=-2.42))
+
+    def test_negative_nu_rejected_through_validate(self):
+        with pytest.raises(ValueError, match="evap_rate_prefactor_per_ps"):
+            _biphasic_cfg(evap_rate_prefactor_per_ps=-2.42).validate()
+
+    def test_default_nu_passes(self):
+        check_biphasic_config(_biphasic_cfg())  # NU_EVAP_PER_PS = 2.42 default
+
+
 class TestPickupInertWarns:
     def test_lambda0_zero_warns_not_raises(self):
         cfg = _biphasic_cfg(pickup_rate_coefficient=0.0)

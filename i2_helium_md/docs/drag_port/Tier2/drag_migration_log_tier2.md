@@ -1812,3 +1812,237 @@ pairing RuntimeWarning now that the shared biphasic test cfg carries a real cons
 bundle under `allow_inconsistent_mass_pairing=True`). Not addressed (recorded, low priority):
 the E_pot-fold ownership stays in the driver per the as-built decision above; the per-step
 `m↔n` allclose assert stays (safety net beats its ~µs cost).
+
+---
+
+## Phase A — post-delivery external review pass (2026-07-02)
+
+An extensive post-delivery code review of the full Phase-A surface (the L/K/U
+modules, the `constants.py` anchors, the config fields + three guards + derived
+property, and the six suites), followed by fixes under the
+`[PROCEED TO IMPLEMENTATION]` trigger. Independent numerical re-verification of
+**all 32 plan §2/§4 golden oracles on a fresh interpreter** (first rungs +
+ordering + floor + cliff geometry; Σ(21) bands + ~10% κ-spread decoupling;
+|S(n*)| pinning + |S|/n*; E_∞ monotonicity + OQ6 zero; E_elec ≤ 0 incl. κ=100;
+split closure; Newton exact factor + dt-robustness + fixed point; cold-shed
+pair+E_int neutrality; S2/S1/K1 identities; reconstruction + pre-t× refusal;
+f_int floors at both budgets × pictures) passed **32/32 — no physics bug**.
+Scope guards verified: no RNG / integrator / mass / velocity / `γ` in Phase A;
+import graph is exactly the L→K→U DAG. Four minor findings, behavioral ones
+fixed test-first (watched RED → GREEN):
+
+1. **`dissociation_ladder="tabulated"` was accepted but silently ignored.**
+   `check_ladder_config` validates the enum, but `biphasic_step` composes the
+   Form-U module functions directly and never read the selector — a `tabulated`
+   config validated cleanly and silently ran Form U (principle-4 violation; the
+   gap opened at Slice G, which gave the twin `helium_density_profile=
+   'tabulated'` arm a lazy refusal but not this one). **Fixed:** `biphasic_step`
+   now refuses `dissociation_ladder != 'form_u'` with `NotImplementedError` at
+   point-of-use (same rule-2 lazy-refusal contract; the `TabulatedLadder`
+   fallback has no config data path yet), + a `TestDriverGuards` regression.
+2. **`TabulatedLadder` missed the fractional-n hardening its Form-U twin got**
+   at the Slice-L review: `d0_of_n(2.5)` / `ladder_cumsum(2.5)` died with
+   numpy's cryptic integer-index `IndexError`. **Fixed:** extracted the shared
+   `_as_integer_occupancy` helper (rule 1 single source; the Form-U
+   `ladder_cumsum` inline block now routes through it — message and behavior
+   unchanged, bit-identity cache regression still green) and applied it to both
+   tabulated lookups: fractional `n` raises loudly, integer-valued floats are
+   accepted and cast (the `ladder_cumsum` contract). +2 tests (reject/accept).
+3. **Cache-coherence hazard documented** (note only, no code change):
+   `_sigma_prefix_table` (the Slice-G hot-path lru_cache) is keyed by
+   `(picture, kappa, n_top)` but builds through the module-global `d0_of_n` /
+   `_FIRST_RUNG_EV`, so monkeypatching those *in the ladder's own namespace*
+   after a table is cached would serve stale values. Current suites are
+   hygienic (stubs patch consumer namespaces only; the `"broken"`-picture test
+   never calls `ladder_cumsum`); the hazard + the `cache_clear()` escape hatch
+   are now stated in the cache docstring.
+4. **`cooling_relaxed` docstring drift fixed:** the module docstring and the
+   `constants.py` comment still called the arm "a rule-2 declared-but-unread
+   stub"; per the Slice-L ExitPlanMode resolution (b) the *arm* is live
+   (provisional arithmetic mean, read by the ordering oracle) and the rule-2
+   carry is the concrete blend *value* (pinned at Phase F). Wording aligned in
+   both places; no behavior change.
+
+**Deliberate non-fixes (recorded, below the bar):** a NaN `dt_ps` slips past
+`newton_cool_step`'s `dt < 0` guard and propagates NaN (a NaN `tau_ps` is
+caught); each distinct `n > _SIGMA_TABLE_N_TOP` builds its own prefix-table
+cache entry (`maxsize=64` bounds it; no correctness impact); boolean `n` is
+accepted as occupancy 0/1 by the integer coercion.
+
+**Files.** Production: `physics/dissociation_ladder.py` (shared
+`_as_integer_occupancy` + tabulated guards + cooling_relaxed / cache-hazard
+docstrings), `simulation/ion_propagation_step.py` (ladder-form point-of-use
+refusal + Raises doc), `physics/constants.py` (cooling_relaxed comment).
+Tests: `test_dissociation_ladder.py` (+2), `test_biphasic_step.py` (+1).
+
+**Tests:** new tests watched RED for the diagnosed reasons (cryptic
+`IndexError`; `DID NOT RAISE`) then GREEN; Phase-A suites + biphasic/
+evaporation consumers 707 green; full suite **1793 passed, 0 failed**
+(1790 → +3), 26 warnings (all pre-existing: §6.5 mass-pairing RuntimeWarnings
++ the v6→v7 `E_int` migration UserWarning).
+
+## Phase B — post-delivery external review pass (2026-07-02)
+
+An extensive post-delivery code review of the full Phase-B surface
+(`b3187d5..ef1b2d0`: Slices ρ/P/Q + the config/constants/cross-cutting layer) by
+four parallel review subagents, followed by fixes under the
+`[PROCEED TO IMPLEMENTATION]` trigger. **Verdict: zero Critical findings; every
+high-risk item independently verified correct** — the self-bound gate direction
+(boundary-consistent across `is_self_bound`/`gate_margin_eV`/`rrk_rate`, the item
+the plan itself once had inverted), the `_reduced_mass_defect_coeff` sign refactor
+(**bit-exact** `cold_shed` regression over 2000 random cases vs the base commit),
+the `spatial_gate` rewire (verbatim body move, scalar return type unchanged), the
+S1/K1 pre-event-`n` off-by-one hotspots, the pickup/evaporation RNG contract
+(empirically: M scalar calls ≡ one components call incl. post-call generator
+state), the §8 out-of-scope leak guard, and the atomic `pickup_*` rename. Full
+suite at ef1b2d0: 1726 passed + 9 env-dependent skips.
+
+**Timing note / already-fixed findings.** The review ran against the Phase-B
+commit range *after* Phase C (Slices X + G) had landed on the branch, so two
+findings were already fixed by Slice G before this pass: the `lambda_0 < 0`
+config-load + point-of-use guards ("Slice-G review fix"), and the
+`helium_density_profile='tabulated'` point-of-use refusal in the driver.
+
+### Fixes applied (test-first; watched RED `DID NOT RAISE` → GREEN)
+
+1. **ν sign guard (the λ₀ class, both layers).** A negative
+   `evap_rate_prefactor_per_ps` gave `k < 0 → P_shed < 0`: the evaporation
+   channel *silently never fires* (draws live in `[0, 1)`). Added the
+   config-load refuse to `check_biphasic_config` (now "non-negative channel
+   rates": λ₀ **and** ν) + the mirroring module defense in
+   `evaporation.rrk_rate`. The Slice-Q "ν carries no load-time bound" decision
+   covered the *value* prior (Sourced 2.42), not the sign;
+   `check_evaporation_config`'s docstring now says where the sign guard lives.
+2. **`rho_ratio < 0` point-of-use guard in `pickup.lambda_attach`** — same
+   silent-shut-off class; defense-in-depth (helium_density's two arms are
+   `[0, 1]` by contract and cannot produce one).
+3. **Pickup scalar↔components RNG-consumption parity lock with a *real*
+   generator** (`TestRNGConsumptionParity`): M scalar `pickup_step` calls must
+   equal one `pickup_step_components` call — outputs, fires (incl. a suppressed
+   full-shell ion that still consumes its draw), **and the post-call PCG64
+   stream state** (next-uniform bitwise equal). The stub-based
+   `TestComponentsMatchScalar` checks outputs but sidesteps consumption; a
+   refactor skipping the draw at `P == 0` (the original plan wording!) would
+   have broken the Slice-X-frozen contract with all tests green. Evaporation
+   already had this lock; pickup did not.
+4. **`TabulatedDensityProfile` finiteness guard.** NaN passed the `[0, 1]` check
+   vacuously (fails both comparisons) → `ratio()` returned NaN silently; ±inf
+   depth nodes degenerate `np.interp` (probed: `ratio(-5) = 0.5` where ≈1 is
+   right); a single-node `(nan,)` grid passed everything. `__post_init__` now
+   refuses non-finite nodes (+3 reject tests). Realistic failure mode: one NaN
+   row in the future sourced TDDFT CSV.
+5. **Gate-override n-validation bypass closed.** With `gate_onset_eV` set,
+   `_gate_threshold_eV` never called `ladder_cumsum`, so its `n >= 0` /
+   integer-occupancy rejection was skipped (`rrk_rate(E, -1, gate_onset_eV=…)`
+   silently returned 0.0 while the no-override path raises). Both threshold
+   sources now validate `n` identically (covers `rrk_rate`, `is_self_bound`,
+   `gate_margin_eV`). Reuses the Phase-A-review `_as_integer_occupancy` single
+   source.
+6. **`effective_dof` fractional-n rejection.** `effective_dof(2.5)` silently
+   truncated on the scalar path (`int(4.5) = 4`) while the array path kept 4.5;
+   now both raise via `_as_integer_occupancy` (integer-valued floats still cast).
+7. **Direct golden lock on `_reduced_mass_defect_coeff`** (named in the plan's
+   test spec but only indirectly covered): bit-exact against the literal
+   `0.5*(m*m_He)/m_plus` in the implementation's operation order, both
+   directions (shed `m−m_He`, capture `m+m_He`).
+8. **`p = 0` Langmuir characterization locked + documented**: `0**0 == 1`, so
+   the cap is structurally inert at `n ≥ n*` (≡ `cap="none"` under a langmuir
+   label). Deliberately *allowed* (only `p < 0` is rejected); docstring +
+   characterization tests make any future tightening a conscious choice.
+9. **Golden value pin on `_erf_complement`**: the parity suites are routing
+   locks (equality by construction); one new test pins the helper bitwise to
+   the literal inline `0.5*(1−erf(depth/14.2))` so a numerically-different
+   rewrite (e.g. `0.5*erfc`) cannot slip through green.
+10. **Test hygiene:** `test_pickup` disjoint-halves tolerance tightened from
+    0.02 (~17σ, nearly vacuous) to a sample-size-justified 5σ band on the
+    difference of two Bernoulli means; dead `_ALWAYS` fixture removed from
+    `test_evaporation`; stale `_ensemble` comment ("third is
+    self-unbound-eligible" — all three are in-band) fixed.
+11. **Docstring corrections:** the `k ∈ [0, ν)` overclaim qualified in
+    `evaporation.py` (module + `rrk_rate`: strictly `< ν` only for `s > 1`;
+    `= ν` at `n = 1` and under an `s = 1` override — asserted by the existing
+    s=1 test); `_gates._erf_complement` / `rho_he_ratio` scalar-return
+    annotations honest (`float | np.ndarray`; the erf ufunc collapses 0-d to
+    `np.float64` — behaviour unchanged); `capture`/`capture_velocity_components`
+    now flag that a scalar `u_he` means the He *vector* `(u, u, u)` and that the
+    Tier-3 `thermal` arm needs per-ion velocity *components*, not a scalar speed.
+12. **CLAUDE.md rule-2 pointer fixed:** it referenced a "rule-2 exception table
+    in `drag_migration_log_tier0.md`" that does not exist; the carries are prose
+    entries in the **active phase's** log (this file). The pointer now says so
+    and states the nomenclature convention the review flagged as three-way
+    inconsistent: a field whose only reader is a config-load *guard* is still a
+    carry — **"guard-live" ≠ "physics-live"** (applies to `he_capture_velocity`,
+    `gate_onset_override_eV`, `evap_rrk_dof`).
+
+### Record corrections (review findings on this log itself)
+
+- **Suite-count convention:** the Slice-Q record's "full suite 1735 passed, 0
+  failed" conflates environment-dependent skips — a fresh checkout gives
+  **1726 passed + 9 skipped (= 1735 collected)**; the 9 skips need
+  experimental-run / VMI reference data. Counts below follow "N passed (+M
+  env-dependent skips)".
+- **Old run directories now fail loudly at load (intentional, previously
+  unrecorded):** the atomic `mass_rate_* → pickup_*` rename means every
+  pre-Phase-B `cfg.json` (which serialized the old field names via `asdict`)
+  is refused by `run_directory.load_cfg`'s unknown-field check with the
+  "different version" message. Correct fail-loud behaviour, not a bug —
+  regenerate or hand-migrate archived run dirs.
+- **Plan-deviation record:** the P/Q test suites use the *real* L/U modules
+  where the plan's Independence sections said "mocked stubs". Stronger as
+  composition checks (and picture-threading is asserted by cross-picture
+  inequality), but a ladder bug would co-vary with the test oracle — recorded
+  as the accepted trade, not silent drift.
+
+### Deliberate non-fixes (recorded, below the bar)
+
+- NaN `rho_ratio` / NaN `E_int` still pass silently (the documented deliberate
+  non-guard, consistent with drag); the new guards catch *sign* errors only.
+- `evaporation_step_components` runs `cold_shed_velocity_components` on all
+  ions, so an ion with `m ≤ m_He` fails the step loudly even if suppressed —
+  physically unreachable (m ≥ bare I⁺ ≈ 126.9 amu) and fail-loud is the right
+  default; noted that the failure is step-global, not per-fire.
+
+### Follow-ups for Slices X/G (Phase C) — for a future run
+
+Phase C was already implemented when this pass ran, so these were **not**
+applied to the X/G surfaces; a future Phase-C touch should:
+
+1. **Treat the ν refuse as part of the Slice-G guard surface.** It lives in
+   `check_biphasic_config` (docstring item 3 now covers λ₀ *and* ν;
+   `TestNegativeNuRejected` in `test_biphasic_config.py`). Any Slice-G doc that
+   enumerates the guard's checks should count both rates.
+2. **Draw-order lock dependency:** the new `TestRNGConsumptionParity` (pickup)
+   is now load-bearing for the Slice-X frozen shed-then-pickup stream contract.
+   Any driver change to how channel draws are consumed must consciously update
+   *both* channels' parity tests (evaporation's is
+   `TestReviewExtensions::test_rng_parity_with_a_suppressed_ion` + companions).
+3. **Override path now raises on bad `n`:** `_gate_threshold_eV` validates
+   `n >= 0` + integrality even when the driver threads
+   `cfg.gate_onset_override_eV`. The driver's own `n` arrays are non-negative
+   ints, so no behaviour change on the production path — but a diagnostic
+   harness feeding raw floats through the override now fails loudly.
+4. **Config-to-module threading test (Q-review recommendation, still open):**
+   add one test that `cfg.gate_onset_override_eV → gate_onset_eV` and
+   `cfg.evap_rate_prefactor_per_ps → nu` reach the channels through
+   `biphasic_step` (the field-vs-kwarg name split invites silent mis-wiring).
+5. **Tier-3 `thermal` arm shape contract:** `capture_velocity_components`
+   takes a scalar `u_he` (He vector `(u, u, u)` per ion). The thermal arm needs
+   per-ion He velocity components — extend the signature (`ux, uy, uz`) and the
+   driver's `_resolve_u_he` threading; do **not** thread a scalar thermal speed.
+
+**Files.** Production: `physics/evaporation.py` (ν guard; override-path n
+validation; `effective_dof` integrality; bound docstrings),
+`physics/pickup.py` (ρ-ratio guard; p=0 docstring), `physics/helium_density.py`
+(finiteness guard; annotation), `physics/_gates.py` (docstring/annotation),
+`physics/mass_jump.py` (u_he docstrings), `config.py` (ν refuse in
+`check_biphasic_config` + docstrings), `CLAUDE.md` (rule-2 pointer +
+guard-live/physics-live convention). Tests: `test_evaporation.py` (+8/−1
+fixture), `test_pickup.py` (+6, tolerance fix), `test_helium_density.py` (+4),
+`test_biphasic_config.py` (+3), `test_mass_jump.py` (+1).
+
+**Tests:** 14 new guard tests watched RED (`DID NOT RAISE`) → GREEN; the 6 new
+lock/characterization tests passed on arrival by design (regression locks on
+verified-correct behaviour). Touched suites 228 green; full suite **1813
+passed, 0 failed** (1793 → +20 new tests), 27 warnings (26 pre-existing §6.5
+mass-pairing / v6→v7 migration + 1 more §6.5 pairing warning from the new
+`TestNegativeNuRejected` `validate()` path).

@@ -275,6 +275,32 @@ def test_tabulated_ladder_rejects_empty():
         tabulated_ladder([])
 
 
+def test_tabulated_ladder_rejects_fractional_n():
+    # Review fix (2026-07-02): mirror the Form-U ladder_cumsum fractional-n
+    # guard -- a genuinely fractional occupancy must raise a loud ValueError,
+    # not numpy's cryptic "arrays used as indices must be ... integer"
+    # IndexError that the bare table lookup produced.
+    lad = tabulated_ladder([0.01, 0.008, 0.005])
+    with pytest.raises(ValueError, match="integer"):
+        lad.d0_of_n(2.5)
+    with pytest.raises(ValueError, match="integer"):
+        lad.ladder_cumsum(2.5)
+    with pytest.raises(ValueError, match="integer"):
+        lad.d0_of_n(np.array([1.0, 2.5]))
+    with pytest.raises(ValueError, match="integer"):
+        lad.ladder_cumsum(np.array([0.0, 1.5]))
+
+
+def test_tabulated_ladder_accepts_integer_valued_floats():
+    # Same contract as the Form-U ladder_cumsum: integer-valued floats are
+    # accepted and cast (2.0 is occupancy 2, not a fractional n).
+    lad = tabulated_ladder([0.01, 0.008, 0.005])
+    assert lad.d0_of_n(2.0) == pytest.approx(0.008, abs=1e-15)
+    assert lad.ladder_cumsum(3.0) == pytest.approx(0.023, abs=1e-15)
+    out = lad.ladder_cumsum(np.array([0.0, 2.0]))
+    assert np.allclose(out, [0.0, 0.018], atol=1e-15)
+
+
 # ---------------------------------------------------------------------------
 # Extended invariants and robustness (review pass).
 # ---------------------------------------------------------------------------

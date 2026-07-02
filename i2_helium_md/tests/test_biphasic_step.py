@@ -465,6 +465,20 @@ class TestDriverGuards:
                 droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
             )
 
+    def test_tabulated_dissociation_ladder_refused_lazily(self):
+        # Review fix (2026-07-02): 'tabulated' is a valid config enum, but the
+        # biphasic energetics compose the Form-U module functions directly (the
+        # TabulatedLadder fallback is a module-level object with no config data
+        # path); selecting it must refuse at point-of-use instead of silently
+        # running the Form-U ladder -- the helium_density_profile contract.
+        cfg = _biphasic_cfg(dissociation_ladder="tabulated")
+        state = _biphasic_state()
+        with pytest.raises(NotImplementedError, match="dissociation_ladder"):
+            biphasic_step(
+                state, rng=np.random.default_rng(0), cfg=cfg,
+                droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
+            )
+
     def test_strided_biphasic_run_keeps_genuine_n_shell_columns(self):
         # Slice-G review fix companion (ion.py writer-call audit): a strided
         # biphasic run (max_bytes forces stride=2 here) must keep every stored

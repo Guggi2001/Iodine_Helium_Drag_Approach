@@ -126,11 +126,12 @@ N_STAR: int = 21                            # count -- first-shell I+ cation occ
 
 D0_1_X2_WAVENUMBER: float = 106.9           # cm^-1 -- IHe05 EPAPS exact J=0 ZPE (MASS R3, +/-3 cm^-1)
 D0_1_MIX_WAVENUMBER: float = 74.4           # cm^-1 -- statistical SO mixture (X2+I1+I0)/3 (MASS A10)
-# Provisional cooling_relaxed first rung: a rule-2 declared-but-unread stub. The
-# source leaves it unpinned ("e.g. a relaxation-weighted blend", strictly between
-# mix and X2; MASS rev-2026-06-21 #3); Phase A ships the arithmetic mean of the
-# two pinned pictures so the ordering mix < cooling_relaxed < X2 holds, and pins
-# the concrete blend at Phase F. Do NOT treat as a 4-figure oracle.
+# Provisional cooling_relaxed first rung -- a live arm whose *value* is the
+# rule-2 carry (the concrete relaxation-weighted blend is pinned at Phase F).
+# The source leaves it unpinned ("e.g. a relaxation-weighted blend", strictly
+# between mix and X2; MASS rev-2026-06-21 #3); Phase A ships the arithmetic mean
+# of the two pinned pictures so the ordering mix < cooling_relaxed < X2 holds.
+# Do NOT treat as a 4-figure oracle.
 D0_1_COOLING_RELAXED_WAVENUMBER: float = 0.5 * (D0_1_X2_WAVENUMBER + D0_1_MIX_WAVENUMBER)  # 90.65 cm^-1
 D_FLOOR_WAVENUMBER: float = 4.97            # cm^-1 -- bulk-He chemical potential |mu_He^bulk| (MASS R3)
 

@@ -43,7 +43,7 @@ import numpy as np
 from ._gates import _erf_complement
 
 
-def rho_he_ratio(depth, *, steepness: float) -> np.ndarray:
+def rho_he_ratio(depth, *, steepness: float) -> float | np.ndarray:
     """``rho_He(depth)/rho_bulk in [0, 1]`` -- the erf-complement occupancy gate.
 
     Parameters
@@ -106,6 +106,15 @@ class TabulatedDensityProfile:
             )
         if depth.size == 0:
             raise ValueError("tabulated density profile requires at least one node")
+        # Post-review fix (2026-07-02): NaN passes the [0, 1] range check vacuously
+        # (it fails both comparisons) and np.interp degenerates on infinite nodes --
+        # both "smuggle past np.interp" cases this class exists to refuse. A sourced
+        # TDDFT CSV with one NaN row is the realistic failure mode.
+        if not (np.all(np.isfinite(depth)) and np.all(np.isfinite(ratio))):
+            raise ValueError(
+                "depth_grid and ratio_grid values must be finite (a NaN/inf node "
+                "makes np.interp return silently-wrong ratios)"
+            )
         if not np.all(np.diff(depth) > 0.0):
             raise ValueError("depth_grid must be strictly increasing")
         if np.any(ratio < 0.0) or np.any(ratio > 1.0):
@@ -129,8 +138,8 @@ def tabulated_density_profile(depth_grid, ratio_grid) -> TabulatedDensityProfile
     Thin coercion wrapper: accepts any ``array_like`` and constructs the frozen
     profile, whose ``__post_init__`` fail-loud (CLAUDE.md principle 4) on a length
     mismatch, a non-strictly-increasing ``depth_grid``, an empty table, a non-1-D
-    input, or a ``ratio`` value outside ``[0, 1]``. Round-trips the supplied nodes
-    exactly and interpolates linearly between them.
+    input, a non-finite node, or a ``ratio`` value outside ``[0, 1]``. Round-trips
+    the supplied nodes exactly and interpolates linearly between them.
 
     Parameters
     ----------
@@ -143,7 +152,8 @@ def tabulated_density_profile(depth_grid, ratio_grid) -> TabulatedDensityProfile
     ------
     ValueError
         On length mismatch, empty table, non-increasing ``depth_grid``, a non-1-D
-        input, or a ratio outside ``[0, 1]`` (all raised by ``__post_init__``).
+        input, a non-finite node, or a ratio outside ``[0, 1]`` (all raised by
+        ``__post_init__``).
     """
     return TabulatedDensityProfile(
         depth_grid=tuple(np.asarray(depth_grid, dtype=float).tolist()),

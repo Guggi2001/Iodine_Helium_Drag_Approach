@@ -25,7 +25,8 @@ Within the band the top rung sheds with the saturating unimolecular rate::
     k(E_int, n) = nu * (1 - D_0(n)/E_int)^(s-1),   s = effective_dof(n),   n >= 2
     P_shed(dt)  = 1 - exp(-k * dt)
 
-bounded to ``k in [0, nu)`` (no gate-open avalanche; at most ~nu*dt per step). The
+bounded to ``k <= nu`` (strictly ``< nu`` for ``s > 1``; ``= nu`` at ``n = 1`` and
+under an ``s = 1`` override -- no gate-open avalanche; at most ~nu*dt per step). The
 **n = 1 diatomic is the degenerate boundary** (the band ``D_0(1) < E_int < Sigma(1) =
 D_0(1)`` collapses; ``s = 3n-3 = 0``), so it is modelled as **direct dissociation**
 ``k = nu`` under the *inverted* gate ``E_int > D_0(1)`` -- the last atom leaves once the
@@ -72,7 +73,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .constants import MASS_HE_AMU
-from .dissociation_ladder import d0_of_n, ladder_cumsum
+from .dissociation_ladder import _as_integer_occupancy, d0_of_n, ladder_cumsum
 from .internal_energy_budget import dE_int_shed_eV
 from .mass_jump import cold_shed, cold_shed_velocity_components
 
@@ -126,9 +127,13 @@ def effective_dof(n):
     ``effective_dof`` of a ``n < 2`` rung is therefore a caller error and raises loudly
     (CLAUDE.md principle 4).
 
-    Scalar-in -> int, array-in -> ndarray of the same shape.
+    Scalar-in -> int, array-in -> ndarray of the same shape. Fractional ``n`` is
+    rejected (the :func:`~i2_helium_md.physics.dissociation_ladder.ladder_cumsum`
+    integer-occupancy contract; a silent ``int(4.5) = 4`` truncation on the scalar
+    path was a post-review fix, 2026-07-02); integer-valued floats are accepted
+    and cast.
     """
-    n_arr = np.asarray(n)
+    n_arr = _as_integer_occupancy(n, context="effective_dof")
     if np.any(n_arr < 2):
         raise ValueError(
             f"effective_dof is defined for n >= 2 (n=1 uses the direct k=nu branch, "
@@ -158,8 +163,16 @@ def _gate_threshold_eV(n, *, picture: str, kappa: float, gate_onset_eV):
 
     ``gate_onset_eV=None`` -> the parameter-free integrated ladder ``Sigma(n)`` (Derived,
     MASS R9). A set float -> that fixed threshold (the diagnostic override; broadcast).
+
+    Both threshold sources validate ``n`` identically (post-review fix 2026-07-02:
+    the override used to bypass ``ladder_cumsum``'s ``n >= 0`` / integer-occupancy
+    rejection, silently returning ``k = 0`` for a negative or fractional ``n``).
     """
     if gate_onset_eV is not None:
+        n_arr = np.asarray(n)
+        if np.any(n_arr < 0):
+            raise ValueError(f"gate threshold requires n >= 0; got {n!r}")
+        _as_integer_occupancy(n, context="_gate_threshold_eV")
         return float(gate_onset_eV)
     return ladder_cumsum(n, picture=picture, kappa=kappa)
 
@@ -210,7 +223,8 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
 
     * ``n >= 2``: ``k = nu * (1 - D_0(n)/E_int)^(s-1)`` inside the self-bound band
       (``D_0(n) < E_int < Sigma(n)``), and ``k = 0`` outside it (below the top rung, or
-      net self-unbound). Bounded to ``[0, nu)`` -- no avalanche.
+      net self-unbound). Bounded to ``[0, nu]`` (strictly ``< nu`` for ``s > 1``;
+      ``= nu`` in-band under an ``s = 1`` override) -- no avalanche.
     * ``n == 1``: direct dissociation ``k = nu`` once ``E_int > D_0(1)`` (the inverted
       gate), else ``0``.
     * ``n <= 0``: ``0`` (no rung to shed).
@@ -238,6 +252,16 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
     float or np.ndarray
         ``k`` in ps^-1. Scalar-in -> float, array-in -> ndarray.
     """
+    # Fail loud on a negative prefactor (post-review fix 2026-07-02): nu < 0 gives
+    # k < 0 -> P_shed = 1 - exp(+|k|*dt) < 0, so the channel silently never fires
+    # (draws live in [0, 1)) -- the pickup lambda0 < 0 class. Module-level defense
+    # mirroring the config-load check (config.check_biphasic_config).
+    if nu < 0.0:
+        raise ValueError(
+            f"RRK prefactor nu must be >= 0 (a negative rate makes P_shed < 0, "
+            f"structurally disabling the channel); got {nu!r}"
+        )
+
     E = np.asarray(E_int_eV, dtype=float)
     n_arr = np.asarray(n)
     d0 = np.asarray(d0_of_n(n_arr, picture=picture, kappa=kappa), dtype=float)

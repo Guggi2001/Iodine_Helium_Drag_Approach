@@ -52,6 +52,18 @@ class TestErfComplementHelper:
         with pytest.raises(ValueError):
             _erf_complement(0.0, -1.0)
 
+    def test_golden_value_pin_against_inline_expression(self):
+        # Post-review lock (2026-07-02): the parity tests are *routing* locks (both
+        # callers share _erf_complement, so their equality is by construction). This
+        # is the one true VALUE pin: the helper must equal the literal Tier-0
+        # expression bitwise, so a numerically-different rewrite (e.g. 0.5*erfc(x))
+        # cannot slip through with all routing locks green.
+        from scipy.special import erf
+
+        depth = np.array([-50.0, -14.2, -1.0, 0.0, 1.0, 14.2, 50.0])
+        expected = 0.5 * (1.0 - erf(depth / STEEPNESS_A))
+        np.testing.assert_array_equal(_erf_complement(depth, STEEPNESS_A), expected)
+
 
 class TestRhoHeRatioOracle:
     """The rho_He/rho_bulk gate values."""
@@ -181,6 +193,29 @@ class TestTabulatedProfileDirectConstruction:
     def test_direct_construction_rejects_empty(self):
         with pytest.raises(ValueError):
             TabulatedDensityProfile(depth_grid=(), ratio_grid=())
+
+    def test_direct_construction_rejects_nan_ratio(self):
+        # Post-review fix (2026-07-02, Phase-B review): NaN passed the [0, 1] check
+        # vacuously (NaN fails both comparisons) and ratio() returned NaN silently --
+        # exactly the "smuggle past np.interp" this class exists to prevent. A sourced
+        # TDDFT CSV with one NaN row is a realistic failure mode.
+        with pytest.raises(ValueError, match="finite"):
+            TabulatedDensityProfile(
+                depth_grid=(-10.0, 0.0, 10.0), ratio_grid=(1.0, float("nan"), 0.0)
+            )
+
+    def test_direct_construction_rejects_nan_depth_single_node(self):
+        # A single-node (nan,) grid passed every check (empty np.diff makes the
+        # monotonicity check vacuous).
+        with pytest.raises(ValueError, match="finite"):
+            TabulatedDensityProfile(depth_grid=(float("nan"),), ratio_grid=(0.5,))
+
+    def test_direct_construction_rejects_infinite_depth(self):
+        # np.interp degenerates on infinite nodes (ratio(-5) = 0.5 where ~1 is right).
+        with pytest.raises(ValueError, match="finite"):
+            TabulatedDensityProfile(
+                depth_grid=(float("-inf"), 0.0), ratio_grid=(1.0, 0.5)
+            )
 
 
 class TestTabulatedProfileDeliberateAllowances:

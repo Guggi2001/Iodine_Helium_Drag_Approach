@@ -94,8 +94,11 @@ Use these for every porting decision, code review, and cleanup:
    module.
 2. No dead code. Remove unused imports, commented-out blocks, and speculative
    branches. *Scoped exception:* the drag-config fields declared-but-not-yet-read
-   (the rule-2 exception table is in `drag_migration_log_tier0.md`; each field is
-   removed from it by the slice/tier that activates it).
+   (the rule-2 carries are recorded as prose entries in the **active phase's** drag
+   migration log — currently `docs/drag_port/Tier2/drag_migration_log_tier2.md`;
+   each carry is retired by the slice/tier that activates it. Convention: a field
+   whose only reader is a config-load *guard* is still a carry — "guard-live" is
+   not "physics-live").
 3. Encode units and conventions in names: `mass_kg`, `time_ps`, `T_particles_K`,
    `R0_GS_angstrom`, etc.
 4. Validate early and fail loudly. Wrong shape, unsupported collision mode,

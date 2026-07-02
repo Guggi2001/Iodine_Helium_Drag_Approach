@@ -306,7 +306,10 @@ def capture(
     u_he : float, optional
         Incoming He velocity [A/ps], broadcast against ``v_minus`` (default ``0.0`` --
         the production ``he_capture_velocity="at_rest"`` arm). A ``thermal`` He velocity
-        is a Tier-3 rule-2 arm resolved by the caller, not here.
+        is a Tier-3 rule-2 arm resolved by the caller, not here. NB a *scalar* ``u_he``
+        broadcasts per-component, i.e. an He velocity vector ``(u, u, u)`` -- inert at
+        ``u = 0`` but wrong for a thermal speed; the ``thermal`` arm must pass a
+        per-component He velocity *vector*, not a scalar speed.
 
     Returns
     -------
@@ -366,7 +369,11 @@ def capture_velocity_components(
     m_he_amu : float, optional
         Captured He mass [amu] (default :data:`MASS_HE_AMU`).
     u_he : float, optional
-        Incoming He velocity [A/ps] (default ``0.0``, the ``at_rest`` arm).
+        Incoming He velocity [A/ps] (default ``0.0``, the ``at_rest`` arm). NB a
+        scalar here means the He vector ``(u, u, u)`` for *every* ion -- inert at
+        ``u = 0``, but the Tier-3 ``thermal`` arm needs per-ion He velocity
+        *components* (e.g. ``ux, uy, uz`` arrays); extend this signature then rather
+        than threading a scalar speed.
 
     Returns
     -------

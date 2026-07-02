@@ -142,6 +142,10 @@ def lambda_attach(
         First-shell capacity ``n*`` (default :data:`N_STAR` = 21).
     p : float, optional
         Langmuir occupancy exponent (default ``1.0``; held fixed, not ``p=kappa``).
+        ``p = 0`` makes the occupancy factor identically ``1`` (``0**0 == 1`` even at
+        ``n >= n*``) -- the cap is inert, equivalent to ``cap="none"`` under a
+        langmuir label (characterization-locked in the tests); only ``p < 0`` is
+        rejected.
     cap : {"langmuir", "none"}, optional
         ``langmuir`` applies the saturation factor ``(1 - n/n*)_+^p``; ``none`` recovers
         the density-only limit (factor ``1``, cap inert).
@@ -186,6 +190,16 @@ def lambda_attach(
         )
 
     rho = np.asarray(rho_ratio, dtype=float)
+    # Fail loud on a negative density ratio (post-review fix 2026-07-02): the same
+    # silent-shut-off class as lambda0 < 0 (rho < 0 -> lambda < 0 -> P_attach < 0).
+    # helium_density can never produce one (erf / clamped [0, 1] contracts); this is
+    # defense-in-depth against a bad caller.
+    if np.any(rho < 0.0):
+        raise ValueError(
+            f"rho_ratio must be >= 0 (the density gate is a [0, 1] ratio; a "
+            f"negative value makes P_attach < 0, structurally disabling the "
+            f"channel); got {rho_ratio!r}"
+        )
     if cap == "langmuir":
         # Fail loud on the two knobs that make the Langmuir factor produce a silent
         # inf/nan rate (CLAUDE.md principle 4): p < 0 gives 0**neg = inf at n >= n*,

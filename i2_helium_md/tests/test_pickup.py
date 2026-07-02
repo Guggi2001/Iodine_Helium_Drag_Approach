@@ -155,6 +155,28 @@ class TestLambdaAttach:
         assert lambda_attach(0.7, 3, lambda0=1.0, cap="none", p=-1.0, n_star=0) == \
             pytest.approx(0.7)
 
+    def test_negative_rho_ratio_rejected(self):
+        # Post-review fix (2026-07-02, Phase-B review): a negative density ratio gives
+        # lambda < 0 -> P_attach < 0, silently disabling the channel -- the same class
+        # as the lambda0 < 0 guard (helium_density can never produce one; this is
+        # defense-in-depth against a bad caller).
+        with pytest.raises(ValueError, match="rho_ratio must be >= 0"):
+            lambda_attach(-0.1, 3, lambda0=1.0)
+
+    def test_negative_rho_ratio_rejected_in_array(self):
+        with pytest.raises(ValueError, match="rho_ratio must be >= 0"):
+            lambda_attach(np.array([0.5, -0.1, 1.0]), np.array([3, 3, 3]), lambda0=1.0)
+
+    def test_p_zero_makes_langmuir_cap_inert(self):
+        # Characterization lock (post-review, 2026-07-02): p = 0 gives 0**0 == 1 even
+        # at n >= n*, so the "cap" is structurally inert -- equivalent to cap="none"
+        # with a langmuir label. Deliberately allowed (only p < 0 is rejected); locked
+        # so any future tightening is a conscious choice, not silent drift.
+        assert lambda_attach(1.0, N_STAR, lambda0=1.0, n_star=N_STAR, p=0.0) == \
+            pytest.approx(1.0)
+        assert lambda_attach(1.0, N_STAR + 5, lambda0=1.0, n_star=N_STAR, p=0.0) == \
+            pytest.approx(1.0)
+
 
 # ---------------------------------------------------------------------------
 # pickup_step -- forced fire / no-fire
@@ -310,7 +332,51 @@ class TestEnsembleIndependence:
         )
         half = n_ions // 2
         r1, r2 = fired[:half].mean(), fired[half:].mean()
-        assert abs(r1 - r2) < 0.02        # ~independent halves, similar rates
+        # 5-sigma band on the difference of two independent Bernoulli means
+        # (post-review fix 2026-07-02: the former 0.02 was ~17 sigma, nearly vacuous).
+        p = 1.0 - np.exp(-lam * dt)
+        se_diff = np.sqrt(2.0 * p * (1.0 - p) / half)
+        assert abs(r1 - r2) < 5.0 * se_diff
+
+
+# ---------------------------------------------------------------------------
+# RNG-consumption parity with a REAL generator (post-review lock, 2026-07-02)
+# ---------------------------------------------------------------------------
+class TestRNGConsumptionParity:
+    def test_scalar_and_components_consume_identical_stream(self):
+        # Locks the Q5 / Slice-X draw-order contract with a real PCG64 generator (the
+        # stub-based TestComponentsMatchScalar checks outputs but sidesteps actual RNG
+        # consumption): M scalar pickup_step calls must consume the stream exactly like
+        # one pickup_step_components call -- including the suppressed ion (P_attach = 0
+        # at n = n*), which still consumes its draw. A refactor that skips the draw
+        # when P == 0 would break this test while leaving every stub test green.
+        n = np.array([0, N_STAR, 5, 10])          # ion 1: full shell -> P_attach = 0
+        vx = np.array([1.0, 3.0, -2.0, 0.5])
+        vy = np.array([0.0, -4.0, 1.0, 2.0])
+        vz = np.array([0.0, 12.0, 2.0, -1.0])
+        m = np.array([120.0, M, 300.0, 180.0])
+        rho = np.array([1.0, 1.0, 0.5, 0.9])
+        kw = dict(lambda0=14.0, f_ret=0.3, kappa=1.0, dt_ps=0.05)  # P ~ 0.5 in-gate
+
+        rng_c = np.random.default_rng(20260702)
+        n_plus, m_plus, vx_p, vy_p, vz_p, dE_int, dE_mt, fired = pickup_step_components(
+            rng=rng_c, n=n, vx=vx, vy=vy, vz=vz, m_amu=m, rho_ratio=rho, **kw,
+        )
+        assert not fired[1]                        # the full-shell ion cannot fire
+
+        rng_s = np.random.default_rng(20260702)
+        for i in range(4):
+            res = pickup_step(
+                rng=rng_s, n=int(n[i]), v=np.array([vx[i], vy[i], vz[i]]),
+                m_amu=float(m[i]), rho_ratio=float(rho[i]), **kw,
+            )
+            assert res.fired == bool(fired[i])
+            assert res.n_plus == n_plus[i]
+            assert res.m_plus_amu == pytest.approx(m_plus[i])
+            assert res.dE_int_eV == pytest.approx(dE_int[i])
+            assert res.dE_mass_transfer == pytest.approx(dE_mt[i])
+        # Identical post-call stream state: the very next uniform must agree bitwise.
+        assert rng_s.random() == rng_c.random()
 
 
 # ---------------------------------------------------------------------------
