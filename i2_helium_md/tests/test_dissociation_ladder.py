@@ -350,3 +350,38 @@ def test_d0_of_n_defensive_floor_guard(monkeypatch):
 def test_ladder_cumsum_rejects_fractional_n():
     with pytest.raises(ValueError, match="integer"):
         ladder_cumsum(2.5, picture="x2_only", kappa=1.0)
+
+
+def test_ladder_cumsum_cache_is_bit_identical_across_call_orders():
+    # Slice-G review fix regression: ladder_cumsum serves Sigma from a cached,
+    # padded prefix table (_sigma_prefix_table). Prefix sums do not depend on
+    # later rungs, so the same n must return the bit-identical value regardless
+    # of which table height was built first (small-then-large, large-then-small)
+    # and must equal an uncached fresh construction of the same prefix.
+    import i2_helium_md.physics.dissociation_ladder as ladder
+
+    ladder._sigma_prefix_table.cache_clear()
+    small_first = ladder_cumsum(5, picture="x2_only", kappa=2.0)
+    large_after = ladder_cumsum(500, picture="x2_only", kappa=2.0)
+
+    ladder._sigma_prefix_table.cache_clear()
+    large_first = ladder_cumsum(500, picture="x2_only", kappa=2.0)
+    small_after = ladder_cumsum(5, picture="x2_only", kappa=2.0)
+
+    assert small_first == small_after   # exact float equality, no tolerance
+    assert large_after == large_first
+
+    # Uncached oracle: the pre-cache construction of the same prefix.
+    rungs = np.atleast_1d(d0_of_n(np.arange(1, 6), picture="x2_only", kappa=2.0))
+    assert small_first == float(np.concatenate(([0.0], np.cumsum(rungs)))[5])
+
+
+def test_ladder_cumsum_cached_table_not_mutable_via_result():
+    # The cached table is shared; results are copies (fancy indexing), so
+    # mutating a returned array must not poison later calls.
+    n = np.array([3, 4, 5])
+    first = ladder_cumsum(n, picture="x2_only", kappa=2.0)
+    first += 99.0
+    second = ladder_cumsum(n, picture="x2_only", kappa=2.0)
+    assert not np.array_equal(first, second)
+    assert np.all(second < 99.0)

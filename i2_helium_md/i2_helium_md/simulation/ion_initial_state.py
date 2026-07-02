@@ -58,8 +58,10 @@ import numpy as np
 from ..config import SimConfig
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.interactions import partner_interaction_ion
+from ..physics.internal_energy_budget import e_int_onset_eV
 from ..physics.potentials import droplet_potential
 from ..physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
+from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import IonCheckpoint, NeutralCheckpoint, _ION_SCHEMA_VERSION
 
 
@@ -163,11 +165,20 @@ def build_initial_ion_state(
         # field semantics clean for Tier 1 (where the two diverge). Do NOT
         # "restore" the inherited neutral mass here -- the override is the fix.
         mass_kg_initial = np.full(two_N, cfg.mass_initial_amu * U)
-    elif cfg.drag_coefficients is not None and cfg.mass_scenario == "anchored_discrete":
-        # Tier-1a anchored_discrete starts at the n=21 complex mass (held for
-        # t <= t*); the He-shell schedule sheds it down to n=14 over the run.
-        # NOT m_eff (= the n=19 mid-window mass) and NOT the inherited bare-I+
-        # neutral mass -- the schedule's onset count is the physical start.
+    elif cfg.mass_scenario == "biphasic" or (
+        cfg.drag_coefficients is not None and cfg.mass_scenario == "anchored_discrete"
+    ):
+        # Tier-1a anchored_discrete and Tier-2 generative biphasic both start at
+        # the full first shell n0 = 21 (the 21->19->14 validation target): the
+        # anchored schedule sheds it down to n=14, the generative pickup /
+        # evaporation channels evolve n from there. NOT m_eff (= the n=19
+        # mid-window mass) and NOT the inherited bare-I+ neutral mass -- the
+        # onset shell count is the physical start. Biphasic is gated on the
+        # scenario alone: it is a drag-path scenario by contract, enforced
+        # upstream by config.check_biphasic_config + ion._check_scope_ion_driver
+        # (a bundle-less biphasic cfg never reaches a propagation loop); the
+        # biphasic column-0 seeds (S2 onset + E_pot binding fold) live below
+        # with the other column-0 physics.
         mass_kg_initial = np.full(two_N, complex_mass_amu(ANCHOR_N_START) * U)
     else:
         mass_kg_initial = neutral_ckpt.mass_kg.copy()
@@ -236,6 +247,29 @@ def build_initial_ion_state(
     n_shell[:, 0] = np.rint(
         (mass_kg_initial / U - MASS_I_ION_AMU) / MASS_HE_AMU
     )
+    # Biphasic column-0 seeds (grouped; Slice-G review fix -- one block owns the
+    # scenario's t0 physics beyond the shared mass init above):
+    # * E_pot binding fold: fold E_bind^pair(n) = -Sigma(n) into E_pot so the
+    #   5-term invariant closes when the pickup/evaporation channels shift the
+    #   rung ladder (a shed adds +D_0(n), a pickup removes -D_0(n+1) -- exactly
+    #   the MASS §6 "E_pot += D_0 / -= D_0" bookings). Seeded at t0 (n=21) so the
+    #   offset is consistent from column 0; the electrostriction marginal stays
+    #   the untracked "A8 -> bath" collective term. The driver re-applies the
+    #   fold each step from the genuine n_shell state (solvation_cooling.
+    #   e_bind_pair_eV; MASS §6).
+    # * S2 onset: deposit E_int(0) = f_int * E_avail^ion once at t0 (MASS §6 S2).
+    #   Only S1/K1/K2 modify E_int thereafter. f_int is required non-None under
+    #   biphasic (config.check_biphasic_config), so it is set here by construction.
+    if cfg.mass_scenario == "biphasic":
+        E_pot_eV[:, 0] += e_bind_pair_eV(
+            ANCHOR_N_START,
+            picture=cfg.ladder_electronic_picture,
+            kappa=cfg.ladder_steepness,
+        )
+        E_int_eV[:, 0] = e_int_onset_eV(
+            f_int=cfg.internal_energy_partition_fraction,
+            e_avail_eV=cfg.coulomb_available_eV,
+        )
 
     # 8. Static finals -- placeholder, the driver fills these at end.
     positions_final_x = np.zeros(two_N)

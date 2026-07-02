@@ -43,6 +43,7 @@ Units follow the package convention: energies in eV (``*_eV``); ``n`` and
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 
@@ -134,12 +135,40 @@ def d0_of_n(n, *, picture: str = "statistical_mixture", kappa: float):
     return float(out) if np.ndim(n) == 0 else out
 
 
+@lru_cache(maxsize=64)
+def _sigma_prefix_table(picture: str, kappa: float, n_top: int) -> np.ndarray:
+    """Cached ``Sigma`` prefix table ``cum[k] = Sigma(k)`` for ``k in [0, n_top]``.
+
+    Built exactly as the pre-cache :func:`ladder_cumsum` body did (same rung
+    construction, same sequential ``np.cumsum``), so every indexed prefix value
+    is **bit-identical** to a fresh computation -- prefix sums do not depend on
+    later rungs, so one table serves every request with ``n <= n_top``. This is
+    the hot-path fix for the Slice-G driver, which evaluates ``Sigma`` several
+    times per step for a ``(picture, kappa)`` pair fixed over the whole run
+    (~1e5 steps); the whole output space is a ~22-entry table. Read-only (the
+    cached array is shared across callers).
+    """
+    rungs = np.atleast_1d(
+        d0_of_n(np.arange(1, n_top + 1), picture=picture, kappa=kappa)
+    )
+    cum = np.concatenate(([0.0], np.cumsum(rungs)))
+    cum.setflags(write=False)
+    return cum
+
+
+#: Default cached-table height: covers the full first shell (n* = 21) plus the
+#: modest overshoot the generative channels can reach, so the production run
+#: hits one cache entry. Larger ``n`` transparently builds a taller table.
+_SIGMA_TABLE_N_TOP: int = N_STAR + 11
+
+
 def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float):
     """Cumulative gate threshold ``Sigma(n) = sum_{i=1}^{n} D_0(i)`` [eV].
 
     ``Sigma(0) = 0``. Consumed by Slice K (occupancy-resolved asymptote) and Slice
     U (self-unbound floor). Vectorised: scalar-in -> float, array-in -> ndarray.
-    Negative ``n`` is rejected (fail-loud).
+    Negative ``n`` is rejected (fail-loud). Values come from the cached
+    :func:`_sigma_prefix_table` (bit-identical to a fresh computation; see there).
     """
     n_arr = np.asarray(n)
     if np.any(n_arr < 0):
@@ -154,11 +183,9 @@ def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float):
             )
         n_arr = n_arr.astype(int)
     n_max = int(n_arr.max(initial=0))
-    # cum[k] = Sigma(k): prepend 0 so cum[0] == 0, then index by n.
-    rungs = np.atleast_1d(
-        d0_of_n(np.arange(1, n_max + 1), picture=picture, kappa=kappa)
-    )
-    cum = np.concatenate(([0.0], np.cumsum(rungs)))
+    # cum[k] = Sigma(k): prepend 0 so cum[0] == 0, then index by n. The table is
+    # padded to a fixed height so the hot path reuses one cache entry.
+    cum = _sigma_prefix_table(picture, float(kappa), max(n_max, _SIGMA_TABLE_N_TOP))
     out = cum[n_arr]
     return float(out) if np.ndim(n) == 0 else out
 

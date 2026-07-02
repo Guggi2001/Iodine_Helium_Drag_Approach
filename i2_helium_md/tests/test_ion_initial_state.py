@@ -155,17 +155,22 @@ class TestDragFixedMassOverride:
         ion = build_initial_ion_state(cfg, neutral, num_steps_ion=10)
         np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
 
-    def test_no_override_for_non_fixed_drag_scenario(self, small_neutral_run):
-        # `biphasic` is non-fixed and has no initial-mass override, so it inherits
-        # the neutral mass. (`anchored_discrete` DOES override -> tested separately.)
+    def test_biphasic_starts_at_n21_mass(self, small_neutral_run):
+        # Tier-2 biphasic (Slice G) starts at the full first shell n0=21 complex
+        # mass (like anchored_discrete, matching the 21->19->14 validation target),
+        # NOT the inherited neutral mass. It also requires f_int (S2 onset seed).
+        from i2_helium_md.physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
+
         cfg, neutral = small_neutral_run
         drag_cfg = replace(
             self._drag_cfg(cfg),
             mass_scenario="biphasic",
+            internal_energy_partition_fraction=0.3,
+            internal_energy_retained_fraction=0.2,
             allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
         )
         ion = build_initial_ion_state(drag_cfg, neutral, num_steps_ion=10)
-        np.testing.assert_array_equal(ion.mass_kg, neutral.mass_kg)
+        np.testing.assert_allclose(ion.mass_kg, complex_mass_amu(ANCHOR_N_START) * U)
 
     def test_anchored_discrete_starts_at_n21_mass(self, small_neutral_run):
         # Tier-1a anchored_discrete overrides the initial mass to the n=21 complex

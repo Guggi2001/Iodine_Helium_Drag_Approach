@@ -220,7 +220,32 @@ unchanged from the 4-term baseline.
 
 ### Slice G — Generative driver `biphasic_step` *(composes A + B; the production loop)*
 
+> **Pre-build decisions (2026-07-01, user; full record in `drag_migration_log_tier2.md`).**
+> (1) **Integrator placement = pre-step seam (reuse), not in-step B/A→jump→O** — K2 cooling +
+> ≤1 event + `E_int` update at the step seam, then rebuild the BAOAB closure at `m⁺`; the §2.3
+> numbered list is *logical*, not literal-in-BAOAB. (2) **`n_shell` becomes genuine state on
+> `IonStepState`** (`(2N,)`), evolved by the P/Q channels independently of mass; the writer
+> stores it directly on the biphasic path and G asserts `m == m_I⁺ + n·m_He` per step (the
+> deferred Phase-B Q3 guard). *No checkpoint-schema bump — `n_shell` is already a v6 field.*
+> (3) **Biphasic init = n₀=`ANCHOR_N_START`=21 with the S2 onset `E_int[:,0]=f_int·
+> coulomb_available_eV` seeded in `build_initial_ion_state`** (`E_avail ← coulomb_available_eV`;
+> onset deposited once at t=0). (4) **Missing-knob guard = config-load `check_biphasic_config`**
+> requiring f_int/f_ret non-None (+ λ₀>0 flagged) when `mass_scenario=='biphasic'`.
+> **Composition facts (audit-settled):** channel `dE_mass_transfer` is amu·Å²/ps² → G converts
+> to eV (`×U×100²/EV`); `newton_cool_step` is reused (at fixed N it *is* `E_int·e^{−dt/τ}`, the
+> drain books to `E_dissip`); **cooling precedes the evaporation draw** (the gate `t×` opens as
+> cooling drains `E_int` below `Σ(n)`); `E_int` evolves additively (`reconstruct` stays a
+> post-t× diagnostic); frozen draw order = evaporation then pickup (shed-then-pickup if both).
+
 **Module.** `simulation/ion_propagation_step.py` (new `biphasic_step` seam).
+
+> **As-built (2026-07-02, DELIVERED — see log).** The §2.1 `E_pot += D_0 / −D_0` bookings that
+> this interface list left implicit are realized by folding the **pair-binding potential
+> `e_bind_pair(n) = −Σ_{i≤n}D_0(i)` into the stored `E_pot`** on the biphasic path (seeded at t0
+> in `build_initial_ion_state`, re-applied each step in the driver arm after `baoab_propagation_
+> step` from the genuine `n_shell`). `biphasic_step` itself returns the cooling/event bookings
+> (`E_int`, `E_mass_transfer`, `E_dissip`, `v`, `mass`, `n_shell`); the driver owns the `E_pot`
+> fold and the closure gate. The forced-event tests close the full 5-term residual to 1e-12.
 
 **Purpose.** The production `biphasic` integrator: assemble the accepted A/B modules into
 one per-step loop with the **one-event-per-step**, **jump-then-O**, **5-term-closing**

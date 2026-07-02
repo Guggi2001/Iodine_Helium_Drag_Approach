@@ -1517,3 +1517,298 @@ all closed test-first (characterisation/regression locks).
 `test_checkpoint`) **62 green**; full suite **1745 passed, 0 failed** (1742 → +3), same 25
 warnings (17 pre-existing `anchored_discrete` + 8 v6→v7 shim). **Next:** Slice G — the
 `biphasic_step` generative driver (`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` §3 Slice G).
+
+---
+
+## Phase C — Slice G pre-build decisions (2026-07-01)
+
+A pre-build discussion pass over the Slice G spec (`biphasic_step` generative driver) in
+`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md`, grounded in a full code-surface audit of every
+composed surface: `simulation/ion_propagation_step.py` (`IonStepState`, `shed_step`,
+`baoab_propagation_step`, the two column seams), `simulation/ion.py` (the `use_drag`
+dispatch loop + the per-step BAOAB-closure rebuild + `_drag_gate_steepness`),
+`simulation/ion_initial_state.py` (`build_initial_ion_state` mass/`n_shell`/E_int column-0
+fills), `physics/baoab.py` (`make_ion_baoab_step` per-atom-mass O-step),
+`physics/solvation_cooling.py` (`newton_cool_step`), `physics/pickup.py` /
+`physics/evaporation.py` (the `*_components` ensemble forms + RNG contracts),
+`physics/internal_energy_budget.py` (S1/S2/K1), and `config.py` (§6.5 guard,
+`_EVOLVING_MASS_SCENARIOS`, the None-/0.0-defaulted knobs). No code — the
+`[PROCEED TO IMPLEMENTATION]` boundary holds; docs-only amendment. Four design calls
+resolved (decision owner: user) plus the audit-settled composition facts recorded below.
+
+**Audit-settled (no fork — consistent with plan + delivered code):**
+- **Dispatch.** Add a `biphasic` arm in `ion.py`'s `use_drag` block beside the
+  `anchored_discrete`/`shed_step` arm; `biphasic` already sits in
+  `_EVOLVING_MASS_SCENARIOS` → trips §6.5 → runs under `allow_inconsistent_mass_pairing=
+  True`. The arm threads `rng` (the channel draws) — the current drag path does not.
+- **Scope guard.** `_check_drag_scope` currently *rejects* `biphasic`; G flips it to accept
+  (the `noise_form='none'` check stays; the `m_eff` band trip-wire already `return`s for
+  non-`fixed`, so evolving biphasic mass is exempt like `anchored_discrete`).
+- **Per-atom mass already supported.** `make_ion_baoab_step` takes a `(2N,)` mass vector and
+  the O-step divides by `m(t)` per atom, so **non-uniform** per-ion biphasic mass integrates
+  unchanged (unlike the uniform-mass `anchored_discrete` schedule).
+- **Ensemble granularity.** `pickup_step_components` / `evaporation_step_components` run over
+  the `(2N,)` ion ensemble, one unconditional `rng.random(size=2N)` draw each.
+- **Units seam (G owns).** The channels' `dE_mass_transfer` is **amu·Å²/ps²**; the
+  `E_mass_transfer_eV` field is eV → G converts with the delivered `×U×100²/EV` idiom (the
+  `shed_step`/`baoab_propagation_step` path). Channel `dE_int` is already eV.
+- **Cooling ≡ E_int decay.** `newton_cool_step` returns `E_solv.struct = E_∞(N) + E_int`, so
+  at fixed N it is exactly `E_int·e^{−dt/τ}`; the drained `E_int·(1−decay)` books to
+  `E_dissip` (§6 closure row K2). G **reuses `newton_cool_step`** (rule 1: single source of
+  the cooling form), not an inline decay.
+- **Ordering that the tests lock.** Cooling runs **before** the evaporation draw — the
+  self-bound gate opens (`t×`) precisely as cooling drains `E_int` below `Σ(n)`. Forward
+  `E_int` evolution is **additive** (`E_int += Σ dE_channel` after the K2 decay);
+  `reconstruct_e_int_eV` (A9) stays a post-t× diagnostic, never called in the loop.
+- **Draw order (frozen at X).** Evaporation draw, then pickup draw; if both fire on an ion →
+  apply **shed then pickup** (pickup's rate reads the post-shed `n`; net `n` unchanged; both
+  E_int/E_mass_transfer bookings applied).
+
+**Four design calls resolved (user, 2026-07-01):**
+1. **Integrator placement → pre-step seam (reuse), NOT in-step B/A→jump→O.** `biphasic_step`
+   mirrors the Tier-1a `shed_step` pattern: K2 cooling + ≤1 mass event (shed-then-pickup) +
+   the `E_int` update happen at the **step seam**, then the BAOAB closure is rebuilt at `m⁺`
+   so the conservative kicks *and* the SQ1 O-step both read the post-jump mass. Reuses
+   delivered code, leaves `baoab.py`/`make_ion_baoab_step` untouched, O(dt)-benign (the
+   `shed_step` docstring's jump-measure-zero argument). **Resolves the plan §2.3 numbered-list
+   tension:** that list is *logical* (the composed operations), not a literal in-BAOAB
+   ordering — the seam does cooling+event *before* the B/A kicks, not between B/A and O.
+2. **`n_shell` → genuine state on `IonStepState`.** Add `n_shell: np.ndarray (2N,)` to
+   `IonStepState`; the P/Q `*_components` channels advance it (`n→n±1`) **independently** of
+   the mass reset; the writer stores `state.n_shell` directly (stops deriving it via `rint`
+   for the biphasic path); and `biphasic_step` asserts `m == m_I⁺ + n·m_He` (within float
+   tol) per step — the **deferred Q3 guard** (Phase-B Slice P) now has real teeth (independent
+   `n` to catch a channel/reset drift, not a `rint`-tautology). Touches the two column seams +
+   `build_initial_ion_state` + `write_ion_state_to_checkpoint_column`. The `fixed`/
+   `anchored_discrete` paths keep `n_shell` derived-from-mass at write (byte-identical).
+   *(NB: `n_shell` is already a **checkpoint** field at v6 — this adds it only to the
+   in-memory `IonStepState` carrier; no checkpoint-schema bump, no forbidden-list trip.)*
+3. **Biphasic initial state → n₀=21, onset seeded in the builder.** `build_initial_ion_state`
+   gets a `biphasic` branch: start at the full first shell **n₀ = `ANCHOR_N_START` = 21**
+   (`mass = complex_mass_amu(21)`, matching the 21→19→14 validation target and the
+   `anchored_discrete` start), and deposit the **S2 onset** `E_int[:,0] = f_int ·
+   coulomb_available_eV` in the builder (it already owns column-0 physics: E_kin/E_pot/mass/
+   n_shell). `E_avail ← cfg.coulomb_available_eV` (0.80 eV validation / 2.70 eV production).
+   The onset is deposited **once** at t=0; only S1/K1/K2 modify `E_int` thereafter.
+4. **Missing-knob guard → config-load `check_biphasic_config`.** A new `validate()` guard:
+   when `mass_scenario=='biphasic'`, require `internal_energy_partition_fraction` (f_int) and
+   `internal_energy_retained_fraction` (f_ret) **non-None** (both are None-defaulted and the
+   onset/S1 cannot be computed without them) and flag `pickup_rate_coefficient` (λ₀) `> 0`
+   (0.0-default = pickup structurally inert — warn or require, decide at build). Mirrors
+   `check_pickup_config` / `check_evaporation_config`; fails at config-load (earliest), not
+   deep in the driver. κ/picture/τ/ν/p/cap all carry live defaults, so they are not part of
+   the required set.
+
+**Config field deltas (Slice G):** the three A13 integrator flags land + activate here
+(`one_mass_event_per_step`, `jump_o_step_ordering`, `mass_jump_velocity_reset`; plan §4);
+`he_capture_velocity` (declared at Slice P) is *activated* (G passes `u_he`). The Slice-P/U
+declared-but-unread carries (`pickup_rate_coefficient`, `pickup_occupancy_exponent`, f_int,
+f_ret, `evap_rate_prefactor_per_ps`, `evap_rrk_dof`, `gate_onset_override_eV`) are **read by
+the driver here** → removed from the rule-2 exception table at the G build.
+
+**Cross-reference verdict:** these are software-composition + integrator-policy calls; no
+MASS/CALIBRATION *value* is touched. Decision #1 (seam) is faithful to A13 (jump-then-O,
+one-event-per-step) and the plan §0 locked "reuse the `shed_step` seam" decision; #2 realizes
+the Phase-B Q3 deferred guard; #3 matches the validation-first 0.80 eV / n=21 target; #4
+mirrors the existing channel config guards. **Slice G is build-ready** pending the
+`[PROCEED TO IMPLEMENTATION]` trigger (the last slice of Phase C).
+
+### Phase C — Slice G two remaining build calls resolved (2026-07-01, user)
+
+A second pre-build pass (full code-surface audit of the composed modules) closed the two
+items design call #4 / plan §4 left open. No code — the `[PROCEED TO IMPLEMENTATION]`
+boundary holds; docs-only amendment.
+
+- **5. λ₀ guard → warn, do not require.** `check_biphasic_config` **hard-requires**
+  `internal_energy_partition_fraction` (f_int) and `internal_energy_retained_fraction`
+  (f_ret) non-None when `mass_scenario=='biphasic'` (onset/S1 undefined without them), and
+  emits a **load-time warning** — not a raise — when `pickup_rate_coefficient` (λ₀) `== 0.0`
+  (pickup structurally inert). Rationale: an evaporation-only biphasic run seeded at n₀=21
+  is a legitimate limit (the Phase-E relaxation stage is its close cousin), so λ₀=0 is not a
+  config error; the validation-first bridge (Phase D) still uses λ₀>0. Fail-loud is reserved
+  for the genuinely-undefined knobs (f_int/f_ret), advisory for the merely-inert one.
+- **6. The three A13 integrator flags → fixed driver policy, NOT config toggles.** Plan §4
+  listed `one_mass_event_per_step` (=true), `jump_o_step_ordering` (=jump_then_O), and
+  `mass_jump_velocity_reset ∈ {momentum_conserving, label_only}` as fields landing at G. Each
+  has exactly **one built/honored value** (`label_only` has no primitive — the Phase-B resets
+  are momentum-conserving by construction), so live toggles would be **dead one-valued config
+  surface** (rule 2). Resolution: encode all three as **structural policy** — the
+  `biphasic_step` seam does one-event-per-step (evaporation-then-pickup, shed-then-pickup),
+  jump-then-O (rebuild BAOAB at m⁺), and momentum-conserving resets **by construction**;
+  documented in the driver docstring + `DRAG_PORT_DESIGN_DECISIONS.md` and **asserted by the
+  Slice-G tests**, with **no new SimConfig fields**. This refines plan §4 (which pre-supposed
+  the fields); the falsification-lever knobs that *do* land are the existing physics ones
+  (κ, picture, |S|, τ, f_int, f_ret, λ₀, p, ν, s, cap/form, `gate_onset_override_eV`).
+  Consequently the rule-2 carries removed at the G build are only the Slice-P/U physics
+  fields (`pickup_rate_coefficient`, `pickup_occupancy_exponent`, f_int, f_ret,
+  `evap_rate_prefactor_per_ps`, `evap_rrk_dof`, `gate_onset_override_eV`) — no integrator
+  field is added or removed.
+
+**Implementation note (no decision needed).** `write_ion_state_to_checkpoint_column` will
+branch on `mass_scenario`: store `state.n_shell` directly on the `biphasic` path (genuine
+state) and keep the `rint`-from-mass derivation for `fixed`/`anchored_discrete` (byte-identical
+regression). With both calls resolved, Slice G is fully specified and build-ready.
+
+---
+
+## Phase C — Slice G DELIVERED (2026-07-02) — Phase C COMPLETE
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD throughout
+(test→RED→GREEN), composing only accepted Phase-A/B modules + the Tier-0/1a seam; **no new
+channel physics**. The four pre-build design calls + the two build calls (λ₀ warn; integrator
+flags as fixed policy) carried straight through.
+
+**Build (production, 4 files):**
+- `simulation/ion_propagation_step.py` — new **`biphasic_step`** pre-step seam (K2 cooling →
+  evaporation-then-pickup draws → S1/K1 `E_int` + `E_mass_transfer` (eV via `×U×100²/EV`) +
+  bath/cooling `E_dissip` bookings → the `m == m_I⁺ + n·m_He` assert); `IonStepState` gains a
+  defaulted `n_shell: np.ndarray | None = None` (genuine state on biphasic, `None` elsewhere)
+  carried through the two return constructors + the read seam; `write_ion_state_to_checkpoint_
+  column` gains a `mass_scenario` kwarg branching biphasic (store `state.n_shell`) vs the
+  `rint`-from-mass derivation (byte-identical); `_check_drag_scope` flipped to **accept
+  `biphasic`** (noise-`none` still required; m_eff trip-wire already exempts non-`fixed`).
+  Module const `_M_N_CONSISTENCY_TOL_AMU = 1e-6`.
+- `simulation/ion.py` — `biphasic` dispatch arm in the `use_drag` loop: `biphasic_step`
+  (threading `rng`, passing the resolved `gate_steepness`) → rebuild the BAOAB closure at `m⁺`
+  → `baoab_propagation_step` → **fold `e_bind_pair(n)` into `E_pot`**; both writer calls pass
+  `mass_scenario=cfg.mass_scenario`.
+- `simulation/ion_initial_state.py` — `biphasic` branch: start at `complex_mass_amu(21)`,
+  seed the **S2 onset** `E_int[:,0] = f_int·coulomb_available_eV`, and seed the **binding fold**
+  `E_pot[:,0] += e_bind_pair(21)` (consistent offset from t0).
+- `config.py` — `check_biphasic_config` (require f_int/f_ret non-None under biphasic; **warn,
+  not raise**, on λ₀==0) wired into `validate()`.
+
+**Key as-built accounting decision — the E_pot binding fold (R4 closure).** The plan §2.1
+closure table lists `E_pot += D_0` (shed) / `−D_0` (pickup) but the Slice-G *interface* omitted
+`E_pot`, and MD `E_pot` is recomputed each step with no binding ladder. Reading MASS §6 (the
+jump-consistency `E_bind ± D_0`) resolved it: the 5-term invariant closes iff the binding
+release is booked to a tracked term. As-built, the **pair-binding potential
+`e_bind_pair(n) = −Σ_{i≤n}D_0(i)` is folded into the stored `E_pot`** on the biphasic path (a
+pure function of the genuine `n`, so an event shifts it by exactly `±D_0`, matching the table);
+the electrostriction marginal stays the untracked "A8 → bath" collective term. Verified by the
+isolated forced-shed / forced-pickup tests, which close the **full per-ion 5-term residual to
+machine precision (atol 1e-12)** — the strongest evidence the R4 partition is right. Worked
+oracle in the build scratchpad.
+
+**Composition facts as-built.** Frozen draw order = evaporation `rng.random(2N)` then pickup
+`rng.random(2N)`; both-fire ⇒ shed-then-pickup (pickup rate reads post-shed `n`); K2 reuses
+`newton_cool_step` on `E_solv.struct = E_∞(n)+E_int` (asymptote cancels at fixed `n` → the
+drain `E_int·(1−e^{−dt/τ})` books to `E_dissip`); cooling precedes the evaporation draw (gate
+`t×` opens as `E_int` drains below `Σ(n)`); `E_int` evolves additively (`reconstruct` never
+called); pickup density gate uses `rho_he_ratio` at the pre-step depth with the resolved
+drag-gate steepness (shared surface).
+
+**Integrator flags → fixed policy (no config fields).** One-event-per-step, jump-then-O, and
+momentum-conserving resets are structural in `biphasic_step`/the driver arm and asserted by the
+tests; no `one_mass_event_per_step` / `jump_o_step_ordering` / `mass_jump_velocity_reset`
+fields were added (rule 2 — no dead one-valued surface).
+
+**Rule-2 table.** The Slice-P/U declared-but-unread carries are now **read by the Slice-G
+driver** and are removed from the exception table: `pickup_rate_coefficient`,
+`pickup_occupancy_exponent`, `internal_energy_partition_fraction` (f_int),
+`internal_energy_retained_fraction` (f_ret), `evap_rate_prefactor_per_ps`, `evap_rrk_dof`,
+`gate_onset_override_eV`. `he_capture_velocity` is activated (G passes `u_he=at_rest`). No new
+config field lands (integrator policy is structural).
+
+**Tests (2 new files + 2 updated).** `tests/test_biphasic_config.py` (9: presence-require +
+λ₀ warn), `tests/test_biphasic_step.py` (19: n_shell seams + scope flip; biphasic init;
+cooling-drain exact closure; `m↔n` invariant over 50 event steps; **isolated forced-shed /
+forced-pickup full 5-term closure to 1e-12**; seeded reproducibility + event firing; full
+`run_ion_propagation` biphasic smoke — v7, finite, onset, `E_int≥0`, `m↔n` across columns,
+5-term `ion_ledger_closure` residual < 1e-2 Verlet). Two tests updated for the legitimately
+changed behavior: `test_ion_drag_smoke` (biphasic now **admitted**; active noise still refused)
+and `test_ion_initial_state` (biphasic now starts at the n=21 complex mass).
+
+**Regression.** `fixed` / `anchored_discrete` never enter the biphasic arm (dispatch on
+`mass_scenario`); the writer's `rint` branch keeps `n_shell` byte-identical; the whole Tier-0/1a
+drag + collision suite is unchanged. Full suite **1773 passed, 0 failed** (was 1745; +28), same
+25 warnings (17 pre-existing `anchored_discrete` + 8 v6→v7 shim). **Phase C (Slice X + Slice G)
+is complete.** Next: Phase D (Slice Z — the generative-vs-anchored bridge),
+`TIER2_PHASE_D_IMPLEMENTATION_PLAN.md`.
+
+---
+
+## Phase C — Slice G post-delivery code review + fixes (2026-07-02)
+
+An 8-angle post-delivery review of the Slice-G diff (3 correctness + reuse/simplification/
+efficiency/altitude/conventions finders, 1-vote verify) surfaced 10 findings; all fixed under a
+fresh `[PROCEED TO IMPLEMENTATION]`. The review **confirmed the physics composition**: every
+energy booking (S1 split on the pre-pickup rung, K1 drain, capture/shed reduced-mass defects,
+the eV conversion, the frozen evaporation-then-pickup draw order, cooling-before-draw) checks
+out against the Phase-A/B primitives — the findings were dispatch/edge holes and
+maintainability debt, not channel physics.
+
+**Correctness fixes (4 production files + tests):**
+1. **Biphasic-without-drag-bundle hole (the top finding).** `mass_scenario='biphasic'` with
+   `drag_coefficients=None` passed every guard and silently dispatched onto the hard-sphere
+   collision path — with the n=21 mass / S2 onset / E_pot fold seeded at column 0, the fold
+   lost from column 1 (spurious +Σ(21) ledger jump), `E_int` frozen, and a frozen verbatim
+   `n_shell` stored while attachment grows the mass. Now refused twice: `check_biphasic_config`
+   requires the bundle at config-load; `ion._check_scope_ion_driver` re-checks for
+   non-validated configs (NotImplementedError before any stepping).
+2. **Writer contract hardened; as-built record corrected.** The delivery note above claimed
+   "both writer calls pass `mass_scenario`" — **wrong as-built**: the post-loop tail write
+   (`ion.py`) omitted it. Fixed, and `write_ion_state_to_checkpoint_column`'s `mass_scenario`
+   kwarg is now **required** (an omitted scenario on any future caller is a TypeError, not a
+   silent rint fallback), with a fail-loud ValueError on `biphasic` + `n_shell=None`. Analysis
+   note: the tail branch itself is *unreachable defensive code*
+   (`1 + floor((n−1)/s) ≡ ceil(n/s)`), so no stored column was ever actually mis-written — the
+   fix closes the latent contract break, not a live corruption.
+3. **Negative λ₀ sign hole.** `check_biphasic_config` warned only on `== 0.0`; a sign typo
+   (λ₀ < 0) validated silently and structurally disabled pickup (`P_attach < 0`, draws in
+   `[0,1)` never fire). Now a config-load ValueError under biphasic **and** a module-level
+   guard in `pickup.lambda_attach` (mirroring the `p < 0` defense). The Slice-P "no load-time
+   bound on λ₀" decision covers the value prior, not the sign. λ₀ == 0.0 stays advisory
+   (decision #5 unchanged).
+4. **`helium_density_profile='tabulated'` lazily refused.** `biphasic_step` hardcoded the erf
+   gate and silently ignored the config-accepted `tabulated` member; it now raises
+   NotImplementedError at point-of-use — the same rule-2 contract as
+   `pickup_rate_form='sweeping'` / `he_capture_velocity='thermal'`.
+
+**Cleanup fixes:**
+5. **Stray script flags reverted.** The `tier0_drag_comparison.py` ENERGY_FIGURE/FORCE_FIGURE
+   False→True flips were unrelated to Slice G; reverted to the committed state (re-flip
+   locally if wanted — they are `# USER SETTINGS`).
+6. **eV-conversion single-sourced (rule 1).** New `_amu_ang2_ps2_to_eV` helper in
+   `ion_propagation_step.py` replaces the three inline `U*(100²)/EV` idioms
+   (`baoab_propagation_step`, `shed_step`, `biphasic_step`). Its op order is the exact
+   pre-refactor inline sequence, so the **Tier-0/1a outputs stay byte-identical**; the
+   biphasic site previously pre-multiplied (different association) and changes in the last
+   ulp — free pre-commit, tests updated in lockstep.
+7. **Biphasic t0 physics grouped.** `build_initial_ion_state`: the byte-identical
+   anchored/biphasic mass-init branches merged into one arm; the E_pot binding fold moved
+   down to join the S2 onset in a single biphasic column-0 block (float-identical: the fold
+   now applies to `E_pot_eV[:,0]` after the fill instead of to `E_pot_t0` before it).
+8. **Ladder hot-path cache (bit-identical).** `dissociation_ladder.ladder_cumsum` now serves
+   Σ from an `lru_cache`d, padded, read-only prefix table (`_sigma_prefix_table`; prefix sums
+   are independent of later rungs, so one `(picture, κ)` entry serves the whole run). Kills
+   the ~5 redundant per-step ladder rebuilds the biphasic driver paid (e_bind fold, e_inf ×2,
+   gate threshold). No numerical-behavior change — regression-tested for exact float equality
+   across call orders and for cached-table immutability.
+9. **Test-helper dedup (rule 1).** `test_biphasic_step.py` now imports the production
+   `_E_kin_eV` and `_amu_ang2_ps2_to_eV` instead of shadow copies, shares one
+   `_biphasic_cfg` base with `test_biphasic_config.py` (single source of the "minimal valid
+   biphasic cfg"; local wrapper only defaults pickup off), and the per-ion 5-term residual
+   became one module-level `_five_term_residual`.
+10. Driver-level unknown-`mass_scenario` reject coverage (lost with the old
+    `test_scope_guard_rejects_mass_scenario`) restored.
+
+**Review-extension tests (same session, before the fixes; all plan-§3 oracles previously
+uncovered):** both-fire ⇒ shed-then-pickup with exact `−D₀(n₀)+f_ret·D₀(n₀)` E_int booking
+(the swapped order would book the n₀+1 rung — numerically distinct); a bitwise manual-replay
+lock of the frozen evaporation-then-pickup RNG stream; gate opening at t× on a cooling ramp
+(no shed above Σ, certain shed on crossing, τ-independent construction); `E_int ≥ 0` + finite
+across 50 event steps; `n_shell=None` ValueError; the m↔n guard's teeth (0.5 amu drift trips).
+
+**Files.** Production: `config.py` (guard extended), `simulation/ion.py` (driver guard + tail
+kwarg), `simulation/ion_propagation_step.py` (writer contract, tabulated refusal, conversion
+helper), `simulation/ion_initial_state.py` (branch merge + t0 grouping),
+`physics/pickup.py` (λ₀ sign guard), `physics/dissociation_ladder.py` (cached Σ table).
+Docs: `docs/simulation/ion_module.md` pseudocode de-drifted (biphasic arm + writer kwarg).
+Tests: `test_biphasic_config.py`, `test_biphasic_step.py`, `test_dissociation_ladder.py`,
+`test_ion_propagation_step.py` (writer kwarg). Full suite **1790 passed, 0 failed**
+(1773 → +7 review-extension, +10 fix tests), 26 warnings (25 pre-existing + 1 expected §6.5
+pairing RuntimeWarning now that the shared biphasic test cfg carries a real constant-mass
+bundle under `allow_inconsistent_mass_pairing=True`). Not addressed (recorded, low priority):
+the E_pot-fold ownership stays in the driver per the as-built decision above; the per-step
+`m↔n` allclose assert stays (safety net beats its ~µs cost).

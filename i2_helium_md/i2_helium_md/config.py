@@ -425,6 +425,7 @@ class SimConfig:
         check_helium_density_config(self)
         check_pickup_config(self)
         check_evaporation_config(self)
+        check_biphasic_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -707,6 +708,97 @@ def check_internal_energy_budget_config(cfg: "SimConfig") -> None:
                 f"~0.2 ceiling and self-unbound floor are advisory, not enforced); "
                 f"got {value!r}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Biphasic generative-driver config-load guard (Tier-2 Phase-C Slice G)
+# ---------------------------------------------------------------------------
+def check_biphasic_config(cfg: "SimConfig") -> None:
+    """Validate the ``biphasic`` generative-driver surface at config-load (Slice G).
+
+    Fires **only** when ``cfg.mass_scenario == "biphasic"`` (the Tier-2 production
+    scenario); a no-op for ``fixed`` / ``anchored_discrete``. Four checks:
+
+    1. **Required partition fractions (fail-loud).** ``internal_energy_partition_
+       fraction`` (f_int, the S2 onset ``E_int(0)=f_int*E_avail``) and
+       ``internal_energy_retained_fraction`` (f_ret, the S1 pickup heat
+       ``+f_ret*D_0``) are ``None``-defaulted (their committed values are Phase-F
+       calibration outputs). Under ``biphasic`` the generative driver *cannot*
+       compute the onset or S1 heat without them, so a ``None`` is refused here at
+       the earliest point (CLAUDE.md principle 4), not deep in the loop. Their
+       ``[0, 1]`` range is still enforced by
+       :func:`check_internal_energy_budget_config`; this guard only enforces
+       *presence*.
+    2. **Required drag bundle (fail-loud; Slice-G review fix).** ``biphasic`` is a
+       *drag-path* scenario: ``run_ion_propagation`` dispatches on
+       ``drag_coefficients is not None``, so a biphasic config without a bundle
+       would silently fall onto the hard-sphere collision path -- where nothing
+       evolves ``E_int`` or re-applies the E_pot binding fold and the seeded
+       column-0 physics corrupts the ledger. Refused here (earliest) and again at
+       the driver (``ion._check_scope_ion_driver``) for non-validated configs.
+    3. **Non-negative pickup rate (fail-loud; Slice-G review fix).** A negative
+       ``pickup_rate_coefficient`` (lambda_0) gives ``P_attach < 0``, so the
+       channel silently never fires (draws live in ``[0, 1)``) -- unphysical and
+       indistinguishable from "pickup on" without this refusal. The Slice-P
+       decision that lambda_0 carries no load-time bound covers the *value prior*
+       (pinned at Phase F), not the sign; ``physics.pickup.lambda_attach`` carries
+       the mirroring module-level defense.
+    4. **Pickup-inert warning (advisory, not a refuse).** ``pickup_rate_coefficient
+       == 0.0`` (the default) -> the Poisson pickup channel is structurally inert
+       (``P_attach = 0``). That is a *legitimate* biphasic run -- the
+       evaporation-only cascade from the seeded ``n_0`` shell (close cousin of the
+       Phase-E relaxation stage) -- so it warns rather than raises (Slice-G decision
+       #5, user 2026-07-01). The genuinely-undefined knobs (f_int/f_ret) fail loud;
+       the merely-inert one is advisory.
+
+    Raises
+    ------
+    ValueError
+        When ``mass_scenario == "biphasic"`` and ``internal_energy_partition_
+        fraction`` or ``internal_energy_retained_fraction`` is ``None``, or
+        ``drag_coefficients`` is ``None``, or ``pickup_rate_coefficient < 0``.
+    """
+    if cfg.mass_scenario != "biphasic":
+        return
+
+    for name in (
+        "internal_energy_partition_fraction",
+        "internal_energy_retained_fraction",
+    ):
+        if getattr(cfg, name) is None:
+            raise ValueError(
+                f"mass_scenario='biphasic' requires {name} to be set (not None): "
+                "the generative driver needs both partition fractions (f_int for the "
+                "S2 onset, f_ret for the S1 pickup heat) to compute the E_int budget. "
+                "Their committed values are a Phase-F calibration output; set them "
+                "explicitly to run a biphasic simulation."
+            )
+
+    if cfg.drag_coefficients is None:
+        raise ValueError(
+            "mass_scenario='biphasic' requires a drag_coefficients bundle: the "
+            "generative biphasic mechanism runs on the BAOAB drag path "
+            "(run_ion_propagation dispatches on drag_coefficients is not None), "
+            "and without a bundle the run would silently fall onto the hard-sphere "
+            "collision path, where E_int is never evolved and the E_pot binding "
+            "fold is lost after column 0."
+        )
+
+    if cfg.pickup_rate_coefficient < 0.0:
+        raise ValueError(
+            "pickup_rate_coefficient (lambda_0) must be >= 0: a negative rate "
+            "gives P_attach = 1 - exp(+|lambda_0|*dt) < 0, so the pickup channel "
+            f"silently never fires; got {cfg.pickup_rate_coefficient!r}."
+        )
+
+    if cfg.pickup_rate_coefficient == 0.0:
+        warnings.warn(
+            "mass_scenario='biphasic' with pickup_rate_coefficient=0.0: the Poisson "
+            "He-pickup channel is structurally inert (P_attach=0), so this run is an "
+            "evaporation-only cascade from the seeded n_0 shell. Set "
+            "pickup_rate_coefficient>0 to enable pickup.",
+            UserWarning,
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -160,7 +160,9 @@ def lambda_attach(
     NotImplementedError
         If ``pickup_rate_form`` is a valid-but-unbuilt rule-2 arm.
     ValueError
-        If ``cap`` is not a recognised occupancy-cap selector.
+        If ``cap`` is not a recognised occupancy-cap selector, or ``lambda0 < 0``
+        (a negative rate makes ``P_attach < 0`` -- the channel would silently
+        never fire).
     """
     if pickup_rate_form != _BUILT_PICKUP_RATE_FORM:
         raise NotImplementedError(
@@ -170,6 +172,17 @@ def lambda_attach(
     if cap not in _KNOWN_OCCUPANCY_CAPS:
         raise ValueError(
             f"unknown pickup occupancy cap {cap!r}; expected one of {_KNOWN_OCCUPANCY_CAPS}."
+        )
+
+    # Fail loud on a negative rate coefficient (CLAUDE.md principle 4): lambda_0 < 0
+    # gives lambda < 0 -> P_attach = 1 - exp(+|lambda|*dt) < 0, so the channel
+    # silently never fires (draws live in [0, 1)) -- indistinguishable from "pickup
+    # on" without this refusal. Module-level defense mirroring the config-load
+    # check (config.check_biphasic_config) and the p < 0 guard below.
+    if lambda0 < 0.0:
+        raise ValueError(
+            f"pickup rate coefficient lambda0 must be >= 0 (a negative rate makes "
+            f"P_attach < 0, structurally disabling the channel); got {lambda0!r}"
         )
 
     rho = np.asarray(rho_ratio, dtype=float)

@@ -39,6 +39,7 @@ using 2D radius and missing partner Coulomb) are fixed by
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from functools import partial
 from typing import Optional
 
@@ -50,11 +51,13 @@ from ..physics.constants import U
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.shell_schedule import build_onset_strip_schedule, build_shell_schedule
+from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
 from .ion_initial_state import build_initial_ion_state
 from .ion_propagation_step import (
     IonStepState,
     baoab_propagation_step,
+    biphasic_step,
     ion_propagation_step,
     ion_state_from_checkpoint_column,
     shed_step,
@@ -218,17 +221,28 @@ def run_ion_propagation(
 
     for internal_id in range(1, num_internal_steps):
         if use_drag:
-            # SQ2/SQ3 (anchored_discrete only): apply at most one scheduled cold
-            # shed BEFORE rebuilding the closure, so the rebuild reads the
-            # post-shed mass m+ for both the conservative kicks and the O-step.
-            if schedule is not None:
+            if cfg.mass_scenario == "biphasic":
+                # Tier-2 generative pre-step (Slice G): K2 cooling + <=1 mass event
+                # (evaporation-then-pickup) + the E_int/E_mass_transfer/E_dissip
+                # bookings, at the step seam BEFORE the closure rebuild -- so the
+                # rebuild reads the post-jump mass m+ for both the conservative kicks
+                # and the O-step (jump-then-O). Threads rng (the channel draws).
+                state = biphasic_step(
+                    state, rng=rng, cfg=cfg, droplet_radii=droplet_radii,
+                    gate_steepness=gate_steepness,
+                )
+            elif schedule is not None:
+                # SQ2/SQ3 (anchored_discrete only): apply at most one scheduled cold
+                # shed BEFORE rebuilding the closure, so the rebuild reads the
+                # post-shed mass m+ for both the conservative kicks and the O-step.
                 state, next_shed_idx = shed_step(
                     state, schedule, next_shed_idx, dt,
                 )
             # Rebuild the BAOAB closure every step, matching the make_ion_step
             # rebuild pattern. Mass enters here in amu (kg -> amu via U); under
             # `fixed` it is constant, under `anchored_discrete` it follows the
-            # shed schedule. Noise dormant (T_eff=0).
+            # shed schedule, under `biphasic` the generative channels. Noise dormant
+            # (T_eff=0).
             acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
             step = make_ion_baoab_step(
                 state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,
@@ -236,6 +250,19 @@ def run_ion_propagation(
             new_state = baoab_propagation_step(
                 state, step=step, cfg=cfg, droplet_radii=droplet_radii,
             )
+            if cfg.mass_scenario == "biphasic":
+                # Fold the pair-binding potential E_bind^pair(n) = -Sigma(n) into the
+                # freshly-recomputed MD E_pot (a pure function of the post-event n), so
+                # the +/- D_0 pickup/shed bookings close the 5-term invariant (MASS §6;
+                # the t0 seed lives in build_initial_ion_state).
+                new_state = replace(
+                    new_state,
+                    E_pot_eV=new_state.E_pot_eV + e_bind_pair_eV(
+                        new_state.n_shell,
+                        picture=cfg.ladder_electronic_picture,
+                        kappa=cfg.ladder_steepness,
+                    ),
+                )
         else:
             new_state = ion_propagation_step(
                 state,
@@ -250,7 +277,9 @@ def run_ion_propagation(
 
         # Store every stride-th internal step.
         if internal_id % stride == 0 and next_storage_idx < num_stored_steps:
-            write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+            write_ion_state_to_checkpoint_column(
+                state, ckpt, next_storage_idx, mass_scenario=cfg.mass_scenario,
+            )
             if state.temperature_diagnostic is not None:
                 ckpt.temperature_diagnostic[next_storage_idx, :] = (
                     state.temperature_diagnostic
@@ -262,7 +291,9 @@ def run_ion_propagation(
     # last reachable column holds the final state. This keeps the trajectory
     # ending at the actual end-time rather than at a pre-stride snapshot.
     if next_storage_idx < num_stored_steps:
-        write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+        write_ion_state_to_checkpoint_column(
+            state, ckpt, next_storage_idx, mass_scenario=cfg.mass_scenario,
+        )
         if state.temperature_diagnostic is not None:
             ckpt.temperature_diagnostic[next_storage_idx, :] = (
                 state.temperature_diagnostic
@@ -292,6 +323,19 @@ def _check_scope_ion_driver(cfg: SimConfig) -> None:
     ``ion_propagation_step`` already raise on those, and the failure
     surfaces before any expensive stepping.
     """
+    if cfg.mass_scenario == "biphasic" and cfg.drag_coefficients is None:
+        # Slice-G review fix: biphasic is a drag-path scenario. Without a bundle
+        # the loop below would dispatch onto the hard-sphere collision path, where
+        # E_int is never evolved, the E_pot binding fold is lost after column 0,
+        # and the writer would store a frozen n_shell while attachment grows the
+        # mass. config.check_biphasic_config refuses this at load; this driver
+        # check covers configs built without validate().
+        raise NotImplementedError(
+            "mass_scenario='biphasic' requires a drag_coefficients bundle: the "
+            "generative biphasic mechanism runs only on the BAOAB drag path, and "
+            "drag_coefficients=None would dispatch onto the hard-sphere collision "
+            "path."
+        )
     if not cfg.single_pulse:
         raise NotImplementedError(
             "run_ion_propagation requires cfg.single_pulse=True. The "

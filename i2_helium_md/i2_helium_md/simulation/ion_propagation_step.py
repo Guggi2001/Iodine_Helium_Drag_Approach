@@ -64,12 +64,22 @@ from ..physics.collisions import (
 )
 from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
+from ..physics.evaporation import evaporation_step_components
+from ..physics.helium_density import rho_he_ratio
+from ..physics.internal_energy_budget import pickup_bath_release_eV
 from ..physics.mass_jump import continuous_velocity_shed_components
+from ..physics.pickup import pickup_step_components
 from ..physics.shell_schedule import ShellSchedule
+from ..physics.solvation_cooling import e_infinity_eV, newton_cool_step
 from ..physics.drag import REALIZED_FORMS
 from ..physics.interactions import partner_interaction_ion
 from ..physics.leapfrog import make_ion_step
 from ..physics.potentials import droplet_potential
+
+#: Tight tolerance [amu] for the per-step ``m == m_I+ + n*m_He`` consistency assert
+#: (Slice G; the reduced-mass resets produce exact +/- m_He, so the residual is
+#: float-rounding only -- distinct from the loose 8-amu drag mass-insensitivity band).
+_M_N_CONSISTENCY_TOL_AMU: float = 1e-6
 
 
 # ===========================================================================
@@ -123,6 +133,14 @@ class IonStepState:
         Cumulative number of hard-sphere collisions per atom.
     time_ps : float
         Time at this state, in picoseconds.
+    n_shell : np.ndarray, shape (2N,) or None
+        Per-complex integer He-shell count (genuine state on the Tier-2
+        ``biphasic`` path, where the pickup/evaporation channels advance ``n``
+        independently of the mass reset so a channel/reset drift can be caught
+        by the ``m == m_I+ + n*m_He`` per-step invariant). ``None`` on the
+        ``fixed`` / ``anchored_discrete`` deterministic paths, where the
+        checkpoint writer re-derives ``n`` from the realized mass via ``rint``
+        (byte-identical to the pre-Slice-G behaviour). Defaults to ``None``.
     temperature_diagnostic : np.ndarray, shape (3,) or None
         Legacy MATLAB per-step temperature diagnostic
         ``[<T'/T>_actual, <T'/T>_from_mass_ratio, <theta_lab>_rad]``
@@ -147,6 +165,7 @@ class IonStepState:
     E_int_eV: np.ndarray
     number_of_collisions: np.ndarray
     time_ps: float
+    n_shell: np.ndarray | None = None
     temperature_diagnostic: np.ndarray | None = None
 
 
@@ -305,6 +324,7 @@ def ion_propagation_step(
         E_int_eV=state.E_int_eV,  # untouched on the collision/attach path
         number_of_collisions=n_coll_new,
         time_ps=state.time_ps + dt,
+        n_shell=state.n_shell,  # carried through (None on the collision path)
         temperature_diagnostic=temperature_diagnostic_step,
     )
 
@@ -368,11 +388,9 @@ def baoab_propagation_step(
     E_kin_new_eV = _E_kin_eV(state.mass_kg, vx1, vy1, vz1)
     E_pot_new_eV = _E_pot_per_atom(depth, E_pot_coulomb_per_pair, cfg)
 
-    # Dissipated energy: amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U,
-    # A/ps->m/s via 100, J->eV via EV) -- the same conversion path as the
-    # mass-attach defect below in ion_propagation_step, so E_dissip_eV stays in a
-    # consistent eV with E_kin_eV / E_pot_eV.
-    dE_dissip_eV = dE_dissip * U * (100.0 ** 2) / EV
+    # Dissipated energy: amu*A^2/ps^2 -> eV via the shared baseline idiom, so
+    # E_dissip_eV stays in a consistent eV with E_kin_eV / E_pot_eV.
+    dE_dissip_eV = _amu_ang2_ps2_to_eV(dE_dissip)
     E_dissip_new = state.E_dissip_eV + dE_dissip_eV
 
     return IonStepState(
@@ -383,9 +401,10 @@ def baoab_propagation_step(
         E_pot_eV=E_pot_new_eV,
         E_dissip_eV=E_dissip_new,
         E_mass_transfer_eV=state.E_mass_transfer_eV,  # stays 0 (no attach)
-        E_int_eV=state.E_int_eV,  # stays 0 (no E_int reservoir on the drag/Tier-0 path)
+        E_int_eV=state.E_int_eV,  # carried through (0 on Tier-0; evolved by biphasic_step)
         number_of_collisions=state.number_of_collisions,       # stays 0 (no collisions)
         time_ps=state.time_ps + dt,
+        n_shell=state.n_shell,  # carried through (None off biphasic; genuine state under it)
         temperature_diagnostic=np.full(3, np.nan, dtype=float),
     )
 
@@ -459,10 +478,9 @@ def shed_step(
         m_he_amu=m_he_amu,
         n_removed=n_removed,
     )
-    # amu*A^2/ps^2 -> eV via the baseline idiom (amu->kg via U, A/ps->m/s via 100,
-    # J->eV via EV) -- the same path baoab_propagation_step uses for dE_dissip, so
-    # the booked defect stays in a consistent eV with E_kin/E_pot/E_dissip.
-    dE_eV = dE_amu * U * (100.0 ** 2) / EV
+    # amu*A^2/ps^2 -> eV via the shared baseline idiom, so the booked defect
+    # stays in a consistent eV with E_kin/E_pot/E_dissip.
+    dE_eV = _amu_ang2_ps2_to_eV(dE_amu)
     new_state = replace(
         state,
         vx=vx_p, vy=vy_p, vz=vz_p,
@@ -470,6 +488,180 @@ def shed_step(
         E_mass_transfer_eV=state.E_mass_transfer_eV + dE_eV,
     )
     return new_state, next_shed_idx + 1
+
+
+# ===========================================================================
+# Tier-2 biphasic generative pre-step (Phase-C Slice G) -- variable-mass drag path
+# ===========================================================================
+def biphasic_step(
+    state: IonStepState,
+    *,
+    rng: np.random.Generator,
+    cfg: SimConfig,
+    droplet_radii: np.ndarray,
+    gate_steepness: float,
+) -> IonStepState:
+    r"""Apply one biphasic generative pre-step (K2 cooling + <=1 mass event). Pure.
+
+    The Tier-2 production analog of :func:`shed_step`: a per-ion **pre-step seam**
+    that runs *before* the driver rebuilds the BAOAB closure at the post-jump mass
+    ``m+``. It composes the accepted Phase-A/B channels into one step with the
+    one-event-per-step / frozen-draw-order / 5-term-closing contract, and does **no**
+    position or time advance (that is :func:`baoab_propagation_step`, run after).
+
+    Per ion, in fixed order (MASS §6; ``scratchpad`` accounting oracle):
+
+    1. **K2 cooling** -- ``E_int -> E_int*exp(-dt/tau)`` via
+       :func:`~i2_helium_md.physics.solvation_cooling.newton_cool_step` on
+       ``E_solv.struct = E_inf(n) + E_int`` (rule-1 reuse; at fixed ``n`` the
+       asymptote cancels). The drain ``E_int*(1-decay) >= 0`` books to ``E_dissip``.
+    2. **Evaporation draw** (frozen first), on the **post-cooling** ``E_int`` so the
+       self-bound gate opens exactly as cooling drains ``E_int`` below ``Sigma(n)``:
+       on a fire ``n->n-1``, ``m->m-m_He`` (cold-shed reset), ``E_int -= D_0(n)``
+       (K1), the mechanical defect ``->`` ``E_mass_transfer``.
+    3. **Pickup draw** (frozen second), on the **post-shed** ``(n, m, v)`` -- so a
+       both-fire ion applies **shed then pickup** (net ``n`` unchanged, both bookings
+       applied): on a fire ``n->n+1``, ``m->m+m_He`` (capture reset),
+       ``E_int += f_ret*D_0(n+1)`` (S1), the bath remainder
+       ``(1-f_ret)*D_0(n+1) -> E_dissip``, the capture defect ``-> E_mass_transfer``.
+
+    The **binding-potential fold** ``e_bind_pair(n) -> E_pot`` that closes the ``+/-
+    D_0`` bookings is applied by the **driver** after :func:`baoab_propagation_step`
+    recomputes the MD ``E_pot`` (it is a pure function of the post-event ``n``), so it
+    is *not* set here. ``E_kin`` / ``E_pot`` are likewise left to the BAOAB step.
+
+    Parameters
+    ----------
+    state : IonStepState
+        Current state (read only; not mutated). ``n_shell`` must be genuine ``(2N,)``
+        state (raised if ``None``).
+    rng : np.random.Generator
+        Injected RNG. Draws exactly one ``rng.random(size=2N)`` for evaporation, then
+        one for pickup (the frozen shed-then-pickup order).
+    cfg : SimConfig
+        Reads the Phase-A/B knob surface (tau, |S|, picture, kappa, nu, f_ret,
+        lambda_0, p, cap, forms, dof/gate overrides) plus ``dt_ion``.
+    droplet_radii : np.ndarray, shape (2N,)
+        Per-atom droplet radius [A] (for the pickup density gate depth).
+    gate_steepness : float
+        The erf-gate steepness [A] for the pickup occupancy density (the driver
+        passes the resolved drag-gate steepness so density and drag share a surface).
+
+    Returns
+    -------
+    IonStepState
+        Advanced ``vx/vy/vz``, ``mass_kg``, ``n_shell``, ``E_int_eV``, ``E_dissip_eV``,
+        ``E_mass_transfer_eV`` at the **same** ``time_ps`` and positions.
+
+    Raises
+    ------
+    ValueError
+        If ``state.n_shell`` is ``None`` (biphasic requires genuine occupancy state).
+    NotImplementedError
+        If ``cfg.helium_density_profile`` selects the declared-but-unbuilt
+        ``'tabulated'`` arm (lazy point-of-use refusal; rule-2 contract).
+    AssertionError
+        If the post-step ``m == m_I+ + n*m_He`` consistency drifts beyond
+        :data:`_M_N_CONSISTENCY_TOL_AMU` (the deferred Phase-B Q3 guard).
+    """
+    if state.n_shell is None:
+        raise ValueError(
+            "biphasic_step requires genuine n_shell state on the IonStepState "
+            "(got None); the biphasic driver reads it from the v7 checkpoint column."
+        )
+
+    dt = cfg.dt_ion
+    picture = cfg.ladder_electronic_picture
+    kappa = cfg.ladder_steepness
+    s_abs = cfg.solv_struct_asymptote_eV
+    f_ret = cfg.internal_energy_retained_fraction
+    n = np.asarray(state.n_shell, dtype=float)
+    m_amu = state.mass_kg / U
+
+    # 1. K2 cooling: reuse newton_cool_step on E_solv.struct = E_inf(n) + E_int. At
+    #    fixed n the asymptote cancels, leaving E_int*exp(-dt/tau); the drain books
+    #    to E_dissip (MASS §6 K2; rule-1 single source of the cooling form).
+    e_inf = np.asarray(e_infinity_eV(n, picture=picture, kappa=kappa, s_abs_eV=s_abs))
+    e_solv_cooled = np.asarray(
+        newton_cool_step(
+            e_inf + state.E_int_eV, n,
+            tau_ps=cfg.internal_energy_cooling_tau_ps, dt_ps=dt,
+            picture=picture, kappa=kappa, s_abs_eV=s_abs,
+        )
+    )
+    E_int = e_solv_cooled - e_inf
+    E_dissip = state.E_dissip_eV + (state.E_int_eV - E_int)   # cooling drain >= 0
+
+    # Pickup occupancy density gate at the pre-step positions (shared drag surface).
+    # Only the analytic erf-complement profile is built; 'tabulated' is a valid
+    # config enum (declared rule-2 arm) whose sourced data array does not exist
+    # yet, so selecting it fails lazily here at point-of-use -- the same contract
+    # as pickup_rate_form='sweeping' / he_capture_velocity='thermal'.
+    if cfg.helium_density_profile != "erf_complement":
+        raise NotImplementedError(
+            f"helium_density_profile={cfg.helium_density_profile!r} is a "
+            "declared-but-unbuilt rule-2 arm for the biphasic pickup density "
+            "gate; only 'erf_complement' is built (physics/helium_density.py)."
+        )
+    depth = _depth(state.x, state.y, state.z, droplet_radii)
+    rho_ratio = rho_he_ratio(depth, steepness=gate_steepness)
+
+    # 2. Evaporation draw FIRST (frozen order), on the post-cooling E_int.
+    n_e, m_e, vx_e, vy_e, vz_e, dE_int_e, dE_mt_e, _fired_e = evaporation_step_components(
+        rng=rng, E_int_eV=E_int, n=n, vx=state.vx, vy=state.vy, vz=state.vz,
+        m_amu=m_amu, nu=cfg.evap_rate_prefactor_per_ps, picture=picture, kappa=kappa,
+        dt_ps=dt, evap_rrk_dof=cfg.evap_rrk_dof,
+        gate_onset_eV=cfg.gate_onset_override_eV,
+    )
+    E_int = E_int + dE_int_e                                  # K1 drain (-D_0(n)) on fire
+    E_mass_transfer = state.E_mass_transfer_eV + _amu_ang2_ps2_to_eV(dE_mt_e)
+
+    # 3. Pickup draw SECOND, on the post-shed (n, m, v) -> shed-then-pickup if both.
+    n_p, m_p, vx_p, vy_p, vz_p, dE_int_p, dE_mt_p, fired_p = pickup_step_components(
+        rng=rng, n=n_e, vx=vx_e, vy=vy_e, vz=vz_e, m_amu=m_e, rho_ratio=rho_ratio,
+        lambda0=cfg.pickup_rate_coefficient, f_ret=f_ret, picture=picture, kappa=kappa,
+        dt_ps=dt, p=cfg.pickup_occupancy_exponent, cap=cfg.pickup_occupancy_cap,
+        pickup_rate_form=cfg.pickup_rate_form,
+        he_capture_velocity=cfg.he_capture_velocity,
+    )
+    E_int = E_int + dE_int_p                                  # S1 heat (+f_ret*D_0) on fire
+    E_mass_transfer = E_mass_transfer + _amu_ang2_ps2_to_eV(dE_mt_p)
+    # S1 bath remainder (1-f_ret)*D_0(n+1) -> E_dissip (n = pre-pickup = post-shed n_e).
+    bath = np.where(
+        fired_p,
+        pickup_bath_release_eV(n_e, f_ret=f_ret, picture=picture, kappa=kappa),
+        0.0,
+    )
+    E_dissip = E_dissip + bath
+
+    n_p = np.asarray(n_p, dtype=float)
+    m_p_amu = np.asarray(m_p, dtype=float)
+
+    # m <-> n consistency (deferred Phase-B Q3 guard, owned here): the two
+    # bookkeepings must never drift (a cheap structural catch on a channel/reset bug).
+    if not np.allclose(
+        m_p_amu, MASS_I_ION_AMU + n_p * MASS_HE_AMU,
+        rtol=0.0, atol=_M_N_CONSISTENCY_TOL_AMU,
+    ):
+        raise AssertionError(
+            "biphasic_step m<->n consistency drift: mass and n_shell disagree beyond "
+            f"{_M_N_CONSISTENCY_TOL_AMU} amu (max gap "
+            f"{float(np.max(np.abs(m_p_amu - (MASS_I_ION_AMU + n_p * MASS_HE_AMU)))):.3e} "
+            "amu). The pickup/evaporation resets and the integer n counter must stay "
+            "in lockstep (capture/cold_shed are the single mass source)."
+        )
+
+    return replace(
+        state,
+        vx=np.asarray(vx_p, dtype=float),
+        vy=np.asarray(vy_p, dtype=float),
+        vz=np.asarray(vz_p, dtype=float),
+        mass_kg=m_p_amu * U,
+        n_shell=n_p,
+        E_int_eV=E_int,
+        E_dissip_eV=E_dissip,
+        E_mass_transfer_eV=E_mass_transfer,
+    )
 
 
 # ===========================================================================
@@ -482,6 +674,19 @@ def _depth(x, y, z, droplet_radii):
     """
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
     return r - droplet_radii
+
+
+def _amu_ang2_ps2_to_eV(dE_amu_ang2_ps2):
+    """Convert an energy increment from MD units [amu*A^2/ps^2] to eV.
+
+    The baseline idiom (amu->kg via ``U``, A/ps->m/s via 100, J->eV via ``EV``),
+    the single source for the drag-path energy bookings (CLAUDE.md rule 1):
+    ``baoab_propagation_step`` (dE_dissip), ``shed_step`` (shed defect), and
+    ``biphasic_step`` (channel dE_mass_transfer). The operation order
+    ``((dE*U)*100^2)/EV`` is exactly the pre-refactor inline sequence, so the
+    Tier-0/1a outputs stay byte-identical. Scalar or ndarray in -> same out.
+    """
+    return dE_amu_ang2_ps2 * U * (100.0 ** 2) / EV
 
 
 def _E_kin_eV(mass_kg, vx, vy, vz):
@@ -550,11 +755,10 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
         unsupported.append(
             f"noise_form={cfg.noise_form!r} (active Langevin noise is Tier 3)"
         )
-    if cfg.mass_scenario not in ("fixed", "anchored_discrete"):
+    if cfg.mass_scenario not in ("fixed", "anchored_discrete", "biphasic"):
         unsupported.append(
-            f"mass_scenario={cfg.mass_scenario!r} (drag branch supports 'fixed' and "
-            "the Tier-1a 'anchored_discrete'; 'biphasic' is the Tier-2 generative "
-            "mechanism, not yet wired)"
+            f"mass_scenario={cfg.mass_scenario!r} (drag branch supports 'fixed', the "
+            "Tier-1a 'anchored_discrete', and the Tier-2 generative 'biphasic')"
         )
     if cfg.drag_form not in REALIZED_FORMS:
         unsupported.append(
@@ -571,11 +775,13 @@ def _check_drag_scope(cfg: SimConfig, initial_mass_kg: np.ndarray) -> None:
 
     if unsupported:
         raise NotImplementedError(
-            "drag-branch ion propagation supports deterministic fixed and "
-            "Tier-1a anchored_discrete mass scenarios, and does not support: "
+            "drag-branch ion propagation supports the deterministic fixed, the "
+            "Tier-1a anchored_discrete, and the Tier-2 biphasic mass scenarios, and "
+            "does not support: "
             + ", ".join(unsupported)
-            + ". Envelope = mass_scenario in ('fixed', 'anchored_discrete'), "
-            "noise_form='none', a realised drag_form (METHOD_B §10 form phase)."
+            + ". Envelope = mass_scenario in ('fixed', 'anchored_discrete', "
+            "'biphasic'), noise_form='none', a realised drag_form (METHOD_B §10 "
+            "form phase)."
         )
 
     # Realized-mass trip-wire: under `fixed`, the integration mass must equal the
@@ -657,6 +863,7 @@ def ion_state_from_checkpoint_column(ckpt, t_id: int) -> IonStepState:
         E_int_eV=ckpt.E_int_eV[:, t_id].copy(),
         number_of_collisions=ckpt.number_of_collisions[:, t_id].copy(),
         time_ps=float(ckpt.time_ps[t_id]),
+        n_shell=ckpt.n_shell[:, t_id].copy(),
     )
 
 
@@ -664,8 +871,45 @@ def write_ion_state_to_checkpoint_column(
     state: IonStepState,
     ckpt,
     t_id: int,
+    *,
+    mass_scenario: str,
 ) -> None:
-    """Write an ``IonStepState`` into column ``t_id`` of an IonCheckpoint."""
+    """Write an ``IonStepState`` into column ``t_id`` of an IonCheckpoint.
+
+    Parameters
+    ----------
+    state : IonStepState
+        The state to store (all ``(2N,)`` per-atom fields).
+    ckpt : IonCheckpoint
+        Target checkpoint; column ``t_id`` of every trajectory array is written.
+    t_id : int
+        Column index.
+    mass_scenario : str
+        The run's ``cfg.mass_scenario``; selects the ``n_shell`` source (Slice G).
+        Under ``"biphasic"`` the He-shell count is **genuine state** carried on
+        ``state.n_shell`` (shape ``(2N,)``, advanced by the pickup/evaporation
+        channels independently of the mass reset), so it is stored verbatim --
+        and a ``None`` ``state.n_shell`` is refused loudly rather than silently
+        re-derived. For every other scenario (``"fixed"``, ``"anchored_discrete"``,
+        the collision path) it is re-derived from the realized mass via ``rint``
+        -- byte-identical to the pre-Slice-G writer, so the deterministic paths
+        are untouched. **Required** keyword (Slice-G review fix): an omitted
+        scenario on a biphasic caller would silently revert the stored ``n_shell``
+        to the mass-derived value, masking exactly the channel/reset drift the
+        genuine state exists to expose.
+
+    Raises
+    ------
+    ValueError
+        If ``mass_scenario == "biphasic"`` and ``state.n_shell`` is ``None``.
+    """
+    if mass_scenario == "biphasic" and state.n_shell is None:
+        raise ValueError(
+            "write_ion_state_to_checkpoint_column: mass_scenario='biphasic' "
+            "requires genuine n_shell state on the IonStepState (got None); "
+            "silently falling back to the rint-from-mass derivation would mask "
+            "channel/reset drift."
+        )
     ckpt.positions_x[:, t_id] = state.x
     ckpt.positions_y[:, t_id] = state.y
     ckpt.positions_z[:, t_id] = state.z
@@ -678,12 +922,16 @@ def write_ion_state_to_checkpoint_column(
     ckpt.E_dissip_eV[:, t_id] = state.E_dissip_eV
     ckpt.E_mass_transfer_eV[:, t_id] = state.E_mass_transfer_eV
     ckpt.E_int_eV[:, t_id] = state.E_int_eV
-    # Per-atom integer He-shell count, derived from the realized mass via
-    # the same rule the v5->v6 load shim uses (so writer and shim agree):
-    # n = round((m/U - m_I+) / m_He). Constant under `fixed`; the 21->14
-    # staircase under `anchored_discrete`.
-    ckpt.n_shell[:, t_id] = np.rint(
-        (state.mass_kg / U - MASS_I_ION_AMU) / MASS_HE_AMU
-    )
+    # Per-atom integer He-shell count. On the `biphasic` path it is genuine state
+    # (channels advance n independently of the mass reset), so store it verbatim;
+    # otherwise re-derive from the realized mass via the same rule the v5->v6 load
+    # shim uses (so writer and shim agree): n = round((m/U - m_I+) / m_He).
+    # Constant under `fixed`; the 21->14 staircase under `anchored_discrete`.
+    if mass_scenario == "biphasic":
+        ckpt.n_shell[:, t_id] = state.n_shell
+    else:
+        ckpt.n_shell[:, t_id] = np.rint(
+            (state.mass_kg / U - MASS_I_ION_AMU) / MASS_HE_AMU
+        )
     ckpt.number_of_collisions[:, t_id] = state.number_of_collisions
     ckpt.time_ps[t_id] = state.time_ps

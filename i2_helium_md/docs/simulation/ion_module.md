@@ -280,20 +280,28 @@ run_ion_propagation(cfg, neutral_ckpt, *, rng, run_dir, max_bytes, verbose)
 │    state  = ion_state_from_checkpoint_column(ckpt, 0)
 │    charge = ones(2N)                    -- allocated once
 │    for internal_id in 1..num_internal_steps-1:
-│        if use_drag:                      -- BAOAB drag path (deterministic)
+│        if use_drag:                      -- BAOAB drag path
+│            if cfg.mass_scenario == "biphasic":       -- Tier-2 generative pre-step (Slice G)
+│                state = biphasic_step(state, rng=rng, cfg=cfg, droplet_radii=..., gate_steepness=...)
+│            elif schedule is not None:                 -- Tier-1a anchored cold shed
+│                state, next_shed_idx = shed_step(state, schedule, next_shed_idx, dt)
 │            acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
 │            step   = make_ion_baoab_step(state.mass_kg/U, droplet_radii, acc_fn, gamma_fn, T_eff=0)
 │            new    = baoab_propagation_step(state, step=step, cfg=cfg, droplet_radii=...)
+│            if cfg.mass_scenario == "biphasic":       -- E_pot binding fold (5-term closure)
+│                new.E_pot_eV += e_bind_pair_eV(new.n_shell, picture=..., kappa=...)
 │        else:                             -- hard-sphere collision path (unchanged)
 │            new = ion_propagation_step(state, ..., prev_distance, rng)
 │            prev_distance = |new - state|
 │        if internal_id % stride == 0:
-│            write_ion_state_to_checkpoint_column(new, ckpt, next_storage_idx)
+│            write_ion_state_to_checkpoint_column(new, ckpt, next_storage_idx,
+│                                                 mass_scenario=cfg.mass_scenario)
 │            ckpt.temperature_diagnostic[next_storage_idx] = new.temperature_diagnostic
 │            next_storage_idx += 1
 │        state = new
 │    if next_storage_idx < num_stored_steps:    -- defensive; unreachable
-│        write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx)
+│        write_ion_state_to_checkpoint_column(state, ckpt, next_storage_idx,
+│                                             mass_scenario=cfg.mass_scenario)
 │        ckpt.temperature_diagnostic[next_storage_idx] = state.temperature_diagnostic
 ├─ _write_final_state(state, ckpt, cfg)
 │    ├─ positions_final_*, velocities_final_*, mass_final_kg <- state

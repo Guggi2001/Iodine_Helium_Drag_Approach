@@ -146,15 +146,19 @@ def test_scope_guard_rejects_active_noise(drag_cfg, neutral):
         run_ion_propagation(bad, neutral)
 
 
-def test_scope_guard_rejects_mass_scenario(drag_cfg, neutral):
-    # `biphasic` (the Tier-2 generative mechanism) is still refused by the drag
-    # scope guard; `anchored_discrete` is now admitted (Tier-1a, Slice I*).
+def test_scope_guard_admits_biphasic_but_rejects_noise(drag_cfg, neutral):
+    # `biphasic` (the Tier-2 generative mechanism) is now ADMITTED by the drag scope
+    # guard (Slice G), alongside `fixed` and `anchored_discrete`. Active Langevin
+    # noise, however, is still Tier 3 and refused -- even on the biphasic path.
     bad = replace(
         drag_cfg,
         mass_scenario="biphasic",
-        allow_inconsistent_mass_pairing=True,  # bypass the §6.5 config guard
+        noise_form="multiplicative_local_fdt",
+        internal_energy_partition_fraction=0.3,   # required under biphasic
+        internal_energy_retained_fraction=0.2,
+        allow_inconsistent_mass_pairing=True,      # bypass the §6.5 config guard
     )
-    with pytest.raises(NotImplementedError, match="mass_scenario"):
+    with pytest.raises(NotImplementedError, match="noise"):
         run_ion_propagation(bad, neutral)
 
 

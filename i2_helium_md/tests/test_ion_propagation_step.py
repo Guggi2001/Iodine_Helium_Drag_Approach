@@ -78,7 +78,7 @@ class TestCheckpointColumnSeamsEint:
         # Write seam: a different E_int written to another column reads back equal.
         target = np.linspace(-2.0, 3.0, two_N)
         state2 = replace(state, E_int_eV=target.copy())
-        write_ion_state_to_checkpoint_column(state2, ion, 1)
+        write_ion_state_to_checkpoint_column(state2, ion, 1, mass_scenario="fixed")
         np.testing.assert_array_equal(ion.E_int_eV[:, 1], target)
         back = ion_state_from_checkpoint_column(ion, 1)
         np.testing.assert_array_equal(back.E_int_eV, target)
