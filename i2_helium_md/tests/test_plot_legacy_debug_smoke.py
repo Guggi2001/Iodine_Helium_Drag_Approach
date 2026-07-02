@@ -94,6 +94,14 @@ def test_ion_energy_balance_smoke(monkeypatch):
     rc = module.main()
     assert rc == 0
     assert len(plt.get_fignums()) == 1
+    # Every 5-term ledger component must be drawn, so the plotted traces sum
+    # to the plotted E_system (post-review fix 2026-07-02: E_int was totalled
+    # into E_system but never drawn -- on a biphasic run the figure would
+    # read as a phantom non-closure).
+    labels = [ln.get_label() for ln in plt.gcf().axes[0].lines]
+    for expected in ("$E_{kin}$", "$E_{pot}$", "$E_{dissip}$",
+                     r"$E_{mass\ transfer}$", "$E_{int}$", "$E_{system}$"):
+        assert expected in labels, f"missing energy trace {expected!r}"
     plt.close("all")
 
 

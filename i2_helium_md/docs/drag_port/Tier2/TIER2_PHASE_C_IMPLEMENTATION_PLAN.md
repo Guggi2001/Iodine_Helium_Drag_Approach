@@ -186,6 +186,12 @@ to five — the detector that catches a G miswire from S onward.
   this is the "extend in place" decision).
 - *step state:* add `E_int_eV: np.ndarray (2N,)` to `IonStepState` (the per-step carrier G
   reads/writes; defaults to zeros so the `fixed`/Tier-1a paths are untouched).
+  *(NB, as-built 2026-07-01 — recorded per the annotation-not-rewrite precedent: the
+  delivered field is **required, no default** — design call 2 in the Slice-X pre-build
+  record, `drag_migration_log_tier2.md`, rejected the `Optional`/defaulted variant; X wires
+  all-zero arrays through the column seams and `build_initial_ion_state` instead, so the
+  `fixed`/Tier-1a paths stay untouched by carrying explicit zeros, and per F1 the slice
+  was not purely additive on the dataclasses.)*
 
 **Encoded form.** §2.1 (invariant) + §2.2 (schema delta).
 

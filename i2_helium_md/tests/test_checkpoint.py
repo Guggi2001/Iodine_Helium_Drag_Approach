@@ -119,6 +119,28 @@ class TestRoundTrip:
         assert loaded.mass_scenario == "anchored_discrete"
         assert isinstance(loaded.mass_scenario, str)
 
+    def test_scalar_fields_load_as_python_scalars(self, tmp_path):
+        """Scalar fields must come back as Python scalars, not 0-d arrays.
+
+        Regression lock for the documented ``scalar int`` contract: npz
+        stores scalars as 0-d arrays, and under ``from __future__ import
+        annotations`` the loader cannot dispatch on ``f.type``, so every
+        scalar field must be name-matched explicitly (schema_version,
+        num_molecules, mass_scenario).
+        """
+        n_loaded = load_neutral_checkpoint(
+            save_neutral_checkpoint(_make_neutral_checkpoint(), tmp_path / "n.npz")
+        )
+        assert type(n_loaded.num_molecules) is int
+        assert type(n_loaded.schema_version) is int
+
+        i_loaded = load_ion_checkpoint(
+            save_ion_checkpoint(_make_ion_checkpoint(), tmp_path / "i.npz")
+        )
+        assert type(i_loaded.num_molecules) is int
+        assert type(i_loaded.schema_version) is int
+        assert type(i_loaded.mass_scenario) is str
+
     def test_extension_added_automatically(self, tmp_path):
         """Saving without .npz extension should add it."""
         ckpt = _make_neutral_checkpoint()

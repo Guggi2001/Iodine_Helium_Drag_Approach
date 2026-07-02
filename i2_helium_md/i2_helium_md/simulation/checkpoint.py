@@ -20,15 +20,15 @@ File format
 - Native to NumPy -- no extra dependency.
 - One file holds all named arrays.
 - ~100x smaller install footprint than HDF5.
-- Forward-compatible: extra fields can be added; the loader uses
-  explicit field names with explicit defaults.
+- Explicit field names -- one named array per dataclass field.
 
 Schema versioning
 -----------------
 Each checkpoint includes a ``schema_version`` integer. The loader checks
-this on read and refuses to load incompatible versions. Bump the version
-whenever fields are removed or their meaning changes; additions are
-backward-compatible.
+this on read and refuses to load incompatible versions. The loader raises
+on any missing field, so *any* schema change -- additions included -- needs
+a version bump plus a migration arm in the shim (the v5->v6 and v6->v7
+precedents; see the ion-specific history below).
 """
 
 from __future__ import annotations
@@ -89,6 +89,13 @@ from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 #        Back-compat: load_ion_checkpoint migrates legacy v5 files (maps the
 #        renamed field, synthesizes n_shell from mass_history_kg, defaults
 #        mass_scenario='fixed') so existing v5 ion.npz run dirs still load.
+#   7 -- Tier-2 internal-energy reservoir (Phase C Slice X):
+#          * ADD E_int_eV (2N, T) -- per-atom internal energy [eV]; all-zero
+#            under fixed / anchored_discrete, evolved by the biphasic
+#            generative driver via the S1/S2/K1/K2 budget.
+#        Back-compat: the migration shim is a stepwise cascade (v5->v6->v7);
+#        the v6->v7 arm synthesizes an all-zero E_int_eV and emits a
+#        UserWarning that the file predates the reservoir.
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
 _ION_SCHEMA_VERSION: int = 7
@@ -174,14 +181,14 @@ class IonCheckpoint:
     * ``velocities_final_z`` : (2 * num_molecules,)            Angstrom/ps
     * ``mass_kg``            : (2 * num_molecules,)            kg (initial mass)
     * ``mass_final_kg``      : (2 * num_molecules,)            kg (after possible mass attachment)
-    * ``mass_history_kg``    : (2 * num_molecules, num_steps)  kg (mass over time; may rise via attachment OR fall via anchored_discrete shedding -- not assumed monotone)
+    * ``mass_history_kg``    : (2 * num_molecules, num_steps)  kg (mass over time; may rise via attachment/biphasic pickup OR fall via anchored_discrete/biphasic shedding -- not assumed monotone)
     * ``droplet_radii_angstrom``: (2 * num_molecules,)         Angstrom (per atom; same value for the two atoms of a molecule)
     * ``E_kin_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_pot_eV``           : (2 * num_molecules, num_steps)  eV (per-atom)
     * ``E_dissip_eV``        : (2 * num_molecules, num_steps)  eV (per-atom, cumulative)
     * ``E_mass_transfer_eV`` : (2 * num_molecules, num_steps) eV (per-atom, cumulative; mass-transfer bookkeeping, positive for Tier-1a continuous-velocity shedding; formerly ``E_mass_attach_defect_eV``)
     * ``E_int_eV``           : (2 * num_molecules, num_steps) eV (per-atom; the Tier-2 internal-energy reservoir added at schema v7. All-zero for ``fixed`` / ``anchored_discrete`` runs and for v6-origin files migrated on load; evolves only under the ``biphasic`` generative driver via the S1/S2/K1/K2 budget)
-    * ``n_shell``            : (2 * num_molecules, num_steps) int-valued (per-atom He-shell count over time; constant under ``fixed``, the 21->14 staircase under ``anchored_discrete``)
+    * ``n_shell``            : (2 * num_molecules, num_steps) int-valued (per-atom He-shell count over time; constant under ``fixed``, the 21->14 staircase under ``anchored_discrete``, genuine channel-written state under ``biphasic``)
     * ``mass_scenario``      : scalar str                     (the run's mass scenario tag: ``fixed`` / ``anchored_discrete`` / ...)
     * ``b_ion_outside``      : (num_molecules,) bool           True if ion exited droplet
     * ``relative_loss_per_ps``: (2 * num_molecules, num_steps) 1/ps (per-atom energy loss rate)
@@ -302,10 +309,13 @@ def load_ion_checkpoint(
 ) -> IonCheckpoint:
     """Load an IonCheckpoint from a .npz file.
 
-    Legacy v5 checkpoints are migrated transparently on load via
-    :func:`_migrate_ion_checkpoint` (the v5->v6 back-compat shim), so
-    existing v5 ``ion.npz`` run directories still load instead of failing
-    the version check.
+    Legacy v5 and v6 checkpoints are migrated transparently on load via
+    :func:`_migrate_ion_checkpoint` (a stepwise v5->v6->v7 cascade), so
+    existing ``ion.npz`` run directories still load instead of failing the
+    version check. The v6->v7 arm synthesizes an all-zero ``E_int_eV`` and
+    emits a ``UserWarning`` that the file predates the internal-energy
+    reservoir (strict-warning test/CI configs must expect or filter it);
+    the v5->v6 arm is silent.
     """
     return _load_checkpoint(
         path,
@@ -416,7 +426,7 @@ def _load_checkpoint(
     ``migrate``, if given, is a callable ``(raw_dict, version) ->
     (raw_dict, version)`` applied before the strict version check, so an
     older on-disk schema can be upgraded in-memory to ``expected_version``
-    (the ion v5->v6 back-compat shim). It receives a mutable copy of the
+    (the ion v5->v6->v7 back-compat cascade). It receives a mutable copy of the
     loaded arrays and must return the migrated arrays plus the new version.
     """
     p = Path(path)
@@ -456,14 +466,13 @@ def _load_checkpoint(
     kwargs: dict[str, Any] = {}
     for f in fields(dataclass_type):
         arr = raw[f.name]
-        # unwrap 0-d arrays for scalar fields. Note: under
-        # ``from __future__ import annotations`` ``f.type`` is a string,
-        # so match the known scalar fields by name as well.
-        if f.name == "schema_version" or f.type is int:
+        # Unwrap 0-d arrays for the scalar fields, matched by name: under
+        # ``from __future__ import annotations`` ``f.type`` is a string, so
+        # type-based dispatch is impossible here. These are the schemas'
+        # only non-array fields.
+        if f.name in ("schema_version", "num_molecules"):
             kwargs[f.name] = int(arr)
-        elif f.type is float:
-            kwargs[f.name] = float(arr)
-        elif f.name == "mass_scenario" or f.type is str:
+        elif f.name == "mass_scenario":
             kwargs[f.name] = str(arr)
         else:
             kwargs[f.name] = np.asarray(arr)

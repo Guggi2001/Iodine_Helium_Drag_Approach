@@ -328,6 +328,70 @@ class TestIsolatedEventClosure:
         np.testing.assert_allclose(self._residual(state, new, cfg), 0.0, atol=1e-12)
 
 
+class TestConfigThreadingThroughDriver:
+    """cfg-field -> channel-kwarg threading locks (A/B-review follow-up 4, 2026-07-02).
+
+    The field-vs-kwarg name splits (``cfg.gate_onset_override_eV`` ->
+    ``gate_onset_eV``, ``cfg.evap_rate_prefactor_per_ps`` -> ``nu``) invite
+    silent mis-wiring: a driver that dropped either kwarg would fall back to
+    the channel default (``None`` / whatever literal it hard-coded) and every
+    other suite would stay green. Each test flips one cfg field and asserts
+    the channel behaviour flips with it, on a state where the baseline
+    provably fires (non-vacuity guard).
+    """
+
+    def _forced_shed_ingredients(self, **cfg_overrides):
+        """Forced-shed setup from TestIsolatedEventClosure: in-band E_int, P_shed ~ 1."""
+        from i2_helium_md.physics.dissociation_ladder import d0_of_n, ladder_cumsum
+
+        cfg_overrides.setdefault("pickup_rate_coefficient", 0.0)       # no pickup
+        cfg_overrides.setdefault("evap_rate_prefactor_per_ps", 1.0e4)  # P_shed ~ 1 when gate open
+        cfg_overrides.setdefault("evap_rrk_dof", 1.0)                  # s=1 -> bracket=1, k=nu in band
+        cfg = _biphasic_cfg(**cfg_overrides)
+        n0 = 4
+        d0 = d0_of_n(n0, picture=cfg.ladder_electronic_picture, kappa=cfg.ladder_steepness)
+        sig = ladder_cumsum(n0, picture=cfg.ladder_electronic_picture, kappa=cfg.ladder_steepness)
+        e_int = 0.5 * (d0 + sig)                # inside the shedding band: d0 < E_int < Sigma(n)
+        state = _biphasic_state(n0=n0, e_int=e_int, two_N=6)
+        return cfg, state, d0, e_int
+
+    def _step(self, state, cfg):
+        return biphasic_step(
+            state, rng=np.random.default_rng(0), cfg=cfg,
+            droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
+        )
+
+    def test_gate_onset_override_threads_to_evaporation(self):
+        # Non-vacuity: with the default parameter-free Sigma(n) gate the shed fires.
+        cfg, state, d0, e_int = self._forced_shed_ingredients()
+        assert cfg.gate_onset_override_eV is None
+        assert np.all(self._step(state, cfg).n_shell == 3.0)
+
+        # A fixed override BELOW the (cooled) E_int closes the self-bound gate
+        # (shed only while E_int < threshold), so no ion may shed. Reachable
+        # only if biphasic_step threads cfg.gate_onset_override_eV into the
+        # channel's gate_onset_eV kwarg -- a dropped kwarg reverts to Sigma(n)
+        # and this assert fails with every ion shed.
+        cfg_ov, state_ov, d0_ov, _ = self._forced_shed_ingredients(
+            gate_onset_override_eV=0.5 * d0,    # < d0 < E_int even after one cooling step
+            allow_gate_onset_override=True,
+        )
+        new = self._step(state_ov, cfg_ov)
+        assert np.all(new.n_shell == 4.0)
+        np.testing.assert_array_equal(new.mass_kg, state_ov.mass_kg)
+
+    def test_nu_prefactor_threads_to_evaporation(self):
+        # Same in-band state; nu = 0 -> k = 0 -> the channel can never fire.
+        # Locks that the driver reads cfg.evap_rate_prefactor_per_ps rather
+        # than a hard-coded prefactor (the draw is still consumed).
+        cfg, state, _, _ = self._forced_shed_ingredients(
+            evap_rate_prefactor_per_ps=0.0,
+        )
+        new = self._step(state, cfg)
+        assert np.all(new.n_shell == 4.0)
+        np.testing.assert_array_equal(new.mass_kg, state.mass_kg)
+
+
 class TestReproducibilityAndEvents:
     def _run_steps(self, seed, n_steps=40):
         cfg = _biphasic_cfg(pickup_rate_coefficient=5.0)

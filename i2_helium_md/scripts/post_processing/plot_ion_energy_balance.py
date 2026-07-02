@@ -2,8 +2,11 @@
 
 Reproduces the figure drawn at the end of ``vmi_sim_3d_ion_propa.m``
 (line 898) from the saved ``ion.npz`` of a run directory. Per-molecule
-sums of ``E_kin``, ``E_pot``, ``E_dissip``, ``E_mass_attach_defect``,
-plus the running total ``E_system``.
+sums of ``E_kin``, ``E_pot``, ``E_dissip``, ``E_mass_transfer`` (the
+legacy ``E_mass_attach_defect``) and the schema-v7 ``E_int`` reservoir
+(all-zero for pre-biphasic runs; MATLAB has no such term), plus the
+running total ``E_system`` so the drawn components sum to the drawn
+total.
 
 Run with::
 
@@ -66,6 +69,10 @@ def _build_figure(totals) -> plt.Figure:
     ax.plot(
         totals.time_ps, totals.E_mass_transfer_eV,
         label=r"$E_{mass\ transfer}$", linewidth=1.5,
+    )
+    ax.plot(
+        totals.time_ps, totals.E_int_eV,
+        label=r"$E_{int}$", linewidth=1.5,
     )
     ax.plot(
         totals.time_ps, totals.E_system_eV,

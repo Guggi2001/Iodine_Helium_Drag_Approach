@@ -2046,3 +2046,104 @@ verified-correct behaviour). Touched suites 228 green; full suite **1813
 passed, 0 failed** (1793 → +20 new tests), 27 warnings (26 pre-existing §6.5
 mass-pairing / v6→v7 migration + 1 more §6.5 pairing warning from the new
 `TestNegativeNuRejected` `validate()` path).
+
+## Phase C — Slice X post-delivery external review pass (2026-07-02)
+
+An extensive post-delivery code review of the Slice-X surface (commit `6988f1e`,
+base `49cf08b`) by **three parallel review subagents** — (1) checkpoint schema /
+migration cascade, (2) 5-term energy closure, (3) step-state threading + RNG
+freeze + doc alignment — each reviewing **both the historical diff and the file
+state at HEAD** (`ae68ba5`), since Slice G (`d5a2028`) and the Phase A/B review
+pass landed *after* X. Every Important finding was independently re-verified in
+code before fixes were applied under the `[PROCEED TO IMPLEMENTATION]` trigger.
+
+**Verdict: zero Critical findings — the Slice-X physics/schema surface is
+correct at HEAD.** Independently confirmed: the v5→v6→v7 cascade (v5→v6
+sub-transform byte-identical to base; unknown versions still fail loudly;
+genuine-v7-missing-`E_int_eV` raises, protected twice), the 5-term summation
+(axis/sign/`/n`/units; the miswire tests are jointly discriminating), the
+threading contract (every post-X `IonStepState` construction site carries
+`E_int_eV`; seams copy-safe; `fixed`/`anchored_discrete` still emit pure-zero
+`E_int_eV` because G's t0 seeding is gated on `mass_scenario == "biphasic"`),
+and the shed-then-pickup freeze (recorded §2.9, implemented in order, pinned by
+real stream-consumption locks; the `ae68ba5` ladder refusal raises before any
+draw, so the frozen stream contract is untouched). R4 double-count: not present
+— pickup `D_0` enters once, split `f_ret`/`(1−f_ret)`, offset once by the
+`e_bind_pair` fold delta.
+
+**Fixes applied (6 Important findings):**
+
+1. **Energy-balance figures now draw `E_int`.** Both figure builders totalled
+   the 5-term `E_system` but plotted only four components — on a biphasic run
+   the figure would read as a phantom non-closure (`E_int` starts at the
+   eV-scale S2 onset). `plot_run_summary._section_ion_energy` plots
+   `totals.E_int_eV` behind the same `is not None` guard as `E_mass_transfer`;
+   `plot_ion_energy_balance._build_figure` plots it unconditionally (ion-only
+   script; module docstring notes MATLAB has no such term). The env-gated ion
+   smoke now asserts all six legend labels (a dropped trace fails the smoke).
+2. **Plan §3 Slice-X step-state bullet annotated (NB, annotation-not-rewrite):**
+   it still said `E_int_eV` "defaults to zeros"; the delivered field is
+   required-no-default (design call 2) — the NB points at this log's record.
+3. **A/B-review follow-up 4 closed** — `TestConfigThreadingThroughDriver` in
+   `test_biphasic_step.py`: (a) `cfg.gate_onset_override_eV → gate_onset_eV`
+   lock (baseline forced-shed fires under the default Σ(n) gate — non-vacuity —
+   then an override below the in-band `E_int` closes the gate and no ion sheds);
+   (b) `cfg.evap_rate_prefactor_per_ps → nu` lock (ν=0 ⇒ the forced-shed state
+   never fires). Load-bearing proven by mutation: hard-coding
+   `gate_onset_eV=None` in the driver fails (a) with every ion shed (watched
+   FAIL → restore → GREEN); previously no test threaded a non-None override
+   through `biphasic_step`, so a dropped kwarg would have passed the suite.
+4. **`checkpoint.py` version-history register extended to v7** (the comment
+   block future bumps consult stopped at v6 while `_ION_SCHEMA_VERSION = 7`).
+5. **Checkpoint docstrings aligned with the loader's actual contract:** the
+   module docstring claimed "extra fields can be added; the loader uses …
+   explicit defaults" / "additions are backward-compatible" — the loader raises
+   on any missing field (v6 and v7 were bumped for additions precisely because
+   of that); `load_ion_checkpoint` now documents the v5→v6→v7 cascade, the
+   synthesized zeros, and the `UserWarning` callers must expect; the
+   `_load_checkpoint` shim parenthetical updated; `n_shell` /
+   `mass_history_kg` field bullets gained their biphasic semantics (G-era
+   drift).
+6. **Scalar-load latent defect fixed (pre-existing, on the load path X
+   extended):** under `from __future__ import annotations` the loader's
+   `f.type is int/float/str` branches were permanently dead and only
+   `schema_version`/`mass_scenario` were name-matched, so `num_molecules`
+   loaded as a 0-d ndarray, violating the documented "scalar int" contract.
+   All scalar fields are now name-matched (`schema_version`, `num_molecules` →
+   `int`; `mass_scenario` → `str`), dead branches removed. Watched RED
+   (`type(array(5)) is int` fails) → GREEN; regression lock
+   `test_scalar_fields_load_as_python_scalars` covers both dataclasses.
+
+**Deliberate non-fixes (Minor, recorded, below the bar):** the `EnergyTotals`
+docstring's MATLAB provenance overclaim (MATLAB has no `E_int`; scope the match
+to the first three terms); "MASS §6 eq. line 935" line-number citations
+(brittle vs NB-annotation drift; cite section names); the `E_int_eV` field
+comment omitting the `/num_molecules` normalization; the
+`test_E_int_deposit_offset_by_dissip_closes` docstring mis-describing the K2
+direction; `IonStepState.n_shell` / read-seam docstring drift after G; the
+"≤1 mass event" gloss vs the documented both-fire shed-then-pickup case
+("≤1 per channel" is the accurate phrase); the stub-based evaporation parity
+lock vs pickup's real-PCG64 post-state check; test tightenings (assert exactly
+one migration warning, dtype-preservation assert, non-square axis-lock matrix);
+the dead duplicate branch in `_save_checkpoint`; no save-side shape validation
+(consistent with the pre-X contract). Follow-up 5 (Tier-3 `thermal` shape
+contract) stays open by design.
+
+**A/B follow-up register after this pass:** 1 satisfied, 2 honored
+(standing rule), 3 closed (`ae68ba5`), **4 closed (this pass)**, 5 open by
+design (Tier 3).
+
+**Files.** Production: `simulation/checkpoint.py` (scalar name-match + v7
+register + docstrings), `scripts/post_processing/plot_run_summary.py`,
+`scripts/post_processing/plot_ion_energy_balance.py`. Docs:
+`TIER2_PHASE_C_IMPLEMENTATION_PLAN.md` (§3 NB), this log. Tests:
+`test_checkpoint.py` (+1), `test_biphasic_step.py` (+2),
+`test_plot_legacy_debug_smoke.py` (legend assertion).
+
+**Tests:** the scalar-load lock watched RED → GREEN; the gate-onset threading
+lock proven load-bearing by driver mutation (FAIL → restore → GREEN); touched
+suites green (`test_checkpoint` 23, `test_biphasic_step` 33,
+`test_plot_legacy_debug_smoke` 6). Full suite **1816 passed, 0 failed**
+(1813 → +3 new tests; env-dependent data present on this machine, so the 9
+data-gated tests ran), 27 warnings (all pre-existing §6.5 mass-pairing /
+v6→v7 migration).

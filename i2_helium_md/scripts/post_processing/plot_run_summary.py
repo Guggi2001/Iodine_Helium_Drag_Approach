@@ -373,6 +373,8 @@ def _section_ion_energy(ion) -> plt.Figure:
     if totals.E_mass_transfer_eV is not None:
         ax.plot(totals.time_ps, totals.E_mass_transfer_eV,
                 label=r"$E_{mass\,transfer}$")
+    if totals.E_int_eV is not None:
+        ax.plot(totals.time_ps, totals.E_int_eV, label=r"$E_{int}$")
     ax.plot(totals.time_ps, totals.E_system_eV, "k", label=r"$E_{system}$")
     ax.set(title="Ion energy balance (per molecule)",
            xlabel="t / ps", ylabel="E / eV")
