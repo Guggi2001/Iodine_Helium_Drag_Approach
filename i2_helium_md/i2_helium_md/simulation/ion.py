@@ -76,9 +76,12 @@ DEFAULT_MAX_CHECKPOINT_BYTES_ION: int = 1000000000
 
 #: Number of (2N, num_steps) trajectory/diagnostic arrays in an IonCheckpoint:
 #: 6 positions/velocities + E_kin + E_pot + E_dissip + E_mass_transfer
-#: + n_shell + relative_loss_per_ps + number_of_collisions + mass_history_kg = 14.
-#: All are 8 bytes per cell (number_of_collisions is int64).
-_NUM_2N_T_ARRAYS_ION: int = 14
+#: + E_int_eV (schema v7) + n_shell + relative_loss_per_ps
+#: + number_of_collisions + mass_history_kg = 15.
+#: All are 8 bytes per cell (number_of_collisions is int64). Must track the
+#: checkpoint schema (guarded by test_ion.py's schema-count test): an
+#: undercount silently grants stride 1 past the byte budget.
+_NUM_2N_T_ARRAYS_ION: int = 15
 
 
 # ===========================================================================
@@ -388,7 +391,8 @@ def _estimate_checkpoint_bytes_ion(num_molecules: int, num_steps: int) -> int:
 
     Counts:
 
-    * 12 trajectory/diagnostic arrays of shape (2N, num_steps) at 8 bytes/cell
+    * ``_NUM_2N_T_ARRAYS_ION`` (15) trajectory/diagnostic arrays of shape
+      (2N, num_steps) at 8 bytes/cell
     * Static (2N,) arrays for mass_kg, mass_final_kg, droplet_radii_angstrom,
       and the six positions/velocities final placeholders (9 arrays).
     * Static (N,) array for b_ion_outside (1 byte, but we count 8 for slack).

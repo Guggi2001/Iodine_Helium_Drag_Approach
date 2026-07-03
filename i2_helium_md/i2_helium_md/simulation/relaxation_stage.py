@@ -98,8 +98,12 @@ class RelaxationResult:
         Per-ion frozen status at the final relaxed state (``n == 0`` or
         ``E_int < D_0(n)``).
     time_relaxed_ps : float
-        The time actually reached (``relaxation_time_ps`` or the earlier
-        all-frozen time).
+        **Window-relative** duration actually relaxed: the realized full window
+        (``ceil(relaxation_time_ps / dt_relax) * dt_relax``, which exceeds
+        ``relaxation_time_ps`` by less than one ``dt_relax``) or the earlier
+        all-frozen time. Compare against ``cfg.relaxation_time_ps`` to detect an
+        early freeze. The checkpoint's ``time_ps`` axis stays **absolute** (it
+        continues the ion-stage axis from the seed column).
     terminal_n : np.ndarray, shape (2N,)
         The matched-time terminal shell count -- the E1 relaxed-input hook
         (``compute_terminal_shell_distribution`` duck-types on this attribute and
@@ -298,8 +302,10 @@ def run_relaxation_stage(
     Raises
     ------
     ValueError
-        If ``cfg.relaxation_stage_enabled`` is False, or any
-        ``check_relaxation_config`` arm fails.
+        If ``cfg.relaxation_stage_enabled`` is False, any
+        ``check_relaxation_config`` arm fails, the seed checkpoint is not a
+        ``biphasic``-scenario checkpoint, or the seed's final stored column is
+        not the ion stage's true final state (stride truncation; see below).
     """
     if not cfg.relaxation_stage_enabled:
         raise ValueError(
@@ -307,6 +313,38 @@ def run_relaxation_stage(
             "(the stage is opt-in; enable it and set relaxation_time_ps)."
         )
     check_relaxation_config(cfg)   # fires the enabled-path checks (fail-loud)
+
+    # Input-checkpoint provenance guard (review 2026-07-03): a fixed /
+    # collision-path seed has no physical E_int/n_shell cascade state (a
+    # v6-migrated checkpoint carries synthesized all-zero E_int_eV, reading as
+    # trivially frozen), and its E_pot never contained the e_bind_pair fold the
+    # free-flight arm removes. Realistic off-scenario seeds would otherwise die
+    # in biphasic_step's m<->n lockstep assertion with a misleading
+    # "channel/reset bug" diagnosis.
+    if ion.mass_scenario != "biphasic":
+        raise ValueError(
+            "run_relaxation_stage requires a biphasic ion checkpoint; got "
+            f"ion.mass_scenario={ion.mass_scenario!r}. The relaxation stage "
+            "propagates the biphasic E_int/n_shell cascade state, which other "
+            "scenarios do not carry."
+        )
+    # Seed-coherence guard (review 2026-07-03, partial -- mass is the available
+    # proxy): the stage seeds from the last stored column, but a strided ion run
+    # whose allocation was exactly consumed leaves the true final state only in
+    # the *_final_* fields -- and E_int_eV/n_shell have no such fields, so a
+    # stale seed is unrecoverable. mass_final_kg is written from the true final
+    # state, so any mass event in the dropped tail is caught here.
+    if not np.array_equal(
+        np.asarray(ion.mass_history_kg)[:, -1], np.asarray(ion.mass_final_kg)
+    ):
+        raise ValueError(
+            "run_relaxation_stage seeds from the ion checkpoint's final stored "
+            "column, but mass_history_kg[:, -1] != mass_final_kg: the ion run "
+            "was stored with a stride that dropped the true final state "
+            "(E_int_eV/n_shell have no *_final_* fields to recover from). "
+            "Re-run the ion stage with a larger max_bytes so the final state "
+            "lands in the last stored column."
+        )
 
     dt_relax = cfg.dt_ion if cfg.relaxation_dt_ps is None else cfg.relaxation_dt_ps
     # Relaxation view: pickup inert (lambda_0=0), relaxation dt. NOT re-validated
@@ -387,6 +425,8 @@ def run_relaxation_stage(
     return RelaxationResult(
         checkpoint=ckpt,
         freeze_flags=freeze_flags,
-        time_relaxed_ps=float(state.time_ps),
+        # Window-relative (the seed enters at the ion stage's absolute end time,
+        # ~20 ps in production; the checkpoint's time_ps axis stays absolute).
+        time_relaxed_ps=float(state.time_ps) - float(seed.time_ps),
         terminal_n=np.asarray(state.n_shell, dtype=float).copy(),
     )

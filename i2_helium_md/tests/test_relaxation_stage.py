@@ -16,6 +16,8 @@ import pytest
 from i2_helium_md.config import check_relaxation_config
 from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 from i2_helium_md.physics.dissociation_ladder import d0_of_n, ladder_cumsum
+from i2_helium_md.physics.evaporation import is_self_bound
+from i2_helium_md.physics.solvation_cooling import e_bind_pair_eV
 from i2_helium_md.postprocess.energy_balance import ion_ledger_closure
 from i2_helium_md.postprocess.size_distribution import compute_terminal_shell_distribution
 from i2_helium_md.simulation.checkpoint import IonCheckpoint, load_ion_checkpoint
@@ -40,14 +42,16 @@ def _relax_cfg(**overrides):
     return _biphasic_driver_cfg(**base)
 
 
-def _seed_checkpoint(cfg, *, n_shell=21, E_int_eV=0.15):
+def _seed_checkpoint(cfg, *, n_shell=21, E_int_eV=0.15, time_ps_start=0.0):
     """A tiny one-column v7 biphasic IonCheckpoint with m == m_I+ + n*m_He.
 
     Two molecules (2N=4), paired atoms (i, i+N) separated in z (mirrors
     ``_tiny_neutral`` so the per-pair Coulomb is finite). Positions are inside the
     30 A droplet. E_pot/E_kin are not self-consistent MD values (fine for the
     n_shell/E_int dynamics tests, which do not check the 5-term closure -- that
-    uses the real-driver seed instead).
+    uses the real-driver seed instead). ``time_ps_start`` sets the seed's absolute
+    time (a production ion stage ends near ~20 ps; default 0 keeps the historic
+    fixtures unchanged).
     """
     N = 2
     two_n = 2 * N
@@ -63,7 +67,7 @@ def _seed_checkpoint(cfg, *, n_shell=21, E_int_eV=0.15):
 
     return IonCheckpoint(
         num_molecules=N,
-        time_ps=np.zeros(T),
+        time_ps=np.full(T, float(time_ps_start)),
         positions_x=x, positions_y=y, positions_z=z,
         velocities_x=col(0.2), velocities_y=col(0.0), velocities_z=col(0.0),
         positions_final_x=np.zeros(two_n), positions_final_y=np.zeros(two_n),
@@ -94,7 +98,13 @@ class TestInvariantClosure:
         ion = run_ion_propagation(cfg, _tiny_neutral())
         return cfg, ion
 
-    def _closes(self, ckpt, tol=1e-2):
+    def _closes(self, ckpt, tol=1e-4):
+        # Tolerance justification (review 2026-07-03): the measured closure
+        # residual on this fixture is ~2e-5 relative (FP accumulation over the
+        # ~300-step window); 1e-4 gives ~5x headroom while still catching a
+        # single mis-booked D_0 rung (~9 meV ~ 4e-3 of E_system ~ 2.5 eV). The
+        # earlier 1e-2 band (~25 meV absolute) was loose enough to hide
+        # per-rung fold errors.
         closure = ion_ledger_closure(ckpt)
         e0 = abs(closure.E_system_eV[0])
         return closure.max_abs_residual_eV / e0 < tol
@@ -166,6 +176,9 @@ class TestShedDynamics:
 
         # Pickup off -> n is monotone non-increasing over the window, per ion.
         assert np.all(np.diff(n, axis=1) <= 0)
+        # No avalanche: biphasic_step sheds at most one rung per step (the plan's
+        # per-step bound; a multi-rung loop bug would still be monotone).
+        assert np.all(np.diff(n, axis=1) >= -1.0)
         # Terminal n never exceeds the seed n* = 21 and stays >= 0.
         assert np.all(result.terminal_n <= 21)
         assert np.all(result.terminal_n >= 0)
@@ -185,6 +198,133 @@ class TestShedDynamics:
         # Fast cooling freezes the whole ensemble well before 50 ps.
         assert bool(result.freeze_flags.all())
         assert result.time_relaxed_ps < 50.0
+
+
+# ---------------------------------------------------------------------------
+# Per-channel sharp oracles (review 2026-07-03): E_dissip == cumulative K2
+# drain; free_flight E_pot == held MD + e_bind fold. The 5-term closure alone
+# cannot catch channel *mis-attribution* (the sum is conserved), so these pin
+# the individual bookings.
+# ---------------------------------------------------------------------------
+class TestEnergyChannels:
+    def _hot_run(self, forces):
+        cfg = _relax_cfg(relaxation_time_ps=3.0, internal_energy_cooling_tau_ps=1.0,
+                         evap_rrk_dof=2.0, relaxation_forces=forces)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        sigma21 = float(ladder_cumsum(21, picture=picture, kappa=kappa))
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=0.98 * sigma21)
+        return cfg, run_relaxation_stage(ion, cfg)
+
+    def test_e_dissip_equals_cumulative_k2_drain(self):
+        # With gamma = 0 and lambda_0 = 0 the ONLY E_dissip writer is the K2
+        # cooling drain (plan E2 acceptance oracle). Reconstruct the drain from
+        # the stored E_int / n_shell columns: per step, K2 acts first
+        # (E_pre -> E_afterK2), then K1 subtracts D_0(n_pre) on a fire, so
+        # E_afterK2 = E_int[t] + shed_t * D_0(n_pre) and
+        # drain_t = E_pre - E_afterK2.
+        cfg, result = self._hot_run("coulomb")
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        ckpt = result.checkpoint
+        # The oracle needs every step stored (stride 1) -- assert the assumption.
+        np.testing.assert_allclose(np.diff(ckpt.time_ps), cfg.dt_ion, rtol=0, atol=1e-12)
+
+        n = ckpt.n_shell
+        E_int = ckpt.E_int_eV
+        shed = n[:, :-1] - n[:, 1:]                     # 0 or 1 per step
+        d0_pre = np.asarray(d0_of_n(np.maximum(n[:, :-1], 1.0),
+                                    picture=picture, kappa=kappa))
+        e_after_k2 = E_int[:, 1:] + shed * d0_pre
+        drain = E_int[:, :-1] - e_after_k2
+        cum_drain = np.cumsum(drain, axis=1)
+
+        dE_dissip = ckpt.E_dissip_eV[:, 1:] - ckpt.E_dissip_eV[:, [0]]
+        # Non-vacuous: real drain accumulated and sheds fired.
+        assert np.all(cum_drain[:, -1] > 0.0)
+        assert np.any(shed > 0)
+        # Tolerance: the reconstruction differs from the booked floats only by
+        # re-association round-off (<= ~1e-14 eV over the window); 1e-9 eV is
+        # ~6 orders below the smallest physical booking (per-step K2 drain ~meV,
+        # D_0 ~ 9 meV), so any mis-attributed channel fails loudly.
+        np.testing.assert_allclose(dE_dissip, cum_drain, rtol=0, atol=1e-9)
+
+    def test_free_flight_e_pot_is_held_plus_fold(self):
+        # Under free flight no conservative work is done: E_pot(t) must equal
+        # the held MD potential (seed E_pot minus the seed fold) plus the
+        # e_bind_pair fold at the current n -- i.e. a shed moves E_pot by
+        # exactly +D_0(n). A constant-offset bug (e.g. forgetting to remove the
+        # seed fold) cancels in the closure residual, so it is pinned here.
+        cfg, result = self._hot_run("free_flight")
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        ckpt = result.checkpoint
+
+        held_md = ckpt.E_pot_eV[:, 0] - e_bind_pair_eV(
+            ckpt.n_shell[:, 0], picture=picture, kappa=kappa,
+        )
+        expected = held_md[:, None] + e_bind_pair_eV(
+            ckpt.n_shell, picture=picture, kappa=kappa,
+        )
+        assert np.any(result.terminal_n < 21)           # sheds fired (non-vacuous)
+        # Exact arithmetic chain (same fold call, same floats): tight tolerance.
+        np.testing.assert_allclose(ckpt.E_pot_eV, expected, rtol=0, atol=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# Gate + ladder rungs (review 2026-07-03): the self-bound gate suppresses, a
+# gate-suppressed ion is NOT frozen (it un-freezes into the RRK band as K2
+# cools it), and the n = 1 direct-dissociation rung reaches the bare ion.
+# ---------------------------------------------------------------------------
+class TestGateAndRungs:
+    def test_self_bound_seed_gate_suppresses_then_sheds(self):
+        cfg = _relax_cfg(relaxation_time_ps=10.0, internal_energy_cooling_tau_ps=0.5,
+                         evap_rrk_dof=2.0)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        sigma21 = float(ladder_cumsum(21, picture=picture, kappa=kappa))
+        # E_int > Sigma(21): net self-unbound -> shedding suppressed at entry.
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=1.5 * sigma21)
+
+        result = run_relaxation_stage(ion, cfg)
+        ckpt = result.checkpoint
+        np.testing.assert_allclose(np.diff(ckpt.time_ps), cfg.dt_ion, rtol=0, atol=1e-12)
+
+        n = ckpt.n_shell
+        E_int = ckpt.E_int_eV
+        shed = n[:, :-1] - n[:, 1:]
+        d0_pre = np.asarray(d0_of_n(np.maximum(n[:, :-1], 1.0),
+                                    picture=picture, kappa=kappa))
+        # The gate saw the post-K2 E_int (reconstructed exactly as in the
+        # E_dissip oracle above).
+        e_after_k2 = E_int[:, 1:] + shed * d0_pre
+        n_pre = n[:, :-1]
+        sb = np.asarray(is_self_bound(
+            e_after_k2, n_pre, picture=picture, kappa=kappa,
+            gate_onset_eV=cfg.gate_onset_override_eV,
+        ))
+        rung_ge2 = n_pre >= 2
+        # Gate suppression: no n>=2 shed ever fires while net self-unbound.
+        assert np.all(shed[rung_ge2 & ~sb] == 0)
+        # Non-vacuous both ways: suppressed steps existed at entry, and the ion
+        # was NOT frozen there (a freeze mask conflating the self-bound gate
+        # with freeze would terminate at step 1 with terminal_n == 21).
+        assert np.any(rung_ge2 & ~sb)
+        assert np.any(result.terminal_n < 21)
+
+    def test_n1_direct_dissociation_reaches_bare_ion(self):
+        cfg = _relax_cfg(relaxation_time_ps=5.0,
+                         internal_energy_cooling_tau_ps=1e6)  # cooling ~off: stay hot
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        d0_1 = float(d0_of_n(1, picture=picture, kappa=kappa))
+        # n = 1 with E_int > D_0(1): the direct-dissociation rung, k = nu.
+        ion = _seed_checkpoint(cfg, n_shell=1, E_int_eV=5.0 * d0_1)
+
+        result = run_relaxation_stage(ion, cfg)
+        n = result.checkpoint.n_shell
+
+        # Every ion sheds its last He (P_miss ~ (1-nu*dt)^500 ~ 5e-6 per ion at
+        # the seeded stream -- deterministic under seed) and freezes at n = 0.
+        np.testing.assert_array_equal(result.terminal_n, np.zeros(4))
+        assert bool(result.freeze_flags.all())
+        assert result.time_relaxed_ps < 5.0             # freeze early-exit fired
+        assert np.all(np.diff(n, axis=1) >= -1.0)       # one rung per step
 
 
 # ---------------------------------------------------------------------------
@@ -257,6 +397,101 @@ class TestE1Admission:
 
 
 # ---------------------------------------------------------------------------
+# dt honored + default-stream derivation (review 2026-07-03)
+# ---------------------------------------------------------------------------
+class TestDtAndSeeding:
+    def test_relaxation_dt_honored(self):
+        # A gate-suppressed, cooling-off seed: never sheds, never freezes
+        # (E_int > D_0), so the stage runs the full window -- this also covers
+        # the time-exhaustion (non-freeze) termination arm.
+        cfg = _relax_cfg(relaxation_time_ps=0.1, relaxation_dt_ps=0.02,
+                         internal_energy_cooling_tau_ps=1e6)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        sigma21 = float(ladder_cumsum(21, picture=picture, kappa=kappa))
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=1.2 * sigma21)
+
+        result = run_relaxation_stage(ion, cfg)
+        ckpt = result.checkpoint
+
+        # relaxation_dt_ps (not dt_ion = 0.01) drives the step: 5 steps of 0.02.
+        assert ckpt.time_ps.shape == (6,)
+        np.testing.assert_allclose(np.diff(ckpt.time_ps), 0.02, rtol=0, atol=1e-12)
+        assert not bool(result.freeze_flags.any())
+        assert result.time_relaxed_ps == pytest.approx(0.1, abs=1e-12)
+        np.testing.assert_array_equal(result.terminal_n, np.full(4, 21.0))
+
+    def test_default_rng_derivation_pinned(self):
+        # The default (rng=None) stream MUST be
+        # default_rng(SeedSequence((cfg.seed, RELAXATION_STREAM_KEY))): seeding
+        # from cfg.seed directly would replay the ion-stage stream (the exact
+        # correlation the key exists to prevent) and no other test executes the
+        # default path.
+        cfg = _relax_cfg(relaxation_time_ps=3.0, internal_energy_cooling_tau_ps=1.0,
+                         evap_rrk_dof=2.0, seed=777)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        sigma21 = float(ladder_cumsum(21, picture=picture, kappa=kappa))
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=0.98 * sigma21)
+
+        r_default = run_relaxation_stage(ion, cfg)
+        r_explicit = run_relaxation_stage(
+            ion, cfg,
+            rng=np.random.default_rng(
+                np.random.SeedSequence((777, RELAXATION_STREAM_KEY))
+            ),
+        )
+        assert np.any(r_default.terminal_n < 21)        # draws mattered (non-vacuous)
+        np.testing.assert_array_equal(
+            r_default.checkpoint.n_shell, r_explicit.checkpoint.n_shell
+        )
+        np.testing.assert_allclose(
+            r_default.checkpoint.E_int_eV, r_explicit.checkpoint.E_int_eV,
+            rtol=0, atol=0,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Input contracts (review 2026-07-03): window-relative time_relaxed_ps; the
+# seed checkpoint must be biphasic and its last column must be the true final
+# ion state.
+# ---------------------------------------------------------------------------
+class TestInputContracts:
+    def test_time_relaxed_is_window_relative(self):
+        # A production seed enters at ~20 ps absolute; time_relaxed_ps is the
+        # window-relative duration (here: one dt_ion step before the cold
+        # freeze), while the checkpoint's time_ps axis stays absolute.
+        cfg = _relax_cfg(relaxation_time_ps=0.05)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        d0_21 = float(d0_of_n(21, picture=picture, kappa=kappa))
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=0.5 * d0_21,
+                               time_ps_start=20.0)
+
+        result = run_relaxation_stage(ion, cfg)
+        assert result.time_relaxed_ps == pytest.approx(cfg.dt_ion, abs=1e-12)
+        # Early-freeze detection works on a real (nonzero-time) seed.
+        assert result.time_relaxed_ps < cfg.relaxation_time_ps
+        # The checkpoint axis continues the ion stage's absolute time.
+        assert result.checkpoint.time_ps[0] == pytest.approx(20.0, abs=1e-12)
+        assert result.checkpoint.time_ps[-1] == pytest.approx(20.0 + cfg.dt_ion,
+                                                              abs=1e-12)
+
+    def test_non_biphasic_seed_checkpoint_rejected(self):
+        cfg = _relax_cfg()
+        ion = replace(_seed_checkpoint(cfg), mass_scenario="fixed")
+        with pytest.raises(ValueError, match="mass_scenario"):
+            run_relaxation_stage(ion, cfg)
+
+    def test_stale_seed_column_rejected(self):
+        # mass_history_kg[:, -1] != mass_final_kg means the ion run's stride
+        # dropped the true final state (E_int/n_shell unrecoverable) -- the
+        # stage must refuse rather than silently relax a stale seed.
+        cfg = _relax_cfg()
+        ion = _seed_checkpoint(cfg)
+        ion = replace(ion, mass_final_kg=ion.mass_final_kg + MASS_HE_AMU * U)
+        with pytest.raises(ValueError, match="final"):
+            run_relaxation_stage(ion, cfg)
+
+
+# ---------------------------------------------------------------------------
 # Config validation (check_relaxation_config arms)
 # ---------------------------------------------------------------------------
 class TestConfigValidation:
@@ -284,6 +519,23 @@ class TestConfigValidation:
         with pytest.raises(ValueError, match="relaxation_time_ps"):
             check_relaxation_config(cfg)
 
+    @pytest.mark.parametrize("bad_time", [0.0, -1.0])
+    def test_zero_or_negative_time_raises(self, bad_time):
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=bad_time,
+        )
+        with pytest.raises(ValueError, match="relaxation_time_ps"):
+            check_relaxation_config(cfg)
+
+    @pytest.mark.parametrize("bad_dt", [0.0, -0.01])
+    def test_nonpositive_dt_raises(self, bad_dt):
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=1.0,
+            relaxation_dt_ps=bad_dt,
+        )
+        with pytest.raises(ValueError, match="relaxation_dt_ps"):
+            check_relaxation_config(cfg)
+
     def test_nu_dt_guard_raises(self):
         # nu = 2.42; dt_relax = 0.05 -> nu*dt = 0.121 > 0.1.
         cfg = _biphasic_driver_cfg(
@@ -292,6 +544,15 @@ class TestConfigValidation:
         )
         with pytest.raises(ValueError, match="nu"):
             check_relaxation_config(cfg)
+
+    def test_nu_dt_boundary_accepted(self):
+        # The guard is nu*dt <= 0.1 inclusive: exactly 0.1 must pass (1.0 * 0.1
+        # is exact in binary floats, so this pins the > vs >= arm).
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=1.0,
+            relaxation_dt_ps=0.1, evap_rate_prefactor_per_ps=1.0,
+        )
+        check_relaxation_config(cfg)  # no raise
 
     def test_bad_forces_raises(self):
         cfg = _biphasic_driver_cfg(

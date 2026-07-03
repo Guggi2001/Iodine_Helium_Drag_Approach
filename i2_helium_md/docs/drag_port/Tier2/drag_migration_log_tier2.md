@@ -3093,3 +3093,111 @@ guards, 5 compare guards, 2 reconstruct fail-loud, 2 Π-flag gating); full suite
 drag-law, or propagation touch; no public-surface rename (the Phase-F pinned
 names are unchanged; `source_tag` and `freeze_side_expected` are additive
 keyword-only params).
+
+---
+
+## Phase E — code review E2 + fixes applied (2026-07-03)
+
+Multi-agent adversarially-verified review of slice E2 (the dedicated review the
+E1/E3/E4/E5 pass deferred). Four parallel reviewer dimensions
+(physics/energy-ledger, RNG/determinism, architecture/checkpoint-contract, test
+adequacy) + an independent probe-driven verification pass on the four
+highest-impact candidates. **No physics bug found.** The strongest refutation
+attempts all failed: the coulomb arm is verifiably the ion driver's biphasic
+branch minus drag; the zero-γ closure is exactly inert (decay = 1.0,
+dE_dissip = 0.0, no draw); the `e_bind_pair` fold shifts E_pot by exactly
++D_0(n) per shed; `dt_relax` reaches every dt reader; the two-draw contract,
+keyed stream, and coulomb/free-flight decoupling hold. A suspected
+freeze-condition bug was **refuted with algebra**: `biphasic_step` passes
+`e_inf + E_int` into `newton_cool_step` and subtracts `e_inf` after, so the
+asymptote cancels and K2 cools `E_int` toward 0 — E_∞(N) > 0 can never
+un-freeze an ion after the early exit. Measured 5-term closure on the delivered
+fixtures: ~2e-5 relative.
+
+**Confirmed findings and fixes (all TDD — the four new-behavior tests watched
+to fail first; the coverage tests passed immediately against the delivered
+code, confirming those behaviors were already correct):**
+
+1. **`time_relaxed_ps` contract (Important, latent).** Returned *absolute*
+   time (seed ≈ 20 ps in production + window) while documented window-relative;
+   probe showed the natural Phase-F early-freeze check
+   `time_relaxed_ps < relaxation_time_ps` answers wrongly on any real seed
+   (invisible to the delivered tests only because the fixture seeded
+   `time_ps = 0`). Fix: window-relative return
+   (`state.time_ps − seed.time_ps`); the checkpoint's `time_ps` axis stays
+   absolute (documented). New nonzero-seed-time test.
+2. **Seed-column staleness guard (Important, latent).** Exhaustive probe
+   (2388 step/stride combos) proved the ion driver's last-column back-fill
+   branch (`ion.py:293`) is dead code — the allocation is always exactly
+   consumed — so under stride > 1 with `S ≢ 1 (mod stride)` column −1 is a
+   stale pre-stride snapshot, and `E_int_eV`/`n_shell` have no `*_final_*`
+   fields to recover from. Fix: `run_relaxation_stage` now refuses a seed with
+   `mass_history_kg[:, -1] != mass_final_kg` (mass_final is written from the
+   true final state; a partial guard — mass events are the observable-relevant
+   proxy). Latent today: production ≈ stride 1.
+3. **Stale v7 byte-count constant (adjacent live defect found by the
+   verifier).** `ion.py::_NUM_2N_T_ARRAYS_ION` was 14 — it omitted the v7
+   `E_int_eV` (2N,T) array — undercounting the checkpoint estimate by ~6.7%
+   (the stride-1 grant flips at ≈ 2090 molecules on the true size). Fixed to
+   15; new schema-count test in `test_ion.py` derives the count from the
+   dataclass fields so the constant tracks future schema changes. Focused-bug
+   justification for the ion-driver touch: bookkeeping constant only, no
+   propagation physics.
+4. **Input-provenance guard (Moderate; scenario partially refuted).**
+   `ion.mass_scenario` was never checked. Verifier showed realistic
+   off-scenario seeds crash *loudly* in `biphasic_step`'s m↔n lockstep
+   assertion — but with a "channel/reset bug" message that misdiagnoses the
+   cause — while a mass-on-lockstep-grid seed passes silently, and the
+   free-flight `held_md_pot` subtraction is mis-based for any seed whose E_pot
+   never contained the fold. Fix: explicit `mass_scenario == "biphasic"`
+   rejection at entry.
+
+**Test gaps closed (+15 tests, `test_relaxation_stage.py` 15 → 29 plus 1 in
+`test_ion.py`):** the plan's per-channel sharp acceptance oracle
+**ΔE_dissip ≡ cumulative K2 drain** (reconstructed exactly from the stored
+`E_int`/`n_shell` columns; catches channel mis-attribution the 5-term sum
+conserves — the one *Critical*-rated coverage gap, found independently by two
+reviewers); free-flight `E_pot ≡ held_MD + e_bind_pair(n)` asserted numerically
+(a constant-offset bug cancels in the closure); no-avalanche
+(`diff(n) ≥ −1`); self-bound gate suppression + not-frozen-at-entry
+(un-freeze-into-band as K2 cools); n = 1 direct dissociation to the bare ion
+with n = 0 freeze; `relaxation_dt_ps` actually honored (also covers the
+time-exhaustion, non-freeze termination arm); the default RNG derivation
+`SeedSequence((cfg.seed, RELAXATION_STREAM_KEY))` pinned end-to-end (previously
+the default path was never executed — a `default_rng(cfg.seed)` regression
+correlating with the ion stream would have stayed green); invariant tolerance
+tightened 1e-2 → 1e-4 with the CLAUDE.md-required justification (measured
+2e-5; the old band hid per-rung fold errors); `check_relaxation_config` arms
+completed (`time ≤ 0`, `dt ≤ 0`, and the ν·dt = 0.1 accept-boundary).
+
+**Corrections to the E2 delivery record above (annotation, append-only):** its
+claim "every `check_relaxation_config` arm fires" was overstated (the
+`time ≤ 0` / `dt ≤ 0` sub-arms and the boundary-accept were unfired — now
+fired), and its test list silently omitted the plan's ΔE_dissip ≡ K2-drain
+acceptance oracle (now covered).
+
+**Recorded, not fixed (deferred with rationale):** the negative-ν hole in
+`check_relaxation_config` (loud downstream via `rrk_rate`'s 2026-07-02
+module-level defense; a config-arm would only move the error earlier); the
+strict `<` freeze boundary vs `rrk_rate`'s k = 0 at equality (delays the early
+exit by ≥ 1 step at a measure-zero boundary; never a wrong shed); the
+`_decide_stride_ion` private-import carry (**re-opened**: E2's delivery
+decision 2 promised its public promotion to E5b, but E5b promoted only
+`drag_gate_steepness` — carried as an open Phase-F item); the stride > 1
+storage branch and native-s (s = 60) nonzero-rate path remain unexercised
+(production-scale concerns; the stride-1 assumption is now asserted loudly
+inside the new oracles via the time-axis spacing check); `held_md_pot` /
+`dt_relax` naming-suffix nits; the pre-loop `freeze_flags` initialization
+(defensive init, kept); `b_ion_outside` stays a documented pass-through;
+`cfg.seed = None` → entropy seeding stays the documented ion-stage convention.
+
+**Verification.** Fail-first confirmed for all four new-behavior tests
+(absolute-time 20.01, two guards DID-NOT-RAISE, 15 ≠ 14);
+`test_relaxation_stage.py` 29 green, `test_ion.py` 26 green; full suite
+**1952 passed** (1937 → +15), same 27 pre-existing warnings, 0 failures. No
+schema bump, no RNG draw-order change (the default-path derivation is now
+*pinned*, not changed), no drag-law / neutral / propagation-physics touch
+(`_NUM_2N_T_ARRAYS_ION` is a storage-budget constant), no public-surface
+rename (`time_relaxed_ps` keeps its pinned name; its semantics now match its
+documented contract). §5 out-of-scope guard holds. **Phase E review is now
+complete for all five slices.**

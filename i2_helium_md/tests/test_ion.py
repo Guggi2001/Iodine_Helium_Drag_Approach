@@ -9,6 +9,7 @@ from i2_helium_md.presets import single_pulse_N2000
 from i2_helium_md.simulation.checkpoint import IonCheckpoint
 from i2_helium_md.simulation.ion import (
     DEFAULT_MAX_CHECKPOINT_BYTES_ION,
+    _NUM_2N_T_ARRAYS_ION,
     _decide_stride_ion,
     _estimate_checkpoint_bytes_ion,
     _internal_step_count_ion,
@@ -300,3 +301,22 @@ class TestInternalHelpers:
         b = _estimate_checkpoint_bytes_ion(200, 100)
         ratio = b / a
         assert 1.8 < ratio < 2.2
+
+    def test_num_2nt_arrays_matches_checkpoint_schema(self):
+        # The byte-estimate constant must track the checkpoint schema: count
+        # the (2N, T) trajectory/diagnostic arrays on a real IonCheckpoint
+        # (schema v7 added E_int_eV; an undercount silently grants stride 1
+        # past the byte budget). 2N=10 vs T=7 keeps the shapes unambiguous.
+        import dataclasses
+
+        from tests.test_checkpoint import _make_ion_checkpoint
+
+        ckpt = _make_ion_checkpoint(num_molecules=5, num_steps=7)
+        two_n_t = (2 * ckpt.num_molecules, ckpt.time_ps.shape[0])
+        count = sum(
+            1
+            for f in dataclasses.fields(ckpt)
+            if isinstance(getattr(ckpt, f.name), np.ndarray)
+            and getattr(ckpt, f.name).shape == two_n_t
+        )
+        assert count == _NUM_2N_T_ARRAYS_ION
