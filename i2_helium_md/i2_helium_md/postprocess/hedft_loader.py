@@ -33,6 +33,8 @@ from pathlib import Path
 
 import numpy as np
 
+from .csv_contract import validate_columns
+
 
 _EXPECTED_COLUMNS: tuple[str, ...] = (
     "Time_ps",
@@ -157,15 +159,11 @@ def load_hedft_trajectory(
         dtype=float,
     )
 
-    actual_columns = tuple(structured.dtype.names or ())
-    missing = tuple(c for c in _EXPECTED_COLUMNS if c not in actual_columns)
-    extra = tuple(c for c in actual_columns if c not in _EXPECTED_COLUMNS)
-    if missing or extra:
-        raise ValueError(
-            f"HeDFT reference {p.name} has unexpected columns. "
-            f"missing={list(missing)}, unexpected={list(extra)}, "
-            f"expected={list(_EXPECTED_COLUMNS)}"
-        )
+    validate_columns(
+        structured.dtype.names,
+        _EXPECTED_COLUMNS,
+        file_label=f"HeDFT reference {p.name}",
+    )
 
     time_ps = np.asarray(structured["Time_ps"], dtype=float)
     if time_ps.ndim != 1 or time_ps.size < 2:

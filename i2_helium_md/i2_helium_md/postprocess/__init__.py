@@ -38,6 +38,23 @@ from .pair_correlation import (
     angular_pair_covariance,
     interparticle_distance_histogram,
 )
+from .abundance_loader import (
+    HeAbundanceReference,
+    load_he_abundance_reference,
+)
+from .derived_diagnostics import (
+    Diagnostics,
+    TCrossSummary,
+    reconstruct_diagnostics,
+)
+from .distribution_compare import (
+    compare_size_distributions,
+    wasserstein_integer_support,
+)
+from .size_distribution import (
+    ShellDistribution,
+    compute_terminal_shell_distribution,
+)
 from .paper_v3 import (
     PaperV3PhiCurve,
     PaperV3PhiReference,
@@ -143,6 +160,15 @@ __all__ = [
     "interparticle_distance_histogram",
     "CovarianceMatrix",
     "angular_pair_covariance",
+    "ShellDistribution",
+    "compute_terminal_shell_distribution",
+    "HeAbundanceReference",
+    "load_he_abundance_reference",
+    "wasserstein_integer_support",
+    "compare_size_distributions",
+    "Diagnostics",
+    "TCrossSummary",
+    "reconstruct_diagnostics",
     "PaperV3RadialReference",
     "PaperV3PhiReference",
     "PaperV3VelocityCurve",

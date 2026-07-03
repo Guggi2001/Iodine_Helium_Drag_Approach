@@ -75,7 +75,7 @@ from i2_helium_md.postprocess import (  # noqa: E402
     ion_ledger_closure,
     load_hedft_trajectory,
 )
-from i2_helium_md.postprocess.bridge_diagnostics import (  # noqa: E402
+from i2_helium_md.postprocess.derived_diagnostics import (  # noqa: E402
     crossing_time_ps,
     mean_shell_count,
     regime_parameter,

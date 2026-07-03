@@ -56,6 +56,7 @@ NoiseGeometry = Literal["longitudinal", "isotropic", "anisotropic"]
 NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
 PickupRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
+RelaxationForces = Literal["coulomb", "free_flight"]   # Tier-2 Phase-E relaxation translation arm
 
 # Tier-2 Phase-B pickup channel (Slice P). ``PickupOccupancyCap`` selects the
 # Langmuir shell-saturation factor ``(1 - n/n*)_+^p`` (``langmuir``, default) vs the
@@ -274,7 +275,7 @@ class SimConfig:
     # (repurposed from the former Optional[object] G4 placeholder; NOT on the
     # rule-2 exception table). rho stays G2: this is the surface-density gate, not
     # a G2->G4 drag-gate promotion. Steepness is NOT a field here -- the Phase-C
-    # driver passes _drag_gate_steepness(cfg) so density and drag share one surface.
+    # driver passes drag_gate_steepness(cfg) so density and drag share one surface.
     helium_density_profile: HeliumDensityProfile = "erf_complement"  # Slice rho (G2 gate)
 
     # -- Tier-2 Phase-B pickup channel (Slice P) --
@@ -321,6 +322,18 @@ class SimConfig:
     noise_geometry: NoiseGeometry = "longitudinal"       # Tier 3
     noise_low_v_behavior: NoiseLowVBehavior = "vanish"   # Tier 3 (anisotropic only)
     validation_histogram_metric: ValidationHistogramMetric = "wasserstein"  # Tier 2
+
+    # -- Tier-2 Phase-E post-ejection relaxation stage (Slice E2; opt-in) --
+    # The R5 mitigation: propagate the biphasic mass subsystem past the 20 ps ion
+    # stage to the experimental timescale (pickup off via lambda_0=0, drag off via
+    # gamma=0) so the terminal size distribution is read at matched time rather than
+    # at the truncated sim-end upper bound. Default off keeps the default simulation
+    # scope unchanged (forbidden-list compliant); check_relaxation_config gates them
+    # and they are read by simulation/relaxation_stage.run_relaxation_stage.
+    relaxation_stage_enabled: bool = False               # opt-in; default off = default scope
+    relaxation_time_ps: Optional[float] = None           # required-when-enabled (no sourced t_exp)
+    relaxation_dt_ps: Optional[float] = None             # None -> dt_ion; guard nu*dt <= 0.1
+    relaxation_forces: RelaxationForces = "coulomb"      # translation arm (coulomb default; free_flight)
 
     # ------------------------------------------------------------------
     # Output
@@ -426,6 +439,7 @@ class SimConfig:
         check_pickup_config(self)
         check_evaporation_config(self)
         check_biphasic_config(self)
+        check_relaxation_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -512,7 +526,7 @@ def check_helium_density_config(cfg: "SimConfig") -> None:
     placeholder into the born-live G2 surface-density selector.
 
     The steepness is **not** a helium-density field: the Phase-C driver passes
-    ``_drag_gate_steepness(cfg)`` so the density and drag gates share one surface
+    ``drag_gate_steepness(cfg)`` so the density and drag gates share one surface
     (CALIBRATION_MAP row 5); there is nothing steepness-related to guard here.
 
     Raises
@@ -827,6 +841,72 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
             "shell. nu defaults to the Sourced NU_EVAP_PER_PS=2.42; an explicit 0 "
             "is a diagnostic configuration.",
             UserWarning,
+        )
+
+
+def check_relaxation_config(cfg: "SimConfig") -> None:
+    """Validate the Tier-2 Phase-E relaxation-stage surface (Slice E2).
+
+    Fires **only** when ``cfg.relaxation_stage_enabled`` is True (the
+    ``check_biphasic_config`` pattern); a no-op otherwise, so the default config
+    (stage disabled) is unaffected and the default simulation scope is unchanged.
+    When enabled it requires:
+
+    1. ``mass_scenario == "biphasic"`` -- the relaxation stage composes the
+       biphasic ``biphasic_step`` under a lambda_0 = 0 view; no other scenario
+       carries the ``E_int`` reservoir / channel machinery it propagates.
+    2. ``relaxation_time_ps`` set and > 0 -- there is **no sourced** experimental
+       flight time (MASS doc §R5 gives only "hundreds of ps"); the concrete value
+       is a Phase-F campaign choice, so it is required-when-enabled with no default
+       (the freeze early-exit bounds the cost of generous values).
+    3. ``nu * dt_relax <= 0.1`` (``dt_relax`` = ``relaxation_dt_ps`` or ``dt_ion``)
+       -- since ``k <= nu`` this bounds the one-event-per-step bias at
+       ``(k*dt)^2/2 <~ 0.5%`` (MASS authorizes no larger step). ``dt_relax`` must
+       be positive.
+    4. ``relaxation_forces in {"coulomb", "free_flight"}`` -- the translation-arm
+       enum reject guard.
+
+    Raises
+    ------
+    ValueError
+        On any failed check above (fail-loud; CLAUDE.md principle 4).
+    """
+    if not cfg.relaxation_stage_enabled:
+        return
+
+    if cfg.mass_scenario != "biphasic":
+        raise ValueError(
+            "relaxation_stage_enabled=True requires mass_scenario='biphasic': the "
+            "post-ejection relaxation stage propagates the biphasic E_int reservoir "
+            "and pickup/evaporation channels (under lambda_0=0), which no other "
+            f"mass scenario carries; got mass_scenario={cfg.mass_scenario!r}."
+        )
+
+    if cfg.relaxation_time_ps is None or cfg.relaxation_time_ps <= 0.0:
+        raise ValueError(
+            "relaxation_stage_enabled=True requires relaxation_time_ps to be set "
+            "and > 0: MASS §R5 gives no sourced experimental flight time (only "
+            "'hundreds of ps'), so the value is a required Phase-F campaign choice; "
+            f"got relaxation_time_ps={cfg.relaxation_time_ps!r}."
+        )
+
+    dt_relax = cfg.dt_ion if cfg.relaxation_dt_ps is None else cfg.relaxation_dt_ps
+    if dt_relax <= 0.0:
+        raise ValueError(
+            f"relaxation_dt_ps must be > 0 (defaults to dt_ion); got {dt_relax!r}."
+        )
+    nu_dt = cfg.evap_rate_prefactor_per_ps * dt_relax
+    if nu_dt > 0.1:
+        raise ValueError(
+            f"nu*dt_relax must be <= 0.1 (one-event-per-step bias bound "
+            f"(k*dt)^2/2 <~ 0.5%, since k <= nu); got nu={cfg.evap_rate_prefactor_per_ps} "
+            f"* dt_relax={dt_relax} = {nu_dt}. Reduce relaxation_dt_ps."
+        )
+
+    if cfg.relaxation_forces not in ("coulomb", "free_flight"):
+        raise ValueError(
+            "relaxation_forces must be 'coulomb' (default) or 'free_flight'; got "
+            f"{cfg.relaxation_forces!r}."
         )
 
 

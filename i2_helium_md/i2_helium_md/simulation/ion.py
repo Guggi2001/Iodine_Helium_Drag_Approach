@@ -195,7 +195,7 @@ def run_ion_propagation(
         # trip-wire checks what the stepper will actually integrate, not a
         # config field.
         _check_drag_scope(cfg, ckpt.mass_kg)
-        gate_steepness = _drag_gate_steepness(cfg)
+        gate_steepness = drag_gate_steepness(cfg)
         # gamma_fn(speed, depth) -> gamma [amu/ps]; the erf gate (§5.5) lives
         # inside drag_gamma via the steepness arg (hard FDT coupling, §5.2).
         gamma_fn = partial(
@@ -345,7 +345,7 @@ def _check_scope_ion_driver(cfg: SimConfig) -> None:
         )
 
 
-def _drag_gate_steepness(cfg: SimConfig) -> float:
+def drag_gate_steepness(cfg: SimConfig) -> float:
     """Resolve the spatial-gate steepness for the drag branch (§5.5 collapse).
 
     The drag gate stays G2: ``density_proportional`` (the default) collapses to

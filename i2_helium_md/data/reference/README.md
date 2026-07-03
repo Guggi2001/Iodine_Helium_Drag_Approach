@@ -23,9 +23,48 @@ scripts/        <- the MATLAB exporters that generate the above CSV/MAT files,
 Top-level files:
 
 ```text
-9A_All_Data.csv   <- HeDFT trajectory reference (9 angstrom droplet)
-18A_All_Data.csv  <- HeDFT trajectory reference (normalized 18 angstrom droplet)
+9A_All_Data.csv                 <- HeDFT trajectory reference (9 angstrom droplet)
+18A_All_Data.csv                <- HeDFT trajectory reference (normalized 18 angstrom droplet)
+integrated_i_he_abundance.csv   <- experimental I+He_n size distribution (Tier-2 arbiter)
 ```
+
+## `integrated_i_he_abundance.csv` — I+He_n size distribution (Tier-2 arbiter)
+
+The measured I+He_n integer-n abundance the Tier-2 generative mass mechanism is
+falsified against (loaded by `postprocess/abundance_loader.py ::
+load_he_abundance_reference`; scored by the E4 integer-support Wasserstein
+comparison). Data contract verified against the file 2026-07-03:
+
+```text
+column                    unit     meaning
+n                         -        He-shell count; integer, contiguous 0..20
+label                     -        species label: I^+, I^+He_1, ..., I^+He_20
+massCenter_u_per_e        u/e      mass-window centre (integer I mass: 127 at n=0,
+                                   step 4.0026 = He; NOT the sim-side 126.90 base)
+massWindowLower_u_per_e   u/e      mass-window lower edge
+massWindowUpper_u_per_e   u/e      mass-window upper edge
+ionCounts                 -        per-species ion intensity (non-negative;
+                                   fractional values, column sum ~ 0.19 -- a
+                                   normalized intensity, NOT raw detector
+                                   counts; the absolute normalization is part
+                                   of the open provenance item below)
+ionPercent                %        ionCounts as a percentage of the column
+                                   total; sums to 100
+```
+
+21 rows (n = 0..20). The loader normalizes `ionPercent` by its own sum into
+`ion_fraction` (sums to exactly 1.0). Note the reference support stops at n = 20
+while the simulation's legal support runs to n = 21 (Langmuir cap n* = 21); the
+E4 comparison zero-fills the union support, it does not clip.
+
+Consumer (in-repo): `data/reference/scripts/plotting_histogram.py`.
+
+**Provenance: to be completed.** This file ships without a documented producer
+(no MATLAB/Python exporter under `scripts/` generates it, and no measurement-ID
+record exists in-repo). The verified column/unit/normalization contract above is
+authoritative for loading; the *measurement provenance* (source measurement IDs,
+the producing script, calibration/scaling steps) is an open item — to be
+supplied by the data owner.
 
 ## On-disk units convention
 

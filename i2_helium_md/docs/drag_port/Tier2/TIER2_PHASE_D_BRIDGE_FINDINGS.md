@@ -96,10 +96,12 @@ burst is the problem:
   `figures/bridge_{mean_n_overlay,kinematics,regime_pi}.png`) — machine-local,
   not committed (repo data policy).
 - Code: `i2_helium_md/postprocess/bridge_diagnostics.py` (helpers; Phase-E D2
-  generalizes), `scripts/tier2_common.py` (Phase-F F1 extends),
+  generalizes; renamed `postprocess/derived_diagnostics.py` at Phase-E E5a),
+  `scripts/tier2_common.py` (Phase-F F1 extends),
   `scripts/gen_tier2_bridge_run.py`,
   `scripts/post_processing/tier2_bridge_report.py`.
 - Tests: `tests/test_bridge_diagnostics.py` (19; incl. the §2.2 analytic
-  oracle and the few-step driver smoke with 5-term closure).
+  oracle and the few-step driver smoke with 5-term closure; renamed
+  `tests/test_derived_diagnostics.py` at Phase-E E5a).
 - Delivery record: `docs/drag_port/Tier2/drag_migration_log_tier2.md`
   (Phase D — Slice Z DELIVERED entry).

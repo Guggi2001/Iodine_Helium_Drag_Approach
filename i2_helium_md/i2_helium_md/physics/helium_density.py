@@ -53,7 +53,7 @@ def rho_he_ratio(depth, *, steepness: float) -> float | np.ndarray:
     steepness : float
         Width of the erf transition in Angstrom (``> 0``). **No default** --
         mirrors :func:`i2_helium_md.physics.drag.spatial_gate`; the Phase-C driver
-        passes ``_drag_gate_steepness(cfg)`` (= ``cfg.potential_steepness`` under the
+        passes ``drag_gate_steepness(cfg)`` (= ``cfg.potential_steepness`` under the
         production gate) so density and drag see the *same* surface.
 
     Returns

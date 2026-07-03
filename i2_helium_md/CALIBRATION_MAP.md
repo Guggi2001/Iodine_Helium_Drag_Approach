@@ -122,7 +122,7 @@ cooling, ladder, early window). Physics-Definition only; no code.
   **integer-n size distribution only** — per-fragment velocity histograms were
   **cut** (the `vmi_summary/*.csv` references are aggregate I⁺He / I⁺-gas
   distributions, not per-n). See
-  `docs/drag_port/Tier2/PHASE_E_IMPLEMENTATION_PLAN.md`.)*
+  `docs/drag_port/Tier2/TIER2_PHASE_E_IMPLEMENTATION_PLAN.md`.)*
 - **Tier 3** — ensemble second moments: final-velocity histogram **width** +
   (if applicable) VMI angular spread. Isolates the noise model.
 

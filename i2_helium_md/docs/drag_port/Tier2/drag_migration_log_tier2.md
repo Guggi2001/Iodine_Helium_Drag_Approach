@@ -2565,3 +2565,531 @@ row again); the "Pi at gate-open (t=0)" summary label (Π = 0 holds on all of
 threading, divergent-steepness ρ-parity, τ rejection); full suite
 **1840 passed, 0 failed** (1837 → +3), same 27 pre-existing warnings. No
 config field, no schema, no RNG, no drag-law touch; the §7 guard holds.
+
+---
+
+## Phase E — pre-build refinement decisions (2026-07-03)
+
+A pre-build refinement pass over `TIER2_PHASE_E_IMPLEMENTATION_PLAN.md` (plan-only; no
+code — the `[PROCEED TO IMPLEMENTATION]` trigger has not been given for E1–E5),
+cross-referenced against MASS §2.1–2.2/§4/§6.11/§R5/§7/§11 + CALIBRATION_MAP (rows
+7/9/10/11/13/14/19/20/21, anchor coverage), `TIER2_PHASE_D_BRIDGE_FINDINGS.md`, the
+Phase-F plan's Phase-E interface bindings, and a full code-surface audit of every
+composed surface (`biphasic_step` + its config reads + RNG consumption,
+`ion_state_from_checkpoint_column`, v7 `IonCheckpoint`, `ion_ledger_closure`,
+`make_ion_accel_fn`/`make_ion_baoab_step`, `bridge_diagnostics.py`, `hedft_loader`,
+`lambda_attach`/`rho_he_ratio`, `complex_mass_amu`, `RunDirectory`, the real abundance
+CSV, and the test-fixture precedents). Plan rewritten in place. Three decisions locked
+(R1/R2 user; R3 recommendation applied with the user idle on the ask — the Phase-D
+"applied as announced" precedent):
+
+1. **R1 — E2 composes the delivered `biphasic_step` verbatim (λ₀=0 relaxation view),
+   not a shed-only reduced loop.** The plan's "draws only shed Bernoullis" wording
+   contradicted the delivered unconditional-draw channel contract: at
+   `pickup_rate_coefficient=0` pickup is structurally inert but its draw is still
+   consumed, so the Slice-X frozen two-draw stream is preserved byte-identically
+   (`check_biphasic_config` already names λ₀=0 the relaxation stage's "close cousin").
+   Drag drops out via a zero-γ BAOAB closure (decay=1, `dE_dissip≡0`), keeping the
+   delivered bookkeeping. The stage runs on its own generator
+   (`SeedSequence((cfg.seed, RELAXATION_STREAM_KEY))`) — draw order extended by a new
+   stage, never re-ordered. Audit fact recorded: with λ₀=0 and γ=0 the mass subsystem
+   decouples from translation entirely (positions enter only the dead density gate),
+   so the `free_flight` arm is exact for the observable; `coulomb` stays the default
+   for ledger/asymptotic fidelity, and the two arms must give the identical shed
+   sequence under one seed (new oracle).
+2. **R2 — E5 = `git mv postprocess/bridge_diagnostics.py → derived_diagnostics.py`.**
+   The delivered module's own docstring names Phase-E D2 as its generalization point;
+   the parent + Phase-F plans bind to `derived_diagnostics.py`; a parallel new module
+   would duplicate t×/Π (rule 1). Helpers move unchanged; the two Phase-D importers
+   (`tier2_bridge_report.py`, `test_bridge_diagnostics.py` →
+   `test_derived_diagnostics.py`) update mechanically. E5 absorbs its recorded
+   Slice-Z-review deferrals: the `_drag_gate_steepness` promotion to a public helper,
+   the `postprocess/__init__` exports, and the shape/monotonic-`time_ps` guards.
+3. **R3 — abundance-CSV provenance gap → README stub + open item.**
+   `integrated_i_he_abundance.csv` has no documented producer (no exporter under
+   `data/reference/scripts/`, no README entry; the only repo reference is the consumer
+   `plotting_histogram.py`). E3 adds a `data/reference/README.md` data-contract entry
+   (columns/units/normalization verified 2026-07-03: 21 rows, n=0–20 contiguous,
+   `ionPercent` sums to 100.0000, mass grid step 4.0026 u/e) with provenance marked
+   "to be completed". **OPEN ITEM:** user to supply measurement IDs / the producing
+   script.
+
+**Corrections + refinements folded into the plan (audit-settled, no fork):**
+
+- **E2 "E_dissip constant" oracle was wrong** — the delivered Slice-G booking sends
+  the K2 cooling drain to `E_dissip` every step. Corrected sharp oracle: with γ=0,
+  λ₀=0, `ΔE_dissip(t)` ≡ the cumulative K2 drain exactly (drag + pickup-bath
+  contributions identically zero). The relaxation driver also reproduces the ion
+  arm's `e_bind_pair(n)` E_pot fold (rule 1 — same call), so the 5-term closure holds
+  in both force arms.
+- **`relaxation_time_ps` = required-when-enabled, no default** — MASS §R5 gives no
+  sourced t_exp (only "hundreds of ps"; no µs flight time anywhere in MASS); the value
+  is a Phase-F campaign choice; freeze early-exit (`n=0` or `E_int<D_0(n)` ∀ ions —
+  k≡0 forever, E_int monotone non-increasing) bounds the cost. `relaxation_dt_ps`
+  defaults to `dt_ion` with a load guard ν·dt ≤ 0.1 (one-event-per-step bias
+  ≲ (k·dt)²/2 ≈ 0.5%; MASS authorizes no larger step; default ν·dt ≈ 0.024).
+  `check_relaxation_config` (the `check_biphasic_config` pattern) additionally
+  requires `mass_scenario=="biphasic"` when enabled.
+- **E2 artifact = a bona fide v7 `IonCheckpoint` for the relaxation window**, saved
+  as `relaxation.npz` via the existing `save_ion_checkpoint` (auto-stride convention
+  reused; no schema bump, zero new I/O code, `ion_ledger_closure` applies unchanged),
+  wrapped in a thin `RelaxationResult` (checkpoint + `freeze_flags` +
+  `time_relaxed_ps`). Seeding via `ion_state_from_checkpoint_column(ion, -1)`.
+- **Phase-F interface names pinned into the E plan:** `load_he_abundance_reference`
+  (E3 — F3's reuse row already binds the name), matched-time + sim-end W₁ per run
+  (E4), `t_cross_ps`/`Pi_t`/`regime_label`/`total_strip_reachable`/`sanity_flags`
+  (E5), `relaxation_stage_enabled` (E2).
+- **E4:** `chi2`/`ks` Literal arms get point-of-use `NotImplementedError` refusals
+  (unbuilt-enum-arm convention); "pure numpy" restated as a style choice (scipy is
+  already a hard dependency via `erf`/`curve_fit`); the config dispatch
+  (`compare_size_distributions`) is the field's first physics-live reader —
+  `validation_histogram_metric` leaves the rule-2 table at the E4 build.
+- **E1:** `n_shell` is int-valued float — validate + cast, fail-loud on fractional;
+  simulated support is 0–21 (n₀=n*=21, Langmuir-capped; bridge terminal n ∈ [18,21])
+  vs the reference's 0–20 — handled by E4's zero-filled union support, not clipped
+  in E1.
+- **Bridge-findings oracle corrections:** at the 9 Å/0.80 eV pinned point the cascade
+  is a ~0.7-shed burst frozen by ~8 ps with max mean Π ≈ 0.005 — E2's shed-to-freeze
+  dynamic tests use synthetic hot inputs (the pinned point adds ≈0 relaxation sheds:
+  matched-time ≈ sim-end there, recorded as a characterization); E5's regime oracle
+  expects `shell_retaining` at 9 Å with Π>1 itself a wiring flag, condition-specific,
+  not carried to 2.70 eV. E5's regime label got a concrete documented reporting rule
+  (majority-NaN t× or median terminal n ≤ 1 → `total_strip`), a convention, not a
+  config knob; `total_strip_reachable` = `e_infinity_eV(0)` under the run's
+  picture/κ, annotated as a split-consistency confirmation (K/U tautology
+  precedent), not an independent anchor.
+- **Prerequisite phasing obsoleted:** Phases A–D are all delivered at HEAD (1840
+  green), so every E slice is buildable now; build order E5a (rename first) →
+  {E3, E4, E1 sim-end} parallel → E2 → E1 relaxed-input admission + E5b.
+- **Relaxation-cost risk downgraded to LOW** (translation decoupled; free-flight arm
+  near-free; freeze early-exit; auto-stride storage budget).
+
+**Drift fixed (rename fallout of `061c92b`, live docs only — log history stays
+append-only):** `CLAUDE.md` doc list, `CALIBRATION_MAP.md` Phase-E NB,
+`TIER2_IMPLEMENTATION_PLAN.md` §4 (both detail-plan pointers), and
+`TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` (entry-docs + cross-links) now cite
+`TIER2_PHASE_E/F_IMPLEMENTATION_PLAN.md`.
+
+**Cross-reference verdict:** no contradictions with MASS / CALIBRATION_MAP. The
+Wasserstein-on-integer-support choice is MASS §10/§6.9 verbatim; the [1,15] ps t×
+sanity band, ±factor-2 GAH25 prior (factor-10 = the genuine flag), Π freeze/shed
+criterion, and the Calvo24/OQ6 reachability statement are §6.11 verbatim; the
+velocity-observable cut is already recorded in CALIBRATION_MAP's Phase-E NB; the R5
+matched-time + upper-bound double-report is §R5's option (a)+(b) combined. Slices
+E1–E5 remain behind the `[PROCEED TO IMPLEMENTATION]` trigger.
+
+---
+
+## Phase E — Slice E1 DELIVERED (2026-07-03)
+
+`[PROCEED TO IMPLEMENTATION]` given for E1 after a pre-build discussion that
+locked five interface defaults (all user-approved):
+
+1. **Which atoms count → all `2N`, no masking.** The I₂ Coulomb explosion yields
+   two I⁺, each carrying its own He shell and each an independent I⁺Heₙ
+   detection; the plan oracle (`n=[0,0,1,2,2,2]`, 6 entries) is consistent.
+2. **`source` field = mode tag only**, `str ∈ {"sim_end", "relaxed"}` (the R5
+   sim-end upper bound vs the E2 matched-time terminal `n`); it is the
+   discriminator E4/F3 pair per run. No path stored.
+3. **Out-of-range `n` fails loud** (not silently clipped/widened): `n > n_max`
+   violates the Langmuir cap (corruption), `n < 0` unphysical; `rint` residual
+   checked **exactly** (`== 0`), integer counts stored as float have no
+   arithmetic drift — a fractional entry is upstream corruption.
+4. **`RelaxationResult` admission = attribute-dispatch, not `isinstance`.** A
+   private `_terminal_n_and_source` checks `n_shell` (→ `[:, -1]`, `"sim_end"`)
+   then `terminal_n` (→ `"relaxed"`), so E1 ships sim-end now without importing
+   the not-yet-built E2 type; the relaxed mode is a one-branch admission.
+5. **Degenerate ensemble = empty** (`2N == 0` or `T == 0`) raises loudly.
+
+**New surface.** `postprocess/size_distribution.py`:
+- `ShellDistribution` (frozen: `n_values (Nn,) int`, `counts (Nn,) int`,
+  `fraction (Nn,) float`, `source str`) + a `mass_amu` property
+  (`complex_mass_amu(n_values)`, on-demand rung labelling — kept off the frozen
+  tuple so the F3-pinned field set stays exactly the four).
+- `compute_terminal_shell_distribution(source, *, n_max=N_STAR=21)` — histogram
+  on integer support `0..n_max` via `np.bincount(minlength=n_max+1)`;
+  `fraction = counts/counts.sum()`. `n = 21` is a legal rung (support includes
+  it; the reference's `0..20` mismatch is E4's zero-filled-union job, not
+  clipped here). Reuses `physics/shell_schedule.complex_mass_amu`.
+- Exported from `postprocess/__init__` now (E1's two names; E5b adds E3/E4/E5).
+  This lands part of the E5.2 deferral early — incremental, no conflict.
+
+**Tests.** `tests/test_size_distribution.py` — **21 green**. Hand-count oracle
+(+ terminal-column-not-sentinel guard); integer support `0..21` incl. the legal
+`n=21`; custom `n_max`; monotone-falling envelope; both input modes give the
+identical histogram (differing only in `source`); a real v7 `IonCheckpoint` via
+`test_checkpoint._make_ion_checkpoint`; fail-loud arms (fractional, out-of-range
+high/negative, non-finite, empty sim-end, zero-steps, empty relaxed, 1-D
+`n_shell`, wrong source type); `mass_amu` matches `complex_mass_amu`; frozen.
+Full suite **1861 passed** (1840 → +21), same 27 pre-existing warnings. No
+config field, no schema, no RNG, no drag-law touch; the §5 out-of-scope guard
+holds. E2–E5 stay behind the trigger.
+
+---
+
+## Phase E — Slice E5a DELIVERED (2026-07-03)
+
+The pure-rename half of E5 (decision R2), kept deliberately minimal so the E5b
+`reconstruct_diagnostics` additions land in the final module name with a clean
+diff.
+
+**Rename (git-tracked as `R`, history preserved).**
+- `git mv i2_helium_md/postprocess/bridge_diagnostics.py →
+  postprocess/derived_diagnostics.py` — module body **byte-identical** (helpers
+  `mean_shell_count`, `crossing_time_ps`, `regime_parameter` move unchanged; the
+  module docstring already names Phase-E D2/E5 as its generalization point, so no
+  edit needed).
+- `git mv tests/test_bridge_diagnostics.py → tests/test_derived_diagnostics.py`.
+
+**Mechanical importer/reference updates (the only content edits).**
+- `tests/test_derived_diagnostics.py`: docstring `bridge_diagnostics.py →
+  derived_diagnostics.py`; import `postprocess.bridge_diagnostics →
+  .derived_diagnostics`.
+- `scripts/post_processing/tier2_bridge_report.py`: same import swap.
+- `TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` (F1 note): dangling
+  `test_bridge_diagnostics.py → test_derived_diagnostics.py` (live-plan drift
+  fix, Quality Principle 8). Phase-D historical docs (D plan, D findings) keep
+  their `bridge_diagnostics` mentions — append-only history.
+
+**Scope boundary — E5a is rename-only.** The three absorbed deferrals (item 1
+`_drag_gate_steepness`→public promotion in `simulation/ion.py`; item 2 the
+E3/E4/E5 `postprocess/__init__` exports; item 3 shape/monotonic-`time_ps` guards
+on the thin helpers) are **deferred to E5b**, where the new `reconstruct_diagnostics`
+code consumes them — item 1 mutates a `simulation/` module (not a rename), and
+item 2's E3/E4/E5 surfaces do not exist yet. (E1's own exports already landed
+with E1.) Recorded so the E5 acceptance "items 1–3 closed" is met by E5b.
+
+**Verification.** `grep bridge_diagnostics **/*.py` → **no matches**;
+`from i2_helium_md.postprocess.derived_diagnostics import ...` resolves;
+`test_derived_diagnostics.py` **22 green** (unchanged from the delivered 22);
+full suite **1861 passed** (no test lost to the rename), same 27 warnings. No
+config/schema/RNG/drag-law touch; the §5 guard holds. E5b + E2–E4 stay behind
+the trigger.
+
+---
+
+## Phase E — Slices E3 + E4 DELIVERED (2026-07-03)
+
+`[PROCEED TO IMPLEMENTATION]` given for E3 and E4 together (the parallelizable
+pure-function pair — E3 loader on the real CSV, E4 W₁ on synthetic
+distributions). Both ship against the real reference + synthetic inputs; no
+production runs (Phase F wires those).
+
+### E3 — experimental abundance reference loader
+
+**New surface.** `postprocess/abundance_loader.py :: load_he_abundance_reference(path)
+-> HeAbundanceReference` (frozen: `n (Nn,) int`, `label (Nn,) str`,
+`mass_center_u (Nn,)`, `ion_counts (Nn,)`, `ion_fraction (Nn,)`, `source_path`).
+Mirrors the `hedft_loader` variant contract: order-independent membership header
+match (missing **and** extra columns raise), loud `FileNotFoundError`/`ValueError`,
+`source_path = p.resolve()`. `ion_fraction = ionPercent / ionPercent.sum()`
+(sums to exactly 1.0).
+
+- **CSV read:** `np.genfromtxt(dtype=None, encoding="utf-8", names=True)` — the
+  string `label` column coexists with the numeric columns in one structured
+  array (the plain `dtype=float` hedft path can't carry the string).
+- **Data contract verified against the file (2026-07-03):** 21 rows, `n`
+  contiguous 0–20, `ionPercent` sums to **exactly 100.0**, `massCenter` step
+  4.0026 u/e, labels `I^+`…`I^+He_20`, spot-checks n=0 → 43.52 %, n=20 →
+  0.2645 %. Guard tolerance `|Σ ionPercent − 100| ≤ 1e-3` (the file is exact; a
+  modest band absorbs future rounding without masking a broken export).
+- **Reference vs sim mass convention (recorded, no conflict):** the reference's
+  `massCenter` uses the integer I mass (127 u at n=0); the sim side's
+  `complex_mass_amu` uses 126.90. E3 loads the reference column verbatim and
+  never recomputes it, so the conventions don't collide (E1/E4 score on integer
+  `n`, not mass).
+- **R3 provenance (applied).** `data/reference/README.md` gains a data-contract
+  entry (columns/units/normalization, consumer `plotting_histogram.py`) with
+  **provenance marked "to be completed"**. OPEN ITEM stands: no in-repo exporter
+  or measurement-ID record; user to supply.
+
+**Tests.** `tests/test_abundance_loader.py` — **13 green**. Real CSV
+(n=arange(21), labels, mass centres, `ion_fraction` sum = 1 + the two plan
+spot-checks, `source_path` resolved, int dtype); synthetic happy path +
+**column-order-independence**; fail-loud arms (file-not-found, missing column,
+extra column, non-contiguous n, n-not-from-0, negative counts, bad percent sum);
+frozen.
+
+### E4 — integer-support Wasserstein comparison + config dispatch
+
+**New surface.** `postprocess/distribution_compare.py`:
+- `wasserstein_integer_support(sim: ShellDistribution, ref: HeAbundanceReference)
+  -> float` — `W₁ = Σ_n |F_sim(n) − F_ref(n)|` over the **contiguous union
+  support** (`arange(min, max+1)` guarantees unit spacing, so the CDF-gap sum is
+  exact; fractions zero-filled where a side is absent — this is where the sim's
+  legal n=21 meets the ref's 0–20). Raises on empty or **disjoint** support (no
+  shared `n` ⇒ a units/labelling bug). Pure numpy.
+- `compare_size_distributions(sim, ref, *, metric: str) -> float` — the
+  `validation_histogram_metric` dispatch; the caller passes
+  `cfg.validation_histogram_metric`. `chi2`/`ks` get point-of-use
+  `NotImplementedError`; any other value → `ValueError`.
+
+**Rule-2 carry RETIRED.** `SimConfig.validation_histogram_metric`
+(`Literal["wasserstein","chi2","ks"]`, default `"wasserstein"`,
+`config.py:58/323`) was declared-but-unread (only referenced by its own default
+in `test_drag_config.py`). E4 is its **first physics-live consumer**: the value
+now flows into a live three-arm dispatch that computes (wasserstein) or refuses
+(chi2/ks/unknown). The carry leaves the active rule-2 set at this build — no
+config/schema change was needed (the field already existed).
+
+**Tests.** `tests/test_distribution_compare.py` — **16 green**. Hand W₁ oracles
+(identical → 0; shift-by-one → 1; shift-by-two → 2; the F=[.5,1,1]/[0,.5,1]
+micro-case → 1; symmetry); the **n=21-vs-zero-filled-ref** union case; support
+guards (disjoint raises, empty either side raises); real E3 ref × synthetic E1
+sim → finite W₁; dispatch (`wasserstein` matches the direct call, `chi2`/`ks`
+refuse, unknown raises, and `cfg.validation_histogram_metric` from
+`single_pulse_N2000()` flows through); **scipy cross-check** (import-guarded,
+tests only — ran, not skipped).
+
+### Shared
+
+- **Exports (progressive E5.2 deferral, per-slice like E1):**
+  `postprocess/__init__` now exports `HeAbundanceReference`,
+  `load_he_abundance_reference`, `wasserstein_integer_support`,
+  `compare_size_distributions` (+ the E1 pair from before). E5b adds the E5
+  surfaces.
+- **Verification.** E3+E4 suites **29 passed** (13+16, no skips → scipy ran);
+  public imports resolve; full suite **1890 passed** (1861 → +29), same 27
+  pre-existing warnings, 0 failures.
+- **Scope.** No schema, no RNG draw-order, no drag-law, no neutral/ion
+  propagation touch. The only config interaction is *activating* an existing
+  declared field (no new field, no `validate()` change). §5 out-of-scope guard
+  holds. Remaining Phase-E work: **E2** (relaxation stage — the one stochastic/
+  driver slice), **E5b** (`reconstruct_diagnostics` + the three absorbed
+  deferrals), and E1's relaxed-input admission (gated on E2's `RelaxationResult`).
+
+---
+
+## Phase E — Slice E2 DELIVERED (2026-07-03)
+
+`[PROCEED TO IMPLEMENTATION]` given for E2, the post-ejection relaxation stage
+(the R5 mitigation). The driver slice — highest-risk in Phase E — so grounded
+against the full delivered seam first (`biphasic_step`, `baoab_propagation_step`,
+`make_ion_baoab_step`/`_o_step`, `make_ion_accel_fn`/`AccelFn`,
+`ion_state_from_checkpoint_column`/`write_ion_state_to_checkpoint_column`,
+`rrk_rate`, `d0_of_n`, `e_bind_pair_eV`, the ion driver's biphasic branch, and the
+config check pattern) before writing a line.
+
+**New surface.** `simulation/relaxation_stage.py`:
+- `RELAXATION_STREAM_KEY = 0xE2_2026` — the fixed key for the stage's own PCG64
+  stream (`SeedSequence((cfg.seed, KEY))`); the ion-stage stream is never touched.
+- `RelaxationResult` (frozen: `checkpoint` (v7 `IonCheckpoint`), `freeze_flags
+  (2N,) bool`, `time_relaxed_ps`, `terminal_n (2N,)`).
+- `run_relaxation_stage(ion, cfg, *, rng=None, save_path=None) -> RelaxationResult`.
+
+**Composition (decision R1 — verbatim reuse).** Per step: `biphasic_step` under a
+**relaxation view** `replace(cfg, pickup_rate_coefficient=0.0, dt_ion=dt_relax)`
+(constructed internally, **not** re-`validate()`-d — the λ₀=0 advisory in
+`check_biphasic_config` is the sanctioned evaporation-only limit), then a
+**zero-γ** BAOAB closure (`_zero_gamma` → decay=1, `dE_dissip≡0`), then the
+`e_bind_pair(n)` E_pot fold. Two arms:
+- `coulomb` (default): real `make_ion_accel_fn` conservative field; **add** the
+  fold to baoab's recomputed E_pot — byte-for-byte the ion driver's biphasic
+  branch minus drag.
+- `free_flight`: zero-accel closure (ballistic positions, E_kin from post-jump
+  (m,v) via the tested baoab path), then **replace** E_pot with `held_MD +
+  e_bind_pair(n)` where `held_MD = seed.E_pot − e_bind_pair(seed_n)` (no
+  conservative work under free flight → MD potential constant; only the discrete
+  fold moves, by `+D_0(n)` per shed). The decoupling fact makes this exact for
+  the observable, not an approximation.
+
+**Freeze condition (verified, not guessed).** Read `rrk_rate`: `k=0` when
+`E_int ≤ D_0(n)` (via `base=max(0,1−d0/E)`) for n≥2, and `k_direct=0` when
+`E_int ≤ D_0(1)` for n=1 (the last-rung barrier). So `freeze = (n==0) | (E_int <
+D_0(n))` uniformly captures "k≡0 forever" given E_int monotone non-increasing
+(K2 cools toward 0, pickup off) — the plan's exact condition, and it correctly
+does **not** freeze a self-bound `E_int > Σ(n)` ion (that un-freezes as it cools).
+
+**Artifact.** A bona fide v7 `IonCheckpoint` for the relaxation window (col 0 =
+seed = ion's final column), assembled with the delivered
+`write_ion_state_to_checkpoint_column` (no new I/O); `droplet_radii`/`b_ion_outside`
+pass-through, `number_of_collisions` zero, `mass_scenario="biphasic"`. Variable
+early-freeze length handled by collecting stored states in a list then sizing the
+checkpoint to `len(stored)` (no trailing-zero corruption). `ion_ledger_closure`
+and `load_ion_checkpoint` apply unchanged.
+
+**Config (new; opt-in; default off → default scope unchanged).**
+`relaxation_stage_enabled` (bool, False), `relaxation_time_ps`
+(`Optional[float]`, required-when-enabled — no sourced t_exp), `relaxation_dt_ps`
+(`Optional[float]` → `dt_ion`), `relaxation_forces` (`Literal["coulomb",
+"free_flight"]`, "coulomb"). `check_relaxation_config` wired into `validate()`
+after `check_biphasic_config`; no-op when disabled, else requires biphasic +
+`relaxation_time_ps>0` + `nu·dt_relax ≤ 0.1` + the forces enum.
+
+**Decisions recorded (defensible calls made inline, per plan latitude):**
+1. **`save_path` param, not `RunDirectory` integration.** The stage takes an
+   optional `save_path` and writes via `save_ion_checkpoint`; Phase F passes
+   `<run_dir>/relaxation.npz`. More decoupled/testable than wiring RunDirectory
+   into E2; the "relaxation.npz beside ion.npz" convention is a Phase-F concern.
+2. **Private cross-module imports** `_decide_stride_ion` / `_drag_gate_steepness`
+   from `simulation.ion` (+ public `DEFAULT_MAX_CHECKPOINT_BYTES_ION`) — reuse the
+   auto-stride + gate-steepness single sources (rule 1). Precedent:
+   `derived_diagnostics.py` already imports `_drag_gate_steepness` privately.
+   E5b's deferral #1 (promote to public) will update both importers together.
+3. **E1 relaxed-input admission is already satisfied — no E1 change.** E1's
+   `_terminal_n_and_source` duck-types `n_shell` then `terminal_n`;
+   `RelaxationResult` exposes `terminal_n` (and no top-level `n_shell`), so
+   `compute_terminal_shell_distribution(result)` returns `source="relaxed"`. The
+   forward-compatible E1 dispatch (built at the E1 slice) closes this plan item.
+
+**Tests.** `tests/test_relaxation_stage.py` — **15 green**. 5-term invariant
+closes on **both** arms with sheds actually firing (asserted `terminal_n < seed
+n` so the K1/e_bind/cold-shed bookings are covered, not only K2); coulomb vs
+free_flight give the **identical shed sequence** (`n_shell`, `E_int` byte-equal;
+the decoupling fact); hot input sheds monotonically (pickup off → `diff(n)≤0`), no
+avalanche, `terminal_n ≤ n*`; freeze termination reached (`freeze_flags.all()`,
+`time_relaxed < relaxation_time`); cold self-bound input sheds nothing while the
+frozen two-draw stream is consumed (real-PCG64 post-state parity — the pickup
+`TestRNGConsumptionParity` precedent); the artifact round-trips through
+`load_ion_checkpoint` (v7, ledger applies); E1 admits the `RelaxationResult`
+(`source="relaxed"`); every `check_relaxation_config` arm fires; the stream key is
+guarded against silent change. Fixtures: the delivered `_biphasic_driver_cfg` /
+`_tiny_neutral` for the real seed; a hand-built consistent-mass v7 seed
+(`m == m_I+ + n·m_He`, paired atoms z-separated so the per-pair Coulomb is finite)
+for the dynamics/RNG tests. The native `s=3n−3=60` at n=21 suppresses the RRK rate
+to ~0 sheds/window, so the dynamics tests use the delivered `evap_rrk_dof=2`
+override (guarded s≥1) to get a non-trivial cascade — a test knob, not a physics
+claim.
+
+**Verification.** E2 suite **15 passed**; full suite **1905 passed** (1890 → +15),
+same 27 pre-existing warnings, 0 failures. No schema bump (reuses v7), no RNG
+draw-order change (the ion stream is untouched; the stage extends it with a new
+seeded stream), no drag-law / neutral / ion-propagation touch, no change to
+default scope (relaxation defaults off). §5 out-of-scope guard holds.
+
+**Remaining Phase-E work:** **E5b** — `reconstruct_diagnostics` + the three
+absorbed deferrals (`_drag_gate_steepness`→public promotion, the E3/E4/E5
+`postprocess/__init__` exports batch, the thin-helper shape/monotonic guards).
+E1's relaxed-input admission is closed (decision 3 above). After E5b, Phase E is
+complete and the program moves to Phase F (the calibration campaign).
+
+---
+
+## Phase E — Slice E5b DELIVERED (2026-07-03) — Phase E COMPLETE
+
+`[PROCEED TO IMPLEMENTATION]` given for E5b, the additive half of E5: the composed
+`reconstruct_diagnostics` plus the three absorbed deferrals. Closes Phase E.
+
+**Deferral 1 — `_drag_gate_steepness` → public `drag_gate_steepness`** (single
+source, imported without the underscore contract). Renamed the def in
+`simulation/ion.py`; updated **all** call sites in one mechanical pass:
+`simulation/ion.py` (internal call), `simulation/relaxation_stage.py` (E2 import +
+call), `postprocess/derived_diagnostics.py` (import + call + docstring),
+`scripts/post_processing/tier0_drag_comparison.py` (import + call),
+`tests/test_baoab_propagation_step.py` (import + 4 calls), plus doc/comment
+references in `config.py`, `physics/helium_density.py`, `docs/simulation/ion_module.md`,
+and `test_derived_diagnostics.py`. No underscore alias kept (clean promotion);
+`grep _drag_gate_steepness **/*.py` → **no matches**. The Tier-2 plan docs +
+this log keep their historical `_drag_gate_steepness` mentions (append-only).
+
+**Deferral 2 — `postprocess/__init__` Phase-E exports batch.** Added the E5
+surface (`Diagnostics`, `TCrossSummary`, `reconstruct_diagnostics`). Combined with
+the E1 (E1 slice) and E3/E4 (E3/E4 slice) exports already landed, the full
+E1/E3/E4/E5 public surface is now exported — deferral closed.
+
+**Deferral 3 — shape / monotonic-`time_ps` guards on the thin helpers.**
+`crossing_time_ps` now rejects a non-strictly-increasing `time_ps`;
+`regime_parameter` now rejects positions/`n_shell` that don't share one (2N, T)
+shape and a `droplet_radii_angstrom` that isn't (2N,). (`mean_shell_count`
+already carried its 2-D guard.)
+
+**New surface (E5b main).** `postprocess/derived_diagnostics.py`:
+- `TCrossSummary` (frozen: `median_ps`, `spread_ps`, `all_agree`).
+- `Diagnostics` (frozen: `t_cross_ps (2N,)`, `t_cross_summary`, `Pi_t (2N,T)`,
+  `regime_label`, `total_strip_reachable: bool`, `sanity_flags: tuple[str,...]`)
+  — **field names pinned** for the Phase-F F3/F4 scoreboard.
+- `reconstruct_diagnostics(ckpt, cfg) -> Diagnostics` — composes the three
+  delivered helpers (re-derives nothing; zero schema cost):
+  - **t× + ensemble summary**: `crossing_time_ps` (threading
+    `cfg.gate_onset_override_eV`) + median/ptp-spread/`all_agree`
+    (`all_agree` = every ion crossed and all within one stored dt — the bridge
+    wiring check).
+  - **Π(t)**: `regime_parameter` verbatim.
+  - **regime label** (a documented reporting rule, **not** a config knob):
+    `total_strip` iff the majority of ions have no finite t× **or** median terminal
+    n ≤ 1; else `shell_retaining`.
+  - **total-strip reachability**: `e_infinity_eV(0)` under the run's picture/κ →
+    `isclose(·, 0)`. Structurally true for the Slice-K form (OQ6) — a consistency
+    confirmation, not an independent anchor.
+  - **sanity flags** (advisory, not raises): t× outside the [1, 15] ps band
+    (§6.11; factor-10 miss = the genuine flag, not the GAH25 ±factor-2 prior); Π > 1
+    where a freeze-side point is expected (a units/wiring smell).
+
+**Tests.** `tests/test_derived_diagnostics.py` — **35 green** (22 delivered move
+unchanged with the E5a rename + regression-lock; **+13** new): the two new guards
+fire (non-monotonic time; regime-parameter shape/droplet-radii); `reconstruct_diagnostics`
+composes all fields; `t_cross_summary` all-agree vs a constructed disagreement;
+regime label flips across shell-retaining / total-strip-by-terminal-n /
+total-strip-by-no-crossing constructions; reachability true under all three
+pictures; both sanity flags fire on constructed absurd inputs (t× < 1 ps; Π > 1);
+the E5 surface is importable from `i2_helium_md.postprocess`.
+`test_baoab_propagation_step.py` **7 green** under the renamed helper.
+
+**Verification.** `grep _drag_gate_steepness **/*.py` → none; E5 public imports
+resolve; `test_derived_diagnostics.py` **35 passed**; full suite **1918 passed**
+(1905 → +13), same 27 pre-existing warnings, 0 failures. No schema, no RNG
+draw-order, no drag-law, no propagation touch (the rename is behavior-preserving);
+§5 out-of-scope guard holds.
+
+**Phase E is COMPLETE.** All five slices delivered and reviewed: E1
+(`size_distribution`), E2 (`relaxation_stage`), E3 (`abundance_loader`), E4
+(`distribution_compare`), E5 (`derived_diagnostics` = E5a rename + E5b compose).
+The full comparison layer — terminal I⁺Heₙ size-distribution extraction (both
+sim-end and relaxed modes), the R5 relaxation stage, the experimental abundance
+loader, the integer-support Wasserstein arbiter, and the regime-determination
+diagnostics — is built and tested on synthetic checkpoints + the real reference
+CSV. The Phase-F pinned interfaces (`load_he_abundance_reference`,
+matched+upper-bound W₁ per run, `t_cross_ps`/`Pi_t`/`regime_label`/
+`total_strip_reachable`/`sanity_flags`, `relaxation_stage_enabled`) are all
+satisfied. Next: **Phase F** — the calibration campaign (F1–F6) that wires
+production runs through E1–E5, composing only accepted modules.
+
+---
+
+## Phase E — code review E1/E3/E4/E5 + fixes applied (2026-07-03)
+
+Multi-agent adversarially-verified review of slices E1, E3, E4, E5 (E2 excluded
+— dedicated review pending). 14 candidates, 14 verified, 0 refuted; 10 reported.
+No physics/units/convention error found; the findings were one provenance bug
+and a cluster of validate-early (Quality Principle 4) gaps. All fixes applied
+TDD (every guard test watched to fail first):
+
+1. **E1 provenance (the one correctness bug).** A relaxation checkpoint
+   reloaded from `relaxation.npz` is a v7 `IonCheckpoint`, so the duck-typed
+   dispatch inferred `source="sim_end"` for matched-time relaxed data — F3
+   would mis-pair `W1_matched`/`W1_simend_upper`. Fix:
+   `compute_terminal_shell_distribution(..., source_tag=...)` explicit
+   override (`{"sim_end","relaxed"}`, invalid fails loud); inference default
+   unchanged; the reload pitfall documented in the module + function docstrings.
+2. **E3 NaN/sign-blind validation.** Blank cells (genfromtxt → NaN) passed the
+   sum guard (NaN compares False); negative `ionPercent` summing to 100 loaded.
+   Fix: finiteness guards on all numeric columns + `ionPercent ≥ 0`.
+3. **E4 unvalidated inputs.** Fractions were never checked, so `.counts` passed
+   by mistake (or an E3 NaN) scored a plausible-but-wrong W₁; duplicate support
+   silently dropped mass in the scatter. Fix: per-side validation (finite,
+   ≥ 0, sums to 1 within 1e-6 — both producers normalize exactly, the band
+   only catches factor-level misuse; unique support).
+4. **E5 fabricated regime labels.** Empty (2N=0) ensembles and fractional
+   `n_shell` (E1's "upstream corruption" condition) produced confident labels.
+   Fix: `reconstruct_diagnostics` rejects both, early, mirroring E1's
+   conventions on the same v7 field.
+5. **E5 Π > 1 flag condition-gated.** The flag fired unconditionally; per the
+   plan the smell is freeze-side-specific and "must not be carried to 2.70 eV".
+   Fix: `freeze_side_expected: bool = True` param — default keeps pinned-point
+   behavior; Phase F passes `False` at shedding-persists conditions.
+6. **Cleanup.** `N_STAR` now imported from `physics/constants.py` (shadow copy
+   removed, rule 1); the byte-identical header-membership block factored into
+   `postprocess/csv_contract.py :: validate_columns` (used by `hedft_loader` +
+   `abundance_loader`, messages unchanged); dead `total == 0` branch removed
+   (rule 2); `ionCounts` contract corrected in `data/reference/README.md` +
+   loader docstring (fractional normalized intensity, **not** raw detector
+   counts — the absolute normalization joins the R3 provenance open item);
+   `TIER2_PHASE_D_BRIDGE_FINDINGS.md` §4 pointers annotated with the E5a
+   rename (append-only convention preserved — annotation, not rewrite).
+
+**Tests.** +19 focused (5 source-tag, 1 N_STAR single-source, 4 abundance
+guards, 5 compare guards, 2 reconstruct fail-loud, 2 Π-flag gating); full suite
+**1937 passed** (1918 → +19), same 27 pre-existing warnings. No schema, RNG,
+drag-law, or propagation touch; no public-surface rename (the Phase-F pinned
+names are unchanged; `source_tag` and `freeze_side_expected` are additive
+keyword-only params).

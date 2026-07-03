@@ -1,6 +1,6 @@
 """Tests for the Phase-D bridge reconstruction helpers (Slice Z).
 
-Covers ``postprocess/bridge_diagnostics.py`` — the two thin post-hoc
+Covers ``postprocess/derived_diagnostics.py`` — the two thin post-hoc
 reconstructions (`t×`, ``Π(t)``) plus the mean-``n(t)`` reduction — against
 the plan §2.2 / §3 oracles (`TIER2_PHASE_D_IMPLEMENTATION_PLAN.md`):
 
@@ -36,9 +36,12 @@ from i2_helium_md.config import SimConfig
 from i2_helium_md.physics.dissociation_ladder import ladder_cumsum
 from i2_helium_md.physics.helium_density import rho_he_ratio
 from i2_helium_md.physics.pickup import lambda_attach
-from i2_helium_md.postprocess.bridge_diagnostics import (
+from i2_helium_md.postprocess.derived_diagnostics import (
+    Diagnostics,
+    TCrossSummary,
     crossing_time_ps,
     mean_shell_count,
+    reconstruct_diagnostics,
     regime_parameter,
 )
 
@@ -260,7 +263,7 @@ class TestRegimeParameter:
         # The rho_ratio re-derivation must match a direct helium_density call on
         # the hand-built positions (depth = r - R_droplet), using the same
         # steepness surface the driver resolves (default drag gate collapses to
-        # cfg.potential_steepness -- ion._drag_gate_steepness section-5.5).
+        # cfg.potential_steepness -- ion.drag_gate_steepness section-5.5).
         depth = positions_r - 30.0
         rho = rho_he_ratio(depth, steepness=cfg.potential_steepness)
         lam = lambda_attach(
@@ -302,7 +305,7 @@ class TestRegimeParameter:
         # The section-2.2 contract is "the same resolved steepness the run
         # used": with drag_spatial_gate='erf_independent' the resolver returns
         # cfg.drag_gate_steepness, NOT cfg.potential_steepness (ion.
-        # _drag_gate_steepness section-5.5). A divergent pair discriminates a
+        # drag_gate_steepness section-5.5). A divergent pair discriminates a
         # wrong hard-coding that the default (coincident) gate cannot.
         positions_r = np.array([[20.0, 28.0, 36.0]])  # near-surface: erf sensitive
         n_shell = np.full((1, 3), 14.0)
@@ -416,3 +419,236 @@ class TestBridgeDriverSmoke:
         assert np.all(pi >= 0.0)
         # Column 0 is gate-open at the full shell: Pi = 0 exactly.
         np.testing.assert_array_equal(pi[:, 0], 0.0)
+
+
+# =============================================================================
+# Deferral-3 guards (shape / monotonic time_ps on the thin helpers)
+# =============================================================================
+
+class TestHelperGuards:
+    def test_crossing_time_rejects_non_monotonic_time(self):
+        E = np.full((1, 3), 0.1)
+        n = np.full((1, 3), 21.0)
+        with pytest.raises(ValueError, match="increasing"):
+            crossing_time_ps(E, n, np.array([0.0, 0.2, 0.1]),
+                             picture=PICTURE, kappa=KAPPA)
+
+    def test_regime_parameter_rejects_shape_mismatch(self):
+        ckpt = SimpleNamespace(
+            positions_x=np.zeros((2, 3)), positions_y=np.zeros((2, 3)),
+            positions_z=np.zeros((2, 3)),
+            droplet_radii_angstrom=np.full(2, 30.0),
+            n_shell=np.zeros((2, 4)),   # T mismatch vs positions
+        )
+        with pytest.raises(ValueError, match="shape"):
+            regime_parameter(ckpt, _bridge_cfg())
+
+    def test_regime_parameter_rejects_bad_droplet_radii(self):
+        ckpt = SimpleNamespace(
+            positions_x=np.zeros((2, 3)), positions_y=np.zeros((2, 3)),
+            positions_z=np.zeros((2, 3)),
+            droplet_radii_angstrom=np.full(3, 30.0),   # (3,) != (2,)
+            n_shell=np.zeros((2, 3)),
+        )
+        with pytest.raises(ValueError, match="2N"):
+            regime_parameter(ckpt, _bridge_cfg())
+
+
+# =============================================================================
+# reconstruct_diagnostics (Slice E5b)
+# =============================================================================
+
+def _recon_stub(E_int, n_shell, time_ps, *, r=5.0, droplet_radius=30.0):
+    """Duck-typed checkpoint carrying every field reconstruct_diagnostics reads."""
+    E = np.asarray(E_int, dtype=float)
+    n = np.asarray(n_shell, dtype=float)
+    two_N, T = E.shape
+    pos = np.full((two_N, T), float(r))
+    return SimpleNamespace(
+        E_int_eV=E, n_shell=n, time_ps=np.asarray(time_ps, dtype=float),
+        positions_x=pos, positions_y=np.zeros((two_N, T)), positions_z=np.zeros((two_N, T)),
+        droplet_radii_angstrom=np.full(two_N, float(droplet_radius)),
+    )
+
+
+def _sigma(n: int) -> float:
+    return float(ladder_cumsum(n, picture=PICTURE, kappa=KAPPA))
+
+
+class TestReconstructDiagnostics:
+    def _cross_at(self, idx, T, sigma, n_val):
+        """(2N=1, T) E_int that crosses Sigma(n_val) at column ``idx``."""
+        arange = np.arange(T)
+        return np.where(arange >= idx, sigma - 0.01, sigma + 0.01)[None, :]
+
+    def test_composes_all_fields(self):
+        T = 11
+        time_ps = np.arange(T) * 1.0                 # 0..10 ps, dt = 1
+        sigma20 = _sigma(20)
+        E = np.vstack([self._cross_at(5, T, sigma20, 20)[0]] * 4)
+        n = np.full((4, T), 20.0)
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+
+        assert isinstance(diag, Diagnostics)
+        assert diag.t_cross_ps.shape == (4,)
+        assert diag.Pi_t.shape == (4, T)
+        assert diag.regime_label in ("shell_retaining", "total_strip")
+        assert diag.total_strip_reachable is True
+        assert isinstance(diag.sanity_flags, tuple)
+        assert isinstance(diag.t_cross_summary, TCrossSummary)
+
+    def test_t_cross_summary_all_agree(self):
+        T = 11
+        time_ps = np.arange(T) * 1.0
+        sigma20 = _sigma(20)
+        E = np.vstack([self._cross_at(5, T, sigma20, 20)[0]] * 4)  # all cross at 5 ps
+        n = np.full((4, T), 20.0)
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert diag.t_cross_summary.all_agree is True
+        assert diag.t_cross_summary.median_ps == pytest.approx(5.0)
+        assert diag.t_cross_summary.spread_ps == pytest.approx(0.0)
+
+    def test_t_cross_summary_disagreement(self):
+        T = 11
+        time_ps = np.arange(T) * 1.0
+        sigma20 = _sigma(20)
+        E = np.vstack([
+            self._cross_at(3, T, sigma20, 20)[0],
+            self._cross_at(7, T, sigma20, 20)[0],
+        ])
+        n = np.full((2, T), 20.0)
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert diag.t_cross_summary.all_agree is False
+        assert diag.t_cross_summary.spread_ps == pytest.approx(4.0)
+
+    def test_regime_label_shell_retaining(self):
+        T = 11
+        time_ps = np.arange(T) * 1.0
+        sigma15 = _sigma(15)
+        E = np.vstack([self._cross_at(5, T, sigma15, 15)[0]] * 4)  # all cross
+        n = np.full((4, T), 15.0)                                   # moderate terminal n
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert diag.regime_label == "shell_retaining"
+
+    def test_regime_label_total_strip_by_terminal_n(self):
+        T = 6
+        time_ps = np.arange(T) * 1.0
+        sigma1 = _sigma(1)
+        E = np.full((4, T), 0.5 * sigma1)             # gate open (crossed)
+        n = np.full((4, T), 0.0)                       # stripped to the core
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert diag.regime_label == "total_strip"
+
+    def test_regime_label_total_strip_by_no_crossing(self):
+        T = 6
+        time_ps = np.arange(T) * 1.0
+        sigma20 = _sigma(20)
+        E = np.full((4, T), sigma20 + 0.1)             # never opens the gate
+        n = np.full((4, T), 20.0)
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert np.all(np.isnan(diag.t_cross_ps))
+        assert diag.regime_label == "total_strip"
+
+    def test_reachability_true_all_pictures(self):
+        T = 6
+        time_ps = np.arange(T) * 1.0
+        sigma20 = _sigma(20)
+        E = np.full((2, T), 0.5 * sigma20)
+        n = np.full((2, T), 20.0)
+        for picture in ("statistical_mixture", "x2_only", "cooling_relaxed"):
+            diag = reconstruct_diagnostics(
+                _recon_stub(E, n, time_ps),
+                _bridge_cfg(ladder_electronic_picture=picture),
+            )
+            assert diag.total_strip_reachable is True
+
+    def test_sanity_flag_t_cross_out_of_band(self):
+        T = 6
+        time_ps = np.arange(T) * 0.1                   # 0..0.5 ps -> t_x < 1 ps
+        sigma20 = _sigma(20)
+        E = np.vstack([self._cross_at(2, T, sigma20, 20)[0]] * 2)  # cross at 0.2 ps
+        n = np.full((2, T), 20.0)
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+        assert any("t_cross out of" in f for f in diag.sanity_flags)
+
+    def test_sanity_flag_pi_exceeds_one(self):
+        T = 4
+        time_ps = np.arange(T) * 1.0
+        sigma1 = _sigma(1)
+        E = np.full((2, T), 0.5 * sigma1)              # gate open
+        n = np.full((2, T), 1.0)                        # small n -> Langmuir cap open
+        cfg = _bridge_cfg(
+            internal_energy_retained_fraction=0.9,
+            internal_energy_cooling_tau_ps=16.0,
+            pickup_rate_coefficient=1.1,
+        )
+        diag = reconstruct_diagnostics(_recon_stub(E, n, time_ps, r=1.0), cfg)
+        assert np.nanmax(diag.Pi_t) > 1.0
+        assert any("Pi exceeds 1" in f for f in diag.sanity_flags)
+
+
+class TestReconstructValidation:
+    """Fail-loud arms: reconstruct_diagnostics must not fabricate a regime
+    label from degenerate or corrupted input (Quality Principle 4; the same
+    conventions E1 enforces on the same v7 field)."""
+
+    def test_empty_ensemble_rejected(self):
+        T = 4
+        time_ps = np.arange(T) * 1.0
+        stub = _recon_stub(np.empty((0, T)), np.empty((0, T)), time_ps)
+        with pytest.raises(ValueError, match="empty"):
+            reconstruct_diagnostics(stub, _bridge_cfg())
+
+    def test_fractional_terminal_n_shell_rejected(self):
+        # E1 defines a fractional n_shell entry as upstream corruption and
+        # fails loud; the regime label must not run on silently rounded data.
+        T = 4
+        time_ps = np.arange(T) * 1.0
+        sigma20 = _sigma(20)
+        E = np.full((2, T), 0.5 * sigma20)
+        n = np.full((2, T), 20.0)
+        n[0, -1] = 19.5
+        with pytest.raises(ValueError, match="integer-valued"):
+            reconstruct_diagnostics(_recon_stub(E, n, time_ps), _bridge_cfg())
+
+
+class TestPiFlagConditionGating:
+    """Plan E5: Pi > 1 is a wiring/units smell only at a freeze-side point
+    (9 A / 0.80 eV); the reading must not be carried to 2.70 eV, where
+    shedding-persists (Pi > 1) is legitimate physics (MASS 6.11)."""
+
+    def _hot_case(self):
+        T = 4
+        time_ps = np.arange(T) * 1.0
+        sigma1 = _sigma(1)
+        E = np.full((2, T), 0.5 * sigma1)              # gate open
+        n = np.full((2, T), 1.0)                        # small n -> cap open
+        cfg = _bridge_cfg(
+            internal_energy_retained_fraction=0.9,
+            internal_energy_cooling_tau_ps=16.0,
+            pickup_rate_coefficient=1.1,
+        )
+        return _recon_stub(E, n, time_ps, r=1.0), cfg
+
+    def test_pi_flag_fires_by_default(self):
+        stub, cfg = self._hot_case()
+        diag = reconstruct_diagnostics(stub, cfg)
+        assert np.nanmax(diag.Pi_t) > 1.0
+        assert any("Pi exceeds 1" in f for f in diag.sanity_flags)
+
+    def test_pi_flag_suppressed_off_freeze_side(self):
+        stub, cfg = self._hot_case()
+        diag = reconstruct_diagnostics(stub, cfg, freeze_side_expected=False)
+        assert np.nanmax(diag.Pi_t) > 1.0
+        assert not any("Pi exceeds 1" in f for f in diag.sanity_flags)
+
+
+class TestPublicExports:
+    def test_e5_surface_exported(self):
+        from i2_helium_md.postprocess import (
+            Diagnostics as D,
+            TCrossSummary as S,
+            reconstruct_diagnostics as rd,
+        )
+
+        assert D is Diagnostics and S is TCrossSummary and rd is reconstruct_diagnostics

@@ -252,7 +252,7 @@ with a seeded/mock RNG, neighbours mocked. Reuse `mass_jump` reset primitives.
 
 ### Phase E — Tier-2 observable (comparison layer)
 
-> **Detailed plan: `PHASE_E_IMPLEMENTATION_PLAN.md`** (slices E1–E5).
+> **Detailed plan: `TIER2_PHASE_E_IMPLEMENTATION_PLAN.md`** (slices E1–E5).
 
 Re-sliced H/W/D2 → **E1–E5** with three scope decisions locked (user, 2026-06-29):
 (1) build a post-ejection **relaxation stage** (E2) for the R5 truncation — the
@@ -278,7 +278,7 @@ E1/E3/E4 are buildable now on synthetic v7 checkpoints; real runs wire in at R2.
 
 ### Phase F — Calibration campaign + production switch
 
-> **Detailed plan: `PHASE_F_IMPLEMENTATION_PLAN.md`** (slices F1–F6).
+> **Detailed plan: `TIER2_PHASE_F_IMPLEMENTATION_PLAN.md`** (slices F1–F6).
 
 R2 expanded into the campaign that absorbs everything postponed to this stage
 (κ+picture co-fit, the f_int/f_ret/τ bounded scalars, the 0.80→2.70 eV switch,

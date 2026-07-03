@@ -118,7 +118,7 @@ import numpy as np  # noqa: E402
 from i2_helium_md.physics.drag import drag_force  # noqa: E402
 from i2_helium_md.physics.interactions import partner_interaction_ion  # noqa: E402
 from i2_helium_md.physics.leapfrog import _droplet_acceleration  # noqa: E402
-from i2_helium_md.simulation.ion import  _drag_gate_steepness  # noqa: E402
+from i2_helium_md.simulation.ion import  drag_gate_steepness  # noqa: E402
 from i2_helium_md.physics.constants import U
 
 from i2_helium_md.postprocess import (  # noqa: E402
@@ -514,7 +514,7 @@ def _reconstruct_radial_forces(ion, cfg, *, atom_index):
     droplet_radii = ion.droplet_radii_angstrom  # (2N,)
     two_N = px.shape[0]
     charge = np.ones(two_N, dtype=float)
-    steepness = _drag_gate_steepness(cfg)
+    steepness = drag_gate_steepness(cfg)
 
     n_steps = px.shape[1]
     drag_r = np.empty(n_steps)

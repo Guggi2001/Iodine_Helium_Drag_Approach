@@ -20,7 +20,7 @@ from i2_helium_md.physics.constants import EV, U
 from i2_helium_md.physics.drag import drag_gamma
 from i2_helium_md.physics.leapfrog import make_ion_accel_fn
 from i2_helium_md.presets import single_pulse_N2000_drag
-from i2_helium_md.simulation.ion import _drag_gate_steepness
+from i2_helium_md.simulation.ion import drag_gate_steepness
 from i2_helium_md.simulation.ion_propagation_step import (
     IonStepState,
     baoab_propagation_step,
@@ -109,21 +109,21 @@ class TestTierZeroFills:
 class TestGateCollapse:
     def test_density_proportional_equals_erf_tied(self):
         base = single_pulse_N2000_drag(num_molecules=2)
-        s_dens = _drag_gate_steepness(
+        s_dens = drag_gate_steepness(
             replace(base, drag_spatial_gate="density_proportional")
         )
-        s_erf = _drag_gate_steepness(replace(base, drag_spatial_gate="erf_tied"))
+        s_erf = drag_gate_steepness(replace(base, drag_spatial_gate="erf_tied"))
         assert s_dens == s_erf == base.potential_steepness
 
     def test_erf_independent_uses_its_own_steepness(self):
         base = single_pulse_N2000_drag(num_molecules=2, drag_gate_steepness=7.5)
-        got = _drag_gate_steepness(replace(base, drag_spatial_gate="erf_independent"))
+        got = drag_gate_steepness(replace(base, drag_spatial_gate="erf_independent"))
         assert got == 7.5
 
     def test_sharp_gate_rejected(self):
         base = single_pulse_N2000_drag(num_molecules=2)
         with pytest.raises(NotImplementedError, match="sharp"):
-            _drag_gate_steepness(replace(base, drag_spatial_gate="sharp"))
+            drag_gate_steepness(replace(base, drag_spatial_gate="sharp"))
 
 
 class TestPerStepRebuild:

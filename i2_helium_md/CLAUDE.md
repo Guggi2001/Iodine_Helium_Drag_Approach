@@ -42,7 +42,7 @@ Repo root:
 `docs/drag_port/Tier2/` (current phase — the active goal documents):
 - `drag_migration_log_tier2.md` — Tier-2 decision + delivery log
 - `TIER2_IMPLEMENTATION_PLAN.md` — program overview (11 slices / 6 phases A–F)
-- per-phase detail plans: `TIER2_PHASE_{A,B,C,D}_IMPLEMENTATION_PLAN.md`, `PHASE_E_IMPLEMENTATION_PLAN.md`, `PHASE_F_IMPLEMENTATION_PLAN.md`
+- per-phase detail plans: `TIER2_PHASE_{A,B,C,D,E,F}_IMPLEMENTATION_PLAN.md`
 
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline

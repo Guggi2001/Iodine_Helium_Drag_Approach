@@ -9,7 +9,7 @@
 > **Entry docs:** `CALIBRATION_MAP.md` (parameter classes + Tier-2 anchor coverage —
 > the postponed-items index); MASS doc §6.11 (regime / `Π` / `t×` / staged
 > calibration), §R5 (matched-time), §R6 (structural pairing), §10 (calibration
-> targets); `PHASE_E_IMPLEMENTATION_PLAN.md` (the comparison layer Phase F drives).
+> targets); `TIER2_PHASE_E_IMPLEMENTATION_PLAN.md` (the comparison layer Phase F drives).
 
 ---
 
@@ -127,7 +127,7 @@ tiny N** — no production-sized runs and no figures in pytest.
 > extend by kwargs-with-defaults so the bridge run stays byte-reproducible; do
 > not repurpose the delivered defaults. F1's planned tests remain open (Phase D
 > landed no `tier2_common` unit tests; the module is exercised through the
-> bridge run and the `test_bridge_diagnostics.py` driver smoke only).
+> bridge run and the `test_derived_diagnostics.py` driver smoke only).
 
 ### F2 — Run-matrix generator (staged campaign, 0.80 eV, 9 Å + 18 Å, larger N)
 
@@ -324,5 +324,5 @@ F3/F4.
 **Cross-links:** `TIER2_IMPLEMENTATION_PLAN.md` §4 (Phase F headline);
 `CALIBRATION_MAP.md` (parameter classes + anchor coverage);
 `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` §6.11 / §R5 / §R6 / §10;
-`PHASE_E_IMPLEMENTATION_PLAN.md` (the comparison layer Phase F drives);
+`TIER2_PHASE_E_IMPLEMENTATION_PLAN.md` (the comparison layer Phase F drives);
 `drag_migration_log_tier2.md` (record the Phase F decision + delivery here).

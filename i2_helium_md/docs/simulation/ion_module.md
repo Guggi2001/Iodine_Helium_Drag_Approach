@@ -126,7 +126,7 @@ On the drag branch the driver:
    fed the **realized** initial ion mass (downstream of the
    `build_initial_ion_state` `m_eff` override) so its mass trip-wire checks what
    the stepper will actually integrate, not a config field;
-2. resolves the spatial-gate steepness via `_drag_gate_steepness(cfg)` — the
+2. resolves the spatial-gate steepness via `drag_gate_steepness(cfg)` — the
    §5.5 G4→G2 collapse: `density_proportional` (default) and `erf_tied` both use
    `cfg.potential_steepness`; `erf_independent` uses `cfg.drag_gate_steepness`;
    `sharp` (G1) is rejected (a discontinuous force breaks the BAOAB O-step);
