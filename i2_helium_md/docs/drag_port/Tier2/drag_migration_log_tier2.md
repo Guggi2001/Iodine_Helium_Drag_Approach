@@ -2461,3 +2461,107 @@ collection + one genuine expectation fix during GREEN); full suite
 mass-pairing / v6→v7 migration). **Phase D (Slice Z) is complete.** Next:
 Phase E (Slices E1–E5, `PHASE_E_IMPLEMENTATION_PLAN.md`), with the bridge
 flag standing as the first Phase-F calibration target.
+
+### Phase F plan de-drifted after the Slice-Z build (2026-07-03, docs-only)
+
+`TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` was amended (as-built NB annotations,
+not a redesign) where Slice Z changed its ground truth:
+
+- **§1 prerequisites, row D:** Slice Z marked delivered, with the staircase
+  flag spelled out as the concrete meaning of "the 0.80 eV validation lands"
+  in the F5 gate.
+- **F1 is now an *extension*, not a creation:** `scripts/tier2_common.py`
+  exists (bridge-scoped subset — pinned-point kwargs `lambda0_per_ps` /
+  `f_int` / `f_ret`; 0.80 eV stamped in-builder; τ/κ/picture on config
+  defaults; fixed bridge tag). F1 adds the campaign kwargs (picture, κ,
+  tau_ps, budget, relaxation enable) + the knob-encoding tag helpers. Two
+  signature corrections recorded: **λ₀ joins the F1 signature** (the planned
+  one omitted the Bounded row-7 knob; the delivered kwarg is the precedent),
+  and a **back-compat constraint** — the Phase-D scripts import this module,
+  so extension is kwargs-with-defaults only (the bridge run must stay
+  reproducible). F1's unit tests remain open (Phase D landed none for
+  `tier2_common`).
+- **F2 reuse row:** `gen_tier2_bridge_run.py` added as the delivered
+  single-run template; plus a four-point **bridge-priors NB** on the stage
+  design: (1) Stage 1 has a quantitative target (the ~10× under-shed; κ grid
+  must span the sharp-cliff end; an in-band failure escalates to the RRK-dof
+  OQ, not a ν/s retune); (2) Stage 2's τ-*insensitivity* premise may invert
+  at 0.80 eV (bridge estimate: τ→16.5 ps ≈ ×3 shed integral — expect the flag
+  arm); (3) the Stage-1 `f_int = floor` pin is a *timing* choice (t× ≈ 0 at
+  the floor vs ≈ 5 ps at the bridge point — the cascade budget is f_int-
+  independent, pinned at Σ(21)); (4) the 9 Å / 0.80 eV leg carries ~no λ₀
+  sensitivity (Π ≤ 0.005), making the 18 Å contrast leg load-bearing. Plus an
+  operational note: cfg.json version-skew invalidates campaign run dirs
+  (`RunDirectory.load_cfg` refuses unknown fields — the Tier-1a artifacts
+  already demonstrate it); score promptly, regenerate rather than migrate.
+
+No code changed; F3–F6 contracts untouched. The `[PROCEED TO IMPLEMENTATION]`
+boundary for Phase E/F holds.
+
+## Phase D — Slice Z post-delivery code review + fixes (2026-07-03)
+
+Four parallel review agents over the Phase-D commit (`c0ca2c6..606ebf3`):
+helpers physics, scripts, tests (with a live suite run), and a cross-cutting
+scope/docs audit. **No Critical findings from any reviewer.** Independently
+verified clean: the full-diff sweep (exactly the seven planned files, nothing
+outside), the §4 no-new-fields contract, the §7 leak-guard grep (only prose
+hits), the pinned-point values (τ = 6.55 confirmed as the plan's own geometric
+mid, a rounding non-deviation), Tier-1a run-parameter inheritance
+line-for-line, and every checkable findings-doc number recomputed from the
+delivered ladder (Σ(21) = 0.18784 eV, closed-form t× = 4.951 ps, Π ceiling
+0.196, RRK k ≈ 0.36/ps, test tallies 19 / 1837). Three Important findings +
+hygiene; fixes applied same-day (user request, no `[PROCEED]` needed — review
+follow-up on delivered code, precedent: the Slice-G post-delivery pass):
+
+- **`crossing_time_ps` gate unified onto the driver's own surface.** The
+  helper compared `E < ladder_cumsum(n)` directly — a semi-copy of the gate
+  that would *silently misreconstruct* a `gate_onset_override_eV` diagnostic
+  run (the driver's `_gate_threshold_eV` swaps Σ(n) for the fixed override;
+  such runs exist via the `allow_gate_onset_override=True` warn-through arm).
+  Now consumes the public `evaporation.is_self_bound` with a
+  `gate_onset_eV=None` passthrough kwarg (plan-§3 signature extended
+  backward-compatibly; rule-1 upgrade — the "matching the driver's gate"
+  docstring claim is now literal). `tier2_bridge_report.py` threads
+  `cfg.gate_onset_override_eV` through and prints a NOTE that the Σ(21)
+  closed form does not apply when an override forced the gate.
+- **`regime_parameter` τ guard + docstring-contract repair.** The `Raises`
+  docstring promised rejection of "unset/non-positive `f_ret` or `τ`" but the
+  code checked only `f_ret is None` (a hand-built cfg bypassing `validate()`
+  hit a bare `TypeError` on `tau=None`, and τ ≤ 0 returned a sign-flipped Π).
+  Fix went *both* directions: τ now fail-louds on `None`/non-positive
+  (mirroring the `check_solvation_cooling_config` load guard), while the
+  f_ret wording was **narrowed to unset-only** — the promised non-positive
+  rejection was wrong, since f_ret = 0 is in-band ([0, 1] per
+  `check_internal_energy_budget_config`) and Π ≡ 0 is its *correct*
+  reconstruction, so enforcing the old docstring would have refused a
+  legitimate run.
+- **Π steepness-resolution blind spot closed (test-only).** The ρ-parity test
+  ran only on the default gate, where `_drag_gate_steepness(cfg)` collapses
+  to `potential_steepness` — a wrong hard-coding would have passed. New
+  `erf_independent` variant with a divergent pair (drag_gate_steepness 5.0 vs
+  potential_steepness 14.2, near-surface positions, plus a self-check that
+  the two ρ fields actually differ) makes the §2.2 "same resolved steepness
+  the run used" contract falsifiable.
+- **Report fail-loud + docstring.** `tier2_bridge_report.main()` now rejects
+  a non-`biphasic` run dir with a clear `ValueError` (was: a bare `TypeError`
+  formatting `f_int=None` mid-report) and carries a docstring.
+- **Rule-2 hygiene:** dead `from dataclasses import replace` import removed
+  from `tests/test_bridge_diagnostics.py`.
+
+**Deliberate non-fixes (recorded, deferred to their owners):** promotion of
+the private `_drag_gate_steepness` import to a public helper + the
+`postprocess/__init__` export (Phase-E D2, the module's named generalization
+point, together with shape/monotonic-`time_ps` guards in the thin helpers);
+the third `_run_one` orchestration copy + the override→run-dir-tag coupling
+(Phase-F F1/F2 touch `tier2_common` anyway); the `E_system(0)` relative-
+residual division (physically far from zero on the ion stage); the loose
+`0 < Π < 1` freeze-side assert (the plan's Π oracle is deliberately
+qualitative); the findings-doc ad-hoc comparator-baseline provenance (already
+disclosed in §3 there; promote to a scripted path only if Phase E/F needs the
+row again); the "Pi at gate-open (t=0)" summary label (Π = 0 holds on all of
+[0, t×], so the number is right).
+
+**Tests:** `test_bridge_diagnostics.py` **22 green** (19 → +3: override
+threading, divergent-steepness ρ-parity, τ rejection); full suite
+**1840 passed, 0 failed** (1837 → +3), same 27 pre-existing warnings. No
+config field, no schema, no RNG, no drag-law touch; the §7 guard holds.

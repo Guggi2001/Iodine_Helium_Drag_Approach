@@ -27,7 +27,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import SimConfig
-from ..physics.dissociation_ladder import ladder_cumsum
+from ..physics.evaporation import is_self_bound
 from ..physics.helium_density import rho_he_ratio
 from ..physics.pickup import lambda_attach
 from ..simulation.ion import _drag_gate_steepness
@@ -68,6 +68,7 @@ def crossing_time_ps(
     *,
     picture: str,
     kappa: float,
+    gate_onset_eV: float | None = None,
 ) -> np.ndarray:
     """Per-ion gate-crossing time ``t× = min{t : E_int(t) < Σ(n(t))}`` [ps].
 
@@ -75,8 +76,12 @@ def crossing_time_ps(
     below the cumulative dissociation threshold ``Σ(n) = Σ_{i≤n} D₀(i)`` and
     the evaporation gate opens — literally GAH25's ``t₀``. Reconstructed
     post-hoc from the stored v7 arrays; the threshold follows the *stored*
-    ``n(t)``, not a constant. The crossing is strict (``E_int == Σ`` is still
-    self-bound), matching the driver's gate.
+    ``n(t)``, not a constant. The gate is the driver's own
+    :func:`~i2_helium_md.physics.evaporation.is_self_bound` (shared surface,
+    not a comparison copy): strict (``E_int == Σ`` is still self-bound), and
+    resolving ``gate_onset_eV`` exactly as the run did — a
+    ``gate_onset_override_eV`` run must pass its override here or the
+    reconstruction would silently misrepresent it.
 
     In the bridge run all ions must agree (pre-crossing dynamics are fully
     deterministic: evaporation suppressed, pickup dead at ``n = n*``, pure K2
@@ -96,6 +101,10 @@ def crossing_time_ps(
         Ladder electronic picture (``cfg.ladder_electronic_picture``).
     kappa : float
         Ladder steepness κ (``cfg.ladder_steepness``).
+    gate_onset_eV : float, optional
+        The run's ``cfg.gate_onset_override_eV``. ``None`` (default) → the
+        parameter-free ladder cumulative ``Σ(n)``; a set float → that fixed
+        diagnostic threshold, mirroring the driver's resolution.
 
     Returns
     -------
@@ -122,8 +131,9 @@ def crossing_time_ps(
             f"time_ps must have shape (T,) = ({E.shape[1]},); got {t.shape}"
         )
 
-    sigma = ladder_cumsum(n, picture=picture, kappa=kappa)   # (2N, T) [eV]
-    below = E < sigma
+    below = is_self_bound(
+        E, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV
+    )                                         # (2N, T) bool: E_int < threshold
     first_idx = below.argmax(axis=1)          # 0 when a row is all-False ...
     ever_below = below.any(axis=1)            # ... so mask those rows to NaN
     return np.where(ever_below, t[first_idx], np.nan)
@@ -164,8 +174,11 @@ def regime_parameter(ckpt, cfg: SimConfig) -> np.ndarray:
     Raises
     ------
     ValueError
-        If ``f_ret`` or ``τ`` is unset/non-positive (a non-biphasic config
-        cannot be reconstructed).
+        If ``f_ret`` is unset (a non-biphasic config cannot be
+        reconstructed; ``f_ret = 0`` is in-band and gives ``Π ≡ 0``), or if
+        ``τ`` is unset/non-positive (unphysical — mirrors the
+        ``check_solvation_cooling_config`` load guard for hand-built
+        configs that bypassed ``validate()``).
     NotImplementedError
         If ``cfg.helium_density_profile`` selects the declared-but-unbuilt
         ``'tabulated'`` arm — the erf re-derivation would silently
@@ -184,6 +197,11 @@ def regime_parameter(ckpt, cfg: SimConfig) -> np.ndarray:
             "λ·f_ret·τ needs the run's biphasic budget knobs."
         )
     tau_ps = cfg.internal_energy_cooling_tau_ps
+    if tau_ps is None or not (tau_ps > 0.0):
+        raise ValueError(
+            f"internal_energy_cooling_tau_ps (tau) must be > 0 (a non-positive "
+            f"relaxation time is unphysical); got {tau_ps!r}"
+        )
 
     x = np.asarray(ckpt.positions_x, dtype=float)
     y = np.asarray(ckpt.positions_y, dtype=float)

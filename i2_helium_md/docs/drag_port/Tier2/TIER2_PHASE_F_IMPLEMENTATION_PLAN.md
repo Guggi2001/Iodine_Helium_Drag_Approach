@@ -65,7 +65,13 @@ Phase F runs **last** — it composes accepted modules from every earlier phase:
 - **C** — Slice X (checkpoint v7 `E_int` + 5-term invariant); Slice G
   (`ion_propagation_step.biphasic_step` driver).
 - **D** — Slice Z bridge: the **0.80 eV validation cross-check** that gates the
-  production switch.
+  production switch. **Delivered 2026-07-03** — wiring-clean (all sharp oracles
+  pass: t×, Π, 5-term closure, kinematics at baseline), but the pinned priored
+  point **misses the anchored staircase** (~0.7 sheds vs 7; evaporation-side
+  levers κ/picture/τ). That standing flag is the concrete meaning of "the
+  0.80 eV validation lands" in the F5 gate: the campaign's Stage 1/2 must
+  resolve it (or surface it as a mechanism-level OQ) before the 2.70 eV
+  switch. See `TIER2_PHASE_D_BRIDGE_FINDINGS.md` §2.
 - **E** — E1 size-dist extractor, **E2 relaxation stage**, E3 abundance loader, E4
   Wasserstein, E5 diagnostics.
 
@@ -101,6 +107,28 @@ tiny N** — no production-sized runs and no figures in pytest.
   cleared by `allow_inconsistent_mass_pairing`; tag/dir round-trips; budget stamp
   matches the scenario.
 
+> **NB (as-built, 2026-07-03 — Slice Z seeded this module; F1 is an *extension*,
+> not a creation).** `scripts/tier2_common.py` was delivered at Phase D with the
+> bridge-scoped subset of this surface:
+> `build_biphasic_cfg(case, variant, *, num_molecules, ion_time_ps, dt_ion_ps,
+> seed, lambda0_per_ps=0.9, f_int=0.5, f_ret=0.1, coeff_overrides=None,
+> e_bind_override=None)` — pinned-point defaults; `coulomb_available_eV` stamped
+> 0.80 inside the builder; τ/κ/picture ride the config defaults (not kwargs) —
+> plus the fixed `TIER2_BRIDGE_TAG` / `tier2_bridge_run_dir_name` (single run, no
+> knob encoding). F1 therefore **extends** the delivered builder with the
+> campaign kwargs this contract lists (`picture`, `kappa`, `tau_ps`,
+> `coulomb_available_eV`, `relaxation_time_ps` / the E2 enable) and adds the
+> knob-encoding `tier2_run_tag` / `tier2_run_dir_name`; the bridge tag stays
+> reserved as-is. Two corrections to the planned signature: (1) **λ₀ joins it**
+> (`lambda0_per_ps`, the delivered kwarg — the planned signature omitted the
+> Bounded row-7 knob entirely, and the `f_ret` 9/18 Å contrast runs need pickup
+> live); (2) **back-compat constraint:** the delivered Phase-D scripts
+> (`gen_tier2_bridge_run.py`, `tier2_bridge_report.py`) import this module —
+> extend by kwargs-with-defaults so the bridge run stays byte-reproducible; do
+> not repurpose the delivered defaults. F1's planned tests remain open (Phase D
+> landed no `tier2_common` unit tests; the module is exercised through the
+> bridge run and the `test_bridge_diagnostics.py` driver smoke only).
+
 ### F2 — Run-matrix generator (staged campaign, 0.80 eV, 9 Å + 18 Å, larger N)
 
 - **Purpose.** Produce the self-describing campaign run dirs for the **staged**
@@ -118,9 +146,44 @@ tiny N** — no production-sized runs and no figures in pytest.
   - Budget **0.80 eV first** (validation; cross-checked by the Phase-D bridge).
   - **N≈500, single seed** per grid point.
 - **Reuse.** `gen_tier1a_runs.py` `_run_one` pipeline; `RunDirectory`,
-  `run_neutral_propagation`, `run_ion_propagation`; `tier2_common` builders.
+  `run_neutral_propagation`, `run_ion_propagation`; `tier2_common` builders;
+  **`scripts/gen_tier2_bridge_run.py`** (delivered at Phase D) as the direct
+  single-run precedent — its `_run_one` + USER-SETTINGS shape is the template.
 - **Tests.** Smoke: tiny-N single-grid-point generation writes a valid run dir (no
   production scale, no figures).
+
+> **NB (bridge priors for the stage design, 2026-07-03 —
+> `TIER2_PHASE_D_BRIDGE_FINDINGS.md` §2; annotations, not a redesign).**
+> The Phase-D run at the pinned central point updates four premises of the
+> staged campaign:
+> 1. **Stage 1 (κ×picture) now has a quantitative target.** The cascade
+>    under-sheds ~10× at κ = 1 / mixture (Δn̄ = 0.67 vs 7; RRK integral ≈ 0.7
+>    expected sheds — kinetically, not energetically, limited). The κ grid must
+>    deliberately span the **sharp-cliff end**: κ sets `D₀(n)/Σ(n)` near n*,
+>    which enters the RRK factor at the (s−1) = 59 power, so k rises steeply
+>    with κ. If no κ/picture/τ combination inside the bands lands the
+>    staircase, that is the mechanism-level OQ (RRK dof convention) the
+>    findings doc names — surface it, do not silently retune ν or s.
+> 2. **Stage 2's premise may invert.** The plan expects a τ-*insensitivity*
+>    confirmation; the bridge mean-rate estimate says terminal n **is**
+>    τ-sensitive at 0.80 eV (τ → 16.5 ps roughly triples the shed integral).
+>    Treat the flag arm as the likely outcome and τ as a live calibration
+>    dimension at this budget, not a formality.
+> 3. **The Stage-1 `f_int = floor` pin is a timing choice, not a neutral
+>    default.** The cascade *budget* is pinned at Σ(21) by the crossing
+>    definition — f_int moves only t× (at the floor, t× ≈ 0: the gate is open
+>    from onset; at the bridge's 0.5, t× ≈ 5 ps, on the GAH25 prior). Fixing
+>    f_int at the floor forfeits the staircase-*timing* comparison; make the
+>    choice consciously per stage.
+> 4. **The 9 Å / 0.80 eV runs carry ~no λ₀ sensitivity** (pickup structurally
+>    dead through the decline: Π ≤ 0.005) — λ₀/`f_ret` discrimination rests on
+>    the 18 Å contrast leg, which is therefore load-bearing, not optional.
+>
+> Operational note (findings §3): `RunDirectory.load_cfg` refuses unknown
+> `cfg.json` fields, so campaign run dirs are invalidated by any later config-
+> surface change (the delivered Tier-1a artifacts already are). Score campaign
+> runs promptly with the code version that generated them; regeneration is the
+> recovery path, not artifact migration.
 
 ### F3 — Scoreboard + report assembler (the deferred Phase-E assembler)
 

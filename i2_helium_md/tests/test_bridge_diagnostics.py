@@ -27,7 +27,6 @@ closure bound reuses the Phase-C 1e-2 Verlet-drift gate.
 
 from __future__ import annotations
 
-from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -143,6 +142,28 @@ class TestCrossingTimeRamp:
             E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA
         )
         assert t_x[0] == time_ps[2]
+
+    def test_gate_onset_override_threads_to_threshold(self):
+        # A diagnostic gate_onset_override_eV run replaces Sigma(n) with the
+        # fixed override (evaporation._gate_threshold_eV); the reconstruction
+        # must resolve the same gate or it silently misrepresents such a run.
+        # E sits below Sigma(21) from t0 but crosses the (lower) override
+        # only at index 2 -- the two gates give different crossings.
+        time_ps = np.array([0.0, 0.1, 0.2])
+        sigma = _sigma21()
+        override_eV = 0.5 * sigma
+        n_shell = np.full((1, 3), 21.0)
+        E = np.array([[0.8 * sigma, 0.8 * sigma, 0.4 * sigma]])
+
+        t_x_default = crossing_time_ps(
+            E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA
+        )
+        t_x_override = crossing_time_ps(
+            E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA,
+            gate_onset_eV=override_eV,
+        )
+        assert t_x_default[0] == time_ps[0]   # below Sigma(21) immediately
+        assert t_x_override[0] == time_ps[2]  # below the override only at t2
 
     def test_shape_mismatch_rejected(self):
         time_ps = np.linspace(0.0, 1.0, 5)
@@ -277,10 +298,58 @@ class TestRegimeParameter:
         result = regime_parameter(ckpt, _bridge_cfg())
         assert 0.0 < result[0, 0] < 1.0
 
+    def test_resolves_independent_gate_steepness(self):
+        # The section-2.2 contract is "the same resolved steepness the run
+        # used": with drag_spatial_gate='erf_independent' the resolver returns
+        # cfg.drag_gate_steepness, NOT cfg.potential_steepness (ion.
+        # _drag_gate_steepness section-5.5). A divergent pair discriminates a
+        # wrong hard-coding that the default (coincident) gate cannot.
+        positions_r = np.array([[20.0, 28.0, 36.0]])  # near-surface: erf sensitive
+        n_shell = np.full((1, 3), 14.0)
+        ckpt = _stub_ckpt(positions_r, n_shell)
+        cfg = _bridge_cfg(
+            drag_spatial_gate="erf_independent", drag_gate_steepness=5.0
+        )
+        assert cfg.drag_gate_steepness != cfg.potential_steepness  # divergent pair
+
+        result = regime_parameter(ckpt, cfg)
+
+        depth = positions_r - 30.0
+        expected_lam = lambda_attach(
+            rho_he_ratio(depth, steepness=cfg.drag_gate_steepness), n_shell,
+            lambda0=cfg.pickup_rate_coefficient,
+            p=cfg.pickup_occupancy_exponent,
+            cap=cfg.pickup_occupancy_cap,
+            pickup_rate_form=cfg.pickup_rate_form,
+        )
+        expected = (
+            expected_lam
+            * cfg.internal_energy_retained_fraction
+            * cfg.internal_energy_cooling_tau_ps
+        )
+        np.testing.assert_array_equal(result, expected)
+        # ... and differs from the potential_steepness reconstruction, so the
+        # assert above actually discriminates the two resolutions.
+        wrong_rho = rho_he_ratio(depth, steepness=cfg.potential_steepness)
+        assert not np.allclose(
+            rho_he_ratio(depth, steepness=cfg.drag_gate_steepness), wrong_rho
+        )
+
     def test_rejects_unset_f_ret(self):
         ckpt = _stub_ckpt(np.full((1, 1), 5.0), np.full((1, 1), 21.0))
         with pytest.raises(ValueError, match="internal_energy_retained_fraction"):
             regime_parameter(ckpt, _bridge_cfg(internal_energy_retained_fraction=None))
+
+    def test_rejects_non_positive_tau(self):
+        # tau <= 0 is unphysical (mirrors the check_solvation_cooling_config
+        # load guard); a hand-built cfg bypassing validate() must still fail
+        # loud here, not return a sign-flipped Pi.
+        ckpt = _stub_ckpt(np.full((1, 1), 5.0), np.full((1, 1), 21.0))
+        for bad_tau in (None, 0.0, -6.55):
+            with pytest.raises(ValueError, match="internal_energy_cooling_tau_ps"):
+                regime_parameter(
+                    ckpt, _bridge_cfg(internal_energy_cooling_tau_ps=bad_tau)
+                )
 
     def test_rejects_tabulated_density_profile(self):
         # The re-derivation assumes the analytic erf-complement gate; a

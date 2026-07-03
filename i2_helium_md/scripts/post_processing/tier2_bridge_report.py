@@ -157,6 +157,7 @@ def build_summary_lines(cfg, ion, hedft) -> tuple[list[str], dict]:
     t_x = crossing_time_ps(
         ion.E_int_eV, ion.n_shell, time_ps,
         picture=cfg.ladder_electronic_picture, kappa=cfg.ladder_steepness,
+        gate_onset_eV=cfg.gate_onset_override_eV,
     )
     payload["t_x"] = t_x
     sigma21 = float(
@@ -169,6 +170,12 @@ def build_summary_lines(cfg, ion, hedft) -> tuple[list[str], dict]:
     payload["t_x_closed"] = t_x_closed
     n_nan = int(np.isnan(t_x).sum())
     lines.append("[t_x reconstruction (sharp oracle, plan §2.2)]")
+    if cfg.gate_onset_override_eV is not None:
+        lines.append(
+            f"  NOTE: gate_onset_override_eV={cfg.gate_onset_override_eV:g} eV "
+            f"forced a fixed gate (diagnostic run); the Sigma(21) closed form "
+            f"below does not apply to the reconstruction above."
+        )
     lines.append(
         f"  Sigma(21) = {sigma21:.4f} eV, E_int(0) = f_int*E_avail = {e0:.3f} eV"
     )
@@ -316,6 +323,12 @@ def emit_figures(payload, ion, out_dir: Path) -> list[Path]:
 
 
 def main() -> int:
+    """Load the bridge run dir, print/write the summary, emit the figures.
+
+    Returns 0 on success. Fails loud (``ValueError``) if ``RUN_DIR`` points at
+    a non-``biphasic`` run — the t×/Π reconstructions need the generative
+    budget knobs (f_int/f_ret/τ), which fixed/anchored runs do not carry.
+    """
     run_dir = (
         Path(RUN_DIR)
         if RUN_DIR is not None
@@ -324,6 +337,12 @@ def main() -> int:
     )
     run = RunDirectory(run_dir)
     cfg = run.load_cfg()
+    if cfg.mass_scenario != "biphasic":
+        raise ValueError(
+            f"tier2_bridge_report needs a biphasic run; {run_dir} has "
+            f"mass_scenario={cfg.mass_scenario!r} (point RUN_DIR at the "
+            f"tier2 bridge run, not a fixed/anchored one)."
+        )
     ion = run.load_ion(cfg)
     hedft = load_hedft_trajectory(HEDFT_CSV_PATH)
 
