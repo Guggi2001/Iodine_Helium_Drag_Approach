@@ -2366,3 +2366,98 @@ A final internal-consistency pass of the refined Phase-D plan against
    carries both numbers with drafting ambiguity, flagged "provisional pending
    OQ2". Not a Phase-D blocker (D fits nothing); a one-line row-14 touch is
    suggested whenever that row is next edited.
+
+---
+
+## Phase D — Slice Z DELIVERED (2026-07-03) — Phase D COMPLETE
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger. TDD for the
+helpers (test→RED→GREEN); the slice composes only delivered modules (Phase-C
+`biphasic` driver, Tier-0/1a scaffolding, `compare_*`, 5-term
+`ion_ledger_closure`) — **no new physics, no new config fields** (plan §4
+honored: the two helpers read config, add nothing). Two small open points were
+resolved before the build (user silent on the AskUser round; recommendations
+applied as announced): **τ = the config default 6.55 ps** (the delivered
+Slice-K geometric mid; the plan's "6.5" is rounded shorthand — closed-form t×
+moves 5.19→5.23 ps, immaterial) and **the biphasic cfg builder seeded in
+`scripts/tier2_common.py`** (Phase-F F1 extends it rather than migrating a
+bridge-local copy).
+
+**Build (4 files + tests):**
+- `i2_helium_md/postprocess/bridge_diagnostics.py` — `mean_shell_count`
+  (2N-row average), `crossing_time_ps` (per-ion `min{t: E_int < Σ(n(t))}`,
+  strict inequality, threshold follows the stored `n(t)`, NaN edge arm),
+  `regime_parameter` (Π = λ·f_ret·τ with the §2.2 reconstruction contract:
+  ρ_ratio re-derived from checkpoint positions + `droplet_radii_angstrom`
+  through the *shared* `simulation.ion._drag_gate_steepness` resolver — no
+  formula copy; fail-loud on `tabulated` density profile / unset f_ret).
+  Phase-E D2 generalizes this module.
+- `scripts/tier2_common.py` — `build_biphasic_cfg` wrapping
+  `tier0_common.build_drag_cfg` (the `tier1a_common.build_anchored_cfg`
+  mirror): scenario swap, scenario-stamped 0.80 eV, pinned knobs as defaulted
+  kwargs (λ₀ 0.9, f_int 0.5, f_ret 0.1; Phase F sweeps by argument), §6.6
+  override, n=21 metadata mass; `tier2_bridge_run_dir_name` /
+  `TIER2_BRIDGE_TAG`.
+- `scripts/gen_tier2_bridge_run.py` — single-run orchestration mirroring
+  `gen_tier1a_runs.py` (N=50, 30 ps, dt 0.01, seed 20260604 — Tier-1a
+  inherited exactly).
+- `scripts/post_processing/tier2_bridge_report.py` — loads the run dir, emits
+  the three overlay figures into `<run>/figures/` (mean-n vs
+  `build_shell_schedule` family t★∈{0.5,5.0,9.0} with 5.0 primary;
+  R/|v| vs the 9 Å CSV on the `compare_*` overlap grid; Π mean±envelope with
+  the t× marker) + prints/writes the numeric summary
+  (`bridge_summary.txt`).
+- `tests/test_bridge_diagnostics.py` (19): hand-average; exact first-crossing
+  per ion + NaN arm + strict-inequality + n-driven-threshold cases (one test
+  premise was inverted during RED — the gate opens when E_int falls *below*
+  Σ(n), so occupancy *growth* raises Σ past a constant E; fixed test-side,
+  code unchanged); the §2.2 **analytic Newton-cooling oracle** (reconstruction
+  within one dt above `τ·ln(E₀/Σ(21))`); Π formula/ρ-parity on hand-built
+  positions via a duck-typed stub + full-shell zero + outside-droplet →0 +
+  freeze-side magnitude + the two fail-loud arms; the **few-step driver
+  smoke** (fast-τ override pulls t× in-window): 5-term closure < 1e-2,
+  helpers consume the real v7 checkpoint, per-ion t× finite and all-agree.
+
+**Bridge run + report (out-of-pytest, plan §6).** Run dir
+`9A_drag_shared_pure_cubic_N50_tier2_bridge_biphasic` (machine-local).
+Headline numbers (full detail + verdict: **`TIER2_PHASE_D_BRIDGE_FINDINGS.md`**):
+
+- **Sharp oracles all pass:** t× reconstructed 4.960 ps vs closed form
+  4.951 ps (one stored dt; all 100 ions agree exactly); Π = 0 at gate-open,
+  max mean Π = 0.0054 (deep freeze side), Π → 0 at exit; 5-term residual
+  0.0011 % of E_system(0). R/|v| vs TDDFT land at the fixed-null baseline
+  (R ratio 1.300 vs 1.299 fixed / 1.297 anchored-t5.0) — no bridge
+  regression; the mass scenario is kinematically invisible at this scale
+  (confirms the Tier-2 premise that the size distribution is the only
+  discriminating observable).
+- **The staircase is missed:** emergent mean n(t) = 21 → 20.33 (frozen by
+  ~8 ps; per-ion terminal [18, 21]) vs the anchored 21→19→14. Quantified in
+  the findings doc: the RRK integral under K2 cooling at the pinned point is
+  ≈ 0.7 expected sheds (k ≈ 0.36/ps at gate-open, s−1 = 59 suppression,
+  τ = 6.55 drain) — the observed Δn̄ = 0.67 is the mechanism's genuine
+  prediction, not a miswire. Cascade budget is kinetically, not
+  energetically, limited. **Levers attached:** κ + picture (the free co-fit
+  pair, via D₀(n)/Σ(n)), τ within [2.6, 16.5]; λ₀ is *not* the lever (pickup
+  dead, Π ≈ 0); ν/s are Sourced/Derived — if Phase F cannot land the
+  staircase inside the free bands, the RRK dof convention becomes an OQ-class
+  finding, not a silent retune.
+- **Stale-artifact note validating decision #3:** the Tier-1a anchored run
+  dirs on this machine carry pre-Phase-B cfg fields (`mass_rate_*`) and no
+  longer load via `RunDirectory`; the schedule-family overlay needed no run
+  artifact (the anchored comparator row was scored by direct `ion.npz` load
+  through the v6→v7 shim).
+
+**Out-of-scope guard honored:** no sweep/calibration, no abundance/VMI/
+Wasserstein read, no Phase-E machinery, no mean-field ODE, no noise, no
+drag-law/RNG/anchored-artifact touch.
+
+**Rule-2 table.** Slice Z adds no config field and retires no carry (the
+helpers read live fields only). The standing carries are unchanged from the
+Slice-G re-review audit.
+
+**Tests:** `test_bridge_diagnostics.py` 19 green (RED watched at module-absent
+collection + one genuine expectation fix during GREEN); full suite
+**1837 passed, 0 failed** (1818 → +19), 27 pre-existing warnings (§6.5
+mass-pairing / v6→v7 migration). **Phase D (Slice Z) is complete.** Next:
+Phase E (Slices E1–E5, `PHASE_E_IMPLEMENTATION_PLAN.md`), with the bridge
+flag standing as the first Phase-F calibration target.
