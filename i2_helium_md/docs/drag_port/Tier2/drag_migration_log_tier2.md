@@ -3201,3 +3201,246 @@ schema bump, no RNG draw-order change (the default-path derivation is now
 rename (`time_relaxed_ps` keeps its pinned name; its semantics now match its
 documented contract). §5 out-of-scope guard holds. **Phase E review is now
 complete for all five slices.**
+
+---
+
+## Phase F — Slices F1 + F2 DELIVERED (2026-07-03)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (open questions
+discussed and resolved by the user first, below). Phase F composes only accepted
+A–E modules — **no new physics, no new `SimConfig` fields**; the new surface is the
+campaign harness (F1) and the run-matrix generator (F2). Both are orchestration
+scripts mirroring the delivered Tier-1a scaffolding.
+
+**Scope decision — 9 A only (user, 2026-07-03).** The campaign runs the **9 A case
+only**: there is no reference shell evolution for the 18 A droplet, so the plan's
+9/18 A density-contrast route to `f_ret` (F2 "both cases per grid point"; F4 `f_ret`
+discrimination) is **unavailable**. Consequence carried forward: `f_ret` is **not
+identifiable** from the 9 A size distribution alone — F2 holds it at a prior (0.1),
+not swept; F4's `f_ret` leg is a documented non-deliverable, not a computed result.
+This narrows the plan's F2/F4 contract (recorded here; the plan text still describes
+the two-case design).
+
+**Open questions resolved (user, 2026-07-03, before coding):**
+1. **F1 new-kwarg default convention → None-sentinel pass-through.** `picture`,
+   `kappa`, `tau_ps` default to `None` and are only injected into `replace(...)`
+   when set (ride the config default otherwise). Keeps the Phase-D bridge
+   byte-reproducible and avoids duplicating the config defaults (`1.0`, `6.55`,
+   `"statistical_mixture"`) in the script layer (Quality Principle 1).
+2. **`relaxation_time_ps` = 8530 ns (experimental I⁺ relaxation time in this
+   setup).** Stored as `EXPERIMENTAL_RELAXATION_TIME_PS = 8530·10³ = 8.53e6 ps`
+   in `tier2_common` (config field is in ps). The E2 stage exits early on
+   all-fragments-frozen, so the large cap is a ceiling, not the executed step
+   count. (⚠ operational: a full-N ion run whose checkpoint stride drops the true
+   final column trips E2's seed-coherence guard — re-run with larger `max_bytes`.)
+3. **Relaxation translation arm → `coulomb`** (config default; the two I⁺
+   fragments still repel post-dissociation). The E2 plan's "free-flight" wording
+   referred to *pickup/drag* being off (which the stage already enforces:
+   `λ₀=0`, drag frozen), not to killing I⁺–I⁺ Coulomb.
+4. **F2 staging → manual USER-SETTINGS per stage.** F2 is a parameterized
+   generator, not an auto-adjudicator: Stage 1 = `KAPPA_GRID × PICTURE_LIST` at
+   `F_INT=None` (→ per-point self-unbound floor, the timing pin); the operator
+   scores with F3/F4, hand-pins the winner, and re-runs enumerating `TAU_PS` for
+   Stage 2. Matches `gen_tier1a_runs` + the "reported, not auto-adjudicated" gate.
+5. **κ grid = {0.5, 1, 2, 4, 8}** (gradual → sharp cliff). Deliberately spans the
+   cliff end per the Phase-D bridge finding (the under-shed is *kinetic*, the
+   s−1 = 59 RRK exponent); if no κ/picture/τ in-band lands the 21→14 staircase,
+   that surfaces as the RRK-dof mechanism-level OQ — not a silent ν/s retune.
+
+**Build (F1 — `scripts/tier2_common.py` extended):** `build_biphasic_cfg` gains the
+None-sentinel campaign kwargs (`picture`, `kappa`, `tau_ps`, `coulomb_available_eV`
+default 0.80, `relaxation_time_ps` → enables E2, `relaxation_forces`); new module
+constants `EXPERIMENTAL_RELAXATION_TIME_PS`, `VALIDATION_BUDGET_EV=0.80`,
+`PRODUCTION_BUDGET_EV=2.70`; new knob-encoding helpers `tier2_run_tag` /
+`tier2_run_dir_name` (encode budget `bNNN`, picture `mix`/`x2`/`cool`, κ/f_int/f_ret
+to 2 dp, τ to 1 dp, + `_totalstrip` variant suffix; picture reject-arm). The bridge
+tag helper `tier2_bridge_run_dir_name` / `TIER2_BRIDGE_TAG` stays reserved as-is; the
+delivered bridge kwargs/defaults (`lambda0_per_ps`/`f_int`/`f_ret`) are unchanged.
+
+**Build (F2 — `scripts/gen_tier2_runs.py`, new):** USER-SETTINGS staged generator,
+9 A only, `N=500` single fixed seed; `campaign_grid_points()` (picture × κ, floor
+`f_int` when `F_INT=None` via `internal_energy_budget.f_int_floor`),
+`build_campaign()` (→ `(label, cfg, run_dir)`, no propagation),
+`_run_one()` pipeline **neutral → ion (`biphasic_step`) → E2 relaxation**
+(`run_relaxation_stage(..., save_path=<run_dir>/relaxation.npz)`), `OVERWRITE_
+EXISTING_RUN` guard. `BUDGET_EV=0.80` first (F5 flips to 2.70).
+
+**Tests:** `tests/test_tier2_common.py` (12 — bridge-reproducibility/ride-default,
+campaign overrides, budget stamp, relaxation enable/forces, tag/dir round-trips +
+picture reject + grid-uniqueness) and `tests/test_gen_tier2_runs.py` (4 — floor
+`f_int` applied, `main()` schedules the expected grid, overwrite refusal, tiny-N
+end-to-end writes all four artifacts). Full suite **1968 passed, 0 failed** (34
+warnings = the documented §6.5 `anchored_discrete`/`biphasic` mass-pairing path).
+
+**Rule-2 / scope:** no new declared-but-unread config fields (F1/F2 only *read* the
+A–E knobs). No schema bump, no RNG draw-order change, no drag-law / neutral /
+propagation touch. **Not built (per plan §2, deferred):** F3 scoreboard, F4
+identifiability report, F5 production switch + total-strip runs, F6 figures; and the
+R6 / p↔κ conditional triggers stay document-only. `_decide_stride_ion` public
+promotion (the re-opened E2 carry) is untouched — F2 does not import it.
+
+### Slices F1 + F2 — review + test-hardening pass (2026-07-05)
+
+A workflow-backed high-effort code review (4 finder angles, 7 verifier agents,
+9 candidates → 7 verified findings, 0 refuted) plus an independent domain review.
+Five findings fixed, two declined with rationale; +net tests (full suite **2007
+passed, 0 failed**). All fixes are in the F1/F2 script layer — no physics, no config
+contract change.
+
+**Fixed (run-dir naming was the load-bearing risk — F3 attributes each size
+distribution *by dir name*, so a tag collision aborts a run or mis-scores it):**
+1. **τ tag precision `.1f` → `.2f`** (CONFIRMED). The Stage-1 default τ = 6.55
+   formatted to `tau6.5` and aliased a Stage-2 sweep value of 6.5 → identical
+   run-dir → `FileExistsError` (or silent mis-attribution under overwrite). The
+   Stage-2 τ sweep is a first-class plan step, so this was a real hazard.
+2. **λ₀ now encoded in the tag** (CONFIRMED). `tier2_run_tag`/`tier2_run_dir_name`
+   gained `lambda0_per_ps` (`_l{λ₀:.2f}`); two campaigns differing only in λ₀ no
+   longer collide. (λ₀ is held fixed at 9 A, but the provenance hole was real.)
+3. **Generator-level budget guard** (PLAUSIBLE). The config field
+   `coulomb_available_eV` keeps its frozen "NO hard refuse" contract (plan §8); the
+   *generator* now refuses a `BUDGET_EV` outside the sanctioned {0.80, 2.70} set,
+   catching an operator typo (e.g. 8.0) before it silently poisons every RRK gate.
+4. **Resume mode** (CONFIRMED). New `SKIP_COMPLETED_RUNS` (default True): a run
+   dir with all four artifacts is skipped, so re-running a crashed 15-point grid
+   recovers only the failed points instead of redoing every N≈500 pipeline. A
+   *partial* dir is not "complete" → still trips the overwrite guard (never
+   silently kept).
+5. **`_PICTURE_TAGS` lockstep with the config enum** (PLAUSIBLE). An import-time
+   assertion checks the abbreviation map covers exactly
+   `config.LadderElectronicPicture` (`typing.get_args`), so a 4th picture added to
+   the enum fails loudly here instead of silently blocking run-dir naming.
+
+**Declined (with rationale):**
+- **`_run_one` duplication vs the bridge script** (CONFIRMED cleanup). The bridge's
+  `_run_one` is **frozen / byte-reproducible** (plan F1 NB: "do not repurpose");
+  extracting a shared helper would force a touch to that frozen file. The Tier-1a
+  multi-generator precedent already tolerates this thin-glue duplication, and the
+  bridge won't change — drift risk is low. Left as-is.
+- **Double `cfg.validate()` in `_run_one`** (CONFIRMED cleanup). Deliberate
+  defense-in-depth: `_run_one` re-validates to catch a post-build `replace()`
+  (exactly what the F2 smoke test does when it shrinks the neutral stage). Every
+  Tier-1a `_run_one` validates the same way. Kept.
+
+**New tests:** tag τ/λ₀ separation locks, `_PICTURE_TAGS`↔enum lockstep, the
+grid-wide floor-`f_int` build guarantee (30 points × both budgets, floor ∈ (0,1]),
+bridge-tag reserved regression, `resolve_f_int` literal override, relaxation-cap
+default/override, the unsanctioned-budget refusal, and the skip-completed /
+refuse-partial resume semantics. **Verification:** the production ion-writer
+force-stores the final column (`ion.py:292-305`), so E2's seed-coherence guard is a
+fail-loud *corner* (exact stride divisibility), not a systematic abort — the
+`max_bytes` caveat stands as documented, no code change.
+
+---
+
+## Phase F — Slice F3 DELIVERED (2026-07-05)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (three open
+questions discussed and confirmed by the user first, below). F3 is the deferred
+Phase-E **scoreboard assembler**: a *pure scorer* composing only accepted E1/E4/E5
+modules + the 5-term `ion_ledger_closure` into **one row per finished campaign run
+dir**. It runs nothing (F2 already wrote `cfg.json`/`ion.npz`/`relaxation.npz`).
+**No new physics, no new `SimConfig` fields.** TDD throughout (test→RED→GREEN: the
+`ModuleNotFoundError` RED was watched before the module existed).
+
+**Three open questions resolved (user, 2026-07-05, before coding):**
+1. **Run-matrix enumeration → glob-discovery + read `cfg.json`.** Over a
+   settings-mirror or a `build_campaign()` import: the staged campaign accumulates
+   run dirs across stages (Stage-1 grid, then the Stage-2 τ sweep), so scoring
+   *what exists on disk* keeps the scoreboard in sync without a settings block to
+   hand-resync. Every row knob (budget/picture/κ/f_int/f_ret/τ/N) is read from the
+   authoritative `cfg.json`, **never parsed from the tag**; only the `case` token is
+   recovered from the dir-name prefix (`<case>_drag_…`, the F1/`tier0_common`
+   convention). `budget_eV` filters by the run's own scenario stamp post-load.
+2. **E5 `freeze_side_expected` → auto from budget.** `_freeze_side_expected(cfg) =
+   isclose(cfg.coulomb_available_eV, VALIDATION_BUDGET_EV)` — `True` at 0.80 eV
+   (Π>1 is the wiring smell), `False` at 2.70 eV (Π>1 is legitimate physics; the
+   E5-review's "must not be carried there"). Compared against the sanctioned
+   constant, not a raw float literal.
+3. **Extra columns → add the three advisories.** Beyond the 16 pinned plan-F3
+   columns: `t_cross_spread_ps`, `t_cross_all_agree`, `sanity_flags`
+   (semicolon-joined). Strictly additive; feeds F4's identifiability report.
+
+**Build (`scripts/post_processing/tier2_size_distribution_table.py`, new)**, mirroring
+`tier1a_rmse_table.py` (`collect_*_records`/`collect_*_rows`/`score_*_run`/
+`format_table`/`write_rows_csv`, USER-SETTINGS block, `main()`):
+- **Per run** (`_score_run`): E1 `compute_terminal_shell_distribution` **twice** —
+  matched-time from `relaxation.npz` (`source_tag="relaxed"`, the E1 reload-pitfall
+  override — a reloaded relaxation checkpoint is a v7 `IonCheckpoint` and would
+  else infer `sim_end`) and sim-end upper bound from `ion.npz`
+  (`source_tag="sim_end"`); E4 `compare_size_distributions(..., metric=
+  cfg.validation_histogram_metric)` for both → `W1_matched`/`W1_simend_upper`; E5
+  `reconstruct_diagnostics(ion, cfg, freeze_side_expected=…)` on the **ion** stage
+  (t×/Π need the ion trajectory) → `t_cross_ps`(=median)/`regime_label`/
+  `total_strip_reachable` + advisories; `ion_ledger_closure(ion).max_abs_residual_eV`;
+  and `n_terminal_mean`/`n_terminal_spread` as moments of the **matched (relaxed)**
+  distribution.
+- **Semantic note (documented in the module header):** `regime_label` reads the
+  *ion-end* (R5 upper-bound) n by construction (E5 runs on the ion stage), distinct
+  from the relaxed `n_terminal_*` columns — two sources, no conflict.
+- `discover_run_dirs` globs `*_tier2_*` dirs with all three read-artifacts;
+  `collect_tier2_records`/`_rows` load the reference once, apply the budget filter,
+  score each. **Reported, not auto-adjudicated** — no code asserts a fidelity verdict.
+- `load_ion_checkpoint(run_dir/"relaxation.npz")` for the matched checkpoint
+  (`RunDirectory` only knows `ion.npz`).
+
+**Tests:** `tests/test_tier2_size_distribution_table.py` (**13**) — one genuine
+tiny-N (N=2) biphasic run dir built once (module-scoped `neutral→ion→relaxation`),
+reused by `copytree`: row carries exactly the 16+3 columns; W₁ both finite/≥0;
+ledger residual finite; regime label ∈ the two outcomes; terminal-n moments in
+`[0, n*]`; knob columns echo cfg; `RunDirectory`-or-path input; discovery finds
+complete runs / skips a run missing `relaxation.npz` / ignores non-`tier2` dirs;
+collect scores all discovered + budget filter selects/drops; freeze-side True@0.80
+/ False@2.70; CSV round-trips; empty-rows table. `main()` is the manual operator
+entry (thin glue over tested units; exercised non-test, the tier1a precedent).
+
+**Rule-2 / scope:** no new declared-but-unread config fields; no schema bump, no RNG
+draw-order change, no drag-law / neutral / propagation touch. **Not built (per plan
+§2, deferred):** F4 identifiability report, F5 production switch + total-strip runs,
+F6 overlay figures (the plan hosts F6 in this module behind `SHOW_FIGURE` — no figure
+code yet); R6 / p↔κ conditional triggers stay document-only.
+
+**Verification.** F3 suite **13 passed**; full suite **2020 passed, 0 failed** (2007
+→ +13), 69 warnings = the documented §6.5 `biphasic`/`anchored_discrete` mass-pairing
+path.
+
+### Slice F3 — review + test-hardening pass (2026-07-05)
+
+An adversarial self-review of the F3 diff (correctness/semantics, fail-loud
+coverage, edge cases, reuse/dead-code, test adequacy) surfaced **two real findings**;
+both fixed test-first (behavioral RED watched before the fix), plus seven
+coverage-lock tests on already-correct behavior.
+
+**Fixed:**
+1. **`freeze_side_expected` ignored the `total_strip` variant (correctness).** It
+   keyed E5's Π>1 flag purely off budget, but a **0.80 eV `total_strip` run sheds
+   by construction** (gate never self-binds), so Π>1 is legitimate there and the
+   freeze-side flag was spurious. `_freeze_side_expected(cfg, *, total_strip=False)`
+   now returns `False` for a total-strip run at any budget; `_is_total_strip_run`
+   reads the F1 `_totalstrip` dir-name suffix (the variant has no `SimConfig` field
+   — the marker lives only in the run tag, symmetric to the `case` prefix parse).
+2. **`discover_run_dirs` could sweep the reserved bridge run (robustness).** The
+   `*_tier2_*` glob also matches the Phase-D `tier2_bridge_biphasic` dir; today it
+   is excluded only incidentally (the bridge predates E2 → no `relaxation.npz`), so
+   a future relaxation-enabled bridge run would silently enter the campaign
+   scoreboard. Now excluded explicitly by `TIER2_BRIDGE_TAG` (single source,
+   imported from `tier2_common`).
+
+**Coverage locks added (+9 tests, F3 suite 13 → 22):** the two fixes; the
+**source-tag wiring** (a `compare_size_distributions` spy proves matched W₁ scores
+the *relaxed* distribution and W1_simend the *sim_end* one, in order — the exact
+mis-pairing the E-review flagged as F3's hazard); `_distribution_moments` hand
+oracle (two-spike → mean 1 / std 1); `_case_from_run_dir` recover + malformed-name
+raise; `_is_total_strip_run` suffix read; a real scored row (t× may be NaN)
+surviving the CSV round-trip; the budget filter separating **two** runs at
+different cfg stamps; and `main()` returning 0 on an empty root.
+
+**Deliberate non-changes (reviewed, left as-is):** `_score_run` propagates a
+per-run E5/load raise rather than swallowing it — fail-loud (Principle 4) over a
+resilient batch mode that could mask a corrupt run; the R5 semantic split (E5
+regime on ion-end n vs relaxed `n_terminal_*`) is intended and documented; `None`
+knobs render as empty CSV cells / `-` in the text table (a diagnostic table, not a
+data contract).
+
+**Verification.** F3 suite **22 passed**; full suite **2029 passed, 0 failed**
+(2020 → +9), 70 warnings = the documented §6.5 mass-pairing path. Next: **F4**
+(identifiability + regime-determination report over the F3 rows).

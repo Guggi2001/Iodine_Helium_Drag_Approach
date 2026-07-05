@@ -1,31 +1,44 @@
-"""Shared Tier-2 run wiring (Phase D bridge; Phase F extends this module).
+"""Shared Tier-2 run wiring (Phase D bridge + Phase F campaign harness).
 
 Tier 2 deliberately reuses the locked Tier-0 drag bundle plumbing, exactly as
 Tier 1a did: :func:`build_biphasic_cfg` builds a Tier-0 drag config and swaps
 only the mass scenario plus the generative-knob values. Seeded at Phase D
-(Slice Z) with the single pinned representative priored point; the Phase-F
-campaign (F1) extends this module with the run-matrix conventions instead of
-re-implementing it.
+(Slice Z) with the single pinned representative priored point; **Phase F (Slice
+F1)** extends the same builder with the campaign knobs (picture, kappa, tau,
+scenario-stamped budget, the E2 relaxation stage) and adds the knob-encoding
+run-tag / run-dir helpers the run-matrix generator and scoreboard share.
 
-Pinned representative priored point (plan §0/§4, 2026-07-02 — chosen, not
-fitted; Phase F owns the real values):
+Back-compat contract (Phase F extends, does not repurpose): the Phase-D scripts
+``gen_tier2_bridge_run.py`` / ``tier2_bridge_report.py`` import this module. The
+campaign knobs are **None-sentinel pass-through** kwargs (``None`` -> ride the
+config default, do not inject), so a call with only the bridge kwargs produces
+the byte-identical bridge config. The delivered bridge defaults
+(``lambda0_per_ps``/``f_int``/``f_ret``) are **not** changed.
 
-* λ₀ = 0.9 /ps (central of the 0.7–1.1 band),
-* f_int = 0.5 (inside the derived 0.80 eV window [0.21–0.24, ~0.6]; lands the
-  closed-form t× in the GAH25 5–6.5 ps prior),
+Pinned representative priored point (plan §0/§4, 2026-07-02 -- chosen, not
+fitted; the Phase-F campaign sweeps the real values):
+
+* lambda_0 = 0.9 /ps (central of the 0.7-1.1 band),
+* f_int = 0.5 (inside the derived 0.80 eV window; lands t_x in the GAH25 prior),
 * f_ret = 0.1 (prior small, nonzero to exercise S1),
-* τ = the config default 6.55 ps (the geometric mid √(2.6·16.5) delivered at
-  Slice K; the plan's "6.5" is rounded shorthand for the same mid),
-* κ = 1.0 and picture = ``statistical_mixture`` (the config defaults),
-* ν = 2.42 /ps and s = 3n−3 (Sourced/Derived — no choice, config defaults).
+* tau = the config default 6.55 ps (geometric mid sqrt(2.6*16.5)),
+* kappa = 1.0 and picture = ``statistical_mixture`` (the config defaults),
+* nu = 2.42 /ps and s = 3n-3 (Sourced/Derived -- no choice, config defaults).
+
+Campaign scope note (user, 2026-07-03): the Tier-2 calibration campaign runs the
+**9 A case only** -- there is no reference shell evolution for the 18 A droplet,
+so the 9/18 A density-contrast route to ``f_ret`` (plan F2/F4) is unavailable and
+``f_ret`` is not identifiable from the size distribution alone. Recorded in
+``drag_migration_log_tier2.md`` (Phase F entry).
 """
 
 from __future__ import annotations
 
 from dataclasses import replace
+import typing
 from typing import Mapping, Optional
 
-from i2_helium_md.config import SimConfig
+from i2_helium_md.config import LadderElectronicPicture, SimConfig
 from i2_helium_md.physics.shell_schedule import complex_mass_amu
 
 from scripts.tier0_common import build_drag_cfg, run_dir_name
@@ -37,6 +50,35 @@ TIER2_BRIDGE_TAG = "tier2_bridge_biphasic"
 BRIDGE_LAMBDA0_PER_PS = 0.9
 BRIDGE_F_INT = 0.5
 BRIDGE_F_RET = 0.1
+
+# Experimental relaxation time of I+ in this setup (user, 2026-07-03): 8530 ns.
+# The E2 relaxation stage propagates the energy-gated cascade to this timescale
+# before the terminal size distribution is read (it exits early once every
+# fragment is frozen, so the large cap is only a ceiling, not the executed step
+# count). Stored in ps -- the config field ``relaxation_time_ps`` is in ps.
+EXPERIMENTAL_RELAXATION_TIME_PS = 8530.0 * 1.0e3  # 8530 ns -> 8.53e6 ps
+
+# Scenario-stamped Coulomb budgets (§6.5 pairing guard): 0.80 eV validation
+# (d = 9 A) -> 2.70 eV production.
+VALIDATION_BUDGET_EV = 0.80
+PRODUCTION_BUDGET_EV = 2.70
+
+# Filesystem-safe electronic-picture abbreviations for the run tag. The keys are
+# kept in lockstep with the config ``LadderElectronicPicture`` Literal (single
+# source of truth): a picture added to the enum without a tag fails loudly at
+# import here, rather than silently blocking run-dir naming at campaign time.
+_PICTURE_TAGS: dict[str, str] = {
+    "statistical_mixture": "mix",
+    "x2_only": "x2",
+    "cooling_relaxed": "cool",
+}
+_PICTURE_ENUM: frozenset[str] = frozenset(typing.get_args(LadderElectronicPicture))
+if frozenset(_PICTURE_TAGS) != _PICTURE_ENUM:
+    raise RuntimeError(
+        "_PICTURE_TAGS is out of sync with config.LadderElectronicPicture: "
+        f"tags={sorted(_PICTURE_TAGS)} vs enum={sorted(_PICTURE_ENUM)}. "
+        "Add the missing abbreviation(s) so the run tag stays well-defined."
+    )
 
 
 def build_biphasic_cfg(
@@ -50,6 +92,12 @@ def build_biphasic_cfg(
     lambda0_per_ps: float = BRIDGE_LAMBDA0_PER_PS,
     f_int: float = BRIDGE_F_INT,
     f_ret: float = BRIDGE_F_RET,
+    picture: Optional[str] = None,
+    kappa: Optional[float] = None,
+    tau_ps: Optional[float] = None,
+    coulomb_available_eV: float = VALIDATION_BUDGET_EV,
+    relaxation_time_ps: Optional[float] = None,
+    relaxation_forces: Optional[str] = None,
     coeff_overrides: Optional[Mapping[str, float]] = None,
     e_bind_override: Optional[float] = None,
 ) -> SimConfig:
@@ -59,14 +107,55 @@ def build_biphasic_cfg(
     come from :func:`scripts.tier0_common.build_drag_cfg` (the run parameters
     inherit Tier-1a exactly; plan §0). The Tier-2-specific changes are the
     mass-scenario switch, the generative-knob values (pinned priored point by
-    default; Phase F sweeps them by argument), the scenario-stamped 0.80 eV
-    budget, and the §6.6 escape hatch for the intentional constant-``m_eff``
-    coefficient pairing (the same structural §6.5 trip as Tier 1a).
+    default; the campaign sweeps them by argument), the scenario-stamped budget,
+    and the §6.6 escape hatch for the intentional constant-``m_eff`` coefficient
+    pairing (the same structural §6.5 trip as Tier 1a).
 
-    τ, κ, picture, ν, s, p, and the cap/rate-form selectors stay at their
-    config defaults (module docstring). ``mass_initial_amu`` is set to the
-    n = 21 complex mass for metadata consistency; the run-time source of truth
-    remains ``simulation/ion_initial_state.py`` (the biphasic branch).
+    Campaign knobs are **None-sentinel pass-through**: ``picture``, ``kappa``,
+    ``tau_ps`` default to ``None`` and are only injected when set, so they ride
+    the config defaults otherwise (keeping the Phase-D bridge byte-reproducible
+    and not duplicating the config defaults in the script layer).
+
+    Parameters
+    ----------
+    case, variant : str
+        Droplet geometry (``"9A"``/``"18A"``) and drag-bundle key (Tier-0).
+    num_molecules, ion_time_ps, dt_ion_ps, seed :
+        Ensemble size, ion-stage duration/timestep [ps], and RNG seed.
+    lambda0_per_ps, f_int, f_ret : float
+        Pickup rate lambda_0 [1/ps] and the E_int partition/retained fractions
+        (default = the pinned bridge point).
+    picture : str or None
+        Ladder electronic picture (``statistical_mixture``/``x2_only``/
+        ``cooling_relaxed``). ``None`` -> ride the config default.
+    kappa : float or None
+        Ladder steepness (Free knob). ``None`` -> ride the config default.
+    tau_ps : float or None
+        Newton-cooling time [ps] (Bounded). ``None`` -> ride the config default.
+    coulomb_available_eV : float
+        Scenario-stamped per-ion Coulomb budget [eV]; default 0.80 (validation),
+        2.70 for production. Guards the budget<->drag/shell pairing (§6.5).
+    relaxation_time_ps : float or None
+        When set, enables the Phase-E E2 post-ejection relaxation stage
+        (``relaxation_stage_enabled=True``) and stamps this cap [ps]. ``None`` ->
+        stage stays disabled (the Phase-D bridge path; default scope unchanged).
+    relaxation_forces : str or None
+        Relaxation translation arm (``"coulomb"``/``"free_flight"``). ``None`` ->
+        ride the config default (``coulomb`` -- the two I+ fragments still repel).
+    coeff_overrides, e_bind_override :
+        Passed through to :func:`build_drag_cfg`.
+
+    Returns
+    -------
+    SimConfig
+        A validated ``biphasic`` config.
+
+    Notes
+    -----
+    tau/kappa/picture/nu/s and the cap/rate-form selectors stay at their config
+    defaults unless overridden here. ``mass_initial_amu`` is set to the n = 21
+    complex mass for metadata consistency; the run-time source of truth remains
+    ``simulation/ion_initial_state.py`` (the biphasic branch).
     """
     fixed_cfg = build_drag_cfg(
         case,
@@ -78,16 +167,29 @@ def build_biphasic_cfg(
         coeff_overrides=coeff_overrides,
         e_bind_override=e_bind_override,
     )
-    cfg = replace(
-        fixed_cfg,
+
+    overrides: dict[str, object] = dict(
         mass_scenario="biphasic",
-        coulomb_available_eV=0.80,
+        coulomb_available_eV=float(coulomb_available_eV),
         pickup_rate_coefficient=float(lambda0_per_ps),
         internal_energy_partition_fraction=float(f_int),
         internal_energy_retained_fraction=float(f_ret),
         allow_inconsistent_mass_pairing=True,
         mass_initial_amu=complex_mass_amu(21),
     )
+    if picture is not None:
+        overrides["ladder_electronic_picture"] = picture
+    if kappa is not None:
+        overrides["ladder_steepness"] = float(kappa)
+    if tau_ps is not None:
+        overrides["internal_energy_cooling_tau_ps"] = float(tau_ps)
+    if relaxation_time_ps is not None:
+        overrides["relaxation_stage_enabled"] = True
+        overrides["relaxation_time_ps"] = float(relaxation_time_ps)
+    if relaxation_forces is not None:
+        overrides["relaxation_forces"] = relaxation_forces
+
+    cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
     return cfg
 
@@ -97,11 +199,95 @@ def tier2_bridge_run_dir_name(case: str, variant: str, n: int) -> str:
     return run_dir_name(case, variant, n, run_tag=TIER2_BRIDGE_TAG)
 
 
+def _budget_tag(budget_eV: float) -> str:
+    """Encode a scenario budget [eV] as a two-decimal ``bNNN`` filesystem tag."""
+    return f"b{int(round(float(budget_eV) * 100)):03d}"
+
+
+def tier2_run_tag(
+    *,
+    picture: str,
+    kappa: float,
+    lambda0_per_ps: float,
+    f_int: float,
+    f_ret: float,
+    tau_ps: float,
+    budget_eV: float,
+    total_strip: bool = False,
+) -> str:
+    """Return the campaign run-tag encoding one grid point.
+
+    Encodes **every knob that can vary across the campaign** so the run-dir name
+    uniquely identifies the point (the F3 scoreboard attributes each terminal
+    size distribution by dir name -- a collision either aborts a run or
+    mis-attributes a score). Covered: budget, electronic picture, kappa, lambda_0
+    (pickup rate), f_int, f_ret, and tau. Precision: kappa/lambda_0/f_int/f_ret
+    and tau all to **two decimals** -- tau needs it for the Stage-2 [2.6, 16.5] ps
+    sweep (one decimal would alias the 6.55 default with a 6.5 sweep value). The
+    case and N are carried by :func:`tier2_run_dir_name`; the optional
+    ``total_strip`` suffix marks the §6.11 secondary regime-axis variant.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``picture`` (mirrors ``check_ladder_config``).
+    """
+    if picture not in _PICTURE_TAGS:
+        raise ValueError(
+            f"picture must be one of {sorted(_PICTURE_TAGS)}; got {picture!r}"
+        )
+    tag = (
+        f"tier2_{_budget_tag(budget_eV)}_{_PICTURE_TAGS[picture]}"
+        f"_k{float(kappa):.2f}_l{float(lambda0_per_ps):.2f}"
+        f"_fi{float(f_int):.2f}_fr{float(f_ret):.2f}_tau{float(tau_ps):.2f}"
+    )
+    if total_strip:
+        tag += "_totalstrip"
+    return tag
+
+
+def tier2_run_dir_name(
+    case: str,
+    variant: str,
+    n: int,
+    *,
+    picture: str,
+    kappa: float,
+    lambda0_per_ps: float,
+    f_int: float,
+    f_ret: float,
+    tau_ps: float,
+    budget_eV: float,
+    total_strip: bool = False,
+) -> str:
+    """Return the Tier-0-style run directory basename for a campaign grid point."""
+    return run_dir_name(
+        case,
+        variant,
+        n,
+        run_tag=tier2_run_tag(
+            picture=picture,
+            kappa=kappa,
+            lambda0_per_ps=lambda0_per_ps,
+            f_int=f_int,
+            f_ret=f_ret,
+            tau_ps=tau_ps,
+            budget_eV=budget_eV,
+            total_strip=total_strip,
+        ),
+    )
+
+
 __all__ = [
     "BRIDGE_F_INT",
     "BRIDGE_F_RET",
     "BRIDGE_LAMBDA0_PER_PS",
+    "EXPERIMENTAL_RELAXATION_TIME_PS",
+    "PRODUCTION_BUDGET_EV",
     "TIER2_BRIDGE_TAG",
+    "VALIDATION_BUDGET_EV",
     "build_biphasic_cfg",
     "tier2_bridge_run_dir_name",
+    "tier2_run_dir_name",
+    "tier2_run_tag",
 ]
