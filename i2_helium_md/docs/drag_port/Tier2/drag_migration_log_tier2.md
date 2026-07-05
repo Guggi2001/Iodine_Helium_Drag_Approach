@@ -3444,3 +3444,181 @@ data contract).
 **Verification.** F3 suite **22 passed**; full suite **2029 passed, 0 failed**
 (2020 → +9), 70 warnings = the documented §6.5 mass-pairing path. Next: **F4**
 (identifiability + regime-determination report over the F3 rows).
+
+---
+
+## Phase F — Slice F4 DELIVERED (2026-07-05)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (open questions
+discussed and resolved by the user first, below). F4 is the campaign's **central
+deliverable**: a *pure assembler* that turns the F3 scoreboard rows into a
+**per-quantity identifiability statement** — which of the CALIBRATION_MAP
+"Tier-2 load-bearing" quantities the single size-distribution observable can
+actually *separate*. It runs nothing and scores nothing new; it reads F3's typed
+records and classifies. **No new physics, no new `SimConfig` fields.** TDD
+throughout (test→RED `ModuleNotFoundError` watched before the module existed).
+
+**Open questions resolved (user, 2026-07-05, before coding):**
+1. **Input contract → import F3's typed collector, not the CSV.** `collect_tier2_
+   records` (typed `Tier2RunRecord`) over round-tripping the lossy scoreboard CSV
+   (`None`→empty, NaN). One scoring path; the assessment core operates on the F3
+   row dicts so it is testable on constructed synthetic rows.
+2. **τ-insensitivity → concrete threshold + graceful single-τ degradation.**
+   `TAU_SENSITIVITY_THRESHOLD_HE = 0.5` (terminal-n moves > 0.5 He across the τ
+   band → `sensitive`, a live dimension; else `insensitive`, confirmation). The
+   Phase-D bridge expects the *sensitive* arm at 0.80 eV, so sensitivity is a
+   first-class reported outcome, not an anomaly. At F4's first run only Stage-1
+   exists (single τ per cell) → `insufficient_data` (`Stage-2 τ sweep not yet
+   run`), never an error.
+3. **"Reported, not auto-adjudicated" boundary.** Factual minima are allowed
+   (argmin κ, best picture, best-W1 regime); a fidelity *verdict* is not. F4
+   reports the W₁-vs-κ landscape **and** its argmin, plus whether that minimum is
+   well-separated (→ identifiable) or flat/degenerate (→ not); it never declares
+   calibration success. The flatness/bracketing/sensitivity thresholds are
+   documented as reader aids, not acceptance gates.
+4. **Boundary argmin → `not_bracketed`.** If the W₁-vs-κ minimum sits at a grid
+   edge (κ=0.5 or 8 — the Phase-D bridge predicts a push toward the sharp-cliff
+   end), F4 reports `not_bracketed` (`optimum not enclosed → extend grid / RRK-dof
+   mechanism-level OQ`) rather than a clean identifiable κ. Flatness is checked
+   *before* bracketing so a degenerate landscape is never mislabelled an edge
+   optimum.
+5. **9 Å-only scope carried from F1/F2 (2026-07-03).** `f_ret` and `λ_attach` are
+   rendered as **deterministic non-deliverables**, not computed: `f_ret`
+   `not_identifiable` (the only route is the 9/18 Å density contrast; no 18 Å
+   shell reference exists — held at prior 0.1); `λ_attach` `not_identifiable`
+   (pickup structurally dead in-window at 9 Å, Π ≤ 0.005, Phase-D finding #4). The
+   plan's F4 test wording ("9/18 Å contrast computes") is corrected to "F4 reports
+   it as a non-deliverable."
+6. **f_int / ν / s deterministic verdicts.** `f_int` `not_identifiable`
+   (timing-only knob: moves t×, not the cascade budget → terminal n insensitive by
+   construction); `ν`/`s` `held_fixed`; `s` carries the **s↔κ coupling** caveat as
+   prose (the κ fit is conditional on the fixed RRK dof), echoed on the κ entry.
+7. **Per-budget sectioning.** 0.80 eV (validation, freeze-side) and 2.70 eV
+   (production, legitimate Π>1) carry different identifiability meaning; the
+   checklist and text report are sectioned per budget. At F4's first run only
+   0.80 exists; 2.70 arrives with F5 and degrades to `insufficient_data`.
+
+**Build (`scripts/post_processing/tier2_identifiability_report.py`, new)**, mirroring
+the Tier-1a/F3 assembler idiom (`build_*`/`format_*`/`write_*_csv`/`collect_*`/
+USER-SETTINGS block/`main()`):
+- **Status vocabulary** — `identifiable` / `not_identifiable` / `not_bracketed` /
+  `insufficient_data` / `held_fixed` / `sensitive` / `insensitive`; `identifiable`
+  + `sensitive` count as "separated" for the headline.
+- **Assessment primitives** (pure, synthetic-row-testable): `assess_kappa_
+  landscape` (insufficient → flat → not_bracketed → identifiable), `assess_picture_
+  separation`, `assess_tau_sensitivity`, `assess_regime` (label counts +
+  lowest-W₁ regime, NaN-guarded).
+- **Grouping builders** — `build_kappa_landscapes` (cells keyed by budget/picture/
+  f_int/f_ret/τ with ≥2 κ → the Stage-1 co-fit cell), `build_tau_sweeps` (cells
+  with ≥2 τ). κ is assessed under the **globally best picture** (the co-fit's
+  chosen picture); τ under the best cell if a sweep exists there.
+- **Checklist** — `build_identifiability_rows` emits one row per (budget,
+  load-bearing quantity) over `LOAD_BEARING_QUANTITIES` (κ, picture, τ, regime,
+  f_int, f_ret, λ_attach, ν, s); computed first, deterministic after. CSV columns
+  `budget_eV, quantity, status, value_or_range, evidence, notes`.
+- **Text report** — `format_report` sections per budget with a "K of M separated"
+  headline; **reported, not auto-adjudicated** banner.
+
+**Tests:** `tests/test_tier2_identifiability_report.py` (**25**) — all on constructed
+synthetic scoreboard rows (the plan's stated F4 surface; no run pipeline, no
+figures): κ-landscape interior-min/boundary/flat/single-point; picture
+separation/flat/single; τ sensitive/insensitive/single; grouping builders;
+regime best-W₁; checklist covers all 9 load-bearing quantities once per budget;
+κ+picture identifiable on a clean co-fit grid; static non-deliverable verdicts
+(f_ret/λ_attach 9 Å rationale, f_int timing-only, ν/s held + s↔κ note); τ sensitive
+when swept / insufficient single-τ; per-budget sectioning; headline/section text;
+CSV round-trip; `main()` returns 0 on empty root. One RED→GREEN adjustment (moved
+"timing" into the f_int `notes`).
+
+**Rule-2 / scope:** no new declared-but-unread config fields (F4 only *reads* F3
+rows + the A–E knobs via cfg); no schema bump, no RNG draw-order change, no
+drag-law / neutral / propagation touch. **Not built (per plan §2, deferred):** F5
+production switch (2.70 eV) + total-strip secondary runs, F6 overlay figures
+(the plan hosts F6 in this module + the F3 module behind `SHOW_FIGURE` — no figure
+code yet); R6 / p↔κ conditional triggers stay document-only.
+
+**Verification.** F4 suite **25 passed**; full suite **2054 passed, 0 failed**
+(2029 → +25), 70 warnings = the documented §6.5 mass-pairing path. Next: **F5**
+(production switch to 2.70 eV + total-strip secondary runs), gated on the 0.80 eV
+validation landing (Phase-D bridge cross-check).
+
+### Slice F4 — review + test-hardening pass (2026-07-05)
+
+A workflow-backed high-effort code review (4 finder angles → 21 candidates, 12
+independent verifier agents, 21 verified → 10 kept after consolidation, 3
+refuted) plus an independent domain pass. **Seven findings fixed, one declined
+with rationale; +16 tests** (F4 suite 25 → 41). All fixes are in the F4 script
+layer — no physics, no config-contract change, no schema/RNG/drag-law touch.
+
+**Fixed (correctness — the load-bearing risk was mis-attributing the campaign's
+central κ/picture/τ verdicts):**
+1. **κ verdict no longer falls back to a non-best picture's landscape**
+   (CONFIRMED). `_kappa_checklist_entry` used `min(chosen or landscapes, …)`; when
+   the W₁-best picture had only single-κ probe runs (no landscape), `chosen` was
+   empty and κ* was silently read off a *different* picture's landscape while the
+   headline named the best picture. **Root fix:** the picture comparison
+   (`_best_w1_by_picture`) is now derived from the **κ landscapes** (min over each
+   picture's co-fit cells), not raw rows — so the globally best picture always owns
+   a landscape (no cross-picture fallback) and κ/picture share one source. This
+   *also* closes an independent domain finding: the old raw-row picture min was
+   **contaminated** by engineered `total_strip` runs and Stage-2 τ-sweep rows
+   (distinct f_int/τ → single-κ cells → not landscapes), which could flip the
+   reported best picture; the landscape-derived comparison structurally excludes
+   them.
+2. **`assess_kappa_landscape([])` no longer crashes** (CONFIRMED). The argmin ran
+   before the `len < 2` guard, so an empty landscape raised `ValueError: min() arg
+   is an empty sequence` instead of the documented `insufficient_data`. Guard moved
+   ahead of the argmin; empty → `insufficient` with a NaN κ/W₁ sentinel.
+3. **τ is read at the co-fit optimum κ cell** (PLAUSIBLE→fixed). `_tau_checklist_
+   entry` picked `(preferred or sweeps)[0]` — the first τ sweep under the best
+   picture in *insertion order*, ignoring κ. With sweeps at two κ cells (an
+   insensitive off-optimum and the sensitive optimum), it could report the wrong
+   arm. `best_kappa` (the κ argmin) is now threaded through and the sweep at
+   (best picture, best κ) is preferred, with a note when no sweep sits at the
+   optimum cell.
+
+**Fixed (robustness / cleanup):**
+4. **Duplicate knob-cell collision now warns** (PLAUSIBLE). Two complete run dirs
+   at an identical (budget,picture,f_int,f_ret,τ,κ) cell collapsed last-write-wins
+   silently. `_accumulate_cell` now emits a `RuntimeWarning` when the incoming
+   W₁/terminal-n differs from what is already stored (identical values = a harmless
+   deterministic replay, no warn), surfacing a stale/replicate dir instead of
+   dropping data silently.
+5. **NaN guards on both grouping builders** (CONFIRMED, defensive). `build_kappa_
+   landscapes` / `build_tau_sweeps` read `W1_matched` / `n_terminal_mean` with a
+   raw `float()` while the sibling consumers (`_best_w1_by_picture`,
+   `assess_regime`) filter via `_is_number`. Added the same guard for internal
+   consistency (a NaN terminal-n would else make the τ spread NaN → silently
+   `insensitive`). *Note:* the reviewers separately **refuted** three variants of
+   this as reachable — E1/E4 fail loud on non-finite upstream, so the guard is
+   inert in practice; kept purely as defense-in-depth/consistency.
+6. **`main()` no longer builds the checklist twice** (CONFIRMED). It called
+   `collect_identifiability_rows` (which builds it) *and* `format_report(rows)`
+   (which rebuilt it). `format_report` now accepts a pre-built `checklist=`; `main`
+   passes the one it already has.
+
+**Declined (with rationale):**
+- **`_format_cell` / `write_report_csv` duplicate F3's `_format_value` /
+  `write_rows_csv`** (CONFIRMED cleanup). Display-only helpers, not physics —
+  Quality Principle 1 targets shared *physics/formulas/constants*, not a 6-line
+  formatter; the two CSV writers differ in their column set
+  (`IDENTIFIABILITY_COLUMNS` vs `TIER2_TABLE_COLUMNS`), so sharing them needs a new
+  column-parameterized util. The Tier-1a/F3 sibling-script family already tolerates
+  this thin-glue duplication (the F1/F2 review declined the analogous `_run_one`
+  extraction), and each post-processing script is deliberately self-contained. Left
+  as-is; a divergence in display precision would be a per-script choice, not a bug.
+
+**New tests (+16, F4 suite 25 → 41):** the empty-landscape guard; low-edge
+`not_bracketed` + all-zero-W₁ / zero-min-interior κ branches; the two
+`assess_picture_separation` zero-best-W₁ branches; NaN-skip on `assess_regime` /
+both builders; the duplicate-cell warn + identical-replay-silent pair; picture
+best **not** contaminated by a non-co-fit run + κ attributed to the actual best
+picture; τ read at the best-κ cell (not insertion order); `format_report`
+pre-built-checklist equivalence; and the `collect_identifiability_rows` F3-record
+wrapper wiring (monkeypatched, no real run).
+
+**Verification.** F4 suite **41 passed**; full suite **2070 passed, 0 failed**
+(2054 → +16), 70 warnings = the documented §6.5 mass-pairing path (the new
+duplicate-cell warning is captured in-test, does not leak). Next: **F5**
+(production switch to 2.70 eV + total-strip secondary runs), gated on the 0.80 eV
+validation landing (Phase-D bridge cross-check).
