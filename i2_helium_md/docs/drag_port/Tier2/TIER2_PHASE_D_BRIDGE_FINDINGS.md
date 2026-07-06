@@ -59,6 +59,15 @@ burst is the problem:
 1. **κ + electronic picture** — the two genuinely-free co-fit knobs. They set
    `D₀(n)/Σ(n)` (the RRK suppression factor) and the rung sizes; a sharper
    cliff (larger κ) shrinks the near-`n*` rungs and raises `k` steeply.
+   > **NB (de-drift, 2026-07-05 — staircase probe result).** The κ direction
+   > claimed here is **inverted** for the stripping range: the Form-U cliff
+   > centre sits at n*+½ = 21.5, the 21→14 rungs all lie *below* it, and
+   > σ(21) = sigmoid(−κ/2) ≤ ½, so larger κ drives the in-shell rungs *up*
+   > toward D₀(1) (only the irrelevant n ≥ 22 rungs shrink); Form-U floors
+   > D₀(21) at ≈ 0.53·D₀(1) over all κ. Confirmed empirically by the 45-run
+   > probe (Δn̄ monotone *decreasing* in κ). See
+   > `drag_migration_log_tier2.md` ("Staircase probe EXECUTED") and
+   > `TIER2_STAIRCASE_PROBE_PLAN.md` Addendum A.
 2. **τ within its [2.6, 16.5] band** — slower cooling holds `E_int` near the
    threshold longer (τ → 16.5 roughly triples the shed integral; τ alone does
    not reach 7 sheds on the anchored timescale, but it moves terminal n).
@@ -67,6 +76,18 @@ burst is the problem:
    inside the κ/picture/τ/f_int bands, that is a genuine mechanism-level
    finding to surface (the RRK dof-counting assumption becomes the suspect —
    an OQ-class item, not a silent retune).
+   > **NB (resolution, 2026-07-06 — s_eff mini-probe result).** This OQ
+   > fired (the 45-run probe landed nothing in-band) and then resolved to
+   > exactly this lever: the Addendum-A mini-probe showed a *constant*
+   > s_eff ≈ 8 at τ = 6.55 ps lands the staircase in magnitude **and**
+   > timing (7.41 sheds → n_end 13.59, t_first 5.42 ps, trajectory MAD
+   > 1.0 He) — outcome (a). The dof convention, not the gate/ladder
+   > structure, was the culprit; the picture cross-check confirmed the
+   > landing is picture-robust (≤4 % magnitude spread) and **promotion was
+   > confirmed (user, 2026-07-06)** — s_eff is now a Bounded knob
+   > (CALIBRATION_MAP row 10; band ≈[5, 20]). See
+   > `drag_migration_log_tier2.md` ("s_eff mini-probe EXECUTED") and
+   > `TIER2_STAIRCASE_PROBE_PLAN.md` Addendum A.
 4. **λ₀ is not the lever here** — pickup is structurally dead through the
    decline window (Π ≈ 0), exactly as the corrected §2.2 oracle predicted.
 

@@ -82,7 +82,9 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.tier2_common import TIER2_BRIDGE_TAG, VALIDATION_BUDGET_EV  # noqa: E402
 
 
-# The 16 pinned plan-F3 columns, then the three confirmed advisory columns.
+# The 16 pinned plan-F3 columns (+ the ``s_eff`` knob column added at the
+# 2026-07-06 s_eff promotion -- the re-scoped Stage-1 sweep axis; ``None`` =
+# the per-n ``s = 3n-3`` classical arm), then the three advisory columns.
 TIER2_TABLE_COLUMNS = [
     "case",
     "budget_eV",
@@ -91,6 +93,7 @@ TIER2_TABLE_COLUMNS = [
     "f_int",
     "f_ret",
     "tau_ps",
+    "s_eff",
     "N",
     "W1_matched",
     "W1_simend_upper",
@@ -176,20 +179,6 @@ def _case_from_run_dir(run_dir: Path) -> str:
     return name.split(sep, 1)[0]
 
 
-def _distribution_moments(dist) -> tuple[float, float]:
-    """Return ``(mean, spread)`` of a :class:`ShellDistribution` over integer n.
-
-    Mean ``= sum n*fraction``; spread ``= sqrt(sum fraction*(n-mean)^2)`` (the
-    population standard deviation of the size distribution). Consistent with the
-    scored object rather than re-reading the raw checkpoint column.
-    """
-    n = dist.n_values.astype(float)
-    p = dist.fraction.astype(float)
-    mean = float(np.sum(n * p))
-    spread = float(np.sqrt(np.sum(p * (n - mean) ** 2)))
-    return mean, spread
-
-
 def _run_is_complete(run_dir: Path) -> bool:
     """True when the run dir holds every artifact F3 reads."""
     return all((run_dir / name).exists() for name in _REQUIRED_ARTIFACTS)
@@ -250,7 +239,7 @@ def _score_run(
     diag = reconstruct_diagnostics(ion, cfg, freeze_side_expected=freeze_side)
 
     closure = ion_ledger_closure(ion)
-    n_mean, n_spread = _distribution_moments(relaxed_dist)
+    n_mean, n_spread = relaxed_dist.moments()
 
     return {
         "case": _case_from_run_dir(run_dir),
@@ -260,6 +249,7 @@ def _score_run(
         "f_int": _optional_float(cfg.internal_energy_partition_fraction),
         "f_ret": _optional_float(cfg.internal_energy_retained_fraction),
         "tau_ps": _optional_float(cfg.internal_energy_cooling_tau_ps),
+        "s_eff": _optional_float(cfg.evap_rrk_dof),
         "N": int(cfg.num_molecules),
         "W1_matched": float(w1_matched),
         "W1_simend_upper": float(w1_simend),

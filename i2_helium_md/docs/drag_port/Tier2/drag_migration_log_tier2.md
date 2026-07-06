@@ -3622,3 +3622,481 @@ wrapper wiring (monkeypatched, no real run).
 duplicate-cell warning is captured in-test, does not leak). Next: **F5**
 (production switch to 2.70 eV + total-strip secondary runs), gated on the 0.80 eV
 validation landing (Phase-D bridge cross-check).
+
+---
+
+## Pre-F5 — Staircase capability probe DELIVERED (2026-07-05)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger, after a design
+discussion (user question: before production, can the biphasic mechanism
+reproduce the 9 Å reference shell evolution — and is it flexible enough to
+express various solvation shells after relaxation?). Design doc:
+`TIER2_STAIRCASE_PROBE_PLAN.md` (inserted between F4 and F5; modifies no
+delivered F-slice). TDD throughout (the `ImportError` RED on both new test
+modules watched before any module existed).
+
+**What it is.** A 45-point small-N existence probe extending the Phase-D
+bridge's single-point staircase comparison across the full in-band lever space
+(`TIER2_PHASE_D_BRIDGE_FINDINGS.md` §2 levers): κ ∈ {0.5, 1, 2, 4, 8} ×
+picture (3) × τ ∈ {2.6, 6.55, 16.5} ps, at 9 Å / 0.80 eV / N=50 / bridge
+seed+window, pipeline neutral → ion (`biphasic_step`) → E2 relaxation. Scored
+against `build_shell_schedule` (zero artifact dependence) on staircase fidelity
+(`dn_mean_window` vs 7, `n_ion_end_mean` vs 14, `t_first_shed_ps` vs the
+anchored first event, `frac_ions_shed`, trajectory MAD) plus the relaxed
+terminal-n moments (flexibility map) and the 5-term ledger residual.
+**Reported, not auto-adjudicated** (factual argmin named, no verdict); a
+grid-wide miss surfaces the RRK-dof mechanism-level OQ, a landing region points
+the N=500 Stage-1/2 campaign — neither discharges the F5 gate by itself.
+
+**Design decisions (user, 2026-07-05, before coding):**
+1. **Goals: both** — staircase reproduction *and* the terminal-shell
+   flexibility map, in one sweep.
+2. **Small-N probe first** (N=50, ≈3/10 of one 15-point N=500 stage) before
+   any campaign/production spend.
+3. **Full κ×picture×τ grid from the start** (not staged): the bridge predicts
+   τ-*sensitivity* at 0.80 eV, so a capability verdict with τ pinned mid-band
+   would be unsound.
+4. **Standalone probe scripts** in a disjoint run-dir namespace — no touch to
+   the reviewed F2/F3 surfaces.
+5. **`f_int = 0.5` (bridge pin), NOT the F2 Stage-1 floor** — f_int is
+   timing-only (moves t×, not the Σ(21) cascade budget); 0.5 puts t× ≈ 5 ps on
+   the anchored first shed, the floor would put gate-open at t ≈ 0 and corrupt
+   every timing comparison. *(Flagged in the design presentation; the user
+   answered with the implementation trigger while the 0.5 pin stood — flipping
+   to the floor is a one-line USER-SETTINGS change if wanted.)*
+
+**Build:**
+- `scripts/tier2_common.py` — additive `tier2_probe_run_tag` /
+  `tier2_probe_run_dir_name` (prefix `tier2probe_`, same two-decimal knob
+  encoding as the campaign tag, picture reject-arm; no `total_strip` variant).
+  **Namespace lock:** a probe dir contains no `_tier2_` substring, so the F3
+  campaign glob can never sweep it, and vice versa — locked by test in both
+  directions. Bridge/campaign helpers and defaults untouched.
+- `scripts/gen_tier2_staircase_probe.py` (new) — USER-SETTINGS generator
+  mirroring `gen_tier2_runs.py` (`probe_grid_points` / `build_probe` /
+  `_run_one` with skip-completed + overwrite guards). Generator-level guard:
+  **0.80 eV only** (the anchored staircase does not apply at any other budget,
+  including the sanctioned 2.70). The (κ=1, mixture, τ=6.55) grid point is the
+  Phase-D bridge configuration — its ion stage must reproduce the bridge
+  numbers (Δn̄ ≈ 0.67, t× ≈ 4.96 ps), a free end-to-end wiring oracle (manual
+  check at probe-run time, not a pytest).
+- `scripts/post_processing/tier2_staircase_probe_report.py` (new) — pure
+  scorer mirroring the F3 idiom (`discover_probe_run_dirs` /
+  `score_probe_run` / `collect_probe_rows` / `format_table` /
+  `format_headline` / `write_rows_csv`, 16 columns). Staircase metrics read
+  the **ion** stage (R5: the anchored staircase is in-window), flexibility
+  moments read the **relaxed** checkpoint (E1 `source_tag="relaxed"` reload
+  override). Figures (mean-n(t) small multiples + relaxed-n heat map) are
+  gated behind `SAVE_FIGURES`/`SHOW_FIGURES` with a lazy matplotlib import —
+  never touched by pytest.
+
+**Tests:** `tests/test_tier2_staircase_probe.py` (**11** — tag encoding/reject,
+two-way namespace disjointness incl. F3-discovery-ignores-probe-dir, 45-point
+unique grid, bridge-knob pins + budget/relaxation stamps, wiring-oracle-point
+config equality vs the pure bridge build, non-validation-budget refusal,
+partial-refuse/complete-skip guards, `main()` schedule, tiny-N end-to-end four
+artifacts) and `tests/test_tier2_staircase_probe_report.py` (**9** — the
+staircase-metric hand oracles: an ion walking the anchored staircase scores
+exactly (7 sheds, terminal 14, MAD 0, first shed = first event time), mixed
+and no-shed ensembles (NaN first-shed never a crash), a genuine tiny-N scored
+row with knob echo + finite metrics, discovery namespace/incomplete/campaign
+exclusion, CSV round-trip, empty table, empty-root `main()`).
+
+**Rule-2 / scope:** no new `SimConfig` fields (the probe only *reads* A–E
+knobs through the delivered F1 builder), no schema bump, no RNG draw-order
+change, no drag-law / neutral / propagation touch; F2/F3/F4 surfaces
+untouched. The 45-run probe itself is an **operator action** (run
+`gen_tier2_staircase_probe.py`, then the report script) — not executed as part
+of this delivery.
+
+**Verification.** New suites **11 + 9 passed**; full suite **2090 passed,
+0 failed** (2070 → +20), 75 warnings = the documented §6.5 mass-pairing path.
+Next: run the probe, adjudicate (landing region → point the N=500 Stage-1/2
+campaign; grid-wide miss → surface the RRK-dof OQ before F5).
+
+### Staircase probe EXECUTED — outcome (b), RRK-dof OQ fired (2026-07-05)
+
+The 45-run probe was executed and scored (operator run; scoreboard via
+`tier2_staircase_probe_report.py`). **Wiring oracle passed:** the (κ=1,
+mixture, τ=6.55) point reproduces the Phase-D bridge exactly (Δn̄ = 0.67,
+n_end = 20.33); ledger residual uniform 2.23·10⁻⁵ eV across all 45 runs. The
+result is therefore the mechanism's genuine prediction.
+
+**Result — outcome (b) of the probe plan §6: no in-band point lands.** Max
+reach Δn̄ = 1.7 sheds (at κ=0.5, τ=16.5, `cooling_relaxed`) vs the anchored 7;
+relaxed terminal n confined to **[19.3, 20.95]** across the whole grid
+(flexibility verdict: the pinned mechanism expresses essentially one shell).
+
+**Three structural findings from the table + ladder/evaporation code:**
+1. **The κ lever is inverted — corrects bridge findings §2 lever 1.** Δn̄
+   *decreases* monotonically with κ everywhere. The Form-U cliff centre is
+   pinned at n*+½ = 21.5 and the stripping range 21→14 lies *below* it:
+   σ(21) = sigmoid(−κ/2) ≤ ½ always, so large κ drives the in-shell rungs
+   *up* toward D₀(1) (it is the irrelevant n ≥ 22 rungs that shrink). The
+   κ→0 direction is also normalisation-capped: **Form-U structurally floors
+   D₀(21) at ≈ 0.53·D₀(1)** (shallow minimum near κ ≈ 0.25). No κ can make
+   the near-edge rungs cheap. (A de-drift NB was added to the findings doc.)
+2. **The picture knob is near-degenerate for this observable.** D₀(n) and
+   Σ(n) both scale with (D₀(1) − D_floor), so the RRK argument
+   x = D₀(21)/Σ(21) ≈ 0.032 is nearly picture-invariant — the three picture
+   blocks of the scoreboard are almost identical. Identifiability note for
+   F4: the κ×picture co-fit landscape is flat in picture.
+3. **τ is the strongest but capped lever.** Δn̄ grows ≈ linearly over the
+   band (0.2 → 1.7), but t× = τ·ln(f_int·E/Σ(21)) grows with τ; the ≈ 80 ps
+   that 7 sheds would extrapolate to puts gate-open past the 30 ps window.
+   Dead end in-band and out.
+
+**Diagnosis (kinetic, quantitative):** k = ν·(1−x)^(s−1) with x ≈ 0.032 and
+s−1 = 59 → k ≈ 0.15·ν ≈ 0.36/ps — the freeze is entirely the RRK exponent on
+a small x. The swept levers move x at most ~2× (linear); s acts
+exponentially (s_eff−1 = 11 → k ≈ 1.7/ps). Energetics are self-sustaining by
+construction (per shed, E_int and Σ(n) drop by the same D₀(n): gate margin
+shed-invariant; 7 sheds cost 0.06 of the 0.188 eV budget). **This fires the
+pre-registered RRK-dof mechanism-level OQ** (bridge findings §2 lever 3):
+s = 3n−3 treats the floppy quantum He₂₁ shell as 60 fully-coupled classical
+oscillators.
+
+**Tier-2-blocking consequence:** the crossing construction caps the cascade
+budget at Σ(21) at *any* `coulomb_available_eV` (budget moves only t×), and
+the experimental abundance reference holds 43 % bare I⁺ / <1 % weight at
+n ≥ 19 — the freeze at n ≈ 20 blocks the arbitration observable at 0.80
+**and** 2.70 eV. The probe saved the N=500 campaign from a dead band.
+
+**Decision (user, 2026-07-05):** proceed with the **`s_eff` mini-probe**
+design addendum — `TIER2_STAIRCASE_PROBE_PLAN.md` Addendum A (12 runs:
+s_eff ∈ {None, 30, 20, 12, 8, 5} × τ ∈ {6.55, 16.5} at the bridge pins,
+via the already-plumbed `cfg.evap_rrk_dof` override; no new physics, no new
+`SimConfig` fields). Falsification/localisation only — a landing s_eff does
+NOT auto-promote the convention; promotion (dof-convention enum arm +
+Bounded s_eff knob + CALIBRATION_MAP reclassification + F2 re-scope to an
+s_eff co-fit) is a subsequent user-level mechanism decision. Implementation
+stays behind `[PROCEED TO IMPLEMENTATION]`.
+
+### s_eff mini-probe harness DELIVERED (2026-07-06)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (user: "Please
+implement the 12-run miniprobe"). TDD throughout (9 RED failures watched — the
+missing `evap_rrk_dof` kwargs, `S_EFF_GRID`, 4-tuple grid, and `s_eff` column
+— before any source change). **Additive only: no new physics, no new
+`SimConfig` field** — `cfg.evap_rrk_dof` was already declared and physics-live
+at the driver's evaporation step (`ion_propagation_step.py:630`), so this is
+pure orchestration/report wiring plus the config pass-through.
+
+**Build (all additive to the delivered probe scripts, Addendum A.3):**
+- `scripts/tier2_common.py` — `build_biphasic_cfg` gains a None-sentinel
+  `evap_rrk_dof` kwarg (injected only when set; `None` rides the config
+  default — the biphasic bridge/probe builds stay byte-identical);
+  `tier2_probe_run_tag` / `tier2_probe_run_dir_name` gain `evap_rrk_dof`,
+  appending `_sNN.NN` (two decimals) when set and **nothing** when `None`
+  (delivered 45-run tags byte-identical).
+- `scripts/gen_tier2_staircase_probe.py` — new `S_EFF_GRID` dimension;
+  `probe_grid_points()` now returns 4-tuples `(picture, κ, τ, s_eff)`;
+  `build_probe` threads `evap_rrk_dof` into the cfg + dir name + label +
+  operator print. **Active USER SETTINGS flipped to the mini-probe** (κ=1,
+  mixture pinned; τ ∈ {6.55, 16.5} × `S_EFF_GRID = [None, 30, 20, 12, 8, 5]`
+  → **12 runs**), since the 45-run probe already executed; the full 45-run
+  grid is preserved in a "FULL PROBE" comment block (one-swap + `S_EFF_GRID=
+  [None]` restore). The wiring-oracle point is now (κ=1, mixture, τ=6.55,
+  **s_eff=None**) — the per-n control that must still equal the bridge.
+- `scripts/post_processing/tier2_staircase_probe_report.py` — `s_eff` column
+  (read from `cfg.json`, `None` → per-n); figure NB that the relaxed-n heat
+  map collapses an s_eff sweep (table/CSV authoritative), s_eff added to the
+  mean-n(t) small-multiple curve labels.
+
+**Tests (+5 net; probe suites 20 → 25):** `test_tier2_staircase_probe.py`
+gained the s_eff tag suffix/omit + namespace check, `build_biphasic_cfg`
+stamping + None-default, the 12-point mini-probe default grid, s_eff dir
+non-collision, and the **`test_full_grid_back_compat_none_s_eff`** guard (full
+grid + `S_EFF_GRID=[None]` → 45 points and byte-identical tag); the delivered
+grid tests were updated to the mini-probe config + 4-tuple arity + the
+`evap_rrk_dof is None` filter on the wiring oracle.
+`test_tier2_staircase_probe_report.py` gained the `s_eff`-column read (per-n
+None on the existing tiny run + a set `s_eff=8` tiny run).
+
+**Rule-2 / scope:** no new declared-but-unread config field (the kwarg feeds an
+already-live one), no schema bump, no RNG draw-order change, no drag-law /
+neutral / propagation / driver touch (the driver already reads
+`cfg.evap_rrk_dof`). F2/F3/F4 untouched.
+
+**Verification.** Probe suites **25 passed**; full suite **2095 passed,
+0 failed** (2090 → +5), 77 warnings = the documented §6.5 mass-pairing path.
+Next (operator action): run the 12-point mini-probe
+(`python scripts/gen_tier2_staircase_probe.py`, then the report script),
+confirm the s_eff=None point reproduces the bridge freeze (wiring oracle), and
+adjudicate the RRK-dof OQ (a landing s_eff → the promotion decision;
+no constant s_eff lands → the ladder/gate structure becomes suspect).
+
+#### Review + fix pass (2026-07-06, before the operator run)
+
+A workflow-backed high-effort code review (4 finder angles, 9 candidates → 9
+verified, 1 refuted) over the uncommitted probe diff. **Three fixed, one
+declined-with-guard; +net tests; full suite 2095 → 2097 passed, 0 failed.**
+
+**Fixed (fidelity — the mini-probe's whole point is the s_eff sweep):**
+1. **Headline argmin dropped s_eff (CONFIRMED).** `format_headline`'s
+   "lowest trajectory MAD" line printed only picture/κ/τ — identical across all
+   12 mini-probe runs (which share those three), so the operator could not read
+   *which* s_eff minimised the MAD. Now prints `s_eff=<n|per-n>` via a new
+   `_s_eff_label` helper; two headline tests lock it (a numeric winner and the
+   per-n control).
+2. **Heat-map collapsed the s_eff sweep (CONFIRMED).** `emit_figures` panel (b)
+   keyed cells on `(kappa, tau)` only, so the mini-probe's 6 s_eff values at a
+   fixed `(κ, τ)` overwrote one cell (last-write-wins, 5 of 6 hidden). The
+   column axis is now the **swept dof knob** — κ when it varies (the delivered
+   45-run probe, byte-identical), else s_eff. Figure code stays non-test/gated.
+3. **`_distribution_moments` duplicated (CONFIRMED, Principle 1).** The probe
+   report had copied the terminal-n mean/population-std formula verbatim from
+   the F3 scoreboard — the *same reported quantity from the same checkpoint*, so
+   a future spread-convention change could silently diverge them. Hoisted to
+   **`ShellDistribution.moments()`** (`postprocess/size_distribution.py`, the
+   owning module); both report scripts now call `dist.moments()`, the F3 hand
+   oracle moved onto the method. (Distinct from the F4-review-declined *display*
+   helper duplications: this is a shared physics/statistics formula, squarely
+   Principle 1.)
+
+**Declined-with-guard:**
+4. **Probe vs campaign tag-encoder duplication (PLAUSIBLE).** The reviewer's
+   deeper fix (a shared `_encode_knob_tag(prefix, suffix)`) would touch the
+   **frozen, delivered campaign encoder** (`tier2_run_tag`) right before an
+   operator run — against the F1/F2 "do not repurpose the delivered encoder"
+   stance, and tag-format naming is a convention, not the physics/formula/
+   constant Principle 1 governs (the F4 review declined the analogous script
+   duplications on the same ground). Instead added a **parity-lock test**:
+   `tier2_probe_run_tag(knobs) == tier2_run_tag(knobs).replace("tier2_",
+   "tier2probe_", 1)` — so a future change to either encoder's knob body fails
+   loudly, catching the exact divergence the finding names, with zero change to
+   the frozen encoder.
+
+**Refuted (agreed):** the `staircase_metrics` shed-below-start detection missing
+a pre-evaporation pickup — inert at 9 Å / 0.80 eV (pickup structurally dead,
+Π ≤ 0.005), confirmed by the verifier and matching the pre-build reasoning.
+
+**Scope:** fixes touch only the two report scripts + the `ShellDistribution`
+method (owning module); no new physics, no schema/RNG/drag-law/driver change.
+Verification: full suite **2097 passed, 0 failed** (2095 → +2: the per-n
+headline + tag-parity lock tests).
+
+### s_eff mini-probe EXECUTED — outcome (a): a constant s_eff lands the staircase (2026-07-06)
+
+The 12-point mini-probe was executed and scored (operator run;
+`tier2_staircase_probe_report.py` over 55 probe dirs = the 45-run grid + the
+10 new set-`s_eff` points; the two `s_eff=None` controls reuse the delivered
+bridge-point dirs). **Wiring oracle passed:** the (κ=1, mixture, τ=6.55,
+s_eff=None) point reproduces the Phase-D bridge exactly (Δn̄ = 0.67,
+n_end = 20.33); ledger residual uniform 2.23·10⁻⁵ eV across all 55 runs.
+
+**Result — outcome (a) of `TIER2_STAIRCASE_PROBE_PLAN.md` Addendum A.4: a
+constant s_eff lands the staircase in magnitude AND timing.** The τ = 6.55 ps
+arm (targets: 7 sheds → n_end 14, first shed at the anchored t★ = 5 ps):
+
+| s_eff | Δn̄ | n_ion_end_mean | t_first_shed_ps | n_traj_MAD |
+|---|---|---|---|---|
+| per-n (60 at n=21) | 0.67 | 20.33 | 6.26 | 3.99 |
+| 30 | 2.08 | 18.92 | 5.97 | 3.02 |
+| 20 | 3.51 | 17.49 | 5.70 | 2.23 |
+| 12 | 5.61 | 15.39 | 5.51 | 1.25 |
+| **8** | **7.41** | **13.59** | **5.42** | **1.00** (grid argmin) |
+| 5 | 9.35 | 11.65 | 5.37 | 2.41 |
+
+The τ = 16.5 ps arm lands *magnitude only*: s_eff=20 reaches 5.93 sheds →
+n_end 15.07 but with t_first ≈ 13.2 ps (timing killed by t× ∝ τ); s_eff=5
+strips to n_end 7.38. `frac_ions_shed = 1` at every set-s_eff point.
+
+**Findings:**
+1. **The kinetic diagnosis is quantitatively confirmed.** Dropping s from 60
+   to 8 moves Δn̄ from 0.67 to 7.41 with *nothing else moving* — the freeze
+   was entirely the RRK exponent (s−1 = 59) acting on x ≈ 0.032, exactly as
+   the 45-run-probe diagnosis stated.
+2. **s↔τ separability worked as designed** (Addendum A.2): first-shed timing
+   stays gate-open-governed (≈ 5.4–6.0 ps at τ=6.55; ≈ 12.9–13.5 ps at
+   τ=16.5, tracking t×), magnitude is s-governed. The landing region is
+   **τ near the GAH25 mid-band × s_eff ∈ ≈ [8, 12]** — the anchored
+   staircase alone nearly pins both, the best identifiability result of the
+   program so far.
+3. **The flexibility question is answered.** Relaxed terminal n now spans
+   [7.3, 20.9] across the sweep (monotone in s and τ; spreads 1.3–1.5 He —
+   a real distribution, not a delta). The mechanism was never inexpressive;
+   the classical dof convention froze it. NB the report headline's
+   per-picture ranges ([7.3, 20.9] mixture vs [19.3, 20.9] others) are a
+   **design artifact** — only `statistical_mixture` received s_eff overrides
+   (the mini-probe pins), not a picture-dependence claim.
+4. **Constant s suffices at mid-band τ** (no in-window overshoot past 14 at
+   s_eff=8): the outcome-(c) contingency (n-dependent scaled s = α·(3n−3),
+   here α ≈ 8/60 ≈ 0.13) is *not demanded* by this data — keep the scaled
+   shape as a documented alternative arm, not a build.
+
+**Interpretation (physics).** `s = 3n−3` treats the He₂₁ shell as 60
+fully-coupled classical oscillators; the landing s_eff ≈ 8–12 says the
+effective heat bath is ~an order of magnitude smaller — the *expected*
+direction for a cold, floppy, quantum He shell (most modes quantum-frozen or
+uncoupled on the sub-ps shed timescale; cf. evaporative-ensemble treatments
+of quantum clusters). The RRK form, energy gate, ladder, and Σ(21) crossing
+budget all survive — outcome (b)'s "gate/ladder structure suspect" arm did
+**not** fire. The pre-registered mechanism-level OQ resolved to exactly the
+lever it named.
+
+**Boundaries (unchanged):** N=50 single seed reads means, not distribution
+tails; TDDFT is not ground truth (the 9 Å non-radial flag stands); the
+landing does **not** discharge the F5 gate — it points the N=500 Stage-1/2
+campaign, which resolves the gate.
+
+**Decision (user, 2026-07-06):** document the finding now (this entry + the
+Addendum status flip + a lever-3 resolution NB in
+`TIER2_PHASE_D_BRIDGE_FINDINGS.md`); **before any CALIBRATION_MAP change**,
+run a picture cross-check (`x2_only` + `cooling_relaxed` with reduced s_eff
+at the landing arm) to confirm empirically that the 45-run probe's
+picture-near-degeneracy prediction holds under reduced s; promotion
+(dof-convention enum arm + Bounded s_eff knob + CALIBRATION_MAP
+reclassification + F2 re-scope to an s_eff×τ co-fit) is **rediscussed after**
+— no auto-promotion (the Addendum A.4 stance).
+
+### Picture cross-check EXECUTED — near-degeneracy under reduced s_eff (2026-07-06)
+
+10 additional probe runs: picture ∈ {`x2_only`, `cooling_relaxed`} ×
+s_eff ∈ {30, 20, 12, 8, 5} at the landing arm (κ=1, τ=6.55 ps, probe pins;
+the per-n controls for both pictures already exist from the 45-run grid).
+Driven through the delivered `build_probe`/`_run_one` pipeline with an
+overridden module-level grid (scratchpad driver) — **no repo-code change**;
+the generator's active USER SETTINGS remain the test-locked 12-point
+mini-probe. Run dirs land in the `tier2probe` namespace and are scored by the
+delivered report script alongside the rest.
+
+**Result — magnitude near-picture-invariance CONFIRMED.** At κ=1, τ=6.55,
+Δn̄ per picture (mixture / cooling_relaxed / x2_only):
+
+| s_eff | Δn̄ (mix / cool / x2) | n_ion_end_mean (mix / cool / x2) |
+|---|---|---|
+| 30 | 2.08 / 2.03 / 2.02 | 18.92 / 18.97 / 18.98 |
+| 20 | 3.51 / 3.34 / 3.22 | 17.49 / 17.66 / 17.78 |
+| 12 | 5.61 / 5.59 / 5.33 | 15.39 / 15.41 / 15.67 |
+| 8 | 7.41 / 7.46 / 7.13 | 13.59 / 13.54 / 13.87 |
+| 5 | 9.35 / 9.11 / 9.10 | 11.65 / 11.89 / 11.90 |
+
+Shed-magnitude spread across pictures ≤ ~0.3 sheds (≤ 4 %) at every s_eff —
+the 45-run probe's prediction (x = D₀(21)/Σ(21) nearly picture-invariant)
+holds under reduced s; **the landing band s_eff ∈ ≈ [8, 12] is
+picture-robust**. The one picture-sensitive read is *timing*: t_first at
+s_eff=8 is 5.42 / 4.22 / 3.07 ps (mixture / cool / x2; anchored t★ = 5 ps) —
+Σ(21) differs per picture, shifting t× = τ·ln(f_int·E/Σ(21)); mixture sits on
+the anchor, x2_only opens ~2 ps early. This is weak discrimination, not a
+picture selection: t× is degenerate with the Bounded `f_int` (a modest f_int
+shift re-aligns any picture's gate-open), so the picture knob stays a
+near-flat co-fit dimension for F4, entangled with f_int only through timing.
+Trajectory-MAD argmin over all 65 scored runs remains (mixture, κ=1, τ=6.55,
+s_eff=8) at 1.00 He; cooling_relaxed and x2_only both reach MAD ≈ 1.36 at
+s_eff=8. Ledger residual stays uniform 2.23·10⁻⁵ eV.
+
+**Adjudication:** deferred to the promotion rediscussion (user-level).
+
+### s_eff PROMOTED to a Bounded calibration knob (user decision, 2026-07-06)
+
+Following the mini-probe landing (outcome (a)) and the picture cross-check
+(magnitude near-invariance confirmed), the user **confirmed the promotion
+direction**. This is the CALIBRATION_MAP reclassification the Addendum A.4
+stance reserved for a user-level mechanism decision — executed as
+documentation only; **no code changed**.
+
+**Documentation delivered (this entry's companion edits):**
+- `CALIBRATION_MAP.md` — new 2026-07-06 update block; **row 10 reclassified
+  Derived → Bounded** (constant s_eff, band ≈ [5, 20], staircase landing
+  [8, 12] at mid-band τ; classical `s = 3n−3` demoted to the classical-limit
+  arm of the dof-convention selection; s ≥ 1 guard + n=1 direct dissociation
+  unchanged); rows 19/20 annotated (κ inverted + normalisation-capped for
+  21→14; picture magnitude-degenerate, timing-only via Σ(21)→t×, degenerate
+  there with f_int); tally Derived 6→5 / Bounded +1; anchor-coverage note —
+  the 9 Å staircase (TDDFT prior) co-anchors s_eff×τ via first-shed timing,
+  the first load shed from the one-observable Tier-2 stack.
+- `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` — §4 dof-bullet NB +
+  **A11 resolution NB** (the classical band [3n−3, 3n] survives as the
+  rigid-classical limit, not the sweep band; effective reservoir ~8–12 modes
+  = quantum mode-freezing / weak coupling, the RRKM-direction difference s
+  was declared to absorb; the s↔κ joint coupling resolved *weak*); §9
+  register row updated. Mechanism, invariant, and guards unchanged — this
+  moves a parameter's *classification*, not the locked mechanism.
+- `TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` — §1 row D mechanism-level
+  resolution note (the F5 gate still resolves only via the 0.80 eV
+  campaign); **F2 Stage-1 re-scope NB**: the κ×picture co-fit is superseded
+  by an **s_eff×τ co-fit** (κ pinned with a sensitivity spot-check;
+  picture + f_int ride as a timing-degenerate pair, reported not fit);
+  §0 postponed-items row annotated.
+- `TIER2_STAIRCASE_PROBE_PLAN.md` Addendum status + the
+  `TIER2_PHASE_D_BRIDGE_FINDINGS.md` lever-3 NB flipped from
+  "pending user decision" to confirmed.
+
+**Deliberately NOT done (stays behind `[PROCEED TO IMPLEMENTATION]`):**
+the dof-convention selection surface (NB: `cfg.evap_rrk_dof` already provides
+the constant-s override the campaign needs — whether a named enum is added or
+the existing Optional field *is* the selection surface is an implementation
+decision for that slice); the `S_EFF` grid dimension + tag encoding in
+`gen_tier2_runs.py` / `tier2_run_tag` (the probe-tag parity-lock test names
+the exact encoding); any F3/F4 scoreboard/report column additions. Rule-2:
+no declared-but-unread fields were added by this decision.
+
+**Next:** implement the F2 campaign re-scope (on trigger), then run the
+re-scoped N=500 Stage-1/2 validation campaign at 0.80 eV (9 Å + 18 Å)
+concentrated on the landing region — that campaign, not the probe, resolves
+the F5 gate. *(Correction, same day: the campaign is 9 Å-only per the standing
+2026-07-03 scope decision — no 18 Å reference exists; restated by the user
+with the implementation trigger.)*
+
+### F2 Stage-1 re-scope IMPLEMENTED — s_eff×τ co-fit campaign (2026-07-06)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger (user:
+"PROCEED TO IMPLEMENTATION (just stage 1 … only for 9 Å, no 18 Å
+reference)"), scoped to Stage 1 at 9 Å / 0.80 eV — consistent with the
+standing 2026-07-03 9 Å-only campaign decision; the old Stage 2
+(τ-insensitivity) is absorbed by the in-grid τ dimension and read
+report-side by F4. TDD throughout (11 RED failures + 1 collection
+`ImportError` watched across five test modules before any source change).
+
+**Selection-surface decision (flagged in the promotion entry, now resolved):**
+no new enum — the existing `cfg.evap_rrk_dof` Optional field **is** the
+dof-convention selection surface (`None` = per-n `s = 3n−3` classical arm;
+a value = the promoted constant s_eff). No new `SimConfig` field, no schema
+bump, no driver/physics change (the field was already physics-live).
+
+**Build:**
+- `scripts/tier2_common.py` — `tier2_run_tag` / `tier2_run_dir_name` gain a
+  None-sentinel `evap_rrk_dof` kwarg appending `_sNN.NN` (two decimals,
+  before any `_totalstrip` suffix); `None` appends nothing — pre-promotion
+  campaign tags byte-identical. The probe↔campaign **parity-lock test now
+  covers the s_eff suffix** in both encoders.
+- `scripts/gen_tier2_runs.py` — Stage-1 grid re-scoped: κ=1 / mixture pinned;
+  `TAU_GRID_PS = [2.6, 6.55, 16.5]` × `S_EFF_GRID = [None, 5, 8, 12, 16, 20]`
+  → **18 runs** (per-n None = in-grid classical-limit control; band [5, 20]
+  brackets the [8, 12] landing). `F_INT = 0.5` (the landing-prior pin —
+  the s_eff ≈ 8 landing was established there; `None` → floor still
+  supported). `campaign_grid_points()` now returns 5-tuples
+  `(picture, κ, τ, s_eff, f_int)`. The superseded κ×picture Stage-1 grid is
+  preserved in an "ORIGINAL STAGE 1" comment block (one-swap restore).
+- `scripts/post_processing/tier2_size_distribution_table.py` (F3) — `s_eff`
+  column (from `cfg.json`, `None` → per-n), inserted after `tau_ps` —
+  without it the 6 s_eff values at a fixed (κ, τ) would be scoreboard-
+  indistinguishable (the probe-report review's bug class).
+- `scripts/post_processing/tier2_identifiability_report.py` (F4) — the
+  κ- and τ-cell keys gain `s_eff` (via `row.get`, so pre-promotion rows
+  keep working) — two runs differing only in s_eff can no longer pool into
+  one landscape/sweep cell; new `build_s_eff_landscapes` +
+  `SEffLandscape` (per-n control rows excluded from the numeric landscape);
+  the generic landscape assessor gained an `axis` parameter (default
+  `"kappa"`, back-compatible); the **`s` checklist entry is now computed**
+  (W1-vs-s_eff landscape, `axis="s_eff"`) with a `held_fixed` static
+  fallback when no sweep is on disk (text updated to the promoted-Bounded
+  wording); module docstring bullets updated.
+
+**Tests (+10 net; full suite 2097 → 2107 passed, 0 failed):** campaign-tag
+s_eff suffix/omit + dir non-collision (`test_tier2_common`), parity-lock
+s_eff extension (`test_tier2_staircase_probe`), re-scoped 18-point grid +
+landing-prior f_int pin + floor-under-monkeypatch + 5-tuple schedule with
+s_eff/τ stamps (`test_gen_tier2_runs`), F3 s_eff column presence + per-n
+None read + set-s_eff=8 tiny-run read, F4 s_eff cell splitting (τ sweeps and
+κ landscapes not pooled across s_eff), per-n-control exclusion, and the
+assessed `s` entry (identifiable interior / not_bracketed edge; the
+held-fixed fallback stays covered by the existing static test).
+
+**Rule-2 / scope:** no new `SimConfig` field, no schema/RNG/drag-law/driver/
+propagation change; probe scripts untouched (their delivered tags remain
+byte-identical); the F5 production switch, total-strip variant, and 18 Å leg
+remain out of scope. The 18-run campaign itself is an **operator action**
+(`python scripts/gen_tier2_runs.py`, then the F3/F4 report scripts) — not
+executed as part of this delivery.

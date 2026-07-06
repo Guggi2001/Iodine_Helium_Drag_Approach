@@ -16,7 +16,12 @@ quantity by quantity, whether that observable can actually *separate* them:
   co-fit; identifiable only if the pictures separate beyond a flatness floor.
 * **tau** -- the post-crossing tail: terminal-n *insensitivity* is confirmed
   (``insensitive``) or flagged (``sensitive``, a live calibration dimension) over
-  the Stage-2 tau sweep. The Phase-D bridge expects the sensitive arm at 0.80 eV.
+  the swept tau band. The Phase-D bridge expects the sensitive arm at 0.80 eV.
+* **s (s_eff, promoted 2026-07-06)** -- the W1-vs-s_eff landscape at a fixed
+  cell (the re-scoped Stage-1 sweep axis; Bounded band ~[5, 20]). The per-n
+  ``s_eff=None`` classical arm is an in-grid control, not a numeric landscape
+  point. When no s_eff sweep is on disk, falls back to the ``held_fixed``
+  static statement.
 * **terminal regime** -- the shell-retaining <-> total-strip axis (E5 t*/Pi
   spine): which regime the campaign realizes and which regime's runs score the
   lowest W1.
@@ -30,9 +35,7 @@ Reported deterministically (no computation -- fixed by scope / mechanism):
   structurally dead (Pi <= 0.005, Phase-D bridge finding #4); held fixed.
 * **f_int** -- ``not_identifiable`` by construction: a timing-only knob (moves t*,
   not the cascade budget), so the terminal-n observable is insensitive to it.
-* **nu, s** -- ``held_fixed`` (RRK prefactor / dof not swept this campaign); s
-  carries the s<->kappa coupling caveat (a kappa fit is conditional on the fixed
-  RRK dof).
+* **nu** -- ``held_fixed`` (RRK prefactor not swept this campaign).
 
 **Reported, not auto-adjudicated** (the Tier-1a reporting-gate stance): no code
 asserts a fidelity pass/fail. Reporting a factual W1 *minimum* (argmin kappa /
@@ -157,12 +160,32 @@ class KappaLandscape:
 
 @dataclass(frozen=True)
 class TauSweep:
-    """terminal-n vs tau at one fixed (budget, picture, kappa, f_int, f_ret) cell."""
+    """terminal-n vs tau at one fixed (budget, picture, kappa, f_int, f_ret,
+    s_eff) cell."""
 
     budget_eV: float
     picture: str
     kappa: float
     points: tuple[tuple[float, float], ...]  # sorted (tau_ps, n_terminal_mean)
+
+
+@dataclass(frozen=True)
+class SEffLandscape:
+    """W1-vs-s_eff at one fixed (budget, picture, kappa, f_int, f_ret, tau) cell.
+
+    Only constant-s_eff rows contribute points; the per-n ``s_eff=None``
+    classical arm is the in-grid control, not a numeric landscape point.
+    """
+
+    budget_eV: float
+    picture: str
+    kappa: float
+    tau_ps: float | None
+    points: tuple[tuple[float, float], ...]  # sorted (s_eff, W1_matched)
+
+    @property
+    def w1_min(self) -> float:
+        return min(w for _, w in self.points)
 
 
 # ---------------------------------------------------------------------------
@@ -174,12 +197,15 @@ def _rk(value: float | None) -> float | None:
 
 
 def _kappa_cell_key(row: dict[str, Any]) -> tuple:
+    # ``row.get("s_eff")`` (not ``row[...]``): pre-promotion rows lack the key and
+    # mean the per-n arm -- exactly what a set ``s_eff=None`` means.
     return (
         _rk(row["budget_eV"]),
         row["picture"],
         _rk(row["f_int"]),
         _rk(row["f_ret"]),
         _rk(row["tau_ps"]),
+        _rk(row.get("s_eff")),
     )
 
 
@@ -190,6 +216,18 @@ def _tau_cell_key(row: dict[str, Any]) -> tuple:
         _rk(row["kappa"]),
         _rk(row["f_int"]),
         _rk(row["f_ret"]),
+        _rk(row.get("s_eff")),
+    )
+
+
+def _s_eff_cell_key(row: dict[str, Any]) -> tuple:
+    return (
+        _rk(row["budget_eV"]),
+        row["picture"],
+        _rk(row["kappa"]),
+        _rk(row["f_int"]),
+        _rk(row["f_ret"]),
+        _rk(row["tau_ps"]),
     )
 
 
@@ -198,28 +236,34 @@ def _tau_cell_key(row: dict[str, Any]) -> tuple:
 # ---------------------------------------------------------------------------
 def assess_kappa_landscape(
     points: list[tuple[float, float]] | tuple[tuple[float, float], ...],
+    *,
+    axis: str = "kappa",
 ) -> tuple[str, float, float, str]:
-    """Classify a W1-vs-kappa landscape.
+    """Classify a W1-vs-knob landscape (generic over the swept ``axis``).
 
-    ``points`` is ``(kappa, W1)`` pairs. Returns
-    ``(status, argmin_kappa, w1_min, notes)``. Order of checks: too few points
+    ``points`` is ``(knob, W1)`` pairs. Returns
+    ``(status, argmin_knob, w1_min, notes)``. Order of checks: too few points
     (insufficient) -> flat (degenerate, not identifiable) -> argmin at a grid edge
     (not bracketed) -> interior minimum (identifiable). Flatness is checked before
     bracketing so a degenerate landscape is never reported as a real edge optimum.
+
+    ``axis`` only shapes the notes text (default ``"kappa"``, the original
+    Stage-1 landscape; the 2026-07-06 re-scope reuses this assessor for the
+    W1-vs-s_eff landscape with ``axis="s_eff"``).
     """
     pts = sorted(points, key=lambda kw: kw[0])
     if len(pts) < 2:
         # Guard before the argmin so an empty landscape degrades to the documented
         # insufficient status instead of raising on min() over an empty range.
         if not pts:
-            return STATUS_INSUFFICIENT, float("nan"), float("nan"), "no kappa points"
-        (only_kappa, only_w1) = pts[0]
-        return STATUS_INSUFFICIENT, only_kappa, only_w1, "single kappa point"
+            return STATUS_INSUFFICIENT, float("nan"), float("nan"), f"no {axis} points"
+        (only_knob, only_w1) = pts[0]
+        return STATUS_INSUFFICIENT, only_knob, only_w1, f"single {axis} point"
 
-    kappas = [k for k, _ in pts]
+    knobs = [k for k, _ in pts]
     w1s = [w for _, w in pts]
     argmin_i = min(range(len(pts)), key=lambda i: w1s[i])
-    argmin_kappa = kappas[argmin_i]
+    argmin_knob = knobs[argmin_i]
     w1_min = w1s[argmin_i]
 
     w1_max = max(w1s)
@@ -231,26 +275,26 @@ def assess_kappa_landscape(
     if flat:
         return (
             STATUS_NOT_IDENTIFIABLE,
-            argmin_kappa,
+            argmin_knob,
             w1_min,
             f"flat landscape (relative W1 range < {KAPPA_FLAT_FRACTION:.0%}): "
-            "the observable does not resolve kappa",
+            f"the observable does not resolve {axis}",
         )
 
     if argmin_i in (0, len(pts) - 1):
         return (
             STATUS_NOT_BRACKETED,
-            argmin_kappa,
+            argmin_knob,
             w1_min,
-            f"minimum at grid edge kappa={argmin_kappa:g}: optimum not bracketed "
+            f"minimum at grid edge {axis}={argmin_knob:g}: optimum not bracketed "
             "-> extend the grid / RRK-dof mechanism-level OQ",
         )
 
     return (
         STATUS_IDENTIFIABLE,
-        argmin_kappa,
+        argmin_knob,
         w1_min,
-        f"well-separated interior minimum at kappa={argmin_kappa:g}",
+        f"well-separated interior minimum at {axis}={argmin_knob:g}",
     )
 
 
@@ -400,11 +444,51 @@ def build_kappa_landscapes(rows: list[dict[str, Any]]) -> list[KappaLandscape]:
         kappa_w1 = cells[key]
         if len(kappa_w1) < 2:
             continue
-        budget, picture, _f_int, _f_ret, tau = key
+        budget, picture, _f_int, _f_ret, tau, _s_eff = key
         pts = tuple(sorted(kappa_w1.items()))
         landscapes.append(
             KappaLandscape(
                 budget_eV=budget, picture=picture, tau_ps=tau, points=pts
+            )
+        )
+    return landscapes
+
+
+def build_s_eff_landscapes(rows: list[dict[str, Any]]) -> list[SEffLandscape]:
+    """Group scoreboard rows into W1-vs-s_eff landscapes (cells with >= 2 s_eff).
+
+    A landscape holds one fixed (budget, picture, kappa, f_int, f_ret, tau) cell
+    with the promoted constant s_eff swept -- the re-scoped Stage-1 co-fit cell
+    (2026-07-06). Rows with ``s_eff`` ``None``/absent are the per-n classical-arm
+    control and are **excluded** (no numeric x-coordinate); their W1 stays visible
+    on the F3 scoreboard. Non-finite ``W1_matched`` is skipped (same defensive
+    stance as :func:`build_kappa_landscapes`).
+    """
+    cells: dict[tuple, dict[float, float]] = {}
+    order: list[tuple] = []
+    for row in rows:
+        s_eff = row.get("s_eff")
+        if s_eff is None:
+            continue
+        w1 = row["W1_matched"]
+        if not _is_number(w1):
+            continue
+        _accumulate_cell(
+            cells, order, _s_eff_cell_key(row), float(s_eff), float(w1),
+            axis="s_eff",
+        )
+
+    landscapes: list[SEffLandscape] = []
+    for key in order:
+        s_w1 = cells[key]
+        if len(s_w1) < 2:
+            continue
+        budget, picture, kappa, _f_int, _f_ret, tau = key
+        pts = tuple(sorted(s_w1.items()))
+        landscapes.append(
+            SEffLandscape(
+                budget_eV=budget, picture=picture, kappa=kappa, tau_ps=tau,
+                points=pts,
             )
         )
     return landscapes
@@ -436,7 +520,7 @@ def build_tau_sweeps(rows: list[dict[str, Any]]) -> list[TauSweep]:
         tau_n = cells[key]
         if len(tau_n) < 2:
             continue
-        budget, picture, kappa, _f_int, _f_ret = key
+        budget, picture, kappa, _f_int, _f_ret, _s_eff = key
         pts = tuple(sorted(tau_n.items()))
         sweeps.append(
             TauSweep(budget_eV=budget, picture=picture, kappa=kappa, points=pts)
@@ -570,6 +654,48 @@ def _tau_checklist_entry(
     )
 
 
+def _s_checklist_entry(
+    budget: float, rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """The 's' verdict: computed from the W1-vs-s_eff landscape when swept.
+
+    s_eff was promoted Derived -> Bounded (2026-07-06; CALIBRATION_MAP row 10,
+    band ~[5, 20]) and is the re-scoped Stage-1 sweep axis. With >= 2 constant
+    s_eff values at a fixed cell, assess the landscape (the generic assessor,
+    ``axis="s_eff"``); the lowest-W1 landscape is reported. Without a sweep the
+    entry falls back to the held-fixed static statement.
+    """
+    landscapes = build_s_eff_landscapes(rows)
+    if not landscapes:
+        return _entry(
+            budget,
+            "s",
+            STATUS_HELD_FIXED,
+            "held fixed",
+            "s_eff not swept in these rows",
+            "Bounded s_eff (promoted 2026-07-06, band ~[5, 20]; classical per-n "
+            "s=3n-3 demoted to the control arm); the kappa-joint coupling "
+            "resolved weak at the staircase probe",
+        )
+    landscape = min(landscapes, key=lambda ls: ls.w1_min)
+    status, argmin_s, w1_min, notes = assess_kappa_landscape(
+        landscape.points, axis="s_eff"
+    )
+    grid = ", ".join(f"{s:g}" for s, _ in landscape.points)
+    tau_txt = "-" if landscape.tau_ps is None else f"{landscape.tau_ps:g}"
+    return _entry(
+        budget,
+        "s",
+        status,
+        f"s_eff*={argmin_s:g}",
+        f"picture={landscape.picture}, kappa={landscape.kappa:g}, "
+        f"tau={tau_txt} ps, W1_min={w1_min:.4g}, "
+        f"s_eff grid [{grid}]",
+        notes + " (per-n classical arm excluded from the numeric landscape; "
+        "staircase landing prior [8, 12])",
+    )
+
+
 def _regime_checklist_entry(
     budget: float, rows: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -621,15 +747,6 @@ def _static_entries(budget: float) -> list[dict[str, Any]]:
             "RRK prefactor not swept",
             "not a campaign knob; would be retuned only under an explicit "
             "mechanism-level OQ, never silently",
-        ),
-        _entry(
-            budget,
-            "s",
-            STATUS_HELD_FIXED,
-            "held fixed (s=59)",
-            "RRK dof not swept",
-            "s and ladder shape kappa are entangled (s<->kappa coupling): the "
-            "kappa fit is conditional on this fixed RRK dof convention",
         ),
     ]
 
@@ -691,6 +808,7 @@ def build_identifiability_rows(
                 budget, budget_rows, best_picture, best_kappa
             ),
             "terminal_regime": _regime_checklist_entry(budget, budget_rows),
+            "s": _s_checklist_entry(budget, budget_rows),
         }
         for static in _static_entries(budget):
             entries[static["quantity"]] = static

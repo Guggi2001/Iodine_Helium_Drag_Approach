@@ -17,12 +17,37 @@ from scripts.tier2_common import build_biphasic_cfg, tier2_run_dir_name
 from i2_helium_md.physics.internal_energy_budget import f_int_floor
 
 
-def test_campaign_grid_applies_floor_f_int_when_unset():
-    """F_INT=None -> every grid point pins f_int at its picture/kappa floor."""
-    assert script.F_INT is None  # the delivered Stage-1 default
+def test_campaign_grid_default_is_stage1_s_eff_tau_cofit():
+    """Re-scoped Stage 1 (2026-07-06, s_eff promotion): kappa and picture are
+    pinned at the bridge point (both proven near-flat on the staircase) and the
+    Bounded s_eff x tau co-fit is swept, with the per-n None arm as the in-grid
+    classical-limit control."""
+    assert script.KAPPA_GRID == [1.0]
+    assert script.PICTURE_LIST == ["statistical_mixture"]
+    assert script.TAU_GRID_PS == [2.6, 6.55, 16.5]
     points = script.campaign_grid_points()
-    assert len(points) == len(script.PICTURE_LIST) * len(script.KAPPA_GRID)
-    for picture, kappa, f_int in points:
+    assert len(points) == len(script.TAU_GRID_PS) * len(script.S_EFF_GRID)
+    assert len(set(points)) == len(points)  # unique 5-tuples
+    # the swept s_eff values: the Bounded band [5, 20] + the per-n control
+    assert {s_eff for _, _, _, s_eff, _ in points} == {None, 5.0, 8.0, 12.0, 16.0, 20.0}
+
+
+def test_stage1_f_int_pinned_at_landing_prior():
+    """The Stage-1 f_int pin is the bridge/landing value 0.5 (the s_eff ~ 8
+    landing prior was established there; t_x ~ 5 ps), not the floor -- f_int
+    rides as the timing-degenerate pair with the picture, reported not fit."""
+    assert script.F_INT == pytest.approx(0.5)
+    assert all(
+        f_int == pytest.approx(0.5)
+        for _, _, _, _, f_int in script.campaign_grid_points()
+    )
+
+
+def test_campaign_grid_applies_floor_f_int_when_unset(monkeypatch):
+    """F_INT=None -> every grid point pins f_int at its picture/kappa floor."""
+    monkeypatch.setattr(script, "F_INT", None)
+    points = script.campaign_grid_points()
+    for picture, kappa, _tau_ps, _s_eff, f_int in points:
         assert f_int == pytest.approx(
             f_int_floor(e_avail_eV=script.BUDGET_EV, picture=picture, kappa=kappa)
         )
@@ -33,7 +58,10 @@ def test_resolve_f_int_literal_override(monkeypatch):
     monkeypatch.setattr(script, "F_INT", 0.42)
     assert script.resolve_f_int("statistical_mixture", 3.0) == pytest.approx(0.42)
     # ...and every grid point then carries that literal, not the floor.
-    assert all(f_int == pytest.approx(0.42) for _, _, f_int in script.campaign_grid_points())
+    assert all(
+        f_int == pytest.approx(0.42)
+        for _, _, _, _, f_int in script.campaign_grid_points()
+    )
 
 
 def test_build_campaign_uses_experimental_relaxation_cap(tmp_path):
@@ -74,17 +102,26 @@ def test_main_schedules_expected_grid(tmp_path, monkeypatch):
             lambda0_per_ps=script.LAMBDA0_PER_PS,
             f_int=f_int,
             f_ret=script.F_RET,
-            tau_ps=script.TAU_PS,
+            tau_ps=tau_ps,
             budget_eV=script.BUDGET_EV,
+            evap_rrk_dof=s_eff,
             total_strip=script.TOTAL_STRIP,
         )
-        for picture, kappa, f_int in script.campaign_grid_points()
+        for picture, kappa, tau_ps, s_eff, f_int in script.campaign_grid_points()
     ]
 
     assert [run_dir for _, _, run_dir in scheduled] == expected_dirs
     assert all(cfg.mass_scenario == "biphasic" for _, cfg, _ in scheduled)
     assert all(cfg.relaxation_stage_enabled for _, cfg, _ in scheduled)
     assert all(cfg.coulomb_available_eV == script.BUDGET_EV for _, cfg, _ in scheduled)
+    # the s_eff sweep is stamped onto the configs (None -> config default None)
+    assert {cfg.evap_rrk_dof for _, cfg, _ in scheduled} == {
+        None, 5.0, 8.0, 12.0, 16.0, 20.0
+    }
+    # ...and the tau sweep onto the cooling time
+    assert {cfg.internal_energy_cooling_tau_ps for _, cfg, _ in scheduled} == {
+        2.6, 6.55, 16.5
+    }
     # distinct run dir per grid point
     assert len({run_dir for _, _, run_dir in scheduled}) == len(expected_dirs)
 

@@ -39,7 +39,6 @@ from scripts.post_processing.tier2_size_distribution_table import (
     TIER2_TABLE_COLUMNS,
     Tier2RunRecord,
     _case_from_run_dir,
-    _distribution_moments,
     _freeze_side_expected,
     _is_total_strip_run,
     collect_tier2_records,
@@ -54,9 +53,11 @@ from scripts.post_processing.tier2_size_distribution_table import (
 PROJECT_ROOT = __import__("pathlib").Path(__file__).resolve().parents[1]
 REFERENCE_PATH = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
-# The 16 pinned plan-F3 columns + the three confirmed advisory columns.
+# The 16 pinned plan-F3 columns (+ the s_eff knob column, added at the
+# 2026-07-06 s_eff promotion) + the three confirmed advisory columns.
 _PINNED_COLUMNS = [
-    "case", "budget_eV", "picture", "kappa", "f_int", "f_ret", "tau_ps", "N",
+    "case", "budget_eV", "picture", "kappa", "f_int", "f_ret", "tau_ps",
+    "s_eff", "N",
     "W1_matched", "W1_simend_upper", "t_cross_ps", "regime_label",
     "total_strip_reachable", "ledger_max_resid_eV", "n_terminal_mean",
     "n_terminal_spread",
@@ -64,7 +65,7 @@ _PINNED_COLUMNS = [
 _ADVISORY_COLUMNS = ["t_cross_spread_ps", "t_cross_all_agree", "sanity_flags"]
 
 
-def _write_tiny_run(run_dir, *, budget_eV=VALIDATION_BUDGET_EV):
+def _write_tiny_run(run_dir, *, budget_eV=VALIDATION_BUDGET_EV, evap_rrk_dof=None):
     """Build one genuine tiny-N biphasic run dir (neutral -> ion -> relaxation)."""
     cfg = build_biphasic_cfg(
         "9A",
@@ -78,6 +79,7 @@ def _write_tiny_run(run_dir, *, budget_eV=VALIDATION_BUDGET_EV):
         tau_ps=6.55,
         f_int=0.5,
         f_ret=0.1,
+        evap_rrk_dof=evap_rrk_dof,
         coulomb_available_eV=budget_eV,
         relaxation_time_ps=1.0,  # small cap: bounds the relaxation loop for the test
     )
@@ -188,6 +190,16 @@ def test_score_tier2_run_values_are_sane(canonical_run, reference):
     assert row["picture"] == "statistical_mixture"
     assert row["kappa"] == pytest.approx(1.0)
     assert row["f_ret"] == pytest.approx(0.1)
+    assert row["s_eff"] is None  # per-n s = 3n-3 (classical arm): no override set
+
+
+def test_score_tier2_run_reads_set_s_eff(reference, tmp_path):
+    """A campaign run with the constant-s_eff override set echoes it in the
+    s_eff column (read from cfg.json, never parsed from the tag)."""
+    run_dir = tmp_path / "9A_drag_shared_pure_cubic_N2_tier2_b080_mix_k1.00_s8.00"
+    _write_tiny_run(run_dir, evap_rrk_dof=8.0)
+    row = score_tier2_run(run_dir, reference)
+    assert row["s_eff"] == pytest.approx(8.0)
 
 
 def test_score_tier2_run_accepts_run_directory_object(canonical_run, reference):
@@ -317,13 +329,14 @@ def test_case_from_run_dir_recovers_case_and_rejects_malformed():
 
 def test_distribution_moments_hand_oracle():
     # A two-spike distribution at n=0 and n=2 (each 1/2): mean 1, std 1.
+    # Moments now live on ShellDistribution (shared by F3 + the probe report).
     dist = ShellDistribution(
         n_values=np.array([0, 1, 2]),
         counts=np.array([1, 0, 1]),
         fraction=np.array([0.5, 0.0, 0.5]),
         source="relaxed",
     )
-    mean, spread = _distribution_moments(dist)
+    mean, spread = dist.moments()
     assert mean == pytest.approx(1.0)
     assert spread == pytest.approx(1.0)
 

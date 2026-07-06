@@ -36,6 +36,7 @@ from scripts.post_processing.tier2_identifiability_report import (
     assess_tau_sensitivity,
     build_identifiability_rows,
     build_kappa_landscapes,
+    build_s_eff_landscapes,
     build_tau_sweeps,
     format_report,
     write_report_csv,
@@ -52,6 +53,7 @@ def _row(**over):
         f_int=0.3,
         f_ret=0.1,
         tau_ps=6.55,
+        s_eff=None,
         N=500,
         W1_matched=1.0,
         W1_simend_upper=1.0,
@@ -180,6 +182,72 @@ def test_build_tau_sweeps_needs_two_taus():
 
 def test_build_tau_sweeps_single_tau_is_no_sweep():
     assert build_tau_sweeps([_row(tau_ps=6.55)]) == []
+
+
+# ---------------------------------------------------------------------------
+# s_eff dimension (2026-07-06 promotion)
+# ---------------------------------------------------------------------------
+def test_tau_sweeps_not_pooled_across_s_eff():
+    """The re-scoped Stage-1 grid sweeps s_eff x tau: two tau sweeps at
+    different s_eff must stay separate cells, never pooled (the probe-report
+    review's collapse bug class)."""
+    rows = [
+        _row(tau_ps=2.6, s_eff=8.0, n_terminal_mean=13.0),
+        _row(tau_ps=16.5, s_eff=8.0, n_terminal_mean=10.0),
+        _row(tau_ps=2.6, s_eff=12.0, n_terminal_mean=16.0),
+        _row(tau_ps=16.5, s_eff=12.0, n_terminal_mean=14.0),
+    ]
+    sweeps = build_tau_sweeps(rows)
+    assert len(sweeps) == 2
+    assert all(len(s.points) == 2 for s in sweeps)
+
+
+def test_kappa_cells_split_by_s_eff():
+    """Rows differing only in s_eff never form one kappa landscape."""
+    rows = [
+        _row(kappa=k, s_eff=s, W1_matched=w)
+        for (k, s, w) in [(0.5, 8.0, 3.0), (2.0, 8.0, 1.0),
+                          (0.5, 12.0, 4.0), (2.0, 12.0, 2.0)]
+    ]
+    landscapes = build_kappa_landscapes(rows)
+    assert len(landscapes) == 2  # one per s_eff cell, not one pooled cell
+
+
+def test_build_s_eff_landscapes_excludes_per_n_control():
+    """The numeric W1-vs-s_eff landscape is built from constant-s_eff rows; the
+    per-n (s_eff=None) classical-limit control is not a numeric point on it."""
+    rows = [
+        _row(s_eff=None, W1_matched=9.0),
+        _row(s_eff=5.0, W1_matched=3.0),
+        _row(s_eff=8.0, W1_matched=1.0),
+        _row(s_eff=12.0, W1_matched=2.0),
+    ]
+    landscapes = build_s_eff_landscapes(rows)
+    assert len(landscapes) == 1
+    assert [s for s, _ in landscapes[0].points] == [5.0, 8.0, 12.0]
+
+
+def test_s_entry_assessed_identifiable_when_s_eff_swept():
+    """With s_eff swept (the re-scoped Stage 1), the 's' checklist entry is
+    computed from the W1-vs-s_eff landscape, not the held-fixed static text."""
+    rows = [
+        _row(s_eff=s, W1_matched=w)
+        for (s, w) in [(5.0, 3.0), (8.0, 1.0), (12.0, 2.0)]
+    ]
+    checklist = build_identifiability_rows(rows)
+    by_q = {r["quantity"]: r for r in checklist}
+    assert by_q["s"]["status"] == STATUS_IDENTIFIABLE
+    assert "8" in str(by_q["s"]["value_or_range"])
+
+
+def test_s_entry_not_bracketed_at_band_edge():
+    rows = [
+        _row(s_eff=s, W1_matched=w)
+        for (s, w) in [(5.0, 1.0), (8.0, 2.0), (12.0, 3.0)]
+    ]
+    checklist = build_identifiability_rows(rows)
+    by_q = {r["quantity"]: r for r in checklist}
+    assert by_q["s"]["status"] == STATUS_NOT_BRACKETED
 
 
 # ---------------------------------------------------------------------------

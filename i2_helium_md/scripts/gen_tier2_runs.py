@@ -11,19 +11,21 @@ shell evolution for the 18 A droplet, so the plan's 9/18 A density-contrast rout
 to ``f_ret`` is unavailable and ``f_ret`` is held at a prior (not swept). Recorded
 in ``docs/drag_port/Tier2/drag_migration_log_tier2.md`` (Phase F entry).
 
-**Staged operation (MASS §6.11 / plan §2).** This is a *parameterized* generator,
-not an auto-adjudicator: the operator runs Stage 1 (the ``KAPPA_GRID`` x
-``PICTURE_LIST`` co-fit at ``F_INT=None`` -> the per-point self-unbound floor),
-scores it with F3/F4, hand-pins the winning ``kappa``/``picture`` into the USER
-SETTINGS, and re-runs for the Stage-2 ``tau`` sweep (set ``KAPPA_GRID``/
-``PICTURE_LIST`` to the singleton winner and enumerate ``TAU_PS``). The 0.80 eV
-validation budget runs first; F5 flips ``BUDGET_EV`` to 2.70 only after it lands.
-
-Bridge finding (``TIER2_PHASE_D_BRIDGE_FINDINGS.md`` §2): the pinned point
-under-sheds ~10x and the miss is *kinetic* (the s-1 = 59 RRK exponent), so the
-``KAPPA_GRID`` deliberately spans the sharp-cliff end. If no kappa/picture/tau in
-the bands lands the 21->14 staircase, that is the mechanism-level RRK-dof open
-question the findings name -- surface it, do not silently retune nu or s.
+**Staged operation (MASS §6.11 / plan §2; Stage 1 re-scoped 2026-07-06).** This
+is a *parameterized* generator, not an auto-adjudicator. The original Stage-1
+kappa x picture co-fit was **superseded by the s_eff promotion** (Phase F plan,
+F2 re-scope NB; ``drag_migration_log_tier2.md`` "s_eff PROMOTED"): the pre-F5
+staircase probe proved both knobs near-flat on the staircase (kappa inverted +
+normalisation-capped for 21->14; picture magnitude-degenerate) and landed the
+anchored staircase at a constant ``s_eff ~ 8`` (Bounded, band ~[5, 20]). Stage 1
+is therefore the **s_eff x tau co-fit** (``S_EFF_GRID`` x ``TAU_GRID_PS``, with
+the per-n ``None`` arm as the in-grid classical-limit control), kappa/picture
+pinned at the bridge point, and ``f_int`` pinned at the 0.5 landing prior
+(timing-degenerate with the picture via Sigma(21) -> t_x; reported, not fit).
+The operator runs the grid, scores it with F3/F4, and hand-pins winners for any
+follow-up sweep. The 0.80 eV validation budget runs first; F5 flips
+``BUDGET_EV`` to 2.70 only after it lands. tau-sensitivity (the old Stage 2) is
+read from the in-grid tau dimension by F4 -- no separate stage needed.
 
 Usage::
 
@@ -49,15 +51,28 @@ ION_TIME_PS = 30.0
 DT_ION_PS = 0.01
 SEED = 20260604                 # single fixed seed across all grid points
 
-# --- Stage-1 co-fit grid (the two genuinely-free knobs) ----------------------
-KAPPA_GRID = [0.5, 1.0, 2.0, 4.0, 8.0]         # gradual -> sharp cliff
-PICTURE_LIST = ["statistical_mixture", "x2_only", "cooling_relaxed"]
+# --- Stage-1 co-fit grid (re-scoped 2026-07-06: s_eff x tau) -----------------
+# kappa/picture are pinned at the bridge point -- both proven near-flat on the
+# staircase (kappa inverted/normalisation-capped, picture magnitude-degenerate;
+# probe + cross-check, drag_migration_log_tier2.md). The promoted Bounded s_eff
+# (band ~[5, 20], staircase landing [8, 12]) x the tau band is the live co-fit;
+# the per-n None arm is the in-grid classical-limit control.
+KAPPA_GRID = [1.0]                             # bridge pin
+PICTURE_LIST = ["statistical_mixture"]         # bridge pin
+TAU_GRID_PS = [2.6, 6.55, 16.5]                # Bounded band [2.6, 16.5] ps
+S_EFF_GRID = [None, 5.0, 8.0, 12.0, 16.0, 20.0]  # None = per-n s=3n-3 control
+
+# ORIGINAL STAGE 1 (superseded 2026-07-06; the kappa x picture co-fit at fixed
+# tau -- restore by swapping these in and setting S_EFF_GRID = [None]):
+#     KAPPA_GRID   = [0.5, 1.0, 2.0, 4.0, 8.0]
+#     PICTURE_LIST = ["statistical_mixture", "x2_only", "cooling_relaxed"]
+#     TAU_GRID_PS  = [6.55]
 
 # --- pinned / bounded knobs --------------------------------------------------
 BUDGET_EV = 0.80                # validation first; F5 flips to 2.70 for production
-F_INT = None                    # None -> per-point self-unbound floor (Stage-1 timing pin)
+F_INT = 0.5                     # landing-prior pin (t_x ~ 5 ps; the s_eff ~ 8 landing
+                                # was established here); None -> per-point floor
 F_RET = 0.1                     # prior (not identifiable at 9 A only)
-TAU_PS = 6.55                   # Stage-1 fixed mid; enumerate for the Stage-2 sweep
 LAMBDA0_PER_PS = 0.9            # pickup live (bridge central value)
 
 # --- E2 relaxation stage -----------------------------------------------------
@@ -121,12 +136,25 @@ def resolve_f_int(picture: str, kappa: float) -> float:
     return f_int_floor(e_avail_eV=BUDGET_EV, picture=picture, kappa=kappa)
 
 
-def campaign_grid_points() -> list[tuple[str, float, float]]:
-    """Enumerate ``(picture, kappa, f_int)`` for the staged grid (USER SETTINGS)."""
+def campaign_grid_points() -> list[tuple[str, float, float, float | None, float]]:
+    """Enumerate ``(picture, kappa, tau_ps, s_eff, f_int)`` for the staged grid.
+
+    ``s_eff`` is the promoted constant RRK effective-dof knob (2026-07-06);
+    ``None`` = the per-n ``s = 3n-3`` classical-limit control. ``f_int`` is
+    resolved per point (literal ``F_INT`` or the picture/kappa floor).
+    """
     return [
-        (picture, float(kappa), resolve_f_int(picture, float(kappa)))
+        (
+            picture,
+            float(kappa),
+            float(tau_ps),
+            None if s_eff is None else float(s_eff),
+            resolve_f_int(picture, float(kappa)),
+        )
         for picture in PICTURE_LIST
         for kappa in KAPPA_GRID
+        for tau_ps in TAU_GRID_PS
+        for s_eff in S_EFF_GRID
     ]
 
 
@@ -144,7 +172,7 @@ def build_campaign(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         else RELAXATION_TIME_PS
     )
     scheduled: list[tuple[str, object, Path]] = []
-    for picture, kappa, f_int in campaign_grid_points():
+    for picture, kappa, tau_ps, s_eff, f_int in campaign_grid_points():
         cfg = build_biphasic_cfg(
             CASE,
             VARIANT,
@@ -157,7 +185,8 @@ def build_campaign(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             f_ret=F_RET,
             picture=picture,
             kappa=kappa,
-            tau_ps=TAU_PS,
+            tau_ps=tau_ps,
+            evap_rrk_dof=s_eff,
             coulomb_available_eV=BUDGET_EV,
             relaxation_time_ps=relaxation_time_ps,
             relaxation_forces=RELAXATION_FORCES,
@@ -171,11 +200,16 @@ def build_campaign(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             lambda0_per_ps=LAMBDA0_PER_PS,
             f_int=f_int,
             f_ret=F_RET,
-            tau_ps=TAU_PS,
+            tau_ps=tau_ps,
             budget_eV=BUDGET_EV,
+            evap_rrk_dof=s_eff,
             total_strip=TOTAL_STRIP,
         )
-        label = f"{CASE} {VARIANT} N={N} biphasic {picture} k={kappa:.2f}"
+        s_tag = "per-n" if s_eff is None else f"s={s_eff:.2f}"
+        label = (
+            f"{CASE} {VARIANT} N={N} biphasic {picture} "
+            f"k={kappa:.2f} tau={tau_ps:.2f} {s_tag}"
+        )
         scheduled.append((label, cfg, run_dir))
     return scheduled
 
@@ -208,7 +242,8 @@ def _run_one(label: str, cfg, run_dir: Path) -> None:
         f"f_int={cfg.internal_energy_partition_fraction:.3f} "
         f"f_ret={cfg.internal_energy_retained_fraction:.2f} "
         f"tau={cfg.internal_energy_cooling_tau_ps:.2f} ps "
-        f"lambda0={cfg.pickup_rate_coefficient:.2f}/ps"
+        f"lambda0={cfg.pickup_rate_coefficient:.2f}/ps "
+        f"s_eff={cfg.evap_rrk_dof if cfg.evap_rrk_dof is not None else 'per-n'}"
     )
     print(f"[{label}] neutral propagation ...")
     neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)

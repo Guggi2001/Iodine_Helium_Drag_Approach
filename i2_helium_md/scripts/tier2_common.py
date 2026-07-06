@@ -95,6 +95,7 @@ def build_biphasic_cfg(
     picture: Optional[str] = None,
     kappa: Optional[float] = None,
     tau_ps: Optional[float] = None,
+    evap_rrk_dof: Optional[float] = None,
     coulomb_available_eV: float = VALIDATION_BUDGET_EV,
     relaxation_time_ps: Optional[float] = None,
     relaxation_forces: Optional[str] = None,
@@ -132,6 +133,11 @@ def build_biphasic_cfg(
         Ladder steepness (Free knob). ``None`` -> ride the config default.
     tau_ps : float or None
         Newton-cooling time [ps] (Bounded). ``None`` -> ride the config default.
+    evap_rrk_dof : float or None
+        Constant RRK effective-dof override ``s`` (the ``TIER2_STAIRCASE_PROBE_PLAN``
+        Addendum-A falsification lever; guarded ``s >= 1`` at config-load, physics-live
+        at the driver's evaporation step). ``None`` -> ride the config default (the
+        per-n ``s = 3n-3`` convention). Diagnostic, not a production knob.
     coulomb_available_eV : float
         Scenario-stamped per-ion Coulomb budget [eV]; default 0.80 (validation),
         2.70 for production. Guards the budget<->drag/shell pairing (§6.5).
@@ -183,6 +189,8 @@ def build_biphasic_cfg(
         overrides["ladder_steepness"] = float(kappa)
     if tau_ps is not None:
         overrides["internal_energy_cooling_tau_ps"] = float(tau_ps)
+    if evap_rrk_dof is not None:
+        overrides["evap_rrk_dof"] = float(evap_rrk_dof)
     if relaxation_time_ps is not None:
         overrides["relaxation_stage_enabled"] = True
         overrides["relaxation_time_ps"] = float(relaxation_time_ps)
@@ -213,6 +221,7 @@ def tier2_run_tag(
     f_ret: float,
     tau_ps: float,
     budget_eV: float,
+    evap_rrk_dof: Optional[float] = None,
     total_strip: bool = False,
 ) -> str:
     """Return the campaign run-tag encoding one grid point.
@@ -221,11 +230,17 @@ def tier2_run_tag(
     uniquely identifies the point (the F3 scoreboard attributes each terminal
     size distribution by dir name -- a collision either aborts a run or
     mis-attributes a score). Covered: budget, electronic picture, kappa, lambda_0
-    (pickup rate), f_int, f_ret, and tau. Precision: kappa/lambda_0/f_int/f_ret
-    and tau all to **two decimals** -- tau needs it for the Stage-2 [2.6, 16.5] ps
-    sweep (one decimal would alias the 6.55 default with a 6.5 sweep value). The
-    case and N are carried by :func:`tier2_run_dir_name`; the optional
-    ``total_strip`` suffix marks the §6.11 secondary regime-axis variant.
+    (pickup rate), f_int, f_ret, tau, and (since the 2026-07-06 s_eff promotion)
+    the constant RRK effective-dof override. Precision: kappa/lambda_0/f_int/
+    f_ret and tau all to **two decimals** -- tau needs it for the Stage-2
+    [2.6, 16.5] ps sweep (one decimal would alias the 6.55 default with a 6.5
+    sweep value). The case and N are carried by :func:`tier2_run_dir_name`; the
+    optional ``total_strip`` suffix marks the §6.11 secondary regime-axis variant.
+
+    ``evap_rrk_dof`` (the promoted Bounded s_eff knob) appends ``_sNN.NN`` when
+    set, before any ``_totalstrip`` suffix; ``None`` (the per-n ``s = 3n-3``
+    classical arm) appends **nothing**, so pre-promotion campaign tags stay
+    byte-identical. Mirrors :func:`tier2_probe_run_tag` (parity-locked by test).
 
     Raises
     ------
@@ -241,6 +256,8 @@ def tier2_run_tag(
         f"_k{float(kappa):.2f}_l{float(lambda0_per_ps):.2f}"
         f"_fi{float(f_int):.2f}_fr{float(f_ret):.2f}_tau{float(tau_ps):.2f}"
     )
+    if evap_rrk_dof is not None:
+        tag += f"_s{float(evap_rrk_dof):.2f}"
     if total_strip:
         tag += "_totalstrip"
     return tag
@@ -258,6 +275,7 @@ def tier2_run_dir_name(
     f_ret: float,
     tau_ps: float,
     budget_eV: float,
+    evap_rrk_dof: Optional[float] = None,
     total_strip: bool = False,
 ) -> str:
     """Return the Tier-0-style run directory basename for a campaign grid point."""
@@ -273,7 +291,85 @@ def tier2_run_dir_name(
             f_ret=f_ret,
             tau_ps=tau_ps,
             budget_eV=budget_eV,
+            evap_rrk_dof=evap_rrk_dof,
             total_strip=total_strip,
+        ),
+    )
+
+
+def tier2_probe_run_tag(
+    *,
+    picture: str,
+    kappa: float,
+    lambda0_per_ps: float,
+    f_int: float,
+    f_ret: float,
+    tau_ps: float,
+    budget_eV: float,
+    evap_rrk_dof: Optional[float] = None,
+) -> str:
+    """Return the staircase-capability-probe run-tag for one grid point.
+
+    The pre-F5 probe (``TIER2_STAIRCASE_PROBE_PLAN.md``) lives in its **own
+    run-dir namespace**: the tag starts ``tier2probe_`` (no ``_tier2_``
+    substring anywhere in the resulting dir name), so the F3 campaign glob
+    ``*_tier2_*`` can never sweep a probe run into the scoreboard, and the
+    probe glob ``*_tier2probe_*`` can never match a campaign run. Knob
+    encoding and precision mirror :func:`tier2_run_tag` (two decimals
+    everywhere; same collision rationale). No ``total_strip`` variant — the
+    probe is a 0.80 eV validation-side sweep only.
+
+    ``evap_rrk_dof`` (the Addendum-A RRK-dof mini-probe lever) appends
+    ``_sNN.NN`` when set; ``None`` (the per-n ``s = 3n-3`` default) appends
+    **nothing**, so the delivered 45-run probe tags stay byte-identical.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``picture`` (mirrors ``check_ladder_config``).
+    """
+    if picture not in _PICTURE_TAGS:
+        raise ValueError(
+            f"picture must be one of {sorted(_PICTURE_TAGS)}; got {picture!r}"
+        )
+    tag = (
+        f"tier2probe_{_budget_tag(budget_eV)}_{_PICTURE_TAGS[picture]}"
+        f"_k{float(kappa):.2f}_l{float(lambda0_per_ps):.2f}"
+        f"_fi{float(f_int):.2f}_fr{float(f_ret):.2f}_tau{float(tau_ps):.2f}"
+    )
+    if evap_rrk_dof is not None:
+        tag += f"_s{float(evap_rrk_dof):.2f}"
+    return tag
+
+
+def tier2_probe_run_dir_name(
+    case: str,
+    variant: str,
+    n: int,
+    *,
+    picture: str,
+    kappa: float,
+    lambda0_per_ps: float,
+    f_int: float,
+    f_ret: float,
+    tau_ps: float,
+    budget_eV: float,
+    evap_rrk_dof: Optional[float] = None,
+) -> str:
+    """Return the Tier-0-style run directory basename for a probe grid point."""
+    return run_dir_name(
+        case,
+        variant,
+        n,
+        run_tag=tier2_probe_run_tag(
+            picture=picture,
+            kappa=kappa,
+            lambda0_per_ps=lambda0_per_ps,
+            f_int=f_int,
+            f_ret=f_ret,
+            tau_ps=tau_ps,
+            budget_eV=budget_eV,
+            evap_rrk_dof=evap_rrk_dof,
         ),
     )
 
@@ -288,6 +384,8 @@ __all__ = [
     "VALIDATION_BUDGET_EV",
     "build_biphasic_cfg",
     "tier2_bridge_run_dir_name",
+    "tier2_probe_run_dir_name",
+    "tier2_probe_run_tag",
     "tier2_run_dir_name",
     "tier2_run_tag",
 ]

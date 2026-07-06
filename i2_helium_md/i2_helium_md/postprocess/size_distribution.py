@@ -81,6 +81,21 @@ class ShellDistribution:
         """
         return complex_mass_amu(self.n_values)
 
+    def moments(self) -> tuple[float, float]:
+        """Return ``(mean, spread)`` of the distribution over integer ``n``.
+
+        ``mean = sum n*fraction``; ``spread = sqrt(sum fraction*(n-mean)^2)`` --
+        the **population** standard deviation of the size distribution (weights
+        already sum to 1). Single source of truth for the terminal-``n`` moments
+        reported by both the F3 scoreboard and the staircase-probe report, so the
+        two never diverge on the spread convention (CLAUDE.md Principle 1).
+        """
+        n = self.n_values.astype(float)
+        p = self.fraction.astype(float)
+        mean = float(np.sum(n * p))
+        spread = float(np.sqrt(np.sum(p * (n - mean) ** 2)))
+        return mean, spread
+
 
 def _terminal_n_and_source(source) -> tuple[np.ndarray, str]:
     """Extract the terminal per-atom shell-count vector and the provenance tag.

@@ -157,6 +157,34 @@ def test_run_tag_total_strip_suffix():
     assert tier2_run_tag(**base, total_strip=True).endswith("_totalstrip")
 
 
+def test_run_tag_appends_and_omits_s_eff_suffix():
+    """s_eff promotion (2026-07-06): a set evap_rrk_dof appends _sNN.NN to the
+    campaign tag; None appends nothing (delivered campaign tags byte-identical);
+    the s_eff suffix precedes the total_strip variant marker."""
+    base = dict(
+        picture="statistical_mixture", kappa=1.0, lambda0_per_ps=0.9, f_int=0.5,
+        f_ret=0.1, tau_ps=6.55, budget_eV=0.80,
+    )
+    assert tier2_run_tag(**base, evap_rrk_dof=None) == tier2_run_tag(**base)
+    assert tier2_run_tag(**base, evap_rrk_dof=8.0).endswith("_tau6.55_s8.00")
+    assert tier2_run_tag(
+        **base, evap_rrk_dof=8.0, total_strip=True
+    ).endswith("_s8.00_totalstrip")
+
+
+def test_run_dir_name_carries_s_eff():
+    """Two campaign grid points differing only in s_eff must not collide."""
+    common = dict(
+        picture="statistical_mixture", kappa=1.0, lambda0_per_ps=0.9, f_int=0.5,
+        f_ret=0.1, tau_ps=6.55, budget_eV=0.80,
+    )
+    dirs = {
+        tier2_run_dir_name("9A", "shared_pure_cubic", 500, **common, evap_rrk_dof=s)
+        for s in (None, 5.0, 8.0, 12.0)
+    }
+    assert len(dirs) == 4
+
+
 def test_run_tag_rejects_unknown_picture():
     with pytest.raises(ValueError, match="picture"):
         tier2_run_tag(

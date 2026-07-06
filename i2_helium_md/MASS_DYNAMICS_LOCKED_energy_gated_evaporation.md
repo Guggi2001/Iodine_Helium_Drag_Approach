@@ -660,6 +660,22 @@ degrees of freedom of the I⁺Heₙ complex. **Parameter sourcing (updated 2026-
   same shell-rigidity question. So $s$ and `ladder_steepness` ($\kappa$) are
   calibrated *jointly* against the size distribution, not separately. $s$ also
   absorbs the classical-RRK-vs-RRKM simplification (A11).
+  > **NB (2026-07-06 — probe resolution + promotion; supersedes the sweep-band
+  > reading above).** The pre-F5 staircase probe fired this empirically: at
+  > $s=3n-3$ (=60 at $n{=}21$) the cascade is kinetically frozen at
+  > $n\approx20$ everywhere in the κ×picture×τ bands, while a **constant
+  > $s_\text{eff}=8$** lands the anchored 21→19→14 staircase in magnitude and
+  > timing, picture-robustly. **User decision (2026-07-06): $s$ is now a
+  > Bounded constant-$s_\text{eff}$ knob** (band ≈[5, 20], landing [8, 12];
+  > CALIBRATION_MAP row 10), with the mode count $s=3n-3$ demoted to the
+  > classical-limit arm of the dof-convention selection. The $[3n{-}3,3n]$
+  > band survives as the rigid-classical limit, not the sweep band — the
+  > effective reservoir is ~an order of magnitude smaller (quantum
+  > mode-freezing / weak coupling; the RRKM-direction difference this very
+  > bullet declared $s$ absorbs). The $s\ge1$ guard, the $n{=}1$ direct
+  > dissociation rule, and the mechanism/invariant are unchanged. Records:
+  > `docs/drag_port/Tier2/drag_migration_log_tier2.md` ("s_eff mini-probe
+  > EXECUTED" + the promotion decision); A11 resolution NB below.
 - **Last-atom step ($n{=}1$) is direct dissociation, not statistical RRK
   (2026-06-21).** I⁺He₁ is a diatomic with a *single* vibrational mode, so the
   statistical phase-space picture is degenerate ($s=3n-3=0$ at $n{=}1$; even
@@ -1724,6 +1740,26 @@ calibrate them **jointly** against the size distribution. *Cross-check / tighten
 the I⁺ cascade timescale from [I2-notes] (OQ5, §10A) pins the $\{\nu,s\}$
 combination the same way GAH25's window pinned $\{f_\text{int},\tau\}$; falsified if
 the size distribution requires an RRKM-shaped, non-power-law switch-on.
+**Resolution NB (2026-07-06 — staircase probe + s_eff mini-probe + picture
+cross-check).** The flagged down-drift is the empirical outcome, and it is
+large: at $s=3n-3$ no in-band (κ, picture, τ) point sheds more than 1.7 of the
+anchored 7 He (kinetic freeze — the $s{-}1=59$ exponent on
+$x=D_0(21)/\Sigma(21)\approx0.032$), while a **constant
+$s_\text{eff}\approx8$–12 — an order of magnitude below the classical band —
+lands magnitude and timing simultaneously** (s_eff=8, τ=6.55: 7.41 sheds →
+n\_end 13.59, first shed 5.42 ps vs t★=5, trajectory MAD 1.0 He), robust
+across all three electronic pictures (≤4 % magnitude spread). The classical
+bracket $[3n-3,3n]$ survives as the *rigid-classical limit*, not the sweep
+band; the effective reservoir is ~8–12 modes (quantum freezing / weak coupling
+on the shed timescale — exactly the RRKM/quantum/ZPE difference $s$ was
+declared to absorb). The κ-coupling flagged above resolved **weak**: κ is
+inverted and normalisation-capped for the stripping range (Form U floors
+$D_0(21)\approx0.53\,D_0(1)$), so it cannot substitute for $s$. **Promotion
+(user, 2026-07-06):** $s$ reclassified Derived → **Bounded** constant
+$s_\text{eff}$ (band ≈[5, 20]; CALIBRATION_MAP row 10 + 2026-07-06 update
+block); $s\ge1$ guard, $n{=}1$ direct-dissociation limit, and the small-$n$
+boundary flags all unchanged. Execution records:
+`docs/drag_port/Tier2/drag_migration_log_tier2.md`.
 
 **A12 — Pickup is occupancy-capped (Langmuir site saturation), inert for ejection
 but required for resting-ion correctness (NEW 2026-06-21).** The pickup rate
@@ -1835,7 +1871,7 @@ open physics question. *Config:* §11 (`mass_jump_velocity_reset`,
 | Self-bound crossing time | $t_\times$ | **derived diagnostic, not fitted**; cross-check vs GAH25 ~5–6.5 ps (±factor-2) and size dist. (§6.11) | — |
 | Early-instability gate | **derived, not fitted** | self-bound criterion $E_\text{int}<\sum_i D_0(i)$ (R9); the ~several-ps onset is now a *prediction* vs [GAH25], cross-checked by size dist. | — |
 | RRK prefactor | $\nu$ | **pinned $2.42$ ps⁻¹ (2026-06-17):** $\omega_e=80.6$ cm⁻¹ from [IHe05] EPAPS $V''(R_e)=748.1$ cm⁻¹/Å² (§4); cross-check vs [I2-notes] cascade timing (OQ5) + size dist. | 2 |
-| RRK effective DOF | $s$ | **mode-counted $s=3n-3$ ($n\ge2$, full complex), not free** (corrected 2026-06-21 from $3n-6$; $n{=}1$ is direct dissociation $k=\nu$); effective-scalar override guarded $s\ge1$; joint with `ladder_steepness` ($\kappa$) (A11) | derived |
+| RRK effective DOF | $s$ | **Bounded constant $s_\text{eff}$ (promoted 2026-07-06; was mode-counted derived):** band ≈[5, 20], staircase landing [8, 12]; $s{=}3n{-}3$ (corrected 2026-06-21 from $3n-6$) demoted to the classical-limit arm; $n{=}1$ direct dissociation $k=\nu$ and the $s\ge1$ guard unchanged; κ-joint resolved weak (A11 resolution NB) | 2 + 9 Å staircase (s↔τ via timing) |
 | Pickup $v$-dependence (if needed) | sweeping/dwell | only if density-only fails Tier 1/2 | 1 / 2 |
 | Total-stripping limit (Calvo24) | terminal $n\to0$ | reachable far end of the biphasic regime axis (§6.11); **evaluated in secondary/sensitivity runs, not excluded, not default**; check vs size dist. (and OQ6) | secondary |
 

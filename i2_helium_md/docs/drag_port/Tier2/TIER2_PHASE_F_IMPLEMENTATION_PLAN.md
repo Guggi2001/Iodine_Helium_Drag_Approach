@@ -32,7 +32,7 @@ knobs. New surfaces are **orchestration scripts + report assemblers + figures**
 
 | Item | Source | Class |
 |---|---|---|
-| κ (ladder steepness) + electronic picture co-fit | CALIBRATION_MAP rows 19/20 | **Free** (the only true knobs) |
+| κ (ladder steepness) + electronic picture co-fit | CALIBRATION_MAP rows 19/20 | **Free** (the only true knobs) *(2026-07-06: both proven near-flat on the staircase; Stage-1 co-fit re-scoped to s_eff×τ — F2 NB)* |
 | `f_int` (floor scenario-keyed), `f_ret`, `τ` band [2.6,16.5] ps | rows 14/13/11 | **Bounded** |
 | Production onset switch 0.80 → **2.70 eV** | row 15 | Sourced, scenario-keyed |
 | Identifiability reporting (`f_ret` via 9/18 Å, `τ` via tail, `s`↔κ) | §"Anchor coverage" | **the central deliverable** |
@@ -72,6 +72,12 @@ Phase F runs **last** — it composes accepted modules from every earlier phase:
   0.80 eV validation lands" in the F5 gate: the campaign's Stage 1/2 must
   resolve it (or surface it as a mechanism-level OQ) before the 2.70 eV
   switch. See `TIER2_PHASE_D_BRIDGE_FINDINGS.md` §2.
+  **Resolved at the mechanism level (2026-07-06):** the pre-F5 staircase
+  probe (`TIER2_STAIRCASE_PROBE_PLAN.md` + Addendum A) localised the miss to
+  the RRK dof convention and landed the staircase at constant s_eff ≈ 8
+  (mid-band τ, picture-robust); s_eff promoted to a Bounded knob
+  (CALIBRATION_MAP row 10). The F5 gate itself is still resolved only by the
+  0.80 eV campaign — now re-scoped to an s_eff×τ co-fit (F2 NB below).
 - **E** — E1 size-dist extractor, **E2 relaxation stage**, E3 abundance loader, E4
   Wasserstein, E5 diagnostics.
 
@@ -184,6 +190,30 @@ tiny N** — no production-sized runs and no figures in pytest.
 > surface change (the delivered Tier-1a artifacts already are). Score campaign
 > runs promptly with the code version that generated them; regeneration is the
 > recovery path, not artifact migration.
+
+> **NB (Stage-1 re-scope, 2026-07-06 — s_eff promotion; annotation, not a
+> redesign of the delivered F2 code).** The pre-F5 staircase probe + s_eff
+> mini-probe + picture cross-check (`TIER2_STAIRCASE_PROBE_PLAN.md` Addendum
+> A; log entries of 2026-07-05/06) supersede Stage 1's co-fit dimensions:
+> κ and picture are **both near-flat on the staircase** (κ inverted +
+> normalisation-capped for 21→14; picture magnitude-degenerate, ≤4 % spread
+> under reduced s), while the promoted **Bounded s_eff** is the dominant
+> magnitude lever. Stage 1 therefore becomes an **s_eff×τ co-fit**
+> (band s_eff ≈ [5, 20], landing prior [8, 12] × mid-band τ; first-shed
+> timing separates s from τ — the mini-probe's τ=16.5 arm lands magnitude
+> only, ~8 ps late). κ pins (e.g. 1) with a sensitivity spot-check; picture
+> and f_int ride as a **timing-degenerate pair** (both move gate-open via
+> Σ(21) → t× = τ·ln(f_int·E/Σ)), reported, not independently fit — their
+> discrimination remains the size distribution's job. Bridge premise 1
+> above (the κ-cliff quantitative target) is superseded by the same probe
+> result. **Implemented 2026-07-06** (trigger given; log entry "F2 Stage-1
+> re-scope IMPLEMENTED"): `S_EFF_GRID` × `TAU_GRID_PS` in
+> `gen_tier2_runs.py` (18 runs, 9 Å / 0.80 eV only — the standing
+> 2026-07-03 scope), the `_sNN.NN` campaign-tag dimension (parity-locked
+> with the probe encoder), the F3 `s_eff` column, and the F4 s_eff-aware
+> cell keys + computed W1-vs-s_eff `s` entry. Selection surface: the
+> existing `cfg.evap_rrk_dof` Optional field (no new enum, no new
+> `SimConfig` field). The campaign run is the operator action.
 
 ### F3 — Scoreboard + report assembler (the deferred Phase-E assembler)
 
