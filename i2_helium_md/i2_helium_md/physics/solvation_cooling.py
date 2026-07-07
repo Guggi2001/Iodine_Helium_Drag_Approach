@@ -100,19 +100,30 @@ def e_electrostriction_eV(N, *, picture: str = "statistical_mixture", kappa: flo
 
 def newton_cool_step(E_solv_struct_eV, N, *, tau_ps: float, dt_ps: float,
                      picture: str = "statistical_mixture", kappa: float,
-                     s_abs_eV: float = S_ABS_EV):
+                     s_abs_eV: float = S_ABS_EV, rho_ratio=1.0):
     """One exact exponential Newton-cooling step toward ``E_inf(N)`` [eV].
 
-    ``E_new = E_inf + (E_solv_struct - E_inf) * exp(-dt/tau)`` -- the closed-form
-    solution of ``dE/dt = -(E - E_inf)/tau`` over ``dt``. ``dt``-robust (one big
-    step equals many small steps) with no integrator state; fixed point at
-    ``E_solv_struct = E_inf``.
+    ``E_new = E_inf + (E_solv_struct - E_inf) * exp(-dt*rho_ratio/tau)`` -- the
+    closed-form solution of ``dE/dt = -rho_ratio*(E - E_inf)/tau`` over ``dt``.
+    ``dt``-robust (one big step equals many small steps) with no integrator state;
+    fixed point at ``E_solv_struct = E_inf``.
 
-    Raises ``ValueError`` on a non-positive ``tau_ps`` or a negative ``dt_ps``
-    (fail-loud; CLAUDE.md principle 4 -- a non-positive relaxation time is
-    unphysical and would invert the cooling, and a negative step gives
-    ``exp(+|dt|/tau) > 1`` i.e. silent anti-cooling away from ``E_inf``). ``dt_ps =
-    0`` is a valid no-op. Scalar-in -> float, array-in -> ndarray.
+    ``rho_ratio`` is the local helium-density spatial-gate factor for the
+    ``cooling_spatial_gate="density_scaled"`` arm: ``tau_eff = tau/rho_ratio``, i.e.
+    K2 bath dissipation attenuates with the surrounding He density (``rho_ratio ->
+    0`` outside the droplet -> no bath -> cooling off). It is dimensionless; the
+    shared erf-complement gate (:func:`helium_density.rho_he_ratio`) supplies values
+    in ``[0, 1]``. ``rho_ratio=1.0`` (the default and the locked ``none`` arm) is
+    **byte-identical** to the ungated closed form (``dt*1.0`` is exact). A per-atom
+    array ``rho_ratio`` broadcasts against ``E_solv_struct`` and forces an ndarray
+    return.
+
+    Raises ``ValueError`` on a non-positive ``tau_ps``, a negative ``dt_ps``, or a
+    negative ``rho_ratio`` (fail-loud; CLAUDE.md principle 4 -- a non-positive
+    relaxation time is unphysical and would invert the cooling; a negative step or a
+    negative density factor gives ``exp(+...) > 1`` i.e. silent anti-cooling away
+    from ``E_inf``). ``dt_ps = 0`` and ``rho_ratio = 0`` are valid no-ops. Scalar-in
+    -> float, array-in -> ndarray.
     """
     if not (tau_ps > 0.0):
         raise ValueError(
@@ -124,9 +135,16 @@ def newton_cool_step(E_solv_struct_eV, N, *, tau_ps: float, dt_ps: float,
             f"newton_cool_step requires dt_ps >= 0 (a negative step gives "
             f"exp(+|dt|/tau) > 1, i.e. anti-cooling away from E_inf); got {dt_ps!r}"
         )
+    rho = np.asarray(rho_ratio)
+    if np.any(rho < 0.0):
+        raise ValueError(
+            f"newton_cool_step requires rho_ratio >= 0 (a negative density factor "
+            f"gives exp(+...) > 1, i.e. anti-cooling away from E_inf); got "
+            f"{rho_ratio!r}"
+        )
     e_inf = e_infinity_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV)
-    decay = np.exp(-dt_ps / tau_ps)
+    decay = np.exp(-dt_ps * rho / tau_ps)
     out = np.asarray(e_inf) + (np.asarray(E_solv_struct_eV) - np.asarray(e_inf)) * decay
-    if np.ndim(E_solv_struct_eV) == 0 and np.ndim(N) == 0:
+    if np.ndim(E_solv_struct_eV) == 0 and np.ndim(N) == 0 and rho.ndim == 0:
         return float(out)
     return out

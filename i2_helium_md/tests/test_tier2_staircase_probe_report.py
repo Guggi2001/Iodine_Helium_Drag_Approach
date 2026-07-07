@@ -137,6 +137,7 @@ def test_score_probe_run_row(tiny_probe_run, schedule):
     assert row["kappa"] == pytest.approx(1.0)
     assert row["tau_ps"] == pytest.approx(6.55)
     assert row["s_eff"] is None  # per-n convention (evap_rrk_dof unset)
+    assert row["cooling_gate"] == "none"  # config default (ungated cooling)
     assert row["f_int"] == pytest.approx(0.5)
     assert row["f_ret"] == pytest.approx(0.1)
     assert row["N"] == 2
@@ -145,9 +146,12 @@ def test_score_probe_run_row(tiny_probe_run, schedule):
     assert np.isfinite(row["n_ion_end_mean"])
     assert np.isfinite(row["n_traj_mad"])
     assert 0.0 <= row["frac_ions_shed"] <= 1.0
-    # flexibility metrics from the relaxed checkpoint
+    # flexibility / total-strip metrics from the relaxed checkpoint
     assert 0.0 <= row["n_relaxed_mean"] <= float(ANCHOR_N_START)
     assert row["n_relaxed_spread"] >= 0.0
+    assert 0 <= row["n_relaxed_min"] <= int(ANCHOR_N_START)
+    assert row["n_relaxed_min"] <= row["n_relaxed_mean"] + 1e-9  # min <= mean
+    assert 0.0 <= row["frac_frozen"] <= 1.0
     # wiring diagnostic
     assert np.isfinite(row["ledger_max_resid_eV"])
 
@@ -242,6 +246,49 @@ def test_score_probe_run_reads_s_eff_override(tmp_path_factory, schedule):
     row = report.score_probe_run(run_dir, schedule)
     assert row["s_eff"] == pytest.approx(8.0)
     assert "s_eff" in report.PROBE_TABLE_COLUMNS
+
+
+def test_score_probe_run_reads_cooling_gate(tmp_path_factory, schedule):
+    """A run built with the density_scaled cooling arm reports it in the
+    cooling_gate column (read from the authoritative cfg.json, not the tag)."""
+    cfg = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        num_molecules=2,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=7,
+        picture="statistical_mixture",
+        kappa=1.0,
+        tau_ps=6.55,
+        f_int=0.5,
+        f_ret=0.1,
+        coulomb_available_eV=0.80,
+        relaxation_time_ps=1.0,
+        evap_rrk_dof=5.0,
+        cooling_spatial_gate="density_scaled",
+    )
+    cfg = replace(cfg, t_max_neutral=0.1, dt_neutral=0.01)
+    run_dir = tmp_path_factory.mktemp("probe_cg") / tier2_probe_run_dir_name(
+        "9A",
+        "shared_pure_cubic",
+        2,
+        picture="statistical_mixture",
+        kappa=1.0,
+        lambda0_per_ps=0.9,
+        f_int=0.5,
+        f_ret=0.1,
+        tau_ps=6.55,
+        budget_eV=0.80,
+        evap_rrk_dof=5.0,
+        cooling_spatial_gate="density_scaled",
+    )
+    gen_script._run_one("tiny-cg", cfg, run_dir)
+
+    row = report.score_probe_run(run_dir, schedule)
+    assert row["cooling_gate"] == "density_scaled"
+    assert "cooling_gate" in report.PROBE_TABLE_COLUMNS
+    assert "n_relaxed_min" in row and "frac_frozen" in row
 
 
 def test_format_table_empty():
@@ -359,6 +406,41 @@ def test_select_best_case_row_empty_and_nonfinite():
          "n_ion_end_mean": 14.0, "n_traj_mad": float("nan")},
     ]
     assert report.select_best_case_row(rows) is None
+
+
+def _matcher_cfg(gate=None):
+    return build_biphasic_cfg(
+        "9A", "shared_pure_cubic", num_molecules=2, ion_time_ps=0.02,
+        dt_ion_ps=0.01, seed=1, cooling_spatial_gate=gate,
+    )
+
+
+def _matcher_row(cfg, **extra):
+    row = {
+        "picture": cfg.ladder_electronic_picture,
+        "kappa": float(cfg.ladder_steepness),
+        "tau_ps": float(cfg.internal_energy_cooling_tau_ps),
+        "budget_eV": float(cfg.coulomb_available_eV),
+        "s_eff": None if cfg.evap_rrk_dof is None else float(cfg.evap_rrk_dof),
+    }
+    row.update(extra)
+    return row
+
+
+def test_cfg_matches_row_distinguishes_cooling_gate():
+    """The A/B arms share every other knob, so without cooling_gate in the match the
+    best-case overlay would re-load the wrong arm's ion checkpoint (Finding 2)."""
+    cfg_none = _matcher_cfg("none")
+    cfg_ds = _matcher_cfg("density_scaled")
+    row_none = _matcher_row(cfg_none, cooling_gate="none")
+    assert report._cfg_matches_row(cfg_none, row_none)
+    assert not report._cfg_matches_row(cfg_ds, row_none)
+
+
+def test_cfg_matches_row_back_compat_missing_cooling_gate():
+    """A pre-arm row (no cooling_gate key) still matches a default-none cfg."""
+    cfg = _matcher_cfg()  # rides the config default 'none'
+    assert report._cfg_matches_row(cfg, _matcher_row(cfg))  # no cooling_gate key
 
 
 def test_main_returns_zero_on_empty_root(tmp_path, monkeypatch):

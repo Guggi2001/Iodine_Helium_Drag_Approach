@@ -99,6 +99,7 @@ def build_biphasic_cfg(
     coulomb_available_eV: float = VALIDATION_BUDGET_EV,
     relaxation_time_ps: Optional[float] = None,
     relaxation_forces: Optional[str] = None,
+    cooling_spatial_gate: Optional[str] = None,
     coeff_overrides: Optional[Mapping[str, float]] = None,
     e_bind_override: Optional[float] = None,
 ) -> SimConfig:
@@ -148,6 +149,12 @@ def build_biphasic_cfg(
     relaxation_forces : str or None
         Relaxation translation arm (``"coulomb"``/``"free_flight"``). ``None`` ->
         ride the config default (``coulomb`` -- the two I+ fragments still repel).
+    cooling_spatial_gate : str or None
+        K2 cooling spatial-gate arm (``"none"``/``"density_scaled"``). ``None`` ->
+        ride the config default (``"none"``, ungated bath dissipation). The
+        ``"density_scaled"`` arm attenuates the Newton-cooling drain by the local
+        He density (cooling off outside the bubble) -- the total-strip capability
+        lever probed by the staircase-probe total-strip A/B grid.
     coeff_overrides, e_bind_override :
         Passed through to :func:`build_drag_cfg`.
 
@@ -196,6 +203,8 @@ def build_biphasic_cfg(
         overrides["relaxation_time_ps"] = float(relaxation_time_ps)
     if relaxation_forces is not None:
         overrides["relaxation_forces"] = relaxation_forces
+    if cooling_spatial_gate is not None:
+        overrides["cooling_spatial_gate"] = cooling_spatial_gate
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
@@ -222,6 +231,7 @@ def tier2_run_tag(
     tau_ps: float,
     budget_eV: float,
     evap_rrk_dof: Optional[float] = None,
+    cooling_spatial_gate: Optional[str] = None,
     total_strip: bool = False,
 ) -> str:
     """Return the campaign run-tag encoding one grid point.
@@ -242,6 +252,12 @@ def tier2_run_tag(
     classical arm) appends **nothing**, so pre-promotion campaign tags stay
     byte-identical. Mirrors :func:`tier2_probe_run_tag` (parity-locked by test).
 
+    ``cooling_spatial_gate`` mirrors the probe encoder: ``"density_scaled"`` appends
+    ``_cgds`` (after the s_eff suffix, before ``_totalstrip``); ``None`` / ``"none"``
+    append **nothing**, so campaigns that do not sweep the gate stay byte-identical.
+    Encoded here (not left probe-only) so a campaign that *does* pass the gate cannot
+    collide two distinct-physics runs onto one run-dir name.
+
     Raises
     ------
     ValueError
@@ -258,6 +274,8 @@ def tier2_run_tag(
     )
     if evap_rrk_dof is not None:
         tag += f"_s{float(evap_rrk_dof):.2f}"
+    if cooling_spatial_gate == "density_scaled":
+        tag += "_cgds"
     if total_strip:
         tag += "_totalstrip"
     return tag
@@ -276,6 +294,7 @@ def tier2_run_dir_name(
     tau_ps: float,
     budget_eV: float,
     evap_rrk_dof: Optional[float] = None,
+    cooling_spatial_gate: Optional[str] = None,
     total_strip: bool = False,
 ) -> str:
     """Return the Tier-0-style run directory basename for a campaign grid point."""
@@ -292,6 +311,7 @@ def tier2_run_dir_name(
             tau_ps=tau_ps,
             budget_eV=budget_eV,
             evap_rrk_dof=evap_rrk_dof,
+            cooling_spatial_gate=cooling_spatial_gate,
             total_strip=total_strip,
         ),
     )
@@ -307,6 +327,7 @@ def tier2_probe_run_tag(
     tau_ps: float,
     budget_eV: float,
     evap_rrk_dof: Optional[float] = None,
+    cooling_spatial_gate: Optional[str] = None,
 ) -> str:
     """Return the staircase-capability-probe run-tag for one grid point.
 
@@ -322,6 +343,14 @@ def tier2_probe_run_tag(
     ``evap_rrk_dof`` (the Addendum-A RRK-dof mini-probe lever) appends
     ``_sNN.NN`` when set; ``None`` (the per-n ``s = 3n-3`` default) appends
     **nothing**, so the delivered 45-run probe tags stay byte-identical.
+
+    ``cooling_spatial_gate`` (the total-strip A/B lever) appends ``_cgds``
+    for ``"density_scaled"`` and **nothing** for ``None``/``"none"`` (the
+    default ungated arm), so pre-arm probe tags stay byte-identical. This
+    dimension is **probe-only** and is intentionally NOT mirrored on the
+    campaign encoder :func:`tier2_run_tag` -- the parity-lock test exercises
+    only the base knobs + ``evap_rrk_dof``, so the two encoders stay locked on
+    that shared body while the probe carries this extra axis until promotion.
 
     Raises
     ------
@@ -339,6 +368,8 @@ def tier2_probe_run_tag(
     )
     if evap_rrk_dof is not None:
         tag += f"_s{float(evap_rrk_dof):.2f}"
+    if cooling_spatial_gate == "density_scaled":
+        tag += "_cgds"
     return tag
 
 
@@ -355,6 +386,7 @@ def tier2_probe_run_dir_name(
     tau_ps: float,
     budget_eV: float,
     evap_rrk_dof: Optional[float] = None,
+    cooling_spatial_gate: Optional[str] = None,
 ) -> str:
     """Return the Tier-0-style run directory basename for a probe grid point."""
     return run_dir_name(
@@ -370,6 +402,7 @@ def tier2_probe_run_dir_name(
             tau_ps=tau_ps,
             budget_eV=budget_eV,
             evap_rrk_dof=evap_rrk_dof,
+            cooling_spatial_gate=cooling_spatial_gate,
         ),
     )
 

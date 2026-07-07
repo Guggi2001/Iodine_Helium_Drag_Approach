@@ -1357,6 +1357,42 @@ complement internally.
 amplitude (§5.2); the BAOAB O-step (§4) reads $g(\\text{depth})$ at
 each step alongside $\\gamma(v)$.
 
+### 5.8 Cooling spatial gate (`cooling\_spatial\_gate`)
+
+\*\*Physical question.\*\* K2 Newton cooling is \*\*bath dissipation\*\* — the
+solvation structure radiating into the surrounding helium. Should it, like drag
+($\\gamma\\propto\\rho\_\\text{He}$) and pickup ($\\lambda\\propto\\rho\_\\text{He}$),
+attenuate with local He density and switch off once the complex is ejected into
+vacuum (no bath to radiate into)? The locked form applies $-E\_\\text{int}/\\tau$
+everywhere — a transplant of the GAH25 near-droplet $\\tau$ to the vacuum phase.
+
+\*\*Primary — `none` (locked, default).\*\* Ungated $-E\_\\text{int}/\\tau$
+everywhere; \*\*byte-identical\*\* to the pre-arm code (the MASS §6 K2 / §6.11
+mechanism). Retained as default so every existing run reproduces exactly.
+
+\*\*Secondary — `density\_scaled`.\*\*
+$\\left.\\dot E\_\\text{int}\\right|\_\\text{K2}=-(\\rho\_\\text{He}/\\rho\_\\text{bulk})\,E\_\\text{int}/\\tau$
+(i.e. $\\tau\_\\text{eff}=\\tau/\\rho\_\\text{ratio}$), reusing the §5.7 drag gate
+surface — one bubble boundary for drag, pickup, \*and\* cooling. Cooling off outside
+the bubble → an ejected self-bound complex keeps shedding without the cooling quench
+→ the \*\*total-vaporization lever\*\* (MASS §6.11 regime axis; the near-bare end the
+experimental 43 % bare-I⁺ peak needs).
+
+\*\*Discarded (deferred) — residual floor.\*\* A floor variant clamping
+$\\rho\_\\text{ratio}\\to\\max(\\rho\_\\text{ratio},\\rho\_\\text{min})$ (the ejected
+complex may drag a local He cloud, so cooling need not go fully to zero) is recorded
+as an OQ, \*\*not built\*\* — the clean erf-cutoff is the first build.
+
+\*\*Interchangeability surface.\*\*
+* `SimConfig.cooling\_spatial\_gate ∈ {none, density\_scaled}` — read by
+`biphasic\_step`'s K2 block; `none` passes a scalar `rho\_ratio=1.0` (byte-identical),
+`density\_scaled` passes the per-atom erf gate. \*\*No new steepness knob\*\* — reuses
+`drag\_gate\_steepness` (§5.7), so the cooling boundary is the drag/density boundary.
+* \*\*Scope: probe-scoped.\*\* Wired into the staircase-probe scripts only
+(`gen\_tier2\_staircase\_probe.py` total-strip A/B grid); the campaign encoder
+(`tier2\_run\_tag`), generator, and F3/F4 reports are intentionally untouched until a
+probe result justifies promotion to a campaign knob.
+
 \---
 
 ## 6\. Validation surface and tolerances

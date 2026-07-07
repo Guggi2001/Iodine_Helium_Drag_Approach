@@ -923,6 +923,38 @@ point-mass MD does not natively have. Its **structure is locked**; the
   inflation. This neutrality is **contingent on the cold-shed assumption and
   on the gate that protects it** (A8, R11) — not free-standing.
 
+  **Spatial-gate arm — bath dissipation attenuates outside the droplet
+  (`cooling_spatial_gate`, added 2026-07-06).** K2 is *bath dissipation* — the
+  solvation structure radiating into the surrounding He. The locked form applies
+  $-E_\text{int}/\tau$ **everywhere**, including after the complex is ejected into
+  vacuum. That is an extrapolation: the GAH25 $\tau$ was fit for a shell cooling
+  *near/into* the droplet (the growing-shell transplant caveat above), whereas an
+  isolated I⁺Heₙ cluster in vacuum has no external bath — only evaporative cooling
+  (K1) remains. Drag ($\gamma\propto\rho_\text{He}$) and pickup
+  ($\lambda\propto\rho_\text{He}$) already gate off outside the bubble; K2 alone did
+  not. The `cooling_spatial_gate` enum makes this a first-class interchangeable
+  choice (DRAG_PORT_DESIGN_DECISIONS §"Cooling spatial gate"; CALIBRATION_MAP
+  row 5a):
+  - `none` (default, locked) — ungated $-E_\text{int}/\tau$, **byte-identical** to
+    the pre-arm code.
+  - `density_scaled` —
+    $\left.\dot E_\text{int}\right|_\text{K2}=-(\rho_\text{He}/\rho_\text{bulk})\,
+    E_\text{int}/\tau$ (i.e. $\tau_\text{eff}=\tau/\rho_\text{ratio}$), reusing the
+    **same** erf-complement gate (`drag_gate_steepness(cfg)`) drag and pickup share —
+    one bubble boundary for all three He-mediated channels. Cooling switches off
+    outside the bubble, so an ejected *self-bound* complex sheds without the cooling
+    quench (the shed-invariant margin $G=E_\text{int}-\Sigma(n)$ keeps the gate open)
+    → deeper stripping. This is the **total-vaporization lever** (§6.11 regime axis):
+    ungated cooling self-quenches the cascade at $n\sim$ few (shell-retaining), the
+    gate opens the near-bare end.
+
+  *Dim:* $[\rho_\text{He}/\rho_\text{bulk}]=1$, so K2 units stay eV/ps ✓.
+  Interchangeable and arbitrated by the terminal size distribution — **not
+  hard-wired**. First build is the clean erf-cutoff (cooling $\to0$ outside); a
+  residual out-of-bubble floor $\rho_\text{min}$ (the ejected complex may drag a
+  local He cloud) is a **deferred OQ**. Probed by the total-strip A/B capability grid
+  (`gen_tier2_staircase_probe.py`; see `drag_migration_log_tier2.md`). Reversible.
+
 **Dimensional check (K2):**
 $[(E_\text{solv.struct}-E_\infty)/\tau] = \text{eV/ps}$ = power ✓.
 
@@ -1141,6 +1173,19 @@ The first equation has units of $\mathrm{ps}^{-1}$ and the second of $\mathrm{eV
   regime axis:** shell-retaining vs stripping is just how long $\Pi>1$ persists
   (dense-traversal time vs $\tau$) before it crosses 1. $\Pi(t)$ and $t_\times$ are
   the two derived diagnostics of the early dynamics (CALIBRATION_MAP).
+
+  **Cooling spatial gate — a second regime lever (added 2026-07-06).** $\Pi$ governs
+  the *pickup-sustained* (resting/slow-ion) regime; the **ejection** regime (9 Å,
+  pickup structurally dead) is instead governed by the K2 cooling-vs-shed race from
+  the $E_\text{int}(0)$ deposit. Under the locked ungated cooling the cascade
+  *self-quenches* ($E_\text{int}$ cools below $D_0(n)$) and terminal $n$ floors at
+  $n\sim$ few — shell-retaining, unable to reach the experimental 43 % bare-I⁺ peak.
+  The `cooling_spatial_gate="density_scaled"` arm (§6 K2) removes the vacuum quench:
+  once ejected ($\rho_\text{He}\to0$) an already-self-bound complex keeps shedding
+  (shed-invariant $G$), driving terminal $n$ toward the near-bare end. So the
+  cooling-gate arm is the ejection-regime analogue of $\Pi$ on the R1
+  shell-retaining ↔ total-vaporization axis, arbitrated by the terminal size
+  distribution.
 
 ---
 

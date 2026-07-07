@@ -73,22 +73,30 @@ DT_ION_PS = 0.01
 SEED = 20260604                 # single fixed seed across all grid points
 
 # --- probe grid ---------------------------------------------------------------
-# ACTIVE: the Addendum-A s_eff mini-probe (12 runs). The 45-run kappa x picture x
-# tau probe already executed (outcome (b): no in-band point lands, freeze at
-# n ~ 20; drag_migration_log_tier2.md "Staircase probe EXECUTED"), so kappa and
-# picture are pinned to the bridge point and the RRK effective-dof s is swept
-# instead (the falsification lever the OQ named). To restore the full 45-run
-# probe, swap in the "FULL PROBE" values below and set S_EFF_GRID = [None].
+# ACTIVE: the total-strip capability A/B probe. Under the locked ungated cooling the
+# cascade self-quenches (E_int cools below D_0(n)) and terminal n floors at n~few --
+# a shell-retaining regime that cannot reach the experimental 43% bare-I+ peak. This
+# grid A/Bs the new cooling_spatial_gate arm (none = locked ungated bath dissipation
+# vs density_scaled = cooling attenuates by rho_He, switching off once the complex is
+# ejected into vacuum) against LOW s_eff, to measure how near-bare the strip reaches.
+# kappa/picture stay bridge-pinned (both proved near-flat); s_eff=1 is the
+# max-kinetics bound (if even it floors above bare, the wall is energetic not kinetic).
 KAPPA_GRID = [1.0]                             # bridge pin (kappa proved inverted/capped)
 PICTURE_LIST = ["statistical_mixture"]         # bridge pin (picture near-degenerate)
-TAU_GRID_PS = [6.55, 16.5]                     # geometric mid + slow-cooling band edge
-S_EFF_GRID = [None, 30, 20, 12, 8, 5]          # None = per-n s=3n-3 control; then constant s
+TAU_GRID_PS = [6.55, 16.5, 30.0]               # slower cooling (larger tau) strips deeper
+S_EFF_GRID = [1, 2, 3, 5]                      # low s = fast kinetics; s=1 = max-kinetics bound
+COOLING_GATE_GRID = ["none", "density_scaled"]  # A/B: ungated (locked) vs bubble-gated cooling
 
-# FULL PROBE (delivered 45-run kappa x picture x tau grid; s_eff = per-n):
-#     KAPPA_GRID   = [0.5, 1.0, 2.0, 4.0, 8.0]
-#     PICTURE_LIST = ["statistical_mixture", "x2_only", "cooling_relaxed"]
-#     TAU_GRID_PS  = [2.6, 6.55, 16.5]
-#     S_EFF_GRID   = [None]
+# RESTORE -- Addendum-A s_eff mini-probe (12 runs; kappa/picture bridge-pinned):
+#     TAU_GRID_PS       = [6.55, 16.5]
+#     S_EFF_GRID        = [None, 30, 20, 12, 8, 5]
+#     COOLING_GATE_GRID = ["none"]
+# RESTORE -- delivered 45-run kappa x picture x tau probe (s_eff = per-n):
+#     KAPPA_GRID        = [0.5, 1.0, 2.0, 4.0, 8.0]
+#     PICTURE_LIST      = ["statistical_mixture", "x2_only", "cooling_relaxed"]
+#     TAU_GRID_PS       = [2.6, 6.55, 16.5]
+#     S_EFF_GRID        = [None]
+#     COOLING_GATE_GRID = ["none"]
 
 # --- pinned knobs (bridge point; f_int deliberately NOT the Stage-1 floor) --
 BUDGET_EV = 0.80                # validation only -- see the guard below
@@ -97,12 +105,18 @@ F_RET = 0.1                     # prior (not identifiable at 9 A only)
 LAMBDA0_PER_PS = 0.9            # pickup live (bridge central value)
 
 # --- E2 relaxation stage (the "after relaxation" leg of the probe) ----------
-RELAXATION_TIME_PS = None       # None -> the experimental 8530 ns cap
+# A FINITE cap (not the experimental 8530 ns default) is REQUIRED here: under
+# density_scaled a self-unbound complex whose cooling is gated off never freezes
+# (E_int stays constant, so the n==0 / E_int<D_0 all-frozen early-stop cannot fire),
+# and an 8530 ns cap would run astronomically many steps. 1000 ps (>> tau) bounds the
+# run while still reaching the cooling-quench floor for the ungated arm; frac_frozen
+# reports per-run completeness (bump this if the gated arm shows incomplete freezing).
+RELAXATION_TIME_PS = 1000.0
 RELAXATION_FORCES = "coulomb"   # the two I+ fragments still repel
 
 # --- safety ------------------------------------------------------------------
-SKIP_COMPLETED_RUNS = True      # resume: skip a run dir that already has all artifacts
-OVERWRITE_EXISTING_RUN = False  # else refuse to clobber a partial/existing run dir
+SKIP_COMPLETED_RUNS = False      # resume: skip a run dir that already has all artifacts
+OVERWRITE_EXISTING_RUN = True  # else refuse to clobber a partial/existing run dir
 
 
 # =============================================================================
@@ -137,20 +151,23 @@ def _run_is_complete(run_dir: Path) -> bool:
     return all((run_dir / name).exists() for name in _REQUIRED_ARTIFACTS)
 
 
-def probe_grid_points() -> list[tuple[str, float, float, float | None]]:
-    """Enumerate ``(picture, kappa, tau_ps, evap_rrk_dof)`` for the probe grid.
+def probe_grid_points() -> list[tuple[str, float, float, float | None, str]]:
+    """Enumerate ``(picture, kappa, tau_ps, evap_rrk_dof, cooling_gate)`` grid points.
 
-    ``evap_rrk_dof`` (the Addendum-A RRK-dof lever) is carried as the fourth
-    element; ``None`` = the per-n ``s = 3n-3`` convention (the in-grid control).
-    With ``S_EFF_GRID = [None]`` the grid reduces to the delivered
-    ``(picture, kappa, tau)`` product (each tuple's fourth element ``None``).
+    ``evap_rrk_dof`` (the Addendum-A RRK-dof lever) is the fourth element; ``None`` =
+    the per-n ``s = 3n-3`` convention (the in-grid control). ``cooling_gate`` (the
+    total-strip A/B lever) is the fifth; ``"none"`` = the locked ungated cooling,
+    ``"density_scaled"`` = cooling attenuated by the He-density gate. With
+    ``S_EFF_GRID = [None]`` and ``COOLING_GATE_GRID = ["none"]`` the grid reduces to
+    the delivered ``(picture, kappa, tau)`` product.
     """
     return [
-        (picture, float(kappa), float(tau_ps), s_eff)
+        (picture, float(kappa), float(tau_ps), s_eff, cooling_gate)
         for picture in PICTURE_LIST
         for kappa in KAPPA_GRID
         for tau_ps in TAU_GRID_PS
         for s_eff in S_EFF_GRID
+        for cooling_gate in COOLING_GATE_GRID
     ]
 
 
@@ -174,7 +191,7 @@ def build_probe(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         else RELAXATION_TIME_PS
     )
     scheduled: list[tuple[str, SimConfig, Path]] = []
-    for picture, kappa, tau_ps, s_eff in probe_grid_points():
+    for picture, kappa, tau_ps, s_eff, cooling_gate in probe_grid_points():
         cfg = build_biphasic_cfg(
             CASE,
             VARIANT,
@@ -192,6 +209,7 @@ def build_probe(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             coulomb_available_eV=BUDGET_EV,
             relaxation_time_ps=relaxation_time_ps,
             relaxation_forces=RELAXATION_FORCES,
+            cooling_spatial_gate=cooling_gate,
         )
         run_dir = project_root / "data" / "runs" / tier2_probe_run_dir_name(
             CASE,
@@ -205,11 +223,12 @@ def build_probe(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             tau_ps=tau_ps,
             budget_eV=BUDGET_EV,
             evap_rrk_dof=s_eff,
+            cooling_spatial_gate=cooling_gate,
         )
         s_tag = "per-n" if s_eff is None else f"s={s_eff:.2f}"
         label = (
             f"{CASE} {VARIANT} N={N} probe {picture} "
-            f"k={kappa:.2f} tau={tau_ps:.2f} {s_tag}"
+            f"k={kappa:.2f} tau={tau_ps:.2f} {s_tag} cg={cooling_gate}"
         )
         scheduled.append((label, cfg, run_dir))
     return scheduled

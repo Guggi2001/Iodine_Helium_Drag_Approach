@@ -267,6 +267,56 @@ class TestEnergyChannels:
         # Exact arithmetic chain (same fold call, same floats): tight tolerance.
         np.testing.assert_allclose(ckpt.E_pot_eV, expected, rtol=0, atol=1e-12)
 
+    def _hot_run_gated(self, droplet_radius, *, gate="density_scaled"):
+        # The _hot_run seed with the cooling_spatial_gate arm selectable and the ions
+        # placed near a small droplet so rho_ratio < 1 actively attenuates the K2
+        # drain during relaxation (the 30 A default keeps rho == 1 -> a vacuous twin).
+        cfg = _relax_cfg(relaxation_time_ps=3.0, internal_energy_cooling_tau_ps=1.0,
+                         evap_rrk_dof=2.0, relaxation_forces="coulomb",
+                         cooling_spatial_gate=gate)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        sigma21 = float(ladder_cumsum(21, picture=picture, kappa=kappa))
+        ion = _seed_checkpoint(cfg, n_shell=21, E_int_eV=0.98 * sigma21)
+        ion = replace(
+            ion,
+            droplet_radii_angstrom=np.full(
+                ion.droplet_radii_angstrom.shape, float(droplet_radius)
+            ),
+        )
+        return cfg, run_relaxation_stage(ion, cfg)
+
+    def test_e_dissip_oracle_holds_under_density_scaled_gate(self):
+        # The E_dissip == cumulative-K2-drain reconstruction is gate-invariant: it
+        # reads the ACTUAL E_int/n_shell trajectory, so a spatially-attenuated drain
+        # still closes. Ions straddle a small (3 A) droplet -> rho_ratio in (0, 1).
+        cfg, result = self._hot_run_gated(3.0)
+        picture, kappa = cfg.ladder_electronic_picture, cfg.ladder_steepness
+        ckpt = result.checkpoint
+        np.testing.assert_allclose(np.diff(ckpt.time_ps), cfg.dt_ion, rtol=0, atol=1e-12)
+
+        n = ckpt.n_shell
+        E_int = ckpt.E_int_eV
+        shed = n[:, :-1] - n[:, 1:]
+        d0_pre = np.asarray(d0_of_n(np.maximum(n[:, :-1], 1.0),
+                                    picture=picture, kappa=kappa))
+        e_after_k2 = E_int[:, 1:] + shed * d0_pre
+        drain = E_int[:, :-1] - e_after_k2
+        cum_drain = np.cumsum(drain, axis=1)
+        dE_dissip = ckpt.E_dissip_eV[:, 1:] - ckpt.E_dissip_eV[:, [0]]
+        assert np.all(cum_drain[:, -1] > 0.0)           # non-vacuous drain accrued
+        np.testing.assert_allclose(dE_dissip, cum_drain, rtol=0, atol=1e-9)
+
+    def test_density_scaled_first_step_drain_below_ungated(self):
+        # First step, identical seed for both arms -> no trajectory divergence yet:
+        # the gated per-ion K2 drain (rho_ratio < 1) is strictly below the ungated
+        # `none` drain at the same small droplet. This proves the gate is active.
+        _, gated = self._hot_run_gated(3.0, gate="density_scaled")
+        _, none = self._hot_run_gated(3.0, gate="none")
+        gated_step1 = gated.checkpoint.E_dissip_eV[:, 1]     # drain over the 1st step
+        none_step1 = none.checkpoint.E_dissip_eV[:, 1]
+        assert np.all(gated_step1 > 0.0)
+        assert np.all(gated_step1 < none_step1)
+
 
 # ---------------------------------------------------------------------------
 # Gate + ladder rungs (review 2026-07-03): the self-bound gate suppresses, a
@@ -561,6 +611,34 @@ class TestConfigValidation:
         )
         with pytest.raises(ValueError, match="relaxation_forces"):
             check_relaxation_config(cfg)
+
+    def test_density_scaled_rejects_runaway_relaxation_cap(self):
+        # density_scaled voids the freeze early-exit, so a runaway cap must fail
+        # loudly at config-load: 2e5 ps / 0.01 ps = 2e7 steps > the 1e7 ceiling.
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=2.0e5,
+            relaxation_dt_ps=0.01, cooling_spatial_gate="density_scaled",
+        )
+        with pytest.raises(ValueError, match="density_scaled"):
+            check_relaxation_config(cfg)
+
+    def test_density_scaled_modest_cap_accepted(self):
+        # The total-strip probe's 1000 ps / 0.01 = 1e5 steps is well under the
+        # ceiling, so the guarded arm's own intended usage stays valid.
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=1000.0,
+            relaxation_dt_ps=0.01, cooling_spatial_gate="density_scaled",
+        )
+        check_relaxation_config(cfg)  # no raise
+
+    def test_ungated_cooling_allows_generous_cap(self):
+        # 'none' keeps the guaranteed freeze early-exit, so the same generous cap
+        # that trips the density_scaled guard stays allowed (guard is arm-specific).
+        cfg = _biphasic_driver_cfg(
+            relaxation_stage_enabled=True, relaxation_time_ps=2.0e5,
+            relaxation_dt_ps=0.01, cooling_spatial_gate="none",
+        )
+        check_relaxation_config(cfg)  # no raise
 
     def test_run_requires_enabled(self):
         cfg = _biphasic_driver_cfg()  # disabled

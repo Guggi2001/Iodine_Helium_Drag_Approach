@@ -595,25 +595,13 @@ def biphasic_step(
     n = np.asarray(state.n_shell, dtype=float)
     m_amu = state.mass_kg / U
 
-    # 1. K2 cooling: reuse newton_cool_step on E_solv.struct = E_inf(n) + E_int. At
-    #    fixed n the asymptote cancels, leaving E_int*exp(-dt/tau); the drain books
-    #    to E_dissip (MASS §6 K2; rule-1 single source of the cooling form).
-    e_inf = np.asarray(e_infinity_eV(n, picture=picture, kappa=kappa, s_abs_eV=s_abs))
-    e_solv_cooled = np.asarray(
-        newton_cool_step(
-            e_inf + state.E_int_eV, n,
-            tau_ps=cfg.internal_energy_cooling_tau_ps, dt_ps=dt,
-            picture=picture, kappa=kappa, s_abs_eV=s_abs,
-        )
-    )
-    E_int = e_solv_cooled - e_inf
-    E_dissip = state.E_dissip_eV + (state.E_int_eV - E_int)   # cooling drain >= 0
-
-    # Pickup occupancy density gate at the pre-step positions (shared drag surface).
-    # Only the analytic erf-complement profile is built; 'tabulated' is a valid
-    # config enum (declared rule-2 arm) whose sourced data array does not exist
-    # yet, so selecting it fails lazily here at point-of-use -- the same contract
-    # as pickup_rate_form='sweeping' / he_capture_velocity='thermal'.
+    # Helium-density spatial gate at the pre-step positions (shared drag surface),
+    # computed up front because BOTH the K2 cooling arm (below) and the pickup channel
+    # read it. Only the analytic erf-complement profile is built; 'tabulated' is a
+    # valid config enum (declared rule-2 arm) whose sourced data array does not exist
+    # yet, so selecting it fails lazily here at point-of-use -- the same contract as
+    # pickup_rate_form='sweeping' / he_capture_velocity='thermal'. Pure + RNG-free, so
+    # hoisting it above the K2 block does not perturb the frozen two-draw stream.
     if cfg.helium_density_profile != "erf_complement":
         raise NotImplementedError(
             f"helium_density_profile={cfg.helium_density_profile!r} is a "
@@ -622,6 +610,24 @@ def biphasic_step(
         )
     depth = _depth(state.x, state.y, state.z, droplet_radii)
     rho_ratio = rho_he_ratio(depth, steepness=gate_steepness)
+
+    # 1. K2 cooling: reuse newton_cool_step on E_solv.struct = E_inf(n) + E_int. At
+    #    fixed n the asymptote cancels, leaving E_int*exp(-dt*cool_rho/tau); the drain
+    #    books to E_dissip (MASS §6 K2; rule-1 single source of the cooling form).
+    #    cooling_spatial_gate="density_scaled" scales the drain by the local He density
+    #    (tau_eff = tau/rho_ratio -> bath dissipation switches off outside the bubble);
+    #    "none" passes scalar 1.0 -> byte-identical to the pre-arm ungated cooling.
+    cool_rho = rho_ratio if cfg.cooling_spatial_gate == "density_scaled" else 1.0
+    e_inf = np.asarray(e_infinity_eV(n, picture=picture, kappa=kappa, s_abs_eV=s_abs))
+    e_solv_cooled = np.asarray(
+        newton_cool_step(
+            e_inf + state.E_int_eV, n,
+            tau_ps=cfg.internal_energy_cooling_tau_ps, dt_ps=dt,
+            picture=picture, kappa=kappa, s_abs_eV=s_abs, rho_ratio=cool_rho,
+        )
+    )
+    E_int = e_solv_cooled - e_inf
+    E_dissip = state.E_dissip_eV + (state.E_int_eV - E_int)   # cooling drain >= 0
 
     # 2. Evaporation draw FIRST (frozen order), on the post-cooling E_int.
     n_e, m_e, vx_e, vy_e, vz_e, dE_int_e, dE_mt_e, _fired_e = evaporation_step_components(

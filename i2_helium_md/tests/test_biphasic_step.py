@@ -239,6 +239,65 @@ class TestCoolingDrainClosure:
         assert new.time_ps == state.time_ps  # pre-step seam does not advance time
 
 
+class TestCoolingSpatialGate:
+    """cooling_spatial_gate arm: ``density_scaled`` attenuates the K2 drain by the
+    shared erf-complement He-density gate (full inside the bubble, off outside);
+    ``none`` (default) is byte-identical to the ungated bath dissipation. Isolated
+    with e_int=0.24 > Sigma(21) (evaporation self-unbound-suppressed) + lambda0=0
+    (pickup off), so only K2 acts and the drain is read off E_dissip."""
+
+    def _step(self, state, *, gate, droplet):
+        # Fresh identical RNG per arm: only cooling is exercised (no draw fires),
+        # but keep the stream identical so any accidental event would match too.
+        return biphasic_step(
+            state, rng=np.random.default_rng(0),
+            cfg=_biphasic_cfg(cooling_spatial_gate=gate),
+            droplet_radii=droplet, gate_steepness=14.2,
+        )
+
+    def test_density_scaled_equals_none_deep_inside(self):
+        # Deep inside (depth << -steepness) rho_ratio == 1 exactly (erf saturates),
+        # so the gated arm reproduces the ungated drain bit-for-bit.
+        state = _biphasic_state(e_int=0.24)          # |r| <= 2
+        droplet = np.full(state.x.shape[0], 100.0)   # depth ~ -100 -> rho = 1.0
+        none = self._step(state, gate="none", droplet=droplet)
+        gated = self._step(state, gate="density_scaled", droplet=droplet)
+        np.testing.assert_array_equal(gated.E_int_eV, none.E_int_eV)
+        np.testing.assert_array_equal(gated.E_dissip_eV, none.E_dissip_eV)
+
+    def test_density_scaled_cooling_off_far_outside(self):
+        # Far outside (depth >> steepness) rho_ratio -> 0: the gated arm does NO K2
+        # cooling (E_int held, nothing booked to E_dissip), while `none` drains fully.
+        two_N = 6
+        state = replace(
+            _biphasic_state(e_int=0.24, two_N=two_N),
+            x=np.full(two_N, 100.0), y=np.zeros(two_N), z=np.zeros(two_N),
+        )
+        droplet = np.zeros(two_N)                    # depth = 100 -> rho = 0
+        gated = self._step(state, gate="density_scaled", droplet=droplet)
+        np.testing.assert_allclose(gated.E_int_eV, state.E_int_eV)
+        np.testing.assert_allclose(gated.E_dissip_eV, 0.0)
+        # Sanity: the ungated arm at the same state DOES drain (the gate matters).
+        none = self._step(state, gate="none", droplet=droplet)
+        assert np.all(none.E_dissip_eV > 0.0)
+
+    def test_density_scaled_drain_strictly_between_at_intermediate_depth(self):
+        # At intermediate depth (0 < rho_ratio < 1) the gated drain is strictly
+        # positive and strictly below the full ungated drain -- monotone in rho_ratio.
+        two_N = 6
+        state = replace(
+            _biphasic_state(e_int=0.24, two_N=two_N),
+            x=np.full(two_N, 5.0), y=np.zeros(two_N), z=np.zeros(two_N),
+        )
+        droplet = np.zeros(two_N)                    # depth = 5, 0 < rho < 1
+        none = self._step(state, gate="none", droplet=droplet)
+        gated = self._step(state, gate="density_scaled", droplet=droplet)
+        none_drain = none.E_dissip_eV - state.E_dissip_eV
+        gated_drain = gated.E_dissip_eV - state.E_dissip_eV
+        assert np.all(gated_drain > 0.0)
+        assert np.all(gated_drain < none_drain)
+
+
 class TestMassOccupancyInvariant:
     """m == m_I+ + n*m_He holds every step (the deferred Phase-B Q3 guard)."""
 

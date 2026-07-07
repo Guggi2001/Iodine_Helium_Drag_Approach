@@ -119,38 +119,44 @@ def test_f3_discovery_ignores_complete_probe_dir(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_probe_grid_default_is_twelve_point_mini_probe():
-    """The committed USER SETTINGS are the Addendum-A s_eff mini-probe: kappa and
-    picture pinned, tau x s_eff swept -> 1 x 1 x 2 x 6 = 12 unique points."""
+def test_probe_grid_default_is_total_strip_ab():
+    """The committed USER SETTINGS are the total-strip capability A/B probe: kappa
+    and picture bridge-pinned, tau x s_eff swept, cooling_gate A/B'd ->
+    1 x 1 x 3 x 4 x 2 = 24 unique points."""
     points = script.probe_grid_points()
     assert len(points) == (
         len(script.PICTURE_LIST)
         * len(script.KAPPA_GRID)
         * len(script.TAU_GRID_PS)
         * len(script.S_EFF_GRID)
+        * len(script.COOLING_GATE_GRID)
     )
-    assert len(points) == 12
-    assert len(set(points)) == 12  # unique (picture, kappa, tau, s_eff) tuples
-    # the s_eff sweep, incl. the None (per-n) in-grid control
-    assert {s_eff for _, _, _, s_eff in points} == {None, 30, 20, 12, 8, 5}
+    assert len(points) == 24
+    assert len(set(points)) == 24  # unique (picture, kappa, tau, s_eff, gate) tuples
+    # the low-s_eff sweep (s=1 = max-kinetics bound) and the cooling A/B axis
+    assert {s_eff for _, _, _, s_eff, _ in points} == {1, 2, 3, 5}
+    assert {gate for _, _, _, _, gate in points} == {"none", "density_scaled"}
 
 
 def test_full_grid_back_compat_none_s_eff(tmp_path, monkeypatch):
     """Addendum A.3 promise: the delivered 45-run probe path is byte-reproducible
-    -- the full kappa x picture x tau grid at S_EFF_GRID=[None] yields 45 points,
-    and a probe tag with s_eff unset is byte-identical to the pre-addendum tag."""
+    -- the full kappa x picture x tau grid at S_EFF_GRID=[None] and the ungated
+    cooling arm yields 45 points, and a probe tag with s_eff/gate unset is
+    byte-identical to the pre-addendum tag."""
     monkeypatch.setattr(script, "KAPPA_GRID", [0.5, 1.0, 2.0, 4.0, 8.0])
     monkeypatch.setattr(
         script, "PICTURE_LIST", ["statistical_mixture", "x2_only", "cooling_relaxed"]
     )
     monkeypatch.setattr(script, "TAU_GRID_PS", [2.6, 6.55, 16.5])
     monkeypatch.setattr(script, "S_EFF_GRID", [None])
+    monkeypatch.setattr(script, "COOLING_GATE_GRID", ["none"])
 
     points = script.probe_grid_points()
     assert len(points) == 45
-    assert all(s_eff is None for _, _, _, s_eff in points)
+    assert all(s_eff is None for _, _, _, s_eff, _ in points)
+    assert all(gate == "none" for _, _, _, _, gate in points)
 
-    # s_eff=None appends no suffix -> identical to the delivered probe tag.
+    # s_eff=None and gate="none" append no suffix -> identical to the delivered tag.
     assert tier2_probe_run_tag(
         picture="statistical_mixture",
         kappa=1.0,
@@ -167,7 +173,7 @@ def test_build_probe_pins_bridge_timing_knobs(tmp_path):
     0.80 eV validation budget; relaxation (E2) is enabled at the experimental
     cap; the s_eff override is stamped (incl. the None per-n arm); dirs unique."""
     scheduled = script.build_probe(tmp_path)
-    assert len(scheduled) == 12
+    assert len(scheduled) == 24
     for _, cfg, _ in scheduled:
         assert cfg.mass_scenario == "biphasic"
         assert cfg.internal_energy_partition_fraction == pytest.approx(0.5)
@@ -175,22 +181,32 @@ def test_build_probe_pins_bridge_timing_knobs(tmp_path):
         assert cfg.pickup_rate_coefficient == pytest.approx(0.9)
         assert cfg.coulomb_available_eV == pytest.approx(VALIDATION_BUDGET_EV)
         assert cfg.relaxation_stage_enabled is True
-        assert cfg.relaxation_time_ps == pytest.approx(8.53e6)
+        assert cfg.relaxation_time_ps == pytest.approx(1000.0)  # finite total-strip cap
         assert cfg.ladder_steepness == pytest.approx(1.0)
         assert cfg.ladder_electronic_picture == "statistical_mixture"
-    # the s_eff sweep is stamped onto the configs (None -> config default None)
-    assert {cfg.evap_rrk_dof for _, cfg, _ in scheduled} == {None, 30, 20, 12, 8, 5}
+    # the low-s_eff sweep and the cooling A/B are stamped onto the configs
+    assert {cfg.evap_rrk_dof for _, cfg, _ in scheduled} == {1, 2, 3, 5}
+    assert {cfg.cooling_spatial_gate for _, cfg, _ in scheduled} == {
+        "none", "density_scaled"
+    }
     run_dirs = [run_dir for _, _, run_dir in scheduled]
-    assert len(set(run_dirs)) == 12
+    assert len(set(run_dirs)) == 24
     assert all("_tier2probe_" in run_dir.name for run_dir in run_dirs)
 
 
-def test_bridge_wiring_oracle_point_matches_bridge_config(tmp_path):
-    """The (kappa=1, statistical_mixture, tau=6.55, s_eff=None) grid point IS the
-    Phase-D bridge configuration (plan §2): its generative knobs must equal the
-    pure bridge-default build, so its ion stage reproduces the bridge numbers.
-    The s_eff=None arm is the control; the swept s_eff points share the same
-    (kappa, picture, tau) and must be excluded from the oracle match."""
+def test_bridge_wiring_oracle_point_matches_bridge_config(tmp_path, monkeypatch):
+    """The (kappa=1, statistical_mixture, tau=6.55, s_eff=None, gate=none) grid point
+    IS the Phase-D bridge configuration (plan §2): its generative knobs must equal
+    the pure bridge-default build, so its ion stage reproduces the bridge numbers.
+    The active total-strip A/B grid drops the s_eff=None / tau=6.55 bridge point, so
+    the grid is monkeypatched back to it for this wiring oracle (the pipeline check
+    is grid-independent; only the active USER SETTINGS moved)."""
+    monkeypatch.setattr(script, "KAPPA_GRID", [1.0])
+    monkeypatch.setattr(script, "PICTURE_LIST", ["statistical_mixture"])
+    monkeypatch.setattr(script, "TAU_GRID_PS", [6.55])
+    monkeypatch.setattr(script, "S_EFF_GRID", [None])
+    monkeypatch.setattr(script, "COOLING_GATE_GRID", ["none"])
+
     bridge_cfg = build_biphasic_cfg(
         script.CASE,
         script.VARIANT,
@@ -206,6 +222,7 @@ def test_bridge_wiring_oracle_point_matches_bridge_config(tmp_path):
         and cfg.ladder_electronic_picture == "statistical_mixture"
         and cfg.internal_energy_cooling_tau_ps == pytest.approx(6.55)
         and cfg.evap_rrk_dof is None
+        and cfg.cooling_spatial_gate == "none"
     ]
     assert len(matches) == 1
     probe_cfg = matches[0]
@@ -219,6 +236,7 @@ def test_bridge_wiring_oracle_point_matches_bridge_config(tmp_path):
         "ladder_steepness",
         "internal_energy_cooling_tau_ps",
         "evap_rrk_dof",
+        "cooling_spatial_gate",
     ):
         assert getattr(probe_cfg, field) == getattr(bridge_cfg, field), field
 
@@ -275,8 +293,9 @@ def test_main_schedules_expected_grid(tmp_path, monkeypatch):
             tau_ps=tau_ps,
             budget_eV=script.BUDGET_EV,
             evap_rrk_dof=s_eff,
+            cooling_spatial_gate=cooling_gate,
         )
-        for picture, kappa, tau_ps, s_eff in script.probe_grid_points()
+        for picture, kappa, tau_ps, s_eff, cooling_gate in script.probe_grid_points()
     ]
     assert scheduled == expected_dirs
 
@@ -380,6 +399,86 @@ def test_s_eff_points_yield_distinct_run_dirs():
     assert len(names) == 6
 
 
+# ---------------------------------------------------------------------------
+# cooling_spatial_gate (total-strip A/B) override -- probe-scoped
+# ---------------------------------------------------------------------------
+
+
+def test_probe_tag_appends_and_omits_cooling_gate_suffix():
+    """density_scaled appends _cgds (staying in the probe namespace); none / None
+    append nothing (byte-identity with the pre-arm probe tag). The suffix follows
+    any s_eff suffix, so an A/B pair at fixed s_eff differs only by _cgds."""
+    base = dict(
+        picture="statistical_mixture",
+        kappa=1.0,
+        lambda0_per_ps=0.9,
+        f_int=0.5,
+        f_ret=0.1,
+        tau_ps=6.55,
+        budget_eV=0.80,
+    )
+    # gate default / "none" -> no suffix
+    assert tier2_probe_run_tag(**base) == tier2_probe_run_tag(
+        **base, cooling_spatial_gate=None
+    )
+    assert tier2_probe_run_tag(**base) == tier2_probe_run_tag(
+        **base, cooling_spatial_gate="none"
+    )
+    # density_scaled -> _cgds, appended after the s_eff suffix
+    tag_ds = tier2_probe_run_tag(**base, evap_rrk_dof=8.0, cooling_spatial_gate="density_scaled")
+    assert tag_ds == tier2_probe_run_tag(**base, evap_rrk_dof=8.0) + "_cgds"
+    assert tag_ds.startswith("tier2probe_")
+    assert not fnmatch(tag_ds, "*_tier2_*")  # still disjoint from the F3 campaign glob
+
+
+def test_cooling_gate_points_yield_distinct_run_dirs():
+    """The A/B arms (none vs density_scaled) at a fixed knob point must map to
+    distinct run dirs so both are generated and scored separately."""
+    common = dict(
+        picture="statistical_mixture",
+        kappa=1.0,
+        lambda0_per_ps=0.9,
+        f_int=0.5,
+        f_ret=0.1,
+        tau_ps=6.55,
+        budget_eV=0.80,
+        evap_rrk_dof=5.0,
+    )
+    none_dir = tier2_probe_run_dir_name(
+        "9A", "shared_pure_cubic", 50, **common, cooling_spatial_gate="none"
+    )
+    ds_dir = tier2_probe_run_dir_name(
+        "9A", "shared_pure_cubic", 50, **common, cooling_spatial_gate="density_scaled"
+    )
+    assert none_dir != ds_dir
+    assert ds_dir.endswith("_cgds")
+
+
+def test_build_biphasic_cfg_stamps_cooling_spatial_gate():
+    """cooling_spatial_gate is a None-sentinel pass-through: set -> stamped and
+    validated; None -> rides the config default ('none', ungated cooling)."""
+    cfg_set = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        num_molecules=2,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=1,
+        cooling_spatial_gate="density_scaled",
+    )
+    assert cfg_set.cooling_spatial_gate == "density_scaled"
+
+    cfg_default = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        num_molecules=2,
+        ion_time_ps=0.02,
+        dt_ion_ps=0.01,
+        seed=1,
+    )
+    assert cfg_default.cooling_spatial_gate == "none"  # config default, not injected
+
+
 def test_probe_tag_knob_body_matches_campaign_encoder():
     """The probe encoder promises to 'mirror' the campaign encoder's knob body;
     lock that so a future change to one (added knob / changed precision) can't
@@ -404,4 +503,44 @@ def test_probe_tag_knob_body_matches_campaign_encoder():
     knobs_s = dict(knobs, evap_rrk_dof=8.0)
     assert tier2_probe_run_tag(**knobs_s) == tier2_run_tag(**knobs_s).replace(
         "tier2_", "tier2probe_", 1
+    )
+    # ...and the cooling-gate suffix (the campaign encoder gained _cgds so a gated
+    # campaign cannot collide run-dir names; the parity lock now guards it too).
+    knobs_cg = dict(knobs_s, cooling_spatial_gate="density_scaled")
+    assert tier2_probe_run_tag(**knobs_cg) == tier2_run_tag(**knobs_cg).replace(
+        "tier2_", "tier2probe_", 1
+    )
+
+
+def test_campaign_tag_appends_and_omits_cooling_gate_suffix():
+    """tier2_run_tag mirrors the probe encoder: density_scaled -> _cgds (after the
+    s_eff suffix, before any _totalstrip); none / None append nothing (campaigns not
+    sweeping the gate stay byte-identical)."""
+    base = dict(
+        picture="statistical_mixture",
+        kappa=1.0,
+        lambda0_per_ps=0.9,
+        f_int=0.5,
+        f_ret=0.1,
+        tau_ps=6.55,
+        budget_eV=0.80,
+    )
+    assert tier2_run_tag(**base) == tier2_run_tag(**base, cooling_spatial_gate=None)
+    assert tier2_run_tag(**base) == tier2_run_tag(**base, cooling_spatial_gate="none")
+    # density_scaled -> _cgds
+    assert (
+        tier2_run_tag(**base, cooling_spatial_gate="density_scaled")
+        == tier2_run_tag(**base) + "_cgds"
+    )
+    # after the s_eff suffix
+    assert (
+        tier2_run_tag(**base, evap_rrk_dof=8.0, cooling_spatial_gate="density_scaled")
+        == tier2_run_tag(**base, evap_rrk_dof=8.0) + "_cgds"
+    )
+    # before the _totalstrip suffix
+    assert (
+        tier2_run_tag(
+            **base, cooling_spatial_gate="density_scaled", total_strip=True
+        )
+        == tier2_run_tag(**base) + "_cgds_totalstrip"
     )

@@ -236,6 +236,55 @@ def test_newton_cool_step_scalar_returns_float():
 
 
 # ---------------------------------------------------------------------------
+# newton_cool_step: rho_ratio spatial-gate factor (the cooling_spatial_gate arm).
+# The `density_scaled` K2 arm passes rho_ratio in [0,1] from the shared erf gate;
+# tau_eff = tau/rho_ratio, i.e. decay = exp(-dt*rho_ratio/tau). rho_ratio=1 recovers
+# the ungated closed form byte-for-byte (the locked `none` arm); rho_ratio=0 disables
+# cooling (no droplet bath to radiate into outside the bubble).
+# ---------------------------------------------------------------------------
+def test_newton_cool_step_rho_ratio_one_equals_ungated():
+    # dt*1.0 is exact float, so passing rho_ratio=1.0 must be byte-identical to
+    # omitting it -- the guarantee the default `none` arm relies on.
+    N, tau, dt = 19, 6.55, 1.0
+    e0 = 0.05
+    ungated = newton_cool_step(e0, N, tau_ps=tau, dt_ps=dt, kappa=1.0)
+    gated1 = newton_cool_step(e0, N, tau_ps=tau, dt_ps=dt, kappa=1.0, rho_ratio=1.0)
+    assert gated1 == ungated
+
+
+def test_newton_cool_step_rho_ratio_zero_is_noop():
+    # rho_ratio=0 -> decay=exp(0)=1 -> E unchanged: cooling off outside the droplet.
+    e0 = 0.05
+    out = newton_cool_step(e0, 19, tau_ps=6.55, dt_ps=1.0, kappa=1.0, rho_ratio=0.0)
+    assert out == pytest.approx(e0, abs=1e-12)
+
+
+def test_newton_cool_step_rho_ratio_scales_decay():
+    # The gate enters as tau_eff = tau/rho_ratio, i.e. decay = exp(-dt*rho_ratio/tau).
+    N, tau, dt, rho = 19, 6.55, 1.0, 0.3
+    e_inf = e_infinity_eV(N, kappa=1.0)
+    e0 = 0.0
+    e1 = newton_cool_step(e0, N, tau_ps=tau, dt_ps=dt, kappa=1.0, rho_ratio=rho)
+    assert (e1 - e_inf) / (e0 - e_inf) == pytest.approx(np.exp(-dt * rho / tau))
+
+
+def test_newton_cool_step_rejects_negative_rho_ratio():
+    # A negative factor gives exp(+|.|) > 1 -> anti-cooling (heats away from E_inf),
+    # the same failure class as a negative dt; fail loud (principle 4).
+    with pytest.raises(ValueError, match="rho_ratio"):
+        newton_cool_step(0.0, 19, tau_ps=6.55, dt_ps=1.0, kappa=1.0, rho_ratio=-0.1)
+
+
+def test_newton_cool_step_array_rho_ratio_returns_ndarray():
+    # A per-atom (2N,) rho_ratio broadcasts against the E array and returns an ndarray
+    # (the driver passes one gate value per ion row) even with scalar E/N.
+    rho = np.array([0.0, 0.5, 1.0])
+    out = newton_cool_step(0.0, 19, tau_ps=6.55, dt_ps=1.0, kappa=1.0, rho_ratio=rho)
+    assert isinstance(out, np.ndarray)
+    assert out.shape == rho.shape
+
+
+# ---------------------------------------------------------------------------
 # Cold-shed neutrality on the pair + E_int sub-sum (K1 cap K2 non-overlap),
 # modulo the A8 marginal-electrostriction bath booking (the collective
 # electrostriction term |S| > Sigma(n*) is the bath booking, excluded here).

@@ -51,6 +51,17 @@ Runs to ``relaxation_time_ps`` **or** stops early when every fragment is frozen:
 pickup off -- verified against ``physics.evaporation.rrk_rate``). Each step
 consumes both draws before the freeze check, so a cold input still consumes the
 frozen two-draw stream on its terminating step.
+
+The early-exit is **guaranteed** only while K2 actively drains ``E_int`` toward 0
+(the ``cooling_spatial_gate == "none"`` default): it is K2 -- not evaporation --
+that reliably pushes ``E_int`` below ``D_0(n)``. Under
+``cooling_spatial_gate == "density_scaled"`` an ejected fragment (``rho_He -> 0``)
+stops cooling, so ``E_int`` is merely held (monotone non-increasing, but not
+driven to 0) and can sit above ``D_0(n)`` indefinitely -- evaporation's RRK rate
+vanishes near threshold. Freeze is then not guaranteed and only
+``relaxation_time_ps`` bounds the run; the ``config.check_relaxation_config``
+step-budget guard rejects a runaway cap for that arm, and ``frac_frozen`` reports
+per-run freeze completeness.
 """
 
 from __future__ import annotations

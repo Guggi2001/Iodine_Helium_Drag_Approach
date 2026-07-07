@@ -76,6 +76,17 @@ HeCaptureVelocity = Literal["at_rest", "thermal"]
 # this is the surface-density occupancy gate, NOT a G2->G4 drag-gate promotion.
 HeliumDensityProfile = Literal["erf_complement", "tabulated"]
 
+# Tier-2 drag-port cooling spatial gate. Selects whether the K2 Newton-cooling drain
+# (``physics.solvation_cooling.newton_cool_step``) is attenuated by the local He
+# density: ``none`` (default) is the locked ungated bath dissipation (``-E_int/tau``
+# everywhere, byte-identical to the pre-arm code); ``density_scaled`` scales the drain
+# by ``rho_He/rho_bulk`` from the SAME erf-complement surface drag+pickup share
+# (``tau_eff = tau/rho_ratio``), so cooling switches off once the complex is ejected
+# into vacuum (no droplet bath to radiate into). A first-class interchangeable model
+# arm (DRAG_PORT_DESIGN_DECISIONS); reuses ``drag_gate_steepness(cfg)`` -- no new
+# steepness knob. A residual out-of-bubble floor ``rho_min`` is a deferred OQ.
+CoolingSpatialGate = Literal["none", "density_scaled"]
+
 # Tier-2 Phase-A dissociation ladder (Slice L). ``LadderElectronicPicture`` must
 # list exactly the picture keys of ``physics.dissociation_ladder._FIRST_RUNG_EV``
 # (the single source of truth for D_0(1); enforced by a parity test). The
@@ -255,6 +266,10 @@ class SimConfig:
     # default = its geometric mid (Phase-F sweeps tau).
     solv_struct_asymptote_eV: float = S_ABS_EV     # |S|; Sourced (MASS K2), eV-primary 0.308
     internal_energy_cooling_tau_ps: float = 6.55   # tau [ps]; Bounded, geometric-mid of [2.6,16.5]
+    # Cooling spatial gate arm (see CoolingSpatialGate above). Default "none" =
+    # locked ungated bath dissipation (byte-identical); "density_scaled" attenuates
+    # the K2 drain by rho_He/rho_bulk. Read by biphasic_step; guard-checked below.
+    cooling_spatial_gate: CoolingSpatialGate = "none"   # inert member (arm default)
 
     # -- Tier-2 Phase-A internal-energy budget (Slice U) --
     # S2 onset partition f_int and S1 pickup retained fraction f_ret. Both Bounded
@@ -434,12 +449,35 @@ class SimConfig:
         check_drag_config(self)
         check_ladder_config(self)
         check_solvation_cooling_config(self)
+        check_cooling_spatial_gate_config(self)
         check_internal_energy_budget_config(self)
         check_helium_density_config(self)
         check_pickup_config(self)
         check_evaporation_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
+
+
+# ---------------------------------------------------------------------------
+# Shared string-enum typo-recovery reject arm
+# ---------------------------------------------------------------------------
+def _reject_unknown_enum(value: object, known: tuple, *, field: str) -> None:
+    """Fail-loud on an unrecognised string-enum selector (CLAUDE.md principle 4).
+
+    ``Literal`` type hints are not runtime-enforced, so every interchangeable
+    string-enum ``SimConfig`` field (``drag_form``, ``dissociation_ladder``,
+    ``helium_density_profile``, ``cooling_spatial_gate``, the pickup selectors, ...)
+    is typo-guarded at config-load against its ``_KNOWN_*`` tuple. This is the single
+    shared reject arm; each caller passes its own ``field`` name so the message stays
+    field-specific (byte-identical to the per-field copies it replaces).
+
+    Raises
+    ------
+    ValueError
+        When ``value`` is not in ``known``.
+    """
+    if value not in known:
+        raise ValueError(f"unknown {field} {value!r}; expected one of {known}")
 
 
 # ---------------------------------------------------------------------------
@@ -483,11 +521,9 @@ def check_ladder_config(cfg: "SimConfig") -> None:
     # constants; config is imported widely) and keeps the guard self-contained.
     from .physics.dissociation_ladder import D_FLOOR_EV, first_rung_d0_eV
 
-    if cfg.dissociation_ladder not in _KNOWN_LADDER_FORMS:
-        raise ValueError(
-            f"unknown dissociation_ladder {cfg.dissociation_ladder!r}; expected "
-            f"one of {_KNOWN_LADDER_FORMS}"
-        )
+    _reject_unknown_enum(
+        cfg.dissociation_ladder, _KNOWN_LADDER_FORMS, field="dissociation_ladder"
+    )
 
     if not (cfg.ladder_steepness > 0.0):
         raise ValueError(
@@ -534,11 +570,45 @@ def check_helium_density_config(cfg: "SimConfig") -> None:
     ValueError
         On an unrecognised ``helium_density_profile`` selector.
     """
-    if cfg.helium_density_profile not in _KNOWN_HELIUM_DENSITY_PROFILES:
-        raise ValueError(
-            f"unknown helium_density_profile {cfg.helium_density_profile!r}; "
-            f"expected one of {_KNOWN_HELIUM_DENSITY_PROFILES}"
-        )
+    _reject_unknown_enum(
+        cfg.helium_density_profile,
+        _KNOWN_HELIUM_DENSITY_PROFILES,
+        field="helium_density_profile",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 drag-port cooling-spatial-gate config-load guard
+# ---------------------------------------------------------------------------
+# Known cooling-gate selectors (mirrors _KNOWN_HELIUM_DENSITY_PROFILES): Literal is
+# not runtime-enforced, so this is the typo-recovery set the guard rejects against.
+_KNOWN_COOLING_SPATIAL_GATES = ("none", "density_scaled")
+
+
+def check_cooling_spatial_gate_config(cfg: "SimConfig") -> None:
+    """Validate the K2 cooling-spatial-gate arm of ``cfg`` at config-load.
+
+    A separate, unit-testable guard called from :meth:`SimConfig.validate`. It is a
+    load-time fail-loud enum reject arm (no silent clamp): ``cfg.cooling_spatial_gate``
+    must be a known ``none`` / ``density_scaled`` selector (mirrors the
+    ``helium_density_profile`` / ``drag_form`` typo-recovery arms). This is the field's
+    live read at config-load; the physics read is in
+    :func:`~i2_helium_md.simulation.ion_propagation_step.biphasic_step`.
+
+    The gate steepness is **not** a cooling field: the ``density_scaled`` arm reuses
+    ``drag_gate_steepness(cfg)`` so the cooling, density, and drag gates share one
+    surface (no new steepness knob). There is nothing steepness-related to guard here.
+
+    Raises
+    ------
+    ValueError
+        On an unrecognised ``cooling_spatial_gate`` selector.
+    """
+    _reject_unknown_enum(
+        cfg.cooling_spatial_gate,
+        _KNOWN_COOLING_SPATIAL_GATES,
+        field="cooling_spatial_gate",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -577,21 +647,19 @@ def check_pickup_config(cfg: "SimConfig") -> None:
         On an unrecognised ``pickup_rate_form``, ``pickup_occupancy_cap``, or
         ``he_capture_velocity`` selector.
     """
-    if cfg.pickup_rate_form not in _KNOWN_PICKUP_RATE_FORMS:
-        raise ValueError(
-            f"unknown pickup_rate_form {cfg.pickup_rate_form!r}; "
-            f"expected one of {_KNOWN_PICKUP_RATE_FORMS}"
-        )
-    if cfg.pickup_occupancy_cap not in _KNOWN_PICKUP_OCCUPANCY_CAPS:
-        raise ValueError(
-            f"unknown pickup_occupancy_cap {cfg.pickup_occupancy_cap!r}; "
-            f"expected one of {_KNOWN_PICKUP_OCCUPANCY_CAPS}"
-        )
-    if cfg.he_capture_velocity not in _KNOWN_HE_CAPTURE_VELOCITIES:
-        raise ValueError(
-            f"unknown he_capture_velocity {cfg.he_capture_velocity!r}; "
-            f"expected one of {_KNOWN_HE_CAPTURE_VELOCITIES}"
-        )
+    _reject_unknown_enum(
+        cfg.pickup_rate_form, _KNOWN_PICKUP_RATE_FORMS, field="pickup_rate_form"
+    )
+    _reject_unknown_enum(
+        cfg.pickup_occupancy_cap,
+        _KNOWN_PICKUP_OCCUPANCY_CAPS,
+        field="pickup_occupancy_cap",
+    )
+    _reject_unknown_enum(
+        cfg.he_capture_velocity,
+        _KNOWN_HE_CAPTURE_VELOCITIES,
+        field="he_capture_velocity",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -844,6 +912,14 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
         )
 
 
+# Step-budget ceiling for the relaxation stage under a cooling spatial gate that can
+# void the freeze early-exit (see check_relaxation_config). ~1e7 steps is a heavy but
+# completable run; the 8.53e6 ps experimental cap at dt_ion=0.01 would be ~8.5e8 steps
+# (a multi-hour runaway with no guaranteed freeze). Raise deliberately if a gated run
+# genuinely needs a longer *bounded* relaxation.
+_DENSITY_SCALED_MAX_RELAX_STEPS = 10_000_000
+
+
 def check_relaxation_config(cfg: "SimConfig") -> None:
     """Validate the Tier-2 Phase-E relaxation-stage surface (Slice E2).
 
@@ -865,6 +941,11 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
        be positive.
     4. ``relaxation_forces in {"coulomb", "free_flight"}`` -- the translation-arm
        enum reject guard.
+    5. Under ``cooling_spatial_gate == "density_scaled"`` the freeze early-exit that
+       makes check 2's "generous values are cheap" true is **void** (an ejected
+       fragment stops cooling and may never freeze), so ``relaxation_time_ps /
+       dt_relax`` is bounded to ``_DENSITY_SCALED_MAX_RELAX_STEPS`` -- otherwise the
+       loop would silently run to the full (e.g. experimental) cap.
 
     Raises
     ------
@@ -902,6 +983,25 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
             f"(k*dt)^2/2 <~ 0.5%, since k <= nu); got nu={cfg.evap_rate_prefactor_per_ps} "
             f"* dt_relax={dt_relax} = {nu_dt}. Reduce relaxation_dt_ps."
         )
+
+    # Under cooling_spatial_gate="density_scaled" the K2 freeze early-exit is NOT
+    # guaranteed: a fragment ejected into vacuum (rho_He -> 0) stops cooling, so E_int
+    # is held and can sit above D_0(n) indefinitely (evaporation's RRK rate -> 0 near
+    # threshold). The generous-relaxation_time_ps rationale (the freeze early-exit
+    # bounds the cost of large values) is therefore void, so bound the step budget
+    # explicitly here to turn a silent multi-hour runaway into a load-time error.
+    if cfg.cooling_spatial_gate == "density_scaled":
+        n_relax_steps = cfg.relaxation_time_ps / dt_relax
+        if n_relax_steps > _DENSITY_SCALED_MAX_RELAX_STEPS:
+            raise ValueError(
+                "cooling_spatial_gate='density_scaled' voids the relaxation freeze "
+                "early-exit (an ejected fragment stops cooling and may never freeze), "
+                f"so relaxation_time_ps/dt_relax = {cfg.relaxation_time_ps}/{dt_relax} "
+                f"= {n_relax_steps:.3g} steps must not exceed "
+                f"{_DENSITY_SCALED_MAX_RELAX_STEPS:.3g}. Set a finite, modest "
+                "relaxation_time_ps (the total-strip probe uses 1000 ps) instead of "
+                "the experimental flight cap."
+            )
 
     if cfg.relaxation_forces not in ("coulomb", "free_flight"):
         raise ValueError(
@@ -974,11 +1074,7 @@ def check_drag_config(cfg: "SimConfig") -> None:
     """
     # Typo-recovery arm: Literal is not runtime-enforced. Runs unconditionally
     # so a typo'd drag_form fails loudly even on a non-drag config.
-    if cfg.drag_form not in _KNOWN_DRAG_FORMS:
-        raise ValueError(
-            f"unknown drag_form {cfg.drag_form!r}; expected one of "
-            f"{_KNOWN_DRAG_FORMS}"
-        )
+    _reject_unknown_enum(cfg.drag_form, _KNOWN_DRAG_FORMS, field="drag_form")
 
     coeffs = cfg.drag_coefficients
     if coeffs is None:

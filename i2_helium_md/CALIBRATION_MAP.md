@@ -128,6 +128,25 @@ cooling, ladder, early window). Physics-Definition only; no code.
 > the first load shed from the one-observable Tier-2 stack. Implementation
 > (selection surface + F2 campaign re-scope to an $s_\text{eff}$×τ co-fit)
 > stays behind the implementation trigger. Reversible.
+>
+> **Update 2026-07-06 — cooling spatial gate arm (`cooling_spatial_gate`).** K2
+> Newton cooling ("bath dissipation") was applied **ungated everywhere**, unlike
+> drag ($\gamma\propto\rho_\text{He}$) and pickup ($\lambda\propto\rho_\text{He}$),
+> which gate off outside the bubble via the shared erf-complement surface. Added a
+> first-class interchangeable enum arm (**new row 5a**): `none` (default,
+> **byte-identical** to the locked ungated form) / `density_scaled`
+> ($\tau_\text{eff}=\tau/\rho_\text{ratio}$, reusing the **row-5** drag gate
+> steepness — one bubble boundary for all three He-mediated channels; cooling
+> switches off in vacuum). Physically motivated: the GAH25 $\tau$ was fit near the
+> droplet, but an ejected I⁺Heₙ cluster has no external bath. This is the
+> **ejection-regime total-vaporization lever** — ungated cooling self-quenches the
+> cascade at $n\sim$ few (shell-retaining), the gate opens the near-bare end the
+> experimental 43 % bare-I⁺ peak requires. Probed by the total-strip A/B capability
+> grid (`gen_tier2_staircase_probe.py`, **probe-scoped**; not yet a campaign knob).
+> Clean erf-cutoff is the first build; a residual out-of-bubble floor
+> $\rho_\text{min}$ is a **deferred OQ**. See MASS §6 K2 / §6.11,
+> DRAG_PORT_DESIGN_DECISIONS §"Cooling spatial gate",
+> `drag_migration_log_tier2.md`. Reversible.
 
 ## Classification scheme
 
@@ -173,6 +192,7 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | 3 | Drag | $E_\text{bind}=0.1168$ (eV) | effective ion binding, co-fit with drag | **Locked** (Tier-0), VMI **pending** | Tier 0 trajectory-match → Tier 2 VMI | TDDFT escape-energy sanity; integrated ladder $\sum_i D_0$ (§6.5.1) | OQ1 (electronic provenance) |
 | 4 | Drag | $v_\text{ceiling}$ (Å/ps) | high-$v$ cubic ceiling cap (contingent) | **Bounded** (only if R10-(b) invoked) | TDDFT peak speed (Tier 0/1) | Tier-1 transient $v$ excursions above $v_\text{max,fit}$ | R10 |
 | 5 | Gate | $g(\text{depth})$ (dimensionless) | drag spatial gate, G4→G2 | **Derived** (erf-tied G2 until $\rho_\text{He}$ profile exists) | confining-potential steepness (14.2 Å) | Tier-1 trajectory; promote to G4 with measured $\rho_\text{He}$ | §5 **[D]** |
+| 5a | Gate | `cooling_spatial_gate` (arm) | K2 cooling spatial gate: `none` (locked, ungated $-E_\text{int}/\tau$) / `density_scaled` ($\tau_\text{eff}{=}\tau/\rho_\text{ratio}$, off outside bubble) | **Free choice** (2 arms, 1 selection; default `none` **byte-identical**; added 2026-07-06) | Tier 2 size dist (total-strip A/B capability probe) | reuses **row-5** drag gate surface (`drag_gate_steepness`, one bubble boundary); ejection-regime total-vaporization lever (shell-retaining ↔ near-bare); $\rho_\text{min}$ floor **deferred OQ**; probe-scoped, not yet a campaign knob | MASS §6 K2/§6.11 |
 | 6 | Noise | $T_\text{eff}$, FDT amplitude | multiplicative local-FDT bath kick (N2) | **Bounded/Derived** (tied to $\gamma(v)$; $\propto\sqrt{\gamma g k_BT_\text{eff}}$) | Tier 3 (ensemble width / VMI) | strict-FDT shown dynamically null (§1.3a) | §1 **[D]** |
 | 7 | Pickup | $\lambda_\text{attach}(\rho_\text{He},n)$ (ps⁻¹) | Poisson He capture rate (density-gated, occupancy-capped) | **Sourced + Bounded** — central ~0.7–1.1/ps (GAH25 Rb⁺/Cs⁺; I⁺ is Rb⁺-like), **not** 2.0 (Na⁺ exp); ±factor-2; ×Langmuir cap $(1-n/n^*)_+^{\,p}$ (A12, 2026-06-21) | Tier 2 size dist | Tier-1 shell trajectory; 9/18 Å density contrast; cap inert for ejection | R1 (Na⁺→I⁺), R7 ($v$-dep), A12 |
 | 7p | Pickup | $p\ge0$ | occupancy-cap sharpness (Langmuir exponent, A12) | **Free (conditional)** — Phase-B default **$p=1$ fixed** (NB 2026-07-01: the $p\!\leftrightarrow\!\kappa$ tie is **inverse** — rigid shell = large $\kappa$ = smaller $p$; **NOT** $p=\kappa$; match cutoff slopes if tied); split only if size dist. demands | Tier 2 size dist | [Nat23] resting-ion saturation bounds $n^*,p$; $p\!\leftrightarrow\!\kappa$ coupling (inverse); Phase-B §3.2 | A12, OQ4/OQ8 |

@@ -74,6 +74,10 @@ from i2_helium_md.postprocess import (  # noqa: E402
 )
 from i2_helium_md.postprocess.derived_diagnostics import mean_shell_count  # noqa: E402
 from i2_helium_md.simulation.checkpoint import load_ion_checkpoint  # noqa: E402
+from i2_helium_md.simulation.ion_propagation_step import (  # noqa: E402
+    ion_state_from_checkpoint_column,
+)
+from i2_helium_md.simulation.relaxation_stage import _freeze_mask  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
@@ -84,6 +88,7 @@ PROBE_TABLE_COLUMNS = [
     "kappa",
     "tau_ps",
     "s_eff",
+    "cooling_gate",
     "f_int",
     "f_ret",
     "N",
@@ -93,9 +98,11 @@ PROBE_TABLE_COLUMNS = [
     "t_first_shed_ps",
     "frac_ions_shed",
     "n_traj_mad",
-    # flexibility metrics (E2 relaxed, matched-time)
+    # flexibility / total-strip metrics (E2 relaxed, matched-time)
     "n_relaxed_mean",
     "n_relaxed_spread",
+    "n_relaxed_min",     # deepest reachable shell (total-strip probe headline)
+    "frac_frozen",       # E2 freeze completeness (n==0 or E_int<D_0(n))
     # wiring diagnostic
     "ledger_max_resid_eV",
 ]
@@ -190,14 +197,18 @@ def _cfg_matches_row(cfg, row: dict[str, Any]) -> bool:
 
     Used to re-find the best-case run's ion checkpoint for the overlay figure
     (rows carry only knobs, not the run dir). Matches the tag-encoded knobs:
-    picture (exact), kappa/tau/budget (isclose), and s_eff (both per-n, or
-    isclose). This mirrors the run-dir uniqueness the campaign tag guarantees.
+    picture (exact), kappa/tau/budget (isclose), s_eff (both per-n, or isclose),
+    and cooling_gate (exact). This mirrors the run-dir uniqueness the probe tag
+    guarantees -- cooling_gate is a distinct tag dimension (``_cgds``), so without
+    it an A/B pair at a fixed knob point would alias to the wrong arm's run dir.
     """
     row_s = row.get("s_eff")
     cfg_s = cfg.evap_rrk_dof
     if (row_s is None) != (cfg_s is None):
         return False
     if row_s is not None and not np.isclose(float(cfg_s), float(row_s)):
+        return False
+    if cfg.cooling_spatial_gate != row.get("cooling_gate", "none"):
         return False
     return (
         cfg.ladder_electronic_picture == row["picture"]
@@ -247,6 +258,22 @@ def score_probe_run(
         relax, n_max=n_max, source_tag="relaxed"
     )
     n_relaxed_mean, n_relaxed_spread = relaxed_dist.moments()
+    # Deepest reachable shell = smallest occupied n in the relaxed distribution
+    # (the total-strip A/B headline; read from the SAME distribution as the moments).
+    occupied = relaxed_dist.n_values[relaxed_dist.counts > 0]
+    n_relaxed_min = int(occupied.min()) if occupied.size else int(n_max)
+
+    # E2 freeze completeness: the fraction of ions at the relaxed cascade floor
+    # (n==0 or E_int<D_0(n)); reuse relaxation_stage._freeze_mask on the final
+    # relaxed column so a non-terminating gated cascade (never all-frozen within the
+    # relaxation cap) is surfaced rather than silently read as a converged terminal n.
+    relaxed_state = ion_state_from_checkpoint_column(relax, -1)
+    frozen = _freeze_mask(
+        relaxed_state,
+        picture=cfg.ladder_electronic_picture,
+        kappa=float(cfg.ladder_steepness),
+    )
+    frac_frozen = float(np.mean(frozen))
 
     closure = ion_ledger_closure(ion)
 
@@ -257,12 +284,15 @@ def score_probe_run(
         "kappa": float(cfg.ladder_steepness),
         "tau_ps": float(cfg.internal_energy_cooling_tau_ps),
         "s_eff": None if cfg.evap_rrk_dof is None else float(cfg.evap_rrk_dof),
+        "cooling_gate": cfg.cooling_spatial_gate,
         "f_int": float(cfg.internal_energy_partition_fraction),
         "f_ret": float(cfg.internal_energy_retained_fraction),
         "N": int(cfg.num_molecules),
         **metrics,
         "n_relaxed_mean": n_relaxed_mean,
         "n_relaxed_spread": n_relaxed_spread,
+        "n_relaxed_min": n_relaxed_min,
+        "frac_frozen": frac_frozen,
         "ledger_max_resid_eV": float(closure.max_abs_residual_eV),
     }
 
@@ -407,6 +437,9 @@ def emit_figures(rows: list[dict[str, Any]], out_dir: Path) -> list[Path]:
     pictures = sorted({row["picture"] for row in rows})
     taus = sorted({float(row["tau_ps"]) for row in rows})
     kappas = sorted({float(row["kappa"]) for row in rows})
+    # Cooling-gate A/B axis: figures collapse to the pre-arm single-gate layout when
+    # only one gate is present (so delivered non-A/B figures stay byte-identical).
+    gates = sorted({row.get("cooling_gate", "none") for row in rows})
 
     # (a) mean-n(t) small multiples.
     fig, axes = plt.subplots(
@@ -429,11 +462,15 @@ def emit_figures(rows: list[dict[str, Any]], out_dir: Path) -> list[Path]:
         s_label = (
             "s=per-n" if cfg.evap_rrk_dof is None else f"s={cfg.evap_rrk_dof:.0f}"
         )
+        cg = cfg.cooling_spatial_gate
+        cg_label = "" if len(gates) <= 1 else f" cg={cg}"
+        cg_ls = "--" if (len(gates) > 1 and cg == "density_scaled") else "-"
         axes[i][j].plot(
             ion.time_ps,
             mean_shell_count(ion.n_shell),
             lw=1.2,
-            label=f"k={cfg.ladder_steepness:.2f} {s_label}",
+            ls=cg_ls,
+            label=f"k={cfg.ladder_steepness:.2f} {s_label}{cg_label}",
         )
     for i, picture in enumerate(pictures):
         for j, tau_ps in enumerate(taus):
@@ -477,26 +514,37 @@ def emit_figures(rows: list[dict[str, Any]], out_dir: Path) -> list[Path]:
         col_ticklabels = [_s_eff_label(s) for s in col_values]
         col_label = "s_eff"
 
+    # Rows facet the cooling-gate A/B (single row when only one gate is present, so
+    # the two arms no longer collide into one (tau, col) cell and overwrite).
     fig, axes = plt.subplots(
-        1, len(pictures), figsize=(4.5 * len(pictures), 3.6), squeeze=False
+        len(gates),
+        len(pictures),
+        figsize=(4.5 * len(pictures), 3.6 * len(gates)),
+        squeeze=False,
     )
-    for p_idx, picture in enumerate(pictures):
-        grid = np.full((len(taus), len(col_values)), np.nan)
-        for row in rows:
-            if row["picture"] != picture:
-                continue
-            grid[taus.index(float(row["tau_ps"])), col_values.index(col_of(row))] = (
-                row["n_relaxed_mean"]
+    for g_idx, gate in enumerate(gates):
+        for p_idx, picture in enumerate(pictures):
+            grid = np.full((len(taus), len(col_values)), np.nan)
+            for row in rows:
+                if row["picture"] != picture:
+                    continue
+                if row.get("cooling_gate", "none") != gate:
+                    continue
+                grid[
+                    taus.index(float(row["tau_ps"])), col_values.index(col_of(row))
+                ] = row["n_relaxed_mean"]
+            ax = axes[g_idx][p_idx]
+            im = ax.imshow(grid, origin="lower", aspect="auto", cmap="viridis")
+            ax.set_xticks(range(len(col_values)), col_ticklabels)
+            ax.set_yticks(range(len(taus)), [f"{t:g}" for t in taus])
+            if g_idx == len(gates) - 1:
+                ax.set_xlabel(col_label)
+            if p_idx == 0:
+                ax.set_ylabel("tau [ps]")
+            ax.set_title(
+                picture if len(gates) == 1 else f"{picture} / {gate}", fontsize=9
             )
-        ax = axes[0][p_idx]
-        im = ax.imshow(grid, origin="lower", aspect="auto", cmap="viridis")
-        ax.set_xticks(range(len(col_values)), col_ticklabels)
-        ax.set_yticks(range(len(taus)), [f"{t:g}" for t in taus])
-        ax.set_xlabel(col_label)
-        if p_idx == 0:
-            ax.set_ylabel("tau [ps]")
-        ax.set_title(picture, fontsize=9)
-        fig.colorbar(im, ax=ax, label="relaxed mean n")
+            fig.colorbar(im, ax=ax, label="relaxed mean n")
     fig.suptitle("Staircase probe: relaxed terminal n across the grid")
     fig.tight_layout()
     path = out_dir / "probe_relaxed_n_heatmap.png"

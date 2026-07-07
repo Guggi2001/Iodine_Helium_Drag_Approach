@@ -4100,3 +4100,174 @@ byte-identical); the F5 production switch, total-strip variant, and 18 Å leg
 remain out of scope. The 18-run campaign itself is an **operator action**
 (`python scripts/gen_tier2_runs.py`, then the F3/F4 report scripts) — not
 executed as part of this delivery.
+
+---
+
+## Cooling spatial gate — `cooling_spatial_gate` model arm + total-strip A/B probe DELIVERED (2026-07-06)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger, after a design
+discussion (user question: before the production switch, *can our parameters
+produce total stripping* — near-bare I⁺, the experimental 43 % bare-I⁺ peak?).
+Design doc: `C:\Users\user\.claude\plans\1-yes-it-deserves-nested-allen.md`.
+TDD throughout (RED watched on every new physics/config surface before the fix).
+
+**The finding that drove it (structural trace of the locked mechanism).** No
+fixed-asymptote wall exists (`E_inf(N)→0` as N→0 was built for OQ6 reachability).
+The limiter is **K2 Newton cooling**: it drains `E_int` toward 0, opening the
+self-bound gate but then quenching shedding once `E_int < D_0(n)` — terminal n
+floors at n~few (shell-retaining), reached in a few τ (the 8.5 µs flight is
+irrelevant; cooling zeroes `E_int` long before). The user then flagged the real
+asymmetry: **drag (`γ∝ρ_He`) and pickup (`λ∝ρ_He`) both gate off outside the
+bubble via the shared erf-complement surface, but K2 cooling is applied ungated
+everywhere** — including after the complex is ejected into vacuum, where there is
+no droplet bath to radiate into (the GAH25 τ was fit for a near-droplet *growing*
+Na⁺ shell; §6 K2 growing-vs-shrinking caveat). Gating K2 off on ejection lets an
+already-self-bound complex keep shedding (shed-invariant margin `G=E_int−Σ(n)`) →
+deeper stripping → the total-vaporization end.
+
+**Design decisions (user, 2026-07-06, before coding):**
+1. **First-class interchangeable `SimConfig` enum arm**, not a hard-wire (the
+   drag-port working method — every model choice behind an enum, arbitrated by the
+   size distribution).
+2. **Clean erf-complement** (cooling → 0 outside the bubble), reusing the drag gate
+   surface; a residual out-of-bubble floor `rho_min` (dragged He cloud) is a
+   deferred OQ, not built.
+3. **Reuse the drag/pickup gate boundary** `drag_gate_steepness(cfg)` (14.2 Å) — no
+   new steepness knob; one bubble boundary for all three He-mediated channels.
+4. **Probe-scoped for now** — wired into the staircase-probe path only; the campaign
+   encoder, generator, and F3/F4 reports stay untouched until a probe result
+   justifies promotion.
+
+**Physics contract.** `none` (default): `Ė_int|K2 = −E_int/τ` (byte-identical to
+the pre-arm code). `density_scaled`: `Ė_int|K2 = −(ρ_He/ρ_bulk)·E_int/τ`, i.e.
+`τ_eff = τ/rho_ratio`, closed form `E_new = E_inf + (E−E_inf)·exp(−dt·rho_ratio/τ)`.
+`[ρ_He/ρ_bulk]=1` → eV/ps unchanged.
+
+**Build (additive; `none` byte-identical everywhere):**
+- `physics/solvation_cooling.py` — `newton_cool_step` gains keyword-only
+  `rho_ratio=1.0` (`decay = exp(−dt·rho_ratio/τ)`), a `rho_ratio<0` fail-loud guard
+  (the anti-cooling class the dt guard already names), and an array-`rho_ratio` →
+  ndarray return. `rho_ratio=1.0` is byte-identical (`dt·1.0` exact).
+- `config.py` — `CoolingSpatialGate = Literal["none","density_scaled"]`, field
+  `cooling_spatial_gate: CoolingSpatialGate = "none"` (inert default), the
+  `_KNOWN_COOLING_SPATIAL_GATES` tuple + `check_cooling_spatial_gate_config` reject
+  guard wired into `validate()` (mirrors `check_helium_density_config`). Physics-live
+  (read by `biphasic_step`), not just guard-live. Old cfg.json without the field
+  loads fine (missing key → default).
+- `simulation/ion_propagation_step.py` — `biphasic_step` **hoists** the RNG-free
+  `_depth`/`rho_he_ratio` gate computation above the K2 block (byte-identical draw
+  stream) and threads `cool_rho = rho_ratio if cfg.cooling_spatial_gate ==
+  "density_scaled" else 1.0` into `newton_cool_step`. `E_dissip` booking unchanged
+  (books the actual before/after drain → the 5-term invariant stays closed).
+- `simulation/relaxation_stage.py` — **no code change**; the verbatim `biphasic_step`
+  reuse carries the arm through (positions advanced → `depth` live). Behavioral
+  change is intended: a gated-off ejected complex sheds without the cooling quench;
+  `E_int` stays monotone non-increasing so freeze-termination holds. **[Corrected by
+  the 2026-07-06 code-review fixes below — monotone non-increasing does NOT imply
+  freeze-termination under `density_scaled`: an ejected fragment stops cooling and can
+  sit above `D_0(n)` indefinitely. The probe's finite 1000 ps cap is what bounds it; a
+  config guard now rejects a runaway cap for that arm.]**
+- `scripts/tier2_common.py` — `build_biphasic_cfg` gains a None-sentinel
+  `cooling_spatial_gate` kwarg (injected only when set); `tier2_probe_run_tag` /
+  `tier2_probe_run_dir_name` append `_cgds` for `"density_scaled"` (nothing for
+  `none`/`None` → delivered probe tags byte-identical). **`tier2_run_tag` (campaign
+  encoder) NOT modified** — the parity-lock test exercises only base knobs +
+  `evap_rrk_dof`, so it stays green while the probe carries this extra axis.
+- `scripts/gen_tier2_staircase_probe.py` — active USER SETTINGS flipped to the
+  **total-strip capability A/B grid**: `COOLING_GATE_GRID = ["none","density_scaled"]`
+  × `S_EFF_GRID = [1,2,3,5]` (s_eff=1 = max-kinetics bound) × `TAU_GRID_PS =
+  [6.55,16.5,30]` (κ=1/mixture pinned) → **24 runs**, 9 Å / 0.80 eV / N=50.
+  `RELAXATION_TIME_PS = 1000.0` (finite cap required: a gated-off self-unbound
+  complex never freezes, so the 8.53e6 ps default would not terminate). The 12-run
+  mini-probe and 45-run full probe preserved as restore comments. `probe_grid_points`
+  now yields 5-tuples.
+- `scripts/post_processing/tier2_staircase_probe_report.py` — `PROBE_TABLE_COLUMNS`
+  gains `cooling_gate`, `n_relaxed_min` (deepest reachable shell = smallest occupied
+  n in the relaxed distribution — the total-strip headline), and `frac_frozen` (E2
+  freeze completeness, reusing `relaxation_stage._freeze_mask` on the final relaxed
+  column so a non-terminating gated cascade is surfaced, not silently read as a
+  converged terminal n).
+
+**Tests (+~20; full suite 2126 → 2130 passed, 0 failed):**
+`test_solvation_cooling.py` (rho_ratio=1 back-compat / rho_ratio=0 no-op / scaled
+decay / negative-rho raise / array broadcast); new
+`test_cooling_spatial_gate_config.py` (default-inert, both arms valid, unknown
+rejected by guard + validate, Literal↔`_KNOWN` parity); `test_biphasic_step.py`
+(`TestCoolingSpatialGate`: deep-inside == ungated exactly, far-outside cooling off /
+E_dissip zero, intermediate-depth drain strictly between); `test_relaxation_stage.py`
+(E_dissip==cumulative-K2-drain oracle gate-invariant under `density_scaled`; first-step
+gated drain < ungated); `test_tier2_staircase_probe*.py` (total-strip 24-point grid,
+back-compat 45-run with gate="none", `_cgds` suffix append/omit + namespace lock,
+A/B distinct dirs, cfg stamp, report `cooling_gate`/`n_relaxed_min`/`frac_frozen`
+columns). Existing relaxation E_dissip oracle stays green unchanged (magnitude-agnostic
+reconstruction; default `none`).
+
+**Rule-2 / scope:** one new `SimConfig` field (`cooling_spatial_gate`, physics-live
+— not a rule-2 carry); no schema bump, no RNG draw-order change, no drag-law / neutral
+/ ion-propagation change; the relaxation stage is untouched (arm flows through). The
+`rho_min` floor, campaign wiring (`tier2_run_tag`/`gen_tier2_runs.py`/F3/F4 columns),
+and the F5 production switch remain out of scope. Docs updated: MASS §6 K2 + §6.11,
+`CALIBRATION_MAP.md` (update block + row 5a), `DRAG_PORT_DESIGN_DECISIONS.md` §5.8.
+
+**Verification.** Full suite **2130 passed, 0 failed**, 80 warnings = the documented
+§6.5 mass-pairing path. **Next (operator action):** run the 24-point total-strip A/B
+probe (`python scripts/gen_tier2_staircase_probe.py`, then
+`tier2_staircase_probe_report.py`), confirm the `none` arm reproduces the
+shell-retaining floor and read whether `density_scaled` drives `n_relaxed_min` toward
+bare across the s_eff/τ grid (with `frac_frozen` confirming completeness) — the
+capability check that gates whether/how the production campaign can express the
+experimental 43 % bare-I⁺ peak. Reported, not auto-adjudicated.
+
+---
+
+## Cooling spatial gate — code-review fixes (high-effort review, 2026-07-06)
+
+A high-effort workflow code review (4 finders + 10 verifiers) of the cooling-gate
+delivery confirmed the `none`-arm core (byte-identity, frozen two-draw stream after
+the RNG-free depth/`rho_ratio` hoist, 5-term closure, `newton_cool_step` guards,
+`Literal↔_KNOWN` parity) and surfaced 7 findings, all fixed under the user's explicit
+"fix all findings even 6" trigger. TDD for the behavioural fixes.
+
+1. **`density_scaled` breaks the guaranteed relaxation freeze-termination
+   (correctness).** The E2 early-exit relies on K2 *actively* draining `E_int` to 0;
+   under `density_scaled` an ejected fragment (`rho_He→0`) stops cooling, `E_int` is
+   merely held, and evaporation's RRK rate vanishes near threshold, so `E_int` can
+   sit above `D_0(n)` forever → the loop runs the full cap (the 8.53e6 ps flight cap
+   ⇒ ~8.5e8 steps ⇒ effective hang). The probe already mitigates via `RELAXATION_TIME
+   _PS=1000.0`; **fix** adds a `check_relaxation_config` step-budget guard
+   (`relaxation_time_ps/dt_relax ≤ _DENSITY_SCALED_MAX_RELAX_STEPS = 1e7`) that turns a
+   runaway cap into a load-time error, and corrects the false "freeze-termination
+   holds" claim (delivery entry above + the `relaxation_stage` Termination docstring).
+2. **`_cfg_matches_row` omitted `cooling_gate` (correctness).**
+   `tier2_staircase_probe_report.py` — best-case overlay re-find could load the wrong
+   A/B arm; **fix** adds the `cooling_gate` match (`row.get(..., "none")` back-compat).
+3. **Report figures collided the A/B arms (correctness).** Small-multiples (curve
+   label/linestyle) and the relaxed-n heatmap (subplot-row facet) now thread
+   `cooling_gate`; single-gate layouts stay byte-identical, so delivered non-A/B
+   figures are unchanged (regenerate the A/B PNGs by re-running the report — operator
+   action, figures are not in pytest).
+4. **Campaign encoder could collide gated run dirs (latent).** `tier2_run_tag` /
+   `tier2_run_dir_name` now append `_cgds` for `density_scaled` (after `_s`, before
+   `_totalstrip`); the probe↔campaign parity-lock test is extended to cover it.
+   Campaigns not sweeping the gate stay byte-identical.
+5. **`newton_cool_step` (cleanup):** `rho = np.asarray(rho_ratio)` bound once (was
+   coerced twice); behaviour-neutral.
+6. **Enum-reject guards consolidated (cleanup, user-approved).** The 7 near-verbatim
+   `if x not in _KNOWN_*: raise ValueError("unknown …")` blocks (drag_form,
+   dissociation_ladder, helium_density_profile, cooling_spatial_gate, the 3 pickup
+   selectors) collapse into one `config._reject_unknown_enum(value, known, field=…)`
+   helper; messages are byte-identical, so the field-name `match=` guard tests still
+   pass.
+
+Two candidates were **correctly refuted** by the verify pass (kept as-is): the
+`relaxation_stage._freeze_mask` cross-module import (a hard top-level import — fails
+loud on rename, not silent drift) and the `== "density_scaled"` suffix special-case
+(closed enum).
+
+**Tests (+~10):** F1 density_scaled runaway-cap reject + modest-cap/ungated accept
+(`test_relaxation_stage`); F2 matcher gate-distinguish + back-compat
+(`test_tier2_staircase_probe_report`); F4 campaign `_cgds` append/omit/order +
+parity-lock extension (`test_tier2_staircase_probe`). F5/F6 covered by existing
+behaviour-preserving tests. **Rule-2 / scope:** no new `SimConfig` field, no schema/
+RNG/drag-law/driver/propagation change; the F6 consolidation is the only pre-existing-
+code touch and is message-preserving.
