@@ -292,3 +292,258 @@ Same metrics, same **reported-not-adjudicated** stance. Outcome shapes:
 
 A landing `s_eff` does **not** auto-promote the convention; this probe
 falsifies/localises, the user adjudicates.
+
+---
+
+# Addendum B (2026-07-07) — post-Wave-4 decisions + gated landing re-location mini-probe (Wave 5)
+
+> **Status: EXECUTED 2026-07-07** (under the `[PROCEED TO IMPLEMENTATION]`
+> trigger; scratchpad-driver route per B.4, zero repo-code change). Outcome
+> shape **(a)+(b) mixed**: a gated s_eff lands the in-window staircase
+> (s_eff ≈ 30, ~4× the ungated landing) but timing is ~2.3 ps late (f_int
+> re-alignment territory) **and** a new structural finding — the gated
+> in-window staircase and the *terminal* read decouple (s_eff sets the
+> cascade rate, not the endpoint; terminal is flight-time dependent above the
+> freeze-out s_eff). Full results + tables: `TIER2_STAIRCASE_PROBE_FINDINGS.md`
+> §4b (insights I10–I12); delivery/decision record:
+> `drag_migration_log_tier2.md`, "Wave-5 gated landing re-location EXECUTED".
+>
+> Follows the Wave-4 cooling-gate total-strip A/B results and their discussion
+> (`TIER2_STAIRCASE_PROBE_FINDINGS.md` §4; log entry "Total-strip A/B probe
+> EXECUTED", 2026-07-07).
+
+## B.1 Decisions (user, 2026-07-07)
+
+1. **`cooling_spatial_gate = density_scaled` is the intended primary
+   production arm.** Grounds: physical self-consistency (drag, pickup, and
+   cooling share one ρ_He bubble boundary; ungated K2 applied a
+   droplet-bath cooling law in vacuum after ejection — the GAH25 τ was fit
+   for a near-droplet growing shell), and capability (the ungated arm
+   cannot pass n̄ ≈ 8.5 at mid-band τ even at the max-kinetics bound
+   s_eff = 1, structurally blocking the experimental 43 % bare-I⁺ peak;
+   the gated arm reaches n̄ ≈ 2.7). This is a *direction*, not a
+   hard-wire: the arm stays an interchangeable `SimConfig` enum with a
+   `none` sensitivity leg in any campaign (working method), and formal
+   promotion into the campaign/production wiring waits for the Wave-5
+   result below.
+2. **`f_int` is promoted to a genuine sweeping parameter — accepted
+   consequence of the gate.** Under `density_scaled` the t×↔ejection race
+   is binary (Wave 4: deep strip if t× ≲ t_eject ≈ 6 ps, permanently
+   closed gate otherwise), and t× = τ·ln(f_int·E/Σ(21)) makes f_int (with
+   τ and the picture-degenerate Σ(21)) the cliff-side selector rather than
+   a timing nicety. **Derived prediction recorded for F5:** at 2.70 eV
+   with f_int = 0.5, t× ≈ 12.9 ps > t_eject → the gated arm sheds
+   *nothing*; opening the gate before ejection at the production budget
+   needs roughly f_int ≲ 0.17 — the scenario-keyed f_int floor
+   (CALIBRATION_MAP row 14) is load-bearing at production, and ejection
+   only gets earlier at higher budget (faster ion).
+3. **The clean erf-complement (exact zero out-of-bubble cooling) is
+   adopted as correct.** A small residual floor (`rho_min`, dragged He
+   cloud) is judged *not physical* by the user; it is retained purely as a
+   **documented open question for domain experts** — explicitly **no
+   implementation**, now or as an escalation default. (Consequence
+   accepted with it: the Wave-4 all-or-nothing τ/f_int cliff is a real
+   feature of the model, not an artifact to be softened.)
+
+Picture and κ stay as adjudicated at the s_eff promotion: κ pinned at 1
+(near-dead: inverted + normalisation-capped), picture pinned at
+`statistical_mixture` and reported — picture enters the dynamics only
+through the ratio f_int·E/Σ(21), i.e. it is one effective knob with f_int
+(Waves 1+3), now swept via f_int alone.
+
+## B.2 Why Wave 5 — the s_eff landing prior is gate-conditional
+
+The staircase landing **s_eff ∈ ≈ [8, 12] × mid-band τ** (Addendum A) was
+established **ungated**. Wave 4 probed the gated arm only at s_eff ≤ 5,
+where the gate roughly doubles in-window shedding at τ = 6.55 (s_eff = 5:
+Δn̄ 9.35 → 17.52) by removing the post-ejection K2 quench. Extrapolating,
+gated s_eff = 8 likely overshoots the anchored 7-shed/n_end-14 staircase
+badly — the gated co-fit optimum should sit at **higher s_eff** (slower
+kinetics compensating the lost quench). Running the re-scoped F2 campaign
+on the ungated prior under a gated production arm would repeat the exact
+mistake the Wave-1 probe was built to prevent. Wave 5 re-locates the
+landing under the gate before any campaign spend.
+
+## B.3 Run matrix (5 runs)
+
+- **Grid:** `s_eff ∈ {8, 12, 16, 20, 30}` at τ = 6.55 ps,
+  `cooling_spatial_gate = density_scaled`.
+- **Pinned (probe pins throughout):** κ = 1, `statistical_mixture`,
+  f_int = 0.5 (t× ≈ 5 ps on the anchored first shed — the correct pin for
+  a staircase-*timing* comparison; the f_int sweep belongs to the
+  campaign, B.1 item 2), f_ret = 0.1, λ₀ = 0.9/ps, 9 Å / 0.80 eV / N = 50
+  / bridge seed / 30 ps ion window / 1000 ps relaxation cap.
+- **Brackets already on disk (no re-run needed):** gated s_eff ∈ {1, 2, 3,
+  5} at τ = 6.55 (Wave 4, all overshooting: n_ion_end 2.7–3.5) below, and
+  the ungated s_eff sweep (Wave 2) as the quench-on reference.
+- **Wiring oracle:** the gated s_eff = 5 / τ = 6.55 point already exists
+  from Wave 4 (Δn̄ = 17.52, n_end = 3.48) — a fresh scoring pass must
+  reproduce it unchanged.
+- **Optional second arm (flagged, not default):** τ = 2.6 ps × the same
+  s_eff grid, if the τ = 6.55 arm shows the gated first shed drifting late
+  (Wave 4 measured 6.68 ps vs the anchored 5 — cooling slows during exit,
+  so the gated crossing lags the ungated t×). Timing re-alignment via
+  f_int is the campaign's job, not this probe's.
+
+## B.4 Implementation surface and read-out
+
+**No new code and no new config surface** — every knob is already plumbed
+(`build_biphasic_cfg`: `evap_rrk_dof`, `cooling_spatial_gate`; generator
+grids `S_EFF_GRID` / `COOLING_GATE_GRID` / `TAU_GRID_PS`; report columns
+`s_eff` / `cooling_gate` / `n_relaxed_min` / `frac_frozen`). Two execution
+routes, either acceptable:
+
+- **Scratchpad driver** through the delivered `build_probe` / `_run_one`
+  pipeline with an overridden module-level grid (the Wave-3 precedent —
+  zero repo-code change; run dirs land in the `tier2probe` namespace and
+  are scored by the delivered report script), or
+- **USER-SETTINGS flip** of the generator's active grid (+ the locked
+  grid tests) — a code change, behind `[PROCEED TO IMPLEMENTATION]`.
+
+Same metrics, same reported-not-adjudicated stance. Outcome shapes:
+
+- **(a) A gated landing exists** (some s_eff lands magnitude *and* timing)
+  → it becomes the gated campaign prior; feeds the F2 Stage-1 grid
+  re-centering and the formal gate-arm promotion decision.
+- **(b) Magnitude lands but timing is systematically late** (the ~1.3 ps
+  gated crossing lag) → the landing is conditional on a modest f_int
+  re-alignment — quantify the lag, hand it to the campaign's f_int
+  dimension (B.1 item 2).
+- **(c) No constant s_eff lands under the gate** (e.g. every s_eff that
+  fixes the magnitude breaks in-window timing or overshoots past 14) →
+  tension between the gated arm and the TDDFT staircase prior; since
+  TDDFT is not ground truth, this becomes a documented conflict for the
+  size-distribution arbitration, not an automatic rejection of either.
+
+## B.5 Campaign-shape implication (recorded for the F-plan, not built)
+
+If Wave 5 lands, the re-scoped Stage 1 becomes **gate = density_scaled
+(primary) × s_eff (gated landing band) × τ × f_int**, with a small
+`gate = none` sensitivity leg and κ/picture/λ₀ pinned-and-reported. The
+identifiability outlook improves: bare fraction ↔ the t×↔ejection race
+(f_int·E/Σ), shell-region location ↔ s_eff, timing/tail ↔ τ. Updating
+`TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` (F2 NB) is deferred until the
+Wave-5 result exists.
+
+> **NB (post-Wave-6, user conclusion 2026-07-07 — supersedes the "× τ ×
+> f_int" grid shape above; findings I18).** τ and f_int must be
+> **connected** in any campaign grid: gated observables organize along the
+> race margin Δ× = t_eject − t×, so Stage 1 should grid **Δ× directly**
+> (f_int derived per τ via f_int = (Σ/E)·e^{t×/τ}), keeping τ as a separate
+> dimension only for its independent role (in-bubble leak/quench strength).
+> An independent τ × f_int product samples the race incidentally and is
+> rejected. The campaign itself stays parked (probe-only scope); OQ-B (the
+> bare peak) is explicitly deferred to the F5/production discussion.
+
+---
+
+# Addendum C (2026-07-07) — Wave 6 (f_int flexibility probe) + Wave 7 (detected-read re-score)
+
+> **Status: Wave 6 EXECUTED 2026-07-07** (under the `[PROCEED TO
+> IMPLEMENTATION]` trigger; scratchpad-driver route, zero repo-code change;
+> 10 new runs → 102 probe dirs; wiring oracle exact on all three f_int = 0.50
+> companions). Verdicts: **P2, P3, P4 confirmed; P1 qualitatively confirmed,
+> quantitatively refined** (timing re-aligns at f_int ≈ 0.40–0.42, not 0.35 —
+> the gated crossing lag grows with t×). New structural finding: **gated,
+> f_int is a joint timing + effective-budget knob** (the in-bubble leak over
+> [t×, t_eject]); bare I⁺ unreached at any f_int. Full tables + insights
+> I15–I17: `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4d; delivery record:
+> `drag_migration_log_tier2.md` "Wave-6 f_int probe EXECUTED".
+> **Wave 7 remains PLANNED** — awaits the Slice-DS build
+> (`TIER2_DETECTION_STAGE_DESIGN.md`), behind its own trigger.
+>
+> Probe-program continuation, explicitly **not** campaign/production work
+> (the B.5 campaign shape stays parked). Goal unchanged: understand the
+> model — parameter sensibility, flexibility reach (total stripping;
+> staircase), now with the detection-time layer. Same stance as all waves:
+> existence/capability probes, **reported, not auto-adjudicated**.
+
+## C.1 Wave 6 — the f_int probe (the one knob every wave pinned)
+
+All 92 probe dirs sit at f_int = 0.5. Post-Wave-4 decision B.1(2) promoted
+f_int to a first-class lever; Wave 6 actually sweeps it, on the
+production-intended gated arm, with three **pre-registered quantitative
+predictions** (t× = τ·ln(f_int·E/Σ(21)); E = 0.80 eV, Σ_mix(21) ≈ 0.188 eV;
+t_eject ≈ 6 ps; gated crossing lag ≈ +1.8–2.3 ps over t×, from Waves 4/5):
+
+- **P1 (timing re-alignment).** Ungated-equivalent t× at f_int = 0.35 is
+  ≈ 2.6 ps; adding the ~2 ps exit lag predicts the gated first shed lands
+  ≈ 5 ps — the anchored t★. Tests whether the standing "the ~2.3 ps late
+  gated timing is f_int-realignable" claim (Wave-5 finding 4) is
+  quantitatively real, and whether the exit lag is itself f_int-independent
+  (assumed, now measured).
+- **P2 (cliff location, closed side).** f_int = 0.65 at τ = 6.55 puts
+  t× ≈ 6.7 ps ≳ t_eject before the lag — predicted to shed **nothing**
+  (permanently closed gate, the Wave-4 τ ≥ 16.5 class). Borderline by
+  construction: it locates the in-band cliff edge.
+- **P3 (re-opening a dead τ-arm).** f_int = 0.25 at τ = 16.5 gives
+  t× ≈ 1.0 ps ≪ t_eject — an arm that shed *zero* at f_int = 0.5 (Wave 4)
+  is predicted to deep-strip. The race, demonstrated from the f_int side.
+- **P4 (floor depth vs the in-bubble leak — the total-strip bound).** The
+  n ≈ 2 floor exists because cooling drains E_int *between sheds inside the
+  bubble*, i.e. over [t×, t_eject]. f_int moves t× relative to ejection and
+  hence the leak: f_int = 0.24 (the row-14 scenario floor; gate open from
+  ≈ onset, t× ≈ 0.1 ps) is the max-leak end; f_int with t× ≈ t_eject is the
+  min-leak end. The sweep maps floor-n(f_int) and bounds, in-model, how
+  close to bare I⁺ the mechanism can get at 0.80 eV — putting a number on
+  the structural OQ-B gap.
+
+**Grid (10 new runs; 12 scored points):** gate = `density_scaled`
+throughout; τ = 6.55: s_eff ∈ {8, 30} × f_int ∈ {0.24, 0.30, 0.35, 0.65}
+(8 new; the f_int = 0.50 pair is on disk from Waves 4/5); τ = 16.5:
+s_eff ∈ {8, 30} × f_int = 0.25 (2 new). All other pins unchanged (κ = 1,
+mixture, f_ret = 0.1, λ₀ = 0.9/ps, 9 Å / 0.80 eV / N = 50 / bridge seed /
+30 ps window / 1000 ps relaxation cap). Execution: the Wave-3/5
+scratchpad-driver route (zero repo-code change; `tier2probe` namespace;
+scored by the delivered report script). Wiring oracle: the two on-disk
+f_int = 0.50 points must re-score unchanged.
+
+s_eff ∈ {8, 30} spans the fast-kinetics and staircase-landing reads so P1
+and P4 are read at both; f_int is already a `build_biphasic_cfg` kwarg and
+already a tag/report dimension — no new surface anywhere.
+
+## C.2 Wave 7 — the detected-read re-score (needs Slice DS)
+
+**Prerequisite:** the detection stage build per
+`TIER2_DETECTION_STAGE_DESIGN.md` (Slice DS — new module + config fields +
+tests; behind `[PROCEED TO IMPLEMENTATION]`). t_detect = 8.53 µs is Sourced
+(CALIBRATION_MAP row 24).
+
+Then: **re-read every probe dir on disk** (92 + Wave 6's ~10) at the
+detector — the detection stage seeds from each dir's existing
+`relaxation.npz`, so Wave 7 costs **zero new MD runs**. Deliverable: the
+flexibility map *at the detector* — the physically meaningful terminal
+reach per (gate, s_eff, τ, f_int) — plus the resolution of Wave 5's open
+end: does gated s_eff = 30 arrive at 8.53 µs still mid-shell (~5–6 He) or
+at the n ≈ 2 floor? That distinction decides whether the gated arm
+contributes mid-shell weight or only deep-strip weight to any eventual
+ensemble picture. Report: `n_detect_*` columns + state-reason fractions
+(`frozen` / `suppressed` / `time_exhausted`) per design §3.5, and the free
+detection-time sensitivity band (§3.3).
+
+**DS acceptance criterion for Wave 7 (recorded now):** adding the two
+config fields must leave existing probe dirs loadable (missing new keys →
+defaults; verified by an explicit back-compat test at build time). If the
+loader rejects them instead, the stale-artifact policy applies and Wave 7
+requires regeneration — surface that before executing, do not migrate
+artifacts silently.
+
+> **NB (2026-07-07): Slice DS DELIVERED** (log entry "Slice DS DELIVERED";
+> design doc as-built block). The acceptance criterion above is **met**:
+> `test_pre_ds_cfg_json_loads_with_defaults` proves a pre-DS `cfg.json`
+> loads with the fields defaulted — existing probe dirs stay valid, no
+> regeneration. The report now carries the `n_detect_*` + state-reason
+> columns (populated from an optional per-dir `detection.npz`, `-` when
+> absent). **Wave 7 execution remains a separate step** behind its own
+> go-ahead: run the detection stage over the ~102 dirs (seeding each from
+> its `relaxation.npz` with a detection-enabled cfg view at the Sourced
+> t_detect), then re-score.
+
+## C.3 Sequencing and outcome handling
+
+Wave 6 needs no build and can run first; Slice DS builds in parallel or
+after; Wave 7 re-reads everything including Wave 6's dirs. Results go to
+`TIER2_STAIRCASE_PROBE_FINDINGS.md` (new sections + insight register), the
+decision/delivery record to `drag_migration_log_tier2.md`, and the
+discussion resumes from the documented findings — the user adjudicates;
+nothing here discharges the F5 gate or touches campaign/production scope.

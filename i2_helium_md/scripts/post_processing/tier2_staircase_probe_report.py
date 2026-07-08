@@ -13,7 +13,17 @@ probe run dir:
   time-averaged trajectory deviation ``n_traj_mad = <|mean_n(t) - n_anchor(t)|>``;
 * **flexibility metrics** from the E2 relaxed checkpoint (E1 matched-time,
   ``source_tag="relaxed"`` -- the documented reload pitfall):
-  ``n_relaxed_mean`` / ``n_relaxed_spread``;
+  ``n_relaxed_mean`` / ``n_relaxed_spread``. **Optional since Slice DS:**
+  a skip-path run (relaxation stage disabled, detection seeding from
+  ``ion.npz``) has no ``relaxation.npz`` and scores ``-`` here;
+* **detected metrics** (Slice DS / Wave 7) from ``detection.npz`` **when
+  present** (the artifact is optional -- probe dirs predating the detection
+  stage score with ``-`` in these columns): ``n_detect_mean`` /
+  ``n_detect_spread`` / ``n_detect_min`` plus the per-reason state fractions
+  (``frozen`` / ``suppressed`` / ``time_exhausted``). The detected read is
+  the Tier-2 arbitration observable; ``n_relaxed_*`` and ``frac_frozen``
+  stay as convergence diagnostics beside it
+  (``TIER2_DETECTION_STAGE_DESIGN.md`` §3.5);
 * the 5-term ``ion_ledger_closure`` residual (wiring diagnostic, not physics).
 
 **Reported, not auto-adjudicated**: the headline states factual minima (the
@@ -74,6 +84,9 @@ from i2_helium_md.postprocess import (  # noqa: E402
 )
 from i2_helium_md.postprocess.derived_diagnostics import mean_shell_count  # noqa: E402
 from i2_helium_md.simulation.checkpoint import load_ion_checkpoint  # noqa: E402
+from i2_helium_md.simulation.detection_stage import (  # noqa: E402
+    load_detection_result,
+)
 from i2_helium_md.simulation.ion_propagation_step import (  # noqa: E402
     ion_state_from_checkpoint_column,
 )
@@ -98,11 +111,19 @@ PROBE_TABLE_COLUMNS = [
     "t_first_shed_ps",
     "frac_ions_shed",
     "n_traj_mad",
-    # flexibility / total-strip metrics (E2 relaxed, matched-time)
+    # flexibility / total-strip metrics (E2 relaxed, matched-time) -- a
+    # convergence diagnostic once a detected read exists (design §3.5)
     "n_relaxed_mean",
     "n_relaxed_spread",
     "n_relaxed_min",     # deepest reachable shell (total-strip probe headline)
     "frac_frozen",       # E2 freeze completeness (n==0 or E_int<D_0(n))
+    # detected metrics (Slice DS; from optional detection.npz -- "-" when absent)
+    "n_detect_mean",
+    "n_detect_spread",
+    "n_detect_min",
+    "frac_det_frozen",
+    "frac_det_suppressed",
+    "frac_det_time_exhausted",
     # wiring diagnostic
     "ledger_max_resid_eV",
 ]
@@ -111,11 +132,20 @@ PROBE_TABLE_COLUMNS = [
 # glob in both directions -- the namespace lock).
 _PROBE_DIR_GLOB = "*_tier2probe_*"
 
-# A probe run dir is scorable only with these three artifacts (``neutral.npz``
-# is written but not read here).
-_REQUIRED_ARTIFACTS: tuple[str, ...] = ("cfg.json", "ion.npz", "relaxation.npz")
+# A probe run dir is scorable with these two artifacts (``neutral.npz`` is
+# written but not read here). ``relaxation.npz`` became OPTIONAL at Slice DS
+# (review fix 2026-07-07): a skip-path run (relaxation_stage_enabled=False,
+# detection stage seeding from ion.npz) carries no relaxation artifact and
+# must still be discovered and scored -- its n_relaxed_*/frac_frozen columns
+# read "-".
+_REQUIRED_ARTIFACTS: tuple[str, ...] = ("cfg.json", "ion.npz")
 
 _RELAXATION_FILENAME = "relaxation.npz"
+
+# Optional detected-read artifact (Slice DS): scored when present, "-" when not
+# -- deliberately NOT in _REQUIRED_ARTIFACTS so every pre-DS probe dir stays
+# scorable unchanged (the Wave-7 back-compat criterion).
+_DETECTION_FILENAME = "detection.npz"
 
 
 def staircase_metrics(
@@ -250,30 +280,73 @@ def score_probe_run(
     run = RunDirectory(run_dir)
     cfg = run.load_cfg()
     ion = run.load_ion()
-    relax = load_ion_checkpoint(run_dir / _RELAXATION_FILENAME)
 
     metrics = staircase_metrics(ion.time_ps, ion.n_shell, schedule)
 
-    relaxed_dist = compute_terminal_shell_distribution(
-        relax, n_max=n_max, source_tag="relaxed"
-    )
-    n_relaxed_mean, n_relaxed_spread = relaxed_dist.moments()
-    # Deepest reachable shell = smallest occupied n in the relaxed distribution
-    # (the total-strip A/B headline; read from the SAME distribution as the moments).
-    occupied = relaxed_dist.n_values[relaxed_dist.counts > 0]
-    n_relaxed_min = int(occupied.min()) if occupied.size else int(n_max)
+    # Relaxed read (E2) -- optional since Slice DS: a skip-path run carries no
+    # relaxation.npz; its relaxed columns read "-" (review fix 2026-07-07).
+    n_relaxed_mean = n_relaxed_spread = n_relaxed_min = frac_frozen = None
+    relaxation_path = run_dir / _RELAXATION_FILENAME
+    if relaxation_path.exists():
+        relax = load_ion_checkpoint(relaxation_path)
+        relaxed_dist = compute_terminal_shell_distribution(
+            relax, n_max=n_max, source_tag="relaxed"
+        )
+        n_relaxed_mean, n_relaxed_spread = relaxed_dist.moments()
+        # Deepest reachable shell = smallest occupied n in the relaxed
+        # distribution (the total-strip A/B headline; read from the SAME
+        # distribution as the moments).
+        occupied = relaxed_dist.n_values[relaxed_dist.counts > 0]
+        n_relaxed_min = int(occupied.min()) if occupied.size else int(n_max)
 
-    # E2 freeze completeness: the fraction of ions at the relaxed cascade floor
-    # (n==0 or E_int<D_0(n)); reuse relaxation_stage._freeze_mask on the final
-    # relaxed column so a non-terminating gated cascade (never all-frozen within the
-    # relaxation cap) is surfaced rather than silently read as a converged terminal n.
-    relaxed_state = ion_state_from_checkpoint_column(relax, -1)
-    frozen = _freeze_mask(
-        relaxed_state,
-        picture=cfg.ladder_electronic_picture,
-        kappa=float(cfg.ladder_steepness),
-    )
-    frac_frozen = float(np.mean(frozen))
+        # E2 freeze completeness: the fraction of ions at the relaxed cascade
+        # floor (n==0 or E_int<D_0(n)); reuse relaxation_stage._freeze_mask on
+        # the final relaxed column so a non-terminating gated cascade (never
+        # all-frozen within the relaxation cap) is surfaced rather than
+        # silently read as a converged terminal n.
+        relaxed_state = ion_state_from_checkpoint_column(relax, -1)
+        frozen = _freeze_mask(
+            relaxed_state,
+            picture=cfg.ladder_electronic_picture,
+            kappa=float(cfg.ladder_steepness),
+        )
+        frac_frozen = float(np.mean(frozen))
+
+    # Detected read (Slice DS / Wave 7): optional -- probe dirs predating the
+    # detection stage carry no detection.npz and score "-" in these columns.
+    detect_cols: dict[str, Any] = {
+        "n_detect_mean": None, "n_detect_spread": None, "n_detect_min": None,
+        "frac_det_frozen": None, "frac_det_suppressed": None,
+        "frac_det_time_exhausted": None,
+    }
+    detection_path = run_dir / _DETECTION_FILENAME
+    if detection_path.exists():
+        detected = load_detection_result(detection_path)
+        # Stale-artifact coherence guard (review fix 2026-07-07): a probe dir
+        # regenerated in place with a leftover detection.npz would otherwise
+        # score the OLD ensemble's detected read next to the NEW run's other
+        # columns -- fail loud on the ensemble-size mismatch instead.
+        if detected.num_molecules != int(cfg.num_molecules):
+            raise ValueError(
+                f"stale detection.npz in {run_dir}: it holds "
+                f"num_molecules={detected.num_molecules} but cfg.json says "
+                f"{cfg.num_molecules}. Re-run the detection stage for this "
+                "dir (stale-artifact policy)."
+            )
+        detected_dist = compute_terminal_shell_distribution(detected, n_max=n_max)
+        n_detect_mean, n_detect_spread = detected_dist.moments()
+        det_occupied = detected_dist.n_values[detected_dist.counts > 0]
+        fractions = detected.reason_fractions()
+        detect_cols = {
+            "n_detect_mean": n_detect_mean,
+            "n_detect_spread": n_detect_spread,
+            "n_detect_min": (
+                int(det_occupied.min()) if det_occupied.size else int(n_max)
+            ),
+            "frac_det_frozen": fractions["frozen"],
+            "frac_det_suppressed": fractions["suppressed"],
+            "frac_det_time_exhausted": fractions["time_exhausted"],
+        }
 
     closure = ion_ledger_closure(ion)
 
@@ -293,6 +366,7 @@ def score_probe_run(
         "n_relaxed_spread": n_relaxed_spread,
         "n_relaxed_min": n_relaxed_min,
         "frac_frozen": frac_frozen,
+        **detect_cols,
         "ledger_max_resid_eV": float(closure.max_abs_residual_eV),
     }
 

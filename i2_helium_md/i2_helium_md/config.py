@@ -350,6 +350,21 @@ class SimConfig:
     relaxation_dt_ps: Optional[float] = None             # None -> dt_ion; guard nu*dt <= 0.1
     relaxation_forces: RelaxationForces = "coulomb"      # translation arm (coulomb default; free_flight)
 
+    # -- Tier-2 Slice DS detection-time continuation stage (opt-in) --
+    # Event-driven (Gillespie) continuation of the post-ejection evaporation
+    # cascade to the detector arrival time -- an *exact solver* of the delivered
+    # mechanism under the P1-P3 handover guard (TIER2_DETECTION_STAGE_DESIGN.md
+    # §2), not a model choice, so the enabled flag alone satisfies the
+    # every-model-choice-behind-an-enum rule (design §3.4). The stage seeds from
+    # relaxation.npz when E2 ran, or directly from ion.npz on the skip path
+    # (design §1 item 5) -- the relaxation stage is NOT required.
+    # ``detection_time_ps`` is **Sourced calibration data with no baked-in
+    # default** (8.53e6 ps = 8.53 us TOF flight time, CALIBRATION_MAP row 24);
+    # required-when-enabled. Both read by check_detection_config below and by
+    # simulation/detection_stage.run_detection_stage.
+    detection_stage_enabled: bool = False                # opt-in; default off = default scope
+    detection_time_ps: Optional[float] = None            # Sourced (8.53e6); required-when-enabled
+
     # ------------------------------------------------------------------
     # Output
     # ------------------------------------------------------------------
@@ -456,6 +471,7 @@ class SimConfig:
         check_evaporation_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
+        check_detection_config(self)
 
 
 # ---------------------------------------------------------------------------
@@ -1007,6 +1023,86 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
         raise ValueError(
             "relaxation_forces must be 'coulomb' (default) or 'free_flight'; got "
             f"{cfg.relaxation_forces!r}."
+        )
+
+
+def check_detection_config(cfg: "SimConfig") -> None:
+    """Validate the Tier-2 Slice-DS detection-stage surface at config-load.
+
+    Fires **only** when ``cfg.detection_stage_enabled`` is True (the
+    ``check_relaxation_config`` pattern); a no-op otherwise, so the default
+    config (stage disabled) is unaffected and existing ``cfg.json`` files that
+    predate the fields load with the defaults (the Wave-7 back-compat
+    criterion, probe plan Addendum C.2). When enabled it requires:
+
+    1. ``mass_scenario == "biphasic"`` -- the detection stage continues the
+       biphasic evaporation cascade (``E_int`` reservoir + RRK channel), which
+       no other scenario carries.
+    2. ``detection_time_ps`` set and > 0 -- **Sourced calibration data with no
+       baked-in default** (8.53e6 ps TOF flight time, CALIBRATION_MAP row 24);
+       the constant is data, not code, so it must be supplied explicitly.
+    3. ``detection_time_ps`` beyond the earliest possible handover on the
+       absolute time axis: ``ion_simulation_time``, plus ``relaxation_time_ps``
+       when the relaxation stage is enabled (the stage seeds from the seed
+       checkpoint's *final* column, so a detection time inside the seed window
+       can never be reached forward). The stage re-checks against the actual
+       handover time ``t_h`` at entry (the config cannot know realized times).
+    4. ``evap_rate_prefactor_per_ps > 0`` -- with ``nu == 0`` the RRK rate is
+       identically zero, so every in-band ion would sit at ``k = 0`` *without*
+       being in a permanent state: the frozen/suppressed/time-exhausted
+       taxonomy (design §2.3) becomes unsound and the detector read is
+       meaningless. The biphasic guard merely *warns* at ``nu == 0`` (a legal
+       pickup-only diagnostic run); the detection stage refuses it.
+
+    The relaxation stage is **not** required (design §1 item 5, the skip
+    path): with ``relaxation_stage_enabled=False`` the stage seeds directly
+    from ``ion.npz`` and the P1-P3 handover guard is the sole defense.
+
+    Raises
+    ------
+    ValueError
+        On any failed check above (fail-loud; CLAUDE.md principle 4).
+    """
+    if not cfg.detection_stage_enabled:
+        return
+
+    if cfg.mass_scenario != "biphasic":
+        raise ValueError(
+            "detection_stage_enabled=True requires mass_scenario='biphasic': the "
+            "detection stage continues the biphasic E_int/RRK evaporation "
+            "cascade, which no other mass scenario carries; got "
+            f"mass_scenario={cfg.mass_scenario!r}."
+        )
+
+    if cfg.detection_time_ps is None or cfg.detection_time_ps <= 0.0:
+        raise ValueError(
+            "detection_stage_enabled=True requires detection_time_ps to be set "
+            "and > 0: the detector arrival time is Sourced calibration data "
+            "(8.53e6 ps TOF flight time, CALIBRATION_MAP row 24) with no "
+            f"baked-in default; got detection_time_ps={cfg.detection_time_ps!r}."
+        )
+
+    earliest_handover_ps = float(cfg.ion_simulation_time)
+    if cfg.relaxation_stage_enabled and cfg.relaxation_time_ps is not None:
+        earliest_handover_ps += float(cfg.relaxation_time_ps)
+    if cfg.detection_time_ps <= earliest_handover_ps:
+        raise ValueError(
+            f"detection_time_ps={cfg.detection_time_ps!r} must lie beyond the "
+            f"seed window end on the absolute time axis (>= {earliest_handover_ps} "
+            "ps = ion_simulation_time"
+            + (" + relaxation_time_ps" if cfg.relaxation_stage_enabled else "")
+            + "): the stage continues the cascade forward from the handover "
+            "state and cannot read a time inside the seed window."
+        )
+
+    if not (cfg.evap_rate_prefactor_per_ps > 0.0):
+        raise ValueError(
+            "detection_stage_enabled=True requires evap_rate_prefactor_per_ps "
+            "(nu) > 0: with nu = 0 the RRK rate is identically zero, so in-band "
+            "ions sit at k = 0 without being frozen or suppressed -- the "
+            "detection stage's permanent-state taxonomy (frozen / suppressed / "
+            "time_exhausted) is unsound and the detector read meaningless; got "
+            f"{cfg.evap_rate_prefactor_per_ps!r}."
         )
 
 

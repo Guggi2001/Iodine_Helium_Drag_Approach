@@ -147,6 +147,25 @@ cooling, ladder, early window). Physics-Definition only; no code.
 > $\rho_\text{min}$ is a **deferred OQ**. See MASS §6 K2 / §6.11,
 > DRAG_PORT_DESIGN_DECISIONS §"Cooling spatial gate",
 > `drag_migration_log_tier2.md`. Reversible.
+>
+> **Update 2026-07-07 — detection time sourced (terminal-read design).** Wave 5
+> (I11) showed the gated terminal read is **flight-time dependent** (the
+> post-ejection cascade is live at any tractable fixed-dt cap), so the Tier-2
+> observable needs an explicit detection time. Design delivered
+> (`docs/drag_port/Tier2/TIER2_DETECTION_STAGE_DESIGN.md`): an event-driven
+> post-ejection continuation reads the per-ion size distribution at
+> $t_\text{detect}$ exactly (the mechanism reduces to a Markov jump chain
+> after ejection — a scheme change, not new physics). **New row 24:**
+> $t_\text{detect}=8.53$ µs $=8.53{\cdot}10^6$ ps, **Sourced** from the
+> experimental-setup publication (TOF flight to detector; user-confirmed
+> 2026-07-07). Sourced tally 8→9. Detection-time *sensitivity* is a free
+> report-side read of the stored shed events (design §3.3). Build stays
+> behind the implementation trigger. Reversible.
+>
+> **NB (2026-07-07, Slice DS delivered):** the carrying config field
+> `detection_time_ps` is now live (`check_detection_config`;
+> required-when-enabled, no baked-in default — the constant stays
+> calibration data supplied per run). Row-24 value unchanged.
 
 ## Classification scheme
 
@@ -214,6 +233,7 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | 21 | Ladder | $\sum_i D_0^{\mathrm{I^+}}(i)$ (eV) | integrated ladder = self-bound gate threshold | **Derived** — $X_2$ **0.25–0.28** / mix 0.17–0.19 eV (Form U pure-$\kappa$ range, corr. 2026-06-21; ~11%, **nearly $\kappa$-indep**, cliff at $n^*{+}\tfrac12$) | — | drag binding 0.1168 eV + crowding-reduced value are **separate cross-checks, not band ends**; $\|S\|{=}0.308$ collective UB | A10, OQ7 |
 | 22 | Ladder | $n^*=21$ | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only; **adopt 21 for all per-atom energetics**, 2026-06-21) | external | GAH25 $R_e$-scaling → ~20 (corroborates to ±1–2); Tier-1 endpoint 14 **author-confirmed I⁺-specific** (2026-06-21); OQ8 raised LOW→LOW–MEDIUM (had leaked into energetics) | OQ4, OQ8 |
 | 23 | Ladder | $D_\text{floor}$ (cm⁻¹) | outer-shell rung floor (Form U) | **Sourced** ($\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹, 7.15 K) | external (bulk superfluid) | picture-independent; sets sigmoid lower anchor | R3 |
+| 24 | Detection | $t_\text{detect}=8.53$ µs ($8.53{\cdot}10^6$ ps) | terminal-read detection time (TOF flight to detector) — where the Tier-2 size distribution is read (`detection_time_ps`) | **Sourced (2026-07-07)** — experimental-setup publication, user-confirmed | Tier 2 size dist (the *detected* read is the arbitration observable) | log-sensitivity band = free report-side re-read of stored shed events (detection-stage design §3.3); gated reads at $s_\text{eff}\gtrsim12$ are undefined without it (I11) | — |
 
 ### Cross-cutting (not single parameters)
 
@@ -229,8 +249,9 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 ## Tally — how few true knobs remain
 
 - **Locked (3):** $b$, $a$, $E_\text{bind}$ (Tier-0 complete).
-- **Sourced (8):** $\lambda_\text{attach}$, $\rho_\text{He}$, $\nu$, $E_\infty$,
-  $E_\text{avail}^\text{ion}$, $D_0(1)$, $n^*$, $D_\text{floor}$.
+- **Sourced (9):** $\lambda_\text{attach}$, $\rho_\text{He}$, $\nu$, $E_\infty$,
+  $E_\text{avail}^\text{ion}$, $D_0(1)$, $n^*$, $D_\text{floor}$,
+  $t_\text{detect}$ (8.53 µs, added 2026-07-07).
 - **Derived (5):** $g(\text{depth})$, $E_\text{int}(0)$, $t_\times$,
   $\sum_i D_0$, $\Pi$ (pickup↔gate order parameter, §6.11). *(Was 6 — $s$
   promoted to Bounded 2026-07-06.)*

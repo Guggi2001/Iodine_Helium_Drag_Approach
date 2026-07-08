@@ -486,6 +486,75 @@ def _load_checkpoint(
     return instance
 
 
+# ===========================================================================
+# Continuation-stage boot helpers (shared by relaxation_stage / detection_stage
+# -- review fix 2026-07-07: the two stages carried verbatim copies)
+# ===========================================================================
+def check_biphasic_seed_checkpoint(ckpt: Any, *, stage: str) -> None:
+    """Seed-coherence guards for a stage that boots from a checkpoint column.
+
+    Shared by ``run_relaxation_stage`` and ``run_detection_stage`` (rule 1 --
+    one source for the guard logic). Two fail-loud checks:
+
+    1. **Scenario:** the seed must be a ``biphasic`` checkpoint -- only that
+       scenario carries the physical ``E_int``/``n_shell`` cascade state the
+       continuation stages propagate (a v6-migrated file carries synthesized
+       all-zero ``E_int_eV``, reading as trivially frozen).
+    2. **Stride:** ``mass_history_kg[:, -1] == mass_final_kg`` -- the stage
+       seeds from the last *stored* column, but a strided run whose
+       allocation was exactly consumed leaves the true final state only in
+       the ``*_final_*`` fields, and ``E_int_eV``/``n_shell`` have no such
+       fields to recover from. ``mass_final_kg`` is written from the true
+       final state, so any mass event in the dropped tail is caught here.
+
+    Parameters
+    ----------
+    ckpt : IonCheckpoint
+        The seed checkpoint (``ion.npz`` or ``relaxation.npz`` -- one
+        contract, both are v7 ``IonCheckpoint`` s).
+    stage : str
+        The calling stage's name for the error message (e.g.
+        ``"run_relaxation_stage"``).
+
+    Raises
+    ------
+    ValueError
+        On a non-biphasic scenario or a stale final stored column.
+    """
+    if ckpt.mass_scenario != "biphasic":
+        raise ValueError(
+            f"{stage} requires a biphasic seed checkpoint; got "
+            f"mass_scenario={ckpt.mass_scenario!r}. The continuation stages "
+            "propagate the biphasic E_int/n_shell cascade state, which other "
+            "scenarios do not carry."
+        )
+    if not np.array_equal(
+        np.asarray(ckpt.mass_history_kg)[:, -1], np.asarray(ckpt.mass_final_kg)
+    ):
+        raise ValueError(
+            f"{stage} seeds from the seed checkpoint's final stored column, "
+            "but mass_history_kg[:, -1] != mass_final_kg: the upstream run "
+            "was stored with a stride that dropped the true final state "
+            "(E_int_eV/n_shell have no *_final_* fields to recover from). "
+            "Re-run the upstream stage with a larger max_bytes so the final "
+            "state lands in the last stored column."
+        )
+
+
+def stage_stream_rng(seed: Any, stream_key: int) -> np.random.Generator:
+    """Derive a continuation stage's private PCG64 stream (rule-1 single source).
+
+    ``SeedSequence((seed, stream_key))`` with a fixed module-level key per
+    stage (``RELAXATION_STREAM_KEY`` / ``DETECTION_STREAM_KEY``) -- the
+    ion-stage stream is never touched and the stages never replay each
+    other. ``seed=None`` -> a non-reproducible default generator (mirrors
+    the driver convention).
+    """
+    if seed is None:
+        return np.random.default_rng()
+    return np.random.default_rng(np.random.SeedSequence((int(seed), stream_key)))
+
+
 def _validate_against_cfg(
     checkpoint: Any,
     cfg: SimConfig,

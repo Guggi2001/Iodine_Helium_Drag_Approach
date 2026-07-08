@@ -1,10 +1,31 @@
-"""Post-ejection relaxation stage (Tier-2 Phase E, Slice E2 -- the R5 mitigation).
+"""Post-ejection relaxation stage (Tier-2 Phase E, Slice E2).
 
-Propagates the biphasic **mass subsystem** past the 20 ps ion stage to the
-experimental timescale, so the terminal I+He_n size distribution (E1) is read at
-*matched time* rather than at the truncated sim-end upper bound (MASS doc §R5:
-the energy-gated cascade continues for hundreds of ps as loosely-bound outer He
-keep evaporating).
+Propagates the biphasic **mass subsystem** past the 20 ps ion stage under
+fixed-dt integration -- the only correct integrator **while K2 cooling is
+live** (cooling makes ``E_int`` decay continuously between sheds, which the
+event-driven detection stage structurally cannot represent).
+
+Contract (re-framed at Slice DS -- design §1 item 5; supersedes the original
+R5 "reach the terminal by matched-time integration" mission, which Wave 5
+showed is unachievable on the gated arm: the terminal is flight-time
+dependent there and the physical ~8.5e6 ps flight is beyond any tractable
+fixed-dt cap):
+
+* **Ungated (``cooling_spatial_gate == "none"``): the terminal solver.**
+  Cooling acts everywhere and reliably drives ``E_int`` below ``D_0(n)``, so
+  the stage runs to freeze-out (the early exit) and its relaxed read IS the
+  converged terminal; the detection stage then no-ops per ion.
+* **Gated (``"density_scaled"``): a handover bridge.** The stage carries the
+  ions from sim-end to a P3-clean state (ejected, cooling erfc-suppressed);
+  the *detection stage* (``simulation/detection_stage.py``, Slice DS) owns
+  the microsecond tail exactly. The cap can therefore be short (~10 ps
+  class); the DS P1-P3 handover guard fails loud if it is shortened past
+  ejection/decoupling. Gated runs may also skip this stage entirely
+  (``relaxation_stage_enabled=False`` -> DS seeds from ``ion.npz``).
+
+The **relaxed read is a convergence diagnostic** (with ``frac_frozen``), not
+the Tier-2 arbitration observable -- that is the Slice-DS *detected* read at
+the Sourced ``t_detect`` (TIER2_DETECTION_STAGE_DESIGN.md §3.5).
 
 Composition (decision R1 -- reuse, not re-composition)
 ------------------------------------------------------
@@ -79,7 +100,12 @@ from ..physics.baoab import make_ion_baoab_step
 from ..physics.dissociation_ladder import d0_of_n
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.solvation_cooling import e_bind_pair_eV
-from .checkpoint import IonCheckpoint, save_ion_checkpoint
+from .checkpoint import (
+    IonCheckpoint,
+    check_biphasic_seed_checkpoint,
+    save_ion_checkpoint,
+    stage_stream_rng,
+)
 from .ion import DEFAULT_MAX_CHECKPOINT_BYTES_ION, _decide_stride_ion, drag_gate_steepness
 from .ion_propagation_step import (
     IonStepState,
@@ -283,7 +309,11 @@ def run_relaxation_stage(
     rng: Optional[np.random.Generator] = None,
     save_path: Optional[str | Path] = None,
 ) -> RelaxationResult:
-    """Propagate the biphasic mass subsystem to the experimental timescale (Slice E2).
+    """Propagate the biphasic mass subsystem while K2 cooling is live (Slice E2).
+
+    Ungated: runs to freeze-out -- the converged terminal solver. Gated: a
+    short handover bridge to a P3-clean state for the detection stage (see
+    the module docstring's re-framed contract, Slice DS).
 
     Parameters
     ----------
@@ -325,37 +355,10 @@ def run_relaxation_stage(
         )
     check_relaxation_config(cfg)   # fires the enabled-path checks (fail-loud)
 
-    # Input-checkpoint provenance guard (review 2026-07-03): a fixed /
-    # collision-path seed has no physical E_int/n_shell cascade state (a
-    # v6-migrated checkpoint carries synthesized all-zero E_int_eV, reading as
-    # trivially frozen), and its E_pot never contained the e_bind_pair fold the
-    # free-flight arm removes. Realistic off-scenario seeds would otherwise die
-    # in biphasic_step's m<->n lockstep assertion with a misleading
-    # "channel/reset bug" diagnosis.
-    if ion.mass_scenario != "biphasic":
-        raise ValueError(
-            "run_relaxation_stage requires a biphasic ion checkpoint; got "
-            f"ion.mass_scenario={ion.mass_scenario!r}. The relaxation stage "
-            "propagates the biphasic E_int/n_shell cascade state, which other "
-            "scenarios do not carry."
-        )
-    # Seed-coherence guard (review 2026-07-03, partial -- mass is the available
-    # proxy): the stage seeds from the last stored column, but a strided ion run
-    # whose allocation was exactly consumed leaves the true final state only in
-    # the *_final_* fields -- and E_int_eV/n_shell have no such fields, so a
-    # stale seed is unrecoverable. mass_final_kg is written from the true final
-    # state, so any mass event in the dropped tail is caught here.
-    if not np.array_equal(
-        np.asarray(ion.mass_history_kg)[:, -1], np.asarray(ion.mass_final_kg)
-    ):
-        raise ValueError(
-            "run_relaxation_stage seeds from the ion checkpoint's final stored "
-            "column, but mass_history_kg[:, -1] != mass_final_kg: the ion run "
-            "was stored with a stride that dropped the true final state "
-            "(E_int_eV/n_shell have no *_final_* fields to recover from). "
-            "Re-run the ion stage with a larger max_bytes so the final state "
-            "lands in the last stored column."
-        )
+    # Seed-coherence guards (review 2026-07-03; hoisted to the shared
+    # checkpoint helper at the Slice-DS review, 2026-07-07 -- one source for
+    # both continuation stages): biphasic scenario + the mass stride guard.
+    check_biphasic_seed_checkpoint(ion, stage="run_relaxation_stage")
 
     dt_relax = cfg.dt_ion if cfg.relaxation_dt_ps is None else cfg.relaxation_dt_ps
     # Relaxation view: pickup inert (lambda_0=0), relaxation dt. NOT re-validated
@@ -363,12 +366,7 @@ def run_relaxation_stage(
     relax_cfg = replace(cfg, pickup_rate_coefficient=0.0, dt_ion=dt_relax)
 
     if rng is None:
-        if cfg.seed is None:
-            rng = np.random.default_rng()
-        else:
-            rng = np.random.default_rng(
-                np.random.SeedSequence((int(cfg.seed), RELAXATION_STREAM_KEY))
-            )
+        rng = stage_stream_rng(cfg.seed, RELAXATION_STREAM_KEY)
 
     num_molecules = int(ion.num_molecules)
     two_n = 2 * num_molecules

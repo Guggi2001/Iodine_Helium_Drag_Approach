@@ -10,7 +10,7 @@ The native Poisson spread of the terminal shell count (MASS doc Sec.2.2) is
 preserved: the distribution is a histogram over the integer shell count itself,
 never a binning of a continuous endpoint.
 
-Two input modes, duck-typed on the terminal shell-count column:
+Three input modes, duck-typed on the terminal shell-count column:
 
 * **sim-end** -- a raw :class:`~i2_helium_md.simulation.checkpoint.IonCheckpoint`
   (any object exposing ``n_shell (2N, T)``). The terminal column ``n_shell[:, -1]``
@@ -18,6 +18,10 @@ Two input modes, duck-typed on the terminal shell-count column:
   the 20 ps ion stage; MASS doc Sec.R5). ``source = "sim_end"``.
 * **relaxed** -- an E2 ``RelaxationResult`` (any object exposing
   ``terminal_n (2N,)``), the matched-time terminal ``n``. ``source = "relaxed"``.
+* **detected** -- a Slice-DS ``DetectionResult`` (``terminal_n`` plus the
+  disambiguating ``state_reason``), the detector-arrival terminal ``n`` at the
+  Sourced ``t_detect``. ``source = "detected"`` -- the Tier-2 arbitration
+  observable; the relaxed read is a convergence diagnostic beside it.
 
 The inference has one blind spot: a relaxation checkpoint **reloaded from
 ``relaxation.npz``** is itself a v7 ``IonCheckpoint`` and would be inferred
@@ -45,8 +49,11 @@ from ..physics.constants import N_STAR
 from ..physics.shell_schedule import complex_mass_amu
 
 # Legal provenance tags for ShellDistribution.source (the E4/F3 pairing
-# discriminator): the R5 sim-end upper bound vs the E2 matched-time result.
-_SOURCE_TAGS: tuple[str, ...] = ("sim_end", "relaxed")
+# discriminator): the R5 sim-end upper bound, the E2 matched-time result, and
+# the Slice-DS detector-arrival read (the Tier-2 arbitration observable; the
+# relaxed read is demoted to a convergence diagnostic once a detected read
+# exists -- TIER2_DETECTION_STAGE_DESIGN.md §3.5).
+_SOURCE_TAGS: tuple[str, ...] = ("sim_end", "relaxed", "detected")
 
 
 @dataclass(frozen=True)
@@ -63,8 +70,10 @@ class ShellDistribution:
         ``counts`` normalized by its own sum; sums to 1.
     source : str
         Provenance tag: ``"sim_end"`` (the R5 sim-end upper bound, from a raw
-        ``IonCheckpoint``) or ``"relaxed"`` (the E2 matched-time terminal ``n``).
-        E4/F3 pair the two scores per run, so this tag is the discriminator.
+        ``IonCheckpoint``), ``"relaxed"`` (the E2 matched-time terminal ``n``;
+        a convergence diagnostic once a detected read exists), or
+        ``"detected"`` (the Slice-DS detector-arrival read -- the Tier-2
+        arbitration observable). E4/F3 pair scores per run by this tag.
     """
 
     n_values: np.ndarray
@@ -136,12 +145,17 @@ def _terminal_n_and_source(source) -> tuple[np.ndarray, str]:
             raise ValueError(
                 "empty ensemble: terminal_n has size 0, nothing to histogram."
             )
+        # A DetectionResult also exposes terminal_n; its state_reason array
+        # (frozen/suppressed/time_exhausted) is the attribute that separates
+        # the detector-arrival read from E2's matched-time relaxed read.
+        if getattr(source, "state_reason", None) is not None:
+            return arr, "detected"
         return arr, "relaxed"
 
     raise TypeError(
         "source must expose either 'n_shell' (IonCheckpoint, sim-end mode) or "
-        f"'terminal_n' (RelaxationResult, relaxed mode); got "
-        f"{type(source).__name__}."
+        f"'terminal_n' (RelaxationResult relaxed mode / DetectionResult "
+        f"detected mode); got {type(source).__name__}."
     )
 
 
@@ -162,12 +176,14 @@ def compute_terminal_shell_distribution(
         Upper edge of the integer support (default :data:`N_STAR` = 21). ``n =
         n_max`` is a legal outcome; ``n > n_max`` fails loud.
     source_tag
-        Explicit provenance override, one of ``"sim_end"`` / ``"relaxed"``.
-        ``None`` (default) infers the tag from the input type. **Required for
-        a relaxation checkpoint reloaded from ``relaxation.npz``**: that is a
-        bona fide v7 ``IonCheckpoint``, so the duck-typed inference would tag
-        its matched-time terminal column ``"sim_end"`` and F3 would pair the
-        two scores wrongly -- pass ``source_tag="relaxed"`` there.
+        Explicit provenance override, one of ``"sim_end"`` / ``"relaxed"`` /
+        ``"detected"``. ``None`` (default) infers the tag from the input type
+        (a ``DetectionResult``'s ``state_reason`` attribute marks it
+        ``"detected"``). **Required for a relaxation checkpoint reloaded from
+        ``relaxation.npz``**: that is a bona fide v7 ``IonCheckpoint``, so the
+        duck-typed inference would tag its matched-time terminal column
+        ``"sim_end"`` and F3 would pair the two scores wrongly -- pass
+        ``source_tag="relaxed"`` there.
 
     Returns
     -------
@@ -180,7 +196,8 @@ def compute_terminal_shell_distribution(
         Non-finite terminal count; a fractional ``n`` (violates the v7
         int-valued contract -> upstream corruption); an ``n`` outside
         ``[0, n_max]`` (``n > n_max`` violates the Langmuir cap); an empty
-        ensemble; or a ``source_tag`` outside the two legal tags.
+        ensemble; or a ``source_tag`` outside the legal tags
+        (``"sim_end"`` / ``"relaxed"`` / ``"detected"``).
     TypeError
         If ``source`` is neither input mode.
     """

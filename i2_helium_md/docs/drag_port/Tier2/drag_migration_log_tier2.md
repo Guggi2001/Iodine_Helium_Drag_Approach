@@ -4271,3 +4271,441 @@ parity-lock extension (`test_tier2_staircase_probe`). F5/F6 covered by existing
 behaviour-preserving tests. **Rule-2 / scope:** no new `SimConfig` field, no schema/
 RNG/drag-law/driver/propagation change; the F6 consolidation is the only pre-existing-
 code touch and is message-preserving.
+
+---
+
+## Total-strip A/B probe EXECUTED + probe findings consolidated (2026-07-07)
+
+The 24-point cooling-gate A/B grid (gate ∈ {`none`, `density_scaled`} ×
+s_eff ∈ {1, 2, 3, 5} × τ ∈ {6.55, 16.5, 30} ps, κ=1/mixture/probe pins,
+relaxation cap 1000 ps) was executed by the operator and scored on 2026-07-07
+with the delivered report script (full re-score of all **87** probe dirs;
+wiring oracle still exact — the per-n bridge control reproduces Δn̄ = 0.67 /
+n_end = 20.33 under the post-gate code, confirming the `none`-arm
+byte-identity end-to-end; ledger residual uniform 2.23·10⁻⁵ eV).
+
+**Headline results (full tables + trajectory traces in the findings doc):**
+- **Gated + mid-band τ = 6.55: near-total strip.** `density_scaled` strips
+  the whole ensemble to n̄ ≈ 2.7–3.5 (relaxed min n = 2, spreads 0.35–0.50)
+  vs the ungated n̄ ≈ 8.5–11.9 — the post-ejection K2 quench was the
+  shell-retention limiter, as the structural trace predicted.
+- **Gated + τ ≥ 16.5: zero sheds, permanently closed gate.** Cooling shuts
+  off at droplet ejection (~6 ps) with E_int held at 0.280 eV > Σ(21) ≈
+  0.188 eV — the self-bound crossing never happens (frac_frozen = 0.0; the
+  finite cap, not freeze, terminates — the code-review correction in
+  action). The gated arm is **all-or-nothing in the t×↔ejection race**.
+- **Ungated floor confirmed:** even at the max-kinetics bound s_eff = 1,
+  `none` floors at n̄ ≈ 8.5 (τ=6.55) / 4.7 (τ=16.5) / relaxed 3.1 (τ=30,
+  cascade continuing into the relaxation stage), with first sheds 13–23 ps
+  at long τ — deep stripping and staircase timing irreconcilable ungated.
+- **Bare I⁺ (n = 0) is NOT reached anywhere** — floor n = 2, energetic
+  under the Σ(21)-crossing budget: expressing the experimental 43 % bare
+  peak remains open (F5/production discussion item, not a retune).
+
+**Findings doc created:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` — consolidates
+all four probe waves (45-run capability probe, s_eff mini-probe, picture
+cross-check, total-strip A/B) with every table, the mechanism traces, the
+insight register I1–I9, boundaries, open questions (rho_min softening,
+bare-peak channel, n-dependent s, standing conditional triggers), and the
+87-dir run inventory. Reported, not auto-adjudicated; nothing in it
+discharges the F5 gate (that stays with the 0.80 eV N=500 campaign).
+Documentation-only entry — no code changed.
+
+### Post-Wave-4 decisions + Wave-5 plan recorded (user, 2026-07-07)
+
+Discussion outcome, recorded as `TIER2_STAIRCASE_PROBE_PLAN.md` **Addendum
+B** (documentation only; no code changed):
+
+1. **`density_scaled` is the intended primary production arm** (physical
+   self-consistency: one ρ_He bubble boundary for drag/pickup/cooling;
+   capability: the only arm that approaches the 43 % bare-I⁺ peak). Stays
+   an interchangeable enum with a `none` sensitivity leg; formal
+   campaign/production promotion waits for Wave 5.
+2. **f_int promoted to a genuine sweeping parameter** — accepted
+   consequence of the gated t×↔ejection cliff. Derived F5 prediction
+   recorded: at 2.70 eV / f_int = 0.5 the gated arm sheds nothing
+   (t× ≈ 12.9 ps > t_eject ≈ 6 ps); production needs roughly
+   f_int ≲ 0.17 — the scenario-keyed floor is load-bearing.
+3. **Clean erf-complement adopted as correct** (zero out-of-bubble
+   cooling); a residual `rho_min` floor judged not physical — kept as a
+   documented open question for domain experts, explicitly **no
+   implementation**. The τ/f_int cliff is accepted as a real model
+   feature.
+
+**Wave 5 planned (Addendum B.2–B.4):** gated landing re-location
+mini-probe — s_eff ∈ {8, 12, 16, 20, 30} × τ = 6.55 ps ×
+`density_scaled`, probe pins, 5 runs (Wave-4 gated s_eff ≤ 5 + Wave-2
+ungated sweep bracket it from disk). Rationale: the [8, 12] landing prior
+is gate-conditional (established ungated; the gate ~doubles in-window
+shedding at s_eff = 5), so running the F2 campaign on the ungated prior
+under a gated arm would repeat the mistake Wave 1 existed to prevent. No
+new code/config surface needed; execution via the Wave-3 scratchpad-driver
+precedent or a USER-SETTINGS flip behind `[PROCEED TO IMPLEMENTATION]`.
+The F2-plan update (gate × s_eff × τ × f_int Stage-1 shape, B.5) is
+deferred until the Wave-5 result exists.
+
+### Wave-5 gated landing re-location EXECUTED (2026-07-07)
+
+Under the `[PROCEED TO IMPLEMENTATION]` trigger (user: "PROCEED TO
+IMPLEMENTATION of the 5-wave and lets discuss results"). Executed via the
+Wave-3 **scratchpad-driver route** (Addendum B.4): the delivered
+`gen_tier2_staircase_probe.py` `build_probe`/`_run_one` pipeline driven with
+an overridden module-level grid — **zero repo-code change**; the generator's
+test-locked active USER SETTINGS (the 24-point A/B grid) are untouched. 5 new
+gated dirs (`s_eff ∈ {8,12,16,20,30}` at τ=6.55, `density_scaled`) in the
+`tier2probe` namespace, scored by the delivered report script (full re-score,
+now **92 probe dirs**). Wiring: the gated s_eff=5 point re-scored unchanged
+from Wave 4 (Δn̄ = 17.52); ledger residual uniform 2.23·10⁻⁵ eV.
+
+**Two results (full tables + traces: `TIER2_STAIRCASE_PROBE_FINDINGS.md`
+§4b, insights I10–I12):**
+
+1. **Landing shifts to s_eff ≈ 30** (gated Δn̄ 7.20, n_ion_end 13.80,
+   MAD 0.96 — grid best), vs the ungated s_eff ≈ 8: the gate multiplies the
+   effective in-window shedding by ≈ 3.75× by removing the post-ejection
+   quench. Prediction confirmed; the ungated [8,12] prior does **not** carry
+   to a gated arm (gated s_eff=8 → n_ion_end 4.84, MAD 4.70). Timing lands
+   ~2.3 ps late (t_first 7.28 vs t★ 5), f_int-realignable.
+2. **New structural finding — the gated in-window staircase and the terminal
+   read decouple.** Ungated: frac_frozen = 1 everywhere, ion-end n = terminal
+   n (one converged read). Gated at s_eff=30: frac_frozen = 0, the relaxation
+   ran the full 1000 ps cap without any ion freezing (n 13.80 → 6.27, E_int
+   0.104 → 0.034 eV, slope −0.0012 n/ps, decelerating). s_eff sets the
+   post-ejection cascade *rate*, not the endpoint (energetic floor n ≈ 2 for
+   all s_eff). Confirmed by the stored relaxation lengths: gated s_eff=1 =
+   2 timesteps (froze at 30 ps), gated s_eff=30 = full 50001. Consequence:
+   the gated *terminal* size distribution (the Tier-2 arbitration observable)
+   is **flight-time dependent** at the staircase-landing s_eff — the physical
+   ~8.5 µs flight is 8500× the tractable cap.
+
+**Interpretation carried forward (I12):** ungated and gated are
+terminal-regime opposites (shell-retaining/converged vs
+deep-stripping/rate-limited); neither single knob point yields the broad
+bimodal experimental distribution — its shape must come from ensemble
+heterogeneity across the t×↔ejection race, which the gate makes two-sided.
+Documentation-only entry; the campaign-shape decision (B.5) stays open for the
+discussion. No code changed; Addendum B status flipped to EXECUTED.
+
+## Detection-time continuation stage — design DELIVERED (2026-07-07)
+
+Post-Wave-5 discussion thread 1 (the I11 flight-time-dependence blocker)
+resolved into a full physics-definition design:
+`TIER2_DETECTION_STAGE_DESIGN.md`. **Documentation only — no code; the build
+stays behind `[PROCEED TO IMPLEMENTATION]`.**
+
+**Problem:** the gated terminal read (the Tier-2 arbitration observable) is
+cap-artifactual — fixed-dt integration cannot reach the experimental flight
+time structurally (`ν·dt ≤ 0.1` with ν = 2.42/ps ⇒ dt ≤ 0.041 ps ⇒ ≥ 2·10⁸
+steps to ~8.5 µs).
+
+**Design (four forks adjudicated by the user, 2026-07-07):**
+
+1. **t_detect = Sourced TOF flight time** (detector-arrival read; apparatus
+   provenance to be recorded as a CALIBRATION_MAP row — open input §3.4).
+2. **Stochastic event-driven realization** (exponential waiting times;
+   integer per-ion n, E1-compatible; the hypoexponential closed form is the
+   pytest oracle, not a production arm).
+3. **Additive stage after E2** (`simulation/detection_stage.py`; the
+   reviewed relaxation stage is untouched; exactness guard at handover —
+   the per-ion drain bound `(ρ/ρ_bulk)·(t_detect−t_h)/τ ≤ ε_drain`).
+4. **Full per-event ledger** (K1 drain / e_bind fold / cold-shed defect per
+   event; 5-term closure extends across the new stage; stored shed times
+   make any intermediate-time read a free report-side reconstruction).
+
+**Key exactness fact (grounded in the delivered code):** under the handover
+preconditions (λ₀ = 0, γ = 0, gated ρ→0) E_int is constant between sheds, so
+the locked mechanism reduces *exactly* to a Markov jump chain — the stage is
+a change of integration scheme (≤ ~21 events/ion to any t_detect), not new
+physics; the fire path composes the delivered `rrk_rate` / `cold_shed` /
+`dE_int_shed_eV` / `e_bind_pair_eV` primitives verbatim (rule-1 reuse).
+Permanent-state taxonomy: `frozen` / `suppressed` (delivered gate semantics
+faithfully extended — OQ-B untouched) / `time_exhausted` (the live-cascade
+detector snapshot Wave 5 could not compute). Translation is exactly out of
+scope (cold shed leaves v unchanged; the E2 decoupling fact). Artifact:
+`detection.npz` (new small file; **schema v7 untouched**). New OQ-E recorded
+(no radiative/electronic channels over the µs flight — domain-expert item).
+
+**Consequences recorded:** the B.5/F2 campaign re-scope is unblocked (scorer
+reads `detected`; `relaxed` + `frac_frozen` demoted to convergence
+diagnostics); the E2 cap becomes a campaign-economy config decision. Open
+before the trigger: the `detection_time_ps` value + provenance (user), and
+the stage's slice placement in the Phase-F program.
+
+**NB (2026-07-07, same day):** the Sourced input is resolved — the user
+confirmed **t_detect = 8.53 µs** as accurate, from the experimental-setup
+publication. Recorded as **CALIBRATION_MAP row 24** (Sourced tally 8→9);
+design doc §1/§3.4/§7 updated. The only remaining pre-trigger item is slice
+placement in the Phase-F program.
+
+### Waves 6+7 PLANNED — f_int probe + detected-read re-score (user, 2026-07-07)
+
+Probe-program continuation agreed in discussion (explicitly **not**
+campaign/production — the B.5 campaign shape stays parked; the goal remains
+model understanding: parameter sensibility + flexibility reach). Plan
+recorded as `TIER2_STAIRCASE_PROBE_PLAN.md` **Addendum C**; execution awaits
+`[PROCEED TO IMPLEMENTATION]`. Documentation-only entry — no code changed.
+
+- **Wave 6 — f_int probe (10 new runs, gated arm):** the one knob every
+  wave pinned at 0.5, now swept with four pre-registered predictions:
+  P1 gated staircase timing re-aligns at f_int ≈ 0.35 (t★ = 5 ps);
+  P2 f_int = 0.65 / τ = 6.55 locates the closed side of the t×↔ejection
+  cliff (sheds nothing); P3 f_int = 0.25 re-opens the dead τ = 16.5 arm
+  (deep strip); P4 floor-n(f_int) maps the in-bubble cooling leak over
+  [t×, t_eject] — the in-model bound on total stripping (the quantified
+  OQ-B gap). Grid: τ=6.55: s_eff ∈ {8,30} × f_int ∈ {0.24, 0.30, 0.35,
+  0.65} + τ=16.5: s_eff ∈ {8,30} × f_int = 0.25; probe pins; scratchpad
+  route; the two on-disk f_int = 0.50 points are the wiring oracle.
+- **Wave 7 — detected-read re-score (zero new MD runs):** after Slice DS
+  (the detection stage per `TIER2_DETECTION_STAGE_DESIGN.md`), re-read all
+  ~102 probe dirs at t_detect = 8.53 µs → the flexibility map *at the
+  detector*, resolving Wave 5's open end (gated s_eff = 30 at the detector:
+  mid-shell or floor?). DS acceptance criterion recorded: existing probe
+  dirs must stay loadable after the config-surface addition (back-compat
+  test), else the stale-artifact policy fires and Wave 7 needs
+  regeneration — surfaced, never silently migrated.
+
+### Wave-6 f_int probe EXECUTED (2026-07-07)
+
+Under the `[PROCEED TO IMPLEMENTATION]` trigger (user: "PROCEED TO
+IMPLEMENTATION of Wave 6 and lets discuss results"). Wave-3/5
+scratchpad-driver route through the delivered `build_probe`/`_run_one`
+pipeline — **zero repo-code change**; the f_int dimension rides the existing
+`_fiX.XX` tag (no namespace work needed). 10 new gated dirs → **102 probe
+dirs**; full re-score with the delivered report script; wiring oracle exact
+on all three gated f_int = 0.50 companions (s_eff = 5/8/30); ledger residual
+uniform ≈ 2.23·10⁻⁵ eV.
+
+**Verdicts on the pre-registered predictions (tables + detail:
+`TIER2_STAIRCASE_PROBE_FINDINGS.md` §4d, insights I15–I17):**
+
+1. **P1 qualitatively confirmed, quantitatively refined:** the gated first
+   shed is monotone-f_int-tunable across 0.7–7.3 ps (spans t★ = 5), but the
+   anchored timing sits at **f_int ≈ 0.40–0.42**, not the predicted 0.35 —
+   the gated crossing lag *grows* with t× (≈1.3 ps at 0.35 → ≈2.3 ps at
+   0.50); the constant-lag assumption is the localized miss.
+2. **P2 confirmed exactly:** f_int = 0.65 / τ = 6.55 sheds nothing at either
+   s_eff — the closed side of the t×↔ejection cliff located in-band
+   (0.50 < f_int* < 0.65).
+3. **P3 confirmed:** f_int = 0.25 re-opens the dead τ = 16.5 arm; s_eff = 30
+   lands near-staircase magnitude there (n_end 14.65, MAD 1.46) — a second
+   staircase-magnitude region; τ↔f_int trade off along the race.
+4. **P4 confirmed:** the relaxed floor is monotone in f_int — earlier
+   gate-open is *shallower* (in-bubble leak eats the Σ(21) budget); deepest
+   sampled strip at f_int = 0.50 (n̄ ≈ 3.1); **bare I⁺ unreached at any
+   f_int** — the OQ-B gap quantified from the f_int side.
+
+**Structural finding (supersedes the "timing-only" note in the gated
+regime):** under `density_scaled`, f_int is a **joint timing +
+effective-budget knob** — it cannot re-align staircase timing without moving
+magnitude; landing both needs a joint (s_eff, f_int) co-fit (interpolated
+prior: s_eff ≈ 25, f_int ≈ 0.42 at τ = 6.55). Findings doc §0 wave table,
+§4d, §5 (I15–I17), §8 inventory updated; Addendum C status flipped
+(Wave 6 EXECUTED; Wave 7 stays planned behind Slice DS). Documentation +
+scratchpad execution only — no repo code changed.
+
+### Post-Wave-6 decisions (user, 2026-07-07)
+
+Discussion outcome on the Wave-6 results, recorded as findings **I18** + a
+B.5 NB in the probe plan (documentation only; no code changed):
+
+1. **τ and f_int are connected — independent grids are rejected.** Gated
+   observables organize along the race margin Δ× = t_eject − t× and "make
+   no sense otherwise" (user). Any future campaign grid samples **Δ×
+   directly** (f_int derived per τ via f_int = (Σ/E)·e^{t×/τ}); τ stays a
+   separate dimension only for its independent role (the in-bubble
+   leak/quench strength). Supersedes the B.5 "× τ × f_int" product shape.
+2. **The bare-peak channel (OQ-B) is deferred to the F5/production
+   discussion** — the probe program has exhausted the kinetic and timing
+   levers (I8 + I17: the n ≈ 2 floor is energetic); no further probe work
+   on it.
+3. **Wave 7 (Slice DS + detected-read re-score) is confirmed as the next
+   step, not yet triggered.** The campaign stays parked; probe-only scope
+   holds.
+
+### Slice-DS pre-trigger adjudications — E2 retained + re-scoped, DS skippable (user, 2026-07-07)
+
+Before triggering Slice DS the user challenged the stage architecture
+directly: *why keep the relaxation stage at all — is E2 dead code once DS
+exists?* Resolved by an investigation of `relaxation_stage.py` + discussion.
+**Documentation only — no code changed; the build stays behind
+`[PROCEED TO IMPLEMENTATION]`.**
+
+**Investigation conclusion (the regime map):** the three stages correspond
+to which continuous channels are alive — ion stage (drag+pickup+cooling,
+fixed-dt MD), E2 (cooling only, fixed-dt), DS (nothing continuous, exact
+jump chain). DS's exactness requires E_int constant between sheds; K2
+cooling breaks exactly that, so DS structurally cannot absorb any
+live-cooling period. E2 is therefore **not dead code**: it is (a) the only
+possible terminal solver for the ungated `none` arm (a
+working-method-mandated sensitivity leg — ungated ions arrive at ion-end
+neither frozen nor P3-compliant, failing the drain bound by ~12 orders of
+magnitude), (b) the P3 guard's remedy path for any in-/near-bubble ion at
+handover, and (c) the producer of the 102 existing `relaxation.npz`
+artifacts Wave 7 re-reads. What *is* obsolete is E2's original R5 mission
+("reach the terminal by matched-time integration" — unachievable on the
+gated arm per Wave 5/I11); a time-inhomogeneous single-stage Gillespie
+replacing E2+DS was considered and rejected (duplicates the K2 drain law in
+hazard integrals; loses the exact-solver/analytic-oracle status; rewrites
+the reviewed E2 contract).
+
+**Decisions (user):** keep E2, **make it shorter and skippable**, with one
+connected code review:
+
+1. **E2 retained, contract re-framed** — ungated: terminal solver to
+   freeze-out (DS no-ops); gated: a short handover **bridge** to a P3-clean
+   state. The relaxed read is demoted to a convergence diagnostic; the
+   module docstring's mission statement is updated in the slice.
+2. **Gated caps shortened by config** (future-facing USER SETTINGS, ~10 ps
+   class instead of 1000 ps; the §2.1 guard fails loud if shortened past
+   ejection/decoupling). Existing probe dirs untouched.
+3. **DS is skippable-E2 capable:** with `relaxation_stage_enabled=False` it
+   seeds directly from `ion.npz` (both artifacts are v7 `IonCheckpoint`s —
+   one seeding contract, `run_detection_stage(seed_ckpt, ...)`); the P1–P3
+   guard is the sole defense on that path, and the `frac_frozen` diagnostic
+   is replaced by the DS `state_reason` fractions. Amends design fork 3 to
+   "additive after E2 *or* the ion stage".
+4. **Slice placement resolved (closes design §7):** standalone pre-F5
+   **Slice DS** — DS build + probe-report `n_detect_*` extension + the E2
+   re-frame/skip path, one connected code review; the B.5/F2 plan update
+   stays parked with the campaign.
+
+Design doc updated in place (`TIER2_DETECTION_STAGE_DESIGN.md`: status
+block, §1 item 5, §2.1, §3.1, §3.4, §5, §6, §7 — no open items remain).
+Next: `[PROCEED TO IMPLEMENTATION]` for Slice DS, then the manual
+production-wiring oracle (gated s_eff = 30 → t_detect) and Wave 7.
+
+### Slice DS DELIVERED — detection-time continuation stage (2026-07-07)
+
+Built under the `[PROCEED TO IMPLEMENTATION]` trigger, per
+`TIER2_DETECTION_STAGE_DESIGN.md` + the §1-item-5 amendments (E2 re-frame,
+skip path, connected review scope). **Full suite green: 2173 passed.**
+
+**Delivered:**
+
+1. **`i2_helium_md/simulation/detection_stage.py`** (new) —
+   `run_detection_stage(seed_ckpt, cfg, *, rng, save_path)` →
+   `DetectionResult`. Per-ion Gillespie event loop composing the delivered
+   primitives verbatim (`rrk_rate` all-gating, `cold_shed`,
+   `dE_int_shed_eV`, `e_bind_pair_eV` fold, `_amu_ang2_ps2_to_eV`); the
+   three permanent lanes (`frozen`/`suppressed`/`time_exhausted`, defensive
+   raise on an impossible k=0 in-band state); P1–P3 handover guard with the
+   **gate-conditional density factor** (erfc ρ under `density_scaled`,
+   exactly 1 under `none`), `EPS_DRAIN = 1e-6`, per-ion violator list +
+   remedy; E2's two seed-coherence guards; realized-`t_h` axis check;
+   stage-private stream `DETECTION_STREAM_KEY = 0xD5_2026` (zero draws on
+   permanent seeds); m↔n lockstep assert; full per-event ledger (times,
+   pre-shed rungs, K1/fold/defect) as ragged flat arrays + offsets;
+   `save_detection_result`/`load_detection_result` for **`detection.npz`**
+   (own schema counter v1, `allow_pickle=False`, fail-loud shape/offsets/
+   reason validation; **IonCheckpoint v7 untouched**).
+2. **Config surface** — `detection_stage_enabled` (default False),
+   `detection_time_ps` (Optional, no default; Sourced row 24 supplied per
+   run), `check_detection_config` wired into `validate()`: biphasic; time
+   set > 0 and beyond the nominal seed-window end (ion window +
+   relaxation cap when enabled); **ν > 0** (ν = 0 warns at the biphasic
+   guard but is refused here — the permanent-state taxonomy is unsound
+   without a live channel). Relaxation stage **not** required (skip path).
+3. **E1** — `"detected"` added to the legal source tags; a
+   `DetectionResult` is inferred `"detected"` via its `state_reason`
+   attribute (duck-typing hook, `terminal_n` property unchanged).
+4. **Probe report** — six new columns (`n_detect_mean/spread/min`,
+   `frac_det_{frozen,suppressed,time_exhausted}`) read from an **optional**
+   per-dir `detection.npz` (`-` when absent; `_REQUIRED_ARTIFACTS`
+   unchanged, so every pre-DS dir stays scorable).
+5. **E2 contract re-frame** (docstrings only, zero behavior change):
+   ungated = terminal solver to freeze-out; gated = short handover bridge;
+   relaxed read demoted to convergence diagnostic.
+6. **Tests** — `tests/test_detection_stage.py`, 37 tests along the design
+   §5 seven-step plan: hand-oracled waiting times on the n=1 direct chain;
+   pinned default-stream derivation + zero-draw permanent lanes + stream
+   key; the three k=0 lanes incl. the ungated no-op; `time_exhausted`;
+   guard arms (non-biphasic, stale stride, t ≤ t_h, P3 in-bubble, P3
+   ungated-live); config arms + the **Wave-7 back-compat criterion**
+   (pre-DS cfg.json loads with defaults — met, no regeneration);
+   **hypoexponential analytic oracle** (400 iid ions on a ≥3-stage
+   distinct-rate chain built from the delivered `rrk_rate`; occupancy
+   within 3σ + mean within 4σ); cold-shed kick composition
+   |v_f| = |v₀|·m₀/m_f + m↔n lockstep; **5-term closure across the stage
+   boundary** (atol 1e-9 — pure arithmetic chain, no integrator drift;
+   per-event sums == field deltas; E_dissip strictly carried);
+   **fixed-dt E2 equivalence** (400 ions, 1 ps horizon, |Δn̄| < 0.45 ≈ 4σ
+   + Bernoulli-bias allowance); skip-path lanes (frozen ion-seed ==
+   relax-seed chain; real ion.npz-shaped seed accepted with relaxation
+   disabled); artifact round-trip + three fail-loud load lanes; E1
+   admission; probe-report smoke (columns `-` before, populated after).
+
+**As-built deviations (recorded in the design doc's status block + §2.2/
+§2.4/§2.5 in place):** the approved draft's "cold shed leaves v unchanged"
+was **wrong** — the delivered `cold_shed` applies the momentum-conserving
+`m/(m−m_He)` kick per fire (KE rise cancelled by the booked
+`E_mass_transfer` defect; the (E_int, n) jump chain never reads v, so the
+exactness claim is untouched). The artifact carries terminal velocities +
+per-ion terminal ledger channels beyond the §3.2 list so closure is
+checkable from `detection.npz` alone. P3's density factor is
+gate-conditional; ν > 0 required.
+
+**Not in this slice (unchanged scope):** Wave-7 execution (behind its own
+go-ahead; probe plan C.2 NB), the manual production-wiring oracle (gated
+s_eff = 30 → t_detect), campaign/F2 wiring (parked), generator changes
+(none — the pipeline hands the stage a cfg view + seed checkpoint).
+**Next:** connected code review (DS build + E2 re-frame, per the §1-item-5
+review scope), then the production-wiring oracle and Wave 7.
+
+### Slice DS code review — EXECUTED, fixes applied (2026-07-07/08)
+
+The §1-item-5 **connected review** ran (multi-agent workflow, high effort:
+4 finder angles → 16 verified candidates → 13 independent verifiers → 10
+confirmed findings, **0 refuted**), covering the DS build + the E2 re-frame
+together. All 10 findings fixed the same session; **suite after fixes:
+2176 passed** (+3 net new tests). Review question ("is the stage boundary
+and the demoted E2 contract coherent") answered: the composition (no
+duplicate physics) and the 5-term closure held; the **P1–P3 guard did
+not** — three confirmed correctness defects, all in the guard/taxonomy or
+its consumers:
+
+1. **P3 exemption of suppressed ions was unsound (the substantive physics
+   finding).** Suppression is *cooling-reversible* (K2 drains E_int below
+   Σ(n) and re-opens the gate — `biphasic_step` cools before the gate for
+   exactly this reason), so a suppressed ion with live cooling is NOT
+   permanent; the draft guard silently rode such ions to the detector at
+   their handover n, biasing the Tier-2 arbitration observable high.
+   **Fix:** the cooling bound now applies to every ion not at the energetic
+   floor (live + suppressed); only strictly-frozen ions are exempt from it.
+   Consequence: ungated non-frozen ions can never hand over (must freeze in
+   E2) — now enforced, not just documented.
+2. **No bound at all on frozen in-bubble ions (the skip-path hole).**
+   Pickup (re-heats E_int by f_ret·D₀ per capture — can *unfreeze* the
+   cascade) and drag are density-gated and only *omitted* by the stage.
+   **Fix:** a helium-exposure bound `ρ·max(λ₀, 1/τ)·(t_detect−t_h) ≤
+   ε_drain` applies to ALL ions, frozen included — the skip path's actual
+   defense. The delivered test that showcased in-bubble suppressed
+   acceptance was inverted into the rejection oracle it should have been.
+3. **RRK-underflow crash lane.** In-band ions with E_int within ~1e-6
+   relative of D₀(n) underflow the bracket `(1−D₀/E)^(s−1)` to k = 0
+   (s−1 up to 59); `_permanent_reason` fell through and the defensive raise
+   aborted the whole run. Reachable (E2's freeze mask is strict `<`).
+   **Fix:** classified `frozen` (waiting time exceeds any flight by
+   hundreds of orders); the raise now covers only impossible states.
+4. **Report dropped skip-path runs.** `relaxation.npz` was still a required
+   artifact. **Fix:** optional — skip-path dirs (cfg + ion + detection) are
+   discovered and scored, relaxed columns `-`; plus a **stale-detection.npz
+   coherence guard** (ensemble-size vs cfg mismatch fails loud — the
+   regenerated-dir hazard).
+
+Cleanups applied with them: point-of-use `NotImplementedError` refusals for
+the `tabulated` ladder/density arms (the `biphasic_step` precedent);
+`fold = −dE_int` (bit-exact K1/fold cancellation; the e_bind-difference
+recomputation left ~1e-17 eV per-fire residues + two redundant ladder
+lookups); the two copy-pasted stage-boot blocks hoisted to shared helpers
+`checkpoint.check_biphasic_seed_checkpoint` / `checkpoint.stage_stream_rng`
+(E2 rewired to them — behavior-identical, RNG tests pin it); E1 doc-drift
+("Two input modes"/"two legal tags" → three) fixed.
+
+Documentation updated in place: design doc §2.1 (review-hardened guard NB +
+new P1/P2 bound), §2.3 (underflow-frozen lane; suppressed-permanence
+caveat), status block (review record); probe-report module docstring
+(optional artifacts). New tests: ungated-suppressed rejection,
+frozen-in-bubble rejection, underflow-frozen classification, skip-path
+discovery/scoring, stale-detection coherence. **Slice DS is now delivered
+AND reviewed. Next: the manual production-wiring oracle (gated s_eff = 30 →
+t_detect) and Wave 7, each behind its own go-ahead.**
