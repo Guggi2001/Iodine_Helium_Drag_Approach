@@ -166,6 +166,31 @@ cooling, ladder, early window). Physics-Definition only; no code.
 > `detection_time_ps` is now live (`check_detection_config`;
 > required-when-enabled, no baked-in default — the constant stays
 > calibration data supplied per run). Row-24 value unchanged.
+>
+> **Update 2026-07-09 — RQ1 adjudicated: $f_\text{int}$ → absolute
+> $E_\text{int}(0)$ (rows 14/16 swap roles).** The RQ1 deep literature run
+> (`docs/drag_port/Tier2/RESEARCH_QUESTIONS.md`, NB register + adjudication)
+> sourced the onset reservoir: dominant channels are **electronic/spin–orbit
+> relaxation** (I⁺ ³P₀ 0.799 / ³P₁ 0.879 / ¹D₂ 1.702 eV, NIST; populated at
+> KER expense in gas-phase I₂ CE, Forbes 2022 — droplet-embedded branching
+> unmeasured) and **solvation reorganization** (Na⁺ benchmark ≈0.22–0.40 eV,
+> droplet-size-independent, Albrechtsen 2025) — both **non-mechanical and
+> budget-independent**; the kinematic leak's magnitude is genuinely open
+> (both literature estimates refuted in verification). User decision: onset
+> convention retained ($t_0$ deposit, nothing subtracted from fragment
+> mechanics — now sourced, not naive); the **swept/transferred variable is
+> the absolute $E_\text{int}(0)$ [eV]** — row 16 Derived → **Bounded**
+> (band 0.2–0.5 eV, floor ≈0.22 eV), row 14 $f_\text{int}$ Bounded →
+> **Derived coordinate** ($=E_\text{int}(0)/E_\text{avail}^\text{ion}$).
+> Budget transfer holds the absolute value fixed ($f$ rescales
+> ×0.80/2.70 ≈ 0.296); row-14 scenario keying dissolves (floor identity
+> ≈$\Sigma(21)$ at both budgets); the B.1(2) production prediction inverts
+> ($t_\times$ budget-independent; production changes via the earlier
+> $t_\text{eject}$). Discriminator refined: expect VMI **fine-structure
+> satellites** (~0.8 eV down-shifted sub-population), not a smooth
+> $\propto f_\text{int}$ deficit. Resolves the *partition* half of OQ2; the
+> per-shed $KE_\text{shed}$/ε half continues as RQ2. Tally unchanged
+> (one-for-one Bounded↔Derived swap). Document-only; no code. Reversible.
 
 ## Classification scheme
 
@@ -222,9 +247,9 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | 12 | Cooling | $E_\infty(N)=-\|S(N)\|$ (eV) | K2 asymptote, **occupancy-resolved** | **Sourced (split, 2026-06-17)** — full-shell $\|S_{\mathrm{I^+}}\|{=}0.308$ eV [I2-notes]; GAH25 −3424/−4144 K Na⁺ fixes form+$\tau$ | equilibrium-shell binding | OQ6 resolved (fixed $E_\infty$ caps strip); shape via $\kappa$ | OQ6, OQ7 |
 | 12b | Cooling | $E_\text{elec}(N)$ (eV) | electrostriction binding (collective excess) | **Sourced/Derived** ($-(\|S(N)\|-\sum_i D_0)$; **dominant** per GAH25 geometry) | — | marginal release → bath on shed (A8); $\partial\|S\|/\partial n{\approx}118$ cm⁻¹ ($n^*{=}21$, corr. 2026-06-21; was 124 off $n^*{=}20$) ≈ $D_0(1)$ | K2, A8, OQ7, OQ8 |
 | 13 | Budget | $f_\text{ret}\in[0,1]$ (dimensionless) | S1 pickup binding-release retained fraction | **Bounded** (prior small) | Tier 2 size dist | 9/18 Å density contrast (feedback gain → density-dependence of terminal $n$) | — |
-| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | S2 onset partition, $E_\text{int}(0){=}f_\text{int}E_\text{avail}^\text{ion}$ | **Bounded** — floor scenario-keyed (2026-06-21): **0.065 (mix)/0.09–0.10 ($X_2$) @ 2.70 eV; 0.21–0.24/0.31–0.35 @ 0.80 eV** ($d{=}9$ Å), picture-set & $\kappa$-indep; soft upper ~0.2 is **advisory, not a constraint** | Tier 2 size dist | GAH25 $t_0$ via $t_\times$; floor robust both scenarios, margin $14\times{\to}4.5\times$ (A7) | R1 regime axis, OQ2 |
+| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | S2 onset **sweep coordinate**, $f_\text{int}=E_\text{int}(0)/E_\text{avail}^\text{ion}$ | **Derived coordinate (2026-07-09, RQ1 adjudication; was Bounded)** — the physical variable is the absolute row-16 $E_\text{int}(0)$; scenario keying dissolved (floor identity: $0.235{\cdot}0.80\approx0.065{\cdot}2.70\approx\Sigma(21)$); budget transfer holds $E_\text{int}(0)$ fixed ⇒ $f$ rescales ×0.80/2.70 | Tier 2 size dist (via row 16) | historical scenario-keyed floors (2026-06-21, superseded as primary read): 0.065 (mix)/0.09–0.10 ($X_2$) @ 2.70 eV; 0.21–0.24/0.31–0.35 @ 0.80 eV; GAH25 $t_0$ via $t_\times$ (A7) | R1 regime axis, OQ2→RQ1 (adjudicated) |
 | 15 | Early | $E_\text{avail}^\text{ion}$ (eV) | per-ion Coulomb onset budget | **Sourced/fixed, scenario-keyed (2026-06-21)** — **0.80 eV** validation (½·14.40/9, $d{=}9$ Å) / **2.70 eV** production (½·14.40/2.666, $R_e$) | fixed reference ($t^*$-window) | stamped to scenario guard (§6.5); reversible to pair (1.60/5.40) | OQ-none |
-| 16 | Early | $E_\text{int}(0)$ (eV) | initial internal energy | **Derived** ($=f_\text{int}E_\text{avail}^\text{ion}$) | — | — | — |
+| 16 | Early | $E_\text{int}(0)$ (eV) | initial internal energy (S2 onset, **absolute** — the physical variable) | **Bounded (2026-07-09, RQ1 adjudication; was Derived)** — sourced band **0.2–0.5 eV** (floor ≈0.22 eV solvation, Na⁺ benchmark; admissible tail ~0.8–1.0 eV full-³P deposit, discounted); **budget-independent**; deposited at $t_0$, nothing subtracted from fragment mechanics (dominant channels electronic + solvation are non-mechanical) | Tier 2 size dist | VMI discriminator: fine-structure satellites (~0.8 eV down-shift), **not** a smooth deficit; provenance in the RQ1 NB register | RQ1 (closed at convention level) |
 | 17 | Early | $t_\times$ (ps) | self-bound crossing (gate-open time) | **Derived diagnostic** | — | GAH25 $t_0$ = 5.0/6.53 ps (±factor-2, Na⁺) | §6.11 |
 | 17b | Early | $\Pi(t)=\lambda(n)f_\text{ret}\tau$ (dimensionless) | pickup↔gate order parameter (NEW 2026-06-21) | **Derived diagnostic** (§6.11) | — | $\Pi{>}1$ shed / $\Pi{<}1$ freeze; regime-axis spine; $\Pi\to0$ at exit ⇒ termination guaranteed; reconstructable post-hoc | §6.11, R1 |
 | 18 | Ladder | $D_0^{\mathrm{I^+}}(1)$: $X_2$ 106.9 / mix 74.4 cm⁻¹ | first dissociation rung (picture-dependent) | **Sourced (pinned 2026-06-17)** — IHe05 EPAPS fit, exact $J{=}0$ ZPE $G(0){=}37$ cm⁻¹ ($D_e{=}143.9$ is **not** $D_0$); $\pm3$ cm⁻¹ | external ab initio | mobility/ZEKE-validated curve; mixture/$X_2$=0.70 | OQ1 (which curve) |

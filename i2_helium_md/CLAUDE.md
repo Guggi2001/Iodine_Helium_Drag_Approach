@@ -43,6 +43,10 @@ Repo root:
 - `drag_migration_log_tier2.md` — Tier-2 decision + delivery log
 - `TIER2_IMPLEMENTATION_PLAN.md` — program overview (11 slices / 6 phases A–F)
 - per-phase detail plans: `TIER2_PHASE_{A,B,C,D,E,F}_IMPLEMENTATION_PLAN.md`
+- `RESEARCH_QUESTIONS.md` — consolidated open physics questions (RQ1–RQ6:
+  E_int(0) provenance, per-shed ε, suppressed fate/bare peak, ladder bottom,
+  µs-flight channels, s_eff cross-check) — entry document of the
+  literature-research / cross-validation phase (active since 2026-07-09)
 
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline

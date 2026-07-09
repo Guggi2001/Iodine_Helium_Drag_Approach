@@ -2,7 +2,8 @@
 # Tier 2 — Staircase / Capability Probe Findings
 
 > **Status:** consolidated findings record, written 2026-07-07 after the fourth
-> probe wave (cooling-spatial-gate total-strip A/B) executed. This document
+> probe wave (cooling-spatial-gate total-strip A/B) executed; last updated
+> 2026-07-08 after Wave 7 (the detected-read re-score, §4e). This document
 > collects **every insight and numerical result** of the pre-F5 probe program
 > in one place; the decision/delivery history stays in
 > `drag_migration_log_tier2.md` (entries of 2026-07-05/06/07) and the design
@@ -30,6 +31,7 @@ small-N probe waves asked, in sequence:
 | 4. Cooling-gate total-strip A/B (2026-07-06/07) | 24 | Can the mechanism express total stripping (the experimental 43 % bare-I⁺ peak)? What does density-gating K2 cooling change? | **Near-total strip reachable** (n̄ ≈ 2.7) with the gate on at mid-band τ; gated arm is **all-or-nothing in τ**; bare n = 0 not reached (floor n = 2) |
 | 5. Gated landing re-location (2026-07-07) | 5 | Under the production gate, where does the s_eff landing move (the ungated [8,12] prior is gate-conditional)? | **Landing shifts to s_eff ≈ 30** (gate ~4× the in-window shedding); **but the gated in-window staircase and the terminal read decouple** — s_eff sets the *rate*, not the endpoint, so the terminal is flight-time-dependent |
 | 6. f_int probe (2026-07-07) | 10 | The one knob every wave pinned: what does f_int control under the gate — timing only, or the race and the budget? Can it re-align staircase timing / reach bare? | **f_int is a joint timing + effective-budget knob gated** (the in-bubble leak over [t×, t_eject]); cliff located (0.50 < f_int* < 0.65 at τ=6.55); the dead τ=16.5 arm re-opens at 0.25; timing re-aligns at ≈ 0.40–0.42; **bare unreached at any f_int** |
+| 7. Detected-read re-score (2026-07-08) | 0 (re-read of all 102) | What is the terminal read at the Sourced detector time t_detect = 8.53 µs, per (gate, s_eff, τ, f_int)? Does the gated landing point arrive at the floor or mid-shell? | **Ungated ≡ relaxed (detector-converged)**; the gated f_int = 0.50 arm is **s_eff-compressed at the detector** (n̄ 2.7–4.1 over s_eff 1→30; the landing point arrives 100 % live at n̄ = 4.09); early-open leak points survive as **converged mid-shell weight**; dead arms are literal n = 21 detector weight; **bare unreached** (min n = 2) |
 
 **Common pins:** 9 Å case, `coulomb_available_eV = 0.80`, N = 50 single fixed
 seed, 30 ps ion window, Tier-0 dt/drag bundle, `f_int = 0.5` (bridge pin —
@@ -580,6 +582,341 @@ exactly the campaign's Stage-1 shape, now with a quantified prior.
 
 ---
 
+## 4e. Wave 7 — the detected read: s_eff compresses away, the race margin owns the detector
+
+Executed 2026-07-08 (under the `[PROCEED TO IMPLEMENTATION]` trigger;
+scratchpad driver through the delivered Slice-DS `run_detection_stage` —
+zero repo-code change, **zero new MD runs**): every one of the **102** probe
+dirs re-read at the Sourced detector time **t_detect = 8.53 µs**
+(CALIBRATION_MAP row 24), seeding from its existing `relaxation.npz`;
+`detection.npz` written per dir; full re-score with the delivered report
+(`n_detect_*` + state-reason columns populated on all 102 rows).
+
+**Execution note (recorded, not a code change).** The 63 pre-Wave-4 dirs are
+stamped with the legacy relaxation cap 8.53·10⁶ ps (chosen before Slice DS
+existed), so the config-load *nominal*-window bound rejects
+t_detect ≤ 30 + 8.53·10⁶ ps even though their E2 runs terminated at
+all-frozen after tens of ps. The transient per-dir cfg view therefore carried
+the **realized** relaxation duration (read from the artifact) alongside the
+detection fields, so the nominal and realized bounds state the same physical
+fact; on-disk `cfg.json` was never modified, and the stage's realized-t_h
+re-check and the P1–P3 handover guard ran on every dir — **zero violations**
+(as predicted: all ions sit at erfc-underflowed ρ_He at handover).
+
+**Wiring:** ungated no-op identity exact on all **75** ungated dirs
+(`n_detect ≡ n_relaxed` elementwise, zero events drawn, all ions `frozen`) —
+W7-P1 confirmed; the bridge point re-scores unchanged (Δn̄ 0.67 /
+n_ion_end 20.33 / n_relaxed 20.33 / **n_detect 20.33**); ledger residual
+uniform ≈ 2.23·10⁻⁵ eV across all 102 rows.
+
+### Gated τ = 6.55 / f_int = 0.50 — the s_eff sweep at the detector
+
+(`n_relax` = the 1000 ps cap read of §4b, for contrast; `frozen`/`texh` =
+detector state-reason fractions, `texh` = `time_exhausted` = cascade live at
+the detector.)
+
+| s_eff | n_relax (cap) | n̄_detect | detect min–max | frozen | texh |
+|---|---|---|---|---|---|
+| 1 | 2.71 | 2.71 | 2–4 | 1.00 | 0.00 |
+| 2 | 2.73 | 2.73 | 2–4 | 1.00 | 0.00 |
+| 3 | 2.84 | 2.82 | 2–4 | 1.00 | 0.00 |
+| 5 | 3.02 | 2.92 | 2–4 | 0.99 | 0.01 |
+| 8 | 3.11 | 3.05 | 2–4 | 0.94 | 0.06 |
+| 12 | 3.86 | 3.08 | 3–4 | 0.95 | 0.05 |
+| 16 | 4.20 | 3.18 | 3–4 | 0.86 | 0.14 |
+| 20 | 4.79 | 3.79 | 3–4 | 0.24 | 0.76 |
+| **30** | 6.21 | **4.09** | 4–5 | **0.00** | **1.00** |
+
+### Gated f_int sweep at the detector (the Wave-6 grid re-read)
+
+| τ [ps] | s_eff | f_int | n_relax (cap) | n̄_detect | detect min–max | frozen | supp | texh |
+|---|---|---|---|---|---|---|---|---|
+| 6.55 | 8 | 0.24 | 10.96 | 10.60 | 8–13 | 0.87 | 0 | 0.13 |
+| 6.55 | 8 | 0.30 | 9.13 | 8.79 | 7–11 | 0.90 | 0 | 0.10 |
+| 6.55 | 8 | 0.35 | 7.66 | 7.37 | 6–9 | 0.93 | 0 | 0.07 |
+| 6.55 | 8 | 0.50 | 3.11 | 3.05 | 2–4 | 0.94 | 0 | 0.06 |
+| 6.55 | 8 | 0.65 | 21.00 | 21.00 | 21 | 0 | 1.00 | 0 |
+| 6.55 | 30 | 0.24 | 14.88 | 13.02 | 12–14 | 0.00 | 0 | 1.00 |
+| 6.55 | 30 | 0.30 | 12.85 | 10.89 | 10–12 | 0.00 | 0 | 1.00 |
+| 6.55 | 30 | 0.35 | 11.20 | 9.21 | 8–11 | 0.00 | 0 | 1.00 |
+| 6.55 | 30 | 0.50 | 6.21 | 4.09 | 4–5 | 0.00 | 0 | 1.00 |
+| 6.55 | 30 | 0.65 | 21.00 | 21.00 | 21 | 0 | 1.00 | 0 |
+| 16.5 | 8 | 0.25 | 5.68 | 5.27 | 4–7 | 0.89 | 0 | 0.11 |
+| 16.5 | 30 | 0.25 | 8.55 | 6.64 | 6–8 | 0.00 | 0 | 1.00 |
+
+The ten gated dead arms (τ ∈ {16.5, 30} × s_eff ∈ {1, 2, 3, 5} at
+f_int = 0.50; τ = 6.55 × s_eff ∈ {8, 30} at f_int = 0.65) all arrive **100 %
+`suppressed` at exactly n = 21** — W7-P3 confirmed; the delivered gate
+semantics ride to the detector verbatim (OQ-B's fragmentation question is now
+literal weight in the observable, still unresolved by construction).
+
+### Detection-time sensitivity band (log-spaced, from stored event times)
+
+n̄(t) at t = 10³ / 10⁴ / 10⁵ / 10⁶ / 8.53·10⁶ ps — a pure re-read of
+`detection.npz` (design §3.3); linear fractions of t_detect would have shown
+three near-identical numbers, the descent is logarithmic:
+
+| τ [ps] | s_eff | f_int | 10³ | 10⁴ | 10⁵ | 10⁶ | 8.53·10⁶ |
+|---|---|---|---|---|---|---|---|
+| 6.55 | 30 | 0.50 | 6.21 | 5.31 | 4.94 | 4.43 | 4.09 |
+| 6.55 | 20 | 0.50 | 4.79 | 4.17 | 3.99 | 3.97 | 3.79 |
+| 6.55 | 16 | 0.50 | 4.20 | 4.00 | 3.77 | 3.44 | 3.18 |
+| 6.55 | 30 | 0.35 | 11.20 | 10.36 | 9.83 | 9.48 | 9.21 |
+| 6.55 | 30 | 0.24 | 14.88 | 14.03 | 13.66 | 13.31 | 13.02 |
+| 6.55 | 8 | 0.24 | 10.96 | 10.79 | 10.70 | 10.64 | 10.60 |
+| 16.5 | 30 | 0.25 | 8.55 | 7.77 | 7.20 | 6.92 | 6.64 |
+
+### Findings
+
+1. **W7-P2 refuted — in the informative direction.** The gated staircase
+   landing (s_eff = 30, τ = 6.55, f_int = 0.50) does **not** reach the n ≈ 2
+   energetic floor by the detector: it arrives **100 % `time_exhausted` at
+   n̄ = 4.09** (91 % at n = 4, 9 % at n = 5), still descending at
+   ≈ 0.4–0.9 He per *time decade* (band row 1). At s_eff = 30 the floor is
+   asymptotic — effectively unreachable at any laboratory flight time. I11's
+   "flight-time dependent" now has a number, and the Wave-5 open end is
+   resolved: the gated landing point contributes **deep-strip-adjacent weight
+   (n ≈ 4), not mid-shell weight**.
+2. **The detector read compresses s_eff — the headline.** At f_int = 0.50 the
+   whole s_eff ∈ [1, 30] range lands n̄_detect ∈ [2.7, 4.1], while the same
+   points span 2.7–13.8 in-window and 2.7–6.2 at the 1000 ps cap. What s_eff
+   decides at the detector is the **arrival state** (frozen by s ≤ 8 vs live
+   at s = 30; the frozen fraction falls 1.00 → 0.00 over s_eff 1 → 30), not
+   the arrival n. This is I13 measured at the physical read: s is a clock,
+   and 8.53 µs is long enough that the clock mostly runs out.
+3. **Identifiability consequence (sharpens I18).** The two reads are
+   near-orthogonal: the in-window staircase is s_eff-sensitive and
+   race-margin-degenerate; the detector distribution is race-margin- and
+   leak-sensitive (f_int at fixed τ moves n̄_detect 3.05 → 10.60 at s_eff = 8)
+   and nearly s_eff-blind. A campaign co-fit gets s_eff from the staircase
+   prior and the race margin Δ× from the terminal distribution — the two
+   targets constrain different knobs, which is the good case.
+4. **W7-P4 confirmed — the gated mid-shell channel is real and converged.**
+   The early-gate-open leak points arrive mostly *energetically frozen* at
+   mid-shell (s_eff = 8: n̄_detect 10.60 / 8.79 / 7.37 at f_int = 0.24 / 0.30
+   / 0.35 with frozen fractions 0.87–0.93). Combined with the deep-strip
+   corner (n ≈ 3–4) and the suppressed class (n = 21), **the gated arm alone
+   spans n_detect ≈ 3–13 continuously along the race margin, plus the n = 21
+   class** — the ensemble-heterogeneity target (I12/I18) is expressible
+   within a single arm at the detector.
+5. **Bare I⁺ is unreached at the detector** (global min n_detect = 2, and
+   only via the fast-kinetics s_eff ≤ 5 corner). OQ-B stands at the
+   physically meaningful read; at s_eff ≳ 20 the floor is *additionally*
+   kinetically out of reach (finding 1), so flight time cannot resolve it
+   either.
+
+### Physical interpretation (post-Wave-7 discussion, 2026-07-08) — why nothing freezes, why s_eff compresses, and where the two cracks are
+
+Synthesis of the post-Wave-7 discussion (user: "I expected all to freeze").
+The result is simultaneously *textbook* — in a way that partially validates
+the mechanism's long-time structure — and *constructed* — in a way that
+localizes the remaining qualitative gaps in two bookkeeping conventions,
+not in any swept knob.
+
+**1. The post-ejection cascade is an exactly closed system.** Under the
+gate, after ejection, each shed removes `D₀(n)` from `E_int` *and* the same
+`D₀(n)` from the remaining ladder cost `Σ(n)`, so the self-bound margin
+`G = E_int − Σ(n)` [eV] is exactly shed-invariant (§4c) — evaporation can
+never close its own gate. The crossing construction hands the cascade
+`E_int = Σ(21)` at gate-open, so `|G|` equals precisely the in-bubble
+cooling leak between crossing and ejection, and the energetic floor sits at
+the rung where the remaining ladder below costs less than `|G|` (n ≈ 2 at
+f_int = 0.50, higher at earlier openings — the P4/I17 leak map). Almost
+nothing reaches that floor, because of:
+
+**2. The kinetic wall, and why it double-log-compresses.** Descending, the
+RRK argument `x = D₀(n)/E_int` steepens like a hyperbola: `E_int ≈ Σ(n)`
+shrinks roughly as n·D₀(1) (the low rungs all sit near D₀(1) below the
+Form-U cliff) while `D₀(n)` grows toward D₀(1), so `x(n) ≈ 1/n` near the
+bottom. The next shed lands within the remaining flight iff `k·t ≳ 1`,
+i.e. `(s−1)·|ln(1−x)| ≲ ln(ν·t_detect) ≈ 17`; that defines a kinetic wall
+`x_c(s) = 1 − e^(−17/(s−1))` (≈ 0.44 at s = 30, ≈ 0.91 at s = 8). Both
+compressions follow at once: in **s**, x_c moves enormously but the steep
+`x(n) ~ 1/n` maps it to Δn ≈ 1–2 (and at s ≤ 8 the energetic floor
+intervenes first — hence frozen at 2.7–3.1 vs kinetically parked at 4.1);
+in **t**, flight time enters only through ln(ν·t), so a decade buys a few
+percent of x_c — the measured 0.4–0.9 He per decade. This is the **Klots
+evaporative-ensemble regime**: an ensemble observed at time t sits at the
+rung where `k(E, n)·t ≈ 1` regardless of where it started, drifting
+logarithmically. A µs cluster cascade landing there is what cluster physics
+says should happen — in this narrow sense Wave 7 *validates* the
+mechanism's long-time structure. (W7-P2 failed by linearly extrapolating a
+logarithmic law: four more decades bought ~2 He, not the descent to the
+floor.)
+
+**3. Crack 1 — the perpetual cascade is a construction (→ OQ-F).** The
+reason evaporation is *exactly* self-sustaining is that a shed drains only
+the binding energy: `dE_int = −D₀(n)` and nothing else (verified in the
+delivered `internal_energy_budget.dE_int_shed_eV`; the cold-shed kick is
+mechanical bookkeeping, not an E_int drain). A real statistical evaporation
+also carries away a translational release per shed, of order the
+equipartition share `ε ~ (E_int − D₀(n))/s ≈ 5–20 meV` at
+E_int ~ 0.1–0.19 eV and s ~ 8–30 — over a ~17-shed cascade that integrates
+to ~0.1–0.3 eV, **the same order as the entire Σ(21) ≈ 0.188 eV budget**.
+Not a correction: first-order. With ε included, G strictly decreases per
+shed → cascades genuinely self-terminate, terminals converge (the
+`time_exhausted` class largely vanishes), freezes land at higher n, the
+deep-strip reach shrinks — and OQ-B gets *worse* (stripping becomes
+harder). Same epistemic class as the RRK-dof convention Wave 2 resolved: a
+statistical-mechanics convention, not a calibration knob, silently
+controlling qualitative behavior.
+
+**4. Crack 2 — the suppressed class is physically a fragmentation channel
+(→ OQ-B, sharpened into a hypothesis).** A `suppressed` ion rides 8.5 µs
+carrying `E_int > Σ(n)` — *more internal energy than the total binding of
+its entire shell*. The model parks it at its handover n by deliberate OQ-B
+non-resolution; physically, a net-self-unbound complex does not arrive
+intact. If the suppressed class fragments, the detector map inverts in
+meaning: **bare I⁺ becomes the crossed-after-ejection side of the Δ× race**
+(not the tail of the cascade side, where every kinetic lever has failed to
+produce it), the experimental **bimodality falls out of the cliff structure
+for free** (one ensemble distributed in Δ× splits into
+suppressed→fragmented→bare and cascade→broad shell weight n ≈ 3–13), and
+the B.1(2) production prediction inverts: at 2.70 eV / f_int = 0.5 the
+whole ensemble is suppressed — previously "sheds nothing, dead arm", it
+would read "entirely bare-candidate", on the same axis as the 43 % bare
+peak.
+
+**One sentence:** the cascade side of the model behaves like a textbook
+evaporative ensemble whose detector read is owned by the race margin and
+the ladder geometry (s_eff demoted to a clock), and the two features that
+look wrong or missing — the eternal cascade and the bare peak — both point
+at the same two energy-bookkeeping conventions (no per-shed KE release;
+suppressed = inert), not at the swept knobs: the probe program has
+exhausted the calibration space and now presses on mechanism conventions,
+which is exactly what it was built to localize.
+
+### The top two experimental bins (post-Wave-7 discussion continued, 2026-07-08) — can the never-opened side also explain I⁺He?
+
+The experimental reference's two largest bins are bare **43.5 %** and
+I⁺He (n = 1) **17.5 %**, then a smooth decreasing tail (8.0 / 5.2 / 4.0 /
+3.3 % for n = 2–5). The delivered ladder (mixture, κ = 1) has a **flat
+bottom**: D₀(n) = 9.22 meV for every low rung, Σ(n) ≈ n·9.22 meV.
+
+**Structural fact — the cascade side cannot make n = 1 either.** The
+cascade-side terminal rung is a direct readout of the in-bubble leak in
+units of one rung (freeze at the smallest n with Σ(n−1) < |G|):
+
+- **bare requires |G| = 0 exactly** (measure zero — *why* every kinetic
+  lever failed: any positive leak leaves the cascade one increment short,
+  by G-invariance);
+- **n = 1 requires |G| < 9.22 meV** (a leak under one rung), *and* that
+  sliver is kinetically strangled — ending at n = 1 means shedding at
+  n = 2 with E_int barely above D₀, i.e. x → 1 where the RRK bracket
+  collapses. Doubly suppressed; hence Wave 7's global minimum n = 2 with
+  n = 1 absent in 10 200 ion detections.
+
+The experiment's two largest bins are therefore **both structurally
+outside the cascade's reach** — they must come from the never-opened side
+(or from ladder physics the flat bottom lacks, below).
+
+**The never-opened side under the three fragmentation specs:**
+
+- **(a) Inert (delivered semantics):** contributes only n = 21. No.
+- **(b) Gateless RRK boil-off, K1 = D₀-only kept:** G > 0 is
+  shed-invariant, so no energetic floor is ever hit, and at n = 1 the
+  delivered rate is the *direct* channel k = ν (no RRK barrier) — the
+  complex boils to **exactly bare, every time** (at G₀ ≈ 0.09 eV the
+  rates stay ~0.2 ps⁻¹ down the ladder; done in tens of ps). The
+  cliff-edge fringe (G₀ ≲ one rung) parks *kinetically* at n = 2 —
+  never at n = 1, which has no barrier to hide behind. Explains the bare
+  peak; gives **zero** at n = 1.
+- **(c) Boil-off with per-shed release ε (OQ-F):** G decreases by ~ε per
+  shed; the excess burns out in ~G₀/ε sheds and the complex freezes
+  energetically a few rungs later — **including at n = 1**, now generic
+  rather than fine-tuned. The ensemble's G₀ distribution is one-sided
+  starting at 0 (cliff-edge trajectories), so the never-opened class
+  splits into **large-G₀ bulk → bare** plus a **small-G₀ fringe → a
+  decreasing small-n tail with n = 1 populated**. Quantitative anchors:
+  G₀ ≈ 0.092 eV at 0.80 eV (Wave 4's held E_int = 0.280 eV vs
+  Σ(21) = 0.188 eV); G₀ ≈ 0.35 eV estimated at 2.70 eV — against a
+  full-ladder ε cost 21·ε ≈ 0.1–0.4 eV, so **bare is marginal at the
+  validation budget and robust at production**: a bare peak that
+  strengthens with budget is a genuine, testable prediction of this
+  picture.
+
+**Answer: the never-opened side explains n = 1 only jointly with OQ-F.**
+Neither crack alone produces both top bins — spec (b) gives bare without
+n = 1; ε without fragmentation gives neither. OQ-B's endpoint
+distribution *is set by* OQ-F's ε: they are one mechanism discussion, not
+two.
+
+**The honest alternative for n = 1 (→ OQ-G):** the elevated n = 1 / n = 2
+ratio (2.2×, then smoothly 1.5×, 1.3×) could be thermodynamic rather than
+race statistics — if the *real* first rung is much deeper than the outer
+ones (ion-induced-dipole binding of the last He on I⁺, plausibly tens of
+meV vs the flat 9.22 meV Form-U bottom), n = 1 is a natural
+"last survivor" of any cascade, a magic-number-like stability the
+flat-bottom ladder cannot express. Identifiability consequence: **the
+small-n abundance tail is the first observable found that reads the
+ladder's *bottom*** (every in-window quantity probes only the top rungs
+near n = 21, and the ladder shape is one of the two genuinely-free knobs).
+n = 1 is arguably the single most mechanism-discriminating bin in the
+distribution: it separates "fragmentation fringe with ε" (tail shape set
+by the G₀ distribution; budget-dependent) from "deep first rung" (tail
+shape set by D₀(1)/D₀(2); budget-robust) — and the two are combinable.
+
+### The f_int parametrization (post-Wave-7 discussion continued, 2026-07-09) — OQ2 fires
+
+User objection: "if f_int = 0.5, half of the Coulomb explosion goes into
+internal energy, then the explosion is only half as violent — this can't be
+right; actual values should be ~1 % or lower." Verified against the
+delivered code, the objection holds in a **sharper** form:
+
+- **The model implements no partition at all.** `E_int(0) = f_int·E_avail`
+  is deposited once at t = 0 (S2 onset, `ion_initial_state.py` →
+  `e_int_onset_eV`) and **nothing is subtracted from the mechanics** — the
+  Coulomb dynamics and initial velocities are f_int-blind. At f_int = 0.5
+  the model books 0.40 eV (validation) / 1.35 eV (production, ≈ 7× the
+  total shell binding) of shell heat with no mechanical source. A *true*
+  partition at 0.5 would slow the fragments by √2 and would have broken the
+  Tier-0/1a drag validation and any VMI comparison — the delivered velocity
+  physics is consistent only because the "partition" isn't one. (Row 14's
+  soft upper ~0.2 "advisory" already flagged the unease.)
+- **But the literal ~1 % kills the mechanism.** f_int = 0.01 →
+  E_int(0) = 8 meV at 0.80 eV — barely one rung (D₀(21) = 5.97 meV), far
+  below Σ(21) = 188 meV: never suppressed, ~1 shed, frozen at n ≈ 20
+  (27 meV → 3–4 sheds at 2.70 eV). No crossing, no race, no deep strip, no
+  bare. **There is no physically comfortable literal value — the
+  parametrization is broken, not the number.**
+- **The row-14 floor identity says the natural variable is absolute.** The
+  scenario-keyed floors multiply out to the *same energy*:
+  0.235 × 0.80 ≈ 0.188 eV and 0.065 × 2.70 ≈ 0.176 eV — both ≈ Σ(21). The
+  "scenario-keyed f_int floor" is the single statement
+  `E_int(0) ≥ Σ(21)` refracted through a fraction-of-budget
+  parametrization; in absolute `E_int(0)` [eV] the scenario-keying
+  dissolves, and the band the whole probe program found effective is
+  E_int(0) ∈ [~0.19, ~0.5] eV at both budgets.
+- **Physical sources that do not touch the KER** (and hence evade the
+  objection): (i) solvation **reorganization on vertical ionization** — the
+  shell equilibrated to neutral I₂ suddenly sits displaced in the ionic
+  potential; deposit up to ~Σ(21) ≈ 0.19 eV, budget-independent; (ii)
+  **electronic / spin–orbit relaxation of nascent I⁺** (~0.7–0.9 eV
+  fine-structure scale, ¹D ~1.7 eV) partially degrading into the shell —
+  budget-independent, big enough, and it ties the hitherto-free **picture
+  knob to the E_int(0) provenance**; (iii) retained drag heating (bounded
+  by the drag share of E_dissip — tens of meV, a supporting term); (iv) the
+  literal KER coupling, ~1 % = 8–27 meV (the user's estimate — real but
+  minor).
+- **Working hypothesis (pending literature validation — NOT adjudicated):**
+  `E_int(0)` ≈ 0.2–0.5 eV **absolute**, essentially budget-independent,
+  sourced from reorganization + electronic relaxation. Consequences if
+  confirmed: the B.1(2) production prediction inverts (t× stops scaling
+  with budget; what changes at 2.70 eV is the earlier t_eject), the
+  bare-peak budget-dependence (§4e above) re-routes through earlier
+  ejection (less cooling time → larger G₀ → *more* bare at production —
+  same sign, different mechanism), the Δ× race coordinate survives
+  untouched, and f_int reclassifies from a dimensionless Bounded fraction
+  to an absolute Bounded energy [eV].
+- **This is CALIBRATION_MAP OQ2 ("KE_shed / partition") firing.** It
+  couples to OQ-F (what a shed drains), OQ-B (what suppression means), and
+  OQ-G (the ladder bottom) — all four live in the same energy-bookkeeping
+  layer at the ionization/shed/self-unbound boundaries. → The consolidated
+  register for the literature-research phase is
+  `RESEARCH_QUESTIONS.md` (user decision, 2026-07-09).
+
+---
+
 ## 5. Consolidated insight register
 
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
@@ -674,6 +1011,68 @@ exactly the campaign's Stage-1 shape, now with a quantified prior.
   own dimension only for what it independently controls (the in-bubble
   leak/quench strength). Independent τ × f_int grids "make no sense" —
   they sample the race incidentally and unevenly.
+- **I19 (Wave 7).** The detected read exists for every probe dir at the
+  Sourced t_detect = 8.53 µs (zero new MD; zero P1–P3 guard violations).
+  Ungated is **detector-converged**: `n_detect ≡ n_relaxed` exactly (the
+  no-op identity, 75/75 dirs). The gated dead arms are **literal detector
+  weight at n = 21** (100 % `suppressed`) — OQ-B's fragmentation question is
+  now visible in the observable itself. The I14 stance has its observable:
+  the terminal distribution at an explicit detection time is now computed,
+  not extrapolated.
+- **I20 (Wave 7).** **The detector read compresses s_eff.** At f_int = 0.50
+  the whole s_eff ∈ [1, 30] range arrives at n̄_detect ∈ [2.7, 4.1] (vs
+  2.7–13.8 in-window); s_eff decides the *arrival state* (frozen vs
+  `time_exhausted`), the race margin + in-bubble leak decide the arrival *n*.
+  The staircase (s-sensitive) and the detector distribution (s-blind,
+  Δ×/f_int-sensitive) are near-orthogonal reads — the campaign co-fit gets
+  each knob from its own target.
+- **I21 (Wave 7).** The gated arm alone spans **n_detect ≈ 3–13 continuously
+  along the race margin, plus the suppressed n = 21 class**; the mid-shell
+  weight is *converged* (energetic leak freezes, 87–93 % frozen at
+  s_eff = 8), not a cap snapshot. Ensemble heterogeneity across Δ× (I12/I18)
+  is expressible within a single arm at the detector.
+- **I22 (Wave 7).** Bare I⁺ is unreached at the detector (global min
+  n_detect = 2); at s_eff ≳ 20 the n ≈ 2 floor is additionally *kinetically*
+  asymptotic (≈ 0.4–0.9 He per time decade at s_eff = 30), so neither budget,
+  f_int, kinetics, nor flight time expresses the 43 % bare peak within the
+  Σ(21)-crossing construction — OQ-B in its sharpest form yet.
+- **I23 (post-Wave-7 interpretation, §4e).** The detected read is the
+  **Klots evaporative-ensemble regime** (the ensemble sits at k·t ≈ 1 and
+  drifts logarithmically) — the mechanism's long-time structure is
+  textbook-validated — but the two remaining qualitative gaps are localized
+  in two *bookkeeping conventions*, not in any swept knob: (1) the eternal
+  cascade traces to the shed draining only D₀(n) (no per-shed translational
+  release ε ~ (E_int−D₀)/s ≈ 5–20 meV, first-order over a cascade → OQ-F);
+  (2) the missing bare peak plausibly *is* the suppressed class
+  (E_int > Σ(n) complexes physically fragment; bare = the
+  crossed-after-ejection side of the Δ× race, bimodality = the cliff → the
+  OQ-B fragmentation hypothesis). Both are mechanism-convention OQs of the
+  same epistemic class the RRK-dof OQ was (resolved by Wave 2).
+- **I24 (post-Wave-7 interpretation, §4e continued).** The experiment's two
+  largest bins (bare 43.5 %, I⁺He 17.5 %) are **both structurally outside
+  the cascade side's reach** (bare needs |G| = 0 exactly; n = 1 needs a
+  sub-rung leak *and* sits behind the collapsing RRK bracket). The
+  never-opened side explains them **only jointly with OQ-F**: gateless
+  boil-off without ε yields exactly bare and zero n = 1 (G > 0 invariant;
+  the n = 1 direct channel has no barrier); with ε, the one-sided G₀
+  distribution gives bare (bulk) + a decreasing small-n tail (fringe),
+  predicting a budget-dependent bare peak. Competing/combinable
+  alternative for n = 1: a deep first rung (OQ-G). The small-n abundance
+  tail is the first observable that reads the **ladder bottom**; n = 1 is
+  the most mechanism-discriminating bin in the distribution.
+- **I25 (post-Wave-7 interpretation, §4e continued — OQ2 fired).** The
+  f_int parametrization is broken in both directions: the model implements
+  **no partition** (E_int(0) = f_int·E_avail is booked on top of the
+  untouched Coulomb mechanics — 0.40/1.35 eV with no mechanical source at
+  f_int = 0.5), while the physically defensible literal coupling (~1 %,
+  8–27 meV) leaves the mechanism inert. The row-14 scenario-keyed floors
+  multiply out to the same absolute energy (≈ Σ(21) at both budgets) — the
+  natural variable is an **absolute E_int(0) [eV]**, working hypothesis
+  0.2–0.5 eV budget-independent from ionization reorganization +
+  electronic/spin–orbit relaxation (which would tie the picture knob to
+  E_int(0) provenance). Pending literature validation; with OQ-B/F/G this
+  completes the set of energy-bookkeeping conventions the probe program
+  localized → `RESEARCH_QUESTIONS.md`.
 
 ---
 
@@ -711,6 +1110,16 @@ exactly the campaign's Stage-1 shape, now with a quantified prior.
   terminal-n numbers at s_eff ≳ 12 are cap-truncated and must never be read
   as converged. Only the *ungated* terminal reads, and the gated reads at
   low s_eff where frac_frozen ≈ 1, are converged.
+- **NB (post-Wave-7, 2026-07-08) — the two cap-truncation items above are
+  historical.** The detected read at the Sourced t_detect now exists for
+  every probe dir (§4e); `n_relaxed` is a convergence diagnostic only
+  (design §3.5), and the anticipated "~n 2 endpoint over the flight" was
+  itself wrong at s_eff = 30 (the descent is logarithmic; the detector
+  catches it at n̄ = 4.09, `time_exhausted`). Detected reads inherit the
+  N = 50 / single-seed boundary plus a single detection-stage RNG
+  realization per dir — distribution-shape claims still wait for the N=500
+  campaign. Over the µs flight the detected read is RRK-evaporation-only by
+  construction (OQ-E, design §4).
 
 ## 7. Open questions raised (documented, not built)
 
@@ -721,6 +1130,61 @@ exactly the campaign's Stage-1 shape, now with a quantified prior.
   via more cascade budget), a lower f_int (earlier gate-open → longer
   post-ejection cascade under the gate), kinetic-energy assist, or a
   mechanism extension? Belongs to the F5/production discussion.
+  *Post-Wave-7 sharpening (I22):* unreached at the detector too (min
+  n_detect = 2); flight time cannot resolve it (the floor is kinetically
+  asymptotic at s_eff ≳ 20), and the `suppressed` n = 21 class puts the
+  fragmentation question directly into the observable.
+  *Post-Wave-7 hypothesis (§4e interpretation, item 4):* the bare peak may
+  *be* the suppressed class — a crossed-after-ejection complex carries
+  E_int > Σ(n) and physically fragments rather than riding intact; the
+  experimental bimodality then falls out of the Δ× cliff structure (one
+  ensemble, two race outcomes). Document-level; the fragmentation
+  channel's spec (statistical boil-off vs prompt, with/without OQ-F's ε)
+  belongs to the OQ-B resolution, behind the trigger.
+  *n = 1 corollary (§4e continued, I24):* the fragmentation channel covers
+  the 17.5 % I⁺He bin **only with OQ-F's ε** (gateless boil-off without ε
+  goes exactly to bare — G > 0 invariant, no barrier at the n = 1 direct
+  channel); OQ-B and OQ-F are therefore one coupled mechanism discussion.
+- **OQ-E (µs-flight channels, design §4):** over the 8.53 µs continuation
+  the only active channel is RRK evaporation — no radiative cooling, no
+  electronic relaxation, no residual-gas collisions. The detected read
+  (Wave 7) leans on this by construction; a domain-expert question for the
+  production discussion.
+- **OQ-F (per-shed kinetic-energy release, post-Wave-7, 2026-07-08):** the
+  delivered K1 drains only the binding energy per shed
+  (`dE_int = −D₀(n)`); a statistical evaporation additionally releases
+  translational energy ε ~ (E_int − D₀(n))/s ≈ 5–20 meV per shed —
+  first-order over a ~17-shed cascade (~0.1–0.3 eV vs the entire
+  Σ(21) ≈ 0.188 eV budget). Consequences if included: G strictly decreases
+  → cascades self-terminate (no eternal `time_exhausted` class), terminals
+  converge at higher n, deep-strip reach shrinks, OQ-B worsens. A
+  mechanism-convention OQ of the RRK-dof class (§4e interpretation,
+  item 3); document-only, no implementation. **Coupled to OQ-B:** the
+  fragmentation channel's endpoint distribution (bare vs the small-n tail,
+  incl. the n = 1 bin) is *set by* ε — resolve together (I24).
+- **OQ-G (ladder-bottom depth, post-Wave-7, 2026-07-08):** the Form-U
+  bottom is flat (D₀(1..5) = 9.22 meV, mixture κ = 1), but the real
+  I⁺–He first rung is plausibly much deeper (ion-induced dipole, first
+  shell) — which would make n = 1 a thermodynamic "last survivor" and
+  explain its elevated 2.2× step over n = 2 without race statistics. The
+  small-n abundance tail is the only identified observable that reads the
+  ladder bottom; discriminates from the OQ-B/OQ-F picture via budget
+  dependence (§4e continued). Literature/domain-expert question
+  (I⁺–Heₙ binding energies); document-only.
+- **OQ2 (S2-onset provenance — CALIBRATION_MAP register, FIRED
+  2026-07-09):** the f_int parametrization `E_int(0) = f_int·E_avail` is
+  physically indefensible in both directions (no actual partition
+  implemented; literal ~1 % coupling leaves the mechanism inert — §4e
+  "OQ2 fires"). Working hypothesis: absolute, budget-independent
+  `E_int(0)` ≈ 0.2–0.5 eV from ionization reorganization +
+  electronic/spin–orbit relaxation. Pending literature validation, then a
+  reclassification decision (fraction → absolute eV; row-14 scenario
+  keying dissolves).
+
+**The consolidated register for all of these (OQ-B/E/F/G + OQ2 + the
+resolved-but-uncrosschecked RRK-dof band) is `RESEARCH_QUESTIONS.md`
+(created 2026-07-09) — the entry document of the literature-research /
+domain-expert cross-validation phase.**
 - **OQ-C (n-dependent s):** the scaled convention `s = α·(3n−3)` stays a
   documented alternative arm; not demanded by any current data.
 - **OQ-D (conditional triggers, standing):** R6 9-Å re-extraction and the
@@ -742,12 +1206,25 @@ f_int dimension rides the existing `_fiX.XX` tag). All gated dirs are stamped
 `relaxation_time_ps = 1000.0` and carry the `cooling_spatial_gate` field in
 `cfg.json`.
 
+**Wave 7 (2026-07-08) added `detection.npz` to every one of the 102 dirs**
+(zero new MD runs): a scratchpad driver through the delivered
+`run_detection_stage`, seeding each dir from its `relaxation.npz` under a
+transient detection-enabled cfg view (`detection_time_ps = 8.53e6`;
+plus, for the 63 pre-Wave-4 dirs stamped with the legacy 8.53·10⁶ ps
+relaxation cap, the *realized* relaxation duration so the config-load
+nominal-window bound and the stage's realized-t_h check state the same fact
+— §4e execution note). On-disk `cfg.json` files are unmodified; the detected
+read is regenerable deterministically (stage-private RNG stream keyed on
+`cfg.seed`).
+
 - Generator: `scripts/gen_tier2_staircase_probe.py` (active USER SETTINGS =
   the Wave-4 A/B grid; the 12-run mini-probe and 45-run full grid are
   preserved as restore comment blocks).
 - Scorer: `scripts/post_processing/tier2_staircase_probe_report.py` (pure
   scorer; table + optional CSV/figures; the numbers in §4.2 come from a
-  full re-score of all 87 dirs on 2026-07-07).
+  full re-score of all 87 dirs on 2026-07-07; the §4e detected numbers from
+  the 2026-07-08 re-score of all 102 dirs with `detection.npz` present —
+  ion/relaxed columns unchanged, the wiring identity).
 - Stale-artifact policy (bridge findings §3) applies: any later
   config-surface change invalidates the dirs; regeneration is the recovery
   path.

@@ -4709,3 +4709,207 @@ frozen-in-bubble rejection, underflow-frozen classification, skip-path
 discovery/scoring, stale-detection coherence. **Slice DS is now delivered
 AND reviewed. Next: the manual production-wiring oracle (gated s_eff = 30 →
 t_detect) and Wave 7, each behind its own go-ahead.**
+
+### Wave-7 detected-read re-score EXECUTED (2026-07-08)
+
+Under the `[PROCEED TO IMPLEMENTATION]` trigger (user approved the four
+discussed open choices: scratchpad-driver route, log-spaced sensitivity
+band, all-102 scope, pre-registered predictions W7-P1..P4). Scratchpad
+driver through the delivered `run_detection_stage` — **zero repo-code
+change, zero new MD runs**: every one of the **102** probe dirs re-read at
+the Sourced t_detect = 8.53 µs (CALIBRATION_MAP row 24), seeding from its
+`relaxation.npz`; `detection.npz` written per dir; full re-score with the
+delivered report (`n_detect_*` + state-reason columns on all 102 rows).
+This also discharges the design's manual production-wiring oracle (the
+gated s_eff = 30 point continued to t_detect) as part of the sweep.
+
+**Execution note (recorded; findings §4e):** the 63 pre-Wave-4 dirs are
+stamped with the legacy relaxation cap 8.53·10⁶ ps (chosen before Slice DS
+existed), which the config-load *nominal*-window bound rejects at
+t_detect = 8.53·10⁶; the transient cfg view therefore carried the
+*realized* relaxation duration (their E2 terminated at all-frozen after
+tens of ps) so the nominal and realized bounds state the same fact.
+On-disk `cfg.json` untouched; the stage's realized-t_h re-check and the
+P1–P3 physics guard ran on every dir — **zero violations**.
+
+**Wiring:** ungated no-op identity exact on all 75 ungated dirs
+(`n_detect ≡ n_relaxed`, zero events, all `frozen`); bridge point row
+unchanged (0.67 / 20.33 / 20.33 / n_detect 20.33); ledger residual uniform
+≈ 2.23·10⁻⁵ eV.
+
+**Verdicts (tables + detail: findings §4e, insights I19–I22):** P1
+confirmed; P3 confirmed exactly (all ten dead arms 100 % `suppressed` at
+n = 21 — OQ-B's fragmentation question is now literal detector weight); P4
+confirmed (early-open leak freezes survive as **converged mid-shell
+weight**: n̄_detect 7.4–10.6 at s_eff = 8, f_int 0.24–0.35, 87–93 %
+frozen); **P2 refuted in the informative direction** — the gated landing
+point (s_eff = 30, τ = 6.55, f_int = 0.50) arrives **100 %
+`time_exhausted` at n̄ = 4.09**, not floor-frozen: the descent is
+logarithmic (band 6.21 → 4.09 over 10³ → 8.53·10⁶ ps, ≈ 0.4–0.9 He per
+time decade), so the n ≈ 2 floor is kinetically asymptotic at high s_eff.
+
+**Headline structural finding (I20): the detector read compresses s_eff.**
+At f_int = 0.50 the whole s_eff ∈ [1, 30] range lands n̄_detect ∈
+[2.7, 4.1] (the same points span 2.7–13.8 in-window): s_eff decides the
+*arrival state* (frozen vs live), the race margin Δ× + in-bubble leak
+decide the arrival *n*. Staircase and detector distribution are thereby
+near-orthogonal targets (staircase → s_eff; terminal distribution → Δ×) —
+the identifiability shape a campaign co-fit wants. The gated arm alone
+spans n_detect ≈ 3–13 + the n = 21 suppressed class (I21); bare I⁺ stays
+unreached at the detector (min n = 2; I22, OQ-B sharpened).
+
+Documentation: findings §0 wave table / §4e / §5 (I19–I22) / §6 NB
+(cap-truncation items historical) / §7 (OQ-B sharpened, OQ-E added) / §8
+inventory; probe plan Addendum-C status flipped (Wave 7 EXECUTED, C.2 NB).
+Documentation + scratchpad execution only — no repo code changed. The
+probe program's Wave-7 deliverable (the detector-level flexibility map) is
+complete; discussion resumes from the documented findings (the user
+adjudicates; campaign/production scope stays parked).
+
+### Post-Wave-7 physical interpretation recorded (user discussion, 2026-07-08)
+
+The user's expectation ("I expected all to freeze") prompted the physical
+synthesis, recorded as findings §4e "Physical interpretation" + **I23** +
+two OQ-register updates (documentation only; no code changed):
+
+1. The post-ejection gated cascade is an exactly **closed system**
+   (G = E_int − Σ(n) shed-invariant); the detected read sits in the
+   **Klots evaporative-ensemble regime** (k·t ≈ 1, logarithmic drift) —
+   the never-freezing behavior and the s_eff compression are the textbook
+   long-time structure of the mechanism, derived and quantified in §4e.
+2. **OQ-F (new):** the eternal cascade is nonetheless a *construction* —
+   K1 drains only D₀(n) per shed; the missing per-shed translational
+   release ε ~ (E_int−D₀)/s is first-order over a cascade and would make
+   cascades self-terminate. Mechanism-convention OQ of the RRK-dof class;
+   document-only.
+3. **OQ-B hypothesis (sharpened):** the suppressed class
+   (E_int > Σ(n), rides inert at n = 21 by construction) physically
+   fragments — bare I⁺ may *be* the crossed-after-ejection side of the Δ×
+   race, making the experimental bimodality the cliff structure itself.
+   Document-level; spec belongs to the OQ-B resolution, behind the
+   trigger.
+
+Discussion continued the same day on the second-largest experimental bin
+(I⁺He, 17.5 %), recorded as findings §4e "top two experimental bins" +
+**I24** + OQ-B/OQ-F coupling notes + **OQ-G (new)**:
+
+4. **Both top experimental bins are structurally outside the cascade
+   side's reach** (flat ladder bottom D₀ = 9.22 meV: bare needs |G| = 0
+   exactly; n = 1 needs a sub-rung leak and is kinetically strangled —
+   consistent with Wave 7's global min n = 2, n = 1 absent in 10 200
+   detections).
+5. **The never-opened side covers n = 1 only jointly with OQ-F's ε**:
+   gateless boil-off without ε goes exactly to bare (G > 0 invariant; the
+   n = 1 direct channel has no barrier); with ε, the one-sided G₀
+   distribution yields bare (bulk) + a decreasing small-n tail (fringe),
+   predicting a **budget-dependent bare peak** (G₀ ≈ 0.09 eV at 0.80 eV
+   vs ≈ 0.35 eV at 2.70 eV against 21·ε ≈ 0.1–0.4 eV). OQ-B and OQ-F are
+   one coupled discussion.
+6. **OQ-G (new):** a deep first rung (real I⁺–He binding vs the flat
+   Form-U bottom) is the competing/combinable explanation for n = 1's
+   prominence; the small-n abundance tail is the first observable that
+   reads the ladder *bottom*. Literature/domain-expert question;
+   document-only.
+
+### OQ2 fired (f_int parametrization) + RESEARCH_QUESTIONS.md created (user, 2026-07-09)
+
+Discussion continued on the user's physical objection to the swept f_int
+values ("f_int = 0.5 means half the Coulomb explosion in internal energy —
+the explosion would be half as violent; actual values ~1 % or lower").
+Recorded as findings §4e "OQ2 fires" + **I25** + §7 OQ2 entry
+(documentation only; no code changed):
+
+1. **Code fact (verified):** the model implements no partition —
+   `E_int(0) = f_int·E_avail` is deposited at t0 with nothing subtracted
+   from the Coulomb mechanics (`ion_initial_state.py` → `e_int_onset_eV`).
+   At f_int = 0.5 the model books 0.40/1.35 eV with no mechanical source;
+   a *true* 0.5 partition would slow fragments by √2 and break the
+   Tier-0/1a and VMI velocity physics.
+2. **No comfortable literal value exists:** ≥ 0.24 is needed for any
+   crossing at 0.80 eV; ≤ ~0.01–0.05 is defensible as literal KER
+   coupling but leaves the mechanism inert (8–27 meV vs Σ(21) = 188 meV
+   → 1–4 sheds, frozen n ≈ 17–20). The parametrization is broken, not the
+   number.
+3. **Row-14 floor identity:** the scenario-keyed floors multiply out to
+   the same absolute energy (0.235·0.80 ≈ 0.065·2.70 ≈ Σ(21)) — the
+   natural variable is an **absolute E_int(0) [eV]**; scenario keying
+   dissolves.
+4. **Working hypothesis (pending literature validation, NOT
+   adjudicated):** E_int(0) ≈ 0.2–0.5 eV budget-independent, from
+   ionization reorganization + electronic/spin–orbit relaxation of
+   nascent I⁺ (ties the picture knob to E_int(0) provenance). If
+   confirmed: f_int reclassifies fraction → absolute Bounded eV; the
+   B.1(2) production prediction inverts; the Δ× race coordinate survives.
+5. **Phase decision (user):** the next step is **extensive literature
+   research / domain cross-validation of the internal-energy handling**.
+   Created **`docs/drag_port/Tier2/RESEARCH_QUESTIONS.md`** — the
+   consolidated register (RQ1 = OQ2 E_int(0) provenance; RQ2 = OQ-F ε per
+   shed; RQ3 = OQ-B suppressed fate/bare peak; RQ4 = OQ-G ladder bottom;
+   RQ5 = OQ-E µs-flight channels; RQ6 = s_eff literature cross-check),
+   each with model convention, problem statement, literature targets,
+   discriminating observables, and couplings; per-RQ findings get
+   recorded there with provenance, the user adjudicates, and any model
+   change stays behind `[PROCEED TO IMPLEMENTATION]`.
+
+### RQ1 literature research EXECUTED + ADJUDICATED — f_int → absolute E_int(0) (user decision, 2026-07-09)
+
+The RQ1 deep literature run was executed (multi-agent: 5 search angles,
+22 primary sources fetched, 90 claims extracted, top 25 through 3-voter
+adversarial verification → 20 confirmed / 5 refuted / 0 unverified;
+findings synthesized to 11 NBs). Full register with provenance:
+`RESEARCH_QUESTIONS.md` → "RQ1 findings — NB register" + "RQ1
+adjudication". Document-only; no code, checkpoints, or probe artifacts
+touched. Key sourced facts:
+
+1. **Electronic/spin–orbit channel is real and non-mechanical:**
+   gas-phase strong-field I₂ CE populates excited I⁺ states *at the
+   expense of KER* (Forbes 2022, assignment hedged, no branching
+   fractions); levels anchored ³P₀ = 0.799, ³P₁ = 0.879, ¹D₂ = 1.702 eV
+   (NIST). Ties the picture knob to E_int(0) provenance as hypothesized.
+2. **Solvation reorganization measured:** Na⁺ sudden creation in He
+   droplets releases ≈0.22 eV (measured, droplet-size-independent;
+   He-DFT total ≈0.38–0.40 eV), dissipated by He ejection following
+   Newton-type cooling over ~5 ps (Albrechtsen 2025) — external
+   precedent for the K2 term and for the t₀-deposit-then-drain shape.
+   Amends the working hypothesis' solvation ceiling upward
+   (≤0.19 → ~0.22–0.40 eV).
+3. **Kinematic KER→shell leak: exists but unquantified.** Speed–N
+   correlation (Braun & Drabbels, *neutral* fragments) contradicts full
+   budget-independence, but **both** quantitative coupling estimates
+   (~14 % effective-mass; ~1 % TDDFT) were refuted 0-3 — magnitude
+   genuinely open. Surface alkali-dimer CE shows no large KER shift.
+4. **Applicability caveat (dominant):** no source measures the target
+   system (in-droplet I₂ CE → two recoiling I⁺Heₙ); everything transfers
+   by analogy (gas-phase CE / surface alkali cations / neutral
+   photofragments). Neutral-vs-ion is the sharpest transfer risk. A Ba⁺
+   counter-lead (LIF survives in liquid He) tempers the assumption that
+   electronic energy must degrade non-radiatively into the shell (→RQ5).
+
+**User adjudication (convention-level; RQ1 closed at that level):**
+
+- Onset convention retained — E_int(0) deposited once at t₀, nothing
+  subtracted from the fragment mechanics. The old "no mechanical source"
+  objection dissolves: the dominant channels are non-mechanical, so
+  no-subtraction is correct bookkeeping, not a naive simplification. The
+  kinematic leak stays un-modeled, absorbed by the sweep.
+- **Sweep variable reinterpreted fraction → absolute:** the physical
+  variable is `E_int(0) [eV] = f_int·E_avail`; sweeps are specified,
+  reported, and budget-transferred in absolute eV (0.80 → 2.70 eV holds
+  E_int(0) fixed; f_int rescales ×0.80/2.70 ≈ 0.296). Sourced band
+  0.2–0.5 eV (floor ≈0.22 eV), discounted tail to ~1 eV.
+- The RQ1 "if confirmed" branch is taken: CALIBRATION_MAP **row 16
+  Derived → Bounded (absolute), row 14 f_int Bounded → Derived
+  coordinate** (one-for-one tally swap, edited 2026-07-09); row-14
+  scenario keying dissolves; the B.1(2) production prediction inverts
+  (t× budget-independent; production changes via the earlier t_eject).
+- Discriminator refined: no smooth VMI KER deficit ∝ f_int expected;
+  the electronic channel predicts fine-structure satellites (~0.8 eV
+  down-shifted sub-population) — falsifiable both ways.
+- Refuted-claims register kept in the RQ1 NBs so dead claims are not
+  re-imported (notably "heavy-cation He-tag > bare ion" — do not cite
+  toward RQ3).
+
+Rule-2 carry status: unchanged — this is a documentation/convention
+change; `e_int_onset_eV` and the config surface are untouched. Any
+config rename or absolute-eV input arm is a future slice behind
+`[PROCEED TO IMPLEMENTATION]`.

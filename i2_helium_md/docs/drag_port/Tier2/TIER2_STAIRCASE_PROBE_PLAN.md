@@ -449,8 +449,17 @@ Wave-5 result exists.
 > [t×, t_eject]); bare I⁺ unreached at any f_int. Full tables + insights
 > I15–I17: `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4d; delivery record:
 > `drag_migration_log_tier2.md` "Wave-6 f_int probe EXECUTED".
-> **Wave 7 remains PLANNED** — awaits the Slice-DS build
-> (`TIER2_DETECTION_STAGE_DESIGN.md`), behind its own trigger.
+> **Wave 7 EXECUTED 2026-07-08** (under the `[PROCEED TO IMPLEMENTATION]`
+> trigger; scratchpad-driver route through the delivered Slice-DS stage,
+> zero repo-code change, zero new MD runs): `detection.npz` in all 102 dirs
+> at the Sourced t_detect = 8.53 µs, zero P1–P3 guard failures, full
+> re-score. Verdicts: **W7-P1, P3, P4 confirmed; W7-P2 refuted in the
+> informative direction** (the gated landing point arrives 100 %
+> `time_exhausted` at n̄ = 4.09, not floor-frozen — the descent is
+> logarithmic). Headline: **the detector read compresses s_eff**; the race
+> margin + leak own the arrival n. Full tables + insights I19–I22:
+> `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4e; delivery record:
+> `drag_migration_log_tier2.md` "Wave-7 detected-read re-score EXECUTED".
 >
 > Probe-program continuation, explicitly **not** campaign/production work
 > (the B.5 campaign shape stays parked). Goal unchanged: understand the
@@ -538,6 +547,16 @@ artifacts silently.
 > go-ahead: run the detection stage over the ~102 dirs (seeding each from
 > its `relaxation.npz` with a detection-enabled cfg view at the Sourced
 > t_detect), then re-score.
+>
+> **NB (2026-07-08): Wave 7 EXECUTED** exactly along this route (all open
+> choices adjudicated by the user: scratchpad driver, log-spaced sensitivity
+> band 10³–8.53·10⁶ ps, all-102 scope, pre-registered W7-P1..P4). One
+> execution wrinkle, recorded in findings §4e: the 63 pre-Wave-4 dirs carry
+> the legacy 8.53·10⁶ ps relaxation cap, so the transient cfg view also
+> carried the *realized* relaxation duration to satisfy the config-load
+> nominal-window bound (the stage's realized-t_h check and the P1–P3 guard
+> ran everywhere; on-disk `cfg.json` untouched). Results: findings §4e +
+> I19–I22.
 
 ## C.3 Sequencing and outcome handling
 
