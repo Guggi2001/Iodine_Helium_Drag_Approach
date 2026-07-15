@@ -70,6 +70,15 @@ import plot_run_summary as run_summary  # noqa: E402
 # with run_summary._section_ihe_ked_curves's panel convention.
 N_PANELS = 4
 
+# Signal-region floor for the simulation energy curves, taken from the
+# reference's own convention (provenance JSON / README: curves are excluded
+# below E = 0.01 eV and the envelope normalization is defined over the
+# signal region). Without it the 1/v Jacobian turns any histogram weight in
+# the lowest velocity bins (e.g. gate atoms moving nearly along z, whose
+# in-plane speed is ~0) into an unphysical spike at E ~ 0 that would
+# dominate the peak normalization and squash the physical peak.
+ENERGY_SIGNAL_CUT_EV = 0.01
+
 _ENERGY_FIGURE_TITLES = {
     "3d": ("3-D kinetic-energy distributions P(E) vs I$^+$He$_n$ "
            "reference (peak-normalized, shapes only)"),
@@ -159,7 +168,12 @@ def _build_energy_figure(ion, ked_dir, ked_ref, representation) -> plt.Figure:
             )
             density_E = smoothed_v / v_mps
             x = energy_eV_of_speed_mps(v_mps, mass_amu)
-            y = normalise_trace(density_E)
+            # Reference signal-region cut: drop the sub-cut bins BEFORE
+            # normalizing so the Jacobian's low-E artifact cannot set the
+            # peak (see ENERGY_SIGNAL_CUT_EV).
+            keep = x >= ENERGY_SIGNAL_CUT_EV
+            x = x[keep]
+            y = normalise_trace(density_E[keep])
             ax.plot(x, y, "--", color="tab:red", linewidth=1.4,
                     label=f"simulation (N={hist.num_atoms_used})")
 

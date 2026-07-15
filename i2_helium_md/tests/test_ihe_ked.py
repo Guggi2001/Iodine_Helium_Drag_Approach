@@ -535,6 +535,47 @@ class TestInteractiveComparisonScripts:
         with pytest.raises(ValueError):
             mod.main()
 
+    def test_energy_curve_signal_cut_blocks_jacobian_spike(self):
+        """A gate atom with near-zero speed must not hijack the peak.
+
+        The 1/v Jacobian turns histogram weight in the lowest velocity
+        bins into a spike at E ~ 0; the reference's signal-region floor
+        (E >= 0.01 eV) is applied to the sim curve BEFORE normalization,
+        so the drawn curve starts at the cut and its maximum (= 1 after
+        normalise_trace) sits at the physical peak, not at the spike.
+        Regression: without the cut, the sim curve for a low-N gate
+        peaked at ~1e-6 eV and the physical structure topped out at ~0.1.
+        """
+        import matplotlib.pyplot as plt
+        from i2_helium_md.physics.shell_schedule import complex_mass_amu
+        from i2_helium_md.postprocess import load_ihe_ked_reference
+
+        mod = _load_pp_script_module("plot_speed_distribution_comparison")
+        ked_ref = load_ihe_ked_reference(REFERENCE_CSV)
+        m3 = float(complex_mass_amu(3))  # n=3 gate mass
+        # Molecule layout is interleaved (atom j and j+N): atoms 0 and 1
+        # carry the n=3 mass; one moves at 0.02 A/ps (2 m/s -> the spike
+        # bin) and one at 9 A/ps (900 m/s -> physical peak ~0.58 eV).
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([0.02, 9.0, 0.02, 9.0]),
+            masses_amu_per_atom=np.array([m3, m3, m3, m3]),
+        )
+        fig = mod._build_energy_figure(ion, IHE_KED_DIR, ked_ref, "2d")
+        ax = fig.axes[3]  # n = 3 panel
+        sim_lines = [
+            line for line in ax.get_lines()
+            if line.get_label().startswith("simulation")
+        ]
+        assert len(sim_lines) == 1
+        x = np.asarray(sim_lines[0].get_xdata())
+        y = np.asarray(sim_lines[0].get_ydata())
+        # Cut applied: nothing drawn below the signal-region floor.
+        assert x.min() >= mod.ENERGY_SIGNAL_CUT_EV
+        # The normalized maximum sits at the physical peak, not at E ~ 0.
+        assert x[int(np.argmax(y))] == pytest.approx(0.583, rel=0.2)
+        plt.close(fig)
+
     def test_speed_distribution_comparison_shows_four_figures(self, monkeypatch):
         # v-axis 2d, v-axis 3d, E-axis 2d, E-axis 3d (Task 10).
         if not REAL_RUN_DIR.exists():
