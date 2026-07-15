@@ -5752,3 +5752,68 @@ The original H.5 "outcome (c) cancels the MD legs" clause is
 gate for the bare bin. **No code, no runs** — the W12 MD leg and the
 W13 arm each remain behind their own `[PROCEED TO IMPLEMENTATION]`;
 nothing here discharges the F5 gate.
+
+---
+
+## IHe KED run-summary integration DELIVERED — Tasks 1–5 (2026-07-15)
+
+Implementation under the `[PROCEED TO IMPLEMENTATION]` trigger, delivering the
+design spec `docs/superpowers/specs/2026-07-14-ihe-ked-run-summary-design.md`
+(commits `67970ae`, `c7329df`, `9697e98`, `111f8a5`, `1947fb9`). Upgrades the
+run-summary comparison layer from the `vmi_summary` overlay to the `ihe_ked`
+reference (a different, higher-count campaign; see the vmi_summary README's
+"different-campaign" note, ⟨E⟩ ~16 % lower there).
+
+- **Task 1 (`67970ae`)** — extracted the shared `select_final_mass_gate`
+  mass-gate helper and added projected in-plane speed histograms to the
+  run-summary pipeline (the like-for-like counterpart of the Abel-inverted
+  2-D experimental slice).
+- **Task 2 (`c7329df`)** — new `postprocess/ihe_ked.py`: reference-table
+  loader for the mean-KE table (bare / n = 1…12+) with the full error model
+  (systematic + statistical bands, correlated across n).
+- **Task 3 (`9697e98`)** — `ihe_ked.py` trusted-curve loader (n = 0…4),
+  dual-axis 2-D/3-D KE-vs-speed curve construction.
+- **Task 4 (`111f8a5`)** — sim-side `fragment_mean_kinetic_energy` /
+  `fragment_gate_counts` helpers, built on the shared `select_final_mass_gate`
+  gate from Task 1 (one gate, not a re-derived selection).
+- **Task 5 (`1947fb9`)** — `plot_run_summary.py`: new `ihe_ked_mean_energy`
+  section (mean-to-mean comparison, correlated error bands, gold markers),
+  `ihe_ked_curves_3d` / `ihe_ked_curves_2d` (5-panel n = 0…4 overlays with
+  `v(⟨E⟩)` markers; the sim 2-D side is the projected in-plane speed from
+  Task 1), and a mass-spectrum-vs-abundance grouped-bar panel against
+  `integrated_i_he_abundance.csv`. Retired the `radial_velocity_with_vmi`
+  overlay panel and its `VMI_REF_*` USER-SETTINGS block (superseded by the
+  ihe_ked comparison layer; the `vmi_summary` loader/CSVs stay live for
+  `plot_experimental_comparison.py`, which keeps its own workflow per the
+  CLAUDE.md HeDFT/experimental separation rule).
+
+**Tests:** `tests/test_ihe_ked.py` (new — reference-table loader, trusted-curve
+loader, sim-side `fragment_mean_kinetic_energy` / `fragment_gate_counts`).
+
+**Task 6 — final validation (2026-07-15).** Full suite: **2202 passed, 0
+failed, 83 warnings** (0 new warning classes — all trace to the documented
+§6.5 mass<->coefficient-pairing `RuntimeWarning` path or the v6→v7
+checkpoint-migration `UserWarning`). Two pre-existing failures surfaced in
+`tests/test_velocity_distribution.py::TestRealVmi`
+(`test_real_vmi_he_loads`, `test_real_vmi_gas_loads`, asserting
+`velocity_Aps.size > 100`) were diagnosed as **unrelated to Tasks 1–5** — no
+diff in Tasks 1–5 touches `load_vmi_reference`, these tests, or the
+`vmi_summary` CSVs. Root cause: commit `c588e77` ("New reference data as well
+as updated plans for drag") intentionally re-exported
+`data/reference/vmi_summary/{vmi_iplus_he,vmi_iplus_gas,vmi_iplus_he_high_snr}.csv`
+together with `export_vmi_reference_data.m` and the `vmi_summary/README.md`,
+switching the export to the pyabel `rIbeta()` Abel-inverted 3-D speed
+distribution (README "Convention fix (2026-07)" note) — a coarser,
+intentionally different velocity grid than the prior raw-pixel radial
+binning: row counts confirmed at 72 / 71 / 72 data rows (73/72/73 lines incl.
+header), down from >400 pre-re-export (`git show --stat c588e77` diffstat).
+The stale `> 100` bound was updated to `> 50` (both new counts clear it with
+margin), with an inline comment recording the c588e77/README provenance so
+the bound doesn't silently drift again. No file under `data/reference/`
+touched.
+
+**Rule-2 / scope:** no schema bump, no RNG draw-order change, no
+drag-law/neutral/propagation touch — a post-processing comparison-layer
+delivery under the CLAUDE.md drag-model scoped exception. Next: none
+scheduled — this closes the ihe_ked run-summary-integration deliverable named
+in the 2026-07-14 design spec.
