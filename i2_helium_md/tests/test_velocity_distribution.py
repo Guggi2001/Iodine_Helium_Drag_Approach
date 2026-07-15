@@ -137,15 +137,21 @@ class TestLoadVmiReference:
     reason="real VMI references not present",
 )
 class TestRealVmi:
+    # Row-count bound tracks the 2026-07-14 vmi_summary re-export (commit
+    # c588e77): the Abel-inverted pyabel `rIbeta()` speed-distribution grid
+    # (see data/reference/vmi_summary/README.md "Convention fix (2026-07)")
+    # is intentionally coarser than the prior raw-pixel radial binning
+    # (he: 73 lines incl. header -> 72 rows; gas: 72 -> 71). The old ">100"
+    # bound encoded the pre-re-export row count and is now stale.
     def test_real_vmi_he_loads(self):
         ref = load_vmi_reference(VMI_HE)
-        assert ref.velocity_Aps.size > 100
+        assert ref.velocity_Aps.size > 50
         assert ref.signal_arb.size == ref.velocity_Aps.size
         assert np.all(np.isfinite(ref.velocity_Aps))
 
     def test_real_vmi_gas_loads(self):
         ref = load_vmi_reference(VMI_GAS)
-        assert ref.velocity_Aps.size > 100
+        assert ref.velocity_Aps.size > 50
         assert ref.signal_arb.size == ref.velocity_Aps.size
 
 
