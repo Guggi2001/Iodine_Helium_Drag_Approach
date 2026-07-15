@@ -41,7 +41,7 @@ import plot_run_summary as run_summary  # noqa: E402
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
 # =============================================================================
 # Path to the run directory holding cfg.json + neutral.npz + ion.npz.
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
 
 # Directory holding the frozen I+He_n kinetic-energy reference
 # (IHe_KED_reference.csv). Required -- this script exists specifically to

@@ -208,7 +208,7 @@ def _build_energy_figure(ion, ked_dir, ked_ref, representation) -> plt.Figure:
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
 # =============================================================================
 # Path to the run directory holding cfg.json + neutral.npz + ion.npz.
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
 
 # Directory holding the frozen I+He_n kinetic-energy reference
 # (IHe_KED_reference.csv + IHe_KED_curves_n{0..4}.csv). Required -- this
@@ -218,6 +218,8 @@ RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 IHE_KED_REFERENCE_DIR: Path | None = (
     PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 )
+
+SHOW_ENERGY_FIGURE = True
 
 
 def main() -> int:
@@ -259,8 +261,9 @@ def main() -> int:
 
     run_summary._section_ihe_ked_curves(ion, ked_dir, ked_ref, "3d")
     run_summary._section_ihe_ked_curves(ion, ked_dir, ked_ref, "2d")
-    _build_energy_figure(ion, ked_dir, ked_ref, "3d")
-    _build_energy_figure(ion, ked_dir, ked_ref, "2d")
+    if SHOW_ENERGY_FIGURE:
+        _build_energy_figure(ion, ked_dir, ked_ref, "3d")
+        _build_energy_figure(ion, ked_dir, ked_ref, "2d")
 
     plt.show()
     return 0
