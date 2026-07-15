@@ -127,6 +127,13 @@ IHE_KED_HIST_V_MAX_APS = 31.0
 IHE_KED_HIST_NUM_BINS = int(round(IHE_KED_HIST_V_MAX_APS / HIST_BIN_WIDTH_APS))
 IHE_KED_PLOT_V_MAX_MPS = 3100.0
 
+# Display smoothing for the experimental curve overlays: the exporter's own
+# mask/normalization window ("movmean": 10, omitnan, in
+# IHe_KED_reference.provenance.json). Using the same window means the
+# smoothed envelope peaks at ~1 by construction of the reference
+# normalization.
+IHE_KED_EXP_SMOOTHING_WINDOW = 10
+
 PAIR_DIST_NUM_BINS = 100
 TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
@@ -528,8 +535,44 @@ def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
     return fig
 
 
+def _nan_aware_moving_mean(values: np.ndarray, window: int) -> np.ndarray:
+    """Centered moving mean with MATLAB ``movmean(..., 'omitnan')`` semantics
+    that additionally preserves NaN positions.
+
+    Each finite entry becomes the mean of the finite entries inside its
+    window; entries that are NaN in the input stay NaN in the output, so the
+    reference's deliberate NaN cuts (low-E Abel exclusions in the 3-D
+    columns) render as gaps and smoothing never bleeds across them.
+
+    Parameters
+    ----------
+    values : (N,) float array, may contain NaN
+    window : positive int, boxcar length in samples
+
+    Returns
+    -------
+    (N,) float array with NaN exactly where ``values`` has NaN.
+    """
+    if window < 1:
+        raise ValueError(f"window must be >= 1, got {window}")
+    v = np.asarray(values, dtype=float)
+    finite = np.isfinite(v)
+    kernel = np.ones(int(window))
+    num = np.convolve(np.where(finite, v, 0.0), kernel, mode="same")
+    den = np.convolve(finite.astype(float), kernel, mode="same")
+    out = np.divide(num, den, out=np.full_like(v, np.nan), where=den > 0.0)
+    out[~finite] = np.nan
+    return out
+
+
 def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure:
-    """Per-fragment speed-distribution overlays for n = 0..4.
+    """Per-fragment speed-distribution overlays for n = 0..3.
+
+    n = 4 is dropped from this display: it is the weakest trusted curve
+    (N_eff ~= 11.7k vs 193.7k at n = 0) and forced a 2x3 grid with a dead
+    sixth axis. The n = 4 export stays on disk and loadable
+    (``load_ihe_ked_curve`` still supports n up to ``CURVE_N_MAX`` = 4) --
+    only this figure's panel count changed.
 
     representation: "3d" overlays the sim 3-D |v| histogram on the
     reconstructed ``signal_3d_Pv``; "2d" overlays the sim in-plane
@@ -537,7 +580,9 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
     ``signal_2d_Pv``. Reference curves are peak-normalized (smoothed
     envelope = 1): compare shapes, never amplitudes. Vertical markers sit
     at v(<E>) -- not <v> -- on both sides; the reference NaN cuts render
-    as gaps.
+    as gaps. The experimental curve itself is drawn as faint raw points
+    plus a movmean-smoothed line (``IHE_KED_EXP_SMOOTHING_WINDOW``) so the
+    underlying scatter stays visible under the smoothed envelope.
     """
     if ked_dir is None or ked_ref is None:
         raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
@@ -551,18 +596,21 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
         "2d": ("2-D detector projections (in-plane speed) vs I$^+$He$_n$ "
                "reference (peak-normalized, shapes only)"),
     }
-    fig, axes = plt.subplots(2, 3, figsize=(12.5, 7.0),
+    fig, axes = plt.subplots(2, 2, figsize=(10.5, 7.0),
                              constrained_layout=True)
     axes = axes.ravel()
-    axes[5].set_axis_off()
     fig.suptitle(titles[representation])
 
-    for n in range(5):
+    for n in range(4):
         ax = axes[n]
         curve = load_ihe_ked_curve(ked_dir, n)
         ref_signal = getattr(curve, f"signal_{representation}_Pv")
-        ax.plot(curve.v_mps, ref_signal, color="tab:blue", linewidth=1.2,
-                label="experiment")
+        ax.plot(curve.v_mps, ref_signal, ".", color="tab:blue",
+                markersize=2.5, alpha=0.30, label="experiment (raw)")
+        ax.plot(curve.v_mps,
+                _nan_aware_moving_mean(ref_signal, IHE_KED_EXP_SMOOTHING_WINDOW),
+                color="tab:blue", linewidth=1.4,
+                label="experiment (movmean 10)")
 
         mass_amu = float(complex_mass_amu(n))
         sim_note = None

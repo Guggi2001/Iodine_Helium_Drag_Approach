@@ -353,6 +353,8 @@ class TestRunSummaryIHeKedSections:
                 _smoke_ion(), IHE_KED_DIR, ked_ref, representation
             )
             assert fig is not None
+            # 2x2 grid, n = 4 panel dropped -- no dead sixth axis.
+            assert len(fig.axes) == 4
         plt.close("all")
 
     def test_mass_spectrum_with_abundance_builds(self):
@@ -371,3 +373,50 @@ class TestRunSummaryIHeKedSections:
         mod = _load_run_summary_module()
         assert not hasattr(mod, "_section_radial_velocity")
         assert not hasattr(mod, "VMI_REF_HE_PATH")
+
+
+class TestNanAwareMovingMean:
+    def test_all_finite_matches_convolve_ratio(self):
+        mod = _load_run_summary_module()
+        rng = np.random.default_rng(0)
+        v = rng.normal(size=37)
+        window = 5
+        expected = np.convolve(
+            v, np.ones(window), "same"
+        ) / np.convolve(np.ones_like(v), np.ones(window), "same")
+        out = mod._nan_aware_moving_mean(v, window)
+        assert out == pytest.approx(expected, rel=1e-12)
+
+    def test_all_finite_hand_computed_five_point(self):
+        mod = _load_run_summary_module()
+        v = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        out = mod._nan_aware_moving_mean(v, 3)
+        # centered window=3, 'same'/shrink edges:
+        # idx0: mean(1,2) = 1.5; idx1: mean(1,2,3)=2; idx2: mean(2,3,4)=3;
+        # idx3: mean(3,4,5)=4; idx4: mean(4,5)=4.5
+        expected = np.array([1.5, 2.0, 3.0, 4.0, 4.5])
+        assert out == pytest.approx(expected, rel=1e-12)
+
+    def test_interior_nan_run_preserves_nan_and_neighbor_means(self):
+        mod = _load_run_summary_module()
+        v = np.array([1.0, 2.0, np.nan, np.nan, 5.0, 6.0, 7.0])
+        out = mod._nan_aware_moving_mean(v, 3)
+        nan_mask = np.isnan(v)
+        assert np.array_equal(np.isnan(out), nan_mask)
+        # idx1 (value 2.0): window covers idx0,1,2 -> finite {1.0, 2.0} only.
+        assert out[1] == pytest.approx(1.5, rel=1e-12)
+        # idx4 (value 5.0): window covers idx3,4,5 -> finite {5.0, 6.0} only.
+        assert out[4] == pytest.approx(5.5, rel=1e-12)
+
+    def test_window_one_returns_input_unchanged(self):
+        mod = _load_run_summary_module()
+        v = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
+        out = mod._nan_aware_moving_mean(v, 1)
+        assert np.isnan(out[1]) and np.isnan(out[3])
+        finite_mask = np.isfinite(v)
+        assert out[finite_mask] == pytest.approx(v[finite_mask], rel=1e-12)
+
+    def test_window_zero_raises(self):
+        mod = _load_run_summary_module()
+        with pytest.raises(ValueError):
+            mod._nan_aware_moving_mean(np.array([1.0, 2.0, 3.0]), 0)
