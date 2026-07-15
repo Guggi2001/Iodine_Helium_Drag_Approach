@@ -302,3 +302,72 @@ class TestFragmentGateCounts:
         )
         counts = fragment_gate_counts(ion, np.arange(3))
         np.testing.assert_array_equal(counts, [0, 2, 0])
+
+
+import importlib.util
+import sys
+
+import matplotlib
+
+
+def _load_run_summary_module():
+    matplotlib.use("Agg", force=True)
+    script = (
+        PROJECT_ROOT / "scripts" / "post_processing" / "plot_run_summary.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "plot_run_summary_under_test", script
+    )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _smoke_ion() -> IonCheckpoint:
+    """A tiny ensemble populating the n = 0..2 gates with plausible speeds."""
+    speeds = np.array([24.0, 20.0, 10.0, 8.0, 6.0, 5.0])  # A/ps
+    masses = np.array([127.0, 127.0, 131.0, 131.0, 135.0, 135.0])
+    return _make_ion(
+        num_molecules=3,
+        final_speeds_per_atom=speeds,
+        masses_amu_per_atom=masses,
+    )
+
+
+class TestRunSummaryIHeKedSections:
+    def test_mean_energy_section_builds(self):
+        import matplotlib.pyplot as plt
+        mod = _load_run_summary_module()
+        ked_ref = load_ihe_ked_reference(REFERENCE_CSV)
+        fig = mod._section_ihe_ked_mean_energy(_smoke_ion(), ked_ref)
+        assert fig is not None
+        plt.close("all")
+
+    def test_curves_sections_build_both_representations(self):
+        import matplotlib.pyplot as plt
+        mod = _load_run_summary_module()
+        ked_ref = load_ihe_ked_reference(REFERENCE_CSV)
+        for representation in ("2d", "3d"):
+            fig = mod._section_ihe_ked_curves(
+                _smoke_ion(), IHE_KED_DIR, ked_ref, representation
+            )
+            assert fig is not None
+        plt.close("all")
+
+    def test_mass_spectrum_with_abundance_builds(self):
+        import matplotlib.pyplot as plt
+        from i2_helium_md.postprocess import load_he_abundance_reference
+        mod = _load_run_summary_module()
+        abundance = load_he_abundance_reference(
+            PROJECT_ROOT / "data" / "reference"
+            / "integrated_i_he_abundance.csv"
+        )
+        fig = mod._section_mass_spectrum(_smoke_ion(), abundance)
+        assert fig is not None
+        plt.close("all")
+
+    def test_old_vmi_section_is_gone(self):
+        mod = _load_run_summary_module()
+        assert not hasattr(mod, "_section_radial_velocity")
+        assert not hasattr(mod, "VMI_REF_HE_PATH")

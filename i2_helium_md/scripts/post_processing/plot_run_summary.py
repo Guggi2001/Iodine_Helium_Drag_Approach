@@ -22,6 +22,12 @@ The following legacy scripts are consolidated here:
                                                      Boltzmann reference
 * ``compare_neutral_dynamics_to_HeDFT.m``      -> neutral cumtrapz r(t)
 
+The legacy ``simulation_image.m`` velocity overlay against the
+``vmi_summary`` CSVs was retired 2026-07-14 in favor of the frozen
+``data/reference/ihe_ked/`` per-fragment reference (mean-KE table +
+trusted 2-D/3-D curves for n = 0..4); see
+``docs/superpowers/specs/2026-07-14-ihe-ked-run-summary-design.md``.
+
 Out of scope (deferred per CLAUDE.md): Abel inversion, pump-probe,
 effusive / gas-phase comparison, live-debug 3D animations.
 
@@ -59,10 +65,14 @@ from i2_helium_md.postprocess import (  # noqa: E402
     compare_neutral_to_hedft,
     compare_velocity_magnitude,
     compute_final_velocity_histogram,
+    fragment_gate_counts,
+    fragment_mean_kinetic_energy,
     interparticle_distance_histogram,
     ion_energy_totals,
+    load_he_abundance_reference,
     load_hedft_trajectory,
-    load_vmi_reference,
+    load_ihe_ked_curve,
+    load_ihe_ked_reference,
     mass_spectrum,
     neutral_energy_totals,
     paper_v2_velocity_curve,
@@ -70,7 +80,9 @@ from i2_helium_md.postprocess import (  # noqa: E402
     paper_v4_angular_pair_covariance,
     radial_distribution_evolution,
     radial_pair_speed_covariance,
+    speed_mps_of_energy_eV,
 )
+from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
 from i2_helium_md.postprocess._smoothing import (  # noqa: E402
     moving_mean,
     normalise_trace,
@@ -108,7 +120,12 @@ HIST_EDGE_MAX_APS = 26.0
 HIST_NUM_BINS = int(round(HIST_EDGE_MAX_APS / HIST_BIN_WIDTH_APS))
 HIST_SMOOTHING_WINDOW = 15
 VELOCITY_PLOT_V_MAX_APS = 28.0
-VELOCITY_PLOT_V_MAX_MPS = 2800.0
+
+# ihe_ked overlay panels: cover the full detector range (crop edge
+# 354 px = 3052 m/s at m = 127; reference README).
+IHE_KED_HIST_V_MAX_APS = 31.0
+IHE_KED_HIST_NUM_BINS = int(round(IHE_KED_HIST_V_MAX_APS / HIST_BIN_WIDTH_APS))
+IHE_KED_PLOT_V_MAX_MPS = 3100.0
 
 PAIR_DIST_NUM_BINS = 100
 TIME_HEATMAP_N_SLICES = 60
@@ -124,14 +141,18 @@ RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
 # Optional reference CSVs. Set to ``None`` to skip the matching section.
 # Typical experimental-droplet configuration:
 HEDFT_REF_PATH: Path | None = None
-VMI_REF_HE_PATH: Path | None = (
-    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
+
+# Directory holding the frozen I+He_n kinetic-energy reference
+# (IHe_KED_reference.csv + IHe_KED_curves_n{0..4}.csv). ``None`` skips
+# the ihe_ked mean-energy and curve-overlay sections.
+IHE_KED_REFERENCE_DIR: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 )
-VMI_REF_GAS_PATH: Path | None = (
-    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
-)
-VMI_REF_HE_HIGH_SNR_PATH: Path | None = (
-    PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he_high_snr.csv"
+
+# Experimental I+He_n abundance CSV for the mass-spectrum side-by-side.
+# ``None`` keeps the plain simulated mass spectrum.
+ABUNDANCE_REF_PATH: Path | None = (
+    PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 )
 
 # Directory holding paper-v2 reference CSVs and images/. Set to ``None`` to
@@ -158,8 +179,8 @@ PAPER_V2_MASS_AMU: float = 131.0
 # experimental block above to switch):
 # RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
 # HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
-# VMI_REF_HE_PATH = None
-# VMI_REF_GAS_PATH = None
+# IHE_KED_REFERENCE_DIR = None
+# ABUNDANCE_REF_PATH = None
 
 # Output directory for the PDF and per-panel PNGs. ``None`` -> <RUN_DIR>/figures.
 OUT_DIR: Path | None = None
@@ -172,11 +193,8 @@ SHOW_FIGURES: bool = False
 def main() -> int:
     run_dir = Path(RUN_DIR)
     hedft_ref = Path(HEDFT_REF_PATH) if HEDFT_REF_PATH else None
-    vmi_ref_he = Path(VMI_REF_HE_PATH) if VMI_REF_HE_PATH else None
-    vmi_ref_gas = Path(VMI_REF_GAS_PATH) if VMI_REF_GAS_PATH else None
-    vmi_ref_he_high_snr = (
-        Path(VMI_REF_HE_HIGH_SNR_PATH) if VMI_REF_HE_HIGH_SNR_PATH else None
-    )
+    ihe_ked_dir = Path(IHE_KED_REFERENCE_DIR) if IHE_KED_REFERENCE_DIR else None
+    abundance_ref_path = Path(ABUNDANCE_REF_PATH) if ABUNDANCE_REF_PATH else None
     paper_v2_ref_dir = (
         Path(PAPER_V2_REFERENCE_DIR) if PAPER_V2_REFERENCE_DIR else None
     )
@@ -186,9 +204,8 @@ def main() -> int:
     args = SimpleNamespace(
         run_dir=run_dir,
         hedft_ref=hedft_ref,
-        vmi_ref_he=vmi_ref_he,
-        vmi_ref_gas=vmi_ref_gas,
-        vmi_ref_he_high_snr=vmi_ref_he_high_snr,
+        ihe_ked_dir=ihe_ked_dir,
+        abundance_ref_path=abundance_ref_path,
         paper_v2_ref_dir=paper_v2_ref_dir,
         paper_cov_ref_dir=paper_cov_ref_dir,
     )
@@ -204,10 +221,13 @@ def main() -> int:
     ion = run.load_ion() if run.has_ion() else None
 
     hedft = load_hedft_trajectory(hedft_ref) if hedft_ref else None
-    vmi_he = load_vmi_reference(vmi_ref_he) if vmi_ref_he else None
-    vmi_gas = load_vmi_reference(vmi_ref_gas) if vmi_ref_gas else None
-    vmi_he_high_snr = (
-        load_vmi_reference(vmi_ref_he_high_snr) if vmi_ref_he_high_snr else None
+    ked_ref = (
+        load_ihe_ked_reference(ihe_ked_dir / "IHe_KED_reference.csv")
+        if ihe_ked_dir else None
+    )
+    abundance = (
+        load_he_abundance_reference(abundance_ref_path)
+        if abundance_ref_path else None
     )
 
     print(f"[run_summary] writing {pdf_path}")
@@ -227,10 +247,15 @@ def main() -> int:
                 ("ion_temperature_diagnostic",
                  lambda: _section_temperature(ion)),
                 ("mass_spectrum",
-                 lambda: _section_mass_spectrum(ion)),
-                ("radial_velocity_with_vmi",
-                 lambda: _section_radial_velocity(
-                     ion, vmi_he, vmi_gas, vmi_he_high_snr)),
+                 lambda: _section_mass_spectrum(ion, abundance)),
+                ("ihe_ked_mean_energy",
+                 lambda: _section_ihe_ked_mean_energy(ion, ked_ref)),
+                ("ihe_ked_curves_3d",
+                 lambda: _section_ihe_ked_curves(
+                     ion, ihe_ked_dir, ked_ref, "3d")),
+                ("ihe_ked_curves_2d",
+                 lambda: _section_ihe_ked_curves(
+                     ion, ihe_ked_dir, ked_ref, "2d")),
                 ("paper_v2_vmi_comparison",
                  lambda: _section_paper_v2_vmi(
                      ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR)),
@@ -330,12 +355,10 @@ def _section_metadata(cfg, ion, neutral, args) -> plt.Figure:
     refs = []
     if args.hedft_ref:
         refs.append(f"HeDFT: {args.hedft_ref}")
-    if args.vmi_ref_he:
-        refs.append(f"VMI(I+He): {args.vmi_ref_he}")
-    if args.vmi_ref_gas:
-        refs.append(f"VMI(gas): {args.vmi_ref_gas}")
-    if args.vmi_ref_he_high_snr:
-        refs.append(f"VMI(I+He, high SNR): {args.vmi_ref_he_high_snr}")
+    if args.ihe_ked_dir:
+        refs.append(f"IHe KED (mean-KE + curves): {args.ihe_ked_dir}")
+    if args.abundance_ref_path:
+        refs.append(f"I+He_n abundance: {args.abundance_ref_path}")
     if args.paper_v2_ref_dir:
         refs.append(f"paper-v2 ref dir: {args.paper_v2_ref_dir}")
     if args.paper_cov_ref_dir:
@@ -406,110 +429,185 @@ def _section_temperature(ion) -> plt.Figure:
     return fig
 
 
-def _section_mass_spectrum(ion) -> plt.Figure:
-    spec = mass_spectrum(ion, bin_width_amu=1.0)
-    fig, ax = plt.subplots(figsize=(8.0, 4.0), constrained_layout=True)
-    ax.bar(spec.bin_centers_amu, spec.counts, width=0.9,
-           edgecolor="black", linewidth=0.5)
-    ax.set(title="Final ion mass spectrum",
-           xlabel="m / u", ylabel="count")
-    ax.set_xlim(left = MASS_I-1, right=MASS_SPECTRUM_MAX_AMU+1)
-    # Set x-ticks in steps of 4 from MASS_I_HE_AMU to MASS_SPECTRUM_MAX_AMU
-    xticks = np.arange(MASS_I, MASS_SPECTRUM_MAX_AMU + 1, 4)
-    ax.set_xticks(xticks)
+def _section_mass_spectrum(ion, abundance) -> plt.Figure:
+    """Final ion mass spectrum; side-by-side with the experimental
+    I+He_n abundance when the reference is configured.
+
+    Sim fractions use the same mass gates as the velocity diagnostics
+    (m(n) +/- 0.5 amu, outside ions only), so a detected-fraction bar is
+    directly the mass-gated ensemble the other ihe_ked sections draw from.
+    """
+    if abundance is None:
+        spec = mass_spectrum(ion, bin_width_amu=1.0)
+        fig, ax = plt.subplots(figsize=(8.0, 4.0), constrained_layout=True)
+        ax.bar(spec.bin_centers_amu, spec.counts, width=0.9,
+               edgecolor="black", linewidth=0.5)
+        ax.set(title="Final ion mass spectrum",
+               xlabel="m / u", ylabel="count")
+        ax.set_xlim(left=MASS_I - 1, right=MASS_SPECTRUM_MAX_AMU + 1)
+        ax.set_xticks(np.arange(MASS_I, MASS_SPECTRUM_MAX_AMU + 1, 4))
+        return fig
+
+    counts = fragment_gate_counts(ion, abundance.n)
+    total = counts.sum()
+    if total == 0:
+        raise _SectionSkipped("no outside ions in any I+He_n mass gate")
+    sim_percent = 100.0 * counts / total
+    exp_percent = 100.0 * abundance.ion_fraction
+
+    fig, ax = plt.subplots(figsize=(9.5, 4.5), constrained_layout=True)
+    width = 0.4
+    ax.bar(abundance.n - width / 2, exp_percent, width=width,
+           color="tab:blue", label="experiment (ionPercent)")
+    ax.bar(abundance.n + width / 2, sim_percent, width=width,
+           color="tab:red", label=f"simulation (N={int(total)} atoms)")
+    ax.set(title="Final I$^+$He$_n$ size distribution vs experimental abundance",
+           xlabel="n (attached He atoms)", ylabel="fraction / %")
+    ax.set_xticks(abundance.n)
+    ax.legend(frameon=False)
     return fig
 
 
-def _section_radial_velocity(
-    ion, vmi_he, vmi_gas, vmi_he_high_snr=None,
-) -> plt.Figure:
-    """Radial velocity with experimental VMI overlay.
+def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
+    """Mean kinetic energy per fragment: sim vs experiment, mean-to-mean.
 
-    Matches ``_draw_velocity_distribution_tile`` in
-    ``plot_experimental_comparison.py``: same 5-color plasma palette, same
-    gas-phase v > 400 m/s normalisation mask, same MATLAB-equivalent
-    smoothing, m/s on the x-axis. No bimodal fit overlay.
+    Error model per the reference README: per-point error is
+    sqrt(stat^2 + sys^2); the calibration and condition bands are
+    correlated (they shift the whole experimental curve coherently) and
+    are drawn as shaded envelopes, never folded into point errors. Gold
+    points are calib-limited: a disagreement there is real physics beyond
+    the two bands.
     """
-    if vmi_he is None or vmi_gas is None:
-        raise _SectionSkipped(
-            "experimental VMI references (He + gas) required"
-        )
-    try:
-        sim_he = compute_final_velocity_histogram(
-            ion, mass_amu=MASS_I_HE_AMU,
-            num_bins=HIST_NUM_BINS, v_max_Aps=HIST_EDGE_MAX_APS,
-        )
-        sim_he2 = compute_final_velocity_histogram(
-            ion, mass_amu=MASS_I_HE2_AMU,
-            num_bins=HIST_NUM_BINS, v_max_Aps=HIST_EDGE_MAX_APS,
-        )
-    except ValueError as exc:
-        raise _SectionSkipped(str(exc))
+    if ked_ref is None:
+        raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
 
-    palette = plt.colormaps["plasma"](np.linspace(0.05, 0.85, 5))
-    c_gas, c_he, c_sim_he, c_sim_he2, c_he_hs = palette
+    sim_points = []
+    for n in ked_ref.n:
+        try:
+            sim_points.append(fragment_mean_kinetic_energy(ion, int(n)))
+        except ValueError:
+            continue
+    fig, ax = plt.subplots(figsize=(9.5, 5.0), constrained_layout=True)
 
-    mask_gas = vmi_gas.velocity_mps > 400.0
-    max_gas = float(vmi_gas.signal_arb[mask_gas].max())
-    max_he = float(vmi_he.signal_arb.max())
-    sim_he_density = normalise_trace(
-        moving_mean(sim_he.density, HIST_SMOOTHING_WINDOW)
-    )
-    sim_he2_density = normalise_trace(
-        moving_mean(sim_he2.density, HIST_SMOOTHING_WINDOW)
-    )
+    mean = ked_ref.mean_KE_eV
+    for frac, label, alpha in (
+        (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
+        (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
+    ):
+        ax.fill_between(ked_ref.n, mean * (1.0 - frac), mean * (1.0 + frac),
+                        color="tab:blue", alpha=alpha, linewidth=0,
+                        label=label)
+    ax.errorbar(ked_ref.n, mean, yerr=ked_ref.point_err_eV, fmt="o",
+                color="tab:blue", markersize=4, capsize=2,
+                label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
+    gold = ked_ref.gold_mask
+    ax.plot(ked_ref.n[gold], mean[gold], "o", markersize=10,
+            markerfacecolor="none", markeredgecolor="goldenrod",
+            markeredgewidth=1.5, label="gold points (calib-limited)")
 
-    fig, ax = plt.subplots(figsize=(9.5, 4.0), constrained_layout=True)
-    ax.plot(
-        vmi_gas.velocity_mps,
-        vmi_gas.signal_arb / max_gas,
-        color=c_gas,
-        linewidth=2.0,
-        label=r"$I_2$:$I^+$",
-    )
-    # ax.plot(
-    #     vmi_he.velocity_mps,
-    #     vmi_he.signal_arb / max_he,
-    #     linestyle=":",
-    #     color=c_he,
-    #     linewidth=2.0,
-    #     label=r"$I_2 He_N$:$I^+ He$",
-    # )
-    if vmi_he_high_snr is not None:
-        max_he_hs = float(vmi_he_high_snr.signal_arb.max())
-        ax.plot(
-            vmi_he_high_snr.velocity_mps,
-            vmi_he_high_snr.signal_arb / max_he_hs,
-            linestyle=(0, (3, 1, 1, 1)),
-            color=c_he_hs,
-            linewidth=2.0,
-            label=r"$I_2 He_N$:$I^+ He$ (high SNR)",
+    if sim_points:
+        ax.errorbar(
+            [p.n for p in sim_points],
+            [p.mean_KE_eV for p in sim_points],
+            yerr=[p.stat_err_mean_KE_eV for p in sim_points],
+            fmt="s", linestyle="--", color="tab:red", markersize=5,
+            capsize=2, label=r"simulation $\langle E\rangle$",
         )
-    ax.plot(
-        sim_he.bin_centers_mps,
-        sim_he_density,
-        linestyle="--",
-        color=c_sim_he,
-        linewidth=2.0,
-        label=r"simulation $I^+ He$",
-    )
-    ax.plot(
-        sim_he2.bin_centers_mps,
-        sim_he2_density,
-        linestyle="-.",
-        color=c_sim_he2,
-        linewidth=2.0,
-        label=r"simulation $I^+ He_2$",
-    )
+        for p in sim_points:
+            ax.annotate(f"N={p.num_atoms_used}",
+                        (p.n, p.mean_KE_eV),
+                        textcoords="offset points", xytext=(0, 7),
+                        fontsize=7, color="tab:red", ha="center")
 
-    ax.set_xlim(0.0, VELOCITY_PLOT_V_MAX_MPS)
-    ax.set_ylim(0.0, 1.1)
-    ax.set_xlabel("v / m/s")
-    ax.set_ylabel("signal / arb. units")
-    ax.set_title("3-D speed vs Abel-inverted VMI radial distribution")
-    ax.legend(frameon=False)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    ax.set_yscale("log")
+    ax.set(title=r"I$^+$He$_n$ mean kinetic energy (mean-to-mean)",
+           xlabel="n (attached He atoms)",
+           ylabel=r"$\langle E\rangle$ / eV")
+    ax.set_xticks(ked_ref.n)
+    ax.legend(frameon=False, fontsize=8)
+    return fig
+
+
+def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure:
+    """Per-fragment speed-distribution overlays for n = 0..4.
+
+    representation: "3d" overlays the sim 3-D |v| histogram on the
+    reconstructed ``signal_3d_Pv``; "2d" overlays the sim in-plane
+    projected speed sqrt(vx^2+vy^2) on the detector projection
+    ``signal_2d_Pv``. Reference curves are peak-normalized (smoothed
+    envelope = 1): compare shapes, never amplitudes. Vertical markers sit
+    at v(<E>) -- not <v> -- on both sides; the reference NaN cuts render
+    as gaps.
+    """
+    if ked_dir is None or ked_ref is None:
+        raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
+    if representation not in ("2d", "3d"):
+        raise ValueError(f"representation must be '2d' or '3d', "
+                         f"got {representation!r}")
+
+    titles = {
+        "3d": ("3-D speed distributions P(v) vs I$^+$He$_n$ reference "
+               "(peak-normalized, shapes only)"),
+        "2d": ("2-D detector projections (in-plane speed) vs I$^+$He$_n$ "
+               "reference (peak-normalized, shapes only)"),
+    }
+    fig, axes = plt.subplots(2, 3, figsize=(12.5, 7.0),
+                             constrained_layout=True)
+    axes = axes.ravel()
+    axes[5].set_axis_off()
+    fig.suptitle(titles[representation])
+
+    for n in range(5):
+        ax = axes[n]
+        curve = load_ihe_ked_curve(ked_dir, n)
+        ref_signal = getattr(curve, f"signal_{representation}_Pv")
+        ax.plot(curve.v_mps, ref_signal, color="tab:blue", linewidth=1.2,
+                label="experiment")
+
+        mass_amu = float(complex_mass_amu(n))
+        sim_note = None
+        try:
+            hist = compute_final_velocity_histogram(
+                ion, mass_amu=mass_amu,
+                num_bins=IHE_KED_HIST_NUM_BINS,
+                v_max_Aps=IHE_KED_HIST_V_MAX_APS,
+                projected=(representation == "2d"),
+            )
+        except ValueError:
+            sim_note = "sim: no atoms in gate"
+        else:
+            sim_density = normalise_trace(
+                moving_mean(hist.density, HIST_SMOOTHING_WINDOW)
+            )
+            ax.plot(hist.bin_centers_mps, sim_density, "--",
+                    color="tab:red", linewidth=1.4,
+                    label=f"simulation (N={hist.num_atoms_used})")
+
+        # v(<E>) markers (labelled v(<E>), not <v>): experiment from the
+        # reference table, simulation from the mass-gated ensemble.
+        v_exp = speed_mps_of_energy_eV(
+            float(ked_ref.mean_KE_eV[n]), mass_amu,
+        )
+        ax.axvline(v_exp, color="tab:blue", linestyle=":", linewidth=1.0,
+                   label=r"exp $v(\langle E\rangle)$")
+        try:
+            sim_mean = fragment_mean_kinetic_energy(ion, n)
+        except ValueError:
+            pass
+        else:
+            ax.axvline(sim_mean.v_of_mean_E_mps, color="tab:red",
+                       linestyle=":", linewidth=1.0,
+                       label=r"sim $v(\langle E\rangle)$")
+
+        if sim_note:
+            ax.annotate(sim_note, (0.97, 0.9), xycoords="axes fraction",
+                        ha="right", fontsize=8, color="tab:red")
+        ax.set(title=f"n = {n}", xlim=(0.0, IHE_KED_PLOT_V_MAX_MPS),
+               ylim=(0.0, 1.25))
+        ax.set_xlabel("v / m/s")
+        ax.set_ylabel("signal / arb. units")
+        if n == 0:
+            ax.legend(frameon=False, fontsize=7)
     return fig
 
 
