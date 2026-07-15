@@ -1,0 +1,196 @@
+{
+  "description": "I+He_n fragment kinetic-energy reference for MD comparison",
+  "generated_by": "export_IHe_KED_reference.m",
+  "matlab_source_of_truth": "matfile_data_scripts/A_state_paper_figures_single_pulse/fragment scan/171024",
+  "measurement_ids": {
+    "fragments": [
+      43634,
+      43636,
+      43656,
+      43640,
+      43641,
+      43642,
+      43643,
+      43644,
+      43645,
+      43646,
+      43647,
+      43648,
+      43649,
+      43650,
+      43651,
+      43652,
+      43653,
+      43654
+    ],
+    "fragments_order": "ascending n = 0..17 (same order as mass_gate.D3_gate_center_ns)",
+    "local_bg_partner_of_Iplus": 43635,
+    "global_bg": 43655
+  },
+  "measurement_context": {
+    "date": "17.10.2024",
+    "camera": "FLIR",
+    "probe_power_mW": 600,
+    "series_note": "final production series of the day, 600 mW probe: 43634 (I+), 43635 (I+ local bg), 43636 (IHe+), 43640..43654 (IHe3+..IHe17+), 43655 (noise, MCP front 0 kV), 43656 (IHe2+). The first IHe2+ take 43637 was contaminated (accidental pump-probe; 43638/43639 are the pump-only/probe-only checks) and remeasured as 43656. 43655 was taken because 600 mW shows \"substantial background for all masses\"; the lab book prescribes subtracting it, which this export does (scaled per fragment).",
+    "crosscheck_series": "independent 300 mW series measured the same day (lower intrinsic high-E background, ~half signal): 43614 (IHe17+) .. 43631 (I+), 43632 (I+ local bg). See crosscheck_300mW_series.m / IHe_KED_crosscheck_300mW.csv.",
+    "effusive_references": "43612 (827 cps / 3000 frames), 43633 (955/3000), 43657 (1138.75/4000); effusive refs taken at 125 mW",
+    "source": "lab book: reference_export/Experimental_details/New Section 1.one (OneNote)"
+  },
+  "mass_model": {
+    "formula": "m = 126.90 + 4.0026*n [u]",
+    "m_I": 126.9,
+    "m_He": 4.0026
+  },
+  "mass_gate": {
+    "D3_gate_center_ns": [
+      8530,
+      8650,
+      8730,
+      8800,
+      8880,
+      8953,
+      9030,
+      9105,
+      9175,
+      9248,
+      9317,
+      9386,
+      9458,
+      9527,
+      9595,
+      9662,
+      9729,
+      9790
+    ],
+    "note": "TOF mass-gate DELAY (D3) centers for n = 0..17 from the lab book (absent from the data info files); centered on the observed I+He_n TOF peaks (timetrace offset 561 ns), sqrt(m)-consistent spacing -> unit-mass selection. Gate WIDTHS were not logged."
+  },
+  "kinetic_energy": {
+    "quantity": "lab-frame translational KE of the detected complex, 1/2 m(n) v^2",
+    "reconstruction": "pyabel (rbasex, reg=pos) speed distribution I(r) from distr.rIbeta(): the properly v^2- and sin(theta)-weighted 3-D KED (abel_inv_post=true); NOT the 2-D slice density and NOT the projection",
+    "moment_definition": "<E> = sum(E.*P(v))/sum(P(v)) on the uniform-in-r native grid = int E P(E) dE / int P(E) dE (proper dE weighting); moments from the UNSMOOTHED distribution over the signal mask",
+    "mass_independent_note": "singly-charged VMI: E = 1/2*127*(r*vf)^2, native per-fragment grid (uniform in r)"
+  },
+  "frame": "droplet rest frame: beam velocity removed by centering on VM_center and per-fragment recentering.",
+  "calibration": {
+    "velocity_factor": 8.6178,
+    "camera": "FLIR (camera_version=1)",
+    "repeller_kV": 7.95,
+    "u_vf_frac": 0.02,
+    "calibSyst_frac": 0.04,
+    "note": "FLIR value; 10.0995 is the IDS value and would be wrong for fn>~2100. ~2% assumed on vf (CEI-fit precision); reference-velocity model error NOT included; coherent scale band."
+  },
+  "central_analysis": {
+    "bg_window_eV": [
+      4,
+      8
+    ],
+    "threshold": 0.05,
+    "lowE_cut_eV": 0.01,
+    "Iplus_cut_eV": 0.4,
+    "movmean": 10,
+    "smoothing_role": "movmean (omitnan) is applied ONLY to build the signal mask (threshold + cuts); moments and sigmaKE are computed from the unsmoothed distribution, and cuts are masks (no NaN/zero smearing into neighboring bins)",
+    "mask_definition": "signal mask = the CONTIGUOUS supra-threshold region of the smoothed normalized P(E) containing the peak (isolated supra-threshold islands at high E are residual-background artifacts with large leverage under proper dE weighting and are excluded)",
+    "blocksize": 3,
+    "VM_center": [
+      512.1433,
+      390.4826
+    ]
+  },
+  "systematic_ensemble": {
+    "definition": "sysErr = half-range of meanKE over the members below (each is a defensible pipeline; varies every analysis manipulation). NaN members omitted.",
+    "bg_window_eV_variants": [
+      [
+        4,
+        8
+      ],
+      [
+        3.5,
+        7.5
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        5,
+        9
+      ]
+    ],
+    "threshold_variants": [
+      0.01,
+      0.03,
+      0.05,
+      0.08
+    ],
+    "lowE_cut_variants": [
+      0.005,
+      0.02
+    ],
+    "Iplus_cut_variants": [
+      0.3,
+      0.5
+    ],
+    "movmean_variants": [
+      6,
+      14
+    ],
+    "n_members": 22,
+    "members": [
+      "win[4 8] thr0.01",
+      "win[4 8] thr0.03",
+      "win[4 8] thr0.05",
+      "win[4 8] thr0.08",
+      "win[3.5 7.5] thr0.01",
+      "win[3.5 7.5] thr0.03",
+      "win[3.5 7.5] thr0.05",
+      "win[3.5 7.5] thr0.08",
+      "win[4 7] thr0.01",
+      "win[4 7] thr0.03",
+      "win[4 7] thr0.05",
+      "win[4 7] thr0.08",
+      "win[5 9] thr0.01",
+      "win[5 9] thr0.03",
+      "win[5 9] thr0.05",
+      "win[5 9] thr0.08",
+      "lowcut0.005",
+      "lowcut0.02",
+      "Icut0.3",
+      "Icut0.5",
+      "movmean6",
+      "movmean14"
+    ]
+  },
+  "bgOffShift": "bgOffShift_eV = meanKE(no global-bg subtraction) - meanKE(central). Structural sensitivity diagnostic ONLY; bg-off is a rejected method (leaves cluster high-E tails in), so it is NOT included in sysErr.",
+  "condition_systematic": {
+    "conditionSyst_frac": 0.06,
+    "origin": "independent same-day 300 mW series (43614-43631) run through the identical pipeline (crosscheck_300mW_series.m / IHe_KED_crosscheck_300mW.csv): coherent +5-7% shift of all clusters (n>=2) and -6.3% for n=0 relative to this 600 mW reference",
+    "meaning": "between-measurement-conditions reproducibility (probe power and/or background regime); a CORRELATED envelope like calibSyst_frac, applied to all fragments together; NOT per-point scatter and NOT included in dominantError (it would tag nearly every point and hide the internal error structure)"
+  },
+  "shape_note": "the cluster distributions are strongly RIGHT-skewed (n=1: mean ~ 1.4x mode, skewness ~ +1.8), while I+ (n=0) is mildly LEFT-skewed (mode ~ 4.7 eV > mean 3.7 eV). The mean is therefore NOT where P(E) peaks. This is a property of the distribution, not an uncertainty: all quoted errors refer to the MEAN. Use modeKE_eV/medianKE_eV for \"typical energy\" statements; compare MD to the data moment-to-moment (mean to mean), not mean-to-peak.",
+  "columns": {
+    "meanKE_eV": "first moment of the 3-D KED, sum(E.*P(v))/sum(P(v)) on the uniform-in-r grid (= int E P(E) dE / int P(E) dE), over the signal mask (central config); UNSMOOTHED distribution",
+    "modeKE_eV": "location of the maximum of the mask-smoothed P(E) within the signal mask (same movmean as the mask, no new convention); see shape_note",
+    "medianKE_eV": "median of the UNSMOOTHED P(E) within the signal mask (robust central value); see shape_note",
+    "sigmaKE_eV": "physical width (std) of the UNSMOOTHED P(E) over the signal mask; NOT the error on the mean",
+    "statErr_meanKE_eV": "sigmaKE/sqrt(N_eff)",
+    "sysErr_meanKE_eV": "ensemble half-range over all analysis manipulations",
+    "calibSyst_frac": "fractional coherent scale uncertainty (multiply meanKE)",
+    "conditionSyst_frac": "fractional measurement-condition reproducibility (multiply meanKE); correlated band, see condition_systematic",
+    "total_error_guidance": "per-point = sqrt(statErr^2 + sysErr^2); then apply calibSyst_frac*meanKE and conditionSyst_frac*meanKE as separate correlated bands (they shift all fragments together)",
+    "N_counts": "raw centroided counts in the mass gate (whole image)",
+    "dominantError": "largest of {statErr, sysErr, calibSyst_frac*meanKE, |bgOffShift|} in absolute eV: stat|analysis|calib|bg-structural. bg-structural means the value hinges on the global-bg choice (treat with care).",
+    "noiseLimited": "1 if N_eff<100 or sys/mean>0.5 or stat/mean>0.5"
+  },
+  "curves_files": {
+    "files": "IHe_KED_curves_n0.csv .. IHe_KED_curves_n4.csv",
+    "contents": "trusted reference curves for the five verified low-n fragments, in BOTH representations and BOTH measures. 2d = angle-integrated radial density of the bg-subtracted, RECENTERED detector image (NOT Abel-inverted; interpolated from its 1-px grid onto the 3-D grid); 3d = pyabel rIbeta speed distribution (the corrected 3-D measure the reference moments use). _Pv columns are densities per unit SPEED (plot against v_mps); _PE columns are densities per unit ENERGY, P(E) = P(v)*dv/dE prop. P(v)/v (plot against E_eV). Plotting a _Pv column against E_eV merely relabels the axis and is NOT the energy density. CAUTION: signal_2d_PE tends to a FINITE center-fill plateau at low E (it is prop. to the ring-averaged image brightness, and the center of a VMI image is filled by fast ions projected inward) - do not read its low-E elevation as slow-ion signal; the 3d columns are immune (P(v) prop. v^2 near 0).",
+    "normalization": "each signal column INDEPENDENTLY normalized so its movmean-smoothed envelope peaks at 1 in the signal region (n=0: E>1 eV, else E>0.01 eV); columns live in different measures - compare shapes, never amplitudes across columns",
+    "axes": "E_eV = mass-independent KE 1/2*127*(r*vf)^2; v_mps = sqrt(2E/m(n)). ONE shared axis pair for both representations (Abel inversion does not remap the radius axis: shell rim in the projection = shell peak in the reconstruction). Interpretation differs: for _3d_ columns the coordinate is the TRUE speed/energy of the ion; for _2d_ columns it is the PROJECTED in-plane component v*sin(theta) / apparent energy.",
+    "excluded_regions": "3d columns ONLY: NaN where E < 0.01 eV (n>=1) or E < 0.4 eV (n=0, Abel-center spike - an inversion artifact). 2d columns cover the full detector range (the raw projection is clean to r=0; small negatives = bg-subtraction noise). Upper end = detector/crop edge at 354 px = 6.13 eV (=3052 m/s at m=127); NOTE the on-the-day lab-book plots show the same edge at ~3576 m/s because they used the legacy velocity factor 10.0995 - same pixels, superseded calibration."
+  },
+  "spectra_file": {
+    "file": "IHe_KED_spectra_n0_n1.csv",
+    "contents": "UNSMOOTHED P(E) = P(v)*dv/dE on the common native E grid, normalized so the movmean-smoothed envelope peaks at 1 in the signal region (n=0: E>1 eV; else E>0.01 eV)",
+    "excluded_regions": "NaN where E < lowE_cut_eV (both fragments) and where E < Iplus_cut_eV (n=0 only, Abel-spike region); rows with both signals NaN are dropped"
+  }
+}

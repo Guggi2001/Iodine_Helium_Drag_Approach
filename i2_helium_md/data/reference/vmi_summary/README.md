@@ -1,9 +1,19 @@
-# VMI summary references (Abel-inverted)
+# VMI summary references (Abel-inverted 3-D speed distributions)
 
 This folder holds the Abel-inverted, image-smoothed, mass-corrected
 experimental VMI references consumed by
 `scripts/post_processing/plot_experimental_comparison.py` and the
 consolidated `scripts/post_processing/plot_run_summary.py` driver.
+
+> **Convention fix (2026-07):** `signal_arb` is now pyabel's speed
+> distribution `I(v)` from `distr.rIbeta()` — the properly v²- and
+> sin θ-weighted **3-D speed distribution**, the like-for-like counterpart
+> of the simulation's histogram of |v| (`compute_final_velocity_histogram`).
+> The previous export shipped `radial_distribution` (the 2-D slice radial
+> sum), which is one factor of v short of a speed distribution and gave the
+> MD overlay a systematic ~v tilt; its low-v Abel center spike also
+> dominated the gas curve. Regenerate old plots before comparing against
+> archived figures.
 
 These files are **not** directly comparable to the paper-era radial
 references under `paper_v2/`, `paper_v3/`, or `paper_v4/`. The reduction
@@ -21,6 +31,16 @@ Velocity is stored in m/s on disk. Python loaders convert to Å/ps
 internally so downstream plotting code keeps the documented Å/ps binning
 conventions (CLAUDE.md "Known Plotting Conventions").
 
+> **⚠️ The two I⁺He files are byte-identical (noted 2026-07-14).**
+> `vmi_iplus_he.csv` and `vmi_iplus_he_high_snr.csv` are the same file: the
+> "high-SNR" `res_sum` MAT is a pre-average of the same four measurements
+> (45668/45662/45667/45686, ~23k counts total) that the I+He pipeline
+> averages itself, so the two pipelines below produce identical output.
+> Treat them as ONE reference, not two independent measurements. That single
+> reference is a different-campaign (45xxx) measurement: its core agrees
+> with the 17.10.24 `ihe_ked/` I⁺He reference (~63k counts), while its ⟨E⟩
+> sits ~16% lower (condition-dependent tail weight).
+
 ## Pipeline (MATLAB)
 
 Source script: `data/reference/scripts/export_vmi_reference_data.m`.
@@ -33,17 +53,21 @@ I+He channel:
 4. Apply `movmean(image, 3, 1)` then `movmean(image, 3, 2)` to smooth the
    2-D image.
 5. Run `abel_invert_processed_VMI()` on the smoothed image.
-6. Velocity axis: `r * vf_single * sqrt(127/131)` with `vf_single = 8.6178`.
-7. Radial signal: `movmean(radial_distribution, 1)` (window size 1, effectively
-   no-op; preserved for parity with the legacy script).
+6. Velocity axis: `speed_r * vf_single * sqrt(127/131)` with `vf_single = 8.6178`
+   (`speed_r` is pyabel's radial grid converted to the same pixel units as `r`).
+7. Signal: `speed_distribution` — pyabel `distr.rIbeta()` `I(v)`.
 
 Gas channel:
 
 1. Single raw measurement: 43632.
 2. Process with `plot_processed_VMI(fn, true, [482.9299 392.4866], true)`.
-3. Run `abel_invert_processed_VMI()`.
-4. Velocity axis: `r * vf_single` with `vf_single = 8.6178` (no mass correction).
-5. Radial signal: `radial_distribution` directly.
+3. Floor negative pixels to zero, then `movmean(image, 3, 1)` and
+   `movmean(image, 3, 2)` — same smoothing as the I+He channels (added
+   2026-07 together with the speed-distribution fix; the legacy script left
+   the gas image raw).
+4. Run `abel_invert_processed_VMI()`.
+5. Velocity axis: `speed_r * vf_single` with `vf_single = 8.6178` (no mass correction).
+6. Signal: `speed_distribution` — pyabel `distr.rIbeta()` `I(v)`.
 
 High-SNR I+He channel:
 
@@ -54,14 +78,13 @@ High-SNR I+He channel:
 3. Apply `movmean(image, 3, 1)` then `movmean(image, 3, 2)` to smooth the
    2-D image.
 4. Run `abel_invert_processed_VMI()` on the smoothed image.
-5. Velocity axis: `r * vf_single * sqrt(127/131)` with `vf_single = 8.6178`.
-6. Radial signal: `movmean(radial_distribution, 1)` (window size 1, effectively
-   no-op; preserved for parity with the averaged channel).
+5. Velocity axis: `speed_r * vf_single * sqrt(127/131)` with `vf_single = 8.6178`.
+6. Signal: `speed_distribution` — pyabel `distr.rIbeta()` `I(v)`.
 
 The high-SNR file shares its source MAT with the paper-v2 high-SNR radial
 export but applies a different pipeline: the paper-v2 export reads
 `res.radial_distribution` raw (2-D projection), while this file is the
-Abel-inverted, image-smoothed 3-D velocity distribution.
+Abel-inverted, image-smoothed 3-D speed distribution `I(v)`.
 
 ## Why this is different from paper_v2/v3/v4
 

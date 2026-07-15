@@ -1,10 +1,14 @@
-
+1C
 # Tier 2 — Staircase / Capability Probe Findings
 
 > **Status:** consolidated findings record, written 2026-07-07 after the fourth
 > probe wave (cooling-spatial-gate total-strip A/B) executed; last updated
-> 2026-07-08 after Wave 7 (the detected-read re-score, §4e). This document
-> collects **every insight and numerical result** of the pre-F5 probe program
+> 2026-07-11 after Wave 11 (the RQ7 production-kinematics probe — K₂.₇₀
+> measured, §4i; Wave 10's width decomposition + K forward model is §4h;
+> Wave 9's E₀-mixture inversion is §4g;
+> Wave 8's cliff anatomy is §4f). This document
+> collects **every insight and numerical result** of the pre-F5 probe program;
+> the H.2b analytic feasibility pass (zero-MD, 2026-07-11) is §4j (I41–I45)
 > in one place; the decision/delivery history stays in
 > `drag_migration_log_tier2.md` (entries of 2026-07-05/06/07) and the design
 > contracts stay in `TIER2_STAIRCASE_PROBE_PLAN.md` (+ Addendum A) and the
@@ -32,6 +36,11 @@ small-N probe waves asked, in sequence:
 | 5. Gated landing re-location (2026-07-07) | 5 | Under the production gate, where does the s_eff landing move (the ungated [8,12] prior is gate-conditional)? | **Landing shifts to s_eff ≈ 30** (gate ~4× the in-window shedding); **but the gated in-window staircase and the terminal read decouple** — s_eff sets the *rate*, not the endpoint, so the terminal is flight-time-dependent |
 | 6. f_int probe (2026-07-07) | 10 | The one knob every wave pinned: what does f_int control under the gate — timing only, or the race and the budget? Can it re-align staircase timing / reach bare? | **f_int is a joint timing + effective-budget knob gated** (the in-bubble leak over [t×, t_eject]); cliff located (0.50 < f_int* < 0.65 at τ=6.55); the dead τ=16.5 arm re-opens at 0.25; timing re-aligns at ≈ 0.40–0.42; **bare unreached at any f_int** |
 | 7. Detected-read re-score (2026-07-08) | 0 (re-read of all 102) | What is the terminal read at the Sourced detector time t_detect = 8.53 µs, per (gate, s_eff, τ, f_int)? Does the gated landing point arrive at the floor or mid-shell? | **Ungated ≡ relaxed (detector-converged)**; the gated f_int = 0.50 arm is **s_eff-compressed at the detector** (n̄ 2.7–4.1 over s_eff 1→30; the landing point arrives 100 % live at n̄ = 4.09); early-open leak points survive as **converged mid-shell weight**; dead arms are literal n = 21 detector weight; **bare unreached** (min n = 2) |
+| 8. Suppressed-fraction cliff anatomy (2026-07-09) | 6 (+ zero-MD step 1) | OQ-B weight-level: does a high-enough E_int(0) split the ensemble ≈ 43.5 % suppressed (bare-candidate) / 56.5 % opened? How wide is the Wave-6 cliff? | **The cliff is a delta at E\* = 0.4612 eV** (ensemble kinematically congruent → no split at any E_int(0): 0 % or 100 % only); the **sub-rung sliver below E\* expresses n = 1** (all ions, first time); the **budget knob is bookkeeping-only** (K₂₇₀ ≡ K₀₈₀; absolute-E_int(0) map budget-invariant; OQ-H fired) |
+| 9. E₀-mixture inversion (2026-07-09) | 8 (+ pure-fit) | Invert the experimental histogram into an implied p(E₀): does a non-negative mixture of single-point detected distributions reproduce it, and what E₀ provenance does the fit imply? | **Clean inversion** — simplex fit of 13 `s_eff = 8` columns reproduces the histogram to **W₁ = 0.086 bins** (top 6 bins < 0.006); implied p(E₀) **smooth, unimodal, concentrated at/above E\* ≈ 0.46 eV**, in the RQ1 band without tuning; deep tail forces **≥ 9.6 % below the 0.22 eV floor** (droplet-R demand); **s_eff detector-identifiable via n = 1** (W9-P4); no multi-modal (branching) signature |
+| 10. Steps 1+1.5: width decomposition + K forward model (2026-07-10) | 0 (re-read of all 41 gated dirs) | Which axis carries the histogram width? Can a narrow E₀ ≈ 0.28 eV + droplet-K spread source the 43.5 % bare peak — at which K-scale? | **Fixed-(E₀, droplet) columns are ≤ 1 bin wide** (W10-P1) — width is E₀/K-axis only; the (E₀, K) closed form is MD-validated (0.84 He); **probe K-scale excluded** for bare at narrow E₀ (needs δ ≈ 12, ~19× Kornilov — W10-P3); **production K-bracket lands bare 42.6 % / W₁ = 0.99 untuned** at (0.28 eV, δ = 0.8) — W10-P5 split verdict confirmed, **RQ7 co-requisite** |
+| 11. RQ7 production-kinematics probe (2026-07-11) | 2 (first off-9 Å MD) | Measure K₂.₇₀ instead of bracketing it; does the closed form transfer? | **K₂.₇₀ = 0.746 measured** (ballistic bracket 0.49 wrong — drag eats the channel speed); 42 % beyond-band validity caveat (over-drag reading, VMI-corroborated ~2×); closed form transfers (0.24 He); narrow-E₀ landing re-calibrates to **E₀ ≈ 0.38–0.41 eV** pinned-droplet |
+| H.2b analytic feasibility pass (2026-07-11) | 0 (zero-MD forward model) | Are the solvated targets (n₁ 31 %/n₂ 14.2 % + the mean-KE curve) reachable inside the all-bounded lever set (L1 position × L2 dressing × L3 floor ladder × priors × E₀ band)? | **Outcome (c) at the frozen bar — no cell passes T1–T4 at either exposure bracket**; but the miss is *structured*: bins 2–8 and the KE envelope/shape land; the residuals are exactly **n₁** (ladder-taper-controlled — the slid-X2 family *worsens* it; the RQ4-graded 2.2:1.5:1.3 diagnostic nearly lands, W₁ 0.575) and the **KE scale** (speed-selective ×1.3–1.5, the v_c direction); new **trapped droplet-retained class** 6–11 % |
 
 **Common pins:** 9 Å case, `coulomb_available_eV = 0.80`, N = 50 single fixed
 seed, 30 ps ion window, Tier-0 dt/drag bundle, `f_int = 0.5` (bridge pin —
@@ -917,6 +926,810 @@ delivered code, the objection holds in a **sharper** form:
 
 ---
 
+## 4f. Wave 8 — the suppressed-fraction cliff is a delta; the sub-rung sliver expresses n = 1; the budget knob is bookkeeping-only
+
+Executed 2026-07-09 (under the `[PROCEED TO IMPLEMENTATION]` trigger;
+Addendum D of the probe plan; scratchpad drivers through the delivered
+generator/detection/report pipelines — zero repo-code change). Step 1 is a
+**zero-MD analysis** of the on-disk f_int = 0.65 dirs; step 2 added **6 new
+MD runs** (not the planned 7 — the step-1 delta collapsed the three
+"ECDF-crossing" points into a two-point bracket), all with `detection.npz`;
+full re-score over all **108** dirs (ledger residual uniform ≈ 2.23·10⁻⁵ eV;
+bridge + gated fi0.50/fi0.65 wiring oracles exact).
+
+### Step 1 — the per-ion critical value is one number, not a distribution
+
+Pre-gate-open the ride is shed-free and pickup-free (n ≡ 21 at Langmuir
+saturation), so the gated K2 drain is source-free and linear:
+`E*_i = Σ(21)·E₀/E_int,i(∞)` read directly from the stored histories.
+Result: **E*_i = 0.461218816 eV with ensemble width 4.2·10⁻¹³ eV** — a
+delta function, not an ECDF. `f_int* = 0.5765` at 0.80 eV. Root cause,
+verified in the artifacts: **the probe ensemble is 100 kinematically
+congruent replicas** — every molecule sits at its droplet center
+(|r|₀ = 4.5 Å), onset speeds agree to 10⁻¹⁹ Å/ps, one droplet radius
+(27.936 Å), so the radial trajectories (2·10⁻¹¹ Å agreement at 5 ps) and
+hence the per-ion cooling-exposure integrals are identical:
+K_tot = ln(E₀/E_end) = **0.898297** for every ion. Analysis validation:
+
+- from-positions replication of the exposure (per-step
+  `exp(−dt·ρ_erfc(r−R)/τ)` through the shared gate surface, depth = r − R):
+  max |E_pred − E_stored| = 1.9·10⁻¹⁵ eV;
+- pre-open E_int linearity across f_int (f0.50 vs f0.65 dirs): residual
+  9.4·10⁻¹⁶ eV over 63,300 ion-steps; pre-open positions **bit-identical**;
+- opening-time law `K(t_open) = ln(E₀/Σ(21))`: predicts the observed
+  f0.50 opening at 6.33 ps exactly.
+
+### Step 2 — six bracket runs, every pre-registered number hit
+
+All gated `density_scaled`, τ = 6.55, probe pins; E₀ = f_int·E_avail [eV]:
+
+| run | E₀ [eV] | predicted | measured |
+|---|---|---|---|
+| b080 f_int 0.57, s30 | 0.4560 | opens 10.83 ps; 0 % supp; \|G\| ≤ 2.12 meV | 100/100 open **at 10.83 ps**; 0 % supp; G ∈ [−2.12, −1.79] meV; n_relax 3.87; **n_detect 2.00** (100 % texh) |
+| b080 f_int 0.57, s8 | 0.4560 | same opening (s-blind); **energetic floor n = 1** | opens 10.83 ps identically; all 100 frozen at **n = 1** by 633 ps; **n_detect 1.00** (100 % frozen) |
+| b080 f_int 0.58, s30 | 0.4640 | never opens (+1.13 meV) | 0/100 open; 100 % suppressed at n = 21; K_tot identical |
+| b270 anchor, s30 | 0.5200 | suppressed, shed-free (exposure source) | 100 % suppressed; **K_tot = 0.898297 ≡ the 0.80 eV value** |
+| b270 f_int 0.17, s30 | 0.4590 | opens 11.96 ps; \|G\| ≤ 0.90 meV | opens **at 11.96 ps**; G ∈ [−0.90, −0.73] meV; n_relax 3.78; n_detect 1.98 (2 ions **frozen at n = 1**, 98 texh) |
+| b270 f_int 0.18, s30 | 0.4860 | never opens (+10.1 meV) | 0/100 open; 100 % suppressed |
+
+### Prediction verdicts
+
+- **W8-P1 (MD lands on the step-1 prediction) — CONFIRMED exactly:**
+  fractions, opening times (10.83 / 11.96 ps), and |G| windows all match;
+  the pre-open separability assumption is airtight (bit-identical pre-open
+  trajectories across f_int).
+- **W8-P2 (finite cliff width) — REFUTED.** Width 4·10⁻¹³ eV: machine
+  noise, not physics. There is no transition region.
+- **W8-P3 (in-band 43.5 % crossing) — REFUTED.** The suppressed fraction is
+  a step 0 → 1 at E* = 0.4612 eV: **no E_int(0) splits the ensemble**; the
+  only available fractions are 0 % and 100 %. (E* itself is in-band —
+  inside the sourced 0.2–0.5 eV window.)
+- **W8-P4 (opened side ≠ the broad tail) — CONFIRMED, sharpened.** Near the
+  cliff the opened side is a near-delta at n = 1–2 (not n ≈ 3–5 as
+  predicted — the sub-rung leak was not anticipated), even farther from the
+  broad experimental tail than predicted.
+- **W8-P5 (bare grows with budget via earlier t_eject) — REFUTED IN-MODEL,
+  at the mechanism level.** `coulomb_available_eV` has exactly **one**
+  physics reader: the S2 onset deposit `E_int(0) = f_int·E_avail`
+  (`ion_initial_state.py`). The Coulomb mechanics, trajectories, ejection,
+  and exposure are **budget-blind** — K₂₇₀ ≡ K₀₈₀ to 10⁻¹³, and the MD
+  bracket confirms the same absolute step (E* between 0.459 and 0.486 eV at
+  2.70 eV). In absolute E_int(0) coordinates the delivered model is exactly
+  budget-invariant; "production" currently changes the E_int bookkeeping
+  and nothing else.
+
+### Findings
+
+1. **OQ-B's "high enough f_int" question is answered: yes, but all-or-none.**
+   Above E* = 0.4612 eV the *entire* ensemble arrives `suppressed`
+   (100 % bare-candidate under the RQ3 fragmentation hypothesis) — never
+   43.5 %. A single-knob-point ensemble cannot express the experimental
+   bare/shell coexistence, not approximately, not at any value: the Δ×
+   race margin is ensemble-uniform by construction. I12/I18's "the shape
+   must come from ensemble heterogeneity" upgrades from an inference to a
+   structural theorem about the current preset: **heterogeneity must be
+   injected** (droplet-radius distribution, thermal onset spread, an
+   E_int(0) distribution) before the bare fraction can take any value
+   between 0 and 1.
+2. **The sub-rung sliver expresses n = 1 — the previously unreachable
+   second-largest experimental bin.** For E₀ ∈ (E* − D₀(1), E*) the leak
+   |G| is under one rung, so the opened cascade's energetic floor is
+   **n = 1** (not the n ≈ 2–3 of every earlier wave, whose leaks were
+   multi-rung). MD: all 100 ions frozen at n = 1 (s_eff 8; reached by
+   633 ps, detector-stable), and even at s_eff 30 the deeper-sub-rung 2.70
+   point put 2/100 at n = 1 within flight. The I24 "n = 1 is doubly
+   suppressed" statement is now refined: the kinetic strangulation applies
+   only as |G| → one full rung; a *shallow* sub-rung leak is kinetically
+   open. Consequence for the tail: the flat-bottom ladder **can** populate
+   n = 1 without OQ-G's deep first rung — but only from a window hugging
+   the cliff from below that is one rung wide in *leak* units, i.e.
+   **D₀(1)·e^(K_tot) = 22.6 meV wide in E_int(0)** (E₀ ∈ 0.4386–0.4612 eV;
+   ~7.5 % of the sourced band). Feeding the 17.5 % experimental n = 1
+   weight from this window constrains any heterogeneity model; OQ-G depth
+   remains the competing (combinable) route. *(Correction 2026-07-09: an
+   earlier revision stated the window as 9.22 meV in E₀ — that width is
+   correct in |G| units only; the e^K = 2.455 map factor was dropped.)*
+3. **The budget knob is bookkeeping-only — the production scenario's
+   kinematics are unmodeled (new OQ-H).** The 2.70 eV channel physically
+   comes with different Coulomb-explosion mechanics (higher KER = faster
+   fragments, earlier ejection, shorter exposure); the delivered model
+   implements none of that. Two standing statements void in-model: the
+   B.1(2) production prediction in *both* its versions (original t×
+   scaling and the RQ1-inverted earlier-t_eject route), and the
+   bare-vs-budget discriminator separating RQ3 from RQ4 — currently
+   untestable in-model on the kinematic route. What survives: in absolute
+   E_int(0) the whole Wave-4..8 gated map transfers to production
+   verbatim (one number, E*, for every budget).
+4. **The delta cliff is preset-conditional, not mechanism-intrinsic.** The
+   congruence traces to the deterministic single-droplet center-placed
+   onset of the probe preset. The heterogeneity axes exist in the codebase
+   (droplet-size distribution preset; thermal sampling) — the cliff
+   *anatomy* under a heterogeneous ensemble (each ion carrying its own
+   E*_i via R_i-dependent exposure) is exactly what a future
+   heterogeneity wave / the campaign would map. The step-1 method
+   (per-ion E*_i from stored histories) applies unchanged there.
+
+### The heterogeneity program (post-Wave-8 discussion, 2026-07-09) — the histogram as a margin-distribution readout, and the two injection axes
+
+Wave 8's negative result (I26: no single-point split) turned constructive
+in discussion: because the per-ion terminal bin is a deterministic
+function of the leak |G| = Σ(21) − E₀·e^(−K), **the experimental
+histogram is a linear readout of the ensemble's margin distribution**
+through fixed windows — at the 9 Å pins, 22.6 meV of E₀ per rung
+(D₀(1)·e^K, flat-bottom regime), bare above E* = 0.4612 eV, n = 1 at
+0.4386–0.4612 eV, one rung per window below. The Wave-6/7 points already
+validate the mid-map (E₀ = 0.40 → n̄_detect 3.05; 0.28 → 7.37; 0.192 →
+10.6, the deviation being the high-n rung shrink). The implied p(E₀) from
+the experimental bins is smooth and unimodal: ≈ 43.5 % above E*, density
+≈ 0.77 %/meV at the cliff declining 2.2× / 1.5× / 1.3× per window — mode
+≈ 0.45 eV, scale ~50 meV — **inside the RQ1-sourced 0.2–0.5 eV band
+without tuning**. That convergence (the sourced provenance range and the
+histogram-required range agree) is the strongest circumstantial support
+the biphasic mechanism has received. Wave 9 (Addendum E; approved
+2026-07-09) inverts this properly, with the fitted p(E₀) treated as a
+**physics claim** on E_int(0) provenance (user decision (b)): a
+multi-modal fit would read as electronic fine-structure branching (RQ1).
+
+**The two injection axes, and why the droplet-size distribution is the
+physically-grounded future one.** Margin heterogeneity can enter through
+E₀ (the reservoir; Wave 9's axis — cheap, zero new physics via run
+mixtures) or through the **exposure K** — and K is set by the droplet
+radius (larger droplet → longer in-bubble transit → larger K → larger
+per-ion E*_i and deeper leak at fixed E₀). The experimental droplet
+ensemble is a **log-normal size distribution** — this axis is not a
+modeling option but a known physical fact the current single-radius
+preset suppresses; the codebase already carries
+`single_pulse_droplet_distribution` on the neutral side. The two axes
+own different parts of the histogram:
+
+- the **near-cliff structure** (bare / n = 1 / n = 2 ratios) is
+  E₀-resolution-limited — the E₀ axis owns it;
+- the **deep-shell tail** (n ≳ 11) requires E₀ below the 0.22 eV
+  solvation floor under pure-E₀ heterogeneity (the W9-P2
+  pre-registration) — the droplet-R tail supplies exactly this weight
+  with in-band E₀ (bigger K, deeper leak);
+- the **near-absence of n ≥ 19** (< 1 % experimentally) *constrains* the
+  large-R tail: a large-enough droplet fully quenches the cascade inside
+  (the ungated-like shell-retaining corner), so the experimental gap at
+  high n bounds how much large-R weight the ensemble can carry.
+
+A future droplet-distribution wave/slice is therefore the expected
+follow-up once Wave 9 quantifies the below-floor demand — it is a real
+build (wiring the distribution preset into the Tier-2 ion pipeline;
+onset-shell size vs R is an open design question), unlike Wave 9's pure
+post-processing. Joint (E₀, R) fitting is the natural endpoint; the
+step-1 per-ion E*_i extraction method applies unchanged to a
+heterogeneous ensemble.
+
+**s_eff identifiability — possible, not fixed (user decision (c)).** The
+n = 1 window populates its bin only if the cascade reaches the floor
+(s_eff = 8: 100 %; s_eff = 30: kinetic wall parks it at n = 2 — the
+measured fi0.57 pair). If the mixture picture holds, the small-n bins
+would make s_eff detector-identifiable for the first time (Wave 7 found
+the detector nearly s-blind). This is **recorded as a possibility only**
+— it awaits the W9-P4 read and adjudication; no campaign re-scope is
+implied by it.
+
+### On the run count and the b270 staircase columns
+
+The addendum's 7-run matrix executed as 6 (the delta has one crossing; a
+2-point bracket verifies it — the third transition point had nothing left
+to measure). The b270 rows carry staircase-metric columns scored against
+the 9 Å / 0.80 eV anchored comparator; they are **N/A physically** (the
+generator-level budget guard exists precisely to prevent this pairing in
+campaign use; the scratchpad route bypassed it deliberately, for exposure
+measurement, not staircase comparison) — read only their suppression /
+terminal / detected columns.
+
+---
+
+## 4g. Wave 9 — the E₀-mixture inversion: the experimental histogram is a smooth in-band p(E₀); the top bins reproduce to W₁ = 0.086 with in-band + above-cliff mass alone
+
+Executed 2026-07-09 (under the `[PROCEED TO IMPLEMENTATION]` trigger;
+Addendum E of the probe plan; scratchpad drivers through the delivered
+generator/detection pipelines + a pure post-processing fit — zero repo-code
+change). **8 new MD runs** (7 primary `s_eff = 8` columns + 1 `s_eff = 30`
+companion), each with `detection.npz` at the Sourced t_detect = 8.53 µs →
+**116 probe dirs**. Wiring oracles exact: ledger residual uniform
+2.231·10⁻⁵ eV across all 8 new dirs; the on-disk fi0.50 s8 / s30 and fi0.65
+points re-score unchanged (n_detect 3.05 / 4.09 / 21.00 — the Wave-7 values).
+
+**User decisions carried into execution (post-design, 2026-07-09):** (1) the
+fit is a **simplex-constrained** least squares (non-negative *and* Σw = 1) —
+p(E₀) is a probability density, not raw NNLS; (2) the suppressed class
+collapses to a single **bare** column under RQ3 spec (b), implemented per-ion
+(`state_reason == "suppressed"` → n = 0); (3) the deep-tail shortfall is
+**reported, not forced** — the basis is not extended to cover bins it cannot
+reach; (4) W9-P4 is a **localized column-swap demonstration**, no campaign
+re-scope.
+
+### The basis lands on the window map (E₀ = f_int · 0.80 eV)
+
+The 7 new `s_eff = 8` columns arrive exactly where the flat-bottom window map
+(§4f) places them, all **frozen/converged** (the floors are *reached* at
+s = 8, Wave-8 I27):
+
+| f_int | E₀ [eV] | n̄_detect | arrival | window |
+|---|---|---|---|---|
+| 0.53 | 0.424 | 2.04 | 100 % frozen | n = 2 |
+| 0.48 | 0.384 | 3.38 | 88 % frozen | n = 3–4 |
+| 0.45 | 0.360 | 4.31 | 91 % frozen | n = 4–6 |
+| 0.42 | 0.336 | 5.22 | 96 % frozen | n ≈ 5–6 |
+| 0.20 | 0.160 | 12.26 | 91 % frozen | n ≈ 12 |
+| 0.15 | 0.120 | 14.48 | 87 % frozen | n ≈ 14 |
+| 0.10 | 0.080 | 16.62 | 89 % frozen | n ≈ 16–17 |
+
+The `s_eff = 30` companion at f_int = 0.53 arrives **n̄_detect = 3.02, 100 %
+`time_exhausted`** (vs the s = 8 sibling's n = 2, frozen) — the kinetic wall
+measured a third time (with the on-disk fi0.57 s8/s30 pair n = 1 vs 2), the
+W9-P4 lever.
+
+### Primary fit (13 `s_eff = 8` columns) — W9-P1 CONFIRMED
+
+The experimental histogram is reproduced to **L2 residual 0.016,
+Wasserstein-1 = 0.086 bins**. The fit is near-diagonal (each near-cliff
+column owns one bin; bare is fed **solely** by the suppressed→bare column,
+weight 0.436 ≈ experimental 0.435):
+
+| bin | exp | fit | resid |
+|---|---|---|---|
+| bare | 0.435 | 0.436 | +0.001 |
+| n = 1 | 0.175 | 0.176 | +0.001 |
+| n = 2 | 0.080 | 0.081 | +0.001 |
+| n = 3 | 0.052 | 0.054 | +0.002 |
+| n = 4 | 0.040 | 0.040 | −0.000 |
+| n = 5 | 0.033 | 0.038 | +0.005 |
+| n = 6 | 0.028 | 0.016 | −0.012 |
+| n = 7–17 | (tail) | (tail) | \|resid\| ≤ 0.003 |
+| n = 18–20 | 0.010 tot | 0.001 | −0.009 tot (basis floor) |
+
+The top six bins match to < 0.006. Near-cliff **density on the physical
+22.6 meV rung window** (D₀(1)·e^K, the convention W9-P1's prediction lives
+in): n = 1 → **0.780 %/meV** (predicted 0.77), n = 2 → 0.375 %/meV,
+ratio **2.08×** (predicted 2.2×). **The top bins are reproducible with in-band
++ above-cliff E₀ mass alone** — W9-P1 confirmed quantitatively.
+
+### Implied p(E₀), W9-P2, and the provenance claim (W9-P3)
+
+The fitted weights, read as a density over E₀, give:
+
+- **mass above E\* (0.4612 eV, the bare/suppressed class): 0.436** — a point
+  mass (all E₀ > E* collapse to bare under spec (b)), matching the
+  experimental bare bin;
+- **mass in the sourced band [0.22, E\*]: 0.467** — the resolved shell bins;
+- **mass below the 0.22 eV solvation floor: 0.096** (**W9-P2 CONFIRMED**):
+  9.6 % of the ensemble must sit below the RQ1 floor (columns E₀ = 0.192 /
+  0.16 / 0.12 / 0.08 eV) to feed the deep tail — *and* n = 18–20 (~1 %
+  experimentally) lies **beyond the basis floor** (needs E₀ < 0.08 eV), an
+  additional below-floor demand. This quantifies, in advance, how much weight
+  the droplet-radius axis (§4f) must supply with in-band E₀ (larger K → deeper
+  leak at fixed E₀).
+
+**W9-P3 (the physics claim) — no multi-modal signature; mode at the cliff,
+not an interior bump.** The implied p(E₀) is **unimodal** (no genuine second
+mode), but the mass does **not** sit in a symmetric ~50 meV bump at 0.45 eV as
+pre-registered: it **rises monotonically toward the cliff** and concentrates
+in the ≥ E* class (0.436), with a declining in-band tail through ≈ 0.28 eV and
+the below-floor tail (~0.10). So the provenance read is **E_int(0) concentrated
+at/above ≈ 0.46 eV with an in-band declining tail** — inside/around the RQ1
+[0.2, 0.5] band but pressed to its **upper edge and above E\***, consistent
+with reorganization + electronic-relaxation sourcing near the top of the band
+(RQ1/OQ2). The interior density carries roughness (a weight spike at
+E₀ = 0.384 / n = 4, zeros at the collinear 0.36 / 0.40 columns) that is a
+**basis-collinearity artifact** (fi0.45 / 0.48 / 0.50 all peak at n ≈ 3–4),
+**not** physical multi-modality — the fit does **not** demand electronic
+fine-structure branching. (A branching signature would have to survive column
+de-collinearization; this one does not.)
+
+### W9-P4 (s_eff identifiability) — CONFIRMED, recorded as possibility only
+
+Re-fitting with the two near-cliff columns swapped to `s_eff = 30`
+(n_detect 1 → 2 and 2 → 3, the kinetic wall) leaves the **n = 1 bin unfed**
+(no s = 30 column reaches n = 1): fit n = 1 = 0.000, resid **−0.175**; L2
+jumps 0.016 → 0.182 and Wasserstein 0.086 → **1.398 (16×)**. The detector's
+small-n bins **select the kinetics band** — s = 8 (floors reached) fits, s = 30
+(kinetic wall) cannot, so **s_eff is detector-identifiable via the n = 1 bin**
+for the first time (Wave 7 found the detector near s-blind at the deep-strip
+corner). Per user decision (c): **recorded as a possibility, no campaign
+re-scope**.
+
+### What Wave 9 establishes
+
+The Wave-8 negative result (no single knob point splits the ensemble; the
+cliff is a delta, I26) is now turned fully constructive: because ions never
+interact, a weighted mixture of single-point runs **is** an ensemble with
+p(E₀) on the grid, and the experimental histogram **inverts cleanly** into a
+smooth, unimodal, in-band-plus-above-cliff p(E₀) (top bins to W₁ = 0.086)
+**without tuning** — the sourced provenance range and the histogram-required
+range coincide (the strongest circumstantial support the biphasic mechanism
+has received, now quantitative). The two standing caveats survive intact and
+are quantified: the deep tail demands ≥ 9.6 % below-floor mass (the
+droplet-R axis's job, W9-P2), and the whole inversion is **conditional on
+RQ3 spec (b)** (suppressed → cleanly bare; an ε-type channel would add
+suppressed-side small-n weight and re-shape the near-cliff fit — OQ-B/OQ-F).
+Wave 9 builds **no p(E₀) sampling surface** and does **not** discharge the F5
+gate; the mixture lives entirely in post-processing.
+
+### Physical-justifiability of the landed parameters + interpretation risks (post-execution discussion, 2026-07-09)
+
+A post-execution discussion assessed whether the Wave-9 operating point sits
+in a physically defensible range. Recorded as caveats on the *interpretation*,
+not new results.
+
+**s_eff = 8 — order-of-magnitude defensible, but a rate knob and a
+methodological pick.** Physically it says the He₂₁ shell acts *kinetically*
+like ~8 active oscillators, not the classical `3n−3 = 60`; the ~10× reduction
+is the expected direction for cold quantum He (quantum mode-freezing — only
+soft delocalized intershell/surface modes participate on the sub-ps shed
+timescale; cf. Klots evaporative-ensemble treatments of weakly-bound/quantum
+clusters; an effective heat capacity ~10–20 % of Dulong–Petit `3Nk_B` is
+plausible for He — consistent, not precise). Three risks on reading "8" as a
+physical constant: (i) s_eff is fundamentally a **rate** knob (I13) — under the
+gate it does not set the terminal n, and the detector read compresses it (I20),
+so the exact value does less work than it looks; (ii) **s = 8 was chosen for
+the Wave-9 basis because at s = 8 the columns reach their *energetic* floor**
+(E₀ → n deterministic, the window map) while s = 30 stalls at the kinetic wall
+— a methodological choice, not a fit; the only physical signal on the value is
+W9-P4 (the small-n bins prefer the fast-kinetics side); (iii) constant s is a
+diagnostic simplification — the physical form scales with size
+(`α·(3n−3)`, OQ-C), so "8" is best read as the effective bath near the *top* of
+the ladder (n ≈ 21, where the in-window sheds happen).
+
+**E_int(0) — band defensible; the upper-edge concentration is a hard physical
+demand.** The fit concentrates **43.6 % of the mass above E\* = Σ(21)·e^K =
+0.461 eV**, i.e. E_int(0) ≳ 2.4× the *total* shell binding for the bare class.
+Solvation reorganization on vertical ionization caps at ~Σ(21) ≈ 0.19 eV
+(budget-independent, the Na⁺-benchmark route), so the > E* mass **requires**
+an additional ≳ 0.27 eV deposit from I⁺ **electronic / spin–orbit relaxation**
+(³P fine-structure scale ~0.94 eV) degrading into the shell. Wave 9 therefore
+effectively claims **the bare peak is electronically sourced**, tying the
+hitherto-free picture knob to E_int(0) provenance (RQ1) — falsifiable. Risk:
+the ≥ 9.6 % below-0.22-eV-floor mass (I30) is **not** E₀-justifiable — it must
+come from the **droplet-radius axis** (larger K), not the reservoir; pure-E₀
+heterogeneity cannot supply the deep tail.
+
+**τ = 6.55 ps — plausible, factor-~2.5 uncertain** (geometric-mean pin; GAH25
+Na⁺ *growing-shell* provenance, a different scenario than an ejected shedding
+complex). **κ = 1 / ladder bottom — a config default, not a data-justified
+value** (κ is near-dead for the staircase — inverted + normalization-capped;
+the flat-bottom ladder `D₀ ≈ 9.22 meV` is physically suspect at the bottom, the
+real last-He-on-I⁺ rung plausibly much deeper — OQ-G; one of the two
+genuinely-free knobs, read by the n = 1 bin). **gate = density_scaled — the
+most physically-grounded choice** (bath-gated cooling; shared ρ_He boundary
+with drag/pickup).
+
+**Interpretation risks carried from execution.** The whole inversion is
+conditional on **RQ3 spec (b)** (suppressed → cleanly bare; an ε channel /
+OQ-F would add suppressed-side small-n weight and reshape the near-cliff fit);
+N = 50 single seed at 1 % granularity; the interior p(E₀) carries
+**basis-collinearity roughness** (the fitted *weights* are robust, the
+*density* readout is window-convention-sensitive); no p(E₀) sampling surface is
+built and nothing here discharges the F5 gate.
+
+---
+
+## 4h. Wave 10 (Steps 1 + 1.5) — the width lives on the E₀/K axes; narrow E₀ fails at the probe K-scale and lands the bare peak at the production K-scale bracket
+
+Executed 2026-07-10 (under the `[PROCEED TO IMPLEMENTATION]` trigger;
+scratchpad route `wave10_step1_step15.py` — **zero new MD, zero repo-code
+change, no run artifacts touched**): the two zero-MD steps of Addendum F *as
+amended* (K-reframing F.2b; Step 1.5 F.3b; corrected W10-P3; K-scale leg
+W10-P5). Step 2 (the droplet slice) and F.5 (the n-graded ladder arm) remain
+un-built and gated. Inputs: all 41 gated (`_cgds`) probe dirs re-read
+(detection.npz per column; stored trajectories of the fi = 0.65 suppressed
+dir for exposure integrals), the F.2b closed form on the delivered ladder
+(Σ(21) = 0.18783720 eV), and `integrated_i_he_abundance.csv`. Scoreboards:
+`wave10_step1_columns.csv`, `wave10_step15_K_of_R.csv`,
+`wave10_step15_scan.csv` (scratchpad).
+
+### Step 1 — width decomposition at fixed (E₀, droplet) — W10-P1 CONFIRMED
+
+- **Wiring oracle.** The per-ion exposure integral
+  `K_i = (1/τ)·∫ρ̂(|r_i(t)|−R₀)dt` over the stored ion + relaxation
+  trajectories reproduces the Wave-8 anchor: mean K = 0.897541 vs 0.898297
+  (0.08 %, trapezoid-vs-per-step discretization); per-ion spread
+  (max−min) = 9.0·10⁻¹³. The implied per-ion `E*_i = Σ(21)·e^{K_i}` has
+  spread **4.15·10⁻¹³ eV — the Wave-8 delta (I26) re-derived from
+  trajectories** rather than from the bisection.
+- **Opened side.** Across all 41 gated columns the detected read at fixed
+  (E₀, droplet) is **≤ 1 bin wide**: n_detect MAD 0.04–0.88 He (every
+  column < 1), min–max spans 1–5 bins, modal-bin fraction 0.36–1.00.
+  Near the cliff the columns are essentially delta (fi ≥ 0.48: MAD ≤ 0.47;
+  the fi = 0.57 column is n = 1 for all 100 ions).
+- **Verdict (W10-P1).** Poisson pickup + trajectory heterogeneity carry
+  ≈ ≤ 1 bin of the ~21-bin experimental span. At fixed droplet the entire
+  Wave-9 tail width came from the E₀ mixture axis; **under a narrow E₀ the
+  droplet-K axis is the only remaining width carrier** — the Step-2 target
+  is now quantified as the full span.
+- **Bonus re-confirmation (I28).** The b270 columns line up in absolute E₀:
+  fi = 0.17 (E₀ = 0.459 eV < E\*) opens and lands n̄ = 1.98; fi = 0.18/0.19
+  (0.486/0.513 eV > E\*) arrive 100 % suppressed — budget-invariance holds
+  in the detected read.
+
+### Step 1.5a — the closed form is MD-validated; K(R) is steep
+
+The F.2b fate map (bare ⇔ K < K\* = ln(E₀/Σ(21)); else no-shed leak +
+exact ε = 0 ladder descent from n = 21) scored against the 13 gated
+`s_eff = 8` columns at the pinned K: **mean |diff| = 0.84 He over the opened
+columns, +0.05/+0.04/±0.00 at fi = 0.50/0.53/0.57** — i.e. ≈ exact in the
+cliff-adjacent region that owns the bare and n = 1 bins; worst −1.7 He
+mid-shell (the no-shed leak approximation slightly over-books the in-bubble
+drain when the gate opens early). The pinned-trajectory exposure curve
+K(R = R₀·(N/2000)^{1/3}) has slope d ln K/d ln R ≈ 1.23:
+
+| N [He] | R [Å] | K | E\* = Σ(21)·e^K [eV] |
+|---|---|---|---|
+| 250 | 14.0 | 0.385 | 0.276 |
+| 500 | 17.5 | 0.498 | 0.309 |
+| 1000 | 22.1 | 0.664 | 0.365 |
+| **2000** | **28.0** | **0.899** | **0.462** |
+| 4000 | 35.4 | 1.229 | 0.642 |
+| 8000 | 44.2 | 1.657 | 0.985 |
+| 16000 | 55.9 | 2.231 | 1.748 |
+
+### Step 1.5b — the fate-map scan — W10-P3 CONFIRMED (probe K), W10-P5 CONFIRMED (the split verdict)
+
+Sharp E₀ ∈ [0.24, 0.32] eV × stated log-normal droplet priors
+(Kornilov δ = 0.625 about ⟨N⟩ = 2000; δ = 0.40 / 0.80 sensitivity;
+pickup-weighted ∝ N^{2/3} variant) × two K-scales (probe 0.898;
+production bracket ×0.545 ≈ 0.49 from fragment-speed scaling √(2.70/0.80)):
+
+- **Probe K-scale: the droplet axis is excluded for the bare peak at narrow
+  E₀.** At E₀ = 0.28 eV every stated prior yields ≤ 2 % bare (max anywhere:
+  12.7 % at the E₀ = 0.32/δ = 0.80 corner); analytically, 43.5 % bare needs
+  σ_lnK ≈ 4.95 → **log-normal δ ≈ 12, ~19× the Kornilov width** — not a
+  tuning miss but an order-of-magnitude exclusion. W₁ ≥ 2.7 bins everywhere
+  at this scale: at narrow E₀ the pinned kinematics put *all* mass
+  mid-shell, so the tail *shape* fails too (the W10-P2 analytic pre-verdict
+  is negative at the probe scale).
+- **Production K-scale bracket: the bare peak lands inside the RQ1 band.**
+  bare crosses 43.5 % within the scanned E₀ band for every prior; best
+  sampled point (E₀ = 0.28 eV, δ = 0.80): **bare 42.6 %, W₁ = 0.993 bins,
+  untuned** (δ = 0.625 gives 33.1 % at 0.28 eV / 55.9 % at 0.30 eV — the
+  cliff sits mid-ensemble, K\*(0.28) ≈ 0.40 vs K₀ ≈ 0.49). The small-n
+  envelope is monotone as observed; the mid-tail (n = 2–4) overshoots
+  (11.6/10.1/8.0 % vs 8.0/5.2/4.0 %); the n = 1 bin under-fills
+  (13.6 % vs 17.5 % — model n1/n2 step 1.18× vs experimental 2.18×).
+- **W10-P4 pre-read.** The residual n = 1 deficit factor is **1.29× ≤ the
+  ~1.4× F.5 electronic-taper cap** — coverable by the capped X₂-first
+  graded picture without fitting the ladder to the bins (existence-level;
+  the n = 2–4 overshoot is not addressed by the taper and stays open).
+- **W10-P5 CONFIRMED — the split verdict, exactly as pre-registered.**
+  Narrow E₀ fails at the probe K-scale and succeeds at the production
+  K-scale bracket. Consequence: the resolution is **"narrow E₀ + RQ7
+  kinematics"** — the amended F.8 outcome-(a)-via-RQ7 exit, *not* the RQ1
+  super-solvation route; **the RQ7 kinematics arm is now co-requisite** for
+  any Step-2 adjudication, and the droplet slice's job shrinks to the
+  width/shape of the K-distribution, not the bare-peak location.
+
+### Boundaries of the Wave-10 zero-MD read
+
+1. The production K-scale is a **ballistic speed-scaling bracket**
+   (×√(0.80/2.70) applied multiplicatively to K(R)), not model output —
+   RQ7 stays unmodeled; no 2.70 eV MD was run.
+2. K(R) is the **pinned-trajectory approximation** (stored r(t) under the
+   R₀ drag environment re-integrated against shifted surfaces); the slope
+   bias is direction-mixed and small vs the 19× probe-scale margin.
+3. **n_eject = 21 for all R** (the delivered model dresses ions fully at
+   t = 0); physically small droplets dress less → smaller Σ(n_eject) →
+   suppression *easier* — a bias in *favour* of the narrow-E₀ reading.
+4. The closed form carries the −1.7 He mid-shell no-shed bias and the
+   ≤ 1.4 He detected-read s-dependence (I20) — both ≈ 0 at the cliff.
+5. All of this is **analytic pre-verdict**: Step 2 (the MD droplet slice)
+   arbitrates; conditional on RQ3 sequential-shed (suppressed → bare) and
+   ε ≈ 0. Reported, not auto-adjudicated; nothing here discharges the F5
+   gate.
+
+---
+
+## 4i. Wave 11 — K₂.₇₀ measured at 0.746: the ballistic bracket was wrong, the pre-registered E₀ band fails, and the narrow-E₀ landing re-calibrates to E₀ ≈ 0.38–0.41 eV (still in-band) with a 42 %-beyond-band validity caveat
+
+Executed 2026-07-11 (under the `[PROCEED TO IMPLEMENTATION]` trigger given
+same day; Addendum G with the opened companion promoted to default).
+Scratchpad route `wave11_gen_runs.py` / `wave11_measure_K.py` /
+`wave11_step3_scan.py`; **two new MD dirs** (the first off 9 Å geometry:
+`..._tier2probe_b270_..._cgds_R2.67`, suppressed primary E₀ = 0.52 eV and
+opened companion E₀ = 0.28 eV at `R0_GS_angstrom = 2.666`), zero repo-code
+change. Scoreboards `wave11_K_scoreboard.csv`, `wave11_step3_scan.csv`
+(scratchpad).
+
+### Step 0 — opening checks (all pass, one correct guard refusal)
+
+- Config-load **accepts** `R0_GS_angstrom = 2.666` (no geometry bound;
+  the standing §6.5 pairing warning is the only trip). Both tags free.
+- The pure-cubic loader **correctly refuses b = 0** (`linear_cubic with
+  a == 0 requires b > 0`) — the drag-off ballistic oracle therefore ran at
+  b = 10⁻¹² (γ·t/m ~ 10⁻¹¹, drag-free to machine precision).
+- **Ballistic dt oracle:** at the ~11× steeper Coulomb onset, the fixed
+  dt = 0.01 ps integrator reproduces the analytic
+  v(r) = √(2·[14.4/2.666 − 14.4/r_sep]/2 − E_bind)/m_eff) — including the
+  bundle's effective binding well 0.116758 eV, which the fragment climbs
+  out of on exit — to **rel. error 8.8·10⁻⁵**. (First oracle attempt
+  omitted E_bind and "failed" at 2.2 % ≡ exactly the well depth — a
+  correct-physics reminder, not an integrator problem.)
+
+### Step 1 — the measurement
+
+- **W11-P1 (wiring oracle) — CONFIRMED exactly.** The re-implemented
+  exposure script reproduces the Wave-10 trajectory-route control at
+  **K = 0.897541** (0.8975410665…, per-ion spread 9.0·10⁻¹³ — the I26
+  congruence delta re-derived).
+- **K₂.₇₀ = 0.74603** (suppressed primary; per-ion spread 7.4·10⁻¹³;
+  exposure ∫ρ̂dt = 4.886 ps; t_exit = 4.62 ps vs 5.63 ps at 9 Å). The
+  independent E_int cross-read agrees: ln(0.52/0.24642) = 0.7468 (0.1 %,
+  trapezoid-vs-per-step discretization). Suppressed ride confirmed
+  (n ≡ 21 through ion end, relaxation, and detection).
+- **W11-P2 — REFUTED as registered.** K₂.₇₀ = 0.746 sits **above** the
+  pre-registered [0.5, 0.7]: the scale factor is S_K = 0.831, nowhere
+  near the ballistic ×0.545. Drag eats almost all of the extra channel
+  speed: the fragment peaks at 10.51 Å/ps mid-flight and exits at
+  3.82 Å/ps — slower transit than ballistic scaling assumed, hence the
+  larger exposure. E\*(K₂.₇₀) = Σ(21)·e^0.746 = **0.396 eV**.
+- **W11-P3 (congruence + m(t) feedback) — CONFIRMED.** The suppressed
+  production ensemble is kinematically congruent (10⁻¹³); the opened
+  companion (cascade lightens the ride 21→~7 He in-window) measures
+  K = 0.7299 ± 0.0111 — the m(t)-feedback on K is **−2.2 %**, and it is
+  the first non-degenerate per-ion K spread ever measured in the probe
+  program (0.0222 — channel-RNG-driven, still ≪ 1 rung in E\* terms).
+
+### Step 2 — validity decompositions (the load-bearing caveat) + VMI
+
+- **W11-P4 — SPLIT.** Overlap share (pair separation < 2×4.67 Å):
+  **8.0 %** — inside the pre-registered ≲ 10–15 %. Beyond-band share
+  (exposure accrued at speed above the 9 Å control's in-window max
+  5.23 Å/ps): **41.7 %** (42.7 % on the companion) — **far above** the
+  pre-registration. The production fragment spends the first half of its
+  exposure at up to **2.0×** the speed the pure-cubic law was calibrated
+  on. Both identified biases push K up (cubic force ∝ v³ is steeper than
+  form drag; the booked inter-ion density is an over-count), so
+  **K₂.₇₀ = 0.746 is an upper-bound-flavored measurement**; the hard
+  lower bracket remains the ballistic 0.49.
+- **Fragment speeds vs VMI (the independent discriminator).** Detected
+  asymptotic speeds: suppressed→bare class 4.11 Å/ps, companion (n ≈ 6)
+  5.31 Å/ps — vs the experimental `vmi_iplus_he.csv` peak at
+  **10.1 Å/ps (1010 m/s)**. Ballistic references: 20.3 (bare), 15.7
+  (dressed n = 21). The experiment sits *between* the model and
+  ballistic: the locked drag **over-dissipates production fragments by
+  ~2–2.5× in speed** — the first VMI-side kinematics constraint, and its
+  direction is *consistent with the over-drag reading* of the
+  beyond-band caveat (true K₂.₇₀ < 0.746). Mass-convention caveat noted
+  (model speeds are complex speeds; RQ3 sequential shed at ε ≈ 0
+  preserves speed, so the comparison is convention-clean to first order).
+
+### Step 3 — closed form validated at production kinematics; the fate-map scan at measured K
+
+- **The F.2b closed form holds at the new geometry:** companion MD
+  n_detect = **5.76** (min 5 / max 8; relaxed 6.16) vs the closed-form
+  ladder descent of E₀·e^(−K) = 0.1328 eV → **n = 6**. 0.24 He agreement
+  — I34's two-parameter (E₀, K) reduction transfers to production
+  kinematics unchanged.
+- **The K(R) machinery wiring-oracles cleanly:** the probe-scale curve
+  re-derived here matches the Wave-10 §4h table to ≤ 0.007 in K
+  (slope 1.226); the production curve is steeper *and lower*:
+  K(N) = 0.302/0.399/0.540/**0.746**/1.041/1.449/1.977 for
+  N = 250/500/1000/2000/4000/8000/16000 (slope d lnK/d lnR ≈ 1.303).
+- **W11-P5 — REFUTED as registered.** In the pre-registered
+  E₀ ∈ [0.24, 0.32] no stated prior reaches the bare peak at the
+  measured K (best anywhere in-band: 18.4 % bare, W₁ = 2.33 at
+  E₀ = 0.32/δ = 0.80). The Wave-10 "landing at 0.28 eV" was an artifact
+  of the wrong ballistic bracket.
+- **But the construction lands *better than Wave 10* one step up-band
+  (still inside RQ1's sourced [0.2, 0.5] eV):** bare crosses 43.5 %
+  within E₀ ≈ 0.37–0.43 for **every** stated prior; bare-pinned rows:
+  δ = 0.625 → (E₀ = 0.38, bare 42.7 %, n₁ 7.7 %, W₁ 0.785);
+  δ = 0.80 → (0.38, 44.3 %, 6.0 %, 0.694); pickup-weighted →
+  (0.42, 44.1 %, 7.7 %, 0.723); δ = 0.40 → (0.385, ~47 %, **12.0 %**,
+  1.19 — best n₁, worst mid-tail: n₂₋₄ 36 % vs 17.2 %). Global best
+  untuned: **W₁ = 0.496** at (E₀ = 0.41, δ = 0.80) — better than
+  Wave 10's 0.993.
+- **Robustness of the landing to the K uncertainty:** the bare-crossing
+  scalar E₀ tracks E\*(K₀) = Σ(21)·e^(K₀); over the *entire* bracketed
+  range K₂.₇₀ ∈ [0.49 (ballistic), 0.746 (measured upper-bound)] that is
+  E₀ ≈ 0.30 → 0.41 eV — **inside the RQ1 band everywhere**. The
+  beyond-band caveat therefore moves the calibration point, not the
+  qualitative verdict.
+- **The K-scale is near-degenerate in W₁:** even the probe-scale curve
+  lands at (E₀ = 0.46, W₁ = 0.570). The histogram alone barely
+  discriminates the kinematics — which is precisely why measuring
+  K₂.₇₀ (this wave) rather than fitting it was the right move: the
+  kinematics question is now settled by measurement, and the scalar E₀
+  sweep inherits a *measured* anchor E\* = 0.396 eV.
+- **The n = 1 bin worsens:** at bare-pinned production-K points the n₁
+  deficit is 1.46× (δ = 0.40) / 2.3× (δ = 0.625) / 2.9× (δ = 0.80) —
+  beyond the ~1.4× F.5 electronic-taper cap except at the narrow prior,
+  which in turn overshoots n₂₋₄ by 2×. Within this construction the
+  n = 1 bin cannot be repaired by (E₀, prior) alone → the sharpened
+  RQ4 ladder-bottom question (and/or the tens-of-meV E₀ smear leg)
+  inherits it.
+
+### Boundaries of the Wave-11 read
+
+1. **The beyond-band share (42 %) is the load-bearing caveat**: K₂.₇₀ =
+   0.746 is measured *inside the locked model*, whose pure-cubic law is
+   exercised at up to 2× its calibrated speed band here. Both identified
+   biases point up → treat 0.746 as the upper edge and 0.49 as the hard
+   lower bracket. A drag law validated at production speeds (TDDFT at
+   2.666 Å kinematics, or a velocity-capped form) is the only way to
+   shrink this — recorded as a candidate research item, **not** silently
+   extrapolated over.
+2. The VMI speed comparison is existence/direction-level (complex-speed
+   vs detected-fragment-speed convention; single knob point; no
+   ensemble). Its direction (model too slow by ~2×) independently favors
+   the over-drag reading.
+3. n_eject = 21 for all geometries stands (§4h boundary 3); at 2.666 Å
+   the two ions start inside one shared first shell (separation < 4.67 Å)
+   — the full-dressing convention is maximally strained here, though its
+   exposure-side cost is bounded by the 8 % overlap share.
+4. The scan inherits every F.3b approximation (pinned-trajectory K(R),
+   no-shed leak, ε = 0, RQ3 sequential shed, detected ≈ energetic floor
+   at s_eff = 8) — MD-validated at the two measured points (0.84 He at
+   9 Å, 0.24 He at production) but analytic in between; N = 50, single
+   seed, single droplet radius per dir.
+5. All of this is **reported, not auto-adjudicated**: the pre-registered
+   W11-P2/P5 are honestly refuted; whether the re-calibrated landing
+   (E₀ ≈ 0.38–0.41) supersedes the Wave-10 narrow-E₀ endorsement, and
+   whether the drag-recalibration item fires, is the user's call.
+   Nothing here discharges the F5 gate.
+
+---
+
+## 4j. H.2b analytic feasibility pass — the bounded lever set cannot land the solvated targets; the miss localizes to the RQ4 taper + the v_c scale; a trapped droplet-retained class appears
+
+Executed 2026-07-11 (under the `[PROCEED TO IMPLEMENTATION]` trigger given
+same day; Addendum H §H.2b as frozen, decisions D1–D7). Scratchpad route
+`h2b_feasibility.py` — **zero MD, zero repo-code change, no run artifacts
+touched**; a self-contained 1D two-body chord forward model importing the
+repo's own ladder (`dissociation_ladder`), density gate (`helium_density`),
+bundle (b = 2.5153509, E_bind = 0.1167578 eV), erf steepness 14.2 Å, and
+R(N) = 2.2173·N^(1/3). 20 000 molecules → 40 000 fragment chords per
+exposure bracket (importance-reweighted over all priors × margins; seed
+20260711; dt = 0.01 ps, t_end = 150 ps); fate map = the unified F.2b closed
+form `E_ej = E₀ᵢ·e^(−Kᵢ)`, suppressed iff `E_ej > Σ(n_eject)`, else exact
+ε = 0 descent (detected ≈ energetic floor, the validated s_eff = 8
+convention). Scoreboards: `h2b_scan.csv` (7 308 cells),
+`h2b_lever_interaction_map.csv`, `h2b_feeder_map.csv` (scratchpad).
+
+### Wiring oracles — the 1D re-implementation reproduces the MD landmarks
+
+| oracle | model | reference |
+|---|---|---|
+| Σ(21) mixture κ=1 | 0.18783720 eV | 0.18783720 (exact) |
+| K production center-pin | 0.74460 | 0.74603 (Wave 11; 0.19 %) |
+| K 9 Å center-pin | 0.89767 | 0.89754 (Wave 10/11; 0.014 %) |
+| t_exit / v_peak / v_detect (prod) | 4.60 ps / 10.53 / 4.13 Å/ps | 4.62 / 10.51 / 4.11 |
+| ballistic v_inf vs analytic | rel. 4.3·10⁻⁴ | (Wave-11 oracle form incl. E_bind) |
+| E\*(K) / companion descent | 0.3955 eV / n = 6 | 0.396 / n = 6 (MD 5.76) |
+
+dt-halving moves K by 3·10⁻⁴ — integration-converged.
+
+### Lever-interaction map (the D5 deliverable) — L2 is margin-floored, and the D2 pre-derivation holds
+
+At the code's actual 14.2 Å erf width, `n_eject = round(21·ρ̂)` at the
+shallowest allowed birth is **13 / 14 / 15** at margin 3 / 4.67 / 6 Å
+(N = 2000 reference: ρ̂ = 0.62 / 0.68 / 0.72). The weighted fraction with
+`n_eject ≤ 10` is **0.0 at every (prior, margin)** — there is **no true
+surface class** inside the firm band: born-bare is impossible and
+Σ(n_eject) ≥ 0.12 eV always. Consequently the **gate-open-at-birth region
+is empty in-bounds** for both E₀-law brackets (p = 1 requires
+E₀ < Σ(21) = 0.188 eV — below the RQ1 band; p = 0 requires
+E₀ < Σ(n_eject) ≤ 0.188 eV — same) — the D2 pre-derivation is confirmed
+with the margin floor: **the W12b-P1 "fast n = 1–3 surface feeder" does not
+exist under any bounded E₀ law.** The n = 1–3 weight is fed by the
+near-cliff chord-K band instead (feeder map: n = 1 comes from births at
+depth −6…−10 Å, n_eject 15–17, K ≈ 0.17–0.29 — just above the cliff).
+Shell-averaged-ρ̂ sensitivity: with shell radius 4.67 ≪ steepness 14.2, the
+averaging correction is ≤ (4.67²/6)·|ρ̂″| ≲ 0.01 in ρ̂ → < 0.25 atoms —
+sub-rounding, dispositioned analytically.
+
+### The scan — no landing at the frozen bar, at either bracket
+
+7 308 cells (E₀ ∈ [0.20, 0.50] × p ∈ {0, 1} × 4 ladders + the RQ4
+diagnostic × 4 priors × 3 margins × 2 exposure brackets): **zero cells pass
+T1∧T2∧T3.** The ballistic bracket is *worse* everywhere (best W₁ = 1.94 —
+under-cooled: bare-heavy, flat solvated), so the verdict is **not
+law-conditional** (the D3 protection). Best cells per ladder (current law):
+
+| ladder | best cell | W₁ | n₁ | n₁/n₂ | bare | trapped |
+|---|---|---|---|---|---|---|
+| flat | d080, m3, p1, E₀ 0.21 | 0.989 | 0.160 | 1.14 | 0.05 | 0.080 |
+| floor1 (knob-free X₂) | d080, m3, p1, E₀ 0.22 | 0.813 | 0.223 | **1.83** | 0.11 | 0.080 |
+| slid2 | d080, m3, p1, E₀ 0.22 | 0.725 | 0.214 | 1.25 | 0.06 | 0.080 |
+| slid3 | d080, m3, p1, E₀ 0.23 | 0.722 | 0.214 | 1.29 | 0.12 | 0.080 |
+| **rq4graded (diagnostic)** | d080, m6, p1, E₀ 0.25 | **0.575** | **0.267** | **1.76** | 0.13 | 0.065 |
+
+Targets: W₁ ≤ 0.5, n₁ ∈ [0.26, 0.36], ratio ∈ [1.75, 2.6]. Structural
+reads:
+
+1. **p = 1 wins everywhere; p = 0 dies by over-suppression** — exactly the
+   D2 pre-derivation (constant E₀ over shrunken Σ(n_eject) makes the
+   off-center population suppressed → bare-heavy). Under p = 1 the descent
+   target scales with Σ(n_eject), so the margin-floored dressing *does*
+   feed small-n — just not n = 1 specifically.
+2. **The n₁ bin is ladder-taper-controlled, and sliding the X₂ transition
+   up makes it WORSE** (slid2/slid3 ratio 1.25/1.29 vs floor1's 1.83):
+   n = 1 is a one-rung-wide window in E_ej, so equal deep rungs widen the
+   n = 2/3 windows equally and the *ratio* reverts to the (flat) chord-K
+   density ratio ≈ 1.1–1.3. What steepens n₁/n₂ is a genuine **taper**
+   (rung 1 > rung 2 > rung 3). The knob-free X₂ floor (1.44×) reaches
+   1.83; the experimental 2.18 needs ≈ 2× — beyond the cap, as
+   pre-registered.
+3. **The RQ4-graded diagnostic (2.2 : 1.5 : 1.3 — outside the bounded set,
+   reported as a prediction FOR the external calculation) nearly lands:**
+   T2 + T3 pass, bins 2–8 match to ≲ 0.01–0.02 absolute
+   (pickup/m3/E₀ 0.23: 0.139/0.142, 0.105/0.092, 0.074/0.071, 0.066/0.058,
+   0.056/0.049, 0.055/0.039, 0.054/0.036; bare 3.8 %), W₁ = 0.575–0.582 vs
+   the 0.5 bar. Through a purely geometric forward model, **the solvated
+   histogram now independently demands the RQ4 target ratios.**
+4. **T4 (KE): the envelope holds at every top cell** — the experimental
+   mean-KE curve lies inside [current-law, ballistic] for all n = 1–12 —
+   but the single-λ scale fails (worst bin ×1.83–2.36 vs the ×1.5
+   tolerance). The needed lift is **speed-selective in the v_c direction**:
+   ×2.2 at n = 1 falling to ×1.7 at n = 12 (speed ×1.5 → ×1.3), and the
+   λ-blend is a conservative proxy (a real velocity-capped law lifts fast
+   fragments and leaves the slow n ≥ 13 tail at its in-band current-law
+   values, where the blend artificially fails the < 0.1 eV band). One
+   marginal band violation is real: the small-weight near-cliff fast class
+   at n ≈ 19 arrives at 0.122 eV.
+5. **E₀ re-lands at the solvation scale.** The optima sit at
+   E₀ ≈ 0.22–0.27 eV ≈ E_solv — not the pinned-droplet 0.38–0.41 (Wave 11)
+   — because the position axis supplies the low-K mass that the E₀ scan
+   previously had to buy with a higher cliff. With bare un-targeted, the
+   narrow-E₀ story becomes *more* physical under the full geometry.
+6. **A trapped, droplet-retained ion class appears (new).** 6.5–11.3 %
+   (weighted; prior/margin-dependent) of fragments — inward-going partners
+   of off-center births with chord exposures up to K ≈ 18 — are dissipated
+   by the current law below the 0.117 eV solvation barrier and **never
+   leave the droplet** (parked near the far surface where the residual
+   Coulomb push ≈ the well gradient). They are excluded from every
+   detected read (they would appear as large cluster masses, not I⁺Heₙ
+   bins). The class is t_end-conditional (150 ps read; the park is
+   quasi-static) and ballistic-bracket-absent — a current-law prediction,
+   MD-arbitrable by the W12 leg.
+
+### Verdict (frozen outcome shapes)
+
+**Outcome (c) at the strict bar — reachability inside the all-bounded
+lever set is refuted, at both exposure brackets.** But the miss is not
+diffuse; it decomposes into exactly two quantified, already-named items:
+
+- **the RQ4 ladder taper** (the histogram side: the bounded floor variant
+  reaches ratio 1.83 / W₁ 0.81; the RQ4-graded ratios close bins 2–8 and
+  reach W₁ 0.575) — the external many-body calculation is confirmed as the
+  **blocking arbiter**: if it returns ≈ 2 : 1.4 : 1.2 or steeper, the
+  histogram closes inside physics; if it returns a plateau, the F.5 escape
+  clause (non-zero ε / missing mechanism) fires with the geometric
+  alternatives now exhausted;
+- **the W13 v_c speed scale** (the KE side: envelope ✓, needed lift
+  ×1.3–1.5 speed-selective — W13-P1's premise pre-confirmed with numbers).
+
+The slid-X₂ family is **rejected as the repair** (worsens the ratio); the
+W12b dressing arm's pre-registered fast-feeder fingerprint (W12b-P1) is
+**predicted absent** under both bounded E₀ laws; the W12/W12b MD legs'
+role shrinks from exploration to verifying the geometric components the
+pass says are load-bearing (the chord-K density near the cliff, the
+trapped class, the KE shape). Reported, not auto-adjudicated — sequencing
+is the user's call; nothing here discharges the F5 gate.
+
+### Boundaries of the H.2b read
+
+1. Pinned-mass straight-line chords (no re-pickup, no bending; the
+   measured m(t)-feedback scale on K is −2.2 %, Wave 11); the no-shed leak
+   is baked into the unified `E_ej = E₀ᵢe^(−K)` form (−1.7 He mid-shell
+   bias at early openings, ≈ 0 at the cliff).
+2. Detected ≈ energetic floor (s_eff = 8 convention; ≤ 1.4 He
+   s-dependence, I20); RQ3 spec-(b) suppressed → bare; ε = 0.
+3. The trapped classification is a 150 ps operational read of a
+   quasi-static park; leak-out over µs flight is not modeled.
+4. The λ-blend T4 operationalization is a conservative stand-in for a
+   velocity-capped law (per-fragment v_c physics is W13's).
+5. Analytic/MC read (no N = 50 quantization; MC noise ≪ the 0.075+ W₁
+   margins); single master seed; mean-⟨N⟩ = 2000 log-normal convention
+   stated (D4).
+6. The KE targets are the D7 user-supplied means, provenance-pending (the
+   H.2 export prerequisite stands).
+
+---
+
 ## 5. Consolidated insight register
 
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
@@ -1074,6 +1887,171 @@ delivered code, the objection holds in a **sharper** form:
   completes the set of energy-bookkeeping conventions the probe program
   localized → `RESEARCH_QUESTIONS.md`.
 
+- **I26 (Wave 8).** The gated suppression cliff at a probe knob point is a
+  **delta function**: E*_i = Σ(21)·e^(K_tot) = 0.461219 eV with ensemble
+  width 4·10⁻¹³ eV, because the probe ensemble is **kinematically
+  congruent** (deterministic center-placed onset, one droplet radius →
+  identical per-ion cooling exposures K_tot = 0.898297). The suppressed
+  fraction is a step 0 → 1: **no single-point ensemble expresses the
+  43.5 % bare / 56.5 % shell coexistence at any E_int(0)** — the Δ× race
+  heterogeneity the observable needs (I12/I18) is structurally absent from
+  the preset and must be *injected* (droplet-radius distribution, thermal
+  onset, E_int(0) spread). All per-ion outcome spread at a knob point is
+  post-opening channel RNG only.
+- **I27 (Wave 8).** The **sub-rung sliver** E₀ ∈ (E* − D₀(1), E*) has a
+  leak |G| under one rung, so the opened cascade's energetic floor is
+  **n = 1** — expressed in MD (100 % of ions at n_detect = 1 at s_eff = 8;
+  2 % even at s_eff = 30 on the deeper-sub-rung point). The experiment's
+  second-largest bin is reachable by the flat-bottom ladder without OQ-G
+  depth, but only from a window one rung wide in leak units =
+  **22.6 meV wide in E_int(0)** (D₀(1)·e^K; ~7.5 % of the sourced band) —
+  a strong constraint on any heterogeneity model that wants to feed
+  17.5 % of the ensemble through it; I24's "kinetically strangled" holds
+  only as |G| → one full rung.
+- **I28 (Wave 8).** **The scenario budget is bookkeeping-only** — its single
+  physics reader is the S2 onset deposit; Coulomb mechanics, ejection, and
+  exposure are budget-blind (K₂₇₀ ≡ K₀₈₀ exactly; MD-verified same absolute
+  step at 2.70 eV). In absolute E_int(0) the delivered model is exactly
+  budget-invariant: the entire gated map transfers to production verbatim,
+  the B.1(2) production prediction is void in both versions, and the
+  bare-vs-budget discriminator (RQ3 vs RQ4) has **no in-model mechanism**
+  until production Coulomb kinematics are modeled (→ OQ-H).
+
+- **I29 (Wave 9).** The experimental I⁺Heₙ histogram **inverts cleanly** into a
+  smooth, unimodal implied p(E₀): a simplex-constrained mixture of the 13
+  `s_eff = 8` detected columns reproduces it to **L2 = 0.016, Wasserstein-1 =
+  0.086 bins**, the top six bins to < 0.006 (bare fed solely by the
+  suppressed→bare column, weight 0.436 ≈ 0.435; near-cliff density on the
+  22.6 meV rung window 0.780 %/meV at n = 1, matching the sourced-histogram
+  prediction 0.77). Because ions never interact, a run-weighted mixture **is**
+  a p(E₀) ensemble — the I26 delta cliff turned constructive. The
+  histogram-required E₀ range coincides with the RQ1-sourced [0.2, 0.5] band
+  without tuning (strongest quantitative circumstantial support for the
+  biphasic mechanism).
+- **I30 (Wave 9).** The deep-shell tail forces **≥ 9.6 % of the ensemble below
+  the 0.22 eV solvation floor** (columns E₀ ≤ 0.192 eV), plus n = 18–20 (~1 %)
+  beyond the s_eff = 8 basis floor (E₀ < 0.08 eV) — W9-P2 confirmed. This is
+  the **droplet-radius axis's quantified demand**: the single-radius preset
+  cannot supply it from in-band E₀, but a larger-K (larger-droplet) tail
+  supplies deep-strip weight at in-band E₀. In-band [0.22, E*] mass 0.467;
+  above-E* (bare class) 0.436.
+- **I31 (Wave 9).** The implied p(E₀) shows **no multi-modal signature** — mass
+  rises monotonically to the cliff and concentrates at/above E* ≈ 0.46 eV, an
+  in-band declining tail below it; interior roughness is a basis-collinearity
+  artifact (fi0.45/0.48/0.50 co-peak at n ≈ 3–4), not electronic-branching
+  structure. Under the W9-P3 decision (fitted p(E₀) = a physics claim on
+  E_int(0) provenance), the read is **E_int(0) concentrated at the upper edge
+  of / above the RQ1 band**, consistent with reorganization + electronic
+  relaxation (RQ1/OQ2) — **not** a demand for fine-structure channels.
+- **I32 (Wave 9).** **s_eff becomes detector-identifiable via the n = 1 bin**
+  (W9-P4): swapping the near-cliff columns to s_eff = 30 (kinetic wall,
+  n_detect 1→2 / 2→3) leaves n = 1 unfed, L2 0.016 → 0.182, W₁ 0.086 → 1.398
+  (16×). The small-n bins select the kinetics band (s = 8 floors reached vs
+  s = 30 parked) — the first detector-side s_eff handle (Wave 7 found the
+  deep-strip detector near s-blind). **Recorded as a possibility only; no
+  campaign re-scope** (user decision (c)). Conditional on RQ3 spec (b)
+  throughout.
+- **I33 (Wave 10, Step 1).** **Width attribution is settled at fixed
+  droplet:** every gated column's detected read at fixed (E₀, droplet) is
+  ≤ 1 bin wide (n_detect MAD 0.04–0.88 He; per-ion E\*_i spread
+  4.15·10⁻¹³ eV, the Wave-8 delta re-derived from trajectories). The
+  ~21-bin experimental span must be carried by the E₀ and/or droplet-K
+  axes — Poisson + trajectory heterogeneity contribute ≈ nothing.
+- **I34 (Wave 10, Step 1.5).** **The gated detected read is two-parameter
+  to first order:** the closed-form (E₀, K) fate map — bare ⇔
+  K < K\* = ln(E₀/Σ(21)), else no-shed leak + exact ε = 0 descent —
+  reproduces the 13 measured s_eff = 8 columns to 0.84 He mean (≈ exact at
+  the cliff). The full histogram machinery can be forward-modelled on
+  paper before any droplet slice is built.
+- **I35 (Wave 10, Step 1.5).** **Probe-K exclusion:** at the pinned 9 Å
+  kinematics (K₀ = 0.898), a narrow E₀ ≈ 0.28 eV cannot source the bare
+  peak from droplet width — 43.5 % bare needs a log-normal δ ≈ 12,
+  ~19× the Kornilov 0.625; every stated prior gives ≤ 2 % bare and
+  W₁ ≥ 2.7 bins. The corrected-direction W10-P3 is confirmed at this
+  scale by an order of magnitude, not a margin.
+- **I36 (Wave 10, Step 1.5).** **Production-K landing:** at the
+  speed-scaling bracket K₀ ≈ 0.49 the suppression cliff sits mid-ensemble
+  and (E₀ = 0.28 eV, δ = 0.80) lands **bare 42.6 %, W₁ = 0.993 bins
+  untuned**, with a monotone small-n envelope; residual n = 1 deficit
+  1.29× ≤ the F.5 taper cap, mid-tail (n = 2–4) overshoot open. W10-P5's
+  split verdict holds → **"narrow E₀ + RQ7 kinematics" is the live
+  resolution and RQ7 is co-requisite for Step-2 adjudication.**
+  Conditional on RQ3 sequential-shed and ε ≈ 0 throughout; analytic
+  pre-verdict, Step 2 arbitrates.
+- **I37 (Wave 11).** **K₂.₇₀ = 0.746 measured** (first MD off 9 Å
+  geometry; suppressed shed-free ride at `R0_GS = 2.666 Å`, congruent to
+  10⁻¹³, E_int cross-read agrees to 0.1 %). The ballistic ×0.545 bracket
+  is **wrong**: drag eats almost all the extra channel speed (peak
+  10.5 Å/ps decelerated to 3.8 Å/ps by exit), S_K = 0.831. **Validity:
+  41.7 % of the exposure accrues beyond the calibrated speed band**
+  (overlap share 8 %); both biases push K up → 0.746 is the upper edge,
+  0.49 the hard lower bracket. W11-P2 refuted as registered.
+- **I38 (Wave 11).** **The (E₀, K) closed form transfers to production
+  kinematics unchanged:** opened companion MD n_detect = 5.76 (5–8) vs
+  closed-form n = 6 (0.24 He); the m(t)-feedback of an opened cascade on
+  K is −2.2 % — the fate map needs no geometry-specific correction, and
+  the K(R) machinery wiring-oracles against the Wave-10 table to ≤ 0.007.
+- **I39 (Wave 11).** **W11-P5 refuted as registered, landing
+  re-calibrated in-band:** at measured K the pre-registered
+  E₀ ∈ [0.24, 0.32] cannot source the bare peak (≤ 18 % everywhere), but
+  every stated prior crosses 43.5 % at E₀ ≈ 0.37–0.43 — inside RQ1's
+  [0.2, 0.5] — with untuned best W₁ = 0.496 (E₀ = 0.41, δ = 0.80),
+  better than Wave 10's 0.993. The bare-crossing E₀ tracks
+  E\*(K₀) = Σ(21)·e^(K₀) ≈ 0.30–0.41 eV over the whole K bracket → the
+  K uncertainty moves the scalar calibration, not the verdict; the
+  K-scale itself is near-degenerate in W₁ (probe curve lands at 0.570)
+  — settled by measurement, not fittable from the histogram. The n = 1
+  deficit worsens to 1.5–2.9× (δ-dependent trade-off against the n₂₋₄
+  overshoot) — beyond the F.5 taper cap except at δ = 0.40 → the bin
+  moves to RQ4 / the E₀-smear leg.
+- **I40 (Wave 11).** **First VMI-side kinematics constraint:** detected
+  model speeds at production kinematics (4.1–5.3 Å/ps) undershoot the
+  experimental I⁺He peak (10.1 Å/ps) by ~2–2.5×, with ballistic at
+  15.7–20.3 — the locked drag over-dissipates production fragments, in
+  the same direction as the beyond-band over-drag reading (true
+  K₂.₇₀ < 0.746). Candidate research item: a drag law validated at
+  production speeds (TDDFT at 2.666 Å kinematics / velocity-capped
+  form); existence-level, single knob point.
+- **I41 (H.2b).** **The all-bounded lever set cannot land the solvated
+  targets** (7 308-cell scan, zero T1∧T2∧T3 passes, both exposure
+  brackets — not law-conditional). The miss is *localized*, not diffuse:
+  bins 2–8 and the KE envelope/shape land; the residuals are exactly the
+  n₁ bin (histogram side) and the KE scale (speed side). Outcome (c) at
+  the strict bar, decomposing into the two already-named items (I42,
+  I43).
+- **I42 (H.2b).** **The n₁ bin is ladder-taper-controlled, and the
+  slid-X₂ family is rejected as its repair:** n = 1 is a one-rung-wide
+  E_ej window, so equal deep rungs (slid2/3, ratio 1.25/1.29) revert
+  n₁/n₂ to the flat chord-K density ratio, while the knob-free X₂ floor
+  reaches 1.83 (cap ≈ 1.44×) and the **RQ4-graded diagnostic
+  (2.2 : 1.5 : 1.3) nearly lands** (T2+T3 pass, W₁ 0.575 vs the 0.5 bar,
+  bins 2–8 to ≲ 0.02). Through a purely geometric forward model the
+  solvated histogram **independently demands the RQ4 target ratios** —
+  the external many-body calculation is the blocking arbiter; ε/missing-
+  mechanism fires only if it returns a plateau.
+- **I43 (H.2b).** **Geometry owns the KE shape; the scale is v_c's:**
+  the experimental mean-KE curve sits inside the [current-law,
+  ballistic] envelope at every top cell, and the required lift is
+  speed-selective (×2.2 at n = 1 → ×1.7 at n = 12 in energy; ×1.5 → ×1.3
+  in speed) — exactly the velocity-cap direction. W13-P1's premise
+  (v_c owns scale, not histogram shape) is pre-confirmed with numbers.
+- **I44 (H.2b).** **A trapped, droplet-retained ion class exists under
+  the current law** (new structural class): 6–11 % of fragments — inward
+  partners of off-center births, chord exposures up to K ≈ 18 — are
+  dissipated below the 0.117 eV solvation barrier and never eject
+  (quasi-static park at the far surface). Absent in the ballistic
+  bracket; invisible to the I⁺Heₙ bins; t_end-conditional; MD-arbitrable
+  by the W12 leg. Every prior wave's exposure map (droplet-R axis, K(R))
+  implicitly assumed ejection — position heterogeneity breaks that.
+- **I45 (H.2b).** **E₀ re-lands at the solvation scale under full
+  geometry** (optima at 0.22–0.27 eV ≈ E_solv vs the pinned-droplet
+  0.38–0.41 of I39): the position axis supplies the low-K mass the E₀
+  scan previously bought with a higher cliff, and bare is un-targeted
+  under the two-channel reading. Also confirmed with the margin floor:
+  no gate-open-at-birth class exists in-bounds (n_eject ≥ 13,
+  Σ(n_eject) ≥ 0.12 eV) — the W12b-P1 fast surface feeder is **predicted
+  absent** under both bounded E₀-law brackets p ∈ {0, 1}.
+
 ---
 
 ## 6. Boundaries — what these results do NOT establish
@@ -1121,6 +2099,15 @@ delivered code, the objection holds in a **sharper** form:
   campaign. Over the µs flight the detected read is RRK-evaporation-only by
   construction (OQ-E, design §4).
 
+- **NB (post-Wave-8, 2026-07-09).** The single-seed boundary is now sharper
+  than "tails are unstable": at a probe knob point the ensemble is
+  kinematically **congruent** (I26), so *no* amount of N or seeds changes
+  the delta cliff under this preset — the missing spread is structural
+  (deterministic congruent onsets), not statistical. Wave-8 detected reads
+  additionally verify that the whole pre-open analysis layer (exposure,
+  opening times, |G| leaks) is deterministic and exactly reproducible from
+  stored artifacts.
+
 ## 7. Open questions raised (documented, not built)
 
 - **OQ-A (rho_min):** a residual out-of-bubble cooling floor (dragged He
@@ -1145,6 +2132,15 @@ delivered code, the objection holds in a **sharper** form:
   the 17.5 % I⁺He bin **only with OQ-F's ε** (gateless boil-off without ε
   goes exactly to bare — G > 0 invariant, no barrier at the n = 1 direct
   channel); OQ-B and OQ-F are therefore one coupled mechanism discussion.
+  *Post-Wave-8 resolution of the weight question (§4f, I26/I27):* "high
+  enough f_int" does put the ensemble on the bare-candidate side — but
+  **all-or-none** (100 % suppressed above E* = 0.4612 eV, 0 % below; the
+  cliff is a delta at a knob point). The 43.5 % *fraction* is therefore
+  not a knob outcome at all: it requires injected ensemble heterogeneity
+  across E*_i (droplet-radius / onset / E_int(0) distributions). Two
+  cascade-side corrections: the sub-rung sliver below E* expresses
+  **n = 1** (I24's strangulation holds only at a full-rung leak), and the
+  bare-vs-budget discriminator is void until OQ-H is resolved.
 - **OQ-E (µs-flight channels, design §4):** over the 8.53 µs continuation
   the only active channel is RRK evaporation — no radiative cooling, no
   electronic relaxation, no residual-gas collisions. The detected read
@@ -1181,7 +2177,20 @@ delivered code, the objection holds in a **sharper** form:
   reclassification decision (fraction → absolute eV; row-14 scenario
   keying dissolves).
 
-**The consolidated register for all of these (OQ-B/E/F/G + OQ2 + the
+- **OQ-H (production Coulomb kinematics, post-Wave-8, 2026-07-09):** the
+  scenario budget `coulomb_available_eV` is bookkeeping-only (single
+  physics reader: the S2 onset deposit) — the Coulomb-explosion mechanics,
+  fragment speeds, ejection time, and cooling exposure are budget-blind
+  (I28: K₂₇₀ ≡ K₀₈₀ exactly). Physically the 2.70 eV channel means faster
+  fragments / earlier ejection / shorter exposure; none of that is
+  modeled. Until it is (initial-separation or charge-state kinematics, an
+  interchangeable arm behind the trigger), every budget-dependent
+  prediction — B.1(2) in both versions, the RQ3-vs-RQ4 bare-vs-budget
+  discriminator — is void in-model, while the absolute-E_int(0) map
+  transfers across budgets verbatim. Couples RQ1 (the E_avail provenance)
+  and the F5/production discussion.
+
+**The consolidated register for all of these (OQ-B/E/F/G/H + OQ2 + the
 resolved-but-uncrosschecked RRK-dof band) is `RESEARCH_QUESTIONS.md`
 (created 2026-07-09) — the entry document of the literature-research /
 domain-expert cross-validation phase.**
@@ -1193,7 +2202,7 @@ domain-expert cross-validation phase.**
 
 ## 8. Run inventory and reproduction
 
-**102 probe dirs** under `data/runs/` (`*_tier2probe_*` namespace, disjoint
+**116 probe dirs** under `data/runs/` (`*_tier2probe_*` namespace, disjoint
 from the F3 campaign glob): 45 (Wave 1) + 10 (Wave 2; the two per-n controls
 reuse Wave-1 dirs) + 10 (Wave 3, scratchpad-driven through the delivered
 pipeline — no repo-code change) + 22 new in Wave 4 (24-point grid; the two
@@ -1202,7 +2211,16 @@ in Wave 5 (gated s_eff ∈ {8,12,16,20,30} at τ=6.55, `density_scaled`;
 scratchpad-driven, no repo-code change) + **10 new in Wave 6** (gated f_int
 sweep: τ=6.55 s_eff ∈ {8,30} × f_int ∈ {0.24, 0.30, 0.35, 0.65} + τ=16.5
 s_eff ∈ {8,30} × f_int = 0.25; scratchpad-driven, no repo-code change; the
-f_int dimension rides the existing `_fiX.XX` tag). All gated dirs are stamped
+f_int dimension rides the existing `_fiX.XX` tag) + **6 new in Wave 8**
+(the cliff bracket, all gated τ=6.55: b080 f_int ∈ {0.57, 0.58} at s_eff=30
++ f_int=0.57 at s_eff=8, and the first-ever **b270** dirs — the 2.70 eV
+anchor f_int=0.192593 (tag `fi0.19`) + the pair f_int ∈ {0.17, 0.18}, all
+s_eff=30; scratchpad-driven, no repo-code change; `detection.npz` written
+at generation time via the Wave-7 route) + **8 new in Wave 9** (the
+E₀-mixture basis columns, all gated τ=6.55 b080: `s_eff=8` at
+f_int ∈ {0.53, 0.48, 0.45, 0.42, 0.20, 0.15, 0.10} + one `s_eff=30` companion
+at f_int=0.53; scratchpad-driven, no repo-code change; `detection.npz`
+written at generation time). All gated dirs are stamped
 `relaxation_time_ps = 1000.0` and carry the `cooling_spatial_gate` field in
 `cfg.json`.
 
@@ -1224,7 +2242,11 @@ read is regenerable deterministically (stage-private RNG stream keyed on
   scorer; table + optional CSV/figures; the numbers in §4.2 come from a
   full re-score of all 87 dirs on 2026-07-07; the §4e detected numbers from
   the 2026-07-08 re-score of all 102 dirs with `detection.npz` present —
-  ion/relaxed columns unchanged, the wiring identity).
+  ion/relaxed columns unchanged, the wiring identity; the §4f numbers from
+  the 2026-07-09 re-score of all 108 dirs — bridge + gated fi0.50/fi0.65
+  oracles exact, ledger residual uniform. NB: the b270 rows' staircase
+  columns are scored against the 9 Å / 0.80 eV anchor and are physically
+  N/A — §4f run-count note).
 - Stale-artifact policy (bridge findings §3) applies: any later
   config-surface change invalidates the dirs; regeneration is the recovery
   path.

@@ -4913,3 +4913,842 @@ Rule-2 carry status: unchanged — this is a documentation/convention
 change; `e_int_onset_eV` and the config surface are untouched. Any
 config rename or absolute-eV input arm is a future slice behind
 `[PROCEED TO IMPLEMENTATION]`.
+
+## Wave-8 suppressed-fraction cliff probe — design APPROVED (2026-07-09)
+
+**Decision (user, after brainstorm):** Wave 8 probes OQ-B/RQ3 at the
+weight level — does an in-band absolute `E_int(0)` split the fixed-seed
+ensemble ≈ 43.5 % suppressed (bare-candidate under the fragmentation
+hypothesis) / 56.5 % opened, and how wide is the Wave-6 cliff
+(0.40–0.52 eV bracket at τ = 6.55)? Approach selected: **analysis-first**
+(Approach B of the discussion) — a zero-MD step 1 computes the per-ion
+critical values `E*_i = sup_t[Σ(n_i(t))·e^(I_i(t)/τ)]` from the on-disk
+shed-free f_int = 0.65 dirs (per-ion cooling-exposure integrals through
+the shared bubble surface), yielding the predicted
+`suppressed_fraction(E_int(0))` ECDF; step 2 places only **7 targeted MD
+runs** (3 transition points at s_eff = 30, one s-blindness companion at
+s_eff = 8, and a 3-run 2.70 eV arm at fixed absolute E_int(0) — the
+first-ever probe data at the production budget, testing the RQ1-inverted
+"bare grows with budget" prediction). Suppressed stays inert (counted,
+not evolved): no fragmentation channel, no new physics, no new config
+surface. The optional τ = 16.5 Δ×-universality spot point was **dropped**
+at approval (deferred, not rejected).
+
+Full design: `TIER2_STAIRCASE_PROBE_PLAN.md` **Addendum D** (D.1–D.6,
+pre-registered W8-P1..P5, outcome shapes a/b/c, boundaries). Sweeps
+specified in absolute `E_int(0)` [eV] per the RQ1 adjudication.
+Execution stays behind `[PROCEED TO IMPLEMENTATION]`; nothing here
+discharges the F5 gate.
+
+## Wave-8 cliff-anatomy probe EXECUTED (2026-07-09)
+
+Executed under the `[PROCEED TO IMPLEMENTATION]` trigger, per Addendum D
+(design approved earlier the same day). Scratchpad drivers through the
+delivered generator / detection / report pipelines — **zero repo-code
+change**; **6 new MD runs** (not the planned 7 — see below) + the zero-MD
+step-1 analysis + detection over the new dirs + a full 108-dir re-score.
+
+**Step 1 (zero-MD).** The per-ion critical value from the on-disk
+shed-free f_int = 0.65 dirs is **one number, not a distribution**:
+E*_i = Σ(21)·E₀/E_int,i(∞) = **0.461219 eV** with ensemble width
+4·10⁻¹³ eV. Root cause verified in the artifacts: the probe ensemble is
+**100 kinematically congruent replicas** (center-placed deterministic
+onsets, one droplet radius → identical cooling exposures
+K_tot = 0.898297). Analysis validation: from-positions replication of the
+gated exposure exact to 1.9·10⁻¹⁵ eV; pre-open E_int linearity across
+f_int to 9.4·10⁻¹⁶ eV with **bit-identical** pre-open positions; the
+f0.50 opening time predicted/observed 6.33 ps. The "ECDF crossings" run
+placement therefore degenerated: a delta has one crossing → two-point
+bracket (the third 0.80 eV point had nothing to measure).
+
+**Step 2 (6 runs, every pre-registered number hit).** b080 f_int 0.57
+(E₀ = 0.4560 eV): 100/100 open at exactly the predicted **10.83 ps**,
+|G| ∈ [1.79, 2.12] meV (bound 2.12); at s_eff = 8 all 100 ions freeze at
+**n = 1** (first n = 1 in the program; n_detect = 1.00, 100 % frozen); at
+s_eff = 30 kinetic parking at n_detect = 2.00. b080 f_int 0.58: 100 %
+suppressed forever. b270 anchor (E₀ = 0.52 eV absolute): suppressed,
+shed-free, and **K₂₇₀ = 0.898297 ≡ K₀₈₀** — `coulomb_available_eV` has
+exactly one physics reader (the S2 onset deposit); the mechanics are
+budget-blind. b270 f_int 0.17 / 0.18: same absolute step (opens at the
+predicted 11.96 ps / never), 2/100 ions at n = 1 even at s_eff = 30.
+Re-score: 108 rows, ledger residual uniform ≈ 2.23·10⁻⁵ eV, bridge +
+gated fi0.50/fi0.65 wiring oracles exact.
+
+**Verdicts:** W8-P1 **confirmed exactly**; W8-P2 + P3 **refuted** (the
+cliff is a step — no E_int(0) splits the ensemble; the 43.5 % bare
+fraction is not a knob outcome; heterogeneity must be *injected*:
+outcome shape (b), pre-registered as equally decisive); W8-P4 confirmed
+sharpened (the sub-rung sliver E₀ ∈ (E* − D₀(1), E*) expresses **n = 1**
+— I24's kinetic strangulation holds only at a full-rung leak); W8-P5
+**refuted in-model at the mechanism level** → **OQ-H fired** (production
+Coulomb kinematics unmodeled; the absolute-E_int(0) gated map transfers
+across budgets verbatim; B.1(2) void in both versions; the RQ3-vs-RQ4
+bare-vs-budget discriminator currently untestable in-model).
+
+Full record: `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4f, insights I26–I28,
+OQ-B post-Wave-8 NB, new OQ-H, §6 congruence boundary NB, §8 inventory
+(102 → **108** dirs; first `b270` namespace entries — their staircase
+columns are N/A, scored against the 9 Å anchor by the shared scorer).
+Addendum D status block updated in `TIER2_STAIRCASE_PROBE_PLAN.md`.
+Nothing here discharges the F5 gate; the user adjudicates.
+
+## Wave-9 E0-mixture inversion — design APPROVED (2026-07-09)
+
+**Decisions (user, post-Wave-8 discussion):** (a) the E₀-mixture probe
+is worth running before any droplet-distribution slice; (b) the fitted
+p(E₀) is treated as a **physics claim** on E_int(0) provenance (RQ1
+solvation + electronic branching; a multi-modal fit would be a genuine
+fine-structure-branching prediction); (c) the s_eff-from-small-n-bins
+identifiability is recorded as **possible but not yet fixed** — no
+campaign re-scope.
+
+**Design (Addendum E of `TIER2_STAIRCASE_PROBE_PLAN.md`):** ions are
+non-interacting, so a weighted mixture of single-point runs is exactly
+an ensemble with p(E₀) supported on the grid — the experimental
+histogram inverts into an implied p(E₀) by non-negative least squares
+over **empirical per-run detected distributions** (never the analytic
+window map). Basis: 13 columns spanning E₀ = 0.08–0.52 eV at s_eff = 8
+(floors reached), of which 5 + the suppressed class are already on disk
+(Waves 4–8) — **8 new runs** (7 × s8 + 1 × s30 companion at the n = 2
+window for the kinetic-wall read). Pre-registered: W9-P1 (top bins fit
+with in-band mass), W9-P2 (the deep tail demands below-floor E₀ — the
+quantified hand-off to the droplet-size axis), W9-P3 (smooth unimodal
+p(E₀), mode ≈ 0.45 eV — multi-modality = RQ1 branching structure),
+W9-P4 (s30 re-fit shifts n = 1 → n = 2; identifiability observation
+only, per decision (c)). Conditional on RQ3 spec (b), the 9 Å exposure
+(RQ7), and the single-radius preset — the droplet axis is deliberately
+absent; its demand is W9-P2's output.
+
+The post-Wave-8 heterogeneity discussion (histogram-as-readout map, the
+two injection axes E₀ vs droplet-R exposure, the future
+droplet-distribution slice and its constraints) is recorded in
+`TIER2_STAIRCASE_PROBE_FINDINGS.md` §4f discussion block. Execution
+stays behind `[PROCEED TO IMPLEMENTATION]`; nothing here discharges the
+F5 gate.
+
+## Wave-9 E0-mixture inversion EXECUTED (2026-07-09)
+
+Executed under the `[PROCEED TO IMPLEMENTATION]` trigger, per Addendum E.
+Scratchpad drivers through the delivered generator/detection pipelines +
+a pure post-processing simplex fit — **zero repo-code change**; **8 new MD
+runs** (7 × `s_eff = 8` at f_int ∈ {0.53, 0.48, 0.45, 0.42, 0.20, 0.15,
+0.10} + 1 × `s_eff = 30` companion at f_int = 0.53), each with
+`detection.npz` at generation → **108 → 116 dirs**. Wiring oracles exact:
+ledger residual uniform 2.231·10⁻⁵ eV on all 8 new dirs; on-disk fi0.50
+s8/s30 + fi0.65 re-score unchanged (n_detect 3.05 / 4.09 / 21.00). New
+columns land on the flat-bottom window map (E₀ → n̄_detect: 0.424 → 2.04,
+0.384 → 3.38, 0.360 → 4.31, 0.336 → 5.22, 0.160 → 12.26, 0.120 → 14.48,
+0.080 → 16.62, all frozen; s30@0.424 → 3.02, 100 % time_exhausted — the
+kinetic wall).
+
+**Execution decisions (user, confirmed at trigger):** (1) **simplex**
+LS (non-negative + Σw = 1), not raw NNLS; (2) suppressed→bare per-ion
+under RQ3 spec (b); (3) deep-tail shortfall **reported not forced**;
+(4) W9-P4 a localized column swap, **no campaign re-scope**.
+
+**Verdicts.** W9-P1 **confirmed** — the histogram inverts cleanly:
+L2 = 0.016, Wasserstein-1 = **0.086 bins**, top six bins < 0.006 (bare
+fed solely by the suppressed→bare column, weight 0.436 ≈ 0.435; near-cliff
+density on the 22.6 meV rung window 0.780 %/meV at n = 1 vs predicted
+0.77, ratio to n = 2 = 2.08× vs 2.2×). W9-P2 **confirmed** — deep tail
+forces **≥ 9.6 %** below the 0.22 eV solvation floor (E₀ ≤ 0.192 eV
+columns) + n = 18–20 beyond the s = 8 basis floor: the droplet-radius
+axis's quantified demand (in-band [0.22, E*] mass 0.467; above-E* bare
+class 0.436). W9-P3 **refined** — the implied p(E₀) is smooth and
+unimodal but **concentrated at/above E\* ≈ 0.46 eV**, an in-band declining
+tail below, **not** an interior 0.45 eV bump; **no multi-modal / electronic-
+branching signature** (interior roughness is a fi0.45/0.48/0.50
+collinearity artifact) — provenance read: E_int(0) at the upper edge of /
+above the RQ1 band. W9-P4 **confirmed** — s = 30 refit of the near-cliff
+columns kills the n = 1 bin (resid −0.175), L2 → 0.182, W₁ → 1.398 (16×):
+s_eff detector-identifiable via n = 1, **recorded as possibility only**.
+
+Full record: `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4g + insights I29–I32,
+§0 wave table, §8 inventory (108 → **116**). Addendum E status block
+flipped to EXECUTED in `TIER2_STAIRCASE_PROBE_PLAN.md`. The fit builds
+**no p(E₀) sampling surface** and is conditional on RQ3 spec (b); nothing
+here discharges the F5 gate; the user adjudicates.
+
+## Waves 8 + 9 — code review + fixes applied (2026-07-09)
+
+Extensive review of the eleven Wave-8/9 scratchpad scripts (Wave 8:
+`step1_cliff_anatomy.py`, `w8_driver_080/270_anchor/270_pair.py`,
+`w8_detection.py`, `w8_rescore.py`, `w8_verify.py`; Wave 9: `w9_generate.py`,
+`w9_fit.py`, `w9_inventory.py`, `w9_ledger_check.py`). Both waves ran the
+**zero-repo-change** scratchpad route, so the review targets the analysis/driver
+scripts, not a repo diff. Load-bearing assumptions were verified against the
+actual repo (the gated K2 cooling law in `ion_propagation_step.py`, the
+`drag_gate_steepness` resolver in `ion.py`, `detection_stage` fields, the
+`integrated_i_he_abundance.csv` contract, and a real probe `cfg.json`).
+
+**Verdict:** the core science is correct and every documented Wave-8/9 number
+reproduces exactly — the `E*_i` derivation (shed-free ride → Σ constant →
+`sup_t[Σ·e^{I/τ}] = Σ(21)·E₀/E_end`, read at the converged relaxation-end
+`E_end`), the from-positions cooling replication (pre-step positions `rho[:, :-1]`
+vs post-step `E[:, 1:]`, matching `newton_cool_step` at fixed n), and the
+simplex mixture inversion (normalized columns + simplex weights → normalized
+mixture; `W₁ = Σ|ΔCDF|`). The issues found are latent-robustness / reporting-
+discipline items, **not** result-invalidating bugs.
+
+**Findings.**
+- **F1 (latent correctness).** `step1_cliff_anatomy.py` read `cfg["drag_gate_
+  steepness"]` raw, but the sim resolves the gated K2/pickup steepness via
+  `drag_gate_steepness(cfg)` = `cfg.potential_steepness` for the default
+  `density_proportional`/`erf_tied` gate (only `erf_independent` reads the
+  `drag_gate_steepness` field). Correct here **only by coincidence**
+  (`drag_gate_steepness == potential_steepness == 14.2`, gate
+  `density_proportional`); impact was bounded even so, since the steepness feeds
+  only the cross-check + `i_open_pred`, never the deliverable `E*_i` (stored
+  `E_end`).
+- **F2 (reporting discipline).** Validation residuals were `print`-only:
+  `step1`'s `drop_relax`, replication `err`, pre-open `scale_err`/`pos_err`, and
+  `w9_fit`'s `total_over` leak count ("expect 0"). A steepness/convention
+  mismatch or a leaked `n>20` ion (silently `np.clip`-folded into the top bin,
+  distorting the fit) would not halt.
+- **F3 (latent).** `step1`'s pre-open position-congruence prefix used ion 0's
+  opening column as the "all-suppressed" prefix; correct prefix is the first ion
+  to open (`min` over ions). Benign under the delta cliff (congruent ensemble),
+  wrong if the ensemble ever spreads.
+- **F4 / F5 (cleanups).** `w9_fit.column_distribution` annotated `-> np.ndarray`
+  but returns a tuple; `simplex_lsq` ignored `res.success`.
+- **F6 (cosmetic, not fixed).** `w8_rescore.py` docstring "109 dirs" (108 after
+  Wave 8); in-loop numpy import in `w8_detection.py`; `w9_generate.py` skip-policy
+  looser than the Wave-8 drivers' clobber guard. No correctness impact.
+
+**Interpretation caveat (recorded, physics not code).** In the Wave-9 fit the
+bare class is carried by the single `f_int = 0.65` column and its weight is placed
+at `E₀ = 0.52 eV` in the implied-p(E₀) table, but **any** `E₀ > E* = 0.461` yields
+the identical fully-suppressed bare delta — so the above-E\* mass *location* is
+unidentifiable by the mixture. The findings already report it as one lumped
+"mass above E\*" (0.436); the p(E₀) density near 0.52 eV should not be read as a
+resolved feature. Given decision (b) treats p(E₀) as a provenance claim, this
+degeneracy is worth an explicit line in §4g.
+
+**Fixes applied (scratchpad scripts only; zero repo-code change).**
+- `step1_cliff_anatomy.py`: **F1** — steepness now `drag_gate_steepness(
+  RunDirectory(...).load_cfg())`, the sim's own resolver (yields the same 14.2,
+  result unchanged); **F2** — asserts (`< 1e-9 eV` / `< 1e-9 Å`) on `drop_relax`,
+  the replication `err`, and the pre-open `scale_err`/`pos_err`, so a
+  steepness/convention mismatch now halts; **F3** — prefix uses `obs_open.min()`.
+- `w9_fit.py`: **F2** — `assert total_over == 0` on the leak check; **F5** —
+  `simplex_lsq` raises on `not res.success`; **F4** — return annotation
+  `tuple[np.ndarray, int]`.
+
+**Verification.** Both fixed scripts pass all asserts and reproduce the record:
+`step1` → `E* = 0.461218816 eV`, `K_tot = 0.898297`, replication `1.9·10⁻¹⁵ eV`,
+`pos_err = 0`, opening `6.33 ps`; `w9_fit` → leak `0`, **PRIMARY**
+`L2 = 0.01609 / W₁ = 0.08647`, **W9-P4 refit** `L2 = 0.18211 / W₁ = 1.39830` —
+matching §4g's `0.016 / 0.086` and `0.182 / 1.398`. No reported result changed.
+
+## RQ2/RQ3 deep-research run + adjudication RECORDED (2026-07-10)
+
+Joint RQ2 (per-shed KE release ε) + RQ3 (fate of the net self-unbound complex)
+literature/cross-validation pass — the entry step of the research phase toward
+the fragmentation channel that must precede a generative production run
+(the discussion also fixed the program order: resolve RQ2/RQ3 → build the
+fragmentation channel → build droplet-R heterogeneity → run the full-assembly
+production run at R0 = 2.666 Å / 2.70 eV, with the 2.666 Å kinematics /
+`n*(R)` check as its opening deterministic gate; RQ7 note below).
+
+**Deep-research run.** 99-agent fan-out (5 angles → 17 primary sources → 39
+claims → 25 adversarially verified, 20 confirmed / 5 refuted 0-3 → 7 findings),
+recorded as the joint **RQ2+RQ3 NB register** in `RESEARCH_QUESTIONS.md`.
+**Primary-source grounding.** The model's foundational paper —
+Albrechtsen/Stapelfeldt, *Nature* 623, 319 (2023)
+(`Stapelfeld_Paper_Ion_Solvation_in_Helium_Droplets.pdf`) — is itself a He
+shell around a **cation** (Na⁺Heₙ, Coulomb-ejected, dissociating in flight,
+VMI-detected) and directly settles both questions, upgrading the web
+literature's transfer-by-analogy to a same-physics-class reference.
+
+**User adjudication (2026-07-10).**
+- **RQ2 — ε ≈ 0, small ε neglected (CLOSED).** A shed drains exactly D₀(n); the
+  evaporated He leaves translationally cold. Sourced two ways: Stapelfeldt
+  explicitly neglects the dissociation-product KER (near-threshold statistical
+  dissociation), and Klots–Hansen gives only ε ≈ D/16 ≈ 0.5–0.6 meV
+  (finite-heat-bath reduction toward 0 for the few-mode shell); the feared
+  5–20 meV is ruled out (µs survival). Resolves findings OQ-F / the KE_shed
+  half of CALIBRATION_MAP OQ2 (the partition half was RQ1) → **OQ2 fully
+  closed**. Drain-D₀ convention retained, now sourced; a thesis-ready ε
+  statement is recorded in the register.
+- **RQ3 — spec (a) inert REJECTED; sequential shed-to-self-termination
+  ADOPTED.** The over-energized complex sheds sequentially (Stapelfeldt MD:
+  tens–hundreds of ps ≪ 8.5 µs), never rides intact. A genuinely
+  net-self-unbound complex (E_int > Σ, margin G > 0) **totally sheds to bare**
+  (G-invariant under ε ≈ 0 — the bare-peak source); the marginal class
+  self-terminates at small n on the ladder bottom. Endpoint deferred to RQ4.
+  Reframes findings OQ-B.
+- **RQ4 promoted with a sharpened, falsifiable target:** the incremental-binding
+  **ratios** D₀(1):D₀(2):D₀(3) ≈ 2.2:1.5:1.3 (decreasing-from-n=1, which the
+  Na⁺ flat-first-shell-plateau analogy does *not* supply), not merely "deep."
+  Flat-ladder + structured p(E₀) vs deep-ladder + smooth p(E₀) are
+  histogram-degenerate; RQ4 (structure) + the production budget test (RQ7) are
+  the two independent handles.
+
+**Doc edits.** `RESEARCH_QUESTIONS.md` — RQ2+RQ3 NB register (7 confirmed NBs,
+5 refuted, open questions), primary-source grounding block, RQ2/RQ3 adjudication
+block, and the RQ4 sharpened-target subsection; `CALIBRATION_MAP.md` — Update
+2026-07-10 blockquote + OQ2 register line marked resolved. **No code** — the
+implied model changes (remove the spec-(a) suppression in favour of a
+sequential-shed continuation; reshape the ladder bottom per RQ4) are deferred
+behind `[PROCEED TO IMPLEMENTATION]`; nothing here discharges the F5 gate. The
+next research target is the RQ4 deep-research pass (I⁺Heₙ incremental-binding
+ratios).
+
+## Wave-10 Addendum F AMENDED pre-execution — K-reframing + Step 1.5 + W10-P5 (user discussion, 2026-07-10)
+
+Post-RQ4-register discussion ("what is K; does less cooling mean more bare
+I⁺?") re-derived the gated fate structure in closed form and fed back into
+the planned-not-executed Wave 10 (`TIER2_STAIRCASE_PROBE_PLAN.md`
+Addendum F). **User adjudication:** fold into Wave 10 by amending Addendum F
+in place (no results depend on it yet) rather than opening a new wave.
+
+**The physics recorded (new F.2b).** The Wave-10 test variable is the
+dimensionless in-bubble cooling exposure `K = (1/τ)·∫(ρ_He/ρ_bulk)dt`
+(`E_int(t_eject) = E₀·e^{−K}`; measured 0.898297 at the pinned 9 Å
+condition, Wave 8). Droplet radius, τ, and the production kinematics (RQ7)
+are three handles on the one variable. At fixed sharp E₀ the fate map is
+closed-form: **bare ⇔ K < K\* = ln(E₀/Σ(21))** — the *under-cooled* class
+(cooling is the only process that can close the gate before ejection; "less
+cooling → more bare" holds, as a cliff, not a dial); just-above-K\* → deep
+strip n ≈ 1–3 (the n = 1 sliver); K ≫ K\* → shallow strip mid/high-n. The
+no-shed leak formula `Σ(21)·(1 − e^{−(K−K*)})` reproduces the Wave-6
+relaxed floors (f_int = 0.24 → n ≈ 11 vs measured 10.96; 0.50 → n ≈ 2–3 vs
+2.7–3.1) — MD-validated at the pinned K. Consequence: one K-distribution
+straddling K\* serves **both** experimental tails (bare below; retained
+mid/high-n above) — the width Wave 9 put in p(E₀) may be a K spread.
+
+**Amendments to Addendum F (all pre-execution, document-only):**
+
+1. **F.2b** — the K reframing + closed-form fate map (above).
+2. **F.3b / Step 1.5** — a zero-MD semi-analytic K forward model: calibrate
+   K(R_droplet) from the existing probe trajectories (anchor K = 0.898297 at
+   ~27.9 Å + transit scaling), propagate a stated droplet prior to a bare
+   fraction P(K < K\*) + leak→terminal-n histogram + Wasserstein vs
+   `integrated_i_he_abundance.csv`, scanned over sharp E₀ ∈ ≈ [0.24, 0.32] eV
+   × two K-scales. De-risks Step 2: the droplet slice is built only against
+   a live (median, width) target, otherwise demoted to tail-shape duty.
+3. **W10-P3 direction corrected** — bare at narrow E₀ comes from the
+   **small-droplet / early-ejection / low-K** end (K\*(0.28 eV) ≈ 0.398 vs
+   the pinned 0.898), not the original "implausibly deep/slow-cooling
+   droplets" (deep droplets *raise* K and serve the shallow-strip mid/high-n
+   weight); P3's falsification now requires failure at both K-scales.
+4. **W10-P5 (new, pre-registered)** — the K-scale / RQ7 leg: at the
+   production-kinematics estimate (fragment speed ×√(2.70/0.80) ≈ 1.84 →
+   K₀ ≈ 0.49, E\* ≈ 0.31 eV) the cliff lands near the ensemble median and
+   narrow E₀ ≈ 0.28 eV plausibly splits ≈ 43/57 with modest droplet width.
+   Prediction: P3 fails at the probe K-scale, succeeds at the production
+   scale → resolution "narrow E₀ + RQ7 kinematics", the RQ7 arm a
+   **co-requisite** of Step-2 adjudication. F.8 outcome (b) gains the
+   corresponding second exit (only both-K-scale failure routes to the RQ1
+   super-solvation source). The 0.49 estimate is a speed-scaling bracket,
+   not model output — RQ7 stays unmodeled.
+
+**No code, no runs** — Wave 10 remains planned-not-executed; Steps 1/1.5 are
+zero-MD scratchpad work under the trigger, Step 2 / F.5 gated as before;
+nothing here discharges the F5 gate. Cross-refs: `RESEARCH_QUESTIONS.md` RQ1
+(the narrow-E₀ argument), RQ2/RQ3 adjudication (suppressed → total shed makes
+the under-cooled class the bare source), RQ4 register (flat ladder → the tail
+reverts to reservoir/race), RQ7 (the K-scale conditionality).
+
+## Wave-10 Steps 1 + 1.5 EXECUTED — zero-MD width decomposition + K forward model (2026-07-10)
+
+Executed under the `[PROCEED TO IMPLEMENTATION]` trigger, same day as the
+Addendum-F amendment: scratchpad route (`wave10_step1_step15.py` + three CSV
+scoreboards in the session scratchpad), **zero new MD, zero repo-code change,
+no run artifacts modified** — a pure re-read of the 41 on-disk gated
+(`_cgds`) probe dirs against the F.2b closed form and
+`data/reference/integrated_i_he_abundance.csv`. Full results: findings
+**§4h**, insights **I33–I36**. Headlines:
+
+- **Step 1 (W10-P1 CONFIRMED).** Per-ion exposure integrals off the stored
+  trajectories reproduce the Wave-8 anchor (K = 0.897541 vs 0.898297,
+  0.08 %; per-ion E\*_i spread 4.15·10⁻¹³ eV = the Wave-8 delta re-derived);
+  every gated column's n_detect at fixed (E₀, droplet) is ≤ 1 bin wide
+  (MAD 0.04–0.88 He). The histogram width lives on the E₀/K axes only.
+  Bonus: the b270 columns re-confirm absolute-E₀ budget-invariance in the
+  detected read.
+- **Step 1.5 validation.** The (E₀, K) fate map (bare ⇔ K < K\*; no-shed
+  leak + exact ε = 0 descent) matches the 13 measured s_eff = 8 columns to
+  0.84 He mean, ≈ exact at the cliff; pinned-trajectory
+  K(R) has d ln K/d ln R ≈ 1.23 (E\*: 0.276 eV at N = 250 → 0.462 at 2000 →
+  1.75 at 16000).
+- **W10-P3 CONFIRMED at the probe K-scale — by ~19×, not a margin.** At
+  K₀ = 0.898, narrow E₀ ≈ 0.28 eV yields ≤ 2 % bare under every stated
+  droplet prior; 43.5 % bare needs log-normal δ ≈ 12 vs Kornilov 0.625.
+  The droplet axis also fails the tail *shape* at this scale (W₁ ≥ 2.7
+  bins) — the W10-P2 analytic pre-verdict is negative at probe K.
+- **W10-P5 CONFIRMED — the split verdict.** At the production speed-scaling
+  bracket (K₀ ≈ 0.49) the cliff sits mid-ensemble: (E₀ = 0.28 eV,
+  δ = 0.80) lands **bare 42.6 %, W₁ = 0.993 bins, untuned**, monotone
+  small-n envelope; n = 1 deficit residual 1.29× ≤ the ~1.4× F.5 taper cap
+  (W10-P4 pre-read: coverable); mid-tail n = 2–4 overshoot open.
+- **Consequence.** The amended F.8 outcome-(a)-via-RQ7 exit is the live
+  resolution: **"narrow E₀ + RQ7 production kinematics"** — the RQ1
+  super-solvation burden does not fire on this evidence, and **the RQ7
+  kinematics arm is co-requisite for any Step-2 adjudication**; the droplet
+  slice's job shrinks to the width/shape of the K-distribution.
+
+**Boundaries (findings §4h):** production K-scale is a ballistic bracket
+(RQ7 unmodeled, no 2.70 eV MD); K(R) is the pinned-trajectory approximation;
+n_eject = 21 for all R in-model (physical incomplete dressing favours
+narrow-E₀ further); conditional on RQ3 sequential-shed + ε ≈ 0. Analytic
+pre-verdicts — **Step 2 (droplet slice, gated) arbitrates**; reported, not
+auto-adjudicated; nothing here discharges the F5 gate. Doc edits:
+findings header/§0 table/§4h/I33–I36; Addendum F status flipped to
+"Steps 1+1.5 executed"; this entry. The user adjudicates the follow-through
+(Step-2 build order vs the RQ7 kinematics arm).
+
+## Post-Wave-10 program order SET — K₂.₇₀ first; narrow-E₀ reading endorsed conditional on RQ7 (user decision, 2026-07-11)
+
+Discussion of the Wave-10 result (what did we get; can the experimental
+signal be reached *without* a broad E₀ sweep). **User adjudications:**
+
+1. **The narrow-E₀ reading is endorsed as the working picture, conditional
+   on RQ7.** The E₀ ensemble-*width* demand is dissolved (one sharp E₀ in
+   the solvation band + the physical droplet distribution); what survives is
+   the scalar E₀ calibration sweep. Recorded as the Wave-10 NB under RQ1.
+2. **A physical tens-of-meV solvation smear on E₀ is endorsed as useful**
+   (sourced by the NB-RQ1-3 reorganization physics; expected to help the
+   n = 1/n = 2 bins) — to be carried as a sensitivity leg of the droplet
+   slice, NOT as a return to a broad p(E₀).
+3. **RQ7 promoted to the active next target** (status block added under RQ7
+   in `RESEARCH_QUESTIONS.md`): K₂.₇₀ is the single number that decides the
+   branch — near ~0.5 → narrow E₀ stands; near the probe 0.9 → the
+   super-solvation route reopens and the Wave-10 landing inverts.
+
+**Program order (supersedes/refines the 2026-07-10 RQ2/RQ3-entry order
+"fragmentation channel → droplet-R → production run" by putting the
+kinematics measurement first):**
+
+- **Move 1 — RQ7 kinematics probe (next wave; smallest, most decisive).**
+  Deterministic Tier-0-style run at the production separation
+  R₀ = 2.666 Å (2.70 eV/fragment; the 9 Å condition is the same Coulomb
+  formula at 0.80 eV) with the locked drag bundle; **measure K₂.₇₀** via the
+  Wave-10-validated exposure integral, replacing the ballistic ×0.545
+  bracket (pre-registered expectation: K₂.₇₀ ∈ ≈ [0.5, 0.7] — drag eats part
+  of the extra speed). Independent discriminator: final fragment speeds vs
+  `vmi_iplus_he.csv` (pins K₀ with no evaporation physics). Design doc must
+  argue drag-calibration validity at ~1.8× speed and include the n\*(R₀)
+  opening check. Behind `[PROCEED TO IMPLEMENTATION]`.
+- **Move 2 — sequential-shed detection arm (RQ3 follow-through).** Replace
+  the spec-(a) "suppressed rides at n = 21" detection semantics with the
+  adjudicated sequential shed-to-self-termination continuation (design doc +
+  interchangeable enum arm) so suppressed → bare is literal in the MD read,
+  not an analytic re-map. Behind the trigger.
+- **Move 3 — Step-2 droplet slice, sharpened targets.** Built only after
+  Moves 1–2, against the Step-1.5 quantified targets: (i) verify the
+  (E₀, K) forward model where valid; (ii) arbitrate the n = 2–4 overshoot
+  (no-shed bias vs prior shape vs n_eject(R)); (iii) carry the
+  tens-of-meV E₀-smear sensitivity leg. **RNG-draw-order discipline:** both
+  new sampling surfaces (droplet radii, E₀ smear) must draw from a separate
+  generator or after all existing draws (forbidden-list item) — to be
+  stated explicitly in the slice design.
+- **Parallel track (non-blocking) — RQ4 external many-body I⁺Heₙ
+  calculation** (the n = 1 residual, F.5's non-tuned gate); RQ5 stays
+  parked (the detector read behaved textbook-Klots).
+- **Before any campaign spend — F5 re-scope adjudication.** The original F2
+  Stage-1 s_eff×τ co-fit predates the probe program's findings (detector
+  nearly s-blind; staircase = showcase; the histogram's information lives on
+  (E₀, K)). The N = 500 campaign is to be re-scoped around
+  (E₀, droplet prior, K validation) with s_eff/τ as reported secondaries —
+  a standing adjudication item, not yet designed.
+
+**Doc edits this entry covers:** `RESEARCH_QUESTIONS.md` — Wave-10 NB under
+RQ1 (narrow-E₀ + smear + measurability consequence) and the RQ7
+promoted-status block; this log entry. No code, no runs; every Move stays
+behind `[PROCEED TO IMPLEMENTATION]` with its own design document.
+
+---
+
+## Wave-11 (Move 1, RQ7 kinematics probe) DESIGNED — Addendum G added (user discussion, 2026-07-11)
+
+Move 1 of the post-Wave-10 program order detailed into its design document:
+**`TIER2_STAIRCASE_PROBE_PLAN.md` Addendum G — Wave 11: measure K₂.₇₀.**
+Design decisions recorded there; the load-bearing ones:
+
+- **Primary leg = the anchor-congruent suppressed ride**, not a literal
+  fixed-mass Tier-0 run: `R0_GS_angstrom = 2.666` + E_int(0) = 0.52 eV (the
+  Wave-8 2.70 eV anchor value; suppressed for any K < K\*(0.52) = 1.02 →
+  shed-free, mass-constant m = I⁺He₂₁, no evaporation/pickup draws) — so
+  S_K = K₂.₇₀/K₀.₈₀ compares like with like against the Wave-8 K = 0.898297.
+  A literal `mass_scenario=fixed` m_eff leg is retained as an *optional*
+  convention-sensitivity check only.
+- **The two Move-1-mandated validity items are in-wave measurements, not
+  prose:** (i) drag-band validity at ~1.84× speed → report the beyond-band
+  exposure share of K; (ii) the n\*(R₀) opening check → report the
+  overlap-segment share (pair separation < 2×4.67 Å) + the geometry
+  statement. Both identified biases push the measured K *up* → K₂.₇₀ is an
+  upper bound in those respects, which makes a ≤ 0.7 landing conservative
+  and forces any inversion verdict to survive the decompositions first.
+- **Step 3 closes the loop zero-MD:** re-run the F.3b scan with the measured
+  K₂.₇₀ replacing the ballistic ×0.545 bracket; W11-P5 pre-registers the
+  Wave-10 landing surviving the replacement. Decision structure and outcome
+  shapes (a)–(d) pre-registered in G.1/G.7, including the honest exit (d):
+  validity failure → drag-recalibration research item, no silent
+  extrapolation.
+- New opening oracles: config-load acceptance at 2.666 Å (a refusing guard
+  is a finding), drag-off ballistic integrator check at the ~11× steeper
+  Coulomb onset, tag non-collision (first dirs off 9 Å geometry — tag must
+  carry budget *and* geometry).
+
+**Doc edits this entry covers:** `TIER2_STAIRCASE_PROBE_PLAN.md` (new
+Addendum G, G.1–G.8, predictions W11-P1–P5); `RESEARCH_QUESTIONS.md` — one
+pointer line under the RQ7 promoted-status block. **No code, no runs** —
+the MD leg (1 primary dir + optional legs) stays behind
+`[PROCEED TO IMPLEMENTATION]`; the control re-read and Step 3 are zero-MD
+scratchpad re-analysis under the standing convention. Nothing here
+discharges the F5 gate.
+
+---
+
+## Wave-11 TRIGGERED — opened companion promoted to default (user adjudication, 2026-07-11)
+
+Two user decisions, same message: (1) the **opened companion
+(E_int(0) = 0.28 eV at the 2.666 Å geometry) is promoted from optional to
+default** — Wave 11 runs two dirs (suppressed primary at 0.52 eV + opened
+companion), leaving only the fixed-mass convention-sensitivity leg
+optional/boundary-conditional; (2) **`[PROCEED TO IMPLEMENTATION]` given**
+for the Addendum-G MD leg. Addendum G status blockquote, G.3 run matrix,
+G.5 Step 4, and G.8 gating updated accordingly. Execution record follows
+in this log when delivered.
+
+---
+
+## Wave-11 DELIVERED — K₂.₇₀ = 0.746 measured; W11-P2/P5 refuted as registered; landing re-calibrates in-band; 42 % beyond-band caveat (2026-07-11)
+
+Executed same day as the trigger, per Addendum G as amended (companion
+default). Scratchpad route (`wave11_gen_runs.py`, `wave11_measure_K.py`,
+`wave11_step3_scan.py` + two scoreboard CSVs, scratchpad); **two new MD
+dirs** under `data/runs/` — the first off 9 Å geometry, tag =
+probe tag + driver-level `_R2.67` suffix:
+`9A_drag_shared_pure_cubic_N50_tier2probe_b270_mix_k1.00_l0.90_fi0.19_fr0.10_tau6.55_s8.00_cgds_R2.67`
+(suppressed primary, E₀ = 0.52 eV) and `..._fi0.10_..._cgds_R2.67`
+(opened companion, E₀ = 0.28 eV); both carry the full
+neutral/ion/relaxation/detection artifact set. **Zero repo-code change.**
+Full numerical record: `TIER2_STAIRCASE_PROBE_FINDINGS.md` **§4i** +
+insights **I37–I40**. Headlines:
+
+- **Step 0 all green:** config-load accepts 2.666 Å; tags free; the
+  pure-cubic b = 0 refusal fired correctly (oracle ran drag-free at
+  b = 10⁻¹²); ballistic dt oracle passes at 8.8·10⁻⁵ once the bundle's
+  0.1168 eV effective-binding well is included in the analytic reference.
+- **W11-P1 exact pass** (control re-read K = 0.897541, spread 10⁻¹³);
+  **K₂.₇₀ = 0.74603** — **W11-P2 refuted** (above [0.5, 0.7]; S_K = 0.831,
+  the ballistic ×0.545 bracket is wrong — drag eats the extra speed);
+  **W11-P3 confirmed** (congruence 10⁻¹³; opened-companion m(t)-feedback
+  −2.2 %); **W11-P4 split** (overlap share 8.0 % in-band; **beyond-band
+  share 41.7 % — far above pre-registration, the load-bearing caveat**;
+  both biases up → 0.746 = upper edge, ballistic 0.49 = hard lower
+  bracket); **W11-P5 refuted as registered** (pre-registered
+  E₀ ∈ [0.24, 0.32] reaches ≤ 18 % bare at measured K) — but the
+  fate-map scan lands the bare peak at **E₀ ≈ 0.37–0.43 eV for every
+  stated prior** (inside RQ1's [0.2, 0.5]), untuned best **W₁ = 0.496**
+  (E₀ = 0.41, δ = 0.80), better than Wave 10's 0.993; the bare-crossing
+  E₀ tracks E\*(K₀) over the whole K bracket (0.30–0.41 eV) so the
+  caveat moves the calibration, not the verdict. **Closed form validated
+  at production kinematics** (companion MD n_detect 5.76 vs closed-form 6).
+  **First VMI-side constraint:** model production speeds undershoot the
+  experimental I⁺He peak ~2–2.5× (over-drag direction, consistent with
+  the beyond-band caveat).
+- Incidental: detection-stage seeding requires the *saved* relaxation
+  checkpoint (an `IonCheckpoint`), not the in-memory `RelaxationResult` —
+  the design-§1-item-5 convention, hit and honored in the driver.
+
+**Standing adjudication items for the user (reported, not
+auto-adjudicated):** (1) whether the re-calibrated landing
+(E₀ ≈ 0.38–0.41 eV at measured K) supersedes the Wave-10 narrow-E₀
+endorsement's 0.28 eV working value — the RQ1 NB scalar sweep would move
+up-band; (2) whether the **drag-recalibration research item** fires (the
+42 % beyond-band share + the ~2× VMI speed undershoot both say the locked
+pure-cubic law is exercised outside its validity at production speeds);
+(3) how the worsened n = 1 deficit (1.5–2.9×, δ-dependent) re-weights RQ4
+vs the E₀-smear leg for Move 3. **Doc edits this entry covers:**
+`TIER2_STAIRCASE_PROBE_FINDINGS.md` (§4i, I37–I40, status header);
+`TIER2_STAIRCASE_PROBE_PLAN.md` (Addendum G status → EXECUTED);
+`RESEARCH_QUESTIONS.md` (RQ7 measured-status note). Nothing here
+discharges the F5 gate; Moves 2–3 stay behind their own design docs +
+trigger.
+
+---
+
+## Two-channel bare-I⁺ reading ENDORSED — arbitration re-targeted to the solvated branch; RQ8 opened; RQ4 promoted to critical path; Waves 12/13 designed (user adjudication, 2026-07-11)
+
+**Experimental input (user, 2026-07-11, post-Wave-11 discussion):** the
+detected mean kinetic energy per fragment falls monotonically from
+**~3 eV at n = 0 to < 0.1 eV at n = 17**, and the bare-I⁺ KE is
+substantially larger than every snowball's — the experimental reading is
+that **bare I⁺ is produced by a different ionization channel** than the
+I⁺Heₙ ejection. (The delivered `vmi_iplus_he.csv` is the mass-131 = n = 1
+gate — its 10.1 Å/ps peak ↔ 0.69 eV; exporter README `sqrt(127/131)`.)
+
+**Discussion findings recorded (scratchpad pre-reads
+`wave11_v_of_R.py` / `wave11_solvated_rescore.py`, zero MD):**
+
+- **Class-conditioning check:** under the current law the speed–size
+  correlation is compressed to ~1.5× across the whole prior (terminal
+  choking; v(R) = 6.0/5.2/3.8/3.2 Å/ps at N = 250/500/2000/8000, detected
+  est. 7.7/6.8/5.1/4.2) — no class reaches the n = 1-gated 10.1 Å/ps, so
+  the Wave-11 over-drag conclusion survives correct conditioning.
+- **Solvated-branch re-score (the two-channel target):** scoring n ≥ 1
+  renormalized (experimental solvated n₁ = 31.0 %, n₂₋₄ = 30.5 %), the
+  delivered construction **fails structurally at every (E₀, prior)**:
+  best W₁ = 1.06, solvated n₁ ≤ 17 %, and only at high E₀ where the
+  model over-produces now-surplus bare (54–68 %). Flat rungs feed flat
+  small-n bins (n₁ ≈ n₂ ≈ n₃); the experimental steep decline
+  (n₁/n₂ = 2.18) reads the **ladder bottom** — converging on RQ4's
+  pre-registered target ratios (D₀(1):D₀(2):D₀(3) ≈ 2.2:1.5:1.3).
+- **Vindication + cost:** the mechanism's structural refusal to make
+  bare (I8/I17/I22) was never a bug — bare was another channel's job;
+  conversely the Wave-9/10/11 "bare lands untuned" results become
+  channel-branching coincidences, not model observables.
+
+**User adjudications (endorsed as a package):**
+
+1. **Arbitration observable re-targeted to the solvated branch:** the
+   n ≥ 1 histogram renormalized + the solvated (n, mean-KE) curve
+   (0.69 eV at n = 1 → < 0.1 eV at n = 17). The bare bin becomes a
+   channel-branching quantity (upper bound / mixed), **not** a model
+   target, pending RQ8.
+2. **RQ8 opened** — bare-channel provenance & branching (candidates:
+   inner-turning-point vertical ionization ~2.8–3.0 eV singly charged;
+   I⁺+I²⁺ born at 5.4 eV partially dissipated; discriminators: I²⁺ at
+   m/z ≈ 63.5, bare-KE distribution shape/slow shoulder, size
+   correlation).
+3. **RQ4 promoted to the critical path** (from "parallel non-blocking"):
+   the solvated small-n shape is its direct observable; the flat Form-U
+   bottom is falsified at ~2× on that branch, drag-law-robustly.
+4. **RQ3 partially un-anchored:** "suppressed → bare" loses its
+   experimental anchor (an evaporative bare class would arrive slow,
+   ~0.2–0.3 eV — check for a slow shoulder under RQ8); the *marginal*
+   self-termination-at-small-n sub-case gains weight.
+5. **Program order: Wave 12 (position heterogeneity) → Wave 13 (drag
+   saturation)**, designed in `TIER2_STAIRCASE_PROBE_PLAN.md`
+   **Addendum H**; the position axis and the RQ4 ladder depth are the
+   two candidate sources of the small-n steepness, separated by the
+   (n, KE) curve (ladder moves bins, not speeds; position moves both).
+6. **Prerequisite export:** the experimental (n, mean-KE) table becomes
+   a small provenance-documented reference CSV under `data/reference/`
+   (data-contract convention; MATLAB source of truth + exporter) before
+   it anchors any calibration.
+
+**Doc edits this entry covers:** `TIER2_STAIRCASE_PROBE_PLAN.md`
+(new Addendum H — Waves 12/13 design); `RESEARCH_QUESTIONS.md` (new RQ8;
+RQ4 critical-path promotion note; RQ3 un-anchoring note; RQ7
+law-conditionality cross-note; coupling-map row). `CALIBRATION_MAP.md`
+propagation (re-targeted Tier-2 observable; the proposed Bounded v_c
+knob) is **pending** — to be folded in when Wave 13's arm is actually
+built. **No code, no runs** — both waves and the new drag arm stay
+behind `[PROCEED TO IMPLEMENTATION]`; nothing here discharges the F5
+gate.
+
+---
+
+## Addendum H AMENDED — analytic feasibility pass (H.2b) + W12b dressing arm + F.5 graded-floor lever admitted (user endorsement, 2026-07-11)
+
+Discussion while the RQ4 external many-body calculation runs (several
+weeks): can the **physically-bounded lever set** reproduce the solvated
+targets without waiting? User endorsement of the resulting design,
+`TIER2_STAIRCASE_PROBE_PLAN.md` Addendum H amended same day:
+
+1. **H.2b — the zero-MD analytic feasibility pass, now the gate for all
+   MD legs.** The validated F.2b fate map extended on paper by the
+   bounded levers (L1 position geometry — volume weight + 3–6 Å margin;
+   L2 `n_eject(depth)` tied to the existing ρ̂ profile, zero free
+   parameters; L3 the F.5 graded-ladder **floor variant**; L4 speed
+   scale bracketed, v_c stays W13's). Pre-registered reachability
+   question against (solvated 31.0/14.2 % + the 0.69 → < 0.1 eV KE
+   curve); outcome shapes: (a) reachable at the floor → MD legs verify,
+   (b) reachable only with the slid transition → recorded as a
+   *prediction for* the RQ4 calculation, (c) unreachable → the F.5
+   escape clause fires (ε/RQ2 or missing mechanism) at zero MD cost.
+2. **H.3b — Wave 12b, the `n_eject(depth) = round(21·ρ̂(d_birth))`
+   dressing arm** (new physics surface behind its own trigger;
+   per-atom arrays already exist → no schema change; `full` vs
+   `density_tied` enum with byte-identity + inert-at-center wiring
+   oracles; A/B/C chain vs Wave-11 center-pinned and W12 position-only).
+   Fingerprint prediction W12b-P1: its n = 1–3 fragments are the
+   *fastest* in their bins — the anti-RQ4 discriminator on the (n, KE)
+   curve. Retires the §4h-boundary-3 full-dressing strain by modeling
+   it.
+3. **F.5 floor variant admitted as knob-free** (usage note appended to
+   F.5): D₀(1) = 13.3 meV (X₂/³Π) with transition-at-n=1 is fully
+   [IHe05]-sourced — the external calculation arbitrates only the
+   transition *location* (slid variants = the knobbed family, reported
+   separately). The 2.2× solvated residual exceeds the ~1.4× cap alone;
+   the taper now stacks with the geometric levers instead of carrying
+   the residual.
+4. **Sequencing (H.5 updated):** H.2b → W12 → W12b → W13; RQ4 returns
+   as arbiter of L3; RQ8 + the (n, KE) export stay arbitration entry
+   gates.
+
+**No code, no runs** — H.2b is scratchpad zero-MD under the standing
+convention but still awaits the trigger; W12/W12b/W13 each behind their
+own `[PROCEED TO IMPLEMENTATION]`. Nothing here discharges the F5 gate.
+
+---
+
+## Addendum H.2b DESIGN FROZEN — user decisions D1–D7 + solvated mean-KE table (user discussion, 2026-07-11)
+
+Pre-execution design discussion of the H.2b analytic feasibility pass
+(three rounds), all open points settled and folded into
+`TIER2_STAIRCASE_PROBE_PLAN.md` §H.2b ("design freeze" block, D1–D7):
+
+1. **D1** — E₀ stays a sharp scalar scanned over the full RQ1 band
+   [0.2, 0.5] eV (outer dimension; not pinned at the Wave-11 landing —
+   bare is un-targeted, so the scan re-lands freely).
+2. **D2** — the constant-E₀ convention under L2 was flagged as naive
+   (user: the surface class would only feed bare). Adopted: the
+   parameter-free bracket family E₀ ∝ (Σ(n_eject)/Σ(21))^p, p ∈ {0, 1},
+   both reported. **Pre-derived insight recorded:** under BOTH brackets
+   the surface class is suppressed (under-cooled either way — p = 0
+   raises K\* while the chord K falls; p = 1 leaves K\* uniform and
+   short chords still undershoot it), so the W12b-P1 fast n = 1–3
+   surface feeder exists only for unsourced super-proportional E₀
+   decay; a (depth, p) gate-open-at-birth diagnostic map and a per-bin
+   feeder map (birth-depth/chord decomposition) are first-class
+   outputs.
+3. **D3** — the exposure-law bracket extends to the histogram side: the
+   full fate map runs at both the current-law and ballistic speed
+   profiles; outcome (c) fires only if unreachable at both (protects
+   the verdict from the Wave-11 over-drag caveat).
+4. **D4** — droplet priors: the stated Wave-10/11 family (Kornilov
+   δ = 0.625 about ⟨N⟩ = 2000 primary; δ = 0.40/0.80; pickup-weighted).
+5. **D5** — the margin band 3–6 Å is firm; the lever-interaction map
+   (margin ↔ reachable n_eject / chord-K, from the code's actual
+   profile) is computed first and heads the scoreboard; a near-inert L2
+   inside the firm band is a finding, not grounds to loosen bounds.
+6. **D6** — pre-registered reachability bar H2b-T1..T5 (solvated
+   W₁ ≤ 0.5 bins; n₁/n₂ ∈ [1.75, 2.6]; n₁ ∈ [26, 36] %; the
+   experimental KE curve inside the [current-law, ballistic] envelope
+   with a single speed scale to ≤ ×1.5 per bin — the W13 v_c preview;
+   bare ≤ 43.5 % hard / flagged > ~15 %). Reachable = T1–T4
+   simultaneously at one in-bounds lever point.
+7. **D7** — the user-supplied solvated mean-KE table (**mean** kinetic
+   energies; provenance-pending, the H.2 export prerequisite stands):
+   bare 2.9 / n₁ 0.974 / n₂ 0.545 / n₃ 0.390 / n₄ 0.341 / n₅ 0.289 /
+   n₆ 0.248 / n₇ 0.201 / n₈ 0.176 / n₉ 0.154 / n₁₀ 0.138 / n₁₁ 0.122 /
+   n₁₂ 0.105 eV, n ≥ 13 < 0.1 eV one-sided. **Supersedes the 0.69 eV
+   n = 1 anchor** in H.2 and the 2026-07-11 two-channel entry above.
+   Two reads recorded: the Wave-11 companion already matches the
+   experimental n = 6 speed within ~6 % (the anomaly is a missing
+   *fast small-n class*, not a uniform rescale); bare 2.9 eV sits above
+   the ≈ 2.71 eV per-fragment ballistic ceiling of the 2.70 eV channel
+   → channel-distinct kinematically, independent of drag (RQ8
+   datapoint).
+
+**Doc edits this entry covers:** `TIER2_STAIRCASE_PROBE_PLAN.md`
+(Addendum H status blockquote second-amendment note; H.2 item-2 KE
+values superseded; new §H.2b design-freeze block D1–D7 + KE table);
+`RESEARCH_QUESTIONS.md` (RQ8 experimental-input NB: mean-KE table +
+the kinematic-ceiling datapoint).
+
+**No code, no runs** — H.2b execution (scratchpad, zero-MD) still
+awaits `[PROCEED TO IMPLEMENTATION]`; W12/W12b/W13 unchanged behind
+their own triggers. Nothing here discharges the F5 gate.
+
+---
+
+## H.2b analytic feasibility pass EXECUTED — outcome (c) at the frozen bar; the miss localizes to the RQ4 taper + v_c; trapped class found (2026-07-11)
+
+Executed same day as the design freeze, under the
+`[PROCEED TO IMPLEMENTATION]` trigger. Scratchpad route
+`h2b_feasibility.py` — **zero MD, zero repo-code change, no artifacts
+touched**: a 1D two-body chord forward model (Coulomb + solvation well +
+gated pure-cubic drag; ballistic bracket = drag off) importing the
+repo's ladder/density/bundle sources; 20 000 molecules → 40 000 fragment
+chords per bracket, importance-reweighted over the D4 priors × D5
+margins; the unified F.2b fate map (E_ej = E₀ᵢ·e^(−K); suppressed iff
+E_ej > Σ(n_eject); exact ε = 0 descent; detected ≈ floor).
+
+- **Wiring oracles all pass:** Σ(21) exact; K = 0.74460 vs the Wave-11
+  MD 0.74603 (0.19 %) at production and 0.89767 vs 0.89754 (0.014 %) at
+  9 Å; t_exit/v_peak/v_detect 4.60 ps/10.53/4.13 vs 4.62/10.51/4.11;
+  ballistic vs analytic 4.3·10⁻⁴; E\* = 0.3955 vs 0.396; companion
+  descent n = 6 exact.
+- **Verdict — outcome (c) at the frozen bar:** zero of 7 308 cells pass
+  T1∧T2∧T3 (hence T1–T4), at **both** exposure brackets (ballistic
+  worse everywhere, best W₁ = 1.94 — the D3 protection: not
+  law-conditional). Bounded-set best: the knob-free X₂ floor at
+  (d080, m3, p1, E₀ = 0.22): W₁ = 0.813, n₁ = 0.223, n₁/n₂ = 1.83.
+- **The miss decomposes into the two named items:** (i) the **RQ4
+  ladder taper** — sliding the X₂ transition up *worsens* the ratio
+  (slid2/3: 1.25/1.29; the n = 1 bin is a one-rung window, equal deep
+  rungs widen n = 2/3 equally), while the beyond-bounds **RQ4-graded
+  diagnostic (2.2:1.5:1.3) nearly lands** (W₁ = 0.575, n₁ = 0.267,
+  ratio 1.76, bins 2–8 to ≲ 0.02; T2+T3 pass, T1 missed by 0.075) —
+  the solvated histogram independently demands the RQ4 target ratios;
+  the external many-body calculation is confirmed as the **blocking
+  arbiter** (plateau ⇒ the F.5 escape clause fires with the geometric
+  alternatives exhausted); (ii) the **W13 v_c speed scale** — the KE
+  envelope holds at every top cell, the needed lift is speed-selective
+  ×1.3–1.5 (energy ×2.2 → ×1.7 over n = 1 → 12) — W13-P1's premise
+  pre-confirmed with numbers.
+- **New structural finding — the trapped droplet-retained class
+  (I44):** 6–11 % of fragments (inward partners of off-center births,
+  chord K up to ≈ 18) are dissipated by the current law below the
+  0.117 eV solvation barrier and never eject; excluded from all
+  detected reads; ballistic-absent; t_end-conditional; MD-arbitrable.
+- **Other reads:** E₀ re-lands at the solvation scale 0.22–0.27 eV
+  under full geometry (I45); no gate-open-at-birth class in-bounds
+  (margin floors n_eject at 13/14/15 for m = 3/4.67/6 Å) → **W12b-P1's
+  fast surface feeder predicted absent** under both E₀-law brackets;
+  p = 1 wins everywhere (p = 0 dies by over-suppression, as
+  pre-derived); T5 satisfied at every top cell (bare 4–21 % ≤ 43.5 %).
+
+**Docs:** findings §4j + I41–I45 + §0 table rows (11, H.2b) + header;
+plan Addendum H status blockquote (EXECUTED note). Scoreboards
+(`h2b_scan.csv`, `h2b_lever_interaction_map.csv`, `h2b_feeder_map.csv`)
+in the session scratchpad.
+
+**Sequencing (user's call, recorded not adjudicated):** per H.5 the
+analytic pass gates the MD legs — the geometric MD legs' role shrinks
+to verifying the load-bearing geometric components (near-cliff chord-K
+density, the trapped class, the KE shape); the RQ4 external calculation
+and the W13 v_c arm carry the two quantified residuals. Nothing here
+discharges the F5 gate.
+
+---
+
+## Post-H.2b sequencing ENDORSED — H.5 amended; W12 re-scoped + predictions quantified; W12b parked; W13 mandate extended (user decision, 2026-07-11)
+
+The user endorsed the post-H.2b program order; `TIER2_STAIRCASE_PROBE_
+PLAN.md` amended same day (H.5 amendment block + H.3/H.3b/H.4 NBs):
+
+1. **(n, mean-KE) export promoted** from arbitration entry gate to
+   **W13 calibration prerequisite** (the D7 table → provenance-
+   documented CSV under `data/reference/`, data-contract convention;
+   error bars would also firm the placeholder ±20 % tolerances).
+2. **W12 runs, re-scoped to verification** of the forward model's
+   geometric inputs. Pre-registered predictions amended to the H.2b
+   forward-model numbers (computed at the delivered physics — full
+   dressing, flat ladder, current law, N = 2000, margin band {0, 4.67}
+   pending the sampler audit): **W12-P5 (new, load-bearing)** trapped
+   fraction 5.9–8.1 % at the 150 ps read (relaxation stage arbitrates
+   permanence); K quantiles 0.15/0.49/15.2 (5/50/95 %); detected speed
+   range 1.8–8.8 Å/ps (~5×, beyond the original ≥ 2×); speed
+   anti-correlation −0.85…−0.92 (the K anti-correlation is weak,
+   −0.12 — the fingerprint lives in the speeds); fate reads at
+   E₀ = 0.28/0.38: suppressed 43–55 % / 70–77 %, flat small-n bins
+   (W12-P3 retired by §4j — no steepening expected at the flat
+   ladder). The margin-4.67/E₀ = 0.28 suppressed fraction 0.435
+   coincides numerically with the experimental bare bin — recorded as
+   a curiosity, not a target (RQ8). MD leg stays behind its own
+   trigger.
+3. **W12b PARKED** — its W12b-P1 fingerprint is predicted absent
+   in-bounds (margin floors n_eject ≥ 13; no gate-open-at-birth class
+   under p ∈ {0, 1}); revive only if W12 falsifies the geometry.
+4. **W13 after W12, mandate extended** — calibrate v_c on the
+   n = 1-class KE (envelope + ×1.3–1.5 speed-selective lift
+   pre-confirmed, I43), then **re-run the H.2b solvated scan under the
+   calibrated arm** (closes the drag-bracket-interior coverage gap;
+   fixes the taper size RQ4 must deliver).
+5. **RQ4 external calculation returns as the decisive arbiter** into
+   the v_c-updated scan: steep bottom → histogram closes inside
+   physics; plateau → the F.5 escape clause (ε/RQ2 or missing
+   mechanism) fires with the geometric alternatives exhausted.
+
+The original H.5 "outcome (c) cancels the MD legs" clause is
+**superseded** (it assumed an unstructured miss). RQ8 stays the entry
+gate for the bare bin. **No code, no runs** — the W12 MD leg and the
+W13 arm each remain behind their own `[PROCEED TO IMPLEMENTATION]`;
+nothing here discharges the F5 gate.

@@ -16,6 +16,10 @@ paper_v4/       <- post_process_single_pulse_paper_v4.m
 vmi_summary/    <- export_vmi_reference_data.m (legacy Abel-inverted summary
                    consumed by plot_experimental_comparison.py and the
                    consolidated plot_run_summary.py)
+ihe_ked/        <- export_IHe_KED_reference.m in the VMI repo (fragment scan
+                   171024): per-fragment I+He_n (n=0..17) kinetic-energy
+                   reference with full error budget, for the H.2b forward
+                   model. See ihe_ked/COLUMNS.md for the data dictionary.
 scripts/        <- the MATLAB exporters that generate the above CSV/MAT files,
                    plus optional Python verification helpers.
 ```
@@ -66,6 +70,45 @@ authoritative for loading; the *measurement provenance* (source measurement IDs,
 the producing script, calibration/scaling steps) is an open item — to be
 supplied by the data owner.
 
+## `ihe_ked/` — per-fragment kinetic-energy reference (H.2b arbiter)
+
+Deployed 2026-07-14 from the VMI repo
+(`matfile_data_scripts/A_state_paper_figures_single_pulse/fragment scan/171024/
+reference_export/`, exporter `export_IHe_KED_reference.m`; regenerate there,
+then re-copy). Contents:
+
+```text
+IHe_KED_reference.csv             <- one row per n = 0..17: meanKE_eV (the
+                                     reference value), modeKE_eV/medianKE_eV
+                                     (shape; distributions are strongly skewed),
+                                     sigmaKE_eV, four error terms, flags
+IHe_KED_spectra_n0_n1.csv         <- unsmoothed P(E) for n=0 and n=1
+IHe_KED_curves_n0..n4.csv         <- trusted curves for n=0..4: raw 2-D detector
+                                     projection AND 3-D speed distribution,
+                                     peak-normalized, dual axes (E_eV + v_mps;
+                                     v_mps is per-fragment mass-corrected)
+IHe_KED_crosscheck_300mW.csv      <- independent same-day 300 mW series vs the
+                                     reference (origin of conditionSyst_frac)
+IHe_KED_reference.provenance.json <- machine-readable conventions/provenance
+COLUMNS.md                        <- data dictionary for every CSV above,
+                                     incl. the error-combination recipe
+README.md                         <- full conventions, error model, and
+                                     per-fragment trust guidance (gold points)
+```
+
+Overview plot: `scripts/experimental_reference_fragments.py` renders all five
+trusted fragment curves in the four representation/measure combinations
+(2-D/3-D × per-v/per-E) → `ihe_ked/experimental_reference_fragments.png`.
+
+Key contract points: the reference value is the **mean** of the 3-D KED
+(pyabel rIbeta speed distribution, proper dE weighting) in the droplet rest
+frame; compare MD mean-to-mean, never mean-to-peak (see `shape_note` in the
+provenance). Errors: per-point = sqrt(stat^2 + sys^2), plus TWO correlated
+bands (`calibSyst_frac` = 0.04, `conditionSyst_frac` = 0.06) that shift all
+fragments together. ⚠️ Units exception: this family is ENERGY-space (eV
+columns, unit-suffixed), not m/s — the convention below applies to the
+velocity-space families.
+
 ## On-disk units convention
 
 All reference CSVs use **m/s** as the canonical velocity unit. CSV
@@ -95,7 +138,9 @@ warning.
 - **`vmi_summary/` is a different reduction pipeline.** See
   `vmi_summary/README.md`. It runs Abel inversion, image smoothing, and a
   mass correction not applied in the paper-era exports, and it averages
-  raw measurements that no paper-era export uses.
+  raw measurements that no paper-era export uses. Its two I⁺He CSVs are
+  **byte-identical** (one 45xxx-campaign reference, not two — see the
+  warning in that README).
 
 ## Forbidden
 

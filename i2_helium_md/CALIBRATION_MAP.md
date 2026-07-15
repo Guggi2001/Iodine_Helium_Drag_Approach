@@ -191,6 +191,39 @@ cooling, ladder, early window). Physics-Definition only; no code.
 > $\propto f_\text{int}$ deficit. Resolves the *partition* half of OQ2; the
 > per-shed $KE_\text{shed}$/ε half continues as RQ2. Tally unchanged
 > (one-for-one Bounded↔Derived swap). Document-only; no code. Reversible.
+>
+> **Update 2026-07-10 — RQ2/RQ3 adjudicated: ε ≈ 0 (OQ2 KE_shed half closed);
+> spec (a) inert rejected → sequential shed; RQ4 sharpened.** The joint
+> RQ2+RQ3 deep-research run + primary-source grounding
+> (`docs/drag_port/Tier2/RESEARCH_QUESTIONS.md`, RQ2+RQ3 NB register +
+> adjudication) closes the ε question and reframes the self-unbound fate.
+> **RQ2 (= OQ2 $KE_\text{shed}$/ε half):** the per-shed kinetic-energy release
+> is **small and neglected** — a shed drains exactly $D_0(n)$, the He leaving
+> translationally cold. Sourced two ways: Albrechtsen/Stapelfeldt (*Nature*
+> 623, 319 (2023), the model's foundational paper) explicitly neglects the
+> dissociation-product KER (near-threshold statistical dissociation), and
+> Klots–Hansen gives only $\varepsilon\approx cD/G\approx D/16\approx
+> 0.5$–$0.6$ meV (finite-heat-bath reduction toward 0 for the few-mode shell);
+> the feared 5–20 meV is ruled out by µs survival. Optional
+> $\varepsilon(n)=cD/G$ refinement recorded, **not adopted**. **OQ2 now fully
+> closed** (partition half by RQ1, ε half here); the drain-$D_0$ convention is
+> retained, now sourced — no row-class change. **RQ3 (findings OQ-B):** the
+> "suppressed = rides intact at $n{=}21$" convention is **not physical,
+> rejected**; an over-energized complex **sheds sequentially to
+> self-termination** over tens–hundreds of ps (Stapelfeldt MD) ≪ 8.5 µs — a
+> genuinely net-self-unbound complex ($E_\text{int}>\Sigma$, margin $G>0$)
+> totally sheds **to bare** ($G$-invariant under $\varepsilon\approx0$; the
+> bare-peak source), while the marginal class self-terminates at small $n$ on
+> the ladder bottom. **RQ4 (= OQ3 $E_\text{bind}(N)$-vs-ladder) promoted with a
+> sharpened target:** the small-$n$ tail is now a pure ladder readout, so RQ4's
+> target is the incremental-binding **ratios** $D_0(1):D_0(2):D_0(3)\approx
+> 2.2:1.5:1.3$ (decreasing-from-$n{=}1$, which the Na⁺ flat-first-shell-plateau
+> analogy does *not* supply), not merely "deep." Flat-ladder + structured
+> $p(E_0)$ vs deep-ladder + smooth $p(E_0)$ are histogram-degenerate; RQ4
+> (structure) + the production budget test (RQ7) are the two independent
+> handles. Convention-level; the implied model changes (remove spec-(a)
+> suppression → sequential-shed continuation; reshape the ladder bottom) are
+> deferred behind `[PROCEED TO IMPLEMENTATION]`. Document-only; no code.
 
 ## Classification scheme
 
@@ -317,7 +350,7 @@ small-$n$ tail.)*
   — its discriminating power is the project's central dependency.
 - **Tier 3:** the noise model.
 - **External / author-contact:** OQ1 (drag electronic state), OQ2
-  ($KE_\text{shed}$), OQ3 ($E_\text{bind}(N)$ vs ladder), OQ4 ($S_{\mathrm{I^+}}$/$n^*$
+  ($KE_\text{shed}$ — **resolved 2026-07-10, ε≈0**), OQ3 ($E_\text{bind}(N)$ vs ladder — **RQ4 sharpened target: the $D_0(1{:}2{:}3)$ ratios**), OQ4 ($S_{\mathrm{I^+}}$/$n^*$
   provenance), OQ5 (cascade timing), OQ6 ($E_\infty$ stripping reach), OQ7
   ($S_{\mathrm{I^+}}$ energy reference — interprets the $|S|$-vs-$\sum D_0$ gap).
 

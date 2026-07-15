@@ -4,11 +4,22 @@
 % references used by scripts/post_processing/plot_experimental_comparison.py
 % and the consolidated scripts/post_processing/plot_run_summary.py.
 %
+% SIGNAL CONVENTION (fixed 2026-07): the exported signal is pyabel's speed
+% distribution I(v) from distr.rIbeta() -- the properly v^2- and
+% sin(theta)-weighted 3-D speed distribution. This is the like-for-like
+% counterpart of the simulation's histogram of |v| = sqrt(vx^2+vy^2+vz^2)
+% (compute_final_velocity_histogram). The previously exported
+% radial_distribution (2-D slice radial sum, one factor of v short and
+% uniform-angle weighted) is NOT a speed distribution and gave the MD
+% overlay a systematic ~v tilt. Requires abel_inv_method = 'pyabel' and the
+% updated abel_invert_processed_VMI that propagates speed_r/speed_distribution.
+%
 % This pipeline is intentionally different from the paper_v2/v3/v4 exporters:
 % it averages four I+He raw measurements, runs movmean image smoothing, does
 % Abel inversion on both channels, and applies a sqrt(127/131) mass correction
-% to the I+He radial axis. The output files therefore are not directly
-% comparable to the paper_v2/v3/v4 radial exports.
+% to the I+He radial axis. The paper_v2/v3/v4 exports are PROJECTED-space
+% references (non-inverted radial vs projected-speed histograms, which are
+% mutually consistent) and are deliberately left unchanged.
 %
 % Outputs, written under data/reference/vmi_summary/:
 % - vmi_iplus_he.csv:          v_mps,signal_arb
@@ -54,12 +65,15 @@ res_Iplus_He.image(res_Iplus_He.image < 0) = 0;
 res_Iplus_He.image = movmean(res_Iplus_He.image, 3, 1);
 res_Iplus_He.image = movmean(res_Iplus_He.image, 3, 2);
 res_Iplus_He = abel_invert_processed_VMI(res_Iplus_He);
+if ~isfield(res_Iplus_He, 'speed_distribution')
+    error('speed_distribution missing: abel_inv_method must be ''pyabel'' with the updated abel_invert_processed_VMI');
+end
 
-% Scale arrays as done in the original plot. Output is m/s (the canonical
-% on-disk velocity unit for all reference CSVs). Python loaders convert to
-% A/ps internally.
-v_he_mps = res_Iplus_He.r * vf_single * mass_correction_factor;
-signal_he = movmean(res_Iplus_He.radial_distribution, 1);
+% Output is m/s (the canonical on-disk velocity unit for all reference CSVs).
+% Python loaders convert to A/ps internally. speed_r shares the pixel units
+% of res.r, so the axis scaling is unchanged.
+v_he_mps = res_Iplus_He.speed_r * vf_single * mass_correction_factor;
+signal_he = res_Iplus_He.speed_distribution;
 
 % Export
 T_he = table(v_he_mps(:), signal_he(:), 'VariableNames', {'v_mps', 'signal_arb'});
@@ -71,11 +85,20 @@ fprintf('Processing I+ Gas Phase data...\n');
 %% 2. Process Gas Phase I+
 gas_measurement = 43632;
 res_Iplus_gas = plot_processed_VMI(gas_measurement, 1, [482.9299 392.4866], true);
+% Same zero-clip + 3x3 image smoothing as the I+He channels (added 2026-07;
+% the legacy script left the gas image raw, which makes pyabel's per-ring
+% I(v) visibly noisy on the native grid). Applied BEFORE inversion, like He.
+res_Iplus_gas.image(res_Iplus_gas.image < 0) = 0;
+res_Iplus_gas.image = movmean(res_Iplus_gas.image, 3, 1);
+res_Iplus_gas.image = movmean(res_Iplus_gas.image, 3, 2);
 res_Iplus_gas = abel_invert_processed_VMI(res_Iplus_gas);
+if ~isfield(res_Iplus_gas, 'speed_distribution')
+    error('speed_distribution missing: abel_inv_method must be ''pyabel'' with the updated abel_invert_processed_VMI');
+end
 
 % Scale arrays
-v_gas_mps = res_Iplus_gas.r * vf_single;
-signal_gas = res_Iplus_gas.radial_distribution;
+v_gas_mps = res_Iplus_gas.speed_r * vf_single;
+signal_gas = res_Iplus_gas.speed_distribution;
 
 % Export
 T_gas = table(v_gas_mps(:), signal_gas(:), 'VariableNames', {'v_mps', 'signal_arb'});
@@ -108,9 +131,12 @@ res_Iplus_He_high_snr.image(res_Iplus_He_high_snr.image < 0) = 0;
 res_Iplus_He_high_snr.image = movmean(res_Iplus_He_high_snr.image, 3, 1);
 res_Iplus_He_high_snr.image = movmean(res_Iplus_He_high_snr.image, 3, 2);
 res_Iplus_He_high_snr = abel_invert_processed_VMI(res_Iplus_He_high_snr);
+if ~isfield(res_Iplus_He_high_snr, 'speed_distribution')
+    error('speed_distribution missing: abel_inv_method must be ''pyabel'' with the updated abel_invert_processed_VMI');
+end
 
-v_he_hs_mps = res_Iplus_He_high_snr.r * vf_single * mass_correction_factor;
-signal_he_hs = movmean(res_Iplus_He_high_snr.radial_distribution, 1);
+v_he_hs_mps = res_Iplus_He_high_snr.speed_r * vf_single * mass_correction_factor;
+signal_he_hs = res_Iplus_He_high_snr.speed_distribution;
 
 T_he_hs = table(v_he_hs_mps(:), signal_he_hs(:), 'VariableNames', {'v_mps', 'signal_arb'});
 writetable(T_he_hs, fullfile(out_dir, 'vmi_iplus_he_high_snr.csv'));
