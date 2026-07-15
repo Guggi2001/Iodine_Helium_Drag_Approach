@@ -437,3 +437,83 @@ class TestNanAwareMovingMean:
         mod = _load_run_summary_module()
         with pytest.raises(ValueError):
             mod._nan_aware_moving_mean(np.array([1.0, 2.0, 3.0]), 0)
+
+
+# ===========================================================================
+# Task 9: thin interactive comparison scripts
+#
+# Each script is the single-figure interactive twin of one
+# plot_run_summary.py section, imported and called via
+# importlib.util.spec_from_file_location (same pattern as
+# _load_run_summary_module above). Smoke tests run against the real
+# committed run directory data/runs/single_pulse_droplet and skip
+# cleanly if it is absent from the checkout; the negative test does not
+# need a run directory because the ValueError guard fires first.
+# ===========================================================================
+REAL_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+
+
+def _load_pp_script_module(name: str):
+    matplotlib.use("Agg", force=True)
+    script = PROJECT_ROOT / "scripts" / "post_processing" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"{name}_under_test", script)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestInteractiveComparisonScripts:
+    def test_histogram_comparison_shows_one_figure(self, monkeypatch):
+        if not REAL_RUN_DIR.exists():
+            pytest.skip(
+                "data/runs/single_pulse_droplet not present in this checkout"
+            )
+        import matplotlib.pyplot as plt
+        mod = _load_pp_script_module("plot_histogram_comparison")
+        mod.RUN_DIR = REAL_RUN_DIR
+        calls = []
+        monkeypatch.setattr(plt, "show", lambda: calls.append(1))
+        rc = mod.main()
+        assert rc == 0
+        assert calls == [1]
+        assert len(plt.get_fignums()) >= 1
+        plt.close("all")
+
+    def test_mean_kinetic_comparison_shows_one_figure(self, monkeypatch):
+        if not REAL_RUN_DIR.exists():
+            pytest.skip(
+                "data/runs/single_pulse_droplet not present in this checkout"
+            )
+        import matplotlib.pyplot as plt
+        mod = _load_pp_script_module("plot_mean_kinetic_comparison")
+        mod.RUN_DIR = REAL_RUN_DIR
+        calls = []
+        monkeypatch.setattr(plt, "show", lambda: calls.append(1))
+        rc = mod.main()
+        assert rc == 0
+        assert calls == [1]
+        assert len(plt.get_fignums()) >= 1
+        plt.close("all")
+
+    def test_mean_kinetic_comparison_none_reference_raises(self):
+        mod = _load_pp_script_module("plot_mean_kinetic_comparison")
+        mod.IHE_KED_REFERENCE_DIR = None
+        with pytest.raises(ValueError):
+            mod.main()
+
+    def test_speed_distribution_comparison_shows_two_figures(self, monkeypatch):
+        if not REAL_RUN_DIR.exists():
+            pytest.skip(
+                "data/runs/single_pulse_droplet not present in this checkout"
+            )
+        import matplotlib.pyplot as plt
+        mod = _load_pp_script_module("plot_speed_distribution_comparison")
+        mod.RUN_DIR = REAL_RUN_DIR
+        calls = []
+        monkeypatch.setattr(plt, "show", lambda: calls.append(1))
+        rc = mod.main()
+        assert rc == 0
+        assert calls == [1]
+        assert len(plt.get_fignums()) == 2
+        plt.close("all")
