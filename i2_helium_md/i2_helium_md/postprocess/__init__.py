@@ -32,6 +32,10 @@ from .hedft_loader import (
     load_hedft_trajectory,
     load_smoothed_speed_reference,
 )
+from .ihe_ked import (
+    IHeKedReference,
+    load_ihe_ked_reference,
+)
 from .pair_correlation import (
     CovarianceMatrix,
     DistanceHistogram,
@@ -215,4 +219,6 @@ __all__ = [
     "radial_distribution_evolution",
     "BoltzmannCurve",
     "boltzmann_population",
+    "IHeKedReference",
+    "load_ihe_ked_reference",
 ]
