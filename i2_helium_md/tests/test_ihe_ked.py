@@ -397,6 +397,20 @@ class TestNanAwareMovingMean:
         expected = np.array([1.5, 2.0, 3.0, 4.0, 4.5])
         assert out == pytest.approx(expected, rel=1e-12)
 
+    def test_even_window_hand_computed_centering(self):
+        # Production window is 10 (even) -- pin the even-window centering
+        # direction: numpy's 'same' convolution puts window/2 samples BEFORE
+        # and window/2 - 1 AFTER the current index, matching MATLAB
+        # movmean's documented even-k convention ("centered about the
+        # current and previous elements").
+        mod = _load_run_summary_module()
+        v = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        out = mod._nan_aware_moving_mean(v, 4)
+        # idx0: mean(1,2)=1.5; idx1: mean(1,2,3)=2; idx2: mean(1,2,3,4)=2.5;
+        # idx3: mean(2,3,4,5)=3.5; idx4: mean(3,4,5)=4
+        expected = np.array([1.5, 2.0, 2.5, 3.5, 4.0])
+        assert out == pytest.approx(expected, rel=1e-12)
+
     def test_interior_nan_run_preserves_nan_and_neighbor_means(self):
         mod = _load_run_summary_module()
         v = np.array([1.0, 2.0, np.nan, np.nan, 5.0, 6.0, 7.0])
