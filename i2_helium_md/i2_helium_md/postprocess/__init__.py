@@ -33,7 +33,9 @@ from .hedft_loader import (
     load_smoothed_speed_reference,
 )
 from .ihe_ked import (
+    IHeKedCurve,
     IHeKedReference,
+    load_ihe_ked_curve,
     load_ihe_ked_reference,
 )
 from .pair_correlation import (
@@ -221,4 +223,6 @@ __all__ = [
     "boltzmann_population",
     "IHeKedReference",
     "load_ihe_ked_reference",
+    "IHeKedCurve",
+    "load_ihe_ked_curve",
 ]

@@ -242,3 +242,120 @@ def load_ihe_ked_reference(path: str | Path) -> IHeKedReference:
         noise_limited=noise.astype(bool),
         source_path=p.resolve(),
     )
+
+
+_CURVE_COLUMNS: tuple[str, ...] = (
+    "E_eV",
+    "v_mps",
+    "signal_2d_Pv",
+    "signal_2d_PE",
+    "signal_3d_Pv",
+    "signal_3d_PE",
+)
+
+
+@dataclass(frozen=True)
+class IHeKedCurve:
+    """One trusted per-fragment curve file (n = 0..4).
+
+    Both representations on one shared axis pair. Each signal column is
+    independently peak-normalized (smoothed envelope = 1): compare shapes,
+    never amplitudes. NaN marks excluded regions (3-D columns only:
+    Abel-center spike / low-E cut); matplotlib renders them as gaps.
+
+    Attributes
+    ----------
+    n : int
+        He count of the fragment (0..4).
+    E_eV : np.ndarray, shape (M,)
+        Kinetic energy axis (mass-independent detector mapping).
+    v_mps : np.ndarray, shape (M,)
+        Speed axis of the mass-m(n) complex; differs per fragment at
+        equal E.
+    signal_2d_Pv, signal_2d_PE : np.ndarray, shape (M,)
+        2-D detector projection per unit speed / per unit energy. The
+        coordinate is the projected in-plane speed (sim counterpart:
+        ``compute_final_velocity_histogram(..., projected=True)``).
+    signal_3d_Pv, signal_3d_PE : np.ndarray, shape (M,)
+        Reconstructed 3-D speed / energy distribution (sim counterpart:
+        the 3-D ``|v|`` histogram).
+    source_path : Path
+        Resolved path of the loaded CSV.
+    """
+
+    n: int
+    E_eV: np.ndarray
+    v_mps: np.ndarray
+    signal_2d_Pv: np.ndarray
+    signal_2d_PE: np.ndarray
+    signal_3d_Pv: np.ndarray
+    signal_3d_PE: np.ndarray
+    source_path: Path
+
+
+def load_ihe_ked_curve(directory: str | Path, n: int) -> IHeKedCurve:
+    """Load ``IHe_KED_curves_n{n}.csv`` for one fragment n in 0..4.
+
+    Raises
+    ------
+    ValueError
+        ``n`` outside 0..``CURVE_N_MAX``; missing/extra columns; a
+        non-finite axis value; a non-ascending axis; or a signal column
+        with no finite entries at all.
+    FileNotFoundError
+        If the curve file does not exist in ``directory``.
+    """
+    if not (0 <= int(n) <= CURVE_N_MAX):
+        raise ValueError(
+            f"n must be in 0..{CURVE_N_MAX} (trusted curves); got {n}."
+        )
+    p = Path(directory) / f"IHe_KED_curves_n{int(n)}.csv"
+    if not p.exists():
+        raise FileNotFoundError(
+            f"IHe KED curve file not found: {p.resolve()}"
+        )
+
+    frame = pd.read_csv(p)
+    validate_columns(
+        list(frame.columns),
+        _CURVE_COLUMNS,
+        file_label=f"IHe KED curve {p.name}",
+    )
+
+    def _axis(name: str) -> np.ndarray:
+        values = np.asarray(frame[name].to_numpy(), dtype=float)
+        if not np.all(np.isfinite(values)):
+            raise ValueError(
+                f"IHe KED curve {p.name} axis {name!r} has non-finite "
+                f"entries."
+            )
+        if np.any(np.diff(values) <= 0.0):
+            raise ValueError(
+                f"IHe KED curve {p.name} axis {name!r} must be strictly "
+                f"ascending."
+            )
+        return values
+
+    def _signal(name: str) -> np.ndarray:
+        values = np.asarray(frame[name].to_numpy(), dtype=float)
+        if not np.isfinite(values).any():
+            raise ValueError(
+                f"IHe KED curve {p.name} signal {name!r} has no finite "
+                f"entries."
+            )
+        if np.any(np.isinf(values)):
+            raise ValueError(
+                f"IHe KED curve {p.name} signal {name!r} contains inf."
+            )
+        return values
+
+    return IHeKedCurve(
+        n=int(n),
+        E_eV=_axis("E_eV"),
+        v_mps=_axis("v_mps"),
+        signal_2d_Pv=_signal("signal_2d_Pv"),
+        signal_2d_PE=_signal("signal_2d_PE"),
+        signal_3d_Pv=_signal("signal_3d_Pv"),
+        signal_3d_PE=_signal("signal_3d_PE"),
+        source_path=p.resolve(),
+    )

@@ -88,3 +88,46 @@ class TestLoadIHeKedReference:
         p.write_text(header + row, encoding="ascii")
         with pytest.raises(ValueError, match="dominantError"):
             load_ihe_ked_reference(p)
+
+
+from i2_helium_md.postprocess.ihe_ked import (  # noqa: E402 (grouped here)
+    IHeKedCurve,
+    load_ihe_ked_curve,
+)
+
+
+class TestLoadIHeKedCurve:
+    def test_real_n0_contract(self):
+        curve = load_ihe_ked_curve(IHE_KED_DIR, 0)
+        assert isinstance(curve, IHeKedCurve)
+        assert curve.n == 0
+        # Axes are finite and strictly ascending.
+        assert np.all(np.isfinite(curve.E_eV))
+        assert np.all(np.diff(curve.E_eV) > 0)
+        assert np.all(np.diff(curve.v_mps) > 0)
+        # n=0 Abel-center spike cut: 3-D columns are NaN below 0.4 eV,
+        # while the 2-D columns cover the full detector range.
+        low = curve.E_eV < 0.4
+        assert np.all(np.isnan(curve.signal_3d_Pv[low]))
+        assert np.all(np.isfinite(curve.signal_2d_Pv))
+        # Above the cut the 3-D reconstruction is real data.
+        assert np.isfinite(curve.signal_3d_Pv[~low]).any()
+
+    def test_all_five_fragments_load(self):
+        for n in range(5):
+            curve = load_ihe_ked_curve(IHE_KED_DIR, n)
+            assert curve.n == n
+
+    def test_out_of_range_n_raises(self):
+        with pytest.raises(ValueError, match="n must be"):
+            load_ihe_ked_curve(IHE_KED_DIR, 5)
+
+    def test_missing_file_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            load_ihe_ked_curve(tmp_path, 0)
+
+    def test_missing_column_raises(self, tmp_path):
+        p = tmp_path / "IHe_KED_curves_n0.csv"
+        p.write_text("E_eV,v_mps\n0.1,100\n0.2,140\n", encoding="ascii")
+        with pytest.raises(ValueError):
+            load_ihe_ked_curve(tmp_path, 0)
