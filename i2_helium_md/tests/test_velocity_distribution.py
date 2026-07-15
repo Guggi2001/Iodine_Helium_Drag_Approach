@@ -13,6 +13,7 @@ from i2_helium_md.postprocess.velocity_distribution import (
     VmiReference,
     compute_final_velocity_histogram,
     load_vmi_reference,
+    select_final_mass_gate,
 )
 from i2_helium_md.simulation.checkpoint import IonCheckpoint
 
@@ -278,3 +279,65 @@ class TestComputeFinalVelocityHistogram:
         h = compute_final_velocity_histogram(ion, mass_amu=131.0)
         assert isinstance(h, FinalVelocityHistogram)
         assert h.mass_amu == 131.0
+
+
+class TestSelectFinalMassGate:
+    def test_mass_and_outside_mask(self):
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([1.0, 2.0, 3.0, 4.0]),
+            masses_amu_per_atom=np.array([131.0, 135.0, 131.0, 135.0]),
+            b_outside=np.array([True, False]),
+        )
+        mask = select_final_mass_gate(ion, mass_amu=131.0)
+        # Molecule 0 (outside): atoms 0 (I1, mass 131) and 2 (I2, mass 131).
+        # Molecule 1 (inside): atoms 1 (I1, mass 135) and 3 (I2, mass 135).
+        np.testing.assert_array_equal(mask, [True, False, True, False])
+
+    def test_require_outside_false_keeps_inside_atoms(self):
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([1.0, 2.0, 3.0, 4.0]),
+            masses_amu_per_atom=np.array([131.0, 127.0, 127.0, 131.0]),
+            b_outside=np.array([True, False]),
+        )
+        mask = select_final_mass_gate(
+            ion, mass_amu=131.0, require_outside=False,
+        )
+        np.testing.assert_array_equal(mask, [True, False, False, True])
+
+    def test_reference_mass_model_inside_default_tolerance(self):
+        # The ihe_ked mass model m(1) = 130.9026 amu must gate sim atoms
+        # whose rounded final mass is 131 amu (|131 - 130.9026| < 0.5).
+        ion = _make_ion(
+            num_molecules=1,
+            final_speeds_per_atom=np.array([5.0, 6.0]),
+            masses_amu_per_atom=np.array([131.0, 127.0]),
+        )
+        mask = select_final_mass_gate(ion, mass_amu=130.9026)
+        np.testing.assert_array_equal(mask, [True, False])
+
+
+class TestProjectedHistogram:
+    def test_projected_uses_only_in_plane_components(self):
+        # One atom with vx=3, vy=4, vz=12: |v| = 13, in-plane = 5.
+        n = 1
+        ion = _make_ion(
+            num_molecules=n,
+            final_speeds_per_atom=np.array([0.0, 0.0]),
+            masses_amu_per_atom=np.array([131.0, 127.0]),
+        )
+        ion.velocities_final_x = np.array([3.0, 0.0])
+        ion.velocities_final_y = np.array([4.0, 0.0])
+        ion.velocities_final_z = np.array([12.0, 0.0])
+
+        h3 = compute_final_velocity_histogram(
+            ion, mass_amu=131.0, num_bins=28, v_max_Aps=28.0,
+        )
+        h2 = compute_final_velocity_histogram(
+            ion, mass_amu=131.0, num_bins=28, v_max_Aps=28.0,
+            projected=True,
+        )
+        assert h3.counts[13] == 1  # bin [13, 14)
+        assert h2.counts[5] == 1   # bin [5, 6)
+        assert h2.num_atoms_used == 1

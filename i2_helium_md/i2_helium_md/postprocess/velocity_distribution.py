@@ -142,6 +142,53 @@ class FinalVelocityHistogram:
     num_atoms_used: int
 
 
+def select_final_mass_gate(
+    ion: IonCheckpoint,
+    *,
+    mass_amu: float,
+    mass_tolerance_amu: float = 0.5,
+    require_outside: bool = True,
+) -> np.ndarray:
+    """Per-atom boolean mask selecting the final-mass gate.
+
+    The single mass-gate convention shared by every mass-gated diagnostic
+    (final-velocity histograms, ihe_ked fragment moments, abundance
+    comparison): ``round(mass_final_kg / U)`` within ``mass_tolerance_amu``
+    of ``mass_amu``, optionally AND-ed with the per-molecule
+    ``b_ion_outside`` flag broadcast to both atoms.
+
+    Parameters
+    ----------
+    ion
+        Ion-stage checkpoint; reads ``mass_final_kg`` (shape ``(2N,)``)
+        and ``b_ion_outside`` (shape ``(N,)``).
+    mass_amu
+        Target atomic mass in amu (may be non-integer, e.g. the ihe_ked
+        mass model m(n) = 126.90 + 4.0026 n).
+    mass_tolerance_amu
+        Half-width of the acceptance window in amu.
+    require_outside
+        If ``True`` (default), both atoms of a molecule pass only when its
+        ``b_ion_outside`` flag is set.
+
+    Returns
+    -------
+    np.ndarray
+        Boolean mask, shape ``(2N,)``.
+    """
+    mass_amu_per_atom = np.round(np.asarray(ion.mass_final_kg) / U_KG)
+    mask = (
+        np.abs(mass_amu_per_atom - float(mass_amu))
+        <= float(mass_tolerance_amu)
+    )
+    if require_outside:
+        outside_per_atom = np.concatenate(
+            [ion.b_ion_outside, ion.b_ion_outside]
+        ).astype(bool)
+        mask = mask & outside_per_atom
+    return mask
+
+
 def compute_final_velocity_histogram(
     ion: IonCheckpoint,
     *,
@@ -150,6 +197,7 @@ def compute_final_velocity_histogram(
     v_max_Aps: float = 28.0,
     mass_tolerance_amu: float = 0.5,
     require_outside: bool = True,
+    projected: bool = False,
 ) -> FinalVelocityHistogram:
     """Bin ``|v_final|`` over atoms whose final mass matches ``mass_amu``.
 
@@ -189,6 +237,10 @@ def compute_final_velocity_histogram(
         If ``True`` (default), only atoms belonging to molecules whose
         ``b_ion_outside`` flag is set contribute. The flag is
         per-molecule; both atoms of an "outside" molecule pass.
+    projected
+        If ``True``, bin the in-plane projected speed √(vx²+vy²) instead
+        of |v| — the 2-D detector-projection observable (``signal_2d_Pv``
+        in the ihe_ked curves).
 
     Returns
     -------
@@ -205,17 +257,12 @@ def compute_final_velocity_histogram(
     if v_max_Aps <= 0.0:
         raise ValueError(f"v_max_Aps must be > 0, got {v_max_Aps}")
 
-    n = ion.num_molecules
-    mass_amu_per_atom = np.round(np.asarray(ion.mass_final_kg) / U_KG)
-    mass_mask = np.abs(mass_amu_per_atom - mass_amu) <= mass_tolerance_amu
-
-    if require_outside:
-        outside_per_atom = np.concatenate(
-            [ion.b_ion_outside, ion.b_ion_outside]
-        ).astype(bool)
-        select = mass_mask & outside_per_atom
-    else:
-        select = mass_mask
+    select = select_final_mass_gate(
+        ion,
+        mass_amu=mass_amu,
+        mass_tolerance_amu=mass_tolerance_amu,
+        require_outside=require_outside,
+    )
 
     num_used = int(np.count_nonzero(select))
     if num_used == 0:
@@ -226,11 +273,15 @@ def compute_final_velocity_histogram(
             f"check the run or relax the tolerance."
         )
 
-    speed_final = np.sqrt(
-        np.asarray(ion.velocities_final_x)[select] ** 2
-        + np.asarray(ion.velocities_final_y)[select] ** 2
-        + np.asarray(ion.velocities_final_z)[select] ** 2
-    )
+    vx = np.asarray(ion.velocities_final_x)[select]
+    vy = np.asarray(ion.velocities_final_y)[select]
+    vz = np.asarray(ion.velocities_final_z)[select]
+    if projected:
+        # In-plane detector projection sqrt(vx^2 + vy^2) -- the same
+        # plane convention as paper_v2_velocity_curve.
+        speed_final = np.sqrt(vx * vx + vy * vy)
+    else:
+        speed_final = np.sqrt(vx * vx + vy * vy + vz * vz)
 
     edges = np.linspace(0.0, v_max_Aps, num_bins + 1)
     counts, _ = np.histogram(speed_final, bins=edges)

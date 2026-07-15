@@ -120,6 +120,7 @@ from .velocity_distribution import (
     bimodal_gaussian_fit,
     compute_final_velocity_histogram,
     load_vmi_reference,
+    select_final_mass_gate,
 )
 
 __all__ = [
@@ -137,6 +138,7 @@ __all__ = [
     "load_vmi_reference",
     "FinalVelocityHistogram",
     "compute_final_velocity_histogram",
+    "select_final_mass_gate",
     "BimodalGaussianFit",
     "bimodal_gaussian_fit",
     "EnergyTotals",
