@@ -359,3 +359,162 @@ def load_ihe_ked_curve(directory: str | Path, n: int) -> IHeKedCurve:
         signal_3d_PE=_signal("signal_3d_PE"),
         source_path=p.resolve(),
     )
+
+
+def speed_mps_of_energy_eV(energy_eV, mass_amu):
+    """Speed [m/s] of a mass-``mass_amu`` complex with kinetic energy
+    ``energy_eV`` [eV]: ``v = sqrt(2 E / m)``. Scalar or array in,
+    same shape out."""
+    return np.sqrt(2.0 * np.asarray(energy_eV, dtype=float) * EV
+                   / (float(mass_amu) * U_KG))
+
+
+@dataclass(frozen=True)
+class FragmentMeanKE:
+    """Simulated per-fragment mean kinetic energy (droplet rest frame).
+
+    The MD counterpart of one ``mean_KE_eV`` row of the reference table:
+    the first moment of the mass-gated final-speed ensemble, computed with
+    the reference's mass model m(n) so the comparison is mean-to-mean on
+    identical conventions.
+
+    Attributes
+    ----------
+    n : int
+        He count of the fragment gate.
+    mass_amu : float
+        m(n) = 126.90 + 4.0026 n used for both the gate and the energy.
+    mean_KE_eV : float
+        Ensemble mean of E = 1/2 m(n) |v_final|^2 [eV].
+    stat_err_mean_KE_eV : float
+        Standard error of the mean, sample-std(ddof=1)/sqrt(N); 0.0 for
+        N = 1 (a single atom has no scatter estimate).
+    v_of_mean_E_mps : float
+        sqrt(2 <E> / m(n)) [m/s] -- the marker position on the curve
+        overlays. NOT the mean speed <|v|>.
+    num_atoms_used : int
+        Atoms that passed the mass + outside gate.
+    """
+
+    n: int
+    mass_amu: float
+    mean_KE_eV: float
+    stat_err_mean_KE_eV: float
+    v_of_mean_E_mps: float
+    num_atoms_used: int
+
+
+def fragment_mean_kinetic_energy(
+    ion: IonCheckpoint,
+    n: int,
+    *,
+    mass_tolerance_amu: float = 0.5,
+    require_outside: bool = True,
+) -> FragmentMeanKE:
+    """Simulated <E> of the I+He_n fragment gate (mean-to-mean observable).
+
+    Parameters
+    ----------
+    ion
+        Ion-stage checkpoint; reads ``velocities_final_{x,y,z}`` (shape
+        ``(2N,)``) for the atoms passing the gate.
+    n
+        He count of the fragment (n >= 0); the gate mass is
+        ``complex_mass_amu(n)``.
+    mass_tolerance_amu, require_outside
+        Forwarded to :func:`~i2_helium_md.postprocess.velocity_distribution.
+        select_final_mass_gate`.
+
+    Returns
+    -------
+    FragmentMeanKE
+
+    Raises
+    ------
+    ValueError
+        If no atoms pass the mass + outside gate (callers typically catch
+        this and skip the fragment), or ``n < 0``.
+    """
+    if int(n) < 0:
+        raise ValueError(f"n must be >= 0, got {n}.")
+    mass_amu = float(complex_mass_amu(int(n)))
+    select = select_final_mass_gate(
+        ion,
+        mass_amu=mass_amu,
+        mass_tolerance_amu=mass_tolerance_amu,
+        require_outside=require_outside,
+    )
+    num_used = int(np.count_nonzero(select))
+    if num_used == 0:
+        raise ValueError(
+            f"No atoms in the I+He_{int(n)} gate "
+            f"(mass {mass_amu:.4f} +/- {mass_tolerance_amu} amu"
+            f"{', outside only' if require_outside else ''})."
+        )
+
+    speed_mps = 100.0 * np.sqrt(
+        np.asarray(ion.velocities_final_x)[select] ** 2
+        + np.asarray(ion.velocities_final_y)[select] ** 2
+        + np.asarray(ion.velocities_final_z)[select] ** 2
+    )
+    energy_eV = 0.5 * mass_amu * U_KG * speed_mps ** 2 / EV
+    mean_eV = float(energy_eV.mean())
+    stat_err_eV = (
+        float(energy_eV.std(ddof=1) / np.sqrt(num_used))
+        if num_used > 1 else 0.0
+    )
+    return FragmentMeanKE(
+        n=int(n),
+        mass_amu=mass_amu,
+        mean_KE_eV=mean_eV,
+        stat_err_mean_KE_eV=stat_err_eV,
+        v_of_mean_E_mps=float(speed_mps_of_energy_eV(mean_eV, mass_amu)),
+        num_atoms_used=num_used,
+    )
+
+
+def fragment_gate_counts(
+    ion: IonCheckpoint,
+    n_values,
+    *,
+    mass_tolerance_amu: float = 0.5,
+    require_outside: bool = True,
+) -> np.ndarray:
+    """Atom count per I+He_n mass gate, for the abundance comparison.
+
+    Uses the same gate convention as every other mass-gated diagnostic
+    (``select_final_mass_gate`` at m(n)); gates are disjoint because the
+    He spacing (4.0026 amu) exceeds twice the default tolerance. Note the
+    Tier-2 scoring path (:func:`~i2_helium_md.postprocess.size_distribution.
+    compute_terminal_shell_distribution`) reads the v7 ``n_shell`` field
+    instead; for v7 biphasic runs the two agree because mass jumps track
+    ``n_shell``, while this mass-gate variant also works for pre-v7 and
+    hard-sphere runs.
+
+    Parameters
+    ----------
+    ion
+        Ion-stage checkpoint.
+    n_values
+        He counts to gate on; any shape.
+    mass_tolerance_amu, require_outside
+        Forwarded to
+        :func:`~i2_helium_md.postprocess.velocity_distribution.
+        select_final_mass_gate`.
+
+    Returns
+    -------
+    np.ndarray
+        Integer counts, same shape as ``n_values``.
+    """
+    n_arr = np.asarray(n_values, dtype=int)
+    counts = np.zeros(n_arr.shape, dtype=int)
+    for i, n in enumerate(n_arr.ravel()):
+        select = select_final_mass_gate(
+            ion,
+            mass_amu=float(complex_mass_amu(int(n))),
+            mass_tolerance_amu=mass_tolerance_amu,
+            require_outside=require_outside,
+        )
+        counts.ravel()[i] = int(np.count_nonzero(select))
+    return counts

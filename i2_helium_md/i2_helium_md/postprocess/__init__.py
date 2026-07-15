@@ -33,10 +33,14 @@ from .hedft_loader import (
     load_smoothed_speed_reference,
 )
 from .ihe_ked import (
+    FragmentMeanKE,
     IHeKedCurve,
     IHeKedReference,
+    fragment_gate_counts,
+    fragment_mean_kinetic_energy,
     load_ihe_ked_curve,
     load_ihe_ked_reference,
+    speed_mps_of_energy_eV,
 )
 from .pair_correlation import (
     CovarianceMatrix,
@@ -225,4 +229,8 @@ __all__ = [
     "load_ihe_ked_reference",
     "IHeKedCurve",
     "load_ihe_ked_curve",
+    "FragmentMeanKE",
+    "fragment_mean_kinetic_energy",
+    "fragment_gate_counts",
+    "speed_mps_of_energy_eV",
 ]

@@ -12,15 +12,91 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from i2_helium_md.physics.constants import U as U_KG
 from i2_helium_md.postprocess.ihe_ked import (
     IHeKedReference,
     load_ihe_ked_reference,
 )
+from i2_helium_md.simulation.checkpoint import IonCheckpoint
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 IHE_KED_DIR = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 REFERENCE_CSV = IHE_KED_DIR / "IHe_KED_reference.csv"
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
+def _make_ion(
+    *,
+    num_molecules: int,
+    final_speeds_per_atom: np.ndarray,
+    masses_amu_per_atom: np.ndarray,
+    b_outside: np.ndarray | None = None,
+    num_steps: int = 4,
+) -> IonCheckpoint:
+    """Build a tiny IonCheckpoint with prescribed final |v| and final masses.
+
+    Copied verbatim from ``tests/test_velocity_distribution.py`` (private
+    test helpers are not shared across test modules). Atom index ``j`` and
+    ``j + num_molecules`` belong to molecule ``j`` (concatenation layout,
+    NOT adjacent pairing) -- see ``select_final_mass_gate``'s
+    ``np.concatenate([b_ion_outside, b_ion_outside])``.
+
+    The full velocity time series is filled with zeros (not used by the
+    histogram code, which only reads ``velocities_final_*``).
+    """
+    n = num_molecules
+    if final_speeds_per_atom.shape != (2 * n,):
+        raise AssertionError("final_speeds_per_atom must have shape (2N,)")
+    if masses_amu_per_atom.shape != (2 * n,):
+        raise AssertionError("masses_amu_per_atom must have shape (2N,)")
+
+    if b_outside is None:
+        b_outside = np.ones(n, dtype=bool)
+
+    # Distribute the speed in a simple way so each atom's speed magnitude
+    # equals the prescribed value: put it all on velocities_final_x.
+    vfx = final_speeds_per_atom.astype(float)
+    vfy = np.zeros(2 * n)
+    vfz = np.zeros(2 * n)
+
+    masses_kg = masses_amu_per_atom.astype(float) * U_KG
+
+    diag_zero = np.zeros((2 * n, num_steps))
+    return IonCheckpoint(
+        num_molecules=n,
+        time_ps=np.linspace(0.0, 1.0, num_steps),
+        positions_x=np.zeros((2 * n, num_steps)),
+        positions_y=np.zeros((2 * n, num_steps)),
+        positions_z=np.zeros((2 * n, num_steps)),
+        velocities_x=np.zeros((2 * n, num_steps)),
+        velocities_y=np.zeros((2 * n, num_steps)),
+        velocities_z=np.zeros((2 * n, num_steps)),
+        positions_final_x=np.zeros(2 * n),
+        positions_final_y=np.zeros(2 * n),
+        positions_final_z=np.zeros(2 * n),
+        velocities_final_x=vfx,
+        velocities_final_y=vfy,
+        velocities_final_z=vfz,
+        mass_kg=masses_kg.copy(),
+        mass_final_kg=masses_kg,
+        mass_history_kg=np.broadcast_to(
+            masses_kg[:, None], (2 * n, num_steps)
+        ).copy(),
+        droplet_radii_angstrom=np.full(2 * n, 30.0),
+        E_kin_eV=diag_zero,
+        E_pot_eV=diag_zero,
+        E_dissip_eV=diag_zero,
+        E_mass_transfer_eV=diag_zero,
+        E_int_eV=diag_zero,
+        n_shell=diag_zero,
+        b_ion_outside=np.asarray(b_outside, dtype=bool),
+        relative_loss_per_ps=diag_zero,
+        number_of_collisions=np.zeros((2 * n, num_steps), dtype=int),
+        temperature_diagnostic=np.full((num_steps, 3), np.nan, dtype=float),
+    )
 
 
 class TestLoadIHeKedReference:
@@ -131,3 +207,98 @@ class TestLoadIHeKedCurve:
         p.write_text("E_eV,v_mps\n0.1,100\n0.2,140\n", encoding="ascii")
         with pytest.raises(ValueError):
             load_ihe_ked_curve(tmp_path, 0)
+
+
+from i2_helium_md.physics.constants import EV  # noqa: E402 (grouped here)
+from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
+from i2_helium_md.postprocess.ihe_ked import (  # noqa: E402
+    FragmentMeanKE,
+    fragment_gate_counts,
+    fragment_mean_kinetic_energy,
+    speed_mps_of_energy_eV,
+)
+
+
+def _energy_eV_of_speed_Aps(speed_Aps: float, mass_amu: float) -> float:
+    """Independent re-derivation: E = 1/2 m v^2, v in m/s (1 A/ps = 100 m/s)."""
+    from i2_helium_md.physics.constants import U as _U
+    v_mps = speed_Aps * 100.0
+    return 0.5 * mass_amu * _U * v_mps * v_mps / EV
+
+
+class TestFragmentMeanKineticEnergy:
+    def test_analytic_mean_and_stat_err(self):
+        # Two n=1 atoms (131 amu, gated by m(1)=130.9026) at 2 and 4 A/ps;
+        # one n=0 atom that must not contaminate the gate.
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([2.0, 4.0, 3.0, 0.0]),
+            masses_amu_per_atom=np.array([131.0, 131.0, 127.0, 127.0]),
+        )
+        result = fragment_mean_kinetic_energy(ion, 1)
+        assert isinstance(result, FragmentMeanKE)
+        m1 = complex_mass_amu(1)
+        e1 = _energy_eV_of_speed_Aps(2.0, m1)
+        e2 = _energy_eV_of_speed_Aps(4.0, m1)
+        expected_mean = 0.5 * (e1 + e2)
+        # Analytical port: tight tolerance.
+        assert result.mean_KE_eV == pytest.approx(expected_mean, rel=1e-12)
+        expected_err = np.std([e1, e2], ddof=1) / np.sqrt(2.0)
+        assert result.stat_err_mean_KE_eV == pytest.approx(
+            expected_err, rel=1e-12,
+        )
+        assert result.num_atoms_used == 2
+        assert result.mass_amu == pytest.approx(m1)
+
+    def test_v_of_mean_E_round_trip(self):
+        ion = _make_ion(
+            num_molecules=1,
+            final_speeds_per_atom=np.array([3.0, 0.0]),
+            masses_amu_per_atom=np.array([131.0, 127.0]),
+        )
+        result = fragment_mean_kinetic_energy(ion, 1)
+        # A single atom at 3 A/ps: v(<E>) must be exactly 300 m/s.
+        assert result.v_of_mean_E_mps == pytest.approx(300.0, rel=1e-12)
+        # And the standalone converter agrees.
+        assert speed_mps_of_energy_eV(
+            result.mean_KE_eV, result.mass_amu
+        ) == pytest.approx(300.0, rel=1e-12)
+
+    def test_single_atom_has_zero_stat_err(self):
+        ion = _make_ion(
+            num_molecules=1,
+            final_speeds_per_atom=np.array([3.0, 0.0]),
+            masses_amu_per_atom=np.array([131.0, 127.0]),
+        )
+        result = fragment_mean_kinetic_energy(ion, 1)
+        assert result.stat_err_mean_KE_eV == 0.0
+
+    def test_empty_gate_raises(self):
+        ion = _make_ion(
+            num_molecules=1,
+            final_speeds_per_atom=np.array([3.0, 0.0]),
+            masses_amu_per_atom=np.array([127.0, 127.0]),
+        )
+        with pytest.raises(ValueError, match="No atoms"):
+            fragment_mean_kinetic_energy(ion, 1)
+
+
+class TestFragmentGateCounts:
+    def test_counts_per_gate(self):
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([1.0, 2.0, 3.0, 4.0]),
+            masses_amu_per_atom=np.array([127.0, 131.0, 131.0, 135.0]),
+        )
+        counts = fragment_gate_counts(ion, np.arange(4))
+        np.testing.assert_array_equal(counts, [1, 2, 1, 0])
+
+    def test_outside_filter_applies(self):
+        ion = _make_ion(
+            num_molecules=2,
+            final_speeds_per_atom=np.array([1.0, 2.0, 3.0, 4.0]),
+            masses_amu_per_atom=np.array([131.0, 131.0, 131.0, 131.0]),
+            b_outside=np.array([True, False]),
+        )
+        counts = fragment_gate_counts(ion, np.arange(3))
+        np.testing.assert_array_equal(counts, [0, 2, 0])
