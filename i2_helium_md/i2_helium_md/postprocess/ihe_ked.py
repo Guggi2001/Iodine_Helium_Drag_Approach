@@ -468,7 +468,7 @@ def fragment_mean_kinetic_energy(
         + np.asarray(ion.velocities_final_y)[select] ** 2
         + np.asarray(ion.velocities_final_z)[select] ** 2
     )
-    energy_eV = 0.5 * mass_amu * U_KG * speed_mps ** 2 / EV
+    energy_eV = energy_eV_of_speed_mps(speed_mps, mass_amu)
     mean_eV = float(energy_eV.mean())
     stat_err_eV = (
         float(energy_eV.std(ddof=1) / np.sqrt(num_used))
