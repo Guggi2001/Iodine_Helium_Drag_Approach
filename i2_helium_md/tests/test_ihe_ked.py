@@ -213,6 +213,7 @@ from i2_helium_md.physics.constants import EV  # noqa: E402 (grouped here)
 from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
 from i2_helium_md.postprocess.ihe_ked import (  # noqa: E402
     FragmentMeanKE,
+    energy_eV_of_speed_mps,
     fragment_gate_counts,
     fragment_mean_kinetic_energy,
     speed_mps_of_energy_eV,
@@ -302,6 +303,38 @@ class TestFragmentGateCounts:
         )
         counts = fragment_gate_counts(ion, np.arange(3))
         np.testing.assert_array_equal(counts, [0, 2, 0])
+
+
+class TestEnergyEVOfSpeedMps:
+    def test_round_trip_several_values(self):
+        # energy_eV_of_speed_mps is the exact inverse of
+        # speed_mps_of_energy_eV: E -> v -> E must return the input E.
+        for energy_eV, mass_amu in (
+            (3.70569, 126.9045),
+            (0.05, 130.9026),
+            (2.0, 146.9163),
+        ):
+            v_mps = speed_mps_of_energy_eV(energy_eV, mass_amu)
+            round_tripped = energy_eV_of_speed_mps(v_mps, mass_amu)
+            assert round_tripped == pytest.approx(energy_eV, rel=1e-12)
+
+    def test_hand_value_300_mps(self):
+        # Same 3 A/ps <-> 300 m/s convention as
+        # TestFragmentMeanKineticEnergy.test_v_of_mean_E_round_trip: a
+        # single n=1 atom (mass m(1)) at 3 A/ps = 300 m/s.
+        m1 = complex_mass_amu(1)
+        expected_eV = _energy_eV_of_speed_Aps(3.0, m1)
+        assert energy_eV_of_speed_mps(300.0, m1) == pytest.approx(
+            expected_eV, rel=1e-12,
+        )
+
+    def test_array_input(self):
+        v_mps = np.array([100.0, 200.0, 300.0])
+        e = energy_eV_of_speed_mps(v_mps, 131.0)
+        assert e.shape == v_mps.shape
+        np.testing.assert_allclose(
+            e, [energy_eV_of_speed_mps(v, 131.0) for v in v_mps], rtol=1e-12,
+        )
 
 
 import importlib.util
@@ -502,7 +535,8 @@ class TestInteractiveComparisonScripts:
         with pytest.raises(ValueError):
             mod.main()
 
-    def test_speed_distribution_comparison_shows_two_figures(self, monkeypatch):
+    def test_speed_distribution_comparison_shows_four_figures(self, monkeypatch):
+        # v-axis 2d, v-axis 3d, E-axis 2d, E-axis 3d (Task 10).
         if not REAL_RUN_DIR.exists():
             pytest.skip(
                 "data/runs/single_pulse_droplet not present in this checkout"
@@ -515,5 +549,5 @@ class TestInteractiveComparisonScripts:
         rc = mod.main()
         assert rc == 0
         assert calls == [1]
-        assert len(plt.get_fignums()) == 2
+        assert len(plt.get_fignums()) == 4
         plt.close("all")

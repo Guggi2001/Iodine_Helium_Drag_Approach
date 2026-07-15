@@ -36,6 +36,7 @@ from .ihe_ked import (
     FragmentMeanKE,
     IHeKedCurve,
     IHeKedReference,
+    energy_eV_of_speed_mps,
     fragment_gate_counts,
     fragment_mean_kinetic_energy,
     load_ihe_ked_curve,
@@ -233,4 +234,5 @@ __all__ = [
     "fragment_mean_kinetic_energy",
     "fragment_gate_counts",
     "speed_mps_of_energy_eV",
+    "energy_eV_of_speed_mps",
 ]

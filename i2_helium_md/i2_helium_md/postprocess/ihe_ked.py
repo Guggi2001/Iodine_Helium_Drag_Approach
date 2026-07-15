@@ -369,6 +369,17 @@ def speed_mps_of_energy_eV(energy_eV, mass_amu):
                    / (float(mass_amu) * U_KG))
 
 
+def energy_eV_of_speed_mps(speed_mps, mass_amu):
+    """Kinetic energy in eV of a fragment of ``mass_amu`` at ``speed_mps``.
+
+    E = 1/2 * m * v^2 with m in kg (``mass_amu * U_KG``) and the result
+    converted to eV. Exact inverse of :func:`speed_mps_of_energy_eV`.
+    Accepts scalars or arrays (vectorized).
+    """
+    return (0.5 * float(mass_amu) * U_KG
+            * np.asarray(speed_mps, dtype=float) ** 2 / EV)
+
+
 @dataclass(frozen=True)
 class FragmentMeanKE:
     """Simulated per-fragment mean kinetic energy (droplet rest frame).
