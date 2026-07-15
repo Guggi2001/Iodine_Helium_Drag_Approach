@@ -605,8 +605,11 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
         ax = axes[n]
         curve = load_ihe_ked_curve(ked_dir, n)
         ref_signal = getattr(curve, f"signal_{representation}_Pv")
-        ax.plot(curve.v_mps, ref_signal, ".", color="tab:blue",
-                markersize=2.5, alpha=0.30, label="experiment (raw)")
+        # Raw export as faint points joined by a fine line; matplotlib
+        # breaks the line at the NaN cuts, so gaps stay gaps.
+        ax.plot(curve.v_mps, ref_signal, ".-", color="tab:blue",
+                markersize=2.5, linewidth=0.5, alpha=0.30,
+                label="experiment (raw)")
         ax.plot(curve.v_mps,
                 _nan_aware_moving_mean(ref_signal, IHE_KED_EXP_SMOOTHING_WINDOW),
                 color="tab:blue", linewidth=1.4,
