@@ -134,6 +134,12 @@ IHE_KED_PLOT_V_MAX_MPS = 3100.0
 # normalization.
 IHE_KED_EXP_SMOOTHING_WINDOW = 10
 
+# Mean-energy figure: left panel covers the trusted-curve fragments
+# (n < split), right panel the evaporative tail (n >= split), each on
+# its own linear scale -- log-y compressed the low-n comparison where
+# the reference is strongest.
+IHE_KED_MEAN_ENERGY_SPLIT_N = 5
+
 PAIR_DIST_NUM_BINS = 100
 TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
@@ -484,6 +490,14 @@ def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
     are drawn as shaded envelopes, never folded into point errors. Gold
     points are calib-limited: a disagreement there is real physics beyond
     the two bands.
+
+    Rendered as two side-by-side linear-scale panels split at
+    ``IHE_KED_MEAN_ENERGY_SPLIT_N``: a single log-y panel compresses the
+    visual distance exactly where absolute sim-vs-exp discrepancies matter
+    most (low n, the trusted-curve / gold-point regime) and flatters
+    near-zero sim values at high n. The left panel covers the
+    trusted-curve fragments (n < split); the right panel the evaporative
+    tail (n >= split); each on its own linear scale.
     """
     if ked_ref is None:
         raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
@@ -494,44 +508,69 @@ def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
             sim_points.append(fragment_mean_kinetic_energy(ion, int(n)))
         except ValueError:
             continue
-    fig, ax = plt.subplots(figsize=(9.5, 5.0), constrained_layout=True)
 
+    split = IHE_KED_MEAN_ENERGY_SPLIT_N
     mean = ked_ref.mean_KE_eV
-    for frac, label, alpha in (
-        (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
-        (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
-    ):
-        ax.fill_between(ked_ref.n, mean * (1.0 - frac), mean * (1.0 + frac),
-                        color="tab:blue", alpha=alpha, linewidth=0,
-                        label=label)
-    ax.errorbar(ked_ref.n, mean, yerr=ked_ref.point_err_eV, fmt="o",
-                color="tab:blue", markersize=4, capsize=2,
-                label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
     gold = ked_ref.gold_mask
-    ax.plot(ked_ref.n[gold], mean[gold], "o", markersize=10,
-            markerfacecolor="none", markeredgecolor="goldenrod",
-            markeredgewidth=1.5, label="gold points (calib-limited)")
+    n_max = int(ked_ref.n.max())
 
-    if sim_points:
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.0), constrained_layout=True)
+    panel_specs = (
+        (axes[0], ked_ref.n < split, lambda n: n < split,
+         f"n = 0-{split - 1} (trusted-curve fragments)", True),
+        (axes[1], ked_ref.n >= split, lambda n: n >= split,
+         f"n = {split}-{n_max}", False),
+    )
+
+    for ax, subset, in_panel, panel_title, show_legend in panel_specs:
+        if not np.any(subset):
+            ax.set_axis_off()
+            continue
+
+        for frac, label, alpha in (
+            (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
+            (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
+        ):
+            ax.fill_between(
+                ked_ref.n[subset],
+                mean[subset] * (1.0 - frac[subset]),
+                mean[subset] * (1.0 + frac[subset]),
+                color="tab:blue", alpha=alpha, linewidth=0, label=label,
+            )
         ax.errorbar(
-            [p.n for p in sim_points],
-            [p.mean_KE_eV for p in sim_points],
-            yerr=[p.stat_err_mean_KE_eV for p in sim_points],
-            fmt="s", linestyle="--", color="tab:red", markersize=5,
-            capsize=2, label=r"simulation $\langle E\rangle$",
-        )
-        for p in sim_points:
-            ax.annotate(f"N={p.num_atoms_used}",
-                        (p.n, p.mean_KE_eV),
-                        textcoords="offset points", xytext=(0, 7),
-                        fontsize=7, color="tab:red", ha="center")
+            ked_ref.n[subset], mean[subset],
+            yerr=ked_ref.point_err_eV[subset], fmt="o",
+            color="tab:blue", markersize=4, capsize=2,
+            label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
+        gold_subset = gold & subset
+        ax.plot(ked_ref.n[gold_subset], mean[gold_subset], "o", markersize=10,
+                markerfacecolor="none", markeredgecolor="goldenrod",
+                markeredgewidth=1.5, label="gold points (calib-limited)")
 
-    ax.set_yscale("log")
-    ax.set(title=r"I$^+$He$_n$ mean kinetic energy (mean-to-mean)",
-           xlabel="n (attached He atoms)",
-           ylabel=r"$\langle E\rangle$ / eV")
-    ax.set_xticks(ked_ref.n)
-    ax.legend(frameon=False, fontsize=8)
+        panel_sim = [p for p in sim_points if in_panel(p.n)]
+        if panel_sim:
+            ax.errorbar(
+                [p.n for p in panel_sim],
+                [p.mean_KE_eV for p in panel_sim],
+                yerr=[p.stat_err_mean_KE_eV for p in panel_sim],
+                fmt="s", linestyle="none", color="tab:red", markersize=5,
+                capsize=2, label=r"simulation $\langle E\rangle$",
+            )
+            for p in panel_sim:
+                ax.annotate(f"N={p.num_atoms_used}",
+                            (p.n, p.mean_KE_eV),
+                            textcoords="offset points", xytext=(0, 7),
+                            fontsize=7, color="tab:red", ha="center")
+
+        ax.set_ylim(bottom=0.0)
+        ax.set(title=panel_title,
+               xlabel="n (attached He atoms)",
+               ylabel=r"$\langle E\rangle$ / eV")
+        ax.set_xticks(ked_ref.n[subset])
+        if show_legend:
+            ax.legend(frameon=False, fontsize=8)
+
+    fig.suptitle(r"I$^+$He$_n$ mean kinetic energy (mean-to-mean)")
     return fig
 
 

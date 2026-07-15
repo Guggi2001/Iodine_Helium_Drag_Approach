@@ -342,6 +342,9 @@ class TestRunSummaryIHeKedSections:
         ked_ref = load_ihe_ked_reference(REFERENCE_CSV)
         fig = mod._section_ihe_ked_mean_energy(_smoke_ion(), ked_ref)
         assert fig is not None
+        assert len(fig.axes) == 2
+        assert all(a.get_yscale() == "linear" for a in fig.axes)
+        assert all(a.get_ylim()[0] == 0.0 for a in fig.axes)
         plt.close("all")
 
     def test_curves_sections_build_both_representations(self):
