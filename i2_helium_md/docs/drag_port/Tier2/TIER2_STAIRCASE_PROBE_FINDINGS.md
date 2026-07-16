@@ -2023,6 +2023,58 @@ integrations (fine v_c grid) + free τ-rescale: **39 312 cells**
 
 ---
 
+## 4l. Slice-T3 pilot first look — the undressed MD parks at n ≈ 7–9; the closure miss localizes to the ensemble geometry, not the calibrated law
+
+Read 2026-07-16 (scratchpad first-look over the four delivered
+`…_tier2probe_conf270_c{1..4}` detection artifacts; delivery record:
+log entry "Slice T3 DELIVERED"; the formal ihe_ked scoring pass has not
+run — this is the structural read that re-sequences it).
+
+**Result.** All four configs produce a **narrow mid-shell cluster with
+zero weight below n = 5** (100 ions each, 90–95 % `frozen`, 0 %
+suppressed — E₀ ≥ 0.23 eV opens the gate in-bubble at every birth):
+
+| | n range | peak bins | bare | solvated n₁ | n̄_detect |
+|---|---|---|---|---|---|
+| C1 | 6–12 | n8 0.34 / n9 0.40 | 0.00 | **0.00** | 8.63 |
+| C2 | 5–12 | n8 0.31 / n9 0.43 | 0.00 | **0.00** | 8.77 |
+| C3 | 6–10 | n6 0.29 / n7 0.50 | 0.00 | **0.00** | 6.97 |
+| C4 | 6–11 | n8 0.42 / n9 0.41 | 0.00 | **0.00** | 8.39 |
+
+S2-P3 (the rq4graded/floor1 n₁ split) is **structurally silent** —
+rungs 1–3 are never reached; the experimental targets (solvated
+n₁ = 0.31, n₁/n₂ = 2.18) are out of reach at *any* (drag, τ, ladder)
+value of the matrix.
+
+**Diagnosis.** The Step-1b/1c closure cells were scored on the full
+H.2b ensemble — L1 birth margin (3–6 Å), **L2 depth-dressing
+n_eject(d) = round(21·ρ̂)**, the D2 E₀-coupling p = 1, and the D4
+droplet priors. The repo MD carries only the position axis:
+`ion_initial_state.py` starts **every** biphasic ion at the full
+n₀ = 21 shell (`ANCHOR_N_START` — the Tier-1a validation convention),
+so off-center births change exposure only, every ion must descend the
+full Σ(21) ladder, and E_ej buys only ~12 rungs → the n ≈ 7–9 park.
+The §I.10 margin-0 "recorded caveat" is hereby **measured to be
+load-bearing**, and the H.3b park premise ("building the dressing would
+confirm an inertness prediction") is overturned in the direction its
+own revival clause reserved.
+
+**What does transfer.** Cross-config ordering follows the F.2b
+race/leak picture exactly (shorter τ → larger K → smaller E_ej → fewer
+post-ejection sheds → higher terminal n: 8.63 (τ3.8) > 8.39 (τ4.4) >
+6.97 (τ6.55)); the capped tails lift detected KE as designed (C1/C2/C4
+×1.3–2.0 vs the experimental means in their populated bins, current-law
+C3 ×0.85–1.15) — though the bin-level KE read is geometry-conditional
+until the shell question is fixed. All four stages ran clean at
+production kinematics (first in-repo), and the dt-halving spot check
+passed (drifts ≤ 0.30× SEM).
+
+Consequence: the **Step-2c geometry-closure slice plan** (plan §I.11,
+slices T5–T9) — build the missing ensemble levers in MD and re-run the
+confirmation under them. The §I.10 T4 scoring gate is absorbed there.
+
+---
+
 ## 5. Consolidated insight register
 
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
@@ -2400,6 +2452,25 @@ integrations (fine v_c grid) + free τ-rescale: **39 312 cells**
   specifically buys n₁ = 0.26+, ratio ≥ 1.75, and W₁ 0.58 → 0.20. RQ4's
   arbitration is therefore about the histogram's small-n shape only —
   the KE side stands either way.
+- **I52 (Slice T3, §4l).** **The undressed MD cannot express the
+  closure's small-n structure at any knob value:** with every ion
+  starting at the full n₀ = 21 shell, all four §I.10 configs park in a
+  narrow n ≈ 7–9 cluster (zero weight below n = 5; bare and n₁
+  identically zero). The 1D↔MD gap is the *ensemble geometry* (L2
+  dressing + E₀ law + margin + prior), not the calibrated (v_c, τ,
+  ladder) values.
+- **I53 (Slice T3, §4l).** **The mechanism transfer itself is
+  confirmed at production kinematics:** τ/E₀ ordering across C1–C4
+  follows the F.2b race/leak closed form; the capped tails lift
+  detected KE (×1.3–2.0 vs current-law ×0.85–1.15 in populated bins);
+  90–95 % frozen arrivals (converged reads); dt-halving drifts
+  ≤ 0.30× SEM.
+- **I54 (Slice T3, §4l).** **`ANCHOR_N_START` = 21 is a
+  validation-era convention doing production work:** the biphasic seed
+  hard-codes the Tier-1a 9 Å full-shell start regardless of birth
+  position — physically indefensible for surface births at 2.666 Å
+  kinematics, and exactly the H.3b "n_eject(depth)" surface that was
+  designed and parked.
 
 ---
 

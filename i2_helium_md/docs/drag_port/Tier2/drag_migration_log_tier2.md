@@ -6274,3 +6274,137 @@ schema, RNG draw order, constants untouched; the runtime
 out-of-table-above lookup stays the accepted fail-loud convention
 (only the physically-reachable `n = 0` *below*-table lane was
 clamped — it is mask-discarded, not physics).
+
+
+## Slice T3 DELIVERED — MD-confirmation generator built + C1–C4 pilots EXECUTED at production kinematics (first in-repo off-9 Å MD); dt-halving oracle clean (2026-07-16)
+
+Executed under the user's `[PROCEED TO IMPLEMENTATION]` ("as proposed
+for all" on the five pre-T3 discussion points: (1) C-label tag scheme
+`tier2probe_conf270_cN` in the probe namespace; (2) ladder-table
+construction pins — base mixture κ=1 Form-U via `d0_of_n(1..32)`,
+rq4graded rungs 1–3 × (2.2, 1.5, 1.3), floor1 rung 1 := 13.3 meV
+absolute; (3) probe pins carried (λ₀ = 0.9/ps, f_ret = 0.1, mixture/κ=1
+stamped, 30 ps ion window, Tier-0 dt, exact-quotient f_int) + a
+one-config dt-halving spot check; (4) detection stage inline in
+`_run_one`; (5) one trigger = build + tests + the 4 × N = 50 pilots).
+TDD: both RED sets watched fail first (ImportError on the missing
+names, the missing-feature failure).
+
+**Code (2 files):**
+
+- `scripts/tier2_common.py` — `build_biphasic_cfg` gained eight
+  None-sentinel byte-inert kwargs (explicit-None call proven equal to
+  the bridge call): `drag_form` + `drag_coefficient_overrides` (form
+  swap; the new form's coefficient set assembles override-first /
+  bundle-second, so `capped_cubic` **structurally inherits the locked
+  pure-cubic b** — the T1 in-band byte-identity premise; provenance +
+  stamped binding ride unchanged; overrides-without-form, unknown keys,
+  and keys available from neither source are refused loudly),
+  `dissociation_ladder` + `tabulated_ladder_rungs_eV` (tuple-coerced;
+  pairing validated by `resolve_ladder` at `validate()`),
+  `R0_GS_angstrom`, `E_coulomb_scale` (stamped *explicitly* — the
+  droplet-distribution preset precedent is 0.8, never inherit
+  silently), `single_initial_position`, and `detection_time_ps`
+  (enables the stage, mirroring the `relaxation_time_ps` pattern). New
+  `tier2_confirmation_run_tag` / `tier2_confirmation_run_dir_name`: the
+  C-label **is** the run identity; all knobs are read from the
+  authoritative `cfg.json` (F3 convention) — at production f_int is an
+  exact quotient (0.25/2.70 = 0.0926…, 0.24/2.70 = 0.0889…) and the
+  probe tag's two-decimal f_int would alias C1 with C2. The `conf270`
+  digits satisfy the Wave-8 "2.70 eV dirs must be tag-distinct" note;
+  namespace-locked in both directions (probe glob sweeps it, campaign
+  glob and delivered `tier2probe_b…` tags never match).
+- `scripts/gen_tier2_md_confirmation.py` (new) — the frozen §I.10
+  C1–C4 `ConfirmationSpec` matrix; rq4graded / floor1 rung tables
+  **constructed generator-side** from `d0_of_n` × the taper multipliers
+  (no taper physics in the package — the T2 boundary; `form_u` key =
+  ride-the-default, byte-inert for C3); production-budget guard
+  (refuses ≠ 2.70 eV, mirroring the probe generator's 0.80-only guard
+  in the opposite direction); `_run_one` runs **all four stages**
+  (neutral → ion → E2 relaxation → detection — the first generator to
+  run detection inline); five-artifact resume guard
+  (`detection.npz` required for skip-complete).
+
+**Tests (+24, RED→GREEN; full suite 2293+11 review = 2304 → 2328
+passed):** `test_tier2_common.py` — byte-inert default lock, capped
+form-swap with bundle-b inheritance + stamped-binding identity, the
+three loud-refusal arms, ladder/production-kinematics/detection stamps,
+conf-tag encoding + label validation + namespace lock.
+`test_gen_tier2_md_confirmation.py` (new) — Form-U base table ==
+`d0_of_n(1..32)` with the **Σ(21) = 0.18783720 eV** wiring pin,
+rq4graded/floor1 construction oracles, ladder-key dispatch, the frozen
+C1–C4 values, common-pin + per-config stamps (f_int exact, never
+rounded), budget guard, unique conf dirs, F3-discovery ignores a
+complete conf dir, tiny-N end-to-end through all four stages writing
+all five artifacts, partial/skip guards, `main()` schedule.
+
+**Pilots EXECUTED** (N = 50, shared bridge seed 20260604, ion 3000
+steps, relaxation full 1000 ps cap, detection at 8.53 µs; dirs
+`data/runs/9A_drag_shared_pure_cubic_N50_tier2probe_conf270_c{1..4}`):
+
+| config | drag | τ [ps] | ladder | E₀ [eV] | n_relax_mean | n_detect_mean |
+|---|---|---|---|---|---|---|
+| C1 | p = −1, v_c = 7.5 | 3.8 | rq4graded | 0.25 | 8.94 | 8.63 |
+| C2 | p = 0, v_c = 6.5 | 4.0 | rq4graded | 0.24 | 9.11 | 8.77 |
+| C3 | linear_cubic (control) | 6.55 | form_u | 0.25 | 7.38 | 6.97 |
+| C4 | p = −1, v_c = 7.5 | 4.4 | floor1 | 0.23 | 8.78 | 8.39 |
+
+**dt-halving spot check** (scratchpad driver, C1, dt 0.01 → 0.005,
+ensemble-mean read — the two arms are independent RNG realizations
+since halving dt doubles the pickup draw count): n̄_detect
+8.630 ± 0.095 → 8.600 ± 0.099 (drift 0.30× SEM); mean detected KE
+0.2966 ± 0.0037 → 0.2971 ± 0.0039 eV (drift 0.14× SEM); C1 arrival
+state 91 % frozen / 0 % suppressed / 9 % time_exhausted. The Tier-0
+dt = 0.01 ps is adequate at production kinematics at the observable
+level — the §I.10 "never exercised in-repo above 5.3 Å/ps" flag is
+discharged.
+
+**Boundaries / notes for T4:** scoring and the S2-P1–P4 verdicts are
+**Slice T4's job** — the means above are generator stdout, not an
+adjudication. The delivered staircase-probe report's `*_tier2probe_*`
+glob **would sweep the conf dirs** (they are artifact-complete for it)
+and would score them against the 0.80 eV anchored comparator — T4
+should exclude `*_tier2probe_conf*` from that report or ignore its rows
+for these dirs. The margin-0 off-center-birth caveat stands (1D used
+3–6 Å). The stale-artifact policy applies to the four pilot dirs.
+Nothing discharges F5.
+
+
+## T3 pilot first-look FINDING + Step 2c geometry-closure slices DESIGNED — §I.11 (T5–T9) added; §I.10 T4 superseded/absorbed (2026-07-16)
+
+First-look read of the four conf detection artifacts (findings **§4l**,
+insights **I52–I54**): every config parks in a narrow n ≈ 7–9 cluster,
+zero weight below n = 5, bare/n₁ identically zero — **S2-P3 is
+structurally silent**. Diagnosis: the Step-1c closure cells were scored
+on the full H.2b ensemble (L1 margin, **L2 dressing
+n_eject = round(21·ρ̂)**, D2 E₀-law p = 1, D4 priors), while the repo
+biphasic seed starts every ion at the full n₀ = 21 shell
+(`ANCHOR_N_START` — the Tier-1a validation convention, I54). The §I.10
+margin-0 caveat is measured to be load-bearing; the H.3b park premise
+is overturned via its own revival clause. What *does* transfer (I53):
+the F.2b τ/E₀ race ordering, the capped-tail KE lift (×1.3–2.0 vs
+current-law ×0.85–1.15 in populated bins), clean four-stage execution,
+dt adequacy.
+
+Consequence (user direction 2026-07-16: "the next slices should be
+reproducing what was achieved in the scratchpad"): plan **§I.11 Step
+2c** added — slices **T5** (initial-shell dressing arm,
+`initial_shell_model ∈ {full, density_tied}` — H.3b revived verbatim),
+**T6** (E₀–dressing coupling,
+`internal_energy_partition_law ∈ {constant, sigma_proportional}`),
+**T7** (hard birth-margin knob — *conditional* on V0-1), **T8**
+(droplet-prior family, Kornilov δ + pickup-weighted; supersedes the
+S2-D4 deferral), **T9** (staged A/B/C/D oracle chain — each leg A/B'd
+against the 1D twin re-scored at exactly that MD configuration — then
+the re-centered confirmation re-pilot + the scoring machinery + the
+N = 500 winner gate absorbed from §I.10 T4, which is superseded as
+written). Pre-slice verification **V0**: (1) the repo birth sampler is
+Boltzmann `r²·e^(−U/kT)`, not the 1D bare-r²+margin — reconciliation
+decision; (2) the droplet well exerts **no force** on the drag-path ion
+(E_pot bookkeeping only) → the §4j trapped class cannot exist in MD —
+normalization convention to fix; (3) `h2b_feasibility.py` survives only
+in expired scratchpads — recover + commit as the reproducible twin.
+Pre-registered S2c-P1..P4 (numerics filled from twin re-scores per
+leg). **All slices behind their own `[PROCEED TO IMPLEMENTATION]`;
+V0-1/V0-3/T8-scope/T9-re-centering are open user decisions.** Nothing
+discharges F5.

@@ -8,6 +8,8 @@ cheap config surface -- no propagation, no run dirs (that is the F2 smoke test).
 
 from __future__ import annotations
 
+from fnmatch import fnmatch
+
 import pytest
 
 from scripts.tier2_common import (
@@ -20,6 +22,8 @@ from scripts.tier2_common import (
     VALIDATION_BUDGET_EV,
     build_biphasic_cfg,
     tier2_bridge_run_dir_name,
+    tier2_confirmation_run_dir_name,
+    tier2_confirmation_run_tag,
     tier2_run_dir_name,
     tier2_run_tag,
 )
@@ -275,6 +279,191 @@ def test_bridge_tag_reserved_and_unchanged():
         picture="statistical_mixture", kappa=1.0, lambda0_per_ps=0.9, f_int=0.5,
         f_ret=0.1, tau_ps=6.55, budget_eV=0.80,
     ).startswith(TIER2_BRIDGE_TAG)
+
+
+# ---------------------------------------------------------------------------
+# Slice T3 (plan §I.10): production-kinematics / drag-form / ladder /
+# detection kwargs on build_biphasic_cfg + the C1-C4 confirmation tag helpers
+# ---------------------------------------------------------------------------
+
+
+def test_t3_kwargs_default_none_is_byte_inert():
+    """All Slice-T3 kwargs are None-sentinel: passing them explicitly as None
+    must produce a config equal to the pre-T3 bridge call (byte-inert lock)."""
+    base = build_biphasic_cfg("9A", "shared_pure_cubic", **_COMMON)
+    explicit = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        drag_form=None,
+        drag_coefficient_overrides=None,
+        dissociation_ladder=None,
+        tabulated_ladder_rungs_eV=None,
+        R0_GS_angstrom=None,
+        E_coulomb_scale=None,
+        single_initial_position=None,
+        detection_time_ps=None,
+        **_COMMON,
+    )
+    assert explicit == base
+    # And the ridden defaults are the delivered ones (9A preset / config).
+    assert base.drag_form == "linear_cubic"
+    assert base.dissociation_ladder == "form_u"
+    assert base.tabulated_ladder_rungs_eV is None
+    assert base.R0_GS_angstrom == pytest.approx(9.0)
+    assert base.E_coulomb_scale == pytest.approx(1.0)
+    assert base.single_initial_position is True
+    assert base.detection_stage_enabled is False
+    assert base.detection_time_ps is None
+
+
+def test_drag_form_override_builds_capped_cubic_inheriting_bundle_b():
+    """drag_form='capped_cubic' swaps the form and assembles the coefficient set
+    from the overrides (v_c, p_tail) plus the bundle (b) -- structurally the T1
+    'same b as the locked pure-cubic bundle' premise. Provenance and the stamped
+    effective binding ride the bundle unchanged (the §6.5.1 identity)."""
+    base = build_biphasic_cfg("9A", "shared_pure_cubic", **_COMMON)
+    cfg = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        drag_form="capped_cubic",
+        drag_coefficient_overrides={"v_c": 7.5, "p_tail": -1.0},
+        **_COMMON,
+    )
+    cfg.validate()
+    assert cfg.drag_form == "capped_cubic"
+    coeffs = cfg.drag_coefficients
+    assert coeffs.form == "capped_cubic"
+    assert set(coeffs.coefficients) == {"b", "v_c", "p_tail"}
+    assert coeffs.coefficients["b"] == base.drag_coefficients.coefficients["b"]
+    assert coeffs.coefficients["v_c"] == pytest.approx(7.5)
+    assert coeffs.coefficients["p_tail"] == pytest.approx(-1.0)
+    assert (
+        coeffs.effective_binding_energy_I_ion_eV
+        == base.drag_coefficients.effective_binding_energy_I_ion_eV
+    )
+    assert coeffs.extraction_mass_amu == base.drag_coefficients.extraction_mass_amu
+
+
+def test_drag_coefficient_overrides_require_drag_form():
+    """Overrides without a form are ambiguous with build_drag_cfg's same-form
+    coeff_overrides path -- refused loudly."""
+    with pytest.raises(ValueError, match="drag_form"):
+        build_biphasic_cfg(
+            "9A",
+            "shared_pure_cubic",
+            drag_coefficient_overrides={"v_c": 7.5},
+            **_COMMON,
+        )
+
+
+def test_drag_form_override_rejects_unknown_coefficient_key():
+    with pytest.raises(ValueError, match="not coefficients of"):
+        build_biphasic_cfg(
+            "9A",
+            "shared_pure_cubic",
+            drag_form="capped_cubic",
+            drag_coefficient_overrides={"v_c": 7.5, "p_tail": 0.0, "a": 1.0},
+            **_COMMON,
+        )
+
+
+def test_drag_form_override_missing_key_not_in_bundle_rejected():
+    """capped_cubic needs v_c/p_tail; the linear_cubic bundle cannot supply
+    them, so omitting them is a loud error, not a silent default."""
+    with pytest.raises(ValueError, match="p_tail"):
+        build_biphasic_cfg(
+            "9A",
+            "shared_pure_cubic",
+            drag_form="capped_cubic",
+            drag_coefficient_overrides={"v_c": 7.5},
+            **_COMMON,
+        )
+
+
+def test_ladder_kwargs_stamp_tabulated_table():
+    from i2_helium_md.physics.constants import N_STAR
+
+    rungs = tuple(0.0092 for _ in range(N_STAR + 11))
+    cfg = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        dissociation_ladder="tabulated",
+        tabulated_ladder_rungs_eV=rungs,
+        **_COMMON,
+    )
+    cfg.validate()
+    assert cfg.dissociation_ladder == "tabulated"
+    assert cfg.tabulated_ladder_rungs_eV == pytest.approx(rungs)
+    assert isinstance(cfg.tabulated_ladder_rungs_eV, tuple)
+
+
+def test_production_kinematics_kwargs_stamped():
+    cfg = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        R0_GS_angstrom=2.666,
+        E_coulomb_scale=1.0,
+        single_initial_position=False,
+        coulomb_available_eV=PRODUCTION_BUDGET_EV,
+        **_COMMON,
+    )
+    cfg.validate()
+    assert cfg.R0_GS_angstrom == pytest.approx(2.666)
+    assert cfg.E_coulomb_scale == pytest.approx(1.0)
+    assert cfg.single_initial_position is False
+    assert cfg.coulomb_available_eV == PRODUCTION_BUDGET_EV
+
+
+def test_detection_time_enables_stage_and_stamps():
+    """Mirrors the relaxation_time_ps pattern: a set detection_time_ps enables
+    the stage and stamps the Sourced t_detect; None leaves the stage off."""
+    cfg = build_biphasic_cfg(
+        "9A",
+        "shared_pure_cubic",
+        relaxation_time_ps=1000.0,
+        detection_time_ps=EXPERIMENTAL_RELAXATION_TIME_PS,
+        **_COMMON,
+    )
+    cfg.validate()
+    assert cfg.detection_stage_enabled is True
+    assert cfg.detection_time_ps == pytest.approx(8.53e6)
+
+
+def test_confirmation_tag_encodes_label_and_budget():
+    assert (
+        tier2_confirmation_run_tag(config_label="c1", budget_eV=2.70)
+        == "tier2probe_conf270_c1"
+    )
+    assert (
+        tier2_confirmation_run_tag(config_label="c4", budget_eV=0.80)
+        == "tier2probe_conf080_c4"
+    )
+
+
+def test_confirmation_tag_rejects_bad_label():
+    for bad in ("", "C1", "c 1", "c_1", "1c"):
+        with pytest.raises(ValueError, match="config_label"):
+            tier2_confirmation_run_tag(config_label=bad, budget_eV=2.70)
+
+
+def test_confirmation_dir_in_probe_namespace_but_distinct():
+    """The conf dirs live in the probe namespace (swept by *_tier2probe_*, never
+    by the F3 campaign glob *_tier2_*) and can never collide with a delivered
+    probe tag (those continue 'tier2probe_b...', conf tags 'tier2probe_conf...')."""
+    name = tier2_confirmation_run_dir_name(
+        "9A", "shared_pure_cubic", 50, config_label="c1", budget_eV=2.70
+    )
+    assert name == "9A_drag_shared_pure_cubic_N50_tier2probe_conf270_c1"
+    assert "_tier2probe_" in name
+    assert not fnmatch(name, "*_tier2_*")  # the F3 campaign glob
+    assert not fnmatch(name, "*_tier2probe_b*")  # the delivered probe tags
+    labels = {
+        tier2_confirmation_run_dir_name(
+            "9A", "shared_pure_cubic", 50, config_label=lab, budget_eV=2.70
+        )
+        for lab in ("c1", "c2", "c3", "c4")
+    }
+    assert len(labels) == 4
 
 
 def test_grid_points_get_distinct_run_dirs():

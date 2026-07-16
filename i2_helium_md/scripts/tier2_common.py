@@ -35,10 +35,12 @@ so the 9/18 A density-contrast route to ``f_ret`` (plan F2/F4) is unavailable an
 from __future__ import annotations
 
 from dataclasses import replace
+import re
 import typing
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Sequence
 
 from i2_helium_md.config import LadderElectronicPicture, SimConfig
+from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS
 from i2_helium_md.physics.shell_schedule import complex_mass_amu
 
 from scripts.tier0_common import build_drag_cfg, run_dir_name
@@ -102,6 +104,14 @@ def build_biphasic_cfg(
     cooling_spatial_gate: Optional[str] = None,
     coeff_overrides: Optional[Mapping[str, float]] = None,
     e_bind_override: Optional[float] = None,
+    drag_form: Optional[str] = None,
+    drag_coefficient_overrides: Optional[Mapping[str, float]] = None,
+    dissociation_ladder: Optional[str] = None,
+    tabulated_ladder_rungs_eV: Optional[Sequence[float]] = None,
+    R0_GS_angstrom: Optional[float] = None,
+    E_coulomb_scale: Optional[float] = None,
+    single_initial_position: Optional[bool] = None,
+    detection_time_ps: Optional[float] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -157,6 +167,41 @@ def build_biphasic_cfg(
         lever probed by the staircase-probe total-strip A/B grid.
     coeff_overrides, e_bind_override :
         Passed through to :func:`build_drag_cfg`.
+    drag_form : str or None
+        Slice T3 (§I.10): when set, swap the Tier-0 bundle's drag *form* (e.g.
+        ``"capped_cubic"``). The coefficient set of the new form is assembled
+        key-by-key from ``drag_coefficient_overrides`` first and the bundle's
+        committed coefficients second (so ``capped_cubic`` structurally
+        inherits the locked pure-cubic ``b`` -- the Slice-T1 in-band
+        byte-identity premise); a key available from neither source is a loud
+        error. Bundle provenance and the stamped effective binding ride
+        unchanged (the §6.5.1 identity). ``None`` -> the bundle form verbatim.
+    drag_coefficient_overrides : Mapping[str, float] or None
+        New-form coefficient values (see ``drag_form``); keys must belong to
+        the new form. Requires ``drag_form`` (a same-form retune goes through
+        ``coeff_overrides`` instead -- the two paths are kept unambiguous).
+    dissociation_ladder : str or None
+        Ladder selector override (``"form_u"``/``"tabulated"``). ``None`` ->
+        ride the config default. Pairing with the rung table is validated by
+        ``resolve_ladder`` at ``cfg.validate()`` (Slice T2).
+    tabulated_ladder_rungs_eV : sequence of float or None
+        Rung table [eV] for ``dissociation_ladder="tabulated"`` (coerced to a
+        tuple -- the ``cfg.json`` round-trip type). ``None`` -> no table.
+    R0_GS_angstrom : float or None
+        Initial I-I separation [A]. ``None`` -> the case preset value (9A ->
+        9.0). The production channel uses 2.666 A (2.70 eV/fragment).
+    E_coulomb_scale : float or None
+        Coulomb scaling factor. ``None`` -> the case preset value (1.0). The
+        §I.10 production pin stamps 1.0 *explicitly* (the droplet-distribution
+        preset precedent uses 0.8 -- do not inherit silently).
+    single_initial_position : bool or None
+        ``False`` enables off-center birth sampling. ``None`` -> the case
+        preset value (9A -> ``True``, all births at the droplet center).
+    detection_time_ps : float or None
+        When set, enables the detection stage (``detection_stage_enabled=True``)
+        and stamps this Sourced flight time [ps] (CALIBRATION_MAP row 24 --
+        8.53e6). ``None`` -> stage stays disabled (the pre-DS scope). Mirrors
+        the ``relaxation_time_ps`` pattern.
 
     Returns
     -------
@@ -180,6 +225,13 @@ def build_biphasic_cfg(
         coeff_overrides=coeff_overrides,
         e_bind_override=e_bind_override,
     )
+
+    if drag_coefficient_overrides is not None and drag_form is None:
+        raise ValueError(
+            "drag_coefficient_overrides requires drag_form: a same-form "
+            "coefficient retune goes through coeff_overrides (the Tier-0 "
+            "bundle path); the form-swap path must name the new form."
+        )
 
     overrides: dict[str, object] = dict(
         mass_scenario="biphasic",
@@ -205,6 +257,56 @@ def build_biphasic_cfg(
         overrides["relaxation_forces"] = relaxation_forces
     if cooling_spatial_gate is not None:
         overrides["cooling_spatial_gate"] = cooling_spatial_gate
+    if drag_form is not None:
+        bundle = fixed_cfg.drag_coefficients
+        required = _REQUIRED_COEFF_KEYS.get(drag_form)
+        if required is None:
+            raise ValueError(
+                f"unknown drag_form {drag_form!r}; expected one of "
+                f"{sorted(_REQUIRED_COEFF_KEYS)}"
+            )
+        supplied = dict(drag_coefficient_overrides or {})
+        unknown = sorted(set(supplied) - set(required))
+        if unknown:
+            raise ValueError(
+                f"drag_coefficient_overrides keys {unknown} are not "
+                f"coefficients of form {drag_form!r}; allowed keys are "
+                f"{sorted(required)}"
+            )
+        new_values: dict[str, float] = {}
+        missing: list[str] = []
+        for key in required:
+            if key in supplied:
+                new_values[key] = float(supplied[key])
+            elif key in bundle.coefficients:
+                new_values[key] = float(bundle.coefficients[key])
+            else:
+                missing.append(key)
+        if missing:
+            raise ValueError(
+                f"drag_form {drag_form!r} requires coefficients {missing} "
+                "supplied via drag_coefficient_overrides (not present in the "
+                f"{bundle.form!r} bundle -- no silent defaults)."
+            )
+        overrides["drag_form"] = drag_form
+        overrides["drag_coefficients"] = replace(
+            bundle, form=drag_form, coefficients=new_values
+        )
+    if dissociation_ladder is not None:
+        overrides["dissociation_ladder"] = dissociation_ladder
+    if tabulated_ladder_rungs_eV is not None:
+        overrides["tabulated_ladder_rungs_eV"] = tuple(
+            float(r) for r in tabulated_ladder_rungs_eV
+        )
+    if R0_GS_angstrom is not None:
+        overrides["R0_GS_angstrom"] = float(R0_GS_angstrom)
+    if E_coulomb_scale is not None:
+        overrides["E_coulomb_scale"] = float(E_coulomb_scale)
+    if single_initial_position is not None:
+        overrides["single_initial_position"] = bool(single_initial_position)
+    if detection_time_ps is not None:
+        overrides["detection_stage_enabled"] = True
+        overrides["detection_time_ps"] = float(detection_time_ps)
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
@@ -407,6 +509,59 @@ def tier2_probe_run_dir_name(
     )
 
 
+# Slice-T3 (§I.10) confirmation labels: short filesystem-safe identifiers
+# ("c1".."c4"). The label IS the run identity -- all physics knobs are read
+# from the authoritative cfg.json (the F3 convention), never parsed from the
+# tag. This sidesteps the knob-encoding tags entirely: at production f_int is
+# an exact quotient (0.25/2.70 = 0.0926..., 0.24/2.70 = 0.0889...) and the
+# probe tag's two-decimal f_int would alias C1 with C2.
+_CONF_LABEL_RE = re.compile(r"^[a-z][a-z0-9]*$")
+
+
+def tier2_confirmation_run_tag(*, config_label: str, budget_eV: float) -> str:
+    """Return the Slice-T3 MD-confirmation run-tag for one C-config.
+
+    ``tier2probe_conf<NNN>_<label>`` -- e.g. ``tier2probe_conf270_c1``. Lives in
+    the **probe namespace** (``*_tier2probe_*`` sweeps it; the F3 campaign glob
+    ``*_tier2_*`` never matches) but is disjoint from every delivered probe tag
+    (those continue ``tier2probe_b...``). The budget digits satisfy the Wave-8
+    tag note: 2.70 eV dirs are tag-distinct from the 0.80 eV probe program by
+    construction.
+
+    Raises
+    ------
+    ValueError
+        On a label that is not a lowercase ``[a-z][a-z0-9]*`` identifier (the
+        label is a path component and a scoreboard key).
+    """
+    if not _CONF_LABEL_RE.match(config_label):
+        raise ValueError(
+            f"config_label {config_label!r} must match [a-z][a-z0-9]* "
+            "(filesystem-safe, lowercase; e.g. 'c1')."
+        )
+    budget_digits = _budget_tag(budget_eV).removeprefix("b")
+    return f"tier2probe_conf{budget_digits}_{config_label}"
+
+
+def tier2_confirmation_run_dir_name(
+    case: str,
+    variant: str,
+    n: int,
+    *,
+    config_label: str,
+    budget_eV: float,
+) -> str:
+    """Return the Tier-0-style run directory basename for one C-config."""
+    return run_dir_name(
+        case,
+        variant,
+        n,
+        run_tag=tier2_confirmation_run_tag(
+            config_label=config_label, budget_eV=budget_eV
+        ),
+    )
+
+
 __all__ = [
     "BRIDGE_F_INT",
     "BRIDGE_F_RET",
@@ -418,6 +573,8 @@ __all__ = [
     "build_biphasic_cfg",
     "tier2_bridge_run_dir_name",
     "tier2_probe_run_dir_name",
+    "tier2_confirmation_run_dir_name",
+    "tier2_confirmation_run_tag",
     "tier2_probe_run_tag",
     "tier2_run_dir_name",
     "tier2_run_tag",

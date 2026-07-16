@@ -2351,6 +2351,26 @@ namespace.
 | C3 | linear_cubic (current) | 6.55 | flat (form_u) | 0.25 | baseline control |
 | C4 | p = −1, v_c = 7.5 | 4.4 | floor1 | 0.23 | bounded-physics claim (I51) |
 
+> **NB (2026-07-16): Slice T3 DELIVERED + pilots EXECUTED** under its
+> own trigger (log entry "Slice T3 DELIVERED"; TDD, RED watched first;
+> full suite 2328 passed). As-built: `build_biphasic_cfg` gained eight
+> None-sentinel byte-inert kwargs (drag form-swap inheriting the locked
+> bundle `b` structurally; ladder selector + table; `R0_GS_angstrom`;
+> `E_coulomb_scale` stamped explicitly; `single_initial_position`;
+> `detection_time_ps`); the C-runs are tagged by config label
+> (`tier2probe_conf270_c1`…, probe namespace, knobs read from
+> `cfg.json` — a knob-encoding tag would alias C1/C2 at two-decimal
+> f_int); `scripts/gen_tier2_md_confirmation.py` builds the rq4graded /
+> floor1 tables generator-side (Σ(21) Form-U pin 0.18783720 eV
+> asserted) and runs neutral → ion → E2 → detection inline. **All four
+> N = 50 pilots are on disk** (first in-repo off-9 Å MD; relaxation
+> full 1000 ps cap): n̄_detect = 8.63 / 8.77 / 6.97 / 8.39
+> (C1/C2/C3/C4). **dt-halving spot check clean** at production
+> kinematics (C1, dt 0.01 → 0.005: n̄_detect drift 0.30× SEM, detected
+> KE drift 0.14× SEM) — the Tier-0 dt carries. Scoring + S2-P1–P4
+> verdicts await Slice T4 (note there: the staircase report's probe
+> glob sweeps conf dirs — exclude or ignore).
+
 ### Slice T4 — scoring, winner selection, N = 500 confirmation
 
 Pilot scored through the ihe_ked run-summary layer (mean-to-mean,
@@ -2379,3 +2399,180 @@ score) re-run at N = 500 for the bar-level verdict. Findings §4l + log.
 execute only under a fresh `[PROCEED TO IMPLEMENTATION]`. CALIBRATION_MAP
 propagation (v_c, p_tail enter as Bounded→Derived; τ reclassified per
 RQ9) lands with Slice T1. Nothing discharges F5.
+
+> **NB (2026-07-16, post-T3):** the T3 pilots executed and surfaced the
+> §4l structural finding (I52–I54): the undressed geometry parks every
+> config at n ≈ 7–9 and S2-P3 is structurally silent. **Slice T4 as
+> written is superseded** — scoring the undressed pilots would rank
+> configs on a distribution the closure never predicted for them. The
+> T4 scoring machinery and the winner/N = 500 gate are **absorbed into
+> §I.11 Slice T9**; the four T3 dirs stay on disk as the A-leg of the
+> §I.11 oracle chain.
+
+## I.11 Step 2c — geometry closure: reproducing the Step-1c closure ensemble in MD (slices T5–T9; designed 2026-07-16)
+
+> **Boundary.** Plan, not code — the strict Physics-Definition /
+> Software-Implementation boundary holds; every slice executes only
+> under its own `[PROCEED TO IMPLEMENTATION]`. Entry documents:
+> findings §4l (I52–I54, the T3 structural finding), §4j (the H.2b
+> lever set), §H.3b (the parked dressing design, revived here),
+> `drag_migration_log_tier2.md` "Slice T3 DELIVERED".
+
+### I.11.0 Why and what "reproduce" means
+
+The Step-1b/1c joint closure (I49/I51: 24 full-house cells around
+(p = −1, v_c ≈ 7–7.5, τ ≈ 3.8–4.1, rq4graded, E₀ ≈ 0.23–0.25)) was
+scored on the full H.2b ensemble: **L1** birth position with a 3–6 Å
+margin, **L2** depth-dressing n_eject(d) = round(21·ρ̂(d)), **D2**
+E₀-coupling E₀(d) = E₀·(Σ(n_eject)/Σ(21))^p with p = 1, **D4** droplet
+priors, plus the delivered L3/L4 (ladders, capped drag). Slices T1–T3
+put L3/L4 and the position *axis* in the repo; the ensemble levers
+(L2, D2, margin realization, priors) exist only in the 1D model. Step
+2c builds them as interchangeable, byte-inert-default arms and re-runs
+the confirmation **stagewise, each stage A/B'd against the 1D twin
+re-scored at exactly that MD configuration** — the twin adapts to the
+MD (delta prior, realized birth law), never the reverse, so every
+stage is a quantitative oracle rather than a leap.
+
+### I.11.V0 Pre-slice verification (zero-MD investigation; may run with the T5 build)
+
+1. **Birth-law reconciliation (decision).** The repo's off-center
+   sampler is Boltzmann-weighted — `r²·exp(−U(r)/k_B T)` at
+   T = 0.4 K through `droplet_potential`
+   (`sampling/radial_positions.py`) — not the L1 bare-r² + hard
+   margin. Quantify the realized radial law and its effective surface
+   exclusion vs the firm 3–6 Å band. Proposed mapping (user decides):
+   **accept the Boltzmann law as the physical realization of L1**
+   (temperature-sourced, parameter-free — more physical than the 1D's
+   hard margin) and adopt it into the 1D twin; the hard-margin knob
+   (T7) is then built only if the realized exclusion falls outside the
+   firm band.
+2. **Trapped-class convention (flag).** The droplet well enters the
+   ion stage as E_pot *bookkeeping only* (no force on the drag path:
+   accelerations are Coulomb + drag) — the §4j trapped droplet-retained
+   class (6–11 %, current-law, sub-0.117 eV fragments) **cannot exist
+   in the MD as built**. Quantify the weight the twin assigns it at
+   each oracle configuration and fix the normalization convention for
+   scoring (report as a documented 1D↔MD difference; whether a
+   droplet-well force on the ion is a physics gap is a separate OQ for
+   the user, not a build item here).
+3. **The 1D twin becomes reproducible (decision).** `h2b_feasibility.py`
+   survives only in expired session scratchpads (two copies located).
+   Proposal: recover, verify its recorded wiring oracles (K 0.74460 /
+   0.89767, Σ(21) = 0.18783720), and commit it (e.g.
+   `scripts/tier2_h2b_forward_model.py`) so every T5–T9 oracle
+   comparison is reproducible in-repo. Without this the twin re-scores
+   are unverifiable hand-me-downs.
+
+### Slice T5 — initial-shell dressing arm (revives H.3b verbatim)
+
+The §H.3b design carries over unchanged, now with its revival clause
+met (the NB there is superseded by §4l: the MD *did* falsify the
+undressed geometry). Config enum `initial_shell_model ∈ {"full"
+(default, byte-inert = delivered 21-for-all), "density_tied"}`:
+
+$$n_{0,i} = \operatorname{round}\big(n^{*}\cdot\hat\rho(d_{{\rm birth},i})\big)$$
+
+ρ̂ through the **shared erf-complement surface** (single source with the
+drag/pickup/cooling gates; dimensionless count — dimensional analysis
+trivial). Per-ion consequences at the biphasic seed
+(`ion_initial_state.py`): `n_shell(0)`, `mass_kg(0) =
+complex_mass_amu(n₀ᵢ)`, the t0 `e_bind_pair(n₀ᵢ)` E_pot fold — arrays
+are already per-ion, **no checkpoint schema change**; the 5-term
+invariant closes per-ion as before. Biphasic-only config guard.
+Oracles (H.3b): `full` arm byte-identical to a delivered dir;
+center-pinned + `density_tied` ≡ n₀ = 21 exactly (inert without the
+position axis); n₀ monotone non-increasing in birth radius. Boundary
+carried: first-order occupancy statement; the dressing↔pickup interplay
+(under-dressed ions re-filling via the live Langmuir channel — a
+channel the 1D twin does *not* have) is read from the runs and reported
+as a twin-divergence candidate.
+
+### Slice T6 — E₀–dressing coupling (the D2 p-law)
+
+Config enum `internal_energy_partition_law ∈ {"constant" (default,
+byte-inert ≡ p = 0), "sigma_proportional" (p = 1)}`:
+
+$$E_{{\rm int},i}(0) = f_{\rm int}\cdot E_{\rm avail}\cdot\big(\Sigma(n_{0,i})/\Sigma(n^{*})\big)^{p}$$
+
+ladder-resolved (the ratio rides the injected table under
+`tabulated`; dimensionless — units unchanged). Structurally inert
+without T5 (ratio ≡ 1 at n₀ = n*), byte-inert default, hand-oracled
+per-ion values. Both arms built; the 1D verdict (p = 1 wins, p = 0
+over-suppresses — §4j finding 1) is a prior, and the arm is swept in
+the T9 A/B chain, not hard-wired.
+
+### Slice T7 — hard birth-margin knob (conditional)
+
+`initial_position_margin_angstrom` (default 0.0, byte-inert): birth
+radius support [0, R − margin], firm band 3–6 Å. **Built only if
+V0-1 finds the Boltzmann law's realized exclusion outside the firm
+band** — otherwise the legacy sampler is the accepted L1 realization
+and this slice is closed unbuilt (recorded, rule-2-clean).
+
+### Slice T8 — droplet prior (the D4 family; supersedes the S2-D4 deferral)
+
+The closure cells are per-(prior, margin); the deep tail carries the
+W9-P2 ≥ 9.6 % below-floor demand — full reproduction needs the droplet
+axis. Rule-1 first: audit the legacy `use_single_droplet_size=False`
+machinery before adding surface; then wire the Wave-10/11 family —
+Kornilov log-normal δ ∈ {0.40, 0.625, 0.80} about ⟨N⟩ = 2000 +
+the pickup-weighted ∝ N^(2/3) variant — behind config, with
+R(N) = 2.2173·N^(1/3) (the existing convention). Scope note: the T9
+oracle chain runs **fixed-N first** (the twin re-scores at a delta
+prior exactly), so T8 sequences last of the physics slices and its
+pilot cost is bounded by the chain's final leg.
+
+### Slice T9 — dressed confirmation re-run + scoring (absorbs §I.10 T4)
+
+The staged A/B/C/D oracle chain at the C1 knob point, one arm flipped
+per leg, each leg pre-registered against the committed 1D twin
+re-scored at exactly that configuration:
+
+- **A** = the delivered T3 dirs (all arms off) — byte-identity
+  regression anchor;
+- **B** = + `density_tied` (T5);
+- **C** = + `sigma_proportional` (T6);
+- **D** = + droplet prior (T8; fixed-N legs A–C).
+
+Then the confirmation matrix re-pilot at the final configuration
+(C-values re-centered per the twin's re-score — the Step-1c basin
+was located under the 1D ensemble and need not sit at the same
+(v_c, τ, E₀) under the MD-realized one), N = 50 → the **T4 scoring
+machinery built here** (ihe_ked run-summary mean-to-mean with the
+I-D4 correlated bands + solvated W₁/n₁/ratio; conf-namespace-aware —
+the staircase report's `*_tier2probe_*` glob must exclude
+`*_tier2probe_conf*` or its rows be disregarded) → winner at N = 500
+for the bar-level verdict (the absorbed §I.10 S2-P4 gate, bar ×1.25
+n = 1…12 after band profiling).
+
+**Pre-registered predictions (numeric values filled from the twin
+re-scores before each leg executes — program convention):**
+
+- **S2c-P1.** Leg B develops small-n weight fed by the **near-cliff
+  chord-K band** (I45: not a fast surface class — none exists
+  in-bounds); the n-histogram broadens from the ±2 cluster toward the
+  twin's per-cell shape.
+- **S2c-P2.** Leg C moves weight between the suppressed/bare side and
+  the shallow bins per the p = 1 uniform-K* mechanism; p = 0 remains
+  over-suppressed (the §4j direction).
+- **S2c-P3 (revived S2-P3).** At the final configuration the
+  rq4graded/floor1 split engages: rq4graded reaches n₁ ≥ 0.26 /
+  ratio ≥ 1.75 territory; floor1 caps near ratio ≈ 1.8 (I51) — the
+  I51 discrimination, now in MD.
+- **S2c-P4.** Twin-divergence channels are the *listed* ones only
+  (pickup re-filling after under-dressed birth; no trapped class in
+  MD; real RRK cascade vs ε = 0 floor map) — an unlisted divergence
+  is a model-structure finding.
+
+### I.11.1 Sequencing, gating, boundaries
+
+T5 → T6 (needs T5 to be live) → T9 legs B/C (fixed N) → T8 → T9 leg D
++ re-pilot + scoring; V0 precedes or accompanies T5; T7 conditional on
+V0-1. Every slice TDD behind its own trigger; every new field/enum
+byte-inert by default with a back-compat cfg.json test (the Slice-DS
+precedent). CALIBRATION_MAP: T5/T6 add **arms, not knobs** (the tied
+law and the p-law are parameter-free); T8 adds the prior selection
+(Bounded, δ family Sourced from Kornilov). Nothing here discharges F5;
+the bare bin stays RQ8-gated; RQ4 remains the external arbiter of the
+rq4graded taper.
