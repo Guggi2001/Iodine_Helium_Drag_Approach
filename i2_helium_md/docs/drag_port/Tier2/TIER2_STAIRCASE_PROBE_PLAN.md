@@ -2290,6 +2290,17 @@ v_c ≥ 5.3 — in-window max speed 5.23); existing suites green
 `test_tier0_drag_comparison.py` — the Tier-0 18 Å gate is untouched
 because the in-band law is identical).
 
+> **NB (2026-07-16): Slice T1 DELIVERED** under its own trigger (log
+> entry "Slice T1 DELIVERED"). All contracts as specified; both oracles
+> pass — the delivered bridge probe dir reproduces **byte-identically**
+> at v_c = 5.3 for both tails (measured in-window max speed
+> 5.2306 Å/ps), and the v_c = ∞ / v_c ≥ v_max identity is exact (`==`)
+> because the in-band branch is literally the pure-cubic arithmetic.
+> Full suite 2250 passed. CALIBRATION_MAP rows 4 (v_c realizes the R10
+> v_ceiling, Bounded), 4b (p_tail Free-choice {0, −1}), and 11 (τ RQ9
+> pending) propagated. No preset/production config selects the arm yet
+> (Slice T3's job); T2–T4 await their builds.
+
 ### Slice T2 — ladder config surface (config.py + dissociation_ladder)
 
 New optional field `tabulated_ladder_rungs_eV` (active only with

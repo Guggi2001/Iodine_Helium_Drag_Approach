@@ -39,6 +39,7 @@ from i2_helium_md.config import (
     _MASS_COEFFICIENT_CONSISTENCY_TOL_AMU,
 )
 from i2_helium_md.physics.drag import (
+    CAPPED_CUBIC,
     DragCoefficients,
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
@@ -213,6 +214,52 @@ class TestFormPhaseDissipativityGuard:
         # n < 1 diverges at rest (would need the inert §3.8 floor) -> refused.
         with pytest.raises(ValueError, match="n >= 1"):
             check_drag_config(self._cfg(POWER_LAW, {"C": 10.0, "n": 0.5}))
+
+
+# ---------------------------------------------------------------------------
+# Guard: capped_cubic dissipativity + adjudicated-tail restriction
+# (Tier-2 Addendum I §I.10 Slice T1: b > 0, v_c > 0, p_tail in {0, -1})
+# ---------------------------------------------------------------------------
+class TestCappedCubicGuard:
+    def _cfg(self, coefficients):
+        return SimConfig(
+            drag_form=CAPPED_CUBIC,
+            drag_coefficients=_form_coeffs(CAPPED_CUBIC, coefficients),
+        )
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_adjudicated_tails_pass(self, p_tail):
+        check_drag_config(
+            self._cfg({"b": 2.5153509, "v_c": 6.5, "p_tail": p_tail})
+        )
+
+    def test_infinite_vc_passes(self):
+        # v_c = inf is the byte-identity limit (== the locked pure cubic
+        # everywhere); admissible for regression configs.
+        check_drag_config(
+            self._cfg({"b": 2.5153509, "v_c": float("inf"), "p_tail": 0.0})
+        )
+
+    def test_nonpositive_b_refused(self):
+        for b in (0.0, -1.0):
+            with pytest.raises(ValueError, match="b > 0"):
+                check_drag_config(self._cfg({"b": b, "v_c": 6.5, "p_tail": 0.0}))
+
+    def test_nonpositive_vc_refused(self):
+        for v_c in (0.0, -3.0):
+            with pytest.raises(ValueError, match="v_c > 0"):
+                check_drag_config(
+                    self._cfg({"b": 2.5, "v_c": v_c, "p_tail": 0.0})
+                )
+
+    @pytest.mark.parametrize("p_tail", [1.0, 0.5, -2.0])
+    def test_unadjudicated_tail_exponent_refused(self, p_tail):
+        # Only the Step-1c-surviving set {0, -1} is loadable (§I.10); any
+        # other exponent needs a fresh adjudication, not a config value.
+        with pytest.raises(ValueError, match="p_tail"):
+            check_drag_config(
+                self._cfg({"b": 2.5, "v_c": 6.5, "p_tail": p_tail})
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -530,6 +577,20 @@ class TestLoaderFormGeneric:
         assert coeffs.form == POWER_LAW
         assert coeffs.coefficients == {"C": 10.36, "n": 2.056}
 
+    def test_capped_cubic_round_trip(self, tmp_path):
+        self._write(
+            tmp_path,
+            {
+                "form": "capped_cubic",
+                "b": 2.5153509, "v_c": 7.5, "p_tail": -1.0,
+                "b_err": 0.1, "v_c_err": 0.5, "p_tail_err": 0.0,
+                "meff_amu": _M_EFF,
+            },
+        )
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.form == CAPPED_CUBIC
+        assert coeffs.coefficients == {"b": 2.5153509, "v_c": 7.5, "p_tail": -1.0}
+
     def test_explicit_linear_cubic_form_key_accepted(self, tmp_path):
         # A new-style file may also stamp form="linear_cubic" explicitly.
         self._write(tmp_path, {**_LEGACY_JSON, "form": "linear_cubic"})
@@ -637,7 +698,8 @@ class TestDragPresets:
 class TestEnumCompleteness:
     def test_all_members_present(self):
         assert set(typing.get_args(DragForm)) == {
-            "linear_cubic", "linear_quadratic", "threshold", "power_law"
+            "linear_cubic", "linear_quadratic", "threshold", "power_law",
+            "capped_cubic",
         }
         assert set(typing.get_args(DragSpatialGate)) == {
             "density_proportional", "erf_tied", "erf_independent", "sharp"

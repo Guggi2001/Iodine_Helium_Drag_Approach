@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 
 from i2_helium_md.physics.drag import (
+    CAPPED_CUBIC,
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
     POWER_LAW,
@@ -433,6 +434,164 @@ class TestNestingIdentities:
                 drag_gamma(self.V, d, lc, STEEPNESS_A),
                 rtol=1e-12, atol=0.0,
             )
+
+
+# ===========================================================================
+# capped_cubic (Tier-2 Addendum I §I.10 Slice T1): locked in-band pure cubic
+# + high-v tail gamma = b*v_c^2*(v/v_c)^p_tail, p_tail in {0, -1}
+# ===========================================================================
+class TestCappedCubic:
+    """§I.3/§I.10 tail family: gamma = g*b*v^2 (v <= v_c), g*b*v_c^2*(v/v_c)^p
+    (v > v_c); F = gamma*v. Continuous at v_c; exactly the locked pure cubic
+    in-band. Analytical pins are tight (rtol 1e-12); byte-identity checks are
+    exact (``==``, no tolerance) because the in-band branch must be the SAME
+    arithmetic as ``linear_cubic(a=0)`` -- the Tier-0 lock rides on it.
+    """
+
+    B = 2.0          # amu*ps/A^2 (arbitrary positive test value)
+    V_C = 3.0        # A/ps
+    DEPTHS = np.array([-400.0, -5.0, 0.0, 10.0])
+    # speeds straddling the cap, including rest and the cap itself
+    V = np.array([0.0, 0.5, 1.5, 3.0, 3.5, 4.5, 6.0])
+
+    def _capped(self, p_tail, v_c=V_C, b=B):
+        return _bundle(
+            CAPPED_CUBIC, {"b": b, "v_c": v_c, "p_tail": p_tail}
+        )
+
+    # --- closed-form pins per branch (§I.10 oracle 1) ---
+    def test_in_band_explicit_values(self):
+        # v < v_c: F = g*b*v^3, gamma = g*b*v^2 at unit gate (deep inside).
+        bundle = self._capped(p_tail=0.0)
+        d, v = -400.0, 2.0
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.B * v**3, rel=1e-12
+        )
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.B * v**2, rel=1e-12
+        )
+
+    def test_tail_p0_explicit_values(self):
+        # p_tail = 0 (Stokes-like tail): gamma = g*b*v_c^2 constant above the
+        # cap; F = g*b*v_c^2*v grows linearly.
+        bundle = self._capped(p_tail=0.0)
+        d, v = -400.0, 6.0
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.B * self.V_C**2, rel=1e-12
+        )
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.B * self.V_C**2 * v, rel=1e-12
+        )
+
+    def test_tail_pm1_explicit_values(self):
+        # p_tail = -1 (saturated/plastic tail): F = g*b*v_c^3 CONSTANT above
+        # the cap; gamma = g*b*v_c^3/v falls off as 1/v.
+        bundle = self._capped(p_tail=-1.0)
+        d = -400.0
+        F_sat = self.B * self.V_C**3
+        for v in (4.0, 6.0):
+            assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                F_sat, rel=1e-12
+            )
+            assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                F_sat / v, rel=1e-12
+            )
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_continuous_at_the_cap(self, p_tail):
+        # Both branches evaluate to g*b*v_c^2 at v = v_c; approach from both
+        # sides agrees to first order (eps*rel band, analytical continuity).
+        bundle = self._capped(p_tail=p_tail)
+        d = -5.0
+        g = float(spatial_gate(d, STEEPNESS_A))
+        expected = g * self.B * self.V_C**2
+        eps = 1e-9
+        for v in (self.V_C - eps, self.V_C, self.V_C + eps):
+            assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                expected, rel=1e-6
+            )
+
+    # --- convention identities (mirror TestFormPhaseFamilies) ---
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_gamma_closed_form_equals_force_over_v(self, p_tail):
+        bundle = self._capped(p_tail=p_tail)
+        v = self.V[self.V > 0.0]  # away from rest (division is legal)
+        for d in self.DEPTHS:
+            F = drag_force(v, d, bundle, STEEPNESS_A)
+            gam = drag_gamma(v, d, bundle, STEEPNESS_A)
+            np.testing.assert_allclose(gam, F / v, rtol=1e-12)
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_dissipative_and_gate_shared(self, p_tail):
+        # F >= 0 (magnitude convention) and gamma carries the SAME gate factor
+        # as the force (hard FDT coupling carrier, §5.2).
+        bundle = self._capped(p_tail=p_tail)
+        for d in self.DEPTHS:
+            F = drag_force(self.V, d, bundle, STEEPNESS_A)
+            gam = drag_gamma(self.V, d, bundle, STEEPNESS_A)
+            assert np.all(F >= 0.0)
+            assert np.all(gam >= 0.0)
+            np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_gamma_at_rest_is_zero(self, p_tail):
+        # v = 0 sits on the in-band pure-cubic branch: gamma -> 0 regularly
+        # (the p_tail = -1 tail formula is never evaluated at rest).
+        bundle = self._capped(p_tail=p_tail)
+        gam0 = drag_gamma(0.0, -40.0, bundle, STEEPNESS_A)
+        assert float(gam0) == 0.0
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_no_floating_point_warnings_across_the_cap(self, p_tail):
+        # Mixed-speed arrays (rest + in-band + tail) and v_c = inf must never
+        # touch a singular intermediate (0**-1, inf/inf): errstate-raise makes
+        # any such leak a hard failure.
+        for v_c in (self.V_C, np.inf):
+            bundle = self._capped(p_tail=p_tail, v_c=v_c)
+            with np.errstate(all="raise"):
+                F = drag_force(self.V, -5.0, bundle, STEEPNESS_A)
+                gam = drag_gamma(self.V, -5.0, bundle, STEEPNESS_A)
+            assert np.all(np.isfinite(F))
+            assert np.all(np.isfinite(gam))
+
+    # --- §I.10 oracle 2: v_c = inf (or >= v_max) byte-identity with the
+    # --- locked pure cubic. Exact ``==``: same arithmetic, not "close".
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("v_c", [np.inf, 6.0])  # 6.0 == max(V) >= v_max
+    def test_vc_at_or_above_vmax_is_byte_identical_to_pure_cubic(
+        self, p_tail, v_c
+    ):
+        b = 2.5153509  # the locked shared_pure_cubic scale (§I.3)
+        capped = self._capped(p_tail=p_tail, v_c=v_c, b=b)
+        pure = _bundle(LINEAR_CUBIC, {"a": 0.0, "b": b})
+        for d in self.DEPTHS:
+            F_capped = drag_force(self.V, d, capped, STEEPNESS_A)
+            F_pure = drag_force(self.V, d, pure, STEEPNESS_A)
+            assert np.array_equal(F_capped, F_pure)
+            gam_capped = drag_gamma(self.V, d, capped, STEEPNESS_A)
+            gam_pure = drag_gamma(self.V, d, pure, STEEPNESS_A)
+            assert np.array_equal(gam_capped, gam_pure)
+
+    def test_in_band_speeds_byte_identical_below_finite_cap(self):
+        # Even with a finite in-range cap, every v <= v_c is the SAME
+        # arithmetic as the locked pure cubic (the Tier-0 in-band lock).
+        b = 2.5153509
+        capped = self._capped(p_tail=-1.0, v_c=self.V_C, b=b)
+        pure = _bundle(LINEAR_CUBIC, {"a": 0.0, "b": b})
+        v = self.V[self.V <= self.V_C]
+        for d in self.DEPTHS:
+            assert np.array_equal(
+                drag_force(v, d, capped, STEEPNESS_A),
+                drag_force(v, d, pure, STEEPNESS_A),
+            )
+            assert np.array_equal(
+                drag_gamma(v, d, capped, STEEPNESS_A),
+                drag_gamma(v, d, pure, STEEPNESS_A),
+            )
+
+    def test_missing_coefficients_rejected(self):
+        with pytest.raises(ValueError, match="missing"):
+            _bundle(CAPPED_CUBIC, {"b": 2.0})  # no v_c, no p_tail
 
 
 # ===========================================================================

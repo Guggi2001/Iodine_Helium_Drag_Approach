@@ -14,6 +14,7 @@ import pytest
 
 from i2_helium_md.physics.constants import U
 from i2_helium_md.physics.drag import (
+    CAPPED_CUBIC,
     DragCoefficients,
     LINEAR_QUADRATIC,
     POWER_LAW,
@@ -326,6 +327,10 @@ _FORM_PHASE_PARAMS = [
     (LINEAR_QUADRATIC, {"a": 4.0, "c": 11.0}),
     (LINEAR_QUADRATIC, {"a": 0.0, "c": 11.0}),   # pure-quadratic variant
     (POWER_LAW, {"C": 10.36, "n": 2.056}),
+    # Tier-2 §I.10 Slice T1: both adjudicated capped_cubic tails, with the cap
+    # placed inside the smoke run's speed range so the tail branch is exercised.
+    (CAPPED_CUBIC, {"b": 2.5153509, "v_c": 2.0, "p_tail": 0.0}),
+    (CAPPED_CUBIC, {"b": 2.5153509, "v_c": 2.0, "p_tail": -1.0}),
 ]
 
 
@@ -346,6 +351,31 @@ def test_scope_guard_rejects_reserved_threshold(drag_cfg):
     mass_meff_kg = np.full(4, cfg.m_eff_amu * U)
     with pytest.raises(NotImplementedError, match="drag_form"):
         _check_drag_scope(cfg, mass_meff_kg)
+
+
+@pytest.mark.parametrize("p_tail", [0.0, -1.0])
+def test_capped_cubic_above_vmax_run_is_byte_identical(
+    drag_cfg, neutral, p_tail
+):
+    """§I.10 in-band invariance at driver level: with the cap above every speed
+    the run reaches, capped_cubic IS the preset's locked pure cubic (a = 0) --
+    every trajectory/energy array must be byte-for-byte identical, because the
+    in-band branch is the same arithmetic (the Tier-0 lock rides on this)."""
+    base = run_ion_propagation(drag_cfg, neutral)
+    b = drag_cfg.drag_coefficients.coefficients["b"]  # the shared bundle scale
+    assert drag_cfg.drag_coefficients.coefficients["a"] == 0.0  # pure cubic
+    capped = _form_cfg(
+        drag_cfg, CAPPED_CUBIC, {"b": b, "v_c": 1.0e6, "p_tail": p_tail}
+    )
+    ck = run_ion_propagation(capped, neutral)
+    for name in (
+        "positions_x", "positions_y", "positions_z",
+        "velocities_x", "velocities_y", "velocities_z",
+        "E_kin_eV", "E_pot_eV", "E_dissip_eV", "mass_history_kg",
+    ):
+        np.testing.assert_array_equal(
+            getattr(ck, name), getattr(base, name), err_msg=name
+        )
 
 
 @pytest.mark.parametrize("form,coefficients", _FORM_PHASE_PARAMS)

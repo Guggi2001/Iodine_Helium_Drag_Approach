@@ -18,6 +18,7 @@ import numpy as np
 
 from .physics.constants import EV, K_B, NU_EVAP_PER_PS, S_ABS_EV
 from .physics.drag import (
+    CAPPED_CUBIC,
     DragCoefficients,
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
@@ -46,7 +47,9 @@ CollisionMode = Literal[1, 2, 3]
 # *inert* member, not the design's "primary" (a default config must do nothing
 # surprising).
 # ---------------------------------------------------------------------------
-DragForm = Literal["linear_cubic", "linear_quadratic", "threshold", "power_law"]
+DragForm = Literal[
+    "linear_cubic", "linear_quadratic", "threshold", "power_law", "capped_cubic"
+]
 DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
 MassScenario = Literal["fixed", "biphasic", "anchored_discrete"]
 AnchorMode = Literal["time", "onset_strip"]   # Tier-1a schedule anchor; radial cross-check deferred (plan §6)
@@ -115,7 +118,13 @@ _EVOLVING_MASS_SCENARIOS = (
 # literals). The guard rejects anything outside this set: ``Literal`` is not
 # enforced at runtime, so this is the recovery for the typo-catching given up by
 # choosing named ``Literal`` aliases over ``enum.Enum``.
-_KNOWN_DRAG_FORMS = (LINEAR_CUBIC, LINEAR_QUADRATIC, THRESHOLD, POWER_LAW)
+_KNOWN_DRAG_FORMS = (
+    LINEAR_CUBIC,
+    LINEAR_QUADRATIC,
+    THRESHOLD,
+    POWER_LAW,
+    CAPPED_CUBIC,
+)
 
 
 @dataclass
@@ -1136,8 +1145,11 @@ def check_drag_config(cfg: "SimConfig") -> None:
        (true whenever ``b > 0``, which both extracted cases satisfy; the
        max-trajectory-speed ceiling that a ``b < 0`` re-extraction would need
        is unsourced and recorded as a §7 open item, not invented here). The
-       reserved forms' branches are written for completeness but unreachable --
-       ``physics/drag.py`` raises ``NotImplementedError`` for them upstream.
+       ``capped_cubic`` arm (Tier-2 §I.10 Slice T1) requires ``b > 0``,
+       ``v_c > 0``, and ``p_tail`` in the Step-1c-adjudicated set ``{0, -1}``.
+       The reserved forms' branches are written for completeness but
+       unreachable -- ``physics/drag.py`` raises ``NotImplementedError`` for
+       them upstream.
     2. **Mass <-> coefficient consistency (§6.5)** -- ``fixed`` is
        self-consistent only with ``constant``-mass coefficients whose
        ``extraction_mass_amu`` matches ``m_eff_amu`` within
@@ -1243,6 +1255,32 @@ def check_drag_config(cfg: "SimConfig") -> None:
                 f"power_law drag requires n >= 1 (gamma finite at v = 0; "
                 f"METHOD_B §10.3 -- n < 1 would need the inert §3.8 "
                 f"low-velocity floor), got n={n!r}"
+            )
+    elif form == CAPPED_CUBIC:
+        # Tier-2 Addendum I §I.10 Slice T1: locked pure cubic in-band, tail
+        # gamma = b*v_c^2*(v/v_c)^p_tail above the cap. gamma >= 0 everywhere
+        # with no turnover for b > 0, so dissipativity reduces to b > 0 plus a
+        # positive cap speed.
+        b = float(c["b"])
+        v_c = float(c["v_c"])
+        p_tail = float(c["p_tail"])
+        if not (b > 0.0):
+            raise ValueError(
+                f"capped_cubic drag requires b > 0 (the locked in-band pure "
+                f"cubic is dissipative only for b > 0), got b={b!r}"
+            )
+        if not (v_c > 0.0):
+            raise ValueError(
+                f"capped_cubic drag requires v_c > 0 (the cap is a speed; "
+                f"v_c = inf is the pure-cubic byte-identity limit), got "
+                f"v_c={v_c!r}"
+            )
+        if p_tail not in (0.0, -1.0):
+            raise ValueError(
+                f"capped_cubic drag requires p_tail in {{0, -1}} (the "
+                f"Step-1c-surviving tail set, TIER2_STAIRCASE_PROBE_PLAN "
+                f"§I.10; any other exponent needs a fresh adjudication), "
+                f"got p_tail={p_tail!r}"
             )
     else:  # pragma: no cover -- membership already enforced above
         raise ValueError(f"unknown drag form {form!r}")

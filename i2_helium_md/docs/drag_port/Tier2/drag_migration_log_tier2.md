@@ -6013,3 +6013,87 @@ floor1/rq4graded histogram split; N = 500 bar verdict).
 CALIBRATION_MAP propagation lands with Slice T1 (v_c/p_tail
 Bounded→Derived; τ per RQ9). **Execution awaits a fresh
 `[PROCEED TO IMPLEMENTATION]`.** Nothing discharges F5.
+
+## Slice T1 DELIVERED — `capped_cubic` drag arm; both §I.10 oracles pass incl. byte-identity of a delivered probe dir at v_c = 5.3; CALIBRATION_MAP rows 4/4b/11 propagated (2026-07-16)
+
+Executed under a fresh `[PROCEED TO IMPLEMENTATION]` (user: Slice T1
+only; the six pre-build clarifications — T2 scope through all three
+stage guards, v_c/p_tail as *coefficients* in the bundle, a new
+config-tag scheme for C1–C4, the 1000 ps relaxation cap, one shared
+pilot seed, slice-by-slice TDD — all confirmed as proposed). Tests
+written first and watched fail (ImportError on `CAPPED_CUBIC`, the
+missing-feature failure), then the arm implemented.
+
+**Code (2 files):**
+
+- `i2_helium_md/physics/drag.py` — `CAPPED_CUBIC = "capped_cubic"`,
+  coefficient keys `("b", "v_c", "p_tail")` [amu·ps/Å², Å/ps,
+  dimensionless], added to `REALIZED_FORMS` (the ion driver's scope
+  guard and the loader accept it automatically via the single-source
+  tables). Branches in `drag_force` / `drag_gamma`: in-band
+  `g·b·v³` / `g·b·v²` — **the same arithmetic expression as
+  `linear_cubic(a=0)`**, so in-band byte-identity holds bitwise, not
+  approximately; tail `g·b·v_c²·v·(v/v_c)^p` / `g·b·v_c²·(v/v_c)^p`,
+  continuous at v_c. Implementation detail with physics weight: the
+  no-tail case (incl. v_c = ∞) returns the pure-cubic expression
+  early, and the tail path substitutes `max(v, v_c)` in the discarded
+  branch of `np.where`, so `p_tail = −1` never evaluates `0**−1` at
+  rest and v_c = ∞ never produces `inf/inf` — verified warning-free
+  under `np.errstate(all="raise")`. Module stays mass-agnostic (no
+  `m` anywhere); the FDT amplitude reads the same closed-form γ
+  (Tier 3 stays inert).
+- `i2_helium_md/config.py` — `capped_cubic` added to the `DragForm`
+  Literal + `_KNOWN_DRAG_FORMS`; `check_drag_config` dissipativity arm:
+  `b > 0`, `v_c > 0` (v_c = ∞ admissible: the byte-identity limit),
+  and **`p_tail ∈ {0, −1}` enforced at config load** (the
+  Step-1c-surviving set; any other exponent is refused with a pointer
+  to §I.10 — a new adjudication, not a config value).
+
+**Tests (3 files, RED→GREEN):** `tests/test_drag.py` new
+`TestCappedCubic` (closed-form pins per branch and per tail;
+continuity at v_c; γ ≡ F/v identity; dissipativity + shared gate
+factor; γ(0) = 0; warning-free mixed-speed/∞-cap evaluation; **exact
+`==` byte-identity** vs `linear_cubic(a=0)` at v_c = ∞ and at finite
+v_c ≥ v_max, plus in-band-only byte-identity below a finite in-range
+cap; missing-key rejection). `tests/test_drag_config.py` new
+`TestCappedCubicGuard` (both tails pass; ∞ cap passes; b ≤ 0, v_c ≤ 0,
+p_tail ∉ {0, −1} refused), a `capped_cubic` loader round-trip in
+`TestLoaderFormGeneric`, and the `DragForm` enum-completeness update.
+`tests/test_ion_drag_smoke.py`: both tails added to
+`_FORM_PHASE_PARAMS` with the cap placed *inside* the smoke speed
+range (tail branch exercised end-to-end through the BAOAB driver), and
+`test_capped_cubic_above_vmax_run_is_byte_identical` — a tiny-N driver
+A/B asserting every trajectory/energy array equals the preset
+pure-cubic run bitwise. Suites: the three touched files 174 passed;
+`test_tier0_drag_comparison.py` 4 passed (Tier-0 18 Å gate untouched);
+**full suite 2250 passed** (warnings = the known §6.6 override
+RuntimeWarnings).
+
+**§I.10 oracles:**
+
+1. **v_c = ∞ / v_c ≥ v_max byte-identity with `linear_cubic(a=0)`** —
+   pytest, exact `==` (see above).
+2. **In-band invariance on a delivered 0.80 eV probe dir** — scratchpad
+   driver (`slice_t1_inband_oracle.py`, zero repo change, run dir
+   untouched): the Phase-D bridge dir
+   (`…_tier2probe_b080_mix_k1.00_l0.90_fi0.50_fr0.10_tau6.55`) re-run
+   ion-stage from its own `neutral.npz` under `capped_cubic` at
+   **v_c = 5.3** for **both** tails. Measured in-window max speed
+   **5.2306 Å/ps < 5.3** (the §I.10 premise, confirmed on the
+   artifact); every ion-checkpoint array **byte-identical** (the sole
+   nominal mismatch was the all-NaN `temperature_diagnostic` fill
+   compared without `equal_nan` — a comparison artifact, fixed in the
+   oracle, not a physics difference).
+
+**CALIBRATION_MAP propagated:** row 4 rewritten — $v_c$ realizes the
+former contingent $v_\text{ceiling}$ (R10-(b)), class **Bounded**
+(band 5.3–15, Step-1c targets 7.5 / 6.0–6.5) → Derived at the T4
+winner; new **row 4b** $p_\text{tail} \in \{0, −1\}$ (Free choice,
+2 arms; p = 1 excluded by K-P2, hard cutoff excluded as physics I48);
+row 11 τ carries the **RQ9 reclassification-pending** note (joint
+closure at τ ≈ 3.0–4.8 = ×0.6 of the GAH25 pin; pilot at 3.8–4.4);
+tally updated.
+
+**Boundaries:** no preset or production config selects `capped_cubic`
+(the pilot generator is Slice T3's job); Slices T2–T4 not started;
+nothing discharges F5.

@@ -33,6 +33,18 @@ outside -- the same convention as :func:`i2_helium_md.physics.potentials.droplet
     power_law        {C [amu*A^(1-n)*ps^(n-2)], n [dimensionless]}:
         F_drag = g * C * v**n                        # amu*A/ps^2 by [C]
         gamma  = g * C * v**(n-1)                    # amu/ps     by [C]
+    capped_cubic     {b [amu*ps/A^2], v_c [A/ps], p_tail [dimensionless]}:
+        v <= v_c:  F_drag = g * b*v**3               # the LOCKED pure cubic
+                   gamma  = g * b*v**2               # amu/ps
+        v >  v_c:  F_drag = g * b*v_c**2 * v * (v/v_c)**p_tail
+                   gamma  = g * b*v_c**2 * (v/v_c)**p_tail
+                   # [b*v_c**2] = amu/ps, tail factor dimensionless -> OK
+        # continuous at v_c (both branches -> b*v_c**2); p_tail = 0 is a
+        # Stokes-like linear-force tail, p_tail = -1 a saturated (constant-
+        # force) tail. Tier-2 Addendum I §I.3/§I.10 Slice T1: the in-band law
+        # is byte-identical to linear_cubic(a=0, b) -- the Tier-0 lock rides
+        # on it -- and only the high-v tail (above the TDDFT-calibrated band)
+        # is new.
 
 All unit checks balance to a force / force coefficient; see
 ``SLICE1_GOALS_gated_drag_module.md`` §3 and METHOD_B §10.3. The drag opposes
@@ -66,12 +78,15 @@ from ._gates import _erf_complement
 
 
 # Drag-form tags. LINEAR_CUBIC (Slice 1), LINEAR_QUADRATIC and POWER_LAW
-# (METHOD_B §10 form phase) are realised; THRESHOLD stays reserved behind the
-# dispatch (see :func:`_raise_unrealised_form`).
+# (METHOD_B §10 form phase), and CAPPED_CUBIC (Tier-2 Addendum I §I.10
+# Slice T1: locked pure cubic in-band + {0, -1}-exponent high-v tail) are
+# realised; THRESHOLD stays reserved behind the dispatch (see
+# :func:`_raise_unrealised_form`).
 LINEAR_CUBIC = "linear_cubic"
 LINEAR_QUADRATIC = "linear_quadratic"
 THRESHOLD = "threshold"
 POWER_LAW = "power_law"
+CAPPED_CUBIC = "capped_cubic"
 
 # Required coefficient keys per form (variable arity by form, §3.8).
 # POWER_LAW's amplitude key is "C" (METHOD_B §10.3/§10.5 raw-{C, n} stamp);
@@ -83,12 +98,18 @@ _REQUIRED_COEFF_KEYS: dict[str, tuple[str, ...]] = {
     LINEAR_QUADRATIC: ("a", "c"),        # amu/ps, amu/A
     THRESHOLD: ("F_sat", "v0"),          # amu*A/ps^2, A/ps
     POWER_LAW: ("C", "n"),               # amu*A^(1-n)*ps^(n-2), dimensionless
+    CAPPED_CUBIC: ("b", "v_c", "p_tail"),  # amu*ps/A^2, A/ps, dimensionless
 }
 
 # The forms with realised force/gamma branches below -- the single source for
 # the loader's form acceptance and the Slice-4 driver's scope guard. THRESHOLD
 # is deliberately absent (reserved; out of the METHOD_B §10 form-phase scope).
-REALIZED_FORMS: tuple[str, ...] = (LINEAR_CUBIC, LINEAR_QUADRATIC, POWER_LAW)
+REALIZED_FORMS: tuple[str, ...] = (
+    LINEAR_CUBIC,
+    LINEAR_QUADRATIC,
+    POWER_LAW,
+    CAPPED_CUBIC,
+)
 
 _VALID_MASS_MODELS = ("constant", "time_resolved")
 
@@ -116,7 +137,9 @@ class DragCoefficients:
         Form-tagged, variable-arity coefficients. ``LINEAR_CUBIC``:
         ``{"a": <amu/ps>, "b": <amu*ps/A^2>}``; ``LINEAR_QUADRATIC``:
         ``{"a": <amu/ps>, "c": <amu/A>}``; ``POWER_LAW``:
-        ``{"C": <amu*A^(1-n)*ps^(n-2)>, "n": <dimensionless>}``.
+        ``{"C": <amu*A^(1-n)*ps^(n-2)>, "n": <dimensionless>}``;
+        ``CAPPED_CUBIC``: ``{"b": <amu*ps/A^2>, "v_c": <A/ps>,
+        "p_tail": <dimensionless, one of {0, -1} (config-load guard)>}``.
     extraction_mass_model : str
         How mass was treated during extraction: ``"constant"`` or
         ``"time_resolved"``. The §6.5 guard (Slice 3) reads this; Slice 1
@@ -198,7 +221,8 @@ def _raise_unrealised_form(form: str) -> None:
             f"drag form {THRESHOLD!r} is reserved but not realised (explicitly "
             f"out of the METHOD_B §10 form-phase scope; see "
             f"DRAG_PORT_DESIGN_DECISIONS.md §3.7). Realised forms: "
-            f"{LINEAR_CUBIC!r}, {LINEAR_QUADRATIC!r}, {POWER_LAW!r}."
+            f"{LINEAR_CUBIC!r}, {LINEAR_QUADRATIC!r}, {POWER_LAW!r}, "
+            f"{CAPPED_CUBIC!r}."
         )
     # DragCoefficients.__post_init__ already rejects unknown forms; defensive.
     raise ValueError(f"unknown drag form {form!r}")
@@ -252,9 +276,15 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         linear_cubic:     F_drag = g(depth) * (a*v + b*v**3)
         linear_quadratic: F_drag = g(depth) * (a*v + c*v**2)
         power_law:        F_drag = g(depth) * C * v**n
+        capped_cubic:     F_drag = g(depth) * b*v**3                (v <= v_c)
+                          F_drag = g(depth) * b*v_c**2 * v * (v/v_c)**p_tail
+                                                                    (v >  v_c)
 
     Returns the **positive magnitude** form (drag opposes motion); the consumer
     applies ``-F_drag`` along ``v_hat`` at the integrator (Slice 2).
+    ``capped_cubic`` is continuous at ``v_c`` and byte-identical to the locked
+    pure cubic (``linear_cubic`` with ``a = 0``) everywhere in-band -- only the
+    high-v tail above the TDDFT-calibrated band is new (§I.10 Slice T1).
 
     Parameters
     ----------
@@ -291,6 +321,24 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         C = float(coeffs.coefficients["C"])
         n = float(coeffs.coefficients["n"])
         return g * C * v**n
+    if coeffs.form == CAPPED_CUBIC:
+        b = float(coeffs.coefficients["b"])
+        v_c = float(coeffs.coefficients["v_c"])
+        p_tail = float(coeffs.coefficients["p_tail"])
+        tail = v > v_c
+        if not np.any(tail):
+            # In-band everywhere (includes the v_c = inf byte-identity limit):
+            # exactly the locked pure cubic's arithmetic.
+            return g * (b * v**3)
+        # Any tail sample implies a finite v_c. np.where evaluates BOTH
+        # branches, so the tail expression must be regular on the whole array:
+        # max(v, v_c) >= v_c > 0 is a safe stand-in below the cap (discarded
+        # by the mask) and equals v in the tail, keeping p_tail = -1 free of
+        # 0**-1 at rest.
+        v_t = np.maximum(v, v_c)
+        return g * np.where(
+            tail, b * v_c**2 * v_t * (v_t / v_c) ** p_tail, b * v**3
+        )
     _raise_unrealised_form(coeffs.form)
 
 
@@ -302,6 +350,9 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         linear_cubic:     gamma = g(depth) * (a + b*v**2)
         linear_quadratic: gamma = g(depth) * (a + c*v)
         power_law:        gamma = g(depth) * C * v**(n-1)
+        capped_cubic:     gamma = g(depth) * b*v**2                 (v <= v_c)
+                          gamma = g(depth) * b*v_c**2 * (v/v_c)**p_tail
+                                                                    (v >  v_c)
 
     Exposed via the **closed form**, *not* ``|F_drag|/v``: analytically equal,
     but the division is singular at ``v -> 0`` where the closed forms are
@@ -351,4 +402,19 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         # n >= 1 (guard-enforced) keeps v**(n-1) finite at v = 0; numpy's
         # 0.0**0.0 == 1.0 realizes the n = 1 limit gamma -> g*C exactly.
         return g * C * v ** (n - 1.0)
+    if coeffs.form == CAPPED_CUBIC:
+        b = float(coeffs.coefficients["b"])
+        v_c = float(coeffs.coefficients["v_c"])
+        p_tail = float(coeffs.coefficients["p_tail"])
+        tail = v > v_c
+        if not np.any(tail):
+            # In-band everywhere (includes the v_c = inf byte-identity limit):
+            # exactly the locked pure cubic's arithmetic. v = 0 sits on this
+            # branch, so the p_tail = -1 tail never sees the rest singularity.
+            return g * (b * v**2)
+        # max(v, v_c) >= v_c > 0: safe stand-in below the cap (see drag_force).
+        v_t = np.maximum(v, v_c)
+        return g * np.where(
+            tail, b * v_c**2 * (v_t / v_c) ** p_tail, b * v**2
+        )
     _raise_unrealised_form(coeffs.form)
