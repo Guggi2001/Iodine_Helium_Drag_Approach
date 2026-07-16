@@ -1987,3 +1987,263 @@ endorsed sequence:
 
 RQ8 remains the entry gate for any interpretation of the bare bin.
 Nothing in this amendment discharges the F5 gate.
+
+---
+
+# Addendum I (2026-07-15) — Wave 13 re-scoped: drag-form reachability & calibration (W13-first reorder)
+
+User decision 2026-07-15, following the delivery of the provenance-documented
+(n, mean-KE) reference (`data/reference/ihe_ked/`, deployed 2026-07-14,
+run-summary comparison layer integrated 2026-07-15). **Supersedes** (a) the
+H.5-amendment ordering "W12 before W13" and (b) the single-arm scope of H.4:
+Wave 13 is promoted to the immediate priority and broadened from a one-knob
+v_c calibration to a drag-form *family* investigation against the corrected
+experimental mean-KE curve. Design frozen here; every execution step stays
+behind `[PROCEED TO IMPLEMENTATION]`.
+
+## I.1 Why — the export invalidates the D7 premise numbers and re-ranks the observables
+
+1. **The D7 table is stale, coherently.** The H.2b T4 verdict was scored
+   against the user-supplied D7 means (n = 0: 2.9 eV, n = 1: 0.974 eV,
+   < 0.1 eV for n ≥ 13). The corrected export
+   (`IHe_KED_reference.csv`) sits ~25–35 % higher across the curve
+   (n = 0: 3.706 eV, n = 1: 1.302 eV) — the D7 values match the *legacy
+   moment convention* the export's changelog identifies as the central
+   pipeline bug (2-D slice density, missing dE Jacobian). The shift is far
+   outside the two correlated bands (4 % calib ⊕ 6 % condition), so the
+   T4/I43 premise numbers ("envelope holds n = 1–12; required lift
+   speed-selective ×1.3–1.5") are unverified against the real reference.
+2. **The n = 1 class sits at the ballistic edge (indicative).** Two-body
+   2.70 eV KER → ~1.35 eV on the I⁺ fragment; mass-corrected to the
+   detected I⁺He complex ~1.31 eV; minus the ~0.117 eV solvation barrier
+   ≈ 1.2 eV zero-drag expectation, vs the measured 1.302 eV mean. Whether
+   *any* drag form can reach the small-n bins is genuinely open — the
+   question must be answered before a calibration loop is built.
+3. **Observable re-ranking.** The histogram arbitration is blocked on the
+   external RQ4 calculation regardless; the (n, mean-KE) curve is now the
+   best-constrained observable in the program (gold points at 1–4 %).
+4. **W12's verification targets are drag-law-conditional** (trapped class,
+   chord-K, detected speed range), so verifying them under a law about to
+   be replaced is half-wasted; verification moves to *after* calibration.
+
+## I.2 Decisions (user, 2026-07-15)
+
+- **I-D1 (ordering):** W13 immediate; W12 demoted to post-calibration
+  verification under the calibrated law; W12b stays parked; RQ4 external
+  calculation stays parallel and returns against the v_c-updated scan
+  (H.5-amendment items 3 and 5 otherwise unchanged).
+- **I-D2 (sweep engine):** the extensive form × knob scan runs in the
+  validated H.2b 1D chord forward model (oracle-matched to MD landmarks at
+  ≤ 0.2 %); full MD confirms the shortlist only. MD remains the arbiter.
+- **I-D3 (n = 0 excluded):** the bare bin is RQ8 channel-distinct
+  (suspected different process, not yet simulable) and enters neither the
+  calibration nor the acceptance bar.
+- **I-D4 (calibration observable):** mean-to-mean ⟨E⟩(n), full-curve fit
+  over n = 1…17 (upgrade from the single n = 1 pin of H.4), weighted by
+  the per-point stat ⊕ sys errors with the 4 % calib and 6 % condition
+  bands profiled as coherent scale nuisances. The n = 0…4 P(E) trusted
+  curves are *validation-only* (mean-to-mean is the calibration
+  convention per the export README; never mean-to-peak).
+- **I-D5 (acceptance bar):** per-bin energy ratio within **×1.25** for
+  n = 1…12 after profiling the coherent bands; n ≥ 13 need only remain in
+  the sub-0.1 eV band. The bar is a **ceiling of strictness**: it may be
+  loosened with documented model-bias justification (pinned mass −2.2 %,
+  no-shed leak, bin reshuffling), never tightened.
+- **I-D6 (form family):** all candidate forms reduce **exactly** to the
+  locked `b·v²` in-band (Tier-0 lock and the H.4 in-band invariance
+  oracle preserved); the investigation space is the high-v tail only.
+
+## I.3 The tail family (strict dimensional analysis)
+
+One two-knob family covers the physical candidates. With
+b = 2.5153509 [amu·ps/Å²] the locked pure-cubic coefficient,
+v_c [Å/ps] the cap, and p [dimensionless] the tail exponent:
+
+γ(v) = b·v²                    for v ≤ v_c        [amu/ps ✓]
+γ(v) = b·v_c²·(v/v_c)^p        for v > v_c        [amu/ps ✓]
+
+continuous at v_c for every finite p (both branches → b·v_c²). Force
+|F| = γ·v = b·v_c²·v·(v/v_c)^p [amu·Å/ps² ✓]:
+
+| p | γ tail | F tail | physical reading |
+|---|---|---|---|
+| 1 | b·v_c·v | ∝ v² | Newton form-drag asymptotic (= the H.4 arm) |
+| 0 | b·v_c² | ∝ v | Stokes-like linear force |
+| −1 | b·v_c³/v | constant | saturated (plastic) drag force |
+| −∞ (limit) | 0 above v_c | 0 | hard cutoff — extreme no-high-v-drag bracket; γ discontinuous at v_c, admissible as a 1D diagnostic bracket only (needs smoothing if ever promoted to MD) |
+
+The sweep scans p ∈ {1, 0, −1} × v_c (Bounded, 5.3 ≲ v_c ≲ 15 per H.4,
+the ≥ 5.3 floor protecting the 0.80 eV in-window byte-identity), plus the
+p → −∞ bracket. Continuous-p refinement is admitted if the discrete set
+brackets a landing. The drag module stays mass-agnostic (γ in amu/ps; m
+enters only at the integrator O-step) per the friction convention.
+
+## I.4 Steps
+
+- **Step 0 — envelope re-read (zero MD, zero repo code).** Score the two
+  existing brackets — current pure-cubic law and ballistic — against
+  `IHe_KED_reference.csv` under the I-D4 error treatment. Deliverables:
+  per-n reachability verdict (inside/outside the [current-law, ballistic]
+  band after coherent-band profiling), the required-lift curve, formal
+  retirement of the D7 table, and correction of the stale T4/I43 premise
+  numbers in the findings doc. Caveat carried explicitly: the envelope is
+  a sharp guide, not a per-bin theorem — changing the drag law also
+  reshuffles fragments between n bins. Step 0's numbers generate the
+  quantitative pre-registered predictions for Step 1 *before* Step 1 runs.
+- **Step 1 — tail-family sweep (1D chord model, scratchpad).** §I.3
+  family × the H.2b geometry (droplet prior + position axis). Score per
+  I-D4/I-D5 over n = 1…17. Every cell also records its abundance-histogram
+  W₁ as a **report column** (not a pass bar — the RQ4 taper is pending),
+  so the KE fix's histogram side-effect is visible. Output: shortlist of
+  1–3 (p, v_c) candidates + the discrimination read (does the curve shape
+  separate the tails, or only the scale?).
+- **Step 2 — MD confirmation (repo change, own trigger).** Implement only
+  the shortlisted arm(s) behind the drag-form enum in `physics/drag.py`
+  (naming per DRAG_PORT_DESIGN_DECISIONS; v_c = ∞ byte-identity
+  regression; in-band invariance oracle). A small set of 2.70 eV
+  production runs under the droplet prior with the biphasic mass
+  mechanism + detection stage, scored through the delivered `ihe_ked`
+  run-summary comparison layer (mean-KE panel primary; n = 0…4 curve
+  overlays as validation).
+- **Step 3 — retained from H.4/H.5 (unchanged in substance).** Re-measure
+  K₂.₇₀ under the calibrated arm (Wave-11 machinery verbatim); re-run the
+  solvated-branch scan under the calibrated law (fixes the taper size RQ4
+  must deliver); confirm the n = 1-class location moved < 1 rung. Then
+  the re-scoped W12 verification runs under the calibrated law, and RQ4
+  arbitrates against the v_c-updated scan.
+
+## I.5 Pre-registered predictions
+
+- **W13-P1 carries over unchanged:** the drag form owns the (n, KE)
+  curve's scale, not the solvated histogram's small-n steepness
+  (ladder-geometric). If a tail choice *does* repair the histogram shape,
+  the H.1 two-mechanism decomposition is wrong — a finding.
+- **I-P1:** Step 0 finds the n = 1 bin at or inside the ballistic bracket
+  only after coherent-band profiling (i.e. the n = 1 class is essentially
+  undecelerated; the required high-v drag is near zero). If n = 1 exceeds
+  the ballistic bracket *beyond* the coherent bands, outcome (c′) fires.
+- Numeric per-bin predictions for Step 1 are generated by Step 0 and
+  registered in the findings doc before Step 1 executes (program
+  convention).
+
+## I.6 Outcome shapes
+
+- **(a)** Some (p, v_c) lands n = 1…12 within the I-D5 bar → calibrated
+  law fixed; proceed Step 2 → Step 3.
+- **(b)** Scale lands but the curve shape fails beyond the bar for every
+  tail → drag alone is insufficient; the position/E₀-smear/RQ4 couplings
+  re-enter (maps onto H.5 outcomes (b)/(c)).
+- **(c′)** Experimental means exceed the ballistic bracket beyond the
+  coherent bands at some n ≤ 12 → **no drag form suffices**; W13 halts
+  before any build and a mechanism-level OQ opens (kick-energy share,
+  detection convention, added-energy channel).
+- **(d)** Degenerate landing (multiple tails pass) → v_c pinned per form;
+  discrimination deferred to P(E)-shape validation and Tier 3 second
+  moments.
+
+## I.7 Boundaries and gating
+
+1. Steps 0–1 are scratchpad-only analytics (H.2b precedent) but still
+   execute only under `[PROCEED TO IMPLEMENTATION]`; Step 2 is a repo
+   physics-surface change behind its **own** trigger.
+2. The 1D model's boundaries carry verbatim from §4j (pinned-mass
+   straight chords, no-shed leak baked into the closed form, detected ≈
+   energetic floor at s_eff = 8, ε = 0, 150 ps trapped-class read).
+3. Nothing here discharges the F5 gate; RQ8 remains the entry gate for
+   any bare-bin interpretation.
+4. Tier-0 lock untouched: every candidate form is byte-identical physics
+   in the TDDFT-calibrated band.
+
+**Cross-links:** findings §4j (H.2b verdict + boundaries); H.4 (form
+motivation, in-band oracle, calibration-loop skeleton); H.5 amendment
+(items 3/5 retained); `data/reference/ihe_ked/README.md` (error model,
+mean-to-mean convention, trust tiers); `CALIBRATION_MAP.md` propagation
+pending at the Step-2 build; log entry 2026-07-15 (this endorsement).
+
+## I.8 Step 1b — joint (v_c, τ) mini-sweep (OQ-I arm (a); user-approved 2026-07-15, post-Step-1)
+
+Step 1 returned outcome (b) with the K-coupling finding (I47): the drag
+tail and the evaporative descent ride the same exposure integral, so the
+KE lift starves the histogram. Arm (a) of OQ-I tests whether a faster
+cooling clock decouples them. **Zero MD, scratchpad; same trigger
+regime as Steps 0–1.**
+
+**Mechanics.** τ enters the chord dynamics nowhere — only the
+bookkeeping K = ∫ρ̂ dt/τ. So K(τ) = K(6.55) · (6.55/τ) per chord, and
+the τ axis is a pure fate-map rescale of cached tail trajectories:
+13 integrations (p ∈ {1, 0, −1} × v_c ∈ {5.3, 6, 7, 8.5} Å/ps + one
+v_c = 15 current-law control), then the scan over
+τ ∈ {6.55, 5.2, 4.1, 3.3, 2.6, 2.0} ps × the Step-1 fate-cell subset is
+free. Scoring unchanged (I-D4/I-D5 KE bar; histogram W₁/n₁/ratio as
+report columns; joint-closure read-out at W₁ ≤ 0.85 — the floor1
+current-law level — with the T2 ratio still RQ4-reserved).
+
+**Physicality note (recorded before execution):** τ = 6.55 ps is the
+GAH25-sourced probe pin (Bounded). A landing at τ ≪ 6.55 is a
+*re-classification event* for the calibration map (the pin becomes a
+fitted knob and its GAH25 sourcing must be re-argued or dropped), not a
+free pass — the sweep measures *what τ closes*; whether that τ is
+physical is a separate adjudication.
+
+**Pre-registered predictions (2026-07-15, before execution):**
+
+- **J-P1 (matched clock):** the histogram recovers where τ restores the
+  current-law K scale: τ\*(p, v_c) ≈ 6.55 · K_q50(tail)/K_q50(current)
+  — numerically τ\* ≈ 4.1 ps at (p = 0, v_c = 6), ≈ 3.4 ps at
+  (p = −1, v_c = 5.3), ≈ 5.3–6.3 ps for the mildest tails. E₀ optima
+  return into the interior (0.21–0.25 eV) off the 0.20 edge, and
+  W₁ recovers to the §4j current-law level (0.58–0.85) at the matched τ.
+- **J-P2 (the decoupling test proper):** at the matched τ the binning
+  returns near-current-law while the per-chord speeds keep the tail
+  lift, so the KE curve becomes a near-uniform lift of the current-law
+  curve — deep bins improve markedly (from ×0.49 toward ≳ 0.7 at
+  n = 12). Whether they clear the strict ×1.25 bar is the open
+  question: the tail lifts high-K chords *least* (they spend longest
+  below v_c where the law is locked), so residual deep-bin failure at
+  the bar remains the likelier outcome. The diagnostic is the worst
+  deep-bin ratio, not the pass count.
+- **J-P3 (control):** the v_c = 15 current-law control shows no KE
+  movement on the τ axis (KE is τ-independent by construction); only
+  its binning shifts. Any apparent KE-vs-τ trend at v_c = 15 beyond
+  binning reshuffles would flag a wiring error.
+
+**Outcome shapes:** (a) joint closure (KE bar + W₁ ≤ 0.85) in a
+contiguous (v_c, τ) region → the W13 Step-2 MD build re-opens with a
+two-knob arm + the τ re-classification question; (b) histogram recovers
+but deep bins stay < ×1.25⁻¹ → the slope is *not* K-coupling — it moves
+to OQ-I arms (b)/(c) (fate map / in-band), drag calibration closes as
+"scale-only"; (c) histogram does not recover at any τ ≥ 2.0 → the
+K-rescale picture itself is wrong (binning is not K-monotone under
+tails) — a model-structure finding.
+
+## I.9 Step 1c — closure-basin refinement scan (user-approved 2026-07-15, post-Step-1b; RQ9 parked in parallel)
+
+Step 1b landed on a coarse grid (τ quantized at 4.1; v_c at 7 points;
+deep-bin passes hugging the bar edge). Before any Step-2 build, map the
+joint-closure basin finely — is it a plateau or a knife-edge, and what
+are the calibration targets with uncertainties? **Zero MD, scratchpad,
+same trigger regime.** The τ-sourcing question is **RQ9 (parked, user
+decision)** — this scan supplies its model-side sensitivity input.
+
+**Grid.** p ∈ {0, −1}: v_c ∈ {5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5} Å/ps
+(4 new integrations per form; 3 cached); p = 1 control at the cached
+{5.3, 6.0, 7.0, 8.5}; τ ∈ 3.0–5.6 ps step 0.2 (free rescale);
+E₀ ∈ 0.20–0.32 step 0.01 (the closure lives at 0.22–0.26); ladders
+rq4graded + floor1 (control); both priors; margins {3, 4.67, 6} Å.
+Scoring identical to §I.8 (I-D4/I-D5 + W₁ ≤ 0.85 joint criterion).
+Deliverables: basin occupancy map over (p, v_c, τ); per-form best-fit
+(v_c, τ, E₀) with basin-width uncertainties; sharpened p = 0 vs p = −1
+discrimination read (n ≥ 13 tail).
+
+**Pre-registered predictions (2026-07-15, before execution):**
+
+- **K-P1 (plateau):** the joint basin is contiguous per form, centered
+  near τ ≈ 4.1 ps, with width ≥ 0.4 ps in τ and ≥ 1.0 Å/ps in v_c —
+  a calibratable plateau, not a knife-edge (based on the Step-1b
+  bar-pass spread τ ∈ [3.3, 5.2] and closure spread v_c ∈ [6, 8.5]).
+- **K-P2 (form exclusion):** p = 1 (Newton tail) remains excluded — no
+  joint closure at any (v_c, τ) (its Step-1b W₁ floor among KE-passing
+  cells was 1.11, far above 0.85).
+- **K-P3 (taper still required):** floor1 yields zero joint closures
+  anywhere on the fine grid — the rq4graded conditionality is a ladder
+  property, not a grid artifact.

@@ -1161,6 +1161,39 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   + experimental cross-checks above + the (n, mean-KE) reference export
   (data-contract prerequisite, Addendum H §H.2).
 
+### RQ9 — Physicality of the fitted cooling time τ ≈ 4.1 ps vs the GAH25 pin (opened 2026-07-15, Addendum I Step 1b; parked by user decision same day)
+
+- **Question:** the Addendum-I joint (v_c, τ) closure (findings §4k
+  Step 1b, I49) selects τ ≈ 4.1 ps — ×0.63 of the GAH25-sourced 6.55 ps
+  probe pin. Is that defensible physics? Specifically: (a) what is the
+  actual uncertainty / regime of validity of the GAH25 cooling time
+  (thermal impurity vs a hot, fast-moving ion in a collapsing bubble);
+  (b) does the effective Newton-cooling constant plausibly shorten for
+  a translationally fast ion (denser local environment, shockfront
+  contact, ripplon/roton emission channels); (c) are there independent
+  literature constraints bracketing τ for cationic dopants in He
+  droplets at these energies?
+- **Status:** **parked (user decision 2026-07-15)** — kept open, not
+  researched now. The τ re-classification event is pre-registered in
+  plan §I.8: at the Step-2 build the pin becomes a fitted knob
+  (Bounded → Free/Derived) in `CALIBRATION_MAP.md` unless this RQ
+  re-anchors it.
+- **Consequences:** if τ ≈ 4.1 ps is indefensible, the Step-1b joint
+  closure loses its arm-(a) mechanism and OQ-I arms (b)/(c) (per-shed
+  ε / fate-map form / in-band revisit) reopen; if GAH25 carries ±40 %
+  room, the closure stands on sourced ground and the calibration-map
+  reclassification is cosmetic.
+- **Method (when fired):** focused literature pass on He-droplet
+  cooling rates (GAH25 primary source + successors; impurity
+  translational vs internal cooling; bubble-collapse timescales), plus
+  the model-side sensitivity already measured (the joint basin in τ —
+  Step-1c scan).
+- **NB (Step 1c, same day):** the basin refinement centers the fitted
+  clock at **τ ≈ 3.8–4.0 ps (×0.58–0.61 of the pin)**, with joint
+  closures spanning τ ∈ [3.0, 4.8] and full-house cells τ ∈ [3.4, 4.2]
+  — so the question is whether GAH25 admits a ≈ ×0.6 cooling time, with
+  ≈ ±0.4 ps of model-side slack (findings §4k Step-1c, I51).
+
 ## 4. Coupling map — what each answer changes
 
 | RQ | Primary observable consequence | Couples with |
@@ -1173,6 +1206,7 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
 | RQ6 s_eff | clock/arrival-state only (detector nearly s-blind) | staircase prior; RQ2 (ε ∝ 1/s) |
 | RQ7 production kinematics | any budget-dependent observable; validity of 2.70 eV predictions | RQ1 (E_avail provenance), RQ3 (bare-vs-budget discriminator), F5 |
 | RQ8 bare-channel provenance | the interpretation of the 43.5 % bare bin (branching vs model); the solvated-branch renormalization | RQ3 (slow-shoulder discriminator), RQ1 (KER/E_avail per channel), Wave-12 position axis |
+| RQ9 τ physicality (parked) | whether the Step-1b joint (v_c, τ) closure stands on sourced ground; the CALIBRATION_MAP class of τ at the Step-2 build | RQ4 (the closure is rq4graded-conditional), OQ-I arms (b)/(c) (reopen if τ = 4.1 indefensible), W13 Step 2 |
 
 The experimental distribution's information, as currently understood:
 **bare fraction ↔ the Δ× race + RQ3; small-n tail (n = 1–3) ↔ RQ2/RQ3
