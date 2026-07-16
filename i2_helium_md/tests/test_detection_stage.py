@@ -801,15 +801,9 @@ class TestArtifactAndIntegration:
 # ---------------------------------------------------------------------------
 class TestTabulatedLadderSliceT2:
     def _rungs(self, cfg, length=32):
-        return tuple(
-            np.atleast_1d(
-                d0_of_n(
-                    np.arange(1, length + 1),
-                    picture=cfg.ladder_electronic_picture,
-                    kappa=cfg.ladder_steepness,
-                )
-            )
-        )
+        from tests.ladder_feeds import form_u_rungs_for
+
+        return form_u_rungs_for(cfg, length=length)
 
     def test_form_u_fed_table_detection_byte_identical(self):
         # The §I.10 equivalence oracle at the detector: a tabulated cfg fed the
@@ -832,6 +826,32 @@ class TestTabulatedLadderSliceT2:
         np.testing.assert_array_equal(res_t.event_time_ps, res_u.event_time_ps)
         np.testing.assert_array_equal(
             res_t.event_dE_int_eV, res_u.event_dE_int_eV
+        )
+
+    def test_cascade_to_bare_ion_tabulated_matches_form_u(self):
+        # Review fix 2026-07-16: the n=1 direct fire leaves a bare ion and the
+        # cascade loop re-enters rrk_rate at n=0 -- under a tabulated ladder
+        # that lane must ride the Form-U k=0 path (permanent "frozen"), not
+        # raise the table-range ValueError. This is the bare-I+ peak path, so
+        # every production tabulated run exercises it.
+        cfg_u = _detect_cfg()
+        picture, kappa = _ladder(cfg_u)
+        d0_1 = float(d0_of_n(1, picture=picture, kappa=kappa))
+        cfg_t = _detect_cfg(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=self._rungs(_detect_cfg()),
+        )
+        res_u = run_detection_stage(
+            _far_seed(cfg_u, n_shell=1, E_int_eV=2.0 * d0_1), cfg_u
+        )
+        res_t = run_detection_stage(
+            _far_seed(cfg_t, n_shell=1, E_int_eV=2.0 * d0_1), cfg_t
+        )
+        assert int(np.min(res_u.n_detected)) == 0    # self-check: bare I+ reached
+        np.testing.assert_array_equal(res_t.n_detected, res_u.n_detected)
+        np.testing.assert_array_equal(res_t.state_reason, res_u.state_reason)
+        np.testing.assert_array_equal(
+            res_t.E_int_detected_eV, res_u.E_int_detected_eV
         )
 
     def test_tabulated_without_rungs_fails_loud(self):

@@ -652,3 +652,83 @@ class TestPublicExports:
         )
 
         assert D is Diagnostics and S is TCrossSummary and rd is reconstruct_diagnostics
+
+
+# =============================================================================
+# Tabulated-ladder threading (review fix 2026-07-16, post-Slice-T2)
+# =============================================================================
+
+class TestTabulatedLadderThreading:
+    """The reconstruction layer must resolve the run's ladder.
+
+    Pre-fix, a ``dissociation_ladder='tabulated'`` run was silently scored
+    against the dead Form-U parametrisation (picture/kappa) -- the removed
+    pre-T2 stage refusals had protected this layer only vacuously.
+    """
+
+    def _form_u_rungs(self, length=32):
+        from tests.ladder_feeds import form_u_rungs
+
+        return form_u_rungs(picture=PICTURE, kappa=KAPPA, length=length)
+
+    def test_crossing_time_threads_ladder(self):
+        # Liveness: a doubled table doubles Sigma(21); an E between the two
+        # thresholds is never-below under Form-U but below from t0 under the
+        # doubled table.
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        doubled = tabulated_ladder(tuple(2.0 * r for r in self._form_u_rungs()))
+        time_ps = np.array([0.0, 0.1])
+        n_shell = np.full((1, 2), 21.0)
+        E = np.full((1, 2), 1.5 * _sigma21())
+        t_u = crossing_time_ps(E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA)
+        t_t = crossing_time_ps(
+            E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA, ladder=doubled
+        )
+        assert np.isnan(t_u[0])
+        assert t_t[0] == time_ps[0]
+
+    def test_crossing_time_form_u_fed_table_identical(self):
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        lad = tabulated_ladder(self._form_u_rungs())
+        time_ps = np.linspace(0.0, 1.0, 11)
+        sigma = _sigma21()
+        n_shell = np.full((1, 11), 21.0)
+        E = np.where(np.arange(11) >= 3, sigma - 0.01, sigma + 0.01)[None, :]
+        t_u = crossing_time_ps(E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA)
+        t_t = crossing_time_ps(
+            E, n_shell, time_ps, picture=PICTURE, kappa=KAPPA, ladder=lad
+        )
+        np.testing.assert_array_equal(t_t, t_u)
+
+    def test_reconstruct_diagnostics_resolves_tabulated_cfg(self):
+        # Equivalence: a tabulated cfg fed the Form-U rungs reproduces the
+        # Form-U t_cross bitwise. Liveness: the doubled table moves it.
+        T = 5
+        time_ps = np.arange(T) * 1.0
+        n = np.full((2, T), 21.0)
+        E = np.full((2, T), 1.5 * _sigma21())
+        stub = _recon_stub(E, n, time_ps)
+
+        diag_u = reconstruct_diagnostics(stub, _bridge_cfg())
+        diag_eq = reconstruct_diagnostics(
+            stub,
+            _bridge_cfg(
+                dissociation_ladder="tabulated",
+                tabulated_ladder_rungs_eV=self._form_u_rungs(),
+            ),
+        )
+        np.testing.assert_array_equal(diag_eq.t_cross_ps, diag_u.t_cross_ps)
+
+        diag_2 = reconstruct_diagnostics(
+            stub,
+            _bridge_cfg(
+                dissociation_ladder="tabulated",
+                tabulated_ladder_rungs_eV=tuple(
+                    2.0 * r for r in self._form_u_rungs()
+                ),
+            ),
+        )
+        assert np.isnan(diag_u.t_cross_ps).all()      # never below Sigma_U
+        assert np.isfinite(diag_2.t_cross_ps).all()   # below the doubled Sigma

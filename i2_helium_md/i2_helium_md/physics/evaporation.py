@@ -186,6 +186,10 @@ def gate_margin_eV(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: 
     The mechanism's natural readout: ``G < 0`` (``E_int < Sigma(n)``) is the self-bound
     regime where the shell sheds; ``G > 0`` is net self-unbound (shedding suppressed).
     Pure/cheap. Scalar-in -> float, array-in -> ndarray. See :func:`is_self_bound`.
+    ``ladder`` (Slice T2, §I.10): an injected
+    :class:`~i2_helium_md.physics.dissociation_ladder.TabulatedLadder` sets
+    ``Sigma`` and ``picture``/``kappa`` are ignored; ``None`` (default) is the
+    byte-inert Form-U path.
     """
     E = np.asarray(E_int_eV, dtype=float)
     thresh = np.asarray(
@@ -208,6 +212,8 @@ def is_self_bound(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: f
     the shell (``n >= 2``) diagnostic; the ``n = 1`` diatomic uses the inverted
     direct-dissociation gate, so :func:`is_self_bound` is **not** the fire predictor at
     ``n = 1`` (that is :func:`rrk_rate`). Scalar-in -> bool, array-in -> bool ndarray.
+    ``ladder``: injected table overrides Form-U (``picture``/``kappa`` ignored
+    when set; see :func:`gate_margin_eV`).
     """
     margin = gate_margin_eV(
         E_int_eV, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV,
@@ -271,8 +277,15 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
 
     E = np.asarray(E_int_eV, dtype=float)
     n_arr = np.asarray(n)
+    # The d0 lookup is clamped to n >= 1 for the same reason effective_dof is
+    # clamped below: the n < 1 lanes' bracket/direct values are discarded by
+    # the final np.where (k = 0 for n < 1), but a TabulatedLadder lookup at
+    # n = 0 raises where the Form-U sigmoid evaluated harmlessly. Bare ions
+    # (n = 0, reachable via the n = 1 direct fire) must ride the k = 0 path
+    # (review fix 2026-07-16).
     d0 = np.asarray(
-        d0_of_n(n_arr, picture=picture, kappa=kappa, ladder=ladder), dtype=float
+        d0_of_n(np.maximum(n_arr, 1), picture=picture, kappa=kappa, ladder=ladder),
+        dtype=float,
     )
     thresh = np.asarray(
         _gate_threshold_eV(n_arr, picture=picture, kappa=kappa,
@@ -340,6 +353,10 @@ def evaporation_step(
     Inputs are loose scalar kwargs -- the persistent ``(n, E_int, v, m)`` carrier is the
     Phase-C driver's ``IonStepState``, not a Phase-B container. One uniform ``rng.random()``
     is drawn **unconditionally** (see the RNG contract in the module docstring).
+    ``ladder`` (Slice T2, §I.10): an injected
+    :class:`~i2_helium_md.physics.dissociation_ladder.TabulatedLadder` is
+    threaded to :func:`rrk_rate` / ``dE_int_shed_eV`` and ``picture``/``kappa``
+    are ignored; ``None`` (default) is the byte-inert Form-U path.
 
     Returns
     -------
@@ -437,8 +454,14 @@ def evaporation_step_components(
     vx_s, vy_s, vz_s, m_s, dE_mt_s = cold_shed_velocity_components(
         vx, vy, vz, m_arr, m_he_amu=m_he_amu,
     )
+    # Clamped to n >= 1: this precompute runs on every lane before the fired
+    # mask, and an n = 0 lane can never fire (k = 0 => p_shed = 0) -- its value
+    # is discarded, but a TabulatedLadder lookup at n = 0 would raise
+    # (review fix 2026-07-16; the rrk_rate d0 clamp's twin).
     dE_int_s = np.asarray(
-        dE_int_shed_eV(n_arr, picture=picture, kappa=kappa, ladder=ladder), dtype=float
+        dE_int_shed_eV(np.maximum(n_arr, 1), picture=picture, kappa=kappa,
+                       ladder=ladder),
+        dtype=float,
     )
 
     n_plus = np.where(fired, n_arr - 1, n_arr)

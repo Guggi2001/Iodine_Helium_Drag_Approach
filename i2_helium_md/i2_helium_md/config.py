@@ -433,16 +433,23 @@ class SimConfig:
 
         Surfaced for inspection only (Slice K): the non-positive collective binding
         marginal at full occupancy, ``-(|S| - Sigma(n*))``, computed from the
-        configured picture/kappa/|S|. Not a stored or tunable field -- it is N-,
-        picture- and kappa-dependent, hence a derived property.
+        configured ladder (Form-U picture/kappa, or the tabulated rung table --
+        review fix 2026-07-16: under ``dissociation_ladder='tabulated'`` the
+        Form-U parametrisation is Sigma-dead and must not be reported). Not a
+        stored or tunable field -- it is N- and ladder-dependent, hence a
+        derived property.
         """
         from .physics.constants import N_STAR
+        from .physics.dissociation_ladder import resolve_ladder
         from .physics.solvation_cooling import e_electrostriction_eV
         return e_electrostriction_eV(
             N_STAR,
             picture=self.ladder_electronic_picture,
             kappa=self.ladder_steepness,
             s_abs_eV=self.solv_struct_asymptote_eV,
+            ladder=resolve_ladder(
+                self.dissociation_ladder, self.tabulated_ladder_rungs_eV
+            ),
         )
 
     # ==================================================================

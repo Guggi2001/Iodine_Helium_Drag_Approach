@@ -54,7 +54,10 @@ def s_collective_eV(N, *, picture: str = "statistical_mixture", kappa: float,
     ``|S(N)| = s_abs_eV * Sigma(N) / Sigma(n*)`` -- consumes Slice L's
     ``ladder_cumsum``. Pinned to ``s_abs_eV`` at ``N = n*`` (ratio 1) for any
     picture/kappa, and ``-> 0`` as ``N -> 0``. Scalar-in -> float, array-in ->
-    ndarray.
+    ndarray. ``ladder`` (Slice T2, §I.10): when set, ``Sigma`` comes from the
+    injected :class:`~i2_helium_md.physics.dissociation_ladder.TabulatedLadder`
+    and ``picture``/``kappa`` are ignored; ``None`` (default) is the byte-inert
+    Form-U path.
     """
     sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa, ladder=ladder)
     sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa, ladder=ladder)
@@ -67,7 +70,8 @@ def e_infinity_eV(N, *, picture: str = "statistical_mixture", kappa: float,
     """Cooling asymptote ``E_inf(N) = -|S(N)|`` [eV] (occupancy-resolved).
 
     Monotone non-increasing in ``N``; ``-> 0`` as ``N -> 0`` (OQ6). Scalar-in ->
-    float, array-in -> ndarray.
+    float, array-in -> ndarray. ``ladder``: injected table overrides Form-U
+    (``picture``/``kappa`` ignored when set; see :func:`s_collective_eV`).
     """
     s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
                         ladder=ladder)
@@ -79,7 +83,9 @@ def e_bind_pair_eV(N, *, picture: str = "statistical_mixture", kappa: float,
     """Pair binding ``E_bind^pair(N) = -Sigma(N)`` [eV] -- thin wrapper over L.
 
     The discrete-trackable binding term (the cumulative rung cost, negated).
-    Scalar-in -> float, array-in -> ndarray.
+    Scalar-in -> float, array-in -> ndarray. ``ladder``: injected table
+    overrides Form-U (``picture``/``kappa`` ignored when set; see
+    :func:`s_collective_eV`).
     """
     sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa, ladder=ladder)
     return -sigma_N if np.ndim(N) == 0 else -np.asarray(sigma_N)
@@ -92,7 +98,9 @@ def e_electrostriction_eV(N, *, picture: str = "statistical_mixture", kappa: flo
     The collective (continuous, A8 bath-booked) part of the binding, non-positive
     everywhere because ``|S| > Sigma(n*)`` so ``|S(N)| >= Sigma(N)``. Together with
     :func:`e_bind_pair_eV` it closes the split: ``E_inf = E_bind_pair + E_elec``.
-    Scalar-in -> float, array-in -> ndarray.
+    Scalar-in -> float, array-in -> ndarray. ``ladder``: injected table
+    overrides Form-U (``picture``/``kappa`` ignored when set; see
+    :func:`s_collective_eV`).
     """
     s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
                         ladder=ladder)
@@ -126,7 +134,8 @@ def newton_cool_step(E_solv_struct_eV, N, *, tau_ps: float, dt_ps: float,
     relaxation time is unphysical and would invert the cooling; a negative step or a
     negative density factor gives ``exp(+...) > 1`` i.e. silent anti-cooling away
     from ``E_inf``). ``dt_ps = 0`` and ``rho_ratio = 0`` are valid no-ops. Scalar-in
-    -> float, array-in -> ndarray.
+    -> float, array-in -> ndarray. ``ladder``: injected table sets the ``E_inf``
+    asymptote and ``picture``/``kappa`` are ignored (see :func:`s_collective_eV`).
     """
     if not (tau_ps > 0.0):
         raise ValueError(

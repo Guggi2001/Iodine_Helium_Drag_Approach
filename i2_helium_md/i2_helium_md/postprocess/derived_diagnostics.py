@@ -43,6 +43,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..config import SimConfig
+from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.evaporation import is_self_bound
 from ..physics.helium_density import rho_he_ratio
 from ..physics.pickup import lambda_attach
@@ -86,6 +87,7 @@ def crossing_time_ps(
     picture: str,
     kappa: float,
     gate_onset_eV: float | None = None,
+    ladder=None,
 ) -> np.ndarray:
     """Per-ion gate-crossing time ``t× = min{t : E_int(t) < Σ(n(t))}`` [ps].
 
@@ -122,6 +124,13 @@ def crossing_time_ps(
         The run's ``cfg.gate_onset_override_eV``. ``None`` (default) → the
         parameter-free ladder cumulative ``Σ(n)``; a set float → that fixed
         diagnostic threshold, mirroring the driver's resolution.
+    ladder : TabulatedLadder, optional
+        The run's resolved ladder (Slice T2 / review fix 2026-07-16): a
+        ``dissociation_ladder='tabulated'`` run must pass its
+        ``resolve_ladder``-built table here — ``picture``/``kappa`` are
+        Σ-dead under it, and reconstructing against Form-U would silently
+        misrepresent the run (the same contract as ``gate_onset_eV``).
+        ``None`` → Form-U via ``picture``/``kappa``.
 
     Returns
     -------
@@ -154,7 +163,8 @@ def crossing_time_ps(
         )
 
     below = is_self_bound(
-        E, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV
+        E, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV,
+        ladder=ladder,
     )                                         # (2N, T) bool: E_int < threshold
     first_idx = below.argmax(axis=1)          # 0 when a row is all-False ...
     ever_below = below.any(axis=1)            # ... so mask those rows to NaN
@@ -373,6 +383,11 @@ def reconstruct_diagnostics(
     """
     picture = cfg.ladder_electronic_picture
     kappa = cfg.ladder_steepness
+    # Resolve the run's ladder exactly as the stages did (review fix
+    # 2026-07-16): a tabulated run's picture/kappa are Sigma-dead, so scoring
+    # it against Form-U would produce plausible-looking but wrong t_x /
+    # regime diagnostics. Fail-loud on an invalid pairing, same as the run.
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
 
     E_int = np.asarray(ckpt.E_int_eV, dtype=float)
     n_shell = np.asarray(ckpt.n_shell, dtype=float)
@@ -395,7 +410,7 @@ def reconstruct_diagnostics(
 
     t_cross = crossing_time_ps(
         E_int, n_shell, time_ps, picture=picture, kappa=kappa,
-        gate_onset_eV=cfg.gate_onset_override_eV,
+        gate_onset_eV=cfg.gate_onset_override_eV, ladder=ladder,
     )
     Pi_t = regime_parameter(ckpt, cfg)
 
@@ -423,7 +438,8 @@ def reconstruct_diagnostics(
 
     # Total-strip reachability: E_∞(N) → 0 as N → 0 (occupancy-resolved, OQ6).
     e_inf_0 = float(
-        e_infinity_eV(0, picture=picture, kappa=kappa, s_abs_eV=cfg.solv_struct_asymptote_eV)
+        e_infinity_eV(0, picture=picture, kappa=kappa,
+                      s_abs_eV=cfg.solv_struct_asymptote_eV, ladder=ladder)
     )
     total_strip_reachable = bool(np.isclose(e_inf_0, 0.0, atol=1e-9))
 

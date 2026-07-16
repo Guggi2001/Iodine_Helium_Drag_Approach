@@ -21,7 +21,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from i2_helium_md.physics.constants import MASS_HE_AMU, N_STAR, NU_EVAP_PER_PS
+from i2_helium_md.physics.constants import (
+    MASS_HE_AMU,
+    MASS_I_ION_AMU,
+    N_STAR,
+    NU_EVAP_PER_PS,
+)
 from i2_helium_md.physics.dissociation_ladder import d0_of_n, ladder_cumsum
 from i2_helium_md.physics.internal_energy_budget import dE_int_shed_eV
 from i2_helium_md.physics.mass_jump import cold_shed
@@ -693,10 +698,9 @@ class TestReviewExtensions:
 # ---------------------------------------------------------------------------
 class TestLadderInjectionSliceT2:
     def _form_u_ladder(self, length=32):
-        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+        from tests.ladder_feeds import form_u_ladder
 
-        rungs = np.atleast_1d(d0_of_n(np.arange(1, length + 1), kappa=KAPPA))
-        return tabulated_ladder(rungs)
+        return form_u_ladder(kappa=KAPPA, length=length)
 
     def test_rrk_rate_form_u_fed_table_bit_identical(self):
         lad = self._form_u_ladder()
@@ -746,3 +750,45 @@ class TestLadderInjectionSliceT2:
         )
         for a, b in zip(out_u, out_t):
             np.testing.assert_array_equal(np.asarray(a), np.asarray(b))
+
+    # -- review fix 2026-07-16: the bare-ion (n = 0) lane must ride the same
+    # k = 0 path under a tabulated ladder as under Form-U, not raise the
+    # table-range ValueError. n = 0 is a legitimately reachable state (the
+    # n = 1 direct-dissociation fire produces it), and every n = 0 lane is
+    # discarded by the existing masks -- the lookup clamp mirrors the
+    # effective_dof(np.maximum(n_arr, 2)) precedent one block above.
+
+    def test_rrk_rate_bare_ion_scalar_tabulated_is_zero(self):
+        lad = self._form_u_ladder()
+        assert rrk_rate(0.5, 0, nu=13.0, kappa=KAPPA, ladder=lad) == 0.0
+
+    def test_rrk_rate_bare_ion_vector_tabulated_matches_form_u(self):
+        lad = self._form_u_ladder()
+        E = np.array([0.5, 0.05, 0.15])
+        n = np.array([0, 3, 21])
+        k_u = rrk_rate(E, n, nu=13.0, kappa=KAPPA)
+        k_t = rrk_rate(E, n, nu=13.0, kappa=KAPPA, ladder=lad)
+        np.testing.assert_array_equal(k_t, k_u)
+        assert k_t[0] == 0.0
+
+    def test_evaporation_step_components_bare_ion_lane_tabulated(self):
+        # The dE_int_shed_eV precompute runs on every lane before the fired
+        # mask -- an n = 0 lane must not raise (its value is discarded; the
+        # lane can never fire because k = 0 => p_shed = 0).
+        lad = self._form_u_ladder()
+        E = np.array([0.5, 0.05])
+        n = np.array([0.0, 21.0])
+        v = np.full(2, 2.0)
+        m = np.array([MASS_I_ION_AMU, 287.0])
+        out_u = evaporation_step_components(
+            rng=np.random.default_rng(7), E_int_eV=E, n=n, vx=v, vy=v, vz=v,
+            m_amu=m, nu=13.0, kappa=KAPPA, dt_ps=0.01,
+        )
+        out_t = evaporation_step_components(
+            rng=np.random.default_rng(7), E_int_eV=E, n=n, vx=v, vy=v, vz=v,
+            m_amu=m, nu=13.0, kappa=KAPPA, dt_ps=0.01, ladder=lad,
+        )
+        for a, b in zip(out_u, out_t):
+            np.testing.assert_array_equal(np.asarray(a), np.asarray(b))
+        n_plus = np.asarray(out_t[0])
+        assert n_plus[0] == 0                     # bare ion stays bare

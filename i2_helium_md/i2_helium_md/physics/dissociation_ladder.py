@@ -44,7 +44,7 @@ Units follow the package convention: energies in eV (``*_eV``); ``n`` and
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cached_property, lru_cache
 
 import numpy as np
 
@@ -240,6 +240,26 @@ class TabulatedLadder:
 
     rungs_eV: tuple[float, ...]
 
+    # Cached table views (review fix 2026-07-16): the ladder is consumed
+    # several times per integrator step over ~1e5 steps, and the Form-U twin
+    # caches its prefix (_sigma_prefix_table) for exactly that hot path.
+    # cached_property writes to the instance __dict__ directly, so it works
+    # on the frozen dataclass; the arrays are marked read-only because they
+    # are shared across every lookup. Values are bit-identical to the
+    # previous per-call rebuild (same asarray/cumsum arithmetic).
+
+    @cached_property
+    def _rungs_arr(self) -> np.ndarray:
+        arr = np.asarray(self.rungs_eV, dtype=float)
+        arr.setflags(write=False)
+        return arr
+
+    @cached_property
+    def _cumsum_arr(self) -> np.ndarray:
+        cum = np.concatenate(([0.0], np.cumsum(self._rungs_arr)))
+        cum.setflags(write=False)
+        return cum
+
     def d0_of_n(self, n):
         """``D_0(n)`` [eV] by table lookup (1-indexed).
 
@@ -252,8 +272,7 @@ class TabulatedLadder:
                 f"n must be in [1, {len(self.rungs_eV)}] for this tabulated "
                 f"ladder; got {n!r}"
             )
-        table = np.asarray(self.rungs_eV, dtype=float)
-        out = table[n_arr - 1]
+        out = self._rungs_arr[n_arr - 1]
         return float(out) if np.ndim(n) == 0 else out
 
     def ladder_cumsum(self, n):
@@ -268,8 +287,7 @@ class TabulatedLadder:
                 f"n must be in [0, {len(self.rungs_eV)}] for this tabulated "
                 f"ladder; got {n!r}"
             )
-        cum = np.concatenate(([0.0], np.cumsum(np.asarray(self.rungs_eV, dtype=float))))
-        out = cum[n_arr]
+        out = self._cumsum_arr[n_arr]
         return float(out) if np.ndim(n) == 0 else out
 
 
@@ -278,10 +296,26 @@ def tabulated_ladder(rungs_eV) -> TabulatedLadder:
 
     The declared Form-U fallback (not the default path). Round-trips the supplied
     rungs and their cumulative sum exactly.
+
+    Raises
+    ------
+    ValueError
+        On an empty table, or any non-positive / non-finite rung (review fix
+        2026-07-16: a ``D_0 <= 0`` rung is unphysical -- it opens the RRK
+        bracket at zero cost -- and that is a property of the ladder object,
+        not of the config path, so direct construction fails as loudly as
+        :func:`resolve_ladder`).
     """
     rungs = tuple(float(x) for x in rungs_eV)
     if len(rungs) == 0:
         raise ValueError("tabulated_ladder requires at least one rung")
+    rungs_arr = np.asarray(rungs, dtype=float)
+    if not np.all(np.isfinite(rungs_arr) & (rungs_arr > 0.0)):
+        raise ValueError(
+            f"tabulated ladder rungs must be positive finite energies [eV] "
+            f"(a D_0 <= 0 rung opens the RRK bracket at zero cost); got "
+            f"{rungs!r}."
+        )
     return TabulatedLadder(rungs_eV=rungs)
 
 
@@ -293,6 +327,14 @@ def resolve_ladder(dissociation_ladder: str, rungs_eV=None):
     the three stages (ion ``biphasic_step`` / relaxation / detection) call it at
     point-of-use, so an unvalidated config view still fails loudly here rather
     than silently running Form-U physics (the pre-T2 relaxation-stage hazard).
+
+    Memoised on the normalised ``(selector, rungs-tuple)`` key (review fix
+    2026-07-16): ``biphasic_step`` resolves at point-of-use on every integrator
+    step, and the per-step tuple rebuild + full table validation was a hot-path
+    regression the Form-U prefix cache had been added to avoid. Invalid
+    pairings are *not* cached (``lru_cache`` does not cache exceptions), so the
+    fail-loud behaviour is unchanged; repeated valid calls return the same
+    (immutable) :class:`TabulatedLadder` instance.
 
     Parameters
     ----------
@@ -321,8 +363,19 @@ def resolve_ladder(dissociation_ladder: str, rungs_eV=None):
           lookup past the table stays a loud :class:`TabulatedLadder` error --
           the accepted fail-loud convention (discussion 2026-07-16);
         * any non-positive or non-finite rung (a ``D_0 <= 0`` rung is
-          unphysical: it opens the RRK bracket at zero cost).
+          unphysical: it opens the RRK bracket at zero cost; enforced in
+          :func:`tabulated_ladder`).
     """
+    rungs_key = None if rungs_eV is None else tuple(float(x) for x in rungs_eV)
+    return _resolve_ladder_cached(dissociation_ladder, rungs_key)
+
+
+# Unbounded is safe: a process holds a handful of distinct (selector, table)
+# keys (config load + the stages of the runs it drives), each a small tuple +
+# TabulatedLadder pair.
+@lru_cache(maxsize=None)
+def _resolve_ladder_cached(dissociation_ladder: str, rungs_eV):
+    """The uncached :func:`resolve_ladder` body; see there for the contract."""
     if dissociation_ladder == "form_u":
         if rungs_eV is not None:
             raise ValueError(
@@ -338,18 +391,15 @@ def resolve_ladder(dissociation_ladder: str, rungs_eV=None):
                 "tabulated_ladder_rungs_eV (the 1-indexed per-rung D_0 table "
                 "[eV]); refusing to silently run the Form-U ladder."
             )
+        # The positive-finite rung invariant is enforced in tabulated_ladder
+        # itself (review fix 2026-07-16); only the config-specific pairing and
+        # the >= n* floor live here.
         ladder = tabulated_ladder(rungs_eV)
         if len(ladder.rungs_eV) < N_STAR:
             raise ValueError(
                 f"tabulated_ladder_rungs_eV needs at least n* = {N_STAR} rungs "
                 f"(Sigma(n*) must be table-covered); got "
                 f"{len(ladder.rungs_eV)}."
-            )
-        rungs_arr = np.asarray(ladder.rungs_eV, dtype=float)
-        if not np.all(np.isfinite(rungs_arr) & (rungs_arr > 0.0)):
-            raise ValueError(
-                "tabulated_ladder_rungs_eV entries must be positive finite "
-                f"energies [eV]; got {ladder.rungs_eV!r}."
             )
         return ladder
     raise ValueError(

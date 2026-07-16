@@ -6182,7 +6182,95 @@ end-to-end, not statistically.
 **Boundaries:** no preset/generator selects `tabulated` (the rq4graded
 / floor1 rung tables are Slice T3's generator-side job); the
 postprocess `derived_diagnostics` `e_infinity_eV(0, ...)` call is
-ladder-independent (Σ(0)/Σ(n\*) = 0 for any table) and stays unwired;
-CALIBRATION_MAP unchanged (T2 adds no calibration knob — rung tables
-are Derived, generator-side); Slices T3–T4 not started; nothing
-discharges F5.
+ladder-independent (Σ(0)/Σ(n\*) = 0 for any table) and stays unwired
+*(superseded by the post-delivery review below: the whole
+reconstruction layer is now ladder-threaded — the `is_self_bound` call
+in `crossing_time_ps` was ladder-dependent and not covered by this
+exemption)*; CALIBRATION_MAP unchanged (T2 adds no calibration knob —
+rung tables are Derived, generator-side); Slices T3–T4 not started;
+nothing discharges F5.
+
+
+## Slices T1+T2 post-delivery code review EXECUTED — fixes applied; the n=0 bare-ion crash on the tabulated path closed (2026-07-16)
+
+High-effort multi-agent review of `ab723e1..597434e` (Slice T1
+`capped_cubic` + Slice T2 tabulated-ladder surface): 4 finders /
+10 independent verifiers, 15 candidates verified, 0 refuted, merged to
+9 findings. **T1 came out clean** (one cleanup finding); every
+substantive finding was in the T2 wiring. All 9 findings fixed under
+the user's `[PROCEED TO IMPLEMENTATION]`, test-first (RED watched
+before each behavioral fix). Full suite **2304 passed** (2293 + 11 new
+tests).
+
+**F1+F2 (CONFIRMED, blocking): bare-ion `n = 0` crash under
+`tabulated`.** `rrk_rate` and the `evaporation_step_components`
+`dE_int_shed_eV` precompute evaluated `d0_of_n` on unclamped occupancy
+arrays; the `n = 0` lanes are discarded by the existing masks (`k = 0`
+for `n < 1`; a bare ion can never fire), but `TabulatedLadder.d0_of_n`
+raises where the Form-U sigmoid evaluated harmlessly. Since `n = 0` is
+reached via the `n = 1` direct fire (the bare-I⁺ peak path!), every
+production tabulated run would have died mid-run — independently
+reproduced before fixing (scalar, vectorized ensemble, and the
+detection cascade all raise). Fix: `np.maximum(n_arr, 1)` at the two
+lookup sites, mirroring the adjacent
+`effective_dof(np.maximum(n_arr, 2))` precedent; Form-U output is
+bitwise unchanged (clamped lanes are mask-discarded). New tests:
+scalar/vector `rrk_rate` at `n = 0`, the components bare-ion lane, and
+a detection cascade-to-bare equivalence oracle (`n = 1` seed,
+`E_int > D_0(1)`, terminal `n = 0` = "frozen").
+
+**F3 (CONFIRMED): reconstruction layer scored tabulated runs against
+the dead Form-U ladder.** The pre-T2 `NotImplementedError` refusals had
+protected the postprocess layer only vacuously; T2 wired the stages but
+not `crossing_time_ps` / `reconstruct_diagnostics` /
+`tier2_bridge_report.py`. Fix: `crossing_time_ps` gained a
+`ladder=None` kwarg (threaded to `is_self_bound`);
+`reconstruct_diagnostics` and the bridge report resolve via
+`resolve_ladder(cfg…)` and thread it (incl. `e_infinity_eV(0)` and the
+report's `Σ(21)` closed form, for run-exact consistency). Tests:
+doubled-table liveness + form_u-fed-table bit-identity at both the
+helper and `reconstruct_diagnostics` level.
+
+**F4 (CONFIRMED): `cfg.electrostriction_binding_eV` reported the
+Form-U value under a tabulated config.** The derived property now
+resolves the config's ladder. Tests: fed-table identity +
+distinct-table liveness.
+
+**F8 (PLAUSIBLE, fixed): positive-finite rung validation moved into
+`tabulated_ladder`** (a `D_0 ≤ 0` rung opening the RRK bracket at zero
+cost is a property of the ladder object, not the config path);
+`resolve_ladder` keeps only the pairing + ≥ n\* floor. Direct
+construction (tests, the T3 generator) now fails as loudly as the
+config path.
+
+**F6 (hot-path): per-step resolve + uncached table math.**
+`resolve_ladder` is now memoised on the normalised
+`(selector, rungs-tuple)` key (`lru_cache`; exceptions are not cached,
+so fail-loud is unchanged; `biphasic_step`'s per-step point-of-use
+resolve returns the same immutable instance), and `TabulatedLadder`
+caches its rungs array + Σ prefix as read-only `cached_property`
+arrays — the Form-U `_sigma_prefix_table` twin. Values bit-identical.
+
+**F5 (T1 cleanup): the duplicated `capped_cubic` tail scaffold**
+(mask / fast path / `max(v, v_c)` 0**−1 guard) now lives once in
+`drag._capped_cubic_tail_factor`, consumed by both `drag_force` and
+`drag_gamma`; each branch keeps its own final multiplication order so
+the delivered bitwise tail pins and the in-band byte-identity oracle
+are untouched (all 178 drag tests green, Tier-0 gate included).
+
+**F7 (test dedup, the Slice-G precedent):** the 9 per-file Form-U
+rung-table builders collapsed into `tests/ladder_feeds.py`
+(`form_u_rungs` / `form_u_rungs_for` / `form_u_ladder`); per-file
+helpers are now one-line delegates or direct imports.
+
+**F9 (rule 5):** the `ladder` kwarg + the picture/κ-are-ignored
+override semantics documented in every public consumer docstring
+(solvation_cooling ×5, internal_energy_budget ×5, pickup ×2,
+evaporation `gate_margin_eV` / `is_self_bound` / `evaporation_step`;
+the `*_components` twins inherit via their "remaining kwargs" clauses).
+
+**Not changed:** no preset selects `tabulated` (T3's job); checkpoint
+schema, RNG draw order, constants untouched; the runtime
+out-of-table-above lookup stays the accepted fail-loud convention
+(only the physically-reachable `n = 0` *below*-table lane was
+clamped — it is mask-discarded, not physics).

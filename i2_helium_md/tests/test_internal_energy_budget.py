@@ -388,12 +388,9 @@ class TestLadderInjectionSliceT2:
     KAPPA = 1.0
 
     def _form_u_ladder(self, length=32):
-        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+        from tests.ladder_feeds import form_u_ladder
 
-        rungs = np.atleast_1d(
-            d0_of_n(np.arange(1, length + 1), kappa=self.KAPPA)
-        )
-        return tabulated_ladder(rungs)
+        return form_u_ladder(kappa=self.KAPPA, length=length)
 
     def test_budget_increments_form_u_fed_table_bit_identical(self):
         lad = self._form_u_ladder()

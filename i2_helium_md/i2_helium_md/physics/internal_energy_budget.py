@@ -74,6 +74,10 @@ def dE_int_pickup_eV(n, *, f_ret: float, picture: str = "statistical_mixture",
     ``n -> n+1``; the remainder ``(1-f_ret)*D_0(n+1)`` goes to the bath
     (:func:`pickup_bath_release_eV`). Strictly positive for ``f_ret > 0``. Consumes
     Slice L's ``d0_of_n``. Scalar-in -> float, array-in -> ndarray.
+    ``ladder`` (Slice T2, §I.10): when set, ``D_0`` comes from the injected
+    :class:`~i2_helium_md.physics.dissociation_ladder.TabulatedLadder` and
+    ``picture``/``kappa`` are ignored; ``None`` (default) is the byte-inert
+    Form-U path (same convention across this module).
     """
     d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa, ladder=ladder)
     out = f_ret * np.asarray(d0_next)
@@ -86,6 +90,8 @@ def pickup_bath_release_eV(n, *, f_ret: float, picture: str = "statistical_mixtu
 
     The complement of :func:`dE_int_pickup_eV`; together they close the S1 split to
     the full rung ``D_0(n+1)`` exactly. Scalar-in -> float, array-in -> ndarray.
+    ``ladder``: injected table overrides Form-U (``picture``/``kappa`` ignored
+    when set; see :func:`dE_int_pickup_eV`).
     """
     d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa, ladder=ladder)
     out = (1.0 - f_ret) * np.asarray(d0_next)
@@ -98,6 +104,8 @@ def dE_int_shed_eV(n, *, picture: str = "statistical_mixture", kappa: float,
 
     One rung is spent breaking the bond as the complex sheds ``n -> n-1``. Strictly
     negative. Consumes Slice L's ``d0_of_n``. Scalar-in -> float, array-in -> ndarray.
+    ``ladder``: injected table overrides Form-U (``picture``/``kappa`` ignored
+    when set; see :func:`dE_int_pickup_eV`).
     """
     d0 = d0_of_n(n, picture=picture, kappa=kappa, ladder=ladder)
     return -d0 if np.ndim(n) == 0 else -np.asarray(d0)
@@ -117,6 +125,8 @@ def reconstruct_e_int_eV(E_solv_struct_eV, N, *, picture: str = "statistical_mix
     required keyword: a False (or omitted) value **raises** ``ValueError`` -- the static
     reconstruction errs in the early window, so pre-crossing use is refused loudly
     (CLAUDE.md principle 4). Scalar-in -> float, array-in -> ndarray.
+    ``ladder``: injected table sets the binding split and ``picture``/``kappa``
+    are ignored (see :func:`dE_int_pickup_eV`).
     """
     if not post_crossing:
         raise ValueError(
@@ -143,6 +153,8 @@ def f_int_floor(*, e_avail_eV: float, picture: str = "statistical_mixture",
     ``e_avail_eV`` (0.80 eV validation / 2.70 eV production) and picture-set /
     near-kappa-independent through ``Sigma(n*)``. Consumes Slice L's ``ladder_cumsum``
     at ``n* = N_STAR``. Raises ``ValueError`` on a non-positive ``e_avail_eV``.
+    ``ladder``: injected table sets ``Sigma(n*)`` and ``picture``/``kappa``
+    are ignored (see :func:`dE_int_pickup_eV`).
     """
     if not (e_avail_eV > 0.0):
         raise ValueError(

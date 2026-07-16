@@ -283,6 +283,10 @@ def pickup_step(
         Rate coefficient, S1 retained fraction, ladder steepness, integrator step.
     picture : str, optional
         Electronic picture threaded to ``dE_int_pickup_eV`` / the ladder.
+    ladder : TabulatedLadder, optional
+        Injected tabulated ladder (Slice T2, §I.10) threaded to
+        ``dE_int_pickup_eV``; ``picture``/``kappa`` are ignored when set.
+        ``None`` (default) is the byte-inert Form-U path.
     n_star, p, cap, pickup_rate_form, he_capture_velocity, m_he_amu
         Occupancy/cap/reset knobs (see :func:`lambda_attach`, :func:`_resolve_u_he`).
 

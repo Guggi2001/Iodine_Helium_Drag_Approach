@@ -89,16 +89,9 @@ def test_nonpositive_kappa_rejected_via_validate():
 # The config-load validation is single-sourced in
 # physics.dissociation_ladder.resolve_ladder (called from check_ladder_config);
 # these tests exercise it through the config guard.
-import numpy as np
-
 from i2_helium_md.physics.constants import N_STAR
-from i2_helium_md.physics.dissociation_ladder import d0_of_n
 
-
-def _form_u_rungs(length=N_STAR + 11):
-    return tuple(
-        np.atleast_1d(d0_of_n(np.arange(1, length + 1), kappa=1.0))
-    )
+from tests.ladder_feeds import form_u_rungs as _form_u_rungs
 
 
 class TestTabulatedLadderConfig:
@@ -148,3 +141,31 @@ class TestTabulatedLadderConfig:
     def test_tabulated_without_rungs_rejected_via_validate(self):
         with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
             SimConfig(dissociation_ladder="tabulated").validate()
+
+
+class TestElectrostrictionPropertyLadder:
+    """Review fix 2026-07-16: the derived ``electrostriction_binding_eV``
+    property must resolve the same ladder as the run -- under a tabulated
+    config the Form-U picture/kappa are Sigma-dead and reporting their value
+    is a silently wrong derived energy."""
+
+    def test_form_u_fed_table_reproduces_form_u_value(self):
+        cfg_u = SimConfig()
+        cfg_t = SimConfig(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=_form_u_rungs(),
+        )
+        assert (
+            cfg_t.electrostriction_binding_eV == cfg_u.electrostriction_binding_eV
+        )
+
+    def test_distinct_table_changes_value(self):
+        doubled = tuple(2.0 * r for r in _form_u_rungs())
+        cfg_u = SimConfig()
+        cfg_t = SimConfig(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=doubled,
+        )
+        assert (
+            cfg_t.electrostriction_binding_eV != cfg_u.electrostriction_binding_eV
+        )

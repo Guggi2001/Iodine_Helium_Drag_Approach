@@ -67,7 +67,10 @@ if not SHOW_FIGURES:
 import matplotlib.pyplot as plt  # noqa: E402
 
 from scripts.tier2_common import tier2_bridge_run_dir_name  # noqa: E402
-from i2_helium_md.physics.dissociation_ladder import ladder_cumsum  # noqa: E402
+from i2_helium_md.physics.dissociation_ladder import (  # noqa: E402
+    ladder_cumsum,
+    resolve_ladder,
+)
 from i2_helium_md.physics.shell_schedule import build_shell_schedule  # noqa: E402
 from i2_helium_md.postprocess import (  # noqa: E402
     compare_distance,
@@ -154,15 +157,19 @@ def build_summary_lines(cfg, ion, hedft) -> tuple[list[str], dict]:
     lines.append("")
 
     # --- 3. t_x: per-ion reconstruction vs the sharp closed form ------------
+    # Resolve the run's ladder exactly as the stages did (review fix
+    # 2026-07-16): under a tabulated run picture/kappa are Sigma-dead.
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
     t_x = crossing_time_ps(
         ion.E_int_eV, ion.n_shell, time_ps,
         picture=cfg.ladder_electronic_picture, kappa=cfg.ladder_steepness,
-        gate_onset_eV=cfg.gate_onset_override_eV,
+        gate_onset_eV=cfg.gate_onset_override_eV, ladder=ladder,
     )
     payload["t_x"] = t_x
     sigma21 = float(
         ladder_cumsum(
-            21, picture=cfg.ladder_electronic_picture, kappa=cfg.ladder_steepness
+            21, picture=cfg.ladder_electronic_picture,
+            kappa=cfg.ladder_steepness, ladder=ladder,
         )
     )
     e0 = cfg.internal_energy_partition_fraction * cfg.coulomb_available_eV

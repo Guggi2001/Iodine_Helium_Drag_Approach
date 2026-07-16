@@ -277,6 +277,35 @@ def test_tabulated_ladder_rejects_empty():
         tabulated_ladder([])
 
 
+def test_resolve_ladder_memoises_valid_resolutions():
+    # Review fix 2026-07-16: biphasic_step resolves at point-of-use every
+    # integrator step -- repeated valid calls must return the same immutable
+    # instance (list/tuple payloads normalise to one key), not rebuild and
+    # re-validate the table each step.
+    from i2_helium_md.physics.dissociation_ladder import resolve_ladder
+
+    rungs = tuple(np.atleast_1d(d0_of_n(np.arange(1, 33), kappa=1.0)))
+    lad_a = resolve_ladder("tabulated", rungs)
+    lad_b = resolve_ladder("tabulated", list(rungs))
+    assert lad_a is lad_b
+    assert resolve_ladder("form_u") is None
+
+
+def test_tabulated_ladder_rejects_nonpositive_or_nonfinite_rungs():
+    # Review fix 2026-07-16: the positive-finite invariant is a property of
+    # the ladder object, not of the config path (a D_0 <= 0 rung opens the
+    # RRK bracket at zero cost) -- direct construction (tests, the Slice-T3
+    # generator) must fail as loudly as resolve_ladder did.
+    with pytest.raises(ValueError, match="positive finite"):
+        tabulated_ladder([0.01, 0.0, 0.005])
+    with pytest.raises(ValueError, match="positive finite"):
+        tabulated_ladder([0.01, -0.008, 0.005])
+    with pytest.raises(ValueError, match="positive finite"):
+        tabulated_ladder([0.01, float("nan"), 0.005])
+    with pytest.raises(ValueError, match="positive finite"):
+        tabulated_ladder([0.01, float("inf"), 0.005])
+
+
 def test_tabulated_ladder_rejects_fractional_n():
     # Review fix (2026-07-02): mirror the Form-U ladder_cumsum fractional-n
     # guard -- a genuinely fractional occupancy must raise a loud ValueError,
@@ -418,11 +447,7 @@ def test_ladder_cumsum_cached_table_not_mutable_via_result():
 # ---------------------------------------------------------------------------
 # Slice T2 (§I.10): resolve_ladder -- the config -> injectable-ladder bridge.
 # ---------------------------------------------------------------------------
-def _form_u_rungs(picture="statistical_mixture", kappa=1.0, length=N_STAR + 11):
-    """The Form-U rung table D_0(1..length) [eV] -- the equivalence-oracle feed."""
-    return tuple(
-        np.atleast_1d(d0_of_n(np.arange(1, length + 1), picture=picture, kappa=kappa))
-    )
+from tests.ladder_feeds import form_u_rungs as _form_u_rungs
 
 
 class TestResolveLadder:

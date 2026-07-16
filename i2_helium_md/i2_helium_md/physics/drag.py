@@ -325,21 +325,38 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         b = float(coeffs.coefficients["b"])
         v_c = float(coeffs.coefficients["v_c"])
         p_tail = float(coeffs.coefficients["p_tail"])
-        tail = v > v_c
-        if not np.any(tail):
+        masked = _capped_cubic_tail_factor(v, v_c, p_tail)
+        if masked is None:
             # In-band everywhere (includes the v_c = inf byte-identity limit):
             # exactly the locked pure cubic's arithmetic.
             return g * (b * v**3)
-        # Any tail sample implies a finite v_c. np.where evaluates BOTH
-        # branches, so the tail expression must be regular on the whole array:
-        # max(v, v_c) >= v_c > 0 is a safe stand-in below the cap (discarded
-        # by the mask) and equals v in the tail, keeping p_tail = -1 free of
-        # 0**-1 at rest.
-        v_t = np.maximum(v, v_c)
-        return g * np.where(
-            tail, b * v_c**2 * v_t * (v_t / v_c) ** p_tail, b * v**3
-        )
+        tail, v_t, tail_pow = masked
+        return g * np.where(tail, b * v_c**2 * v_t * tail_pow, b * v**3)
     _raise_unrealised_form(coeffs.form)
+
+
+def _capped_cubic_tail_factor(v, v_c: float, p_tail: float):
+    """Shared ``capped_cubic`` tail scaffold for :func:`drag_force` / :func:`drag_gamma`.
+
+    Returns ``None`` when no sample is above the cap (the callers' in-band
+    fast path, which realises the v_c = inf byte-identity limit), else the
+    triple ``(tail mask, v_t = max(v, v_c), (v_t / v_c) ** p_tail)``.
+
+    The singularity guard lives ONLY here so the two closed forms cannot
+    drift apart (a one-sided edit would silently break the gamma = |F|/v
+    identity the Tier-3 FDT amplitude and BAOAB O-step both ride on): any
+    tail sample implies a finite v_c, and ``np.where`` evaluates BOTH
+    branches, so the tail expression must be regular on the whole array --
+    ``max(v, v_c) >= v_c > 0`` is a safe stand-in below the cap (discarded by
+    the mask) and equals ``v`` in the tail, keeping ``p_tail = -1`` free of
+    ``0**-1`` at rest. Each caller keeps its own final multiplication order
+    (the delivered bitwise tail pins).
+    """
+    tail = v > v_c
+    if not np.any(tail):
+        return None
+    v_t = np.maximum(v, v_c)
+    return tail, v_t, (v_t / v_c) ** p_tail
 
 
 def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarray:
@@ -406,15 +423,12 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         b = float(coeffs.coefficients["b"])
         v_c = float(coeffs.coefficients["v_c"])
         p_tail = float(coeffs.coefficients["p_tail"])
-        tail = v > v_c
-        if not np.any(tail):
+        masked = _capped_cubic_tail_factor(v, v_c, p_tail)
+        if masked is None:
             # In-band everywhere (includes the v_c = inf byte-identity limit):
             # exactly the locked pure cubic's arithmetic. v = 0 sits on this
             # branch, so the p_tail = -1 tail never sees the rest singularity.
             return g * (b * v**2)
-        # max(v, v_c) >= v_c > 0: safe stand-in below the cap (see drag_force).
-        v_t = np.maximum(v, v_c)
-        return g * np.where(
-            tail, b * v_c**2 * (v_t / v_c) ** p_tail, b * v**2
-        )
+        tail, _v_t, tail_pow = masked
+        return g * np.where(tail, b * v_c**2 * tail_pow, b * v**2)
     _raise_unrealised_form(coeffs.form)

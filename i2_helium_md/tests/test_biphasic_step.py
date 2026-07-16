@@ -903,19 +903,7 @@ class TestBiphasicStepGuards:
 # ===========================================================================
 # Slice T2 (§I.10): tabulated-ladder wiring through biphasic_step
 # ===========================================================================
-def _form_u_rungs_for(cfg, length=32):
-    """The Form-U rung table for cfg's (picture, kappa) -- the equivalence feed."""
-    from i2_helium_md.physics.dissociation_ladder import d0_of_n
-
-    return tuple(
-        np.atleast_1d(
-            d0_of_n(
-                np.arange(1, length + 1),
-                picture=cfg.ladder_electronic_picture,
-                kappa=cfg.ladder_steepness,
-            )
-        )
-    )
+from tests.ladder_feeds import form_u_rungs_for as _form_u_rungs_for
 
 
 class TestTabulatedLadderSliceT2:

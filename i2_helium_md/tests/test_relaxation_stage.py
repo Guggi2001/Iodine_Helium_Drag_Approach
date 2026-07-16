@@ -661,16 +661,10 @@ class TestTabulatedLadderSliceT2:
         # Form-U physics. Post-T2 it resolves the ladder; fed the Form-U rungs
         # it must reproduce the form_u run bitwise (same cfg.seed-derived
         # stream).
+        from tests.ladder_feeds import form_u_rungs_for
+
         cfg_u = _relax_cfg()
-        rungs = tuple(
-            np.atleast_1d(
-                d0_of_n(
-                    np.arange(1, 33),
-                    picture=cfg_u.ladder_electronic_picture,
-                    kappa=cfg_u.ladder_steepness,
-                )
-            )
-        )
+        rungs = form_u_rungs_for(cfg_u, length=32)
         cfg_t = _relax_cfg(
             dissociation_ladder="tabulated", tabulated_ladder_rungs_eV=rungs,
         )
