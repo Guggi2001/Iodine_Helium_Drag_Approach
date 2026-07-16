@@ -272,3 +272,58 @@ class TestPipeline:
         run_y.save_cfg(cfg_y)
         assert run_x.load_cfg().seed == 1
         assert run_y.load_cfg().seed == 2
+
+
+# ===========================================================================
+# Slice T2 (§I.10): tabulated_ladder_rungs_eV cfg.json round-trip
+# ===========================================================================
+class TestTabulatedLadderRungsRoundTrip:
+    def _tabulated_cfg(self):
+        from dataclasses import replace
+
+        from i2_helium_md.physics.constants import N_STAR
+        from i2_helium_md.physics.dissociation_ladder import d0_of_n
+
+        rungs = tuple(
+            np.atleast_1d(d0_of_n(np.arange(1, N_STAR + 12), kappa=1.0))
+        )
+        return replace(
+            single_pulse_N2000(num_molecules=2, seed=1),
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=rungs,
+        )
+
+    def test_rungs_round_trip_as_tuple(self, tmp_path):
+        # JSON stores the table as an array; load_cfg must coerce it back to
+        # the tuple the dataclass declares (so cfg == loaded holds and the
+        # frozen TabulatedLadder gets a hashable-safe payload).
+        cfg = self._tabulated_cfg()
+        run = RunDirectory(tmp_path / "run")
+        run.save_cfg(cfg)
+        loaded = run.load_cfg()
+        assert isinstance(loaded.tabulated_ladder_rungs_eV, tuple)
+        assert loaded.tabulated_ladder_rungs_eV == cfg.tabulated_ladder_rungs_eV
+        assert loaded == cfg
+
+    def test_pre_t2_cfg_json_loads_with_default_none(self, tmp_path):
+        # Back-compat (the Slice-DS precedent): a cfg.json written before the
+        # field existed must load with the inert default -- existing probe dirs
+        # stay valid, no regeneration.
+        cfg = single_pulse_N2000(num_molecules=2, seed=1)
+        run = RunDirectory(tmp_path / "run")
+        run.save_cfg(cfg)
+        payload = json.loads(run.cfg_path.read_text(encoding="utf-8"))
+        payload.pop("tabulated_ladder_rungs_eV")
+        run.cfg_path.write_text(json.dumps(payload), encoding="utf-8")
+        loaded = run.load_cfg()
+        assert loaded.tabulated_ladder_rungs_eV is None
+
+    def test_invalid_rungs_payload_raises(self, tmp_path):
+        cfg = single_pulse_N2000(num_molecules=2, seed=1)
+        run = RunDirectory(tmp_path / "run")
+        run.save_cfg(cfg)
+        payload = json.loads(run.cfg_path.read_text(encoding="utf-8"))
+        payload["tabulated_ladder_rungs_eV"] = "not-a-table"
+        run.cfg_path.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            run.load_cfg()

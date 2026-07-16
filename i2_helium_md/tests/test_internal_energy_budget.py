@@ -272,7 +272,9 @@ def test_reconstruct_propagates_fractional_N_guard():
 # Independence: U composes L (rungs) only through d0_of_n. Stub it and confirm.
 # ---------------------------------------------------------------------------
 def test_pickup_uses_ladder_only_through_d0_of_n(monkeypatch):
-    monkeypatch.setattr(ieb, "d0_of_n", lambda n, *, picture, kappa: 1.0)
+    monkeypatch.setattr(
+        ieb, "d0_of_n", lambda n, *, picture, kappa, ladder=None: 1.0
+    )
     # With every rung stubbed to 1.0 eV, pickup = f_ret * 1.0 and shed = -1.0.
     assert dE_int_pickup_eV(5, f_ret=0.4, kappa=1.0) == pytest.approx(0.4, abs=1e-15)
     assert dE_int_shed_eV(5, kappa=1.0) == pytest.approx(-1.0, abs=1e-15)
@@ -334,9 +336,13 @@ def test_reconstruct_scalar_returns_float():
 def test_reconstruct_composes_K_split_only(monkeypatch):
     # Prove reconstruct = E_solv - e_bind_pair - e_electrostriction and touches K only
     # through those two terms (not e.g. e_infinity directly). Stub both to constants.
-    monkeypatch.setattr(ieb, "e_bind_pair_eV", lambda N, *, picture, kappa: -0.2)
     monkeypatch.setattr(
-        ieb, "e_electrostriction_eV", lambda N, *, picture, kappa, s_abs_eV: -0.05
+        ieb, "e_bind_pair_eV", lambda N, *, picture, kappa, ladder=None: -0.2
+    )
+    monkeypatch.setattr(
+        ieb,
+        "e_electrostriction_eV",
+        lambda N, *, picture, kappa, s_abs_eV, ladder=None: -0.05,
     )
     # E_int = E_solv - (-0.2) - (-0.05) = E_solv + 0.25.
     assert reconstruct_e_int_eV(-0.1, 10, kappa=1.0, post_crossing=True) == pytest.approx(
@@ -373,3 +379,51 @@ def test_pickup_cooling_relaxed_orders_between_pictures(n):
     cr = dE_int_pickup_eV(n, f_ret=f_ret, picture="cooling_relaxed", kappa=kappa)
     x2 = dE_int_pickup_eV(n, f_ret=f_ret, picture="x2_only", kappa=kappa)
     assert mix < cr < x2
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): ladder= injection -- tabulated == form_u on the fed rungs.
+# ---------------------------------------------------------------------------
+class TestLadderInjectionSliceT2:
+    KAPPA = 1.0
+
+    def _form_u_ladder(self, length=32):
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        rungs = np.atleast_1d(
+            d0_of_n(np.arange(1, length + 1), kappa=self.KAPPA)
+        )
+        return tabulated_ladder(rungs)
+
+    def test_budget_increments_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        n = np.arange(1, 22)
+        np.testing.assert_array_equal(
+            np.asarray(dE_int_shed_eV(n, kappa=self.KAPPA, ladder=lad)),
+            np.asarray(dE_int_shed_eV(n, kappa=self.KAPPA)),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(dE_int_pickup_eV(n, f_ret=0.1, kappa=self.KAPPA, ladder=lad)),
+            np.asarray(dE_int_pickup_eV(n, f_ret=0.1, kappa=self.KAPPA)),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(
+                pickup_bath_release_eV(n, f_ret=0.1, kappa=self.KAPPA, ladder=lad)
+            ),
+            np.asarray(pickup_bath_release_eV(n, f_ret=0.1, kappa=self.KAPPA)),
+        )
+
+    def test_f_int_floor_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        assert f_int_floor(
+            e_avail_eV=0.80, kappa=self.KAPPA, ladder=lad
+        ) == f_int_floor(e_avail_eV=0.80, kappa=self.KAPPA)
+
+    def test_distinct_table_moves_shed_drain(self):
+        # Liveness: the K1 drain is -D_0(n) straight off the injected table.
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        lad = tabulated_ladder(tuple(0.02 for _ in range(21)))
+        assert dE_int_shed_eV(5, kappa=self.KAPPA, ladder=lad) == pytest.approx(
+            -0.02, abs=1e-15
+        )

@@ -67,7 +67,7 @@ def e_int_onset_eV(*, f_int: float, e_avail_eV: float):
 
 
 def dE_int_pickup_eV(n, *, f_ret: float, picture: str = "statistical_mixture",
-                     kappa: float):
+                     kappa: float, ladder=None):
     """S1 pickup heating ``dE_int = +f_ret * D_0(n+1)`` [eV] (``n`` = pre-pickup).
 
     The retained fraction of the bond energy released when the complex grows
@@ -75,36 +75,37 @@ def dE_int_pickup_eV(n, *, f_ret: float, picture: str = "statistical_mixture",
     (:func:`pickup_bath_release_eV`). Strictly positive for ``f_ret > 0``. Consumes
     Slice L's ``d0_of_n``. Scalar-in -> float, array-in -> ndarray.
     """
-    d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa)
+    d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa, ladder=ladder)
     out = f_ret * np.asarray(d0_next)
     return float(out) if np.ndim(n) == 0 else out
 
 
 def pickup_bath_release_eV(n, *, f_ret: float, picture: str = "statistical_mixture",
-                           kappa: float):
+                           kappa: float, ladder=None):
     """S1 pickup bath release ``(1-f_ret) * D_0(n+1)`` [eV] (``n`` = pre-pickup).
 
     The complement of :func:`dE_int_pickup_eV`; together they close the S1 split to
     the full rung ``D_0(n+1)`` exactly. Scalar-in -> float, array-in -> ndarray.
     """
-    d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa)
+    d0_next = d0_of_n(np.asarray(n) + 1, picture=picture, kappa=kappa, ladder=ladder)
     out = (1.0 - f_ret) * np.asarray(d0_next)
     return float(out) if np.ndim(n) == 0 else out
 
 
-def dE_int_shed_eV(n, *, picture: str = "statistical_mixture", kappa: float):
+def dE_int_shed_eV(n, *, picture: str = "statistical_mixture", kappa: float,
+                   ladder=None):
     """K1 evaporation drain ``dE_int = -D_0(n)`` [eV] (``n`` = pre-shed occupancy).
 
     One rung is spent breaking the bond as the complex sheds ``n -> n-1``. Strictly
     negative. Consumes Slice L's ``d0_of_n``. Scalar-in -> float, array-in -> ndarray.
     """
-    d0 = d0_of_n(n, picture=picture, kappa=kappa)
+    d0 = d0_of_n(n, picture=picture, kappa=kappa, ladder=ladder)
     return -d0 if np.ndim(n) == 0 else -np.asarray(d0)
 
 
 def reconstruct_e_int_eV(E_solv_struct_eV, N, *, picture: str = "statistical_mixture",
                          kappa: float, s_abs_eV: float = S_ABS_EV,
-                         post_crossing: bool):
+                         post_crossing: bool, ladder=None):
     """A9 reconstruction ``E_int = E_solv.struct - E_bind^pair(N) - E_elec(N)`` [eV].
 
     Recovers ``E_int`` from the cooled master variable ``E_solv.struct`` using the
@@ -123,8 +124,9 @@ def reconstruct_e_int_eV(E_solv_struct_eV, N, *, picture: str = "statistical_mix
             "(A9); the static binding split errs in the early window. Pass "
             "post_crossing=True only when the reconstruction is known to be post-t_x."
         )
-    e_bind = e_bind_pair_eV(N, picture=picture, kappa=kappa)
-    e_elec = e_electrostriction_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV)
+    e_bind = e_bind_pair_eV(N, picture=picture, kappa=kappa, ladder=ladder)
+    e_elec = e_electrostriction_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
+                                   ladder=ladder)
     out = np.asarray(E_solv_struct_eV) - np.asarray(e_bind) - np.asarray(e_elec)
     if np.ndim(E_solv_struct_eV) == 0 and np.ndim(N) == 0:
         return float(out)
@@ -132,7 +134,7 @@ def reconstruct_e_int_eV(E_solv_struct_eV, N, *, picture: str = "statistical_mix
 
 
 def f_int_floor(*, e_avail_eV: float, picture: str = "statistical_mixture",
-                kappa: float):
+                kappa: float, ladder=None):
     """Self-unbound floor ``f_int^floor = Sigma(n*) / E_avail`` [dimensionless].
 
     The S2 lower bound below which ``E_int(0)`` cannot keep the full first shell
@@ -147,5 +149,5 @@ def f_int_floor(*, e_avail_eV: float, picture: str = "statistical_mixture",
             f"f_int_floor requires e_avail_eV > 0 (the per-ion Coulomb budget); "
             f"got {e_avail_eV!r}"
         )
-    sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa)
+    sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa, ladder=ladder)
     return float(sigma_nstar / e_avail_eV)

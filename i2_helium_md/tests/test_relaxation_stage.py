@@ -649,3 +649,47 @@ class TestConfigValidation:
     def test_stream_key_is_stable(self):
         # A guard against an accidental key change (would silently re-seed runs).
         assert RELAXATION_STREAM_KEY == 0xE2_2026
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): tabulated-ladder wiring through the relaxation stage.
+# ---------------------------------------------------------------------------
+class TestTabulatedLadderSliceT2:
+    def test_form_u_fed_table_relaxation_byte_identical(self):
+        # Regression for the pre-T2 silent-Form-U hazard: the relaxation stage
+        # had no ladder guard, so a tabulated cfg would silently have run
+        # Form-U physics. Post-T2 it resolves the ladder; fed the Form-U rungs
+        # it must reproduce the form_u run bitwise (same cfg.seed-derived
+        # stream).
+        cfg_u = _relax_cfg()
+        rungs = tuple(
+            np.atleast_1d(
+                d0_of_n(
+                    np.arange(1, 33),
+                    picture=cfg_u.ladder_electronic_picture,
+                    kappa=cfg_u.ladder_steepness,
+                )
+            )
+        )
+        cfg_t = _relax_cfg(
+            dissociation_ladder="tabulated", tabulated_ladder_rungs_eV=rungs,
+        )
+        res_u = run_relaxation_stage(_seed_checkpoint(cfg_u, E_int_eV=0.15), cfg_u)
+        res_t = run_relaxation_stage(_seed_checkpoint(cfg_t, E_int_eV=0.15), cfg_t)
+        np.testing.assert_array_equal(res_t.terminal_n, res_u.terminal_n)
+        np.testing.assert_array_equal(res_t.freeze_flags, res_u.freeze_flags)
+        assert res_t.time_relaxed_ps == res_u.time_relaxed_ps
+        for attr in ("E_int_eV", "n_shell", "E_pot_eV", "E_dissip_eV",
+                     "mass_history_kg"):
+            np.testing.assert_array_equal(
+                getattr(res_t.checkpoint, attr),
+                getattr(res_u.checkpoint, attr),
+                err_msg=attr,
+            )
+
+    def test_tabulated_without_rungs_fails_loud(self):
+        # The stage must resolve the ladder (fail-loud data path), not silently
+        # run Form-U -- the pre-T2 hazard this slice closes.
+        cfg = _relax_cfg(dissociation_ladder="tabulated")
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            run_relaxation_stage(_seed_checkpoint(cfg), cfg)

@@ -51,6 +51,7 @@ from ..physics.constants import U
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.shell_schedule import build_onset_strip_schedule, build_shell_schedule
+from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
 from .ion_initial_state import build_initial_ion_state
@@ -192,7 +193,16 @@ def run_ion_propagation(
     gamma_fn = None
     schedule = None
     next_shed_idx = 0
+    ladder = None
     if use_drag:
+        if cfg.mass_scenario == "biphasic":
+            # Slice T2 (§I.10): resolve the ladder once for the per-step
+            # e_bind_pair E_pot fold below (biphasic_step resolves its own
+            # injection from the same cfg fields; fail-loud on a tabulated
+            # selector without a table).
+            ladder = resolve_ladder(
+                cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV
+            )
         # Pass the *realized* initial ion mass (ckpt.mass_kg, downstream of the
         # build_initial_ion_state m_eff override) so the scope guard's mass
         # trip-wire checks what the stepper will actually integrate, not a
@@ -264,6 +274,7 @@ def run_ion_propagation(
                         new_state.n_shell,
                         picture=cfg.ladder_electronic_picture,
                         kappa=cfg.ladder_steepness,
+                        ladder=ladder,
                     ),
                 )
         else:

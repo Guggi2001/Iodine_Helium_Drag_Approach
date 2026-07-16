@@ -166,6 +166,26 @@ class RunDirectory:
                 "This run was probably produced by a different version of the code."
             )
 
+        # JSON has no tuple type: the tabulated-ladder rung table round-trips
+        # as a list, so coerce it back to the tuple the dataclass declares
+        # (keeps cfg == loaded and the frozen TabulatedLadder payload exact).
+        raw_rungs = payload.get("tabulated_ladder_rungs_eV")
+        if raw_rungs is not None:
+            if not isinstance(raw_rungs, (list, tuple)):
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid "
+                    "tabulated_ladder_rungs_eV: expected a JSON array or null."
+                )
+            try:
+                payload["tabulated_ladder_rungs_eV"] = tuple(
+                    float(x) for x in raw_rungs
+                )
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid "
+                    f"tabulated_ladder_rungs_eV: {exc}"
+                ) from exc
+
         raw_drag_coefficients = payload.get("drag_coefficients")
         if raw_drag_coefficients is not None:
             if not isinstance(raw_drag_coefficients, dict):

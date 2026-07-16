@@ -64,6 +64,7 @@ from ..physics.collisions import (
 )
 from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
+from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.evaporation import evaporation_step_components
 from ..physics.helium_density import rho_he_ratio
 from ..physics.internal_energy_budget import pickup_bath_release_eV
@@ -559,10 +560,12 @@ def biphasic_step(
         If ``state.n_shell`` is ``None`` (biphasic requires genuine occupancy state).
     NotImplementedError
         If ``cfg.helium_density_profile`` selects the declared-but-unbuilt
-        ``'tabulated'`` arm, or ``cfg.dissociation_ladder`` selects the
-        ``'tabulated'`` fallback (the biphasic energetics compose the Form-U
-        module functions directly; a :class:`TabulatedLadder` has no config
-        data path). Both are lazy point-of-use refusals (rule-2 contract).
+        ``'tabulated'`` arm (a lazy point-of-use refusal, rule-2 contract).
+    ValueError
+        If the ladder surface is invalid (Slice T2: ``resolve_ladder`` refuses
+        ``dissociation_ladder='tabulated'`` without a rung table -- no silent
+        Form-U fallback), or a tabulated run reaches an occupancy outside the
+        table (the loud :class:`TabulatedLadder` range error).
     AssertionError
         If the post-step ``m == m_I+ + n*m_He`` consistency drifts beyond
         :data:`_M_N_CONSISTENCY_TOL_AMU` (the deferred Phase-B Q3 guard).
@@ -573,19 +576,13 @@ def biphasic_step(
             "(got None); the biphasic driver reads it from the v7 checkpoint column."
         )
 
-    # Ladder-form refusal at point-of-use: every energetics call below (K2
-    # cooling, evaporation gate/drain, pickup heat/bath) composes the Form-U
-    # module functions; the 'tabulated' fallback is a module-level
-    # TabulatedLadder object with no config data path, so selecting it would
-    # otherwise silently run the Form-U ladder -- the same lazy rule-2 contract
-    # as helium_density_profile='tabulated' below.
-    if cfg.dissociation_ladder != "form_u":
-        raise NotImplementedError(
-            f"dissociation_ladder={cfg.dissociation_ladder!r} is not wired into "
-            "the biphasic driver; only the 'form_u' ladder is composed "
-            "(physics/dissociation_ladder.py -- the TabulatedLadder fallback "
-            "has no config data path yet)."
-        )
+    # Ladder resolution (Slice T2, §I.10): every energetics call below (K2
+    # cooling, evaporation gate/drain, pickup heat/bath) threads the resolved
+    # ladder -- None rides the Form-U module functions (byte-identical to the
+    # pre-T2 path), a TabulatedLadder overrides them. resolve_ladder fails
+    # loudly on 'tabulated' without a table (no silent Form-U fallback -- the
+    # pre-T2 lazy-refusal contract moved to the data path).
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
 
     dt = cfg.dt_ion
     picture = cfg.ladder_electronic_picture
@@ -618,12 +615,15 @@ def biphasic_step(
     #    (tau_eff = tau/rho_ratio -> bath dissipation switches off outside the bubble);
     #    "none" passes scalar 1.0 -> byte-identical to the pre-arm ungated cooling.
     cool_rho = rho_ratio if cfg.cooling_spatial_gate == "density_scaled" else 1.0
-    e_inf = np.asarray(e_infinity_eV(n, picture=picture, kappa=kappa, s_abs_eV=s_abs))
+    e_inf = np.asarray(
+        e_infinity_eV(n, picture=picture, kappa=kappa, s_abs_eV=s_abs, ladder=ladder)
+    )
     e_solv_cooled = np.asarray(
         newton_cool_step(
             e_inf + state.E_int_eV, n,
             tau_ps=cfg.internal_energy_cooling_tau_ps, dt_ps=dt,
             picture=picture, kappa=kappa, s_abs_eV=s_abs, rho_ratio=cool_rho,
+            ladder=ladder,
         )
     )
     E_int = e_solv_cooled - e_inf
@@ -634,7 +634,7 @@ def biphasic_step(
         rng=rng, E_int_eV=E_int, n=n, vx=state.vx, vy=state.vy, vz=state.vz,
         m_amu=m_amu, nu=cfg.evap_rate_prefactor_per_ps, picture=picture, kappa=kappa,
         dt_ps=dt, evap_rrk_dof=cfg.evap_rrk_dof,
-        gate_onset_eV=cfg.gate_onset_override_eV,
+        gate_onset_eV=cfg.gate_onset_override_eV, ladder=ladder,
     )
     E_int = E_int + dE_int_e                                  # K1 drain (-D_0(n)) on fire
     E_mass_transfer = state.E_mass_transfer_eV + _amu_ang2_ps2_to_eV(dE_mt_e)
@@ -645,14 +645,15 @@ def biphasic_step(
         lambda0=cfg.pickup_rate_coefficient, f_ret=f_ret, picture=picture, kappa=kappa,
         dt_ps=dt, p=cfg.pickup_occupancy_exponent, cap=cfg.pickup_occupancy_cap,
         pickup_rate_form=cfg.pickup_rate_form,
-        he_capture_velocity=cfg.he_capture_velocity,
+        he_capture_velocity=cfg.he_capture_velocity, ladder=ladder,
     )
     E_int = E_int + dE_int_p                                  # S1 heat (+f_ret*D_0) on fire
     E_mass_transfer = E_mass_transfer + _amu_ang2_ps2_to_eV(dE_mt_p)
     # S1 bath remainder (1-f_ret)*D_0(n+1) -> E_dissip (n = pre-pickup = post-shed n_e).
     bath = np.where(
         fired_p,
-        pickup_bath_release_eV(n_e, f_ret=f_ret, picture=picture, kappa=kappa),
+        pickup_bath_release_eV(n_e, f_ret=f_ret, picture=picture, kappa=kappa,
+                               ladder=ladder),
         0.0,
     )
     E_dissip = E_dissip + bath

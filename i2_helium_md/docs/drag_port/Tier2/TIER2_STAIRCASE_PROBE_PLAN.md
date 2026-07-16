@@ -2311,6 +2311,29 @@ tables are *constructed in the generator script* (probe-side, from
 package. Tests: tabulated == form_u when fed the form_u rungs;
 guard behavior; inert-default regression.
 
+> **NB (2026-07-16): Slice T2 DELIVERED** under its own trigger (log
+> entry "Slice T2 DELIVERED"; TDD, tests watched fail first). Scope ran
+> through **all three stages** as approved pre-trigger:
+> `resolve_ladder(dissociation_ladder, rungs_eV)` in
+> `physics/dissociation_ladder.py` is the single cfg→ladder bridge
+> (pairing + ≥ n\* positive-finite-rung validation; called by
+> `check_ladder_config` at config load and by ion `biphasic_step` /
+> relaxation / detection at point-of-use), and every ladder consumer
+> gained a byte-inert `ladder=None` kwarg — the injected table replaces
+> the Form-U parametrisation entirely (picture/κ ignored when set). The
+> two pre-T2 `NotImplementedError` stage refusals became the loud
+> missing-table `ValueError`; the relaxation stage — previously
+> guardless, silently Form-U — now resolves. `cfg.json` round-trips the
+> table (list→tuple in `load_cfg`); a pre-T2 `cfg.json` loads with the
+> inert `None` default (back-compat test, the Slice-DS precedent).
+> Equivalence oracle: tabulated fed the Form-U rungs is **bit-identical**
+> through `biphasic_step`, relaxation, and detection; liveness proven by
+> distinct-table tests + the short-table loud pickup-lookup failure.
+> Range convention: config floor ≥ n\* = 21 entries; generator tables at
+> N_STAR + 11 = 32 (the Form-U cache height); out-of-table occupancy
+> fails loudly at the lookup. Full suite 2293 passed. No preset selects
+> `tabulated` (T3's job); T3–T4 await their builds.
+
 ### Slice T3 — generator + pilot runs (N = 50, production kinematics)
 
 Common config: biphasic; R0_GS = 2.666 Å, E_coulomb_scale = 1.0

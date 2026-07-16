@@ -83,3 +83,68 @@ def test_positive_kappa_accepted(good_kappa):
 def test_nonpositive_kappa_rejected_via_validate():
     with pytest.raises(ValueError, match="ladder_steepness"):
         SimConfig(ladder_steepness=-2.0).validate()
+
+
+# --- Slice T2 (§I.10): tabulated_ladder_rungs_eV config surface -------------
+# The config-load validation is single-sourced in
+# physics.dissociation_ladder.resolve_ladder (called from check_ladder_config);
+# these tests exercise it through the config guard.
+import numpy as np
+
+from i2_helium_md.physics.constants import N_STAR
+from i2_helium_md.physics.dissociation_ladder import d0_of_n
+
+
+def _form_u_rungs(length=N_STAR + 11):
+    return tuple(
+        np.atleast_1d(d0_of_n(np.arange(1, length + 1), kappa=1.0))
+    )
+
+
+class TestTabulatedLadderConfig:
+    def test_default_rungs_none_and_inert(self):
+        cfg = SimConfig()
+        assert cfg.tabulated_ladder_rungs_eV is None
+        cfg.validate()                  # inert-default regression
+
+    def test_tabulated_with_valid_rungs_passes(self):
+        cfg = SimConfig(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=_form_u_rungs(),
+        )
+        check_ladder_config(cfg)        # does not raise
+        cfg.validate()
+
+    def test_tabulated_without_rungs_rejected(self):
+        cfg = SimConfig(dissociation_ladder="tabulated")
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            check_ladder_config(cfg)
+
+    def test_form_u_with_rungs_rejected(self):
+        # Off-diagonal pairing refused loudly (mirrors the drag form/coefficient
+        # cross-check style; a silently-ignored table is a stale-intent hazard).
+        cfg = SimConfig(tabulated_ladder_rungs_eV=_form_u_rungs())
+        with pytest.raises(ValueError, match="form_u"):
+            check_ladder_config(cfg)
+
+    def test_short_table_rejected(self):
+        cfg = SimConfig(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=_form_u_rungs(length=N_STAR - 1),
+        )
+        with pytest.raises(ValueError, match=str(N_STAR)):
+            check_ladder_config(cfg)
+
+    def test_nonpositive_rung_rejected(self):
+        rungs = list(_form_u_rungs())
+        rungs[0] = 0.0
+        cfg = SimConfig(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=tuple(rungs),
+        )
+        with pytest.raises(ValueError, match="positive"):
+            check_ladder_config(cfg)
+
+    def test_tabulated_without_rungs_rejected_via_validate(self):
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            SimConfig(dissociation_ladder="tabulated").validate()

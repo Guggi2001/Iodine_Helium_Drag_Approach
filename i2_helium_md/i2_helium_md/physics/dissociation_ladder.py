@@ -105,8 +105,8 @@ def sigma(n, *, kappa: float):
     return float(out) if np.ndim(n) == 0 else out
 
 
-def d0_of_n(n, *, picture: str = "statistical_mixture", kappa: float):
-    """Single-rung dissociation cost ``D_0(n)`` [eV] (Form U).
+def d0_of_n(n, *, picture: str = "statistical_mixture", kappa: float, ladder=None):
+    """Single-rung dissociation cost ``D_0(n)`` [eV] (Form U or injected table).
 
     Parameters
     ----------
@@ -116,14 +116,23 @@ def d0_of_n(n, *, picture: str = "statistical_mixture", kappa: float):
         Electronic picture selecting ``D_0(1)`` (default ``statistical_mixture``).
     kappa : float
         Cliff steepness (per-unit-``n``); the Free Tier-2 knob.
+    ladder : TabulatedLadder, optional
+        Injected non-parametric ladder (Slice T2, §I.10): when set, the lookup
+        delegates to ``ladder.d0_of_n(n)`` and **``picture``/``kappa`` are
+        ignored** (the table replaces the Form-U parametrisation entirely).
+        ``None`` (default) is the byte-inert Form-U path. Consumers thread this
+        kwarg; the config bridge is :func:`resolve_ladder`.
 
     Returns
     -------
     float or ndarray
-        ``D_0(n)`` in eV. Monotone non-increasing in ``n`` and bounded to
-        ``[D_floor, D_0(1)]`` for ``n >= 1``. Scalar-in -> float, array-in ->
-        ndarray of the same shape.
+        ``D_0(n)`` in eV. On the Form-U path: monotone non-increasing in ``n``
+        and bounded to ``[D_floor, D_0(1)]`` for ``n >= 1``. Scalar-in -> float,
+        array-in -> ndarray of the same shape. The tabulated path additionally
+        requires integer ``n`` within the table (fail-loud).
     """
+    if ladder is not None:
+        return ladder.d0_of_n(n)
     d1 = first_rung_d0_eV(picture)
     if not (d1 > D_FLOOR_EV):  # defensive: the sourced rungs all satisfy this
         raise ValueError(
@@ -187,14 +196,21 @@ def _sigma_prefix_table(picture: str, kappa: float, n_top: int) -> np.ndarray:
 _SIGMA_TABLE_N_TOP: int = N_STAR + 11
 
 
-def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float):
+def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float,
+                  ladder=None):
     """Cumulative gate threshold ``Sigma(n) = sum_{i=1}^{n} D_0(i)`` [eV].
 
     ``Sigma(0) = 0``. Consumed by Slice K (occupancy-resolved asymptote) and Slice
     U (self-unbound floor). Vectorised: scalar-in -> float, array-in -> ndarray.
     Negative ``n`` is rejected (fail-loud). Values come from the cached
     :func:`_sigma_prefix_table` (bit-identical to a fresh computation; see there).
+
+    ``ladder`` (Slice T2, §I.10): when set, delegates to
+    ``ladder.ladder_cumsum(n)`` and ``picture``/``kappa`` are ignored -- see
+    :func:`d0_of_n`.
     """
+    if ladder is not None:
+        return ladder.ladder_cumsum(n)
     n_arr = np.asarray(n)
     if np.any(n_arr < 0):
         raise ValueError(f"ladder_cumsum requires n >= 0; got {n!r}")
@@ -207,9 +223,10 @@ def ladder_cumsum(n, *, picture: str = "statistical_mixture", kappa: float):
     return float(out) if np.ndim(n) == 0 else out
 
 
-def gate_threshold(n, *, picture: str = "statistical_mixture", kappa: float):
+def gate_threshold(n, *, picture: str = "statistical_mixture", kappa: float,
+                   ladder=None):
     """Readable alias for :func:`ladder_cumsum` -- the self-bound gate threshold."""
-    return ladder_cumsum(n, picture=picture, kappa=kappa)
+    return ladder_cumsum(n, picture=picture, kappa=kappa, ladder=ladder)
 
 
 @dataclass(frozen=True)
@@ -266,3 +283,76 @@ def tabulated_ladder(rungs_eV) -> TabulatedLadder:
     if len(rungs) == 0:
         raise ValueError("tabulated_ladder requires at least one rung")
     return TabulatedLadder(rungs_eV=rungs)
+
+
+def resolve_ladder(dissociation_ladder: str, rungs_eV=None):
+    """Resolve the config ladder surface to an injectable ladder object (Slice T2).
+
+    The single ``(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)`` ->
+    ``ladder`` bridge: ``config.check_ladder_config`` calls it at config load and
+    the three stages (ion ``biphasic_step`` / relaxation / detection) call it at
+    point-of-use, so an unvalidated config view still fails loudly here rather
+    than silently running Form-U physics (the pre-T2 relaxation-stage hazard).
+
+    Parameters
+    ----------
+    dissociation_ladder : str
+        The config selector (``"form_u"`` or ``"tabulated"``).
+    rungs_eV : sequence of float, optional
+        The 1-indexed per-rung ``D_0`` table [eV] (``rungs_eV[i-1] = D_0(i)``);
+        the ``cfg.tabulated_ladder_rungs_eV`` payload.
+
+    Returns
+    -------
+    TabulatedLadder or None
+        ``None`` for ``form_u`` (consumers use the Form-U module functions via
+        ``picture``/``kappa``); a :class:`TabulatedLadder` for ``tabulated``.
+
+    Raises
+    ------
+    ValueError
+        * ``"tabulated"`` without a table (no silent Form-U fallback);
+        * a table under ``"form_u"`` (a silently-ignored table is a stale-intent
+          hazard -- the off-diagonal pairing is refused, mirroring the drag
+          form/coefficient cross-check);
+        * fewer than ``N_STAR`` rungs (``Sigma(n*)`` must be table-covered: the
+          solvation split normalises by it). Longer tables cover the pickup
+          overshoot band (the Form-U cache height is ``N_STAR + 11``); a runtime
+          lookup past the table stays a loud :class:`TabulatedLadder` error --
+          the accepted fail-loud convention (discussion 2026-07-16);
+        * any non-positive or non-finite rung (a ``D_0 <= 0`` rung is
+          unphysical: it opens the RRK bracket at zero cost).
+    """
+    if dissociation_ladder == "form_u":
+        if rungs_eV is not None:
+            raise ValueError(
+                "tabulated_ladder_rungs_eV is set but dissociation_ladder="
+                "'form_u' would silently ignore it; select "
+                "dissociation_ladder='tabulated' or drop the table."
+            )
+        return None
+    if dissociation_ladder == "tabulated":
+        if rungs_eV is None:
+            raise ValueError(
+                "dissociation_ladder='tabulated' requires "
+                "tabulated_ladder_rungs_eV (the 1-indexed per-rung D_0 table "
+                "[eV]); refusing to silently run the Form-U ladder."
+            )
+        ladder = tabulated_ladder(rungs_eV)
+        if len(ladder.rungs_eV) < N_STAR:
+            raise ValueError(
+                f"tabulated_ladder_rungs_eV needs at least n* = {N_STAR} rungs "
+                f"(Sigma(n*) must be table-covered); got "
+                f"{len(ladder.rungs_eV)}."
+            )
+        rungs_arr = np.asarray(ladder.rungs_eV, dtype=float)
+        if not np.all(np.isfinite(rungs_arr) & (rungs_arr > 0.0)):
+            raise ValueError(
+                "tabulated_ladder_rungs_eV entries must be positive finite "
+                f"energies [eV]; got {ladder.rungs_eV!r}."
+            )
+        return ladder
+    raise ValueError(
+        f"unknown dissociation_ladder {dissociation_ladder!r}; expected one of "
+        "('form_u', 'tabulated')"
+    )

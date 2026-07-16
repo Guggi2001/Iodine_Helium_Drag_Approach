@@ -794,3 +794,49 @@ class TestArtifactAndIntegration:
         save_detection_result(stale, skip_dir / "detection.npz")
         with pytest.raises(ValueError, match="stale detection.npz"):
             report.score_probe_run(skip_dir, schedule)
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): tabulated-ladder wiring through the detection stage.
+# ---------------------------------------------------------------------------
+class TestTabulatedLadderSliceT2:
+    def _rungs(self, cfg, length=32):
+        return tuple(
+            np.atleast_1d(
+                d0_of_n(
+                    np.arange(1, length + 1),
+                    picture=cfg.ladder_electronic_picture,
+                    kappa=cfg.ladder_steepness,
+                )
+            )
+        )
+
+    def test_form_u_fed_table_detection_byte_identical(self):
+        # The §I.10 equivalence oracle at the detector: a tabulated cfg fed the
+        # Form-U rungs reproduces the form_u detected read bitwise (same
+        # cfg.seed-derived stage stream; the waiting-time draws see identical
+        # rates).
+        cfg_u = _detect_cfg()
+        cfg_t = _detect_cfg(
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=self._rungs(_detect_cfg()),
+        )
+        res_u = run_detection_stage(_far_seed(cfg_u, E_int_eV=0.15), cfg_u)
+        res_t = run_detection_stage(_far_seed(cfg_t, E_int_eV=0.15), cfg_t)
+        assert res_u.event_offsets[-1] > 0    # self-check: the cascade fired
+        np.testing.assert_array_equal(res_t.n_detected, res_u.n_detected)
+        np.testing.assert_array_equal(
+            res_t.E_int_detected_eV, res_u.E_int_detected_eV
+        )
+        np.testing.assert_array_equal(res_t.state_reason, res_u.state_reason)
+        np.testing.assert_array_equal(res_t.event_time_ps, res_u.event_time_ps)
+        np.testing.assert_array_equal(
+            res_t.event_dE_int_eV, res_u.event_dE_int_eV
+        )
+
+    def test_tabulated_without_rungs_fails_loud(self):
+        # Slice T2 supersedes the DS-review NotImplementedError refusal: the
+        # 'tabulated' arm is wired, so the lazy refusal moves to the data path.
+        cfg = _detect_cfg(dissociation_ladder="tabulated")
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            run_detection_stage(_far_seed(cfg), cfg)

@@ -256,6 +256,7 @@ def pickup_step(
     cap: str = "langmuir",
     pickup_rate_form: str = "density_only",
     he_capture_velocity: str = "at_rest",
+    ladder=None,
     m_he_amu: float = MASS_HE_AMU,
 ) -> PickupResult:
     """Draw one Bernoulli pickup for a single ion; on fire, capture He + deposit S1 heat.
@@ -308,7 +309,8 @@ def pickup_step(
         )
 
     cap_res = capture(v, m_amu, m_he_amu=m_he_amu, u_he=u_he)
-    dE_int = dE_int_pickup_eV(n, f_ret=f_ret, picture=picture, kappa=kappa)
+    dE_int = dE_int_pickup_eV(n, f_ret=f_ret, picture=picture, kappa=kappa,
+                              ladder=ladder)
     return PickupResult(
         n_plus=int(n) + 1,
         m_plus_amu=cap_res.m_plus_amu,
@@ -338,6 +340,7 @@ def pickup_step_components(
     cap: str = "langmuir",
     pickup_rate_form: str = "density_only",
     he_capture_velocity: str = "at_rest",
+    ladder=None,
     m_he_amu: float = MASS_HE_AMU,
 ):
     """Vectorized per-ion pickup over ``(M,)`` ensemble arrays (one draw per step).
@@ -386,7 +389,9 @@ def pickup_step_components(
         vx, vy, vz, m_arr, m_he_amu=m_he_amu, u_he=u_he,
     )
     dE_int_c = np.asarray(
-        dE_int_pickup_eV(n_arr, f_ret=f_ret, picture=picture, kappa=kappa), dtype=float
+        dE_int_pickup_eV(n_arr, f_ret=f_ret, picture=picture, kappa=kappa,
+                         ladder=ladder),
+        dtype=float,
     )
 
     n_plus = np.where(fired, n_arr + 1, n_arr)

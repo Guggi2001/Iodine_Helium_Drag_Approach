@@ -686,3 +686,63 @@ class TestReviewExtensions:
             np.testing.assert_allclose(a[j], b[j])
         np.testing.assert_allclose(a[3], b[3])            # m_plus scalar == array value
         np.testing.assert_allclose(a[4], b[4])            # per-atom defect
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): ladder= injection -- tabulated == form_u on the fed rungs.
+# ---------------------------------------------------------------------------
+class TestLadderInjectionSliceT2:
+    def _form_u_ladder(self, length=32):
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        rungs = np.atleast_1d(d0_of_n(np.arange(1, length + 1), kappa=KAPPA))
+        return tabulated_ladder(rungs)
+
+    def test_rrk_rate_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        E = np.array([0.001, 0.05, 0.15, 0.25])   # below-rung / in-band / suppressed
+        n = np.array([21, 21, 21, 21])
+        k_u = rrk_rate(E, n, nu=13.0, kappa=KAPPA)
+        k_t = rrk_rate(E, n, nu=13.0, kappa=KAPPA, ladder=lad)
+        np.testing.assert_array_equal(k_t, k_u)
+
+    def test_gate_margin_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        assert gate_margin_eV(0.15, 21, kappa=KAPPA, ladder=lad) == gate_margin_eV(
+            0.15, 21, kappa=KAPPA
+        )
+
+    def test_is_self_bound_threads_ladder(self):
+        lad = self._form_u_ladder()
+        assert is_self_bound(0.15, 21, kappa=KAPPA, ladder=lad) == is_self_bound(
+            0.15, 21, kappa=KAPPA
+        )
+
+    def test_distinct_table_changes_rate(self):
+        # Liveness: a doubled table doubles D_0/Sigma, so an in-band (E, n) point
+        # moves (different bracket + gate) -- the injected table is physics-live,
+        # not silently ignored.
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        rungs = np.atleast_1d(d0_of_n(np.arange(1, 33), kappa=KAPPA))
+        doubled = tabulated_ladder(2.0 * rungs)
+        k_u = rrk_rate(0.15, 21, nu=13.0, kappa=KAPPA)
+        k_t = rrk_rate(0.15, 21, nu=13.0, kappa=KAPPA, ladder=doubled)
+        assert k_t != k_u
+
+    def test_evaporation_step_components_form_u_fed_table_identical(self):
+        lad = self._form_u_ladder()
+        E = np.full(4, 0.05)
+        n = np.full(4, 21.0)
+        v = np.full(4, 2.0)
+        m = np.full(4, 287.0)
+        out_u = evaporation_step_components(
+            rng=np.random.default_rng(5), E_int_eV=E, n=n, vx=v, vy=v, vz=v,
+            m_amu=m, nu=13.0, kappa=KAPPA, dt_ps=0.01,
+        )
+        out_t = evaporation_step_components(
+            rng=np.random.default_rng(5), E_int_eV=E, n=n, vx=v, vy=v, vz=v,
+            m_amu=m, nu=13.0, kappa=KAPPA, dt_ps=0.01, ladder=lad,
+        )
+        for a, b in zip(out_u, out_t):
+            np.testing.assert_array_equal(np.asarray(a), np.asarray(b))

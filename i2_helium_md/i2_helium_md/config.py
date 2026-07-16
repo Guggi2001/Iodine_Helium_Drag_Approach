@@ -265,6 +265,19 @@ class SimConfig:
     dissociation_ladder: LadderForm = "form_u"                 # Form-U sigmoid vs tabulated fallback
     ladder_steepness: float = 1.0                              # kappa [per-unit-n]; Free (Phase-F fit)
     ladder_electronic_picture: LadderElectronicPicture = "statistical_mixture"  # sets D_0(1)
+    # Tabulated-ladder data path (Slice T2, §I.10): the 1-indexed per-rung D_0
+    # table [eV] (rungs[i-1] = D_0(i)) consumed only under
+    # dissociation_ladder="tabulated" -- dissociation_ladder.resolve_ladder
+    # builds the TabulatedLadder the three stages inject into every ladder
+    # consumer. None (default) is inert. Validation (single-sourced in
+    # resolve_ladder, called from check_ladder_config): 'tabulated' without a
+    # table, or a table under 'form_u', is refused; floor >= N_STAR positive
+    # finite entries (Sigma(n*) must be table-covered). Under 'tabulated',
+    # kappa/picture are D_0/Sigma-dead (the table replaces the Form-U
+    # parametrisation) but stay guard-checked and reportable. Rung tables are
+    # built generator-side (rq4graded / floor1 -- no taper physics in the
+    # package; Slice T3).
+    tabulated_ladder_rungs_eV: Optional[tuple[float, ...]] = None
 
     # -- Tier-2 Phase-A solvation cooling (Slice K) --
     # Newton cooling of E_solv.struct toward the occupancy-resolved asymptote
@@ -534,17 +547,28 @@ def check_ladder_config(cfg: "SimConfig") -> None:
        satisfy it, but a future picture / floor edit that violated it would be a
        physics error, caught loudly here rather than producing a non-dissipative
        inverted ladder.
+    5. **Tabulated data path** (Slice T2, §I.10) -- the
+       ``(dissociation_ladder, tabulated_ladder_rungs_eV)`` pairing resolves
+       through ``dissociation_ladder.resolve_ladder`` (single source; the stages
+       call the same resolver at point-of-use): ``'tabulated'`` requires a table
+       with >= ``N_STAR`` positive finite rungs, and a table under ``'form_u'``
+       is refused (the off-diagonal stale-intent hazard).
 
     Raises
     ------
     ValueError
         On an unrecognised ladder selector, a non-positive ``ladder_steepness``, an
-        unrecognised electronic picture, or a resolved ``D_0(1)`` that does not
-        exceed ``D_floor``.
+        unrecognised electronic picture, a resolved ``D_0(1)`` that does not
+        exceed ``D_floor``, or an invalid tabulated-ladder pairing/table
+        (see :func:`~i2_helium_md.physics.dissociation_ladder.resolve_ladder`).
     """
     # Local import avoids a module-load cycle (dissociation_ladder imports only
     # constants; config is imported widely) and keeps the guard self-contained.
-    from .physics.dissociation_ladder import D_FLOOR_EV, first_rung_d0_eV
+    from .physics.dissociation_ladder import (
+        D_FLOOR_EV,
+        first_rung_d0_eV,
+        resolve_ladder,
+    )
 
     _reject_unknown_enum(
         cfg.dissociation_ladder, _KNOWN_LADDER_FORMS, field="dissociation_ladder"
@@ -566,6 +590,10 @@ def check_ladder_config(cfg: "SimConfig") -> None:
             f"floor D_floor={D_FLOOR_EV!r} eV (picture="
             f"{cfg.ladder_electronic_picture!r})"
         )
+
+    # Tabulated data path (arm 5): pairing + table validation, single-sourced in
+    # the resolver the stages also call at point-of-use.
+    resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
 
 
 # ---------------------------------------------------------------------------

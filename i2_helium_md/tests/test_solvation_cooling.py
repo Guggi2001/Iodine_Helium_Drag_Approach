@@ -328,7 +328,9 @@ def test_s_collective_depends_on_ladder_only_through_cumsum(monkeypatch):
 
     # Stub Sigma(n) = n: then |S(N)| = |S| * N / n* exactly, independent of the
     # real ladder shape -- proving K composes L only via ladder_cumsum.
-    monkeypatch.setattr(sc, "ladder_cumsum", lambda n, *, picture, kappa: float(n))
+    monkeypatch.setattr(
+        sc, "ladder_cumsum", lambda n, *, picture, kappa, ladder=None: float(n)
+    )
     s = sc.s_collective_eV(10, picture="statistical_mixture", kappa=1.0)
     assert s == pytest.approx(S_ABS_EV * 10 / N_STAR)
 
@@ -399,3 +401,45 @@ def test_consumers_propagate_ladder_failloud(fn, bad_N):
 def test_newton_cool_step_propagates_ladder_failloud():
     with pytest.raises(ValueError):
         newton_cool_step(0.0, -1, tau_ps=6.55, dt_ps=1.0, kappa=1.0)
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): ladder= injection -- tabulated == form_u on the fed rungs.
+# ---------------------------------------------------------------------------
+class TestLadderInjectionSliceT2:
+    KAPPA = 1.0
+
+    def _form_u_ladder(self, length=32):
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        rungs = np.atleast_1d(
+            d0_of_n(np.arange(1, length + 1), kappa=self.KAPPA)
+        )
+        return tabulated_ladder(rungs)
+
+    def test_binding_split_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        N = np.arange(0, 22)
+        for fn in (s_collective_eV, e_infinity_eV, e_bind_pair_eV,
+                   e_electrostriction_eV):
+            np.testing.assert_array_equal(
+                np.asarray(fn(N, kappa=self.KAPPA, ladder=lad)),
+                np.asarray(fn(N, kappa=self.KAPPA)),
+            )
+
+    def test_newton_cool_step_form_u_fed_table_bit_identical(self):
+        lad = self._form_u_ladder()
+        out_u = newton_cool_step(0.1, 21, tau_ps=6.55, dt_ps=0.01, kappa=self.KAPPA)
+        out_t = newton_cool_step(
+            0.1, 21, tau_ps=6.55, dt_ps=0.01, kappa=self.KAPPA, ladder=lad
+        )
+        assert out_t == out_u
+
+    def test_distinct_table_moves_binding_pair(self):
+        # Liveness: e_bind_pair = -Sigma(N) tracks the injected table exactly.
+        from i2_helium_md.physics.dissociation_ladder import tabulated_ladder
+
+        lad = tabulated_ladder(tuple(0.01 for _ in range(21)))
+        assert e_bind_pair_eV(3, kappa=self.KAPPA, ladder=lad) == pytest.approx(
+            -0.03, abs=1e-15
+        )

@@ -48,7 +48,7 @@ from .dissociation_ladder import ladder_cumsum
 
 
 def s_collective_eV(N, *, picture: str = "statistical_mixture", kappa: float,
-                    s_abs_eV: float = S_ABS_EV):
+                    s_abs_eV: float = S_ABS_EV, ladder=None):
     """Occupancy-resolved collective solvation magnitude ``|S(N)|`` [eV].
 
     ``|S(N)| = s_abs_eV * Sigma(N) / Sigma(n*)`` -- consumes Slice L's
@@ -56,35 +56,37 @@ def s_collective_eV(N, *, picture: str = "statistical_mixture", kappa: float,
     picture/kappa, and ``-> 0`` as ``N -> 0``. Scalar-in -> float, array-in ->
     ndarray.
     """
-    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa)
-    sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa)
+    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa, ladder=ladder)
+    sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa, ladder=ladder)
     out = s_abs_eV * np.asarray(sigma_N) / sigma_nstar
     return float(out) if np.ndim(N) == 0 else out
 
 
 def e_infinity_eV(N, *, picture: str = "statistical_mixture", kappa: float,
-                  s_abs_eV: float = S_ABS_EV):
+                  s_abs_eV: float = S_ABS_EV, ladder=None):
     """Cooling asymptote ``E_inf(N) = -|S(N)|`` [eV] (occupancy-resolved).
 
     Monotone non-increasing in ``N``; ``-> 0`` as ``N -> 0`` (OQ6). Scalar-in ->
     float, array-in -> ndarray.
     """
-    s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV)
+    s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
+                        ladder=ladder)
     return -s if np.ndim(N) == 0 else -np.asarray(s)
 
 
-def e_bind_pair_eV(N, *, picture: str = "statistical_mixture", kappa: float):
+def e_bind_pair_eV(N, *, picture: str = "statistical_mixture", kappa: float,
+                   ladder=None):
     """Pair binding ``E_bind^pair(N) = -Sigma(N)`` [eV] -- thin wrapper over L.
 
     The discrete-trackable binding term (the cumulative rung cost, negated).
     Scalar-in -> float, array-in -> ndarray.
     """
-    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa)
+    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa, ladder=ladder)
     return -sigma_N if np.ndim(N) == 0 else -np.asarray(sigma_N)
 
 
 def e_electrostriction_eV(N, *, picture: str = "statistical_mixture", kappa: float,
-                          s_abs_eV: float = S_ABS_EV):
+                          s_abs_eV: float = S_ABS_EV, ladder=None):
     """Electrostriction marginal ``E_elec(N) = -(|S(N)| - Sigma(N)) <= 0`` [eV].
 
     The collective (continuous, A8 bath-booked) part of the binding, non-positive
@@ -92,15 +94,16 @@ def e_electrostriction_eV(N, *, picture: str = "statistical_mixture", kappa: flo
     :func:`e_bind_pair_eV` it closes the split: ``E_inf = E_bind_pair + E_elec``.
     Scalar-in -> float, array-in -> ndarray.
     """
-    s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV)
-    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa)
+    s = s_collective_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
+                        ladder=ladder)
+    sigma_N = ladder_cumsum(N, picture=picture, kappa=kappa, ladder=ladder)
     out = -(np.asarray(s) - np.asarray(sigma_N))
     return float(out) if np.ndim(N) == 0 else out
 
 
 def newton_cool_step(E_solv_struct_eV, N, *, tau_ps: float, dt_ps: float,
                      picture: str = "statistical_mixture", kappa: float,
-                     s_abs_eV: float = S_ABS_EV, rho_ratio=1.0):
+                     s_abs_eV: float = S_ABS_EV, rho_ratio=1.0, ladder=None):
     """One exact exponential Newton-cooling step toward ``E_inf(N)`` [eV].
 
     ``E_new = E_inf + (E_solv_struct - E_inf) * exp(-dt*rho_ratio/tau)`` -- the
@@ -142,7 +145,8 @@ def newton_cool_step(E_solv_struct_eV, N, *, tau_ps: float, dt_ps: float,
             f"gives exp(+...) > 1, i.e. anti-cooling away from E_inf); got "
             f"{rho_ratio!r}"
         )
-    e_inf = e_infinity_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV)
+    e_inf = e_infinity_eV(N, picture=picture, kappa=kappa, s_abs_eV=s_abs_eV,
+                          ladder=ladder)
     decay = np.exp(-dt_ps * rho / tau_ps)
     out = np.asarray(e_inf) + (np.asarray(E_solv_struct_eV) - np.asarray(e_inf)) * decay
     if np.ndim(E_solv_struct_eV) == 0 and np.ndim(N) == 0 and rho.ndim == 0:

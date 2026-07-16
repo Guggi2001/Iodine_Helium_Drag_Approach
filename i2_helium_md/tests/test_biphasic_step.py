@@ -588,15 +588,15 @@ class TestDriverGuards:
                 droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
             )
 
-    def test_tabulated_dissociation_ladder_refused_lazily(self):
-        # Review fix (2026-07-02): 'tabulated' is a valid config enum, but the
-        # biphasic energetics compose the Form-U module functions directly (the
-        # TabulatedLadder fallback is a module-level object with no config data
-        # path); selecting it must refuse at point-of-use instead of silently
-        # running the Form-U ladder -- the helium_density_profile contract.
+    def test_tabulated_ladder_without_rungs_refused_lazily(self):
+        # Slice T2 (§I.10) supersedes the 2026-07-02 point-of-use refusal: the
+        # 'tabulated' arm is now wired (resolve_ladder injects a TabulatedLadder
+        # into every biphasic energetics call), so the lazy refusal contract
+        # moves to the *data path*: selecting 'tabulated' without a rung table
+        # must fail loudly (resolve_ladder), never silently run Form-U.
         cfg = _biphasic_cfg(dissociation_ladder="tabulated")
         state = _biphasic_state()
-        with pytest.raises(NotImplementedError, match="dissociation_ladder"):
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
             biphasic_step(
                 state, rng=np.random.default_rng(0), cfg=cfg,
                 droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
@@ -894,6 +894,73 @@ class TestBiphasicStepGuards:
         state = _biphasic_state(n0=5, e_int=1.0)
         state = replace(state, mass_kg=state.mass_kg + 0.5 * U)  # +0.5 amu drift
         with pytest.raises(AssertionError, match="consistency drift"):
+            biphasic_step(
+                state, rng=np.random.default_rng(0), cfg=cfg,
+                droplet_radii=np.full(6, 30.0), gate_steepness=14.2,
+            )
+
+
+# ===========================================================================
+# Slice T2 (§I.10): tabulated-ladder wiring through biphasic_step
+# ===========================================================================
+def _form_u_rungs_for(cfg, length=32):
+    """The Form-U rung table for cfg's (picture, kappa) -- the equivalence feed."""
+    from i2_helium_md.physics.dissociation_ladder import d0_of_n
+
+    return tuple(
+        np.atleast_1d(
+            d0_of_n(
+                np.arange(1, length + 1),
+                picture=cfg.ladder_electronic_picture,
+                kappa=cfg.ladder_steepness,
+            )
+        )
+    )
+
+
+class TestTabulatedLadderSliceT2:
+    def test_form_u_fed_table_biphasic_step_byte_identical(self):
+        # The §I.10 equivalence oracle at the step level: a tabulated cfg fed
+        # the Form-U rungs must reproduce the form_u step bitwise (same RNG
+        # stream; the two-draw order is form-independent), with cooling,
+        # evaporation, and pickup all live.
+        cfg_u = _biphasic_cfg(pickup_rate_coefficient=0.5)
+        cfg_t = _biphasic_cfg(
+            pickup_rate_coefficient=0.5,
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=_form_u_rungs_for(cfg_u),
+        )
+        state = _biphasic_state(e_int=0.15)     # in-band -> evaporation live
+        droplet = np.full(6, 30.0)              # ions inside -> pickup live
+        new_u = biphasic_step(
+            state, rng=np.random.default_rng(3), cfg=cfg_u,
+            droplet_radii=droplet, gate_steepness=14.2,
+        )
+        new_t = biphasic_step(
+            state, rng=np.random.default_rng(3), cfg=cfg_t,
+            droplet_radii=droplet, gate_steepness=14.2,
+        )
+        for attr in ("vx", "vy", "vz", "mass_kg", "n_shell", "E_int_eV",
+                     "E_dissip_eV", "E_mass_transfer_eV"):
+            np.testing.assert_array_equal(
+                getattr(new_t, attr), getattr(new_u, attr), err_msg=attr,
+            )
+
+    def test_short_table_fails_loud_at_pickup_lookup(self):
+        # Runtime range convention (discussion 2026-07-16): the config-load
+        # floor is >= N_STAR entries, but a pickup at n = N_STAR needs rung
+        # D_0(N_STAR + 1) -- a table cut at exactly N_STAR must fail loudly at
+        # the lookup (TabulatedLadder), never wrap or clamp. Also the liveness
+        # proof: form_u would never raise here.
+        cfg = _biphasic_cfg(
+            pickup_rate_coefficient=0.5,
+            dissociation_ladder="tabulated",
+            tabulated_ladder_rungs_eV=_form_u_rungs_for(
+                _biphasic_cfg(), length=21
+            ),
+        )
+        state = _biphasic_state()               # n = 21 everywhere
+        with pytest.raises(ValueError, match="tabulated"):
             biphasic_step(
                 state, rng=np.random.default_rng(0), cfg=cfg,
                 droplet_radii=np.full(6, 30.0), gate_steepness=14.2,

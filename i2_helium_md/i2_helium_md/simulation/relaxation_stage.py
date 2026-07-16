@@ -97,7 +97,7 @@ import numpy as np
 from ..config import SimConfig, check_relaxation_config
 from ..physics.constants import U
 from ..physics.baoab import make_ion_baoab_step
-from ..physics.dissociation_ladder import d0_of_n
+from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import (
@@ -176,7 +176,8 @@ def _zero_accel_fn(num_molecules: int):
     return acc
 
 
-def _freeze_mask(state: IonStepState, *, picture: str, kappa: float) -> np.ndarray:
+def _freeze_mask(state: IonStepState, *, picture: str, kappa: float,
+                 ladder=None) -> np.ndarray:
     """Per-ion frozen mask: ``n == 0`` or ``E_int < D_0(n)`` (the k==0 floor).
 
     ``D_0(0)`` is undefined on the ladder, so ``n`` is clamped to >= 1 for the
@@ -184,7 +185,9 @@ def _freeze_mask(state: IonStepState, *, picture: str, kappa: float) -> np.ndarr
     """
     n = np.asarray(state.n_shell, dtype=float)
     E_int = np.asarray(state.E_int_eV, dtype=float)
-    d0 = np.asarray(d0_of_n(np.maximum(n, 1.0), picture=picture, kappa=kappa))
+    d0 = np.asarray(
+        d0_of_n(np.maximum(n, 1.0), picture=picture, kappa=kappa, ladder=ladder)
+    )
     return (n <= 0.0) | (E_int < d0)
 
 
@@ -196,6 +199,7 @@ def _coulomb_translate(
     charge: np.ndarray,
     picture: str,
     kappa: float,
+    ladder=None,
 ) -> IonStepState:
     """One conservative (zero-gamma BAOAB) translation step + the e_bind_pair fold.
 
@@ -212,7 +216,8 @@ def _coulomb_translate(
     return replace(
         new_state,
         E_pot_eV=new_state.E_pot_eV
-        + e_bind_pair_eV(new_state.n_shell, picture=picture, kappa=kappa),
+        + e_bind_pair_eV(new_state.n_shell, picture=picture, kappa=kappa,
+                         ladder=ladder),
     )
 
 
@@ -225,6 +230,7 @@ def _free_flight_translate(
     num_molecules: int,
     picture: str,
     kappa: float,
+    ladder=None,
 ) -> IonStepState:
     """One ballistic (force-free) translation step; MD potential held, e_bind tracks n.
 
@@ -244,7 +250,8 @@ def _free_flight_translate(
     return replace(
         new_state,
         E_pot_eV=held_md_pot
-        + e_bind_pair_eV(new_state.n_shell, picture=picture, kappa=kappa),
+        + e_bind_pair_eV(new_state.n_shell, picture=picture, kappa=kappa,
+                         ladder=ladder),
     )
 
 
@@ -374,6 +381,11 @@ def run_relaxation_stage(
     charge = np.ones(two_n, dtype=float)
     picture = cfg.ladder_electronic_picture
     kappa = cfg.ladder_steepness
+    # Slice T2 (§I.10): resolve the ladder once for the stage-local consumers
+    # (freeze mask, e_bind folds); the pre-T2 stage had NO ladder guard and
+    # would have silently run Form-U under a tabulated cfg. biphasic_step
+    # resolves its own injection from the same (carried) cfg fields.
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
     forces = cfg.relaxation_forces
     gate_steepness = drag_gate_steepness(cfg)
 
@@ -384,7 +396,7 @@ def run_relaxation_stage(
     held_md_pot = None
     if forces == "free_flight":
         held_md_pot = seed.E_pot_eV - e_bind_pair_eV(
-            seed.n_shell, picture=picture, kappa=kappa,
+            seed.n_shell, picture=picture, kappa=kappa, ladder=ladder,
         )
 
     num_internal_steps = math.ceil(cfg.relaxation_time_ps / dt_relax)
@@ -394,7 +406,7 @@ def run_relaxation_stage(
 
     stored: list[IonStepState] = [seed]
     state = seed
-    freeze_flags = _freeze_mask(seed, picture=picture, kappa=kappa)
+    freeze_flags = _freeze_mask(seed, picture=picture, kappa=kappa, ladder=ladder)
 
     for internal_id in range(1, num_internal_steps + 1):
         # Mass subsystem (verbatim biphasic_step under the lambda_0=0 view): draws
@@ -407,19 +419,20 @@ def run_relaxation_stage(
         if forces == "coulomb":
             state = _coulomb_translate(
                 state, relax_cfg=relax_cfg, droplet_radii=droplet_radii,
-                charge=charge, picture=picture, kappa=kappa,
+                charge=charge, picture=picture, kappa=kappa, ladder=ladder,
             )
         else:
             state = _free_flight_translate(
                 state, relax_cfg=relax_cfg, droplet_radii=droplet_radii,
                 held_md_pot=held_md_pot, num_molecules=num_molecules,
-                picture=picture, kappa=kappa,
+                picture=picture, kappa=kappa, ladder=ladder,
             )
 
         if internal_id % stride == 0:
             stored.append(state)
 
-        freeze_flags = _freeze_mask(state, picture=picture, kappa=kappa)
+        freeze_flags = _freeze_mask(state, picture=picture, kappa=kappa,
+                                    ladder=ladder)
         if bool(freeze_flags.all()):
             break
 

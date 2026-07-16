@@ -39,10 +39,12 @@ from i2_helium_md.physics.constants import (
     N_STAR,
 )
 from i2_helium_md.physics.dissociation_ladder import (
+    TabulatedLadder,
     d0_of_n,
     first_rung_d0_eV,
     gate_threshold,
     ladder_cumsum,
+    resolve_ladder,
     sigma,
     tabulated_ladder,
 )
@@ -411,3 +413,111 @@ def test_ladder_cumsum_cached_table_not_mutable_via_result():
     second = ladder_cumsum(n, picture="x2_only", kappa=2.0)
     assert not np.array_equal(first, second)
     assert np.all(second < 99.0)
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): resolve_ladder -- the config -> injectable-ladder bridge.
+# ---------------------------------------------------------------------------
+def _form_u_rungs(picture="statistical_mixture", kappa=1.0, length=N_STAR + 11):
+    """The Form-U rung table D_0(1..length) [eV] -- the equivalence-oracle feed."""
+    return tuple(
+        np.atleast_1d(d0_of_n(np.arange(1, length + 1), picture=picture, kappa=kappa))
+    )
+
+
+class TestResolveLadder:
+    def test_form_u_resolves_to_none(self):
+        # None = "use the Form-U module functions" (the byte-inert default path).
+        assert resolve_ladder("form_u", None) is None
+
+    def test_tabulated_resolves_to_tabulated_ladder(self):
+        rungs = _form_u_rungs()
+        lad = resolve_ladder("tabulated", rungs)
+        assert isinstance(lad, TabulatedLadder)
+        assert lad.rungs_eV == rungs
+
+    def test_tabulated_without_rungs_rejected(self):
+        with pytest.raises(ValueError, match="tabulated_ladder_rungs_eV"):
+            resolve_ladder("tabulated", None)
+
+    def test_form_u_with_rungs_rejected(self):
+        # The off-diagonal pairing: silently ignoring a supplied table would run
+        # Form-U physics against a stale table intent -- refuse loudly.
+        with pytest.raises(ValueError, match="form_u"):
+            resolve_ladder("form_u", _form_u_rungs())
+
+    def test_unknown_form_rejected(self):
+        with pytest.raises(ValueError, match="dissociation_ladder"):
+            resolve_ladder("quadratic_typo", None)
+
+    def test_short_table_rejected(self):
+        # Config-load floor: >= N_STAR entries (Sigma(n*) must be table-covered;
+        # the solvation split normalizes by it). Longer tables cover pickup
+        # overshoot; a runtime lookup past the table stays a loud TabulatedLadder
+        # ValueError (the accepted fail-loud convention, discussion 2026-07-16).
+        with pytest.raises(ValueError, match=str(N_STAR)):
+            resolve_ladder("tabulated", _form_u_rungs(length=N_STAR - 1))
+
+    def test_exactly_n_star_entries_accepted(self):
+        lad = resolve_ladder("tabulated", _form_u_rungs(length=N_STAR))
+        assert len(lad.rungs_eV) == N_STAR
+
+    @pytest.mark.parametrize("bad", [0.0, -0.01, float("nan"), float("inf")])
+    def test_nonpositive_or_nonfinite_rung_rejected(self, bad):
+        rungs = list(_form_u_rungs())
+        rungs[3] = bad
+        with pytest.raises(ValueError, match="positive"):
+            resolve_ladder("tabulated", tuple(rungs))
+
+
+# ---------------------------------------------------------------------------
+# Slice T2 (§I.10): ladder= injection dispatch on the module functions.
+# ---------------------------------------------------------------------------
+class TestLadderInjection:
+    def test_d0_of_n_dispatches_to_ladder(self):
+        # A table distinct from any Form-U curve proves the injection is live
+        # (picture/kappa are ignored when a ladder is injected).
+        rungs = tuple(0.5 + 0.01 * i for i in range(N_STAR))
+        lad = tabulated_ladder(rungs)
+        out = d0_of_n(4, picture="statistical_mixture", kappa=1.0, ladder=lad)
+        assert out == rungs[3]
+
+    def test_ladder_cumsum_dispatches_to_ladder(self):
+        rungs = tuple(0.5 + 0.01 * i for i in range(N_STAR))
+        lad = tabulated_ladder(rungs)
+        out = ladder_cumsum(3, picture="x2_only", kappa=9.9, ladder=lad)
+        assert out == pytest.approx(sum(rungs[:3]), abs=0.0)
+
+    def test_gate_threshold_alias_dispatches(self):
+        rungs = tuple(0.5 + 0.01 * i for i in range(N_STAR))
+        lad = tabulated_ladder(rungs)
+        assert gate_threshold(2, kappa=1.0, ladder=lad) == ladder_cumsum(
+            2, kappa=1.0, ladder=lad
+        )
+
+    def test_form_u_fed_table_is_bit_identical(self):
+        # The §I.10 equivalence oracle at the module layer: a TabulatedLadder fed
+        # the Form-U rungs reproduces d0_of_n / ladder_cumsum bitwise (same float
+        # construction: rung table + np.cumsum prefix).
+        kappa = 1.0
+        lad = tabulated_ladder(_form_u_rungs(kappa=kappa))
+        n_scalar = 7
+        n_arr = np.arange(1, N_STAR + 1)
+        assert d0_of_n(n_scalar, kappa=kappa, ladder=lad) == d0_of_n(
+            n_scalar, kappa=kappa
+        )
+        np.testing.assert_array_equal(
+            np.asarray(d0_of_n(n_arr, kappa=kappa, ladder=lad)),
+            np.asarray(d0_of_n(n_arr, kappa=kappa)),
+        )
+        assert ladder_cumsum(N_STAR, kappa=kappa, ladder=lad) == ladder_cumsum(
+            N_STAR, kappa=kappa
+        )
+        np.testing.assert_array_equal(
+            np.asarray(ladder_cumsum(np.arange(0, N_STAR + 1), kappa=kappa, ladder=lad)),
+            np.asarray(ladder_cumsum(np.arange(0, N_STAR + 1), kappa=kappa)),
+        )
+
+    def test_default_none_ladder_is_form_u_path(self):
+        # ladder=None must be byte-inert (the pre-T2 call signature behavior).
+        assert d0_of_n(5, kappa=1.3, ladder=None) == d0_of_n(5, kappa=1.3)

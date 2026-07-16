@@ -6097,3 +6097,92 @@ tally updated.
 **Boundaries:** no preset or production config selects `capped_cubic`
 (the pilot generator is Slice T3's job); Slices T2–T4 not started;
 nothing discharges F5.
+
+## Slice T2 DELIVERED — tabulated-ladder config surface wired through all three stages via a single resolve_ladder bridge; tabulated≡form_u bit-identity oracles pass at step/relaxation/detection level (2026-07-16)
+
+Executed under the user's `[PROCEED TO IMPLEMENTATION]` (T1 committed
+first, `eb8398e`; the three pre-T2 discussion points all confirmed as
+proposed: (1) resolver-injection wiring shape, (2) config floor ≥ n\*
+with loud runtime out-of-table failure + N_STAR + 11 generator
+convention, (3) form_u+table refused loudly / picture-κ inert-but-
+reportable under tabulated). TDD: the full RED set watched fail
+(ImportError on `resolve_ladder`, the missing-feature failure; unknown
+field TypeError; DID-NOT-RAISE guards) before any implementation.
+
+**Code (10 files):**
+
+- `physics/dissociation_ladder.py` — `resolve_ladder(dissociation_
+  ladder, rungs_eV)`: the single cfg→ladder bridge (form_u → None;
+  tabulated → validated `TabulatedLadder`; unknown → reject). Validation
+  single-sourced here: tabulated-without-table refused (no silent Form-U
+  fallback), table-under-form_u refused (stale-intent hazard), floor
+  ≥ N_STAR positive finite rungs (Σ(n\*) must be table-covered).
+  `d0_of_n` / `ladder_cumsum` / `gate_threshold` gained a byte-inert
+  `ladder=None` kwarg: when injected, the table overrides the Form-U
+  parametrisation entirely (picture/κ ignored — documented).
+- `physics/solvation_cooling.py` — `ladder=` threaded through the K
+  split (`s_collective_eV`, `e_infinity_eV`, `e_bind_pair_eV`,
+  `e_electrostriction_eV`) and `newton_cool_step`.
+- `physics/internal_energy_budget.py` — threaded through
+  `dE_int_pickup_eV`, `pickup_bath_release_eV`, `dE_int_shed_eV`,
+  `f_int_floor`, `reconstruct_e_int_eV`.
+- `physics/evaporation.py` — threaded through `_gate_threshold_eV`,
+  `gate_margin_eV`, `is_self_bound`, `rrk_rate`, `evaporation_step`,
+  `evaporation_step_components`.
+- `physics/pickup.py` — threaded through `pickup_step` /
+  `pickup_step_components` (the S1 heat off the injected table).
+- `config.py` — new field `tabulated_ladder_rungs_eV:
+  Optional[tuple[float, ...]] = None` (inert default; physics-live at
+  this slice — no rule-2 carry). `check_ladder_config` arm 5 delegates
+  the pairing/table validation to `resolve_ladder` (rule-1 single
+  source with the stages' point-of-use calls).
+- `simulation/ion_propagation_step.py` — `biphasic_step` resolves once
+  and threads all five energetics calls (K2 cooling asymptote+step,
+  evaporation, pickup, bath release). The 2026-07-02 NotImplementedError
+  refusal is superseded by the missing-table ValueError.
+- `simulation/ion.py` + `simulation/ion_initial_state.py` — the
+  per-step and t0 `e_bind_pair` E_pot folds ride the same resolved
+  ladder (5-term invariant stays closed under a tabulated run).
+- `simulation/relaxation_stage.py` — **the silent-Form-U hazard closed**:
+  the stage had no ladder guard pre-T2; it now resolves once and
+  threads the freeze mask + both translation-arm folds.
+- `simulation/detection_stage.py` — resolves once; threads `rrk_rate`,
+  the P1–P3 guard's `d0_of_n`, `_permanent_reason` (d0 + gate margin),
+  and the per-fire K1 drain. DS refusal superseded like biphasic_step.
+- `simulation/run_directory.py` — `load_cfg` coerces the JSON array
+  back to the declared tuple (cfg == loaded holds); invalid payloads
+  raise; a pre-T2 `cfg.json` without the key loads with the default
+  (back-compat, the Slice-DS acceptance-criterion precedent).
+
+**Tests (RED→GREEN; +43, full suite 2250 → 2293 passed):**
+`test_dissociation_ladder.py` (resolver semantics; injection dispatch;
+form_u-fed-table bitwise identity on d0/Σ), `test_ladder_config.py`
+(guard surface incl. off-diagonal + floor + positivity + inert
+default), `test_evaporation.py` / `test_solvation_cooling.py` /
+`test_internal_energy_budget.py` (per-module fed-table bit-identity +
+distinct-table liveness; three pre-existing monkeypatch stubs updated
+to the new signature), `test_biphasic_step.py` (step-level byte
+identity with cooling+evaporation+pickup live; short-table loud
+pickup-lookup failure — the runtime range convention made concrete;
+guard test flipped to the data-path contract),
+`test_relaxation_stage.py` (stage byte identity + fail-loud),
+`test_detection_stage.py` (detected-read byte identity + fail-loud),
+`test_run_directory.py` (tuple round-trip; pre-T2 back-compat; invalid
+payload).
+
+**Equivalence argument (why bitwise, not approx):** the Form-U
+`ladder_cumsum` prefix table and a `TabulatedLadder` fed
+`d0_of_n(1..32)` build the same float array through the same
+`np.cumsum`, and the tabulated `d0_of_n` is an exact table lookup of
+the same values — so every downstream expression is the identical
+arithmetic, and the biphasic two-draw RNG stream is consumed
+identically (draws are unconditional). Byte-identity therefore holds
+end-to-end, not statistically.
+
+**Boundaries:** no preset/generator selects `tabulated` (the rq4graded
+/ floor1 rung tables are Slice T3's generator-side job); the
+postprocess `derived_diagnostics` `e_infinity_eV(0, ...)` call is
+ladder-independent (Σ(0)/Σ(n\*) = 0 for any table) and stays unwired;
+CALIBRATION_MAP unchanged (T2 adds no calibration knob — rung tables
+are Derived, generator-side); Slices T3–T4 not started; nothing
+discharges F5.

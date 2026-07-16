@@ -57,6 +57,7 @@ import numpy as np
 
 from ..config import SimConfig
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
+from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.interactions import partner_interaction_ion
 from ..physics.internal_energy_budget import e_int_onset_eV
 from ..physics.potentials import droplet_potential
@@ -261,10 +262,15 @@ def build_initial_ion_state(
     #   Only S1/K1/K2 modify E_int thereafter. f_int is required non-None under
     #   biphasic (config.check_biphasic_config), so it is set here by construction.
     if cfg.mass_scenario == "biphasic":
+        # Slice T2 (§I.10): the t0 fold rides the same resolved ladder as the
+        # driver/stages (fail-loud on a tabulated selector without a table).
         E_pot_eV[:, 0] += e_bind_pair_eV(
             ANCHOR_N_START,
             picture=cfg.ladder_electronic_picture,
             kappa=cfg.ladder_steepness,
+            ladder=resolve_ladder(
+                cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV
+            ),
         )
         E_int_eV[:, 0] = e_int_onset_eV(
             f_int=cfg.internal_energy_partition_fraction,

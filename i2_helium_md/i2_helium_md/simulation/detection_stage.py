@@ -103,7 +103,7 @@ import numpy as np
 
 from ..config import SimConfig, check_detection_config
 from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
-from ..physics.dissociation_ladder import d0_of_n
+from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.evaporation import gate_margin_eV, rrk_rate
 from ..physics.helium_density import rho_he_ratio
 from ..physics.internal_energy_budget import dE_int_shed_eV
@@ -248,7 +248,7 @@ class DetectionResult:
 
 
 def _permanent_reason(E_int_eV: float, n: int, *, picture: str, kappa: float,
-                      gate_onset_eV) -> str:
+                      gate_onset_eV, ladder=None) -> str:
     """Classify a ``k == 0`` ion into its permanent state (design §2.3).
 
     Called only when :func:`rrk_rate` returned exactly 0, so with ``nu > 0``
@@ -267,11 +267,12 @@ def _permanent_reason(E_int_eV: float, n: int, *, picture: str, kappa: float,
     """
     if n <= 0:
         return "frozen"
-    d0 = float(d0_of_n(n, picture=picture, kappa=kappa))
+    d0 = float(d0_of_n(n, picture=picture, kappa=kappa, ladder=ladder))
     if E_int_eV <= d0:
         return "frozen"
     if n >= 2 and float(gate_margin_eV(
         E_int_eV, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV,
+        ladder=ladder,
     )) >= 0.0:
         return "suppressed"
     if n >= 2 and E_int_eV > d0:
@@ -326,9 +327,11 @@ def run_detection_stage(
         beyond the realized handover time ``t_h``, or the P1-P3 handover
         guard fails (the per-ion violator list, with the remedy).
     NotImplementedError
-        If the config selects the declared-but-unbuilt ``tabulated`` ladder
-        or density-profile arms (point-of-use refusal, the biphasic_step
-        precedent).
+        If the config selects the declared-but-unbuilt ``tabulated``
+        density-profile arm (point-of-use refusal, the biphasic_step
+        precedent). The tabulated *ladder* is wired at Slice T2 (§I.10):
+        ``resolve_ladder`` injects it; selecting it without a rung table is
+        a loud ``ValueError`` instead.
     """
     if not cfg.detection_stage_enabled:
         raise ValueError(
@@ -337,16 +340,14 @@ def run_detection_stage(
         )
     check_detection_config(cfg)   # fires the enabled-path checks (fail-loud)
 
-    # Point-of-use refusals for the declared-but-unbuilt enum arms this stage
-    # composes around (the biphasic_step precedent -- review fix 2026-07-07):
-    # selecting them would otherwise silently run Form-U / erfc physics.
-    if cfg.dissociation_ladder != "form_u":
-        raise NotImplementedError(
-            f"dissociation_ladder={cfg.dissociation_ladder!r} is not wired "
-            "into the detection stage; only the 'form_u' ladder is composed "
-            "(rrk_rate / d0_of_n / dE_int_shed_eV -- the TabulatedLadder "
-            "fallback has no config data path yet)."
-        )
+    # Ladder resolution (Slice T2, §I.10): rrk_rate / d0_of_n /
+    # dE_int_shed_eV below thread the resolved ladder -- None rides Form-U
+    # (byte-identical), a TabulatedLadder overrides it; 'tabulated' without a
+    # table fails loudly in resolve_ladder (the pre-T2 lazy refusal moved to
+    # the data path). The density-profile arm stays a point-of-use refusal
+    # (the biphasic_step precedent -- review fix 2026-07-07): selecting it
+    # would otherwise silently run erfc physics.
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
     if cfg.helium_density_profile != "erf_complement":
         raise NotImplementedError(
             f"helium_density_profile={cfg.helium_density_profile!r} is a "
@@ -406,7 +407,8 @@ def run_detection_stage(
     #   with enormous margin or fails loudly on an in-/near-bubble ion --
     #   the skip path's actual defense.
     d0_h = np.asarray(
-        d0_of_n(np.maximum(n0, 1), picture=picture, kappa=kappa), dtype=float
+        d0_of_n(np.maximum(n0, 1), picture=picture, kappa=kappa, ladder=ladder),
+        dtype=float,
     )
     frozen_h = (n0 <= 0) | (E_int0 < d0_h)
     depth = _depth(seed.x, seed.y, seed.z,
@@ -482,11 +484,12 @@ def run_detection_stage(
             k = float(rrk_rate(
                 E_i, n_i, nu=nu, picture=picture, kappa=kappa,
                 evap_rrk_dof=s_override, gate_onset_eV=gate_onset,
+                ladder=ladder,
             ))
             if k == 0.0:
                 reasons.append(_permanent_reason(
                     E_i, n_i, picture=picture, kappa=kappa,
-                    gate_onset_eV=gate_onset,
+                    gate_onset_eV=gate_onset, ladder=ladder,
                 ))
                 break
             u = float(rng.random())
@@ -502,7 +505,9 @@ def run_detection_stage(
             # Fire: compose the delivered primitives verbatim (design §2.6).
             n_pre = n_i
             shed = cold_shed(v_i, m_i, m_he_amu=MASS_HE_AMU)
-            dE_int = float(dE_int_shed_eV(n_pre, picture=picture, kappa=kappa))
+            dE_int = float(
+                dE_int_shed_eV(n_pre, picture=picture, kappa=kappa, ladder=ladder)
+            )
             # E_pot fold: exactly +D_0(n_pre) = -dE_int, so the K1/fold pair
             # cancels bit-exactly in the 5-term sum (review fix 2026-07-07:
             # recomputing the fold as an e_bind_pair difference left ~1e-17 eV

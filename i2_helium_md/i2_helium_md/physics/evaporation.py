@@ -158,7 +158,7 @@ def shed_probability(k_per_ps, dt_ps: float):
     return out
 
 
-def _gate_threshold_eV(n, *, picture: str, kappa: float, gate_onset_eV):
+def _gate_threshold_eV(n, *, picture: str, kappa: float, gate_onset_eV, ladder=None):
     """Resolve the self-bound gate threshold [eV]: ``Sigma(n)`` or a fixed override.
 
     ``gate_onset_eV=None`` -> the parameter-free integrated ladder ``Sigma(n)`` (Derived,
@@ -176,11 +176,11 @@ def _gate_threshold_eV(n, *, picture: str, kappa: float, gate_onset_eV):
         # gate_margin_eV and have never seen the private helper name.
         _as_integer_occupancy(n, context="gate threshold")
         return float(gate_onset_eV)
-    return ladder_cumsum(n, picture=picture, kappa=kappa)
+    return ladder_cumsum(n, picture=picture, kappa=kappa, ladder=ladder)
 
 
 def gate_margin_eV(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: float,
-                   gate_onset_eV=None):
+                   gate_onset_eV=None, ladder=None):
     r"""Signed self-unbound margin ``G = E_int - Sigma(n)`` [eV].
 
     The mechanism's natural readout: ``G < 0`` (``E_int < Sigma(n)``) is the self-bound
@@ -189,7 +189,8 @@ def gate_margin_eV(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: 
     """
     E = np.asarray(E_int_eV, dtype=float)
     thresh = np.asarray(
-        _gate_threshold_eV(n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV),
+        _gate_threshold_eV(n, picture=picture, kappa=kappa,
+                           gate_onset_eV=gate_onset_eV, ladder=ladder),
         dtype=float,
     )
     out = E - thresh
@@ -199,7 +200,7 @@ def gate_margin_eV(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: 
 
 
 def is_self_bound(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: float,
-                  gate_onset_eV=None):
+                  gate_onset_eV=None, ladder=None):
     r"""The self-bound gate: ``True`` iff ``E_int < Sigma(n)`` (== ``gate_margin_eV < 0``).
 
     **True = self-bound = shell evaporation enabled** (MASS R9 "once self-bound ... the
@@ -209,7 +210,8 @@ def is_self_bound(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: f
     ``n = 1`` (that is :func:`rrk_rate`). Scalar-in -> bool, array-in -> bool ndarray.
     """
     margin = gate_margin_eV(
-        E_int_eV, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV
+        E_int_eV, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV,
+        ladder=ladder,
     )
     out = np.asarray(margin) < 0.0
     if np.ndim(E_int_eV) == 0 and np.ndim(n) == 0:
@@ -218,7 +220,7 @@ def is_self_bound(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: f
 
 
 def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
-             kappa: float, evap_rrk_dof=None, gate_onset_eV=None):
+             kappa: float, evap_rrk_dof=None, gate_onset_eV=None, ladder=None):
     r"""Energy-gated RRK shed rate ``k(E_int, n)`` [ps^-1] -- the full fire-path rate.
 
     Encodes **all** gating so a downstream draw fires on ``rng.random() < P_shed`` alone:
@@ -248,6 +250,9 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
         the pickup ``p < 0`` guard).
     gate_onset_eV : float, optional
         Diagnostic self-bound threshold override (n>=2 gate only); ``None`` -> ``Sigma(n)``.
+    ladder : TabulatedLadder, optional
+        Injected tabulated ladder (Slice T2, §I.10) threaded to ``d0_of_n`` /
+        ``ladder_cumsum``; ``picture``/``kappa`` are ignored when set.
 
     Returns
     -------
@@ -266,9 +271,12 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
 
     E = np.asarray(E_int_eV, dtype=float)
     n_arr = np.asarray(n)
-    d0 = np.asarray(d0_of_n(n_arr, picture=picture, kappa=kappa), dtype=float)
+    d0 = np.asarray(
+        d0_of_n(n_arr, picture=picture, kappa=kappa, ladder=ladder), dtype=float
+    )
     thresh = np.asarray(
-        _gate_threshold_eV(n_arr, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV),
+        _gate_threshold_eV(n_arr, picture=picture, kappa=kappa,
+                           gate_onset_eV=gate_onset_eV, ladder=ladder),
         dtype=float,
     )
 
@@ -321,6 +329,7 @@ def evaporation_step(
     dt_ps: float,
     evap_rrk_dof=None,
     gate_onset_eV=None,
+    ladder=None,
     m_he_amu: float = MASS_HE_AMU,
 ) -> EvaporationResult:
     """Draw one Bernoulli evaporation for a single ion; on fire, cold-shed + drain K1.
@@ -338,7 +347,7 @@ def evaporation_step(
     """
     k = rrk_rate(
         E_int_eV, n, nu=nu, picture=picture, kappa=kappa,
-        evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV,
+        evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV, ladder=ladder,
     )
     p_shed = shed_probability(k, dt_ps)
     fired = bool(float(rng.random()) < p_shed)
@@ -354,7 +363,7 @@ def evaporation_step(
         )
 
     shed = cold_shed(v, m_amu, m_he_amu=m_he_amu)
-    dE_int = dE_int_shed_eV(n, picture=picture, kappa=kappa)
+    dE_int = dE_int_shed_eV(n, picture=picture, kappa=kappa, ladder=ladder)
     return EvaporationResult(
         n_plus=int(n) - 1,
         m_plus_amu=shed.m_plus_amu,
@@ -380,6 +389,7 @@ def evaporation_step_components(
     dt_ps: float,
     evap_rrk_dof=None,
     gate_onset_eV=None,
+    ladder=None,
     m_he_amu: float = MASS_HE_AMU,
 ):
     """Vectorized per-ion evaporation over ``(M,)`` ensemble arrays (one draw per step).
@@ -417,7 +427,7 @@ def evaporation_step_components(
 
     k = rrk_rate(
         E_int_eV, n_arr, nu=nu, picture=picture, kappa=kappa,
-        evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV,
+        evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV, ladder=ladder,
     )
     p_shed = np.asarray(shed_probability(k, dt_ps), dtype=float)
     draws = rng.random(size=p_shed.shape)
@@ -427,7 +437,9 @@ def evaporation_step_components(
     vx_s, vy_s, vz_s, m_s, dE_mt_s = cold_shed_velocity_components(
         vx, vy, vz, m_arr, m_he_amu=m_he_amu,
     )
-    dE_int_s = np.asarray(dE_int_shed_eV(n_arr, picture=picture, kappa=kappa), dtype=float)
+    dE_int_s = np.asarray(
+        dE_int_shed_eV(n_arr, picture=picture, kappa=kappa, ladder=ladder), dtype=float
+    )
 
     n_plus = np.where(fired, n_arr - 1, n_arr)
     m_plus = np.where(fired, m_s, m_arr)
