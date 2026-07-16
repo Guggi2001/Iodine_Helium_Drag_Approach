@@ -5982,3 +5982,34 @@ findings §4k Step-1c; insight **I51**.
   the KE side stands either way (I51).
 - Step-2 build decision surface unchanged otherwise; refined targets
   ready. Nothing discharges F5.
+
+## Addendum I Step 2 (MD confirmation build) DESIGN FROZEN — §I.10 added; decisions S2-D1–S2-D4; two build surfaces identified (capped_cubic arm + tabulated-ladder config); 4-config pilot matrix; awaits its own trigger (2026-07-16)
+
+Doc state through Step 1c committed (`2ac509e`). Surface audit via
+repo exploration: τ (`internal_energy_cooling_tau_ps`), f_int, s_eff,
+cooling gate, biphasic mechanism, relaxation/detection stages,
+off-center birth sampling, and the ihe_ked scoring layer all exist;
+missing exactly (1) a velocity-capped drag arm (no saturation form is
+realized in `physics/drag.py`; `THRESHOLD` is reserved-unimplemented)
+and (2) a config path to the existing `TabulatedLadder` (no field wires
+`rungs_eV`; neither floor1 nor rq4graded is expressible today).
+
+User decisions (2026-07-16): **S2-D1** build the tabulated-ladder
+config surface (receives RQ4 verbatim later); **S2-D2** N = 50 pilot →
+N = 500 winner; **S2-D3** focused 4-config matrix (2 targets +
+current-law control + floor1 bounded-physics leg); **S2-D4** fixed
+N = 2000 droplets, distribution axis deferred.
+
+Design: plan **§I.10** — Slice T1 `capped_cubic` {b, v_c, p_tail}
+(dimensional analysis in-plan; v_c = ∞ byte-identity with
+`linear_cubic`; in-band invariance oracle; p_tail restricted to
+{0, −1} at config load), Slice T2 `tabulated_ladder_rungs_eV` (rung
+tables built generator-side), Slice T3 pilot matrix C1–C4 at
+production kinematics (E_int(0) = E₀ via partition fraction; s_eff = 8;
+density_scaled cooling; position sampling on; margin-0 caveat
+recorded), Slice T4 ihe_ked scoring + winner N = 500. Pre-registered
+predictions S2-P1–S2-P4 (control anchor; pilot KE ×1.4; the I51
+floor1/rq4graded histogram split; N = 500 bar verdict).
+CALIBRATION_MAP propagation lands with Slice T1 (v_c/p_tail
+Bounded→Derived; τ per RQ9). **Execution awaits a fresh
+`[PROCEED TO IMPLEMENTATION]`.** Nothing discharges F5.

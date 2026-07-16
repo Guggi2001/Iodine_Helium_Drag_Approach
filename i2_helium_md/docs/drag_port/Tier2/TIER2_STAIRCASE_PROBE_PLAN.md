@@ -2247,3 +2247,101 @@ discrimination read (n ≥ 13 tail).
 - **K-P3 (taper still required):** floor1 yields zero joint closures
   anywhere on the fine grid — the rq4graded conditionality is a ladder
   property, not a grid artifact.
+
+## I.10 Step 2 — MD confirmation build (design frozen 2026-07-16, user decisions S2-D1–S2-D4; execution behind its own `[PROCEED TO IMPLEMENTATION]`)
+
+Surface audit (2026-07-16): τ, f_int, s_eff, cooling gate, biphasic
+mechanism, relaxation + detection stages, off-center birth sampling
+(`single_initial_position=False`) and the ihe_ked scoring layer all
+exist. Missing exactly two repo surfaces: the capped drag tail and a
+config path to the existing-but-unwired `TabulatedLadder`.
+
+**Decisions (user, 2026-07-16):**
+
+- **S2-D1:** build the tabulated-ladder config surface (wires the
+  existing `tabulated_ladder(rungs_eV)` path; later receives the RQ4
+  answer verbatim).
+- **S2-D2:** statistics = N = 50 pilot on all configs → N = 500 on the
+  winning cell.
+- **S2-D3:** focused matrix — 2 targets + 2 controls (4 configs).
+- **S2-D4:** fixed N = 2000 droplets (probe convention, §6.6 defense);
+  the droplet-distribution axis is deferred.
+
+### Slice T1 — drag arm `capped_cubic` (physics/drag.py)
+
+Strict dimensional analysis. Coefficients
+{b [amu·ps/Å²], v_c [Å/ps], p_tail [dimensionless]}:
+
+γ(v) = g(depth)·b·v²                    v ≤ v_c    [amu/ps ✓]
+γ(v) = g(depth)·b·v_c²·(v/v_c)^p_tail   v > v_c    [amu/ps ✓]
+|F| = γ·v [amu·Å/ps² ✓]; continuous at v_c for all finite p_tail.
+
+Contracts preserved: mass-agnostic (no m argument); gate single-sourced
+via `spatial_gate`; γ = F/v identity; FDT amplitude uses γ directly
+(Tier-3 stays inert); dissipativity guard (b > 0, v_c > 0); form/coeff
+cross-check extended to the new form; p_tail restricted to {0, −1} at
+config load (the Step-1c-surviving set; others need a new adjudication).
+
+Oracles/tests: closed-form pins per branch; **v_c = ∞ (or v_c ≥ v_max)
+byte-identity with `linear_cubic` (a = 0, same b)**; in-band invariance
+(a delivered 0.80 eV probe dir reproduces byte-identically at
+v_c ≥ 5.3 — in-window max speed 5.23); existing suites green
+(`test_drag.py`, `test_drag_config.py`, `test_ion_drag_smoke.py`,
+`test_tier0_drag_comparison.py` — the Tier-0 18 Å gate is untouched
+because the in-band law is identical).
+
+### Slice T2 — ladder config surface (config.py + dissociation_ladder)
+
+New optional field `tabulated_ladder_rungs_eV` (active only with
+`dissociation_ladder="tabulated"`; validation: ≥ n\* positive entries,
+loud failure otherwise; inert default None). The rq4graded / floor1 rung
+tables are *constructed in the generator script* (probe-side, from
+`d0_of_n` × the taper multipliers) — no taper physics enters the
+package. Tests: tabulated == form_u when fed the form_u rungs;
+guard behavior; inert-default regression.
+
+### Slice T3 — generator + pilot runs (N = 50, production kinematics)
+
+Common config: biphasic; R0_GS = 2.666 Å, E_coulomb_scale = 1.0
+(2.70 eV/fragment channel); E_int(0) via
+`internal_energy_partition_fraction` = E₀ / 2.70; s_eff = 8;
+`cooling_spatial_gate="density_scaled"`; `single_initial_position=False`
+at fixed N = 2000 (margin 0 — 1D used 3–6 Å; recorded caveat);
+relaxation + detection stages on (8.53 µs); fixed seeds; probe dir
+namespace.
+
+| config | drag | τ [ps] | ladder | E₀ [eV] | role |
+|---|---|---|---|---|---|
+| C1 | p = −1, v_c = 7.5 | 3.8 | rq4graded | 0.25 | full-house target |
+| C2 | p = 0, v_c = 6.5 | 4.0 | rq4graded | 0.24 | form discrimination |
+| C3 | linear_cubic (current) | 6.55 | flat (form_u) | 0.25 | baseline control |
+| C4 | p = −1, v_c = 7.5 | 4.4 | floor1 | 0.23 | bounded-physics claim (I51) |
+
+### Slice T4 — scoring, winner selection, N = 500 confirmation
+
+Pilot scored through the ihe_ked run-summary layer (mean-to-mean,
+correlated bands per I-D4) + solvated W₁/n₁/ratio. Winner (best joint
+score) re-run at N = 500 for the bar-level verdict. Findings §4l + log.
+
+**Pre-registered predictions (2026-07-16, before any build):**
+
+- **S2-P1 (control anchors):** C3 reproduces the known current-law
+  behavior — detected KE curve ≈ the §4k Step-0 current-law bracket
+  (0/12 bar bins), solvated read per the Wave-7/8 probe results.
+- **S2-P2 (pilot, KE):** C1/C2 land n = 1…6 within ×1.4 of the
+  reference at N = 50 (bar ×1.25 relaxed for pilot statistics + the
+  known 1D↔MD deltas: real RRK cascade vs frozen fate map, m(t)
+  feedback −2.2 % on K, real shed vs no-shed). Deep bins reported, not
+  gated, at N = 50.
+- **S2-P3 (histogram split):** C1 lands n₁ ∈ [0.24, 0.38] with
+  ratio ≥ 1.6; C4 reproduces the KE curve but caps at n₁ ≤ 0.24 —
+  the floor1/rq4graded split of I51 survives the real cascade.
+- **S2-P4 (bar verdict):** the N = 500 winner passes the I-D5 bar
+  (×1.25, n = 1…12) after profiling the coherent bands. If it fails
+  while the pilot passed at ×1.4, the discrepancy localizes to the
+  frozen-fate-map ↔ RRK mapping — a §4l finding either way.
+
+**Gating:** Slices T1–T4 are repo-code + run-artifact changes — they
+execute only under a fresh `[PROCEED TO IMPLEMENTATION]`. CALIBRATION_MAP
+propagation (v_c, p_tail enter as Bounded→Derived; τ reclassified per
+RQ9) lands with Slice T1. Nothing discharges F5.
