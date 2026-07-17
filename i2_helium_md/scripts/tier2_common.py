@@ -115,6 +115,7 @@ def build_biphasic_cfg(
     birth_position_law: Optional[str] = None,
     initial_position_margin_angstrom: Optional[float] = None,
     detection_droplet_retained_policy: Optional[str] = None,
+    evaporation_shed_convention: Optional[str] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -217,6 +218,12 @@ def build_biphasic_cfg(
         detection handover (``"refuse"`` / ``"exclude"`` -- the V0-2
         droplet-retained convention). ``None`` -> the config default
         (``refuse``, the delivered loud guard).
+    evaporation_shed_convention : str or None
+        OQ-J shed velocity/momentum convention of the evaporation channel
+        (``"cold"`` / ``"co_moving"``; adjudication 2026-07-17 -- co-moving is
+        the working convention for the twin-parity legs, stamped explicitly).
+        ``None`` -> the config default (``cold``, the delivered byte-inert
+        bound arm).
 
     Returns
     -------
@@ -332,6 +339,8 @@ def build_biphasic_cfg(
         overrides["detection_droplet_retained_policy"] = (
             detection_droplet_retained_policy
         )
+    if evaporation_shed_convention is not None:
+        overrides["evaporation_shed_convention"] = evaporation_shed_convention
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()

@@ -415,18 +415,27 @@ def continuous_velocity_shed_components(
     vx: np.ndarray,
     vy: np.ndarray,
     vz: np.ndarray,
-    m_minus_amu: float,
+    m_minus_amu,
     *,
     m_he_amu: float = MASS_HE_AMU,
     n_removed: int = 1,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, np.ndarray]:
-    """Per-atom vectorized production shed over velocity component arrays.
+    """Per-atom vectorized co-moving shed over velocity component arrays.
 
-    Velocity components are copied unchanged. The scalar post-shed mass is
+    Velocity components are copied unchanged. The post-shed mass is
     ``m - n_removed*m_He`` and the per-atom ledger increment is
-    ``+0.5*n_removed*m_He*|v_i|^2`` [amu*A^2/ps^2].
+    ``+0.5*n_removed*m_He*|v_i|^2`` [amu*A^2/ps^2] — the exact lab-frame KE
+    the co-moving He carries away (no reduced-mass correction: the He leaves
+    at exactly ``v_i``).
+
+    ``m_minus_amu`` may be a **uniform scalar** (the Tier-1a anchored schedule)
+    or a **per-ion array** (the Tier-2 generative evaporation channel under the
+    ``co_moving`` OQ-J arm — fires diverge, so masses differ across ions), the
+    same contract as :func:`cold_shed_velocity_components`. The scalar path is
+    byte-identical to the pre-generalization behaviour (the arithmetic
+    broadcasts; only the mass check widened).
     """
-    _check_masses(m_minus_amu, m_he_amu)
+    _check_masses_shed(m_minus_amu, m_he_amu)
     n = _check_removed_count(n_removed, m_minus_amu, m_he_amu)
     vxf = np.asarray(vx, dtype=float)
     vyf = np.asarray(vy, dtype=float)
@@ -559,14 +568,19 @@ def _check_masses_shed(m_minus_amu, m_he_amu: float) -> None:
         )
 
 
-def _check_removed_count(n_removed: int, m_minus_amu: float, m_he_amu: float) -> int:
-    """Return validated integer removed-He count."""
+def _check_removed_count(n_removed: int, m_minus_amu, m_he_amu: float) -> int:
+    """Return validated integer removed-He count.
+
+    ``m_minus_amu`` may be a scalar or a per-ion array (the OQ-J co-moving
+    generalization); every element must survive the removal. The scalar path
+    is behaviour-identical to the original scalar-only check.
+    """
     if isinstance(n_removed, (bool, np.bool_)) or not isinstance(n_removed, (int, np.integer)):
         raise ValueError(f"n_removed must be an integer; got {n_removed!r}.")
     n = int(n_removed)
     if n <= 0:
         raise ValueError(f"n_removed must be > 0; got {n_removed!r}.")
-    if not (m_minus_amu - n * m_he_amu > 0.0):
+    if not np.all(np.asarray(m_minus_amu, dtype=float) - n * m_he_amu > 0.0):
         raise ValueError(
             f"n_removed={n} removes too much mass from m_minus_amu={m_minus_amu!r}."
         )

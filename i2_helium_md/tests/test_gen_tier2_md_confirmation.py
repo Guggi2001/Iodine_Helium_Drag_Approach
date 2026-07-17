@@ -255,7 +255,7 @@ def test_leg_aprime_flips_exactly_one_lever(tmp_path, monkeypatch):
     """Leg A' = leg A + the uniform_volume birth law at margin 3 A; every
     other stamped field is identical, and the run dirs carry the ap_ prefix
     (distinct from the delivered T3 dirs, same conf namespace)."""
-    assert script.LEG == "aprime"  # the active USER SETTING for this leg
+    monkeypatch.setattr(script, "LEG", "aprime")
     aprime = script.build_confirmation(tmp_path)
     monkeypatch.setattr(script, "LEG", "a")
     a = script.build_confirmation(tmp_path)
@@ -272,6 +272,8 @@ def test_leg_aprime_flips_exactly_one_lever(tmp_path, monkeypatch):
         # captures need time to resolve), not second physics levers.
         assert cfg_ap.detection_droplet_retained_policy == "exclude"
         assert cfg_ap.relaxation_time_ps == pytest.approx(8000.0)
+        # A' stays on the delivered cold default (the A'' lever, not A's).
+        assert cfg_ap.evaporation_shed_convention == "cold"
         cfg_ap.validate()
         # exactly one physics lever (+ its two bookkeeping/adequacy
         # consequences): every other field equal
@@ -290,6 +292,34 @@ def test_leg_aprime_flips_exactly_one_lever(tmp_path, monkeypatch):
         assert dir_ap.name != dir_a.name
         assert f"_tier2probe_conf270_ap{spec.label}" in dir_ap.name
         assert not fnmatch(dir_ap.name, "*_tier2_*")
+
+
+def test_leg_aprime_cm_flips_exactly_one_lever_vs_aprime(tmp_path, monkeypatch):
+    """Leg A'' = leg A' + the co-moving shed convention (the OQ-J working-
+    convention adjudication, 2026-07-17) -- exactly one field differs vs A',
+    and the run dirs carry the apcm_ prefix (distinct from both the T3 and
+    the A' dirs, same conf namespace)."""
+    assert script.LEG == "aprime_cm"  # the active USER SETTING for this leg
+    acm = script.build_confirmation(tmp_path)
+    monkeypatch.setattr(script, "LEG", "aprime")
+    aprime = script.build_confirmation(tmp_path)
+
+    import dataclasses
+
+    for (_, cfg_cm, dir_cm), (_, cfg_ap, dir_ap), spec in zip(
+        acm, aprime, script.CONFIRMATION_MATRIX
+    ):
+        assert cfg_cm.evaporation_shed_convention == "co_moving"
+        cfg_cm.validate()
+        diff = {
+            f.name
+            for f in dataclasses.fields(type(cfg_cm))
+            if getattr(cfg_cm, f.name) != getattr(cfg_ap, f.name)
+        }
+        assert diff == {"evaporation_shed_convention"}
+        assert dir_cm.name != dir_ap.name
+        assert f"_tier2probe_conf270_apcm{spec.label}" in dir_cm.name
+        assert not fnmatch(dir_cm.name, "*_tier2_*")
 
 
 def test_unknown_leg_rejected(tmp_path, monkeypatch):

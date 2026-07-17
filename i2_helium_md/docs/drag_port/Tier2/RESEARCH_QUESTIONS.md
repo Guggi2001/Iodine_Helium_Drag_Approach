@@ -1194,6 +1194,47 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   — so the question is whether GAH25 admits a ≈ ×0.6 cooling time, with
   ≈ ±0.4 ps of model-side slack (findings §4k Step-1c, I51).
 
+### RQ10 — Shed-frame / momentum convention of the evaporation channel (= findings OQ-J, fired 2026-07-17 by the I.11.2 item-1 re-read)
+
+- **Question:** what momentum does an evaporated He carry away from a
+  *translationally fast* I⁺Heₙ complex? The delivered Tier-2 evaporation
+  channel uses the **cold-shed** operator (He left at rest in the lab
+  frame; the complex keeps its full momentum, so KE × m/m′ per shed —
+  +0.9 eV / ×1.61 cumulative on a full 21→1 post-ejection strip at
+  production speeds). The physically expected convention for thermal
+  evaporation is **co-moving** (He leaves with the complex velocity plus
+  an isotropic thermal recoil ε ~ meV — the Tier-1a-adjudicated
+  continuous-velocity path). [Nat23]'s "cold He (≈ 0 KE)" grounding is an
+  *at-rest* Na⁺ result where the two conventions coincide.
+- **Why it matters (measured, findings §4n / I58–I60):** first-order on
+  the (n, mean-KE) observable — the co-moving counterfactual reproduces
+  the 1D twin's per-bin KE to ≤ 2 %, so the entire twin−MD KE divergence
+  (I57) is this convention; the experimental n₁ mean (1.302 eV) sits
+  between the two conventions (cold 2.42–2.48, co-moving 0.93–0.96 eV,
+  capped-tail configs); the §4k (v_c, τ) KE closure is co-moving-based
+  and does not transfer to a cold-shed MD at small n; the RQ3 bare-bin
+  mean KE is a fragmentation-convention discriminator (1.18 vs 3.3 eV).
+- **Couples with:** RQ2/OQ-F (ε is the *energy* the He carries; RQ10 is
+  the *momentum* — one coupled "what leaves with the He" resolution),
+  RQ3 (fragment speeds), the leg-B/T5 KE pre-registration basis.
+- **Candidate resolution:** interchangeable shed-convention enum
+  (cold / continuous_velocity — both operators already exist in
+  `physics/mass_jump.py`) behind its own trigger; user adjudication
+  required before the T9 endgame.
+- **Status: working convention ADJUDICATED (user, 2026-07-17) —
+  co-moving for the twin-parity legs (T5 onward);** cold retained as
+  the interchangeable bound arm (`cold` stays the byte-inert config
+  default, legs stamp `co_moving` — the T7 precedent; **enum build
+  DELIVERED 2026-07-17**, CALIBRATION_MAP row 26). Grounds and consequences: findings §7 OQ-J adjudication
+  NB. **The RQ itself stays open** as the physical-resolution question:
+  the true convention is co-moving + isotropic thermal recoil, i.e.
+  the momentum side of RQ2's ε — how much recoil, correlated how, is
+  the literature/domain-expert item; the two operators bracket it
+  (ε → 0 vs maximal backward kick). Histograms are essentially
+  convention-blind (mass events never enter the RRK rate/gate/cooling;
+  small-n occupants shed post-exit) — the switch moves only the KE
+  axis (n₁ 2.42–2.48 → ≈ 0.93–0.96 eV on the capped-tail configs).
+
 ## 4. Coupling map — what each answer changes
 
 | RQ | Primary observable consequence | Couples with |
@@ -1207,6 +1248,7 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
 | RQ7 production kinematics | any budget-dependent observable; validity of 2.70 eV predictions | RQ1 (E_avail provenance), RQ3 (bare-vs-budget discriminator), F5 |
 | RQ8 bare-channel provenance | the interpretation of the 43.5 % bare bin (branching vs model); the solvated-branch renormalization | RQ3 (slow-shoulder discriminator), RQ1 (KER/E_avail per channel), Wave-12 position axis |
 | RQ9 τ physicality (parked) | whether the Step-1b joint (v_c, τ) closure stands on sourced ground; the CALIBRATION_MAP class of τ at the Step-2 build | RQ4 (the closure is rq4graded-conditional), OQ-I arms (b)/(c) (reopen if τ = 4.1 indefensible), W13 Step 2 |
+| RQ10 shed-frame convention | every small-n mean-KE read (×1.6 at n₁); the twin↔MD KE comparability; transfer of the (v_c, τ) KE closure to MD | RQ2 (one "what leaves with the He" resolution), RQ3 (fragment speeds, bare-bin KE discriminator), leg-B pre-registration basis |
 
 The experimental distribution's information, as currently understood:
 **bare fraction ↔ the Δ× race + RQ3; small-n tail (n = 1–3) ↔ RQ2/RQ3

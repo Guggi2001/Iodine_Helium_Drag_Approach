@@ -75,7 +75,12 @@ import numpy as np
 from .constants import MASS_HE_AMU
 from .dissociation_ladder import _as_integer_occupancy, d0_of_n, ladder_cumsum
 from .internal_energy_budget import dE_int_shed_eV
-from .mass_jump import cold_shed, cold_shed_velocity_components
+from .mass_jump import (
+    cold_shed,
+    cold_shed_velocity_components,
+    continuous_velocity_shed,
+    continuous_velocity_shed_components,
+)
 
 
 @dataclass(frozen=True)
@@ -329,6 +334,20 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
     return k
 
 
+def _check_shed_convention(shed_convention: str) -> None:
+    """Fail loudly on an unknown shed convention (mirrors the config guard).
+
+    The config-load guard (``check_evaporation_config``) is the primary
+    surface; this point-of-use twin protects direct physics-module callers
+    (scratchpad drivers, tests) from a silent fall-through to ``cold``.
+    """
+    if shed_convention not in ("cold", "co_moving"):
+        raise ValueError(
+            f"shed_convention must be 'cold' or 'co_moving'; got "
+            f"{shed_convention!r}."
+        )
+
+
 def evaporation_step(
     *,
     rng,
@@ -344,12 +363,13 @@ def evaporation_step(
     gate_onset_eV=None,
     ladder=None,
     m_he_amu: float = MASS_HE_AMU,
+    shed_convention: str = "cold",
 ) -> EvaporationResult:
-    """Draw one Bernoulli evaporation for a single ion; on fire, cold-shed + drain K1.
+    """Draw one Bernoulli evaporation for a single ion; on fire, shed + drain K1.
 
     The single-ion oracle for :func:`evaporation_step_components`. Composes
-    :func:`rrk_rate` (all gating), :func:`mass_jump.cold_shed` (velocity/mass/KE-defect
-    reset), and :func:`internal_energy_budget.dE_int_shed_eV` (K1 drain, ``n`` = pre-shed).
+    :func:`rrk_rate` (all gating), the selected shed operator (below), and
+    :func:`internal_energy_budget.dE_int_shed_eV` (K1 drain, ``n`` = pre-shed).
     Inputs are loose scalar kwargs -- the persistent ``(n, E_int, v, m)`` carrier is the
     Phase-C driver's ``IonStepState``, not a Phase-B container. One uniform ``rng.random()``
     is drawn **unconditionally** (see the RNG contract in the module docstring).
@@ -357,11 +377,19 @@ def evaporation_step(
     :class:`~i2_helium_md.physics.dissociation_ladder.TabulatedLadder` is
     threaded to :func:`rrk_rate` / ``dE_int_shed_eV`` and ``picture``/``kappa``
     are ignored; ``None`` (default) is the byte-inert Form-U path.
+    ``shed_convention`` (OQ-J arm, 2026-07-17): ``"cold"`` (default,
+    byte-inert) composes :func:`mass_jump.cold_shed` -- the delivered
+    momentum-conserving reset; ``"co_moving"`` composes
+    :func:`mass_jump.continuous_velocity_shed` -- velocity unchanged, the
+    ledger books the (positive) KE the co-moving He carries away. The
+    ``(E_int, n)`` jump chain is convention-invariant (it reads neither v nor
+    m), so the fire pattern under a fixed seed is identical across arms.
 
     Returns
     -------
     EvaporationResult
     """
+    _check_shed_convention(shed_convention)
     k = rrk_rate(
         E_int_eV, n, nu=nu, picture=picture, kappa=kappa,
         evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV, ladder=ladder,
@@ -379,7 +407,10 @@ def evaporation_step(
             fired=False,
         )
 
-    shed = cold_shed(v, m_amu, m_he_amu=m_he_amu)
+    if shed_convention == "co_moving":
+        shed = continuous_velocity_shed(v, m_amu, m_he_amu=m_he_amu)
+    else:
+        shed = cold_shed(v, m_amu, m_he_amu=m_he_amu)
     dE_int = dE_int_shed_eV(n, picture=picture, kappa=kappa, ladder=ladder)
     return EvaporationResult(
         n_plus=int(n) - 1,
@@ -408,14 +439,20 @@ def evaporation_step_components(
     gate_onset_eV=None,
     ladder=None,
     m_he_amu: float = MASS_HE_AMU,
+    shed_convention: str = "cold",
 ):
     """Vectorized per-ion evaporation over ``(M,)`` ensemble arrays (one draw per step).
 
     The ensemble-facing form of :func:`evaporation_step`: one vectorized Bernoulli draw
-    ``rng.random(size=M)``, per-ion independence, and the same composition of
-    :func:`mass_jump.cold_shed_velocity_components` (**per-ion mass**, since fires diverge)
+    ``rng.random(size=M)``, per-ion independence, and the same composition of the
+    selected shed operator (**per-ion mass**, since fires diverge)
     + :func:`internal_energy_budget.dE_int_shed_eV`. Non-fired / suppressed ions keep their
     velocity/mass/occupancy and receive zero energy increments.
+    ``shed_convention`` (OQ-J arm): ``"cold"`` (default, byte-inert) composes
+    :func:`mass_jump.cold_shed_velocity_components`; ``"co_moving"`` composes
+    :func:`mass_jump.continuous_velocity_shed_components` (velocity unchanged,
+    positive carried-KE ledger). The draw stream and the ``(E_int, n)`` chain
+    are convention-invariant.
 
     Parameters
     ----------
@@ -439,6 +476,7 @@ def evaporation_step_components(
         tuple discipline of ``mass_jump.cold_shed_velocity_components`` /
         ``pickup.pickup_step_components``.
     """
+    _check_shed_convention(shed_convention)
     n_arr = np.asarray(n)
     m_arr = np.asarray(m_amu, dtype=float)
 
@@ -450,10 +488,15 @@ def evaporation_step_components(
     draws = rng.random(size=p_shed.shape)
     fired = draws < p_shed
 
-    # Would-be cold shed for every ion (per-ion mass; non-fired results discarded).
-    vx_s, vy_s, vz_s, m_s, dE_mt_s = cold_shed_velocity_components(
-        vx, vy, vz, m_arr, m_he_amu=m_he_amu,
-    )
+    # Would-be shed for every ion (per-ion mass; non-fired results discarded).
+    if shed_convention == "co_moving":
+        vx_s, vy_s, vz_s, m_s, dE_mt_s = continuous_velocity_shed_components(
+            vx, vy, vz, m_arr, m_he_amu=m_he_amu,
+        )
+    else:
+        vx_s, vy_s, vz_s, m_s, dE_mt_s = cold_shed_velocity_components(
+            vx, vy, vz, m_arr, m_he_amu=m_he_amu,
+        )
     # Clamped to n >= 1: this precompute runs on every lane before the fired
     # mask, and an n = 0 lane can never fire (k = 0 => p_shed = 0) -- its value
     # is discarded, but a TabulatedLadder lookup at n = 0 would raise

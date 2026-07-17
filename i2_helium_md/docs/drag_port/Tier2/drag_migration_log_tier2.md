@@ -6749,3 +6749,284 @@ configuration. Nothing here discharges F5.
 > orbits straddle the Landau cutoff, so naive drag-on may overdamp);
 > (3) the leg-B pre-registration amendment (per-bin mean KE mandatory
 > alongside histograms). Suggested order (1) → (2) → T5 trigger.
+
+## I.11.2 item 1 (n1-composition re-read) EXECUTED — pre-registered Coulomb-share hypothesis REFUTED as dominant; the driver is the cold-shed momentum convention (OQ-J/RQ10 fired); item 2 ADJUDICATED (arm (c) Landau-gated); item 3 ADOPTED + sharpened (2026-07-17)
+
+All three §I.11.2 items settled in one session (user decisions: "1
+PROCEED / 2 go with (c) / 3 agree and amend"). Full record: findings
+**§4n + I58–I60 + OQ-J**; `RESEARCH_QUESTIONS.md` **RQ10** + coupling
+row; plan §I.11.2 status block.
+
+**Item 1 — executed (zero new MD; scratch read over the four on-disk
+apc dirs, probe convention, zero repo-code change).** Method: exact
+per-fragment Coulomb-work integral from the stored trajectories
+(pair-sum renormalized against U_c(0) − U_c(end)), per-ion birth
+radius / chord cosine / first-shed / exit time / mass-at-exit, and the
+empirically verified 5-term ledger
+(E_kin + E_pot + E_dissip + E_mass_transfer + E_int conserved to
+−0.0008 eV mean end-drift) → per-class decomposition
+KE_det = 2.70 + coul_x − drag + boost + resid, closing to ≤ 0.06 eV on
+every live class.
+
+Verdict — **the §I.11.2 hypothesis ("v = 19.1 > 15.4 Å/ps requires the
+mass-asymmetric Coulomb split") is refuted as dominant**:
+
+- measured Coulomb-share excess on n1: **+0.08 eV (≈ 3 %)** — n1 ions
+  exit full-shell at 0.7–0.9 ps, mass-symmetric through the
+  acceleration (m̄ 210/209 amu self/partner over the first 2 ps), and
+  shed only after ejection; the hypothesized light-early compounding
+  route does not operate;
+- the dominant term is the **cold-shed momentum convention** of the
+  delivered evaporation channel
+  (`physics/evaporation.py` composes
+  `mass_jump.cold_shed_velocity_components`): He left at lab rest,
+  v → v·m/m′ per shed (verified event-by-event: v_ratio ≡ m_ratio),
+  injecting **+0.91 eV** over the post-exit 21→1 strip
+  (×1.611 = m21/m1 in KE); E_mass_transfer books exactly the injected
+  energy;
+- the **co-moving counterfactual**
+  KE_cf = ½·m_det·(v_det·m_det/m_exit)² reproduces the twin per config
+  to ≤ 2 % (n1: 0.955/0.952/0.256/0.933 eV vs twin 0.97/—/0.261/—) —
+  the twin is the co-moving convention in disguise; **I57 is entirely
+  the shed-frame convention**, with the composition axis (near-edge
+  outward births, drag deficit 1.19 vs 2.66 eV) deciding occupancy and
+  the convention deciding speed.
+
+Consequences recorded: **OQ-J opened** (findings §7) = **RQ10**
+(`RESEARCH_QUESTIONS.md`, coupled to RQ2 as one "what leaves with the
+He" resolution and to RQ3 via the bare-bin KE fragmentation
+discriminator, 1.18 vs 3.3 eV); the experimental n1 mean 1.302 eV is
+convention-spanned (cold 2.42–2.48 / co-moving 0.93–0.96 on the
+capped-tail configs); **calibration-transfer warning** — the §4k
+(v_c, τ) KE closure is co-moving-based and does not transfer to a
+cold-shed MD at small n. A8's [Nat23] grounding is an at-rest result
+(cold ≡ co-moving there); Tier-1a had adjudicated continuous-velocity
+as the physical path. Candidate resolution: an interchangeable
+shed-convention enum (both operators already in `mass_jump.py`) behind
+its own trigger — **user adjudication required before the T9 endgame**.
+
+**Item 2 — ADJUDICATED (user, 2026-07-17): arm (c) Landau-gated drag**
+for the E2 relaxation dissipation question (γ = 0 below the config
+Landau cutoff `v_limit`, drag above — sub-Landau superfluid motion is
+dissipationless; captures marginal/orbiting ions physically without
+overdamping slow motion). Build stays behind its own
+`[PROCEED TO IMPLEMENTATION]`, required before any N = 500 run; until
+built, the `_conservatively_bound` classification + leg-level caps
+remain the handling.
+
+**Item 3 — ADOPTED + sharpened by item 1:** the leg-B (T5) twin
+re-score pre-registers per-bin mean detected KE alongside the
+histograms/classes, and every KE claim must **state its
+shed-convention basis** (twin = co-moving by construction; delivered
+MD = cold-shed) — the two KE axes are not comparable without it (I59).
+
+Next per the I.11 sequence: the **OQ-J shed-convention adjudication**
+(new, from item 1), then **Slice T5** (initial-shell dressing arm)
+behind its own trigger with the amended pre-registration. Nothing here
+discharges F5.
+
+## OQ-J working convention ADJUDICATED — co-moving shed for the twin-parity legs; cold retained as the interchangeable bound arm; RQ10 stays open (user decision, 2026-07-17)
+
+User decision, same session as the item-1 re-read ("as we want to
+reproduce twin results ... switch to co-moving convention and discuss
+why for now; this remains an open research question"). Assistant
+concurred on physics grounds independent of the twin-parity motive;
+the recorded rationale:
+
+1. **Frame physics.** Evaporation is thermal in the complex rest frame
+   (u_thermal ~ 0.5–1 Å/ps ≪ v_lab 10–19 Å/ps) — co-moving is the
+   correct zeroth order. Cold shed requires a directed ~75 meV/He
+   backward launch (0.5·m_He·v², ~30× thermal, several D₀ rungs) with
+   no energy source — the ledger books an unsourced +0.91 eV injection
+   on a full strip. Defensible only as a bound, not as physics.
+2. **No contradiction with A8/[Nat23]:** the Na⁺ complex is at rest,
+   where cold ≡ co-moving; co-moving extends the source correctly to
+   moving complexes.
+3. **Intra-model consistency:** Tier-1a adjudicated
+   continuous-velocity as the physical path; the Tier-2 channel's cold
+   composition was a silent divergence, now removed.
+4. **Calibration transfer:** the §4k (v_c, τ) closure and the leg-B KE
+   bar are co-moving-based; under co-moving MD the I59 gap closes by
+   construction.
+
+**Decision shape (build behind its own `[PROCEED TO IMPLEMENTATION]`):**
+interchangeable `evaporation_shed_convention ∈ {cold, co_moving}` —
+**`cold` stays the byte-inert config default** (every pre-existing
+`cfg.json` load remains an honest record of what ran), **the T5+/leg-B
+generators stamp `co_moving` explicitly** (the T7 birth-law
+precedent); production default revisited at config assembly. Both
+operators exist in `mass_jump.py`; the co-moving one needs the
+per-ion-mass generalization the cold one got (fires diverge), threaded
+as the single mass source through the ion/relaxation/detection stages
+(the resolve_ladder single-surface precedent). Ledger: E_mass_transfer
+flips to the continuous form (+0.5·m_He·|v|² carried away per shed);
+the 5-term closure holds in the same form.
+
+**Consequences recorded:** histograms/classes are essentially
+convention-blind (mass events never enter the RRK rate, gate, or
+cooling; n₁/bare occupants shed post-exit; deep bins only a small
+in-bubble drag feedback via m(t)) — the leg-A′ verdicts stand; only
+the KE axis moves (n₁ 2.42–2.48 → ≈ 0.93–0.96 eV, onto the twin). All
+existing probe/T3/apc dirs stay valid as records of the cold arm
+(their KE reads were never arbitration inputs; the Wave-11 K
+measurement was a shed-free suppressed ride — convention-free). New
+legs regenerate under the stamped arm per the stale-artifact policy.
+
+**RQ10 stays open** as the physical-resolution question: the true
+convention is co-moving + isotropic thermal recoil — the momentum side
+of RQ2's ε (how much recoil, correlated how); the two delivered
+operators bracket it (ε → 0 vs maximal backward kick). One coupled
+RQ2+RQ10 literature/domain-expert discussion.
+
+Next per the amended I.11 sequence: **the shed-convention enum build +
+Slice T5** (initial-shell dressing arm) behind their trigger(s), with
+the leg-B pre-registration carrying per-bin mean KE on the stated
+co-moving basis. Nothing here discharges F5.
+
+## Shed-convention enum DELIVERED — `evaporation_shed_convention ∈ {cold (byte-inert default), co_moving}` threaded through all three stages from one config field; CALIBRATION_MAP row 26 (2026-07-17)
+
+Executed under its own `[PROCEED TO IMPLEMENTATION]` (the OQ-J
+adjudication entry above is the design record). TDD: the 18-test suite
+watched RED (AttributeError on the missing field) before any
+implementation.
+
+**As built.**
+- `config.py`: `EvaporationShedConvention = Literal["cold", "co_moving"]`;
+  field `evaporation_shed_convention = "cold"` (byte-inert default,
+  declared beside the Slice-Q evaporation surface); typo guard via
+  `_reject_unknown_enum` added to `check_evaporation_config` (check 3).
+- `physics/mass_jump.py`: `continuous_velocity_shed_components`
+  generalized to **per-ion mass** (the exact mirror of the cold
+  generalization — fires diverge; `_check_masses_shed` + array-aware
+  `_check_removed_count`; scalar path behaviour-identical). The
+  co-moving ledger term `+0.5·m_He·|v|²` is exact (no reduced-mass
+  correction — the He leaves at exactly `v`).
+- `physics/evaporation.py`: `evaporation_step` /
+  `evaporation_step_components` gain `shed_convention="cold"` and
+  dispatch cold vs co-moving operators; `_check_shed_convention`
+  point-of-use twin guard for direct physics-module callers.
+- `simulation/ion_propagation_step.py`: `biphasic_step` passes
+  `cfg.evaporation_shed_convention` (the relaxation stage rides the same
+  call through its cfg view — no E2-side change needed).
+- `simulation/detection_stage.py`: the Gillespie event loop dispatches
+  the same config field (`cold_shed` vs `continuous_velocity_shed`).
+- `scripts/tier2_common.py :: build_biphasic_cfg`: None-sentinel
+  `evaporation_shed_convention` kwarg (T7 pattern). No preset, generator,
+  or production config selects the arm — the T5/leg-B legs stamp it.
+
+**Verification.**
+- `tests/test_evaporation_shed_convention.py` — 18 focused tests: config
+  default/guard/back-compat (pre-enum `cfg.json` loads with `cold`)/
+  round-trip; per-ion co-moving components hand oracle + single-atom
+  parity + underweight fail-loud; channel-level RNG contract (same seed →
+  identical fire pattern and (E_int, n) chain across arms; exact ledger
+  relation `dE_cold = −(m/(m−m_He))·dE_co_moving`); `biphasic_step`
+  threading (co-moving keeps v elementwise, books `+0.5·m_He·|v|²`);
+  detection stage (co-moving keeps v through all events, positive event
+  ledgers, **machine-precision 5-term closure across the stage**; cold
+  kicks up, negative ledgers); `build_biphasic_cfg` pass-through.
+- Byte-identity of the cold default: the pre-slice suites lock the
+  delivered behaviour and pass unchanged — neighboring suites
+  (evaporation, mass_jump, biphasic_step, detection, relaxation,
+  tier2_common, gen_tier2_md_confirmation, birth law) **373 passed**;
+  **full suite 2385 passed**.
+
+**CALIBRATION_MAP:** row 26 — the convention is an **arm, not a knob**;
+working convention `co_moving` for the twin-parity legs (per the
+adjudication), `cold` retained as the diagnostic bound arm; RQ10 open.
+
+Next per the amended I.11 sequence: **Slice T5** (initial-shell dressing
+arm) behind its own trigger, with the leg-B twin re-score pre-registering
+per-bin mean detected KE on the stated co-moving basis. Nothing here
+discharges F5.
+
+## T9 leg A″ TRIGGERED — A′ + co-moving shed convention; build delivered + predictions PRE-REGISTERED before any MD (2026-07-17)
+
+User trigger ("[PROCEED TO IMPLEMENTATION] leg A″"), following the
+discussion: leg B (T5) will run under `co_moving`, so jumping from the
+cold A′ baseline to a dressed co-moving leg B would flip two levers at
+once — the convention flip needs its own leg first. Leg A″ validates
+the delivered enum end-to-end in the real three-stage pipeline at
+production kinematics and re-baselines the KE axis on the twin's
+co-moving basis.
+
+**Build (delivered under this trigger; TDD on the new lock test):**
+`gen_tier2_md_confirmation.py` gains `LEG = "aprime_cm"` (active) —
+identical to `aprime` except `evaporation_shed_convention="co_moving"`
+stamped through the delivered `build_biphasic_cfg` kwarg; dirs carry
+the `apcm` prefix (`…_tier2probe_conf270_apcmc{1..4}`). Lock tests:
+the A′ one-lever test re-pinned via monkeypatch (A′ additionally
+asserts `cold`); new A″ test asserts the field-diff vs A′ is exactly
+`{evaporation_shed_convention}` and the dirs are distinct. Generator +
+common + convention suites 94 passed.
+
+**Pre-registered predictions (from the §4n decomposition — no new
+analysis; same four configs, same N = 50 bridge seed, margin 3 Å,
+exclude policy, 8000 ps cap):**
+
+- **A″-P1 (histogram invariance).** Histograms/classes reproduce A′
+  within N = 50 noise: the (E_int, n) jump chain is convention-blind;
+  n₁/bare occupants shed entirely post-ejection (bin-identical), deep
+  bins may drift slightly via the in-bubble m(t)/v drag feedback. The
+  suppressed/bare ordering c3 ≫ c4 > c1 > c2 transfers unchanged. A
+  material histogram move falsifies the I59 "convention-blind
+  histogram" claim — itself a finding.
+- **A″-P2 (the KE landing — the headline).** Per-bin mean detected KE
+  at n = 1 lands on the §4n co-moving counterfactuals ≈ the twin:
+  **0.955 / 0.952 / 0.256 / 0.933 eV** (c1/c2/c3/c4) vs twin
+  0.97 / — / 0.261 / —. I57 closes in the real pipeline; the residual
+  twin−MD KE gap is composition-level only.
+- **A″-P3 (ledger signature).** `E_mass_transfer` ≥ 0 for every shed
+  ion (positive carried-KE booking); 5-term `ion_ledger_closure`
+  residual unchanged; suppressed/bare and retained classes carry
+  *identical* KE to A′ (no sheds → convention-free) — the free wiring
+  oracle.
+- **A″-P4 (speed re-scale).** n₁ detected speeds drop from ~19.1 to
+  **≈ 11.9 Å/ps** (the momentum base at m_exit; v_det ≈ v_exit under
+  co-moving sheds).
+
+MD pilots (N = 50, four stages, `apcmc1..4`) launch next; scored
+against A′, the §4n counterfactuals, and the twin. Nothing here
+discharges F5.
+
+## T9 leg A″ EXECUTED — A″-P1..P4 all CONFIRMED (P3 sub-claim refined): the co-moving convention lands the twin KE axis in real MD; twin↔MD parity is now two-axis; leg-B baseline re-set to the apcm dirs (2026-07-17)
+
+Full record: findings **§4o + I61**. Four dirs on disk
+(`…_tier2probe_conf270_apcmc{1..4}`, all five artifacts; apcmc1 from the
+first launch, apcmc2 regenerated after a mid-relaxation kill — the
+partial dir removed per the generator's documented recovery path,
+apcmc3/4 fresh; resume guard exercised as designed).
+
+**Verdicts vs the pre-registered numbers (same-day entry above):**
+- **A″-P1 CONFIRMED** — W₁(A″, A′) = 0.14–0.20 bins over 22; the
+  suppressed/bare ordering c3 ≫ c4 > c1 > c2 exact; class fractions
+  within ≤ 3 ions. The histogram is convention-blind in real MD (I59
+  survives).
+- **A″-P2 CONFIRMED** — n₁ mean detected KE **1.005 / 1.025 / 0.312 /
+  0.991 eV** (c1..c4) vs twin 0.972/0.963/0.261/0.949 and §4n
+  counterfactuals 0.955/0.952/0.256/0.933; the cold ×2.5 divergence
+  (I57) collapses to ×1.03–1.20, and the **whole solvated per-bin KE
+  curve matches the twin** (c1 n2 0.74/0.74, n3 0.59/0.57, n5
+  0.36/0.36). Small uniform +0.04–0.06 eV residual above the
+  counterfactual: composition-level (in-bubble sheds), not
+  convention-level.
+- **A″-P3 CONFIRMED in signature, strict sub-claim refined** — every
+  shed ion books E_mass_transfer > 0; 5-term closure drift unchanged
+  (max transient 0.11–0.14 eV, end-drift −8·10⁻⁴ eV — the cold arm's
+  values). The "suppressed/retained KE identical to A′" oracle holds to
+  ≤ 10–20 meV only: **ion pairs are Coulomb-coupled** (an opened
+  partner's convention-shifted trajectory perturbs its never-shed twin),
+  and **1–3 marginal near-barrier ions per config flip retained**
+  (c3: 11 → 14) — meV-scale fragility of the marginal class, sharpening
+  the E2-dissipation (Landau-gated) adjudication's stakes before N = 500.
+- **A″-P4 CONFIRMED** — n₁ speeds 12.1–12.3 Å/ps (pre-reg ≈ 11.9; cold
+  19.1).
+
+**Consequences:** the OQ-J working-convention adjudication is validated
+end-to-end at production kinematics; the leg-B (T5) A/B baseline is the
+**apcm** dirs — MD and twin now share the co-moving KE basis by
+construction, satisfying the item-3 stated-basis amendment. The apc
+(cold) dirs remain on disk as the OQ-J bound-arm record. Next per the
+I.11 sequence: **Slice T5** (initial-shell dressing arm) behind its own
+trigger, with the leg-B twin re-score pre-registering histograms *and*
+per-bin mean KE at the dressed configuration. Nothing here discharges F5.

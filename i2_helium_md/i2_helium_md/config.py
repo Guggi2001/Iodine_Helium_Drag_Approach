@@ -112,6 +112,21 @@ DetectionDropletRetainedPolicy = Literal["refuse", "exclude"]
 # capability arm, not a physical claim (plan §I.11.0 NB 2026-07-16).
 BirthPositionLaw = Literal["boltzmann", "uniform_volume"]
 
+# OQ-J adjudication (2026-07-17; Tier-2 plan §I.11.2 item 1, findings §4n/I59):
+# the velocity/momentum convention of the generative evaporation channel.
+# ``cold`` (byte-inert default) leaves the shed He at rest in the LAB frame —
+# the complex keeps its full momentum, ``v -> m/(m - m_He)*v``, and the ledger
+# books the (negative) reduced-mass KE injection; the delivered behaviour,
+# retained as the diagnostic bound arm (a directed backward kick, exact only
+# for a complex at rest — the [Nat23] regime). ``co_moving`` is the physical
+# zeroth order for thermal evaporation from a moving complex: the He leaves
+# co-moving, the velocity is unchanged, and the ledger books the (positive)
+# ``+0.5*m_He*|v|^2`` the He carries away (Tier-1a's continuous-velocity
+# path). Read by evaporation_step(_components) via biphasic_step (ion + E2
+# stages) and by the detection-stage event loop — one field, three stages.
+# RQ10 (co-moving + thermal recoil ε, coupled to RQ2) stays open.
+EvaporationShedConvention = Literal["cold", "co_moving"]
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -371,6 +386,10 @@ class SimConfig:
     evap_rrk_dof: Optional[float] = None          # s override; None=per-n; guarded s>=1 when set
     gate_onset_override_eV: Optional[float] = None      # None=parameter-free Sigma(n); else diagnostic
     allow_gate_onset_override: bool = False             # provenance guard for the override above
+    # Shed velocity/momentum convention (OQ-J arm; see EvaporationShedConvention
+    # above). "cold" = delivered momentum-conserving reset (byte-inert default);
+    # "co_moving" = the physical co-moving He (T5+/leg-B legs stamp it explicitly).
+    evaporation_shed_convention: EvaporationShedConvention = "cold"
 
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
@@ -816,12 +835,26 @@ def check_evaporation_config(cfg: "SimConfig") -> None:
        §6.5.1 ``allow_unvalidated_binding_pairing`` refuse->warn arm), so a forced gate can
        never *silently* enter a production / Tier-2-lock run.
 
+    3. **Shed-convention enum typo guard (OQ-J arm, 2026-07-17).**
+       ``cfg.evaporation_shed_convention`` selects the evaporation channel's
+       velocity/momentum convention (``cold`` = delivered momentum-conserving
+       reset, byte-inert default; ``co_moving`` = the physical co-moving He).
+       An unknown value is refused here (earliest), mirroring the other enum
+       surfaces (``_reject_unknown_enum``).
+
     Raises
     ------
     ValueError
-        On ``evap_rrk_dof < 1`` when set, or a non-``None`` ``gate_onset_override_eV``
-        without ``allow_gate_onset_override``.
+        On ``evap_rrk_dof < 1`` when set, a non-``None`` ``gate_onset_override_eV``
+        without ``allow_gate_onset_override``, or an unknown
+        ``evaporation_shed_convention``.
     """
+    _reject_unknown_enum(
+        cfg.evaporation_shed_convention,
+        ("cold", "co_moving"),
+        field="evaporation_shed_convention",
+    )
+
     if cfg.evap_rrk_dof is not None and not (cfg.evap_rrk_dof >= 1.0):
         raise ValueError(
             f"evap_rrk_dof (s) must be >= 1 when set (s < 1 diverges the RRK rate as "

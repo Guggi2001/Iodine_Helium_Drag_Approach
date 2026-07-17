@@ -107,7 +107,7 @@ from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.evaporation import gate_margin_eV, rrk_rate
 from ..physics.helium_density import rho_he_ratio
 from ..physics.internal_energy_budget import dE_int_shed_eV
-from ..physics.mass_jump import cold_shed
+from ..physics.mass_jump import cold_shed, continuous_velocity_shed
 from ..physics.potentials import droplet_potential
 from .checkpoint import check_biphasic_seed_checkpoint, stage_stream_rng
 from .ion import drag_gate_steepness
@@ -380,6 +380,11 @@ def run_detection_stage(
     nu = float(cfg.evap_rate_prefactor_per_ps)
     s_override = cfg.evap_rrk_dof
     gate_onset = cfg.gate_onset_override_eV
+    # OQ-J shed-convention arm (2026-07-17): the event loop composes the same
+    # operator family the in-window channel does -- "cold" (default,
+    # byte-inert) vs "co_moving" (velocity unchanged, positive carried-KE
+    # ledger). Guarded at config-load; the jump chain is convention-invariant.
+    shed_convention = cfg.evaporation_shed_convention
     tau_ps = float(cfg.internal_energy_cooling_tau_ps)
 
     n0 = np.rint(np.asarray(seed.n_shell, dtype=float)).astype(int)
@@ -528,7 +533,10 @@ def run_detection_stage(
 
             # Fire: compose the delivered primitives verbatim (design §2.6).
             n_pre = n_i
-            shed = cold_shed(v_i, m_i, m_he_amu=MASS_HE_AMU)
+            if shed_convention == "co_moving":
+                shed = continuous_velocity_shed(v_i, m_i, m_he_amu=MASS_HE_AMU)
+            else:
+                shed = cold_shed(v_i, m_i, m_he_amu=MASS_HE_AMU)
             dE_int = float(
                 dE_int_shed_eV(n_pre, picture=picture, kappa=kappa, ladder=ladder)
             )
@@ -564,8 +572,8 @@ def run_detection_stage(
     ):
         raise AssertionError(
             "detection stage m<->n consistency drift: mass and n disagree "
-            "beyond 1e-6 amu after the event loop (cold_shed is the single "
-            "mass source; the counters must stay in lockstep)."
+            "beyond 1e-6 amu after the event loop (the shed operator is the "
+            "single mass source; the counters must stay in lockstep)."
         )
 
     mass_out_kg = m_amu_out * U

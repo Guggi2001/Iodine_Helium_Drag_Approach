@@ -2724,6 +2724,27 @@ EXECUTED"). AP-P1..P4 all confirmed; the one divergence is **I57** —
 histogram parity without composition parity, visible on the KE axis.
 Three items follow, in the suggested order:
 
+> **Status (2026-07-17, user decisions + execution):** **item 1
+> EXECUTED** (zero MD; findings §4n + I58–I60; the pre-registered
+> Coulomb-share hypothesis is *refuted as dominant* — the driver is the
+> **cold-shed momentum convention** of the delivered evaporation
+> channel, +0.91 eV on n₁; the co-moving counterfactual matches the
+> twin to ≤ 2 % → **OQ-J / RQ10 fired**; **shed convention ADJUDICATED
+> same day: co-moving is the working convention for the twin-parity
+> legs** — enum `evaporation_shed_convention ∈ {cold (byte-inert
+> default), co_moving (stamped by T5+ legs)}`, **build DELIVERED
+> 2026-07-17** (log entry "Shed-convention enum DELIVERED"; row 26);
+> RQ10 stays open as the physical-resolution question,
+> coupled to RQ2's ε). **Item 2 ADJUDICATED:
+> arm (c) Landau-gated drag** selected by the user; build stays behind
+> its own `[PROCEED TO IMPLEMENTATION]`, required before any N = 500
+> run. **Item 3 ADOPTED and sharpened by item 1:** leg-B twin
+> re-scores pre-register per-bin mean detected KE alongside the
+> histograms, **stating the shed-convention basis of every KE claim**
+> (the twin is co-moving by construction; the delivered MD is
+> cold-shed) — without the stated basis the two KE axes are not
+> comparable (I59).
+
 **1. The n₁-composition re-read (zero MD, on-disk apc dirs; do this
 before T5).** The undressed-MD n₁ bin sits at mean KE 2.42–2.48 eV
 (experiment 1.302 eV; twin at A′ 0.97 eV). The kinematics already

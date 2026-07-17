@@ -635,6 +635,7 @@ def biphasic_step(
         m_amu=m_amu, nu=cfg.evap_rate_prefactor_per_ps, picture=picture, kappa=kappa,
         dt_ps=dt, evap_rrk_dof=cfg.evap_rrk_dof,
         gate_onset_eV=cfg.gate_onset_override_eV, ladder=ladder,
+        shed_convention=cfg.evaporation_shed_convention,
     )
     E_int = E_int + dE_int_e                                  # K1 drain (-D_0(n)) on fire
     E_mass_transfer = state.E_mass_transfer_eV + _amu_ang2_ps2_to_eV(dE_mt_e)
@@ -672,7 +673,7 @@ def biphasic_step(
             f"{_M_N_CONSISTENCY_TOL_AMU} amu (max gap "
             f"{float(np.max(np.abs(m_p_amu - (MASS_I_ION_AMU + n_p * MASS_HE_AMU)))):.3e} "
             "amu). The pickup/evaporation resets and the integer n counter must stay "
-            "in lockstep (capture/cold_shed are the single mass source)."
+            "in lockstep (the capture / shed operators are the single mass source)."
         )
 
     return replace(
