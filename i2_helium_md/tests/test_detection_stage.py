@@ -352,6 +352,98 @@ class TestGuards:
 
 
 # ---------------------------------------------------------------------------
+# T9 leg A' -- the V0-2 droplet-retained policy (well-trapped ions)
+# ---------------------------------------------------------------------------
+class TestDropletRetainedPolicy:
+    """An energetically bound (well-trapped) ion at handover can never
+    decouple; under ``exclude`` it is classified ``droplet_retained`` and
+    excluded from the event loop (the V0-2 scoring convention). The default
+    ``refuse`` keeps the delivered loud guard byte-identically; an *unbound*
+    in-bubble ion (a decoupling error, not a trapped ion) refuses under
+    either policy."""
+
+    def _frozen_E(self, cfg):
+        picture, kappa = _ladder(cfg)
+        return 0.5 * float(d0_of_n(21, picture=picture, kappa=kappa))
+
+    def test_default_refuse_keeps_the_loud_guard(self):
+        cfg = _detect_cfg(seed=3)
+        assert cfg.detection_droplet_retained_policy == "refuse"
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True)
+        with pytest.raises(ValueError, match="P1-P3"):
+            run_detection_stage(seed, cfg)
+
+    def test_exclude_classifies_bound_ion_and_processes_the_rest(self):
+        cfg = _detect_cfg(seed=3,
+                          detection_droplet_retained_policy="exclude")
+        # KE at speed 0.2 A/ps ~ 0.4 meV << the 116.8 meV well: bound.
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True)
+        seed.positions_z[1:, 0] = 1000.0  # ions 1..3 properly ejected
+        res = run_detection_stage(seed, cfg)
+        assert res.state_reason[0] == "droplet_retained"
+        assert set(res.state_reason[1:]) == {"frozen"}
+        # handover state carried verbatim; zero events for the retained ion
+        assert res.n_detected[0] == 21.0
+        assert res.event_offsets[1] == res.event_offsets[0] == 0
+        # the artifact round-trips the new reason value
+        assert "droplet_retained" in np.asarray(res.state_reason).tolist()
+
+    def test_exclude_classifies_centrifugal_resonance(self):
+        """A mostly-tangential orbit just above the *radial* escape
+        threshold but below its centrifugal barrier is droplet-retained
+        (the leg-A' apc3 'ion 9' class): the L = 0 criterion would call it
+        unbound, the effective-potential criterion must not."""
+        from i2_helium_md.physics.constants import EV
+        from i2_helium_md.physics.potentials import droplet_potential
+
+        cfg = _detect_cfg(seed=3,
+                          detection_droplet_retained_policy="exclude")
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True)
+        seed.positions_z[1:, 0] = 1000.0  # others properly ejected
+        # ion 0 at the droplet surface (r = R = 30) with tangential v such
+        # that E_kin + U = E_bind + 0.5 meV (radially unbound by 0.5 meV);
+        # its centrifugal barrier at h = r*v_t ~ 70 A^2/ps sits ~15 meV
+        # above E_bind -> conservatively bound.
+        R = 30.0
+        seed.positions_x[0, 0] = R
+        seed.positions_y[0, 0] = 0.0
+        seed.positions_z[0, 0] = 0.0
+        m_kg = float(seed.mass_kg[0])
+        U_here = float(droplet_potential(
+            np.array([0.0]), steepness=cfg.potential_steepness,
+            binding_energy=cfg.binding_energy_I_ion_eV,
+        )[0])
+        ke_target_eV = cfg.binding_energy_I_ion_eV - U_here + 0.5e-3
+        v_t = float(np.sqrt(2.0 * ke_target_eV * EV / m_kg)) / 100.0  # A/ps
+        seed.velocities_x[0, 0] = 0.0
+        seed.velocities_y[0, 0] = v_t
+        seed.velocities_z[0, 0] = 0.0
+        seed.E_kin_eV[0, 0] = 0.5 * m_kg * (v_t * 100.0) ** 2 / EV
+
+        res = run_detection_stage(seed, cfg)
+        assert res.state_reason[0] == "droplet_retained"
+        assert set(res.state_reason[1:]) == {"frozen"}
+
+    def test_exclude_still_refuses_unbound_in_bubble_ion(self):
+        # speed 5 A/ps -> KE ~ 0.27 eV > the 0.117 eV well: NOT trapped --
+        # an undecoupled escaper is a configuration error under any policy.
+        cfg = _detect_cfg(seed=3,
+                          detection_droplet_retained_policy="exclude")
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True, speed=5.0)
+        with pytest.raises(ValueError, match="P1-P3"):
+            run_detection_stage(seed, cfg)
+
+    def test_unknown_policy_rejected_at_config_load(self):
+        with pytest.raises(ValueError, match="detection_droplet_retained_policy"):
+            cfg = _detect_cfg(detection_droplet_retained_policy="nope")
+            cfg.validate()
+
+
+# ---------------------------------------------------------------------------
 # Config-load guard arms + the Wave-7 back-compat criterion
 # ---------------------------------------------------------------------------
 class TestConfigValidation:

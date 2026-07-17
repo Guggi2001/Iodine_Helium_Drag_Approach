@@ -125,11 +125,13 @@ def test_matrix_is_the_frozen_c1_c4():
     assert specs["c4"].e0_eV == 0.23
 
 
-def test_build_confirmation_stamps_common_pins(tmp_path):
+def test_build_confirmation_stamps_common_pins(tmp_path, monkeypatch):
     """Every C-config carries the §I.10 common pins: production kinematics,
     the 2.70 eV budget with f_int = E0/2.70 stamped EXACTLY (never rounded),
     s_eff = 8, gated cooling, off-center births, 1000 ps relaxation cap, and
-    the Sourced detector time."""
+    the Sourced detector time. Pinned at leg 'a' (the frozen T3 record; the
+    A' leg's 3000 ps adequacy cap is asserted in the leg-A' test)."""
+    monkeypatch.setattr(script, "LEG", "a")
     scheduled = script.build_confirmation(tmp_path)
     assert len(scheduled) == 4
     for (label, cfg, run_dir), spec in zip(scheduled, script.CONFIRMATION_MATRIX):
@@ -217,7 +219,10 @@ def test_build_confirmation_refuses_non_production_budget(tmp_path, monkeypatch)
 # ---------------------------------------------------------------------------
 
 
-def test_run_dirs_unique_and_in_conf_namespace(tmp_path):
+def test_run_dirs_unique_and_in_conf_namespace(tmp_path, monkeypatch):
+    """Leg A (the delivered T3 configuration) keeps its exact run-dir names —
+    the byte-identity lock for the four on-disk pilot dirs."""
+    monkeypatch.setattr(script, "LEG", "a")
     dirs = [run_dir for _, _, run_dir in script.build_confirmation(tmp_path)]
     assert len({d.name for d in dirs}) == 4
     for d, spec in zip(dirs, script.CONFIRMATION_MATRIX):
@@ -230,6 +235,67 @@ def test_run_dirs_unique_and_in_conf_namespace(tmp_path):
         )
         assert "_tier2probe_conf270_" in d.name
         assert not fnmatch(d.name, "*_tier2_*")
+
+
+# ---------------------------------------------------------------------------
+# T9 leg A' (plan §I.11; the active USER SETTING)
+# ---------------------------------------------------------------------------
+
+
+def test_leg_a_is_byte_inert_on_the_birth_surface(tmp_path, monkeypatch):
+    """Under LEG='a' the cfgs carry the T7 byte-inert defaults — the four
+    delivered T3 dirs remain reproducible from this generator."""
+    monkeypatch.setattr(script, "LEG", "a")
+    for _, cfg, _ in script.build_confirmation(tmp_path):
+        assert cfg.birth_position_law == "boltzmann"
+        assert cfg.initial_position_margin_angstrom == 0.0
+
+
+def test_leg_aprime_flips_exactly_one_lever(tmp_path, monkeypatch):
+    """Leg A' = leg A + the uniform_volume birth law at margin 3 A; every
+    other stamped field is identical, and the run dirs carry the ap_ prefix
+    (distinct from the delivered T3 dirs, same conf namespace)."""
+    assert script.LEG == "aprime"  # the active USER SETTING for this leg
+    aprime = script.build_confirmation(tmp_path)
+    monkeypatch.setattr(script, "LEG", "a")
+    a = script.build_confirmation(tmp_path)
+
+    import dataclasses
+
+    for (_, cfg_ap, dir_ap), (_, cfg_a, dir_a), spec in zip(
+        aprime, a, script.CONFIRMATION_MATRIX
+    ):
+        assert cfg_ap.birth_position_law == "uniform_volume"
+        assert cfg_ap.initial_position_margin_angstrom == pytest.approx(3.0)
+        # The retained policy and the longer relaxation cap are consequences
+        # the lever forces (well-trapped ions never decouple; quasi-bound
+        # captures need time to resolve), not second physics levers.
+        assert cfg_ap.detection_droplet_retained_policy == "exclude"
+        assert cfg_ap.relaxation_time_ps == pytest.approx(8000.0)
+        cfg_ap.validate()
+        # exactly one physics lever (+ its two bookkeeping/adequacy
+        # consequences): every other field equal
+        diff = {
+            f.name
+            for f in dataclasses.fields(type(cfg_ap))
+            if getattr(cfg_ap, f.name) != getattr(cfg_a, f.name)
+        }
+        assert diff == {
+            "birth_position_law",
+            "initial_position_margin_angstrom",
+            "detection_droplet_retained_policy",
+            "relaxation_time_ps",
+        }
+        # distinct dirs, conf namespace, no collision with the T3 names
+        assert dir_ap.name != dir_a.name
+        assert f"_tier2probe_conf270_ap{spec.label}" in dir_ap.name
+        assert not fnmatch(dir_ap.name, "*_tier2_*")
+
+
+def test_unknown_leg_rejected(tmp_path, monkeypatch):
+    monkeypatch.setattr(script, "LEG", "b")
+    with pytest.raises(ValueError, match="LEG"):
+        script.build_confirmation(tmp_path)
 
 
 def test_f3_discovery_ignores_complete_conf_dir(tmp_path):

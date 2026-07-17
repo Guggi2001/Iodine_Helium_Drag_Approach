@@ -293,6 +293,7 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | 22 | Ladder | $n^*=21$ | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only; **adopt 21 for all per-atom energetics**, 2026-06-21) | external | GAH25 $R_e$-scaling → ~20 (corroborates to ±1–2); Tier-1 endpoint 14 **author-confirmed I⁺-specific** (2026-06-21); OQ8 raised LOW→LOW–MEDIUM (had leaked into energetics) | OQ4, OQ8 |
 | 23 | Ladder | $D_\text{floor}$ (cm⁻¹) | outer-shell rung floor (Form U) | **Sourced** ($\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹, 7.15 K) | external (bulk superfluid) | picture-independent; sets sigmoid lower anchor | R3 |
 | 24 | Detection | $t_\text{detect}=8.53$ µs ($8.53{\cdot}10^6$ ps) | terminal-read detection time (TOF flight to detector) — where the Tier-2 size distribution is read (`detection_time_ps`) | **Sourced (2026-07-07)** — experimental-setup publication, user-confirmed | Tier 2 size dist (the *detected* read is the arbitration observable) | log-sensitivity band = free report-side re-read of stored shed events (detection-stage design §3.3); gated reads at $s_\text{eff}\gtrsim12$ are undefined without it (I11) | — |
+| 25 | Ensemble | `birth_position_law` + `initial_position_margin_angstrom` (Å) | molecule-centre birth law: `boltzmann` (delivered thermal sampler, default) vs `uniform_volume` ($p(r)\propto r^2$ on $[0, R-m]$, hard margin — the 1D twin's L1 law; Slice T7, 2026-07-16) | law = **arm, not knob** (twin-parity/capability lever, not a physical claim — §I.11.0 NB; the physical default stays `boltzmann`, which is **center-pinned** at 0.4 K: median 1.37 Å, V0-1); margin = **Bounded** — firm band {3, 4.67, 6} Å (H.2b D5) | Tier 2 (T9 oracle-chain legs A′–D; per-cell margin from the Step-1c closure) | margin read only under `uniform_volume` (guard-refused otherwise); margin ≥ R fails at sampling; default byte-identical to the pre-T7 sampler (exact-draw regression) | — |
 
 ### Cross-cutting (not single parameters)
 
@@ -314,11 +315,13 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 - **Derived (5):** $g(\text{depth})$, $E_\text{int}(0)$, $t_\times$,
   $\sum_i D_0$, $\Pi$ (pickup↔gate order parameter, §6.11). *(Was 6 — $s$
   promoted to Bounded 2026-07-06.)*
-- **Bounded (5–6):** $\tau_\text{dissip}$ (RQ9 reclassification pending,
+- **Bounded (6–7):** $\tau_\text{dissip}$ (RQ9 reclassification pending,
   2026-07-16), $f_\text{ret}$, $f_\text{int}$,
   $s_\text{eff}$ (promoted 2026-07-06, band ≈[5, 20], staircase landing
   [8, 12]), $v_c$ (the realized `capped_cubic` cap, 2026-07-16; was the
   contingent $v_\text{ceiling}$ — Derived at the §I.10 T4 winner),
+  the birth margin $m\in\{3, 4.67, 6\}$ Å (row 25, Slice T7 2026-07-16;
+  active only under the `uniform_volume` twin-parity arm),
   ($T_\text{eff}$/noise). *Plus one new Free choice:* the tail exponent
   $p_\text{tail}\in\{0,-1\}$ (row 4b, discrimination via the §I.10 pilot).
 - **Free (2):** the ladder **steepness** $\kappa$ (Form U sigmoid, $D_0(n{>}1)$)

@@ -75,6 +75,25 @@ R0_GS_ANGSTROM = 2.666          # real I2 bond length -> 14.4/2.666/2 = 2.70 eV
 E_COULOMB_SCALE = 1.0           # stamped explicitly (droplet preset uses 0.8!)
 SINGLE_INITIAL_POSITION = False  # off-center births, margin 0 (recorded caveat)
 
+# --- T9 oracle-chain leg (plan §I.11; leg A' ACTIVE 2026-07-16) --------------
+# "a"      = the delivered Slice-T3 configuration (boltzmann births —
+#            byte-identical run-dir names and cfgs; the regression anchor);
+# "aprime" = + birth_position_law="uniform_volume" at the Step-1c full-house
+#            margin 3 A (exactly one lever flipped vs leg A; run dirs carry
+#            the "ap" config-label prefix — apc1..apc4 — same conf namespace).
+LEG = "aprime"
+BIRTH_MARGIN_ANGSTROM = 3.0     # the Step-1c full-house cells' margin (§4k)
+# The position axis creates near-barrier transients: marginal E > 0 ions
+# (apc3 ion 9: escape margin +1.1 meV) fly *conservative* scattering orbits
+# through the droplet in E2 -- the relaxation "coulomb" mode is zero-gamma,
+# so no capture is possible and the orbit decouples on its own clock
+# (~4000 ps at v_inf ~ 0.32 A/ps for ion 9). The cap must outlast that
+# clock. Numerical adequacy, not a physics knob (detection re-reads at
+# 8.53 us); the missing-drag-in-E2 question is recorded as an OQ in the log.
+# 8000 ps: ion 9 was outbound at d ~ +10 A at 5000 ps and needs d ~ +73 A
+# (exposure underflow) at ~0.3 A/ps -- 8000 carries ~10x slack on that leg.
+APRIME_RELAXATION_TIME_PS = 8000.0
+
 # --- common mechanism pins ---------------------------------------------------
 S_EFF = 8.0                     # the floors-reached kinetics arm (Wave-8 I27)
 COOLING_GATE = "density_scaled"  # B.1(1): the intended primary production arm
@@ -253,6 +272,27 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             f"the {PRODUCTION_BUDGET_EV} eV production budget (§I.10; the "
             "0.80 eV validation program is the staircase probe's namespace)."
         )
+    if LEG == "a":
+        birth_law: Optional[str] = None       # ride the boltzmann default
+        birth_margin: Optional[float] = None  # byte-inert (the T3 leg exactly)
+        retained_policy: Optional[str] = None  # delivered loud guard
+        relaxation_ps = RELAXATION_TIME_PS    # the T3 cap exactly
+        label_prefix = ""
+    elif LEG == "aprime":
+        birth_law = "uniform_volume"
+        birth_margin = BIRTH_MARGIN_ANGSTROM
+        # The position axis populates the V0-2 droplet-retained class (well-
+        # trapped sub-barrier fragments; twin predicts 3-7 %), which can never
+        # decouple -- the leg runs under the exclude policy so those ions are
+        # classified, not fatal (bookkeeping convention, not a physics lever).
+        retained_policy = "exclude"
+        relaxation_ps = APRIME_RELAXATION_TIME_PS
+        label_prefix = "ap"  # tag charset is [a-z0-9] -> "apc1" ... "apc4"
+    else:
+        raise ValueError(
+            f"unknown LEG {LEG!r}; expected 'a' or 'aprime' (a new oracle-"
+            "chain leg is a plan amendment, not a config value -- §I.11)."
+        )
     scheduled: list[tuple[str, SimConfig, Path]] = []
     for spec in CONFIRMATION_MATRIX:
         selector, rungs = ladder_selector_and_table(spec.ladder_key)
@@ -271,7 +311,7 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             tau_ps=spec.tau_ps,
             evap_rrk_dof=S_EFF,
             coulomb_available_eV=BUDGET_EV,
-            relaxation_time_ps=RELAXATION_TIME_PS,
+            relaxation_time_ps=relaxation_ps,
             relaxation_forces=RELAXATION_FORCES,
             cooling_spatial_gate=COOLING_GATE,
             drag_form=spec.drag_form,
@@ -282,15 +322,18 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             E_coulomb_scale=E_COULOMB_SCALE,
             single_initial_position=SINGLE_INITIAL_POSITION,
             detection_time_ps=DETECTION_TIME_PS,
+            birth_position_law=birth_law,
+            initial_position_margin_angstrom=birth_margin,
+            detection_droplet_retained_policy=retained_policy,
         )
         run_dir = project_root / "data" / "runs" / tier2_confirmation_run_dir_name(
             CASE,
             VARIANT,
             N,
-            config_label=spec.label,
+            config_label=f"{label_prefix}{spec.label}",
             budget_eV=BUDGET_EV,
         )
-        label = f"{CASE} {VARIANT} N={N} conf {spec.role}: {spec.label}"
+        label = f"{CASE} {VARIANT} N={N} conf[{LEG}] {spec.role}: {spec.label}"
         scheduled.append((label, cfg, run_dir))
     return scheduled
 

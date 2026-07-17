@@ -108,6 +108,7 @@ from ..physics.evaporation import gate_margin_eV, rrk_rate
 from ..physics.helium_density import rho_he_ratio
 from ..physics.internal_energy_budget import dE_int_shed_eV
 from ..physics.mass_jump import cold_shed
+from ..physics.potentials import droplet_potential
 from .checkpoint import check_biphasic_seed_checkpoint, stage_stream_rng
 from .ion import drag_gate_steepness
 from .ion_propagation_step import (
@@ -427,6 +428,19 @@ def run_detection_stage(
     cooling_violation = (~frozen_h) & (cooling_fraction > EPS_DRAIN)
     exposure_violation = exposure_fraction > EPS_DRAIN
     violators = cooling_violation | exposure_violation
+    # T9 leg A' (V0-2 convention, 2026-07-16): under the "exclude" policy an
+    # energetically *bound* violator (KE + U < E_bind: turned around by the
+    # droplet well -- it can never decouple at any relaxation length) is
+    # classified `droplet_retained` and excluded from the free-flight event
+    # loop instead of failing the run. Unbound violators (slow escapers that
+    # a longer relaxation WOULD decouple) still refuse loudly, under either
+    # policy -- the trapped class is physics, an undecoupled escaper is a
+    # configuration error.
+    droplet_retained = np.zeros(two_n, dtype=bool)
+    if np.any(violators) and cfg.detection_droplet_retained_policy == "exclude":
+        bound = _conservatively_bound(seed, seed_ckpt, cfg)
+        droplet_retained = violators & bound
+        violators = violators & ~bound
     if np.any(violators):
         idx = np.flatnonzero(violators)
         badness = np.maximum(
@@ -447,7 +461,10 @@ def run_detection_stage(
             f"ion ids: {idx.tolist()}. Remedy: extend relaxation_time_ps (or "
             "enable the relaxation stage on the skip path) so ions decouple "
             "before handover; an ungated (cooling_spatial_gate='none') run "
-            "must freeze in E2 -- its non-frozen ions can never hand over."
+            "must freeze in E2 -- its non-frozen ions can never hand over. "
+            "A genuinely well-trapped (energetically bound) ion never "
+            "decouples: select detection_droplet_retained_policy='exclude' "
+            "to classify it droplet_retained per the V0-2 convention."
         )
 
     # ---- RNG (stage-private stream; shared derivation helper) -----------
@@ -474,6 +491,13 @@ def run_detection_stage(
     ev_dE_mt: list[float] = []
 
     for i in range(two_n):
+        if droplet_retained[i]:
+            # V0-2 convention: droplet-retained ions carry their handover
+            # state verbatim (no events) and are excluded from the IHe_n
+            # read by their state reason.
+            reasons.append("droplet_retained")
+            ev_offsets[i + 1] = len(ev_time)
+            continue
         t = t_h
         n_i = int(n_out[i])
         E_i = float(E_int_out[i])
@@ -572,6 +596,83 @@ def run_detection_stage(
         save_detection_result(result, save_path)
 
     return result
+
+
+def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
+    """Per-ion mask: cannot reach infinity under the E2 conservative dynamics.
+
+    The droplet-retained criterion for the ``exclude`` policy (V0-2
+    convention, barrier-corrected 2026-07-16). The E2 relaxation "coulomb"
+    mode is **zero-gamma** (conservative BAOAB: droplet well + residual
+    Coulomb, no drag), so an ion escapes iff its total energy clears the
+    **effective potential** along the outward path:
+
+        E_tot = E_kin + U(depth)   must reach every
+        V_eff(r') = U(r' - R) + L^2 / (2 m r'^2)   for r' >= r,
+
+    with L = m |r x v| the (conserved) angular momentum about the droplet
+    center. The radial-only criterion (E_kin + U < E_bind) is the L = 0
+    special case; a near-threshold ion on a mostly-tangential orbit can sit
+    *above* the radial threshold yet *below* its centrifugal barrier — a
+    quasi-bound resonance that never decouples (the leg-A' apc3 "ion 9":
+    +1.1 meV radial margin, ~5 A of outward drift in 3000 ps). The residual
+    pair Coulomb (repulsive, partner >> 100 A away) only aids escape, so
+    ignoring it keeps the criterion conservative in the correct direction:
+    no genuinely escaping ion is ever classified retained... the reverse —
+    Coulomb could push a marginally-retained ion out — is bounded by the
+    partner distance and is negligible at the guard's operating point
+    (< 0.1 meV beyond ~10^4 A).
+
+    Returns a boolean (2N,) mask. Units: masses kg -> amu; energies eV via
+    the amu*A^2/ps^2 conversion (strict dimensional bookkeeping).
+    """
+    x = np.asarray(seed.x, dtype=float)
+    y = np.asarray(seed.y, dtype=float)
+    z = np.asarray(seed.z, dtype=float)
+    vx = np.asarray(seed.vx, dtype=float)
+    vy = np.asarray(seed.vy, dtype=float)
+    vz = np.asarray(seed.vz, dtype=float)
+    m_amu = np.asarray(seed.mass_kg, dtype=float) / U
+    radii = np.asarray(seed_ckpt.droplet_radii_angstrom, dtype=float)
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+    r_safe = np.maximum(r, 1e-12)
+    E_kin = _E_kin_eV(
+        np.asarray(seed.mass_kg, dtype=float), vx, vy, vz
+    )
+    U_here = droplet_potential(
+        r - radii,
+        steepness=cfg.potential_steepness,
+        binding_energy=cfg.binding_energy_I_ion_eV,
+    )
+    E_tot = E_kin + U_here                                   # eV
+
+    # |r x v|^2 per ion [A^4/ps^2]; L^2/(2 m r'^2) = m*h2/(2 r'^2) in
+    # amu*A^2/ps^2 -> eV.
+    hx = y * vz - z * vy
+    hy = z * vx - x * vz
+    hz = x * vy - y * vx
+    h2 = hx**2 + hy**2 + hz**2
+
+    # Outward-path barrier on a grid r' in [r, r + 12*steepness] (U is
+    # asymptotic well beyond ~7 widths; the centrifugal term only falls).
+    n_grid = 400
+    span = 12.0 * float(cfg.potential_steepness)
+    frac = np.linspace(0.0, 1.0, n_grid)[None, :]            # (1, G)
+    r_grid = r_safe[:, None] + span * frac                   # (2N, G)
+    U_grid = droplet_potential(
+        r_grid - radii[:, None],
+        steepness=cfg.potential_steepness,
+        binding_energy=cfg.binding_energy_I_ion_eV,
+    )
+    E_cf_grid = _amu_ang2_ps2_to_eV(
+        0.5 * m_amu[:, None] * h2[:, None] / r_grid**2
+    )
+    barrier = np.maximum(
+        (U_grid + E_cf_grid).max(axis=1),
+        cfg.binding_energy_I_ion_eV,      # the r' -> inf asymptote
+    )
+    return E_tot < barrier
 
 
 # ===========================================================================

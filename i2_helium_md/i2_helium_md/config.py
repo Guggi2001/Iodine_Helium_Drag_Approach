@@ -98,6 +98,20 @@ CoolingSpatialGate = Literal["none", "density_scaled"]
 LadderForm = Literal["form_u", "tabulated"]
 LadderElectronicPicture = Literal["statistical_mixture", "x2_only", "cooling_relaxed"]
 
+# T9 leg A′ (Tier-2 plan §I.11): what the detection stage does with an ion
+# that is energetically bound in the droplet well at handover (the V0-2
+# droplet-retained class). ``refuse`` keeps the delivered loud guard;
+# ``exclude`` classifies bound ions as ``droplet_retained`` and excludes
+# them from the free-flight event loop (they can never decouple).
+DetectionDropletRetainedPolicy = Literal["refuse", "exclude"]
+
+# Slice T7 (Tier-2 plan §I.11): birth-position law for the molecule centre.
+# ``boltzmann`` is the delivered thermal sampler (byte-inert default);
+# ``uniform_volume`` is the 1D twin's L1 ensemble law — p(r) ∝ r² on
+# [0, R − margin], hard surface margin, no smoothing. A twin-parity /
+# capability arm, not a physical claim (plan §I.11.0 NB 2026-07-16).
+BirthPositionLaw = Literal["boltzmann", "uniform_volume"]
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -174,6 +188,11 @@ class SimConfig:
     deltaR0_angstrom: float = 0.0       # width of initial R distribution
     T_particles_K: float = 0.4          # translational temperature in droplet
     single_initial_position: bool = True    # all at droplet center
+    # Slice T7: molecule-centre birth law + hard surface margin [Å].
+    # The margin is read only under ``uniform_volume`` (guard-refused
+    # otherwise — no silent carry); firm band {3, 4.67, 6} Å (H.2b D5).
+    birth_position_law: BirthPositionLaw = "boltzmann"
+    initial_position_margin_angstrom: float = 0.0
     partner_interaction: bool = True    # include I-I X potential
 
     # ------------------------------------------------------------------
@@ -386,6 +405,12 @@ class SimConfig:
     # simulation/detection_stage.run_detection_stage.
     detection_stage_enabled: bool = False                # opt-in; default off = default scope
     detection_time_ps: Optional[float] = None            # Sourced (8.53e6); required-when-enabled
+    # Droplet-retained (well-trapped) ions at handover (T9 leg A′, 2026-07-16):
+    # "refuse" (default) = the delivered loud P1–P3 guard; "exclude" = classify
+    # energetically bound violators `droplet_retained` per the V0-2 scoring
+    # convention (excluded from the event loop and the IHe_n read; unbound
+    # violators still refuse loudly).
+    detection_droplet_retained_policy: DetectionDropletRetainedPolicy = "refuse"
 
     # ------------------------------------------------------------------
     # Output
@@ -490,6 +515,7 @@ class SimConfig:
                     f"anchor_n_final must be in [0, 20] for onset_strip; "
                     f"got {self.anchor_n_final!r}."
                 )
+        check_birth_position_config(self)
         check_drag_config(self)
         check_ladder_config(self)
         check_solvation_cooling_config(self)
@@ -523,6 +549,47 @@ def _reject_unknown_enum(value: object, known: tuple, *, field: str) -> None:
     """
     if value not in known:
         raise ValueError(f"unknown {field} {value!r}; expected one of {known}")
+
+
+# ---------------------------------------------------------------------------
+# Slice T7 birth-position-law config-load guard (Tier-2 plan §I.11)
+# ---------------------------------------------------------------------------
+_KNOWN_BIRTH_POSITION_LAWS = ("boltzmann", "uniform_volume")
+
+
+def check_birth_position_config(cfg: "SimConfig") -> None:
+    """Validate the birth-position surface of ``cfg`` at config-load (Slice T7).
+
+    Rules
+    -----
+    1. ``birth_position_law`` must be a known selector (typo guard).
+    2. ``initial_position_margin_angstrom`` must be finite and >= 0.
+    3. The margin belongs to the ``uniform_volume`` law only: a non-zero
+       margin under ``boltzmann`` is refused loudly (no silent carry —
+       CLAUDE.md rule 2 convention).
+
+    The margin-vs-droplet-radius bound is enforced at sampling time
+    (:func:`i2_helium_md.sampling.radial_positions.sample_radial_positions`),
+    where the per-molecule radii are known.
+    """
+    _reject_unknown_enum(
+        cfg.birth_position_law,
+        _KNOWN_BIRTH_POSITION_LAWS,
+        field="birth_position_law",
+    )
+    margin = cfg.initial_position_margin_angstrom
+    if not np.isfinite(margin) or margin < 0.0:
+        raise ValueError(
+            "initial_position_margin_angstrom must be finite and >= 0; "
+            f"got {margin!r}"
+        )
+    if cfg.birth_position_law == "boltzmann" and margin != 0.0:
+        raise ValueError(
+            "initial_position_margin_angstrom is defined for "
+            "birth_position_law='uniform_volume' only; got "
+            f"margin={margin} under 'boltzmann' (set the margin to 0.0 "
+            "or select the uniform_volume law)"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1070,6 +1137,9 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
         )
 
 
+_KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude")
+
+
 def check_detection_config(cfg: "SimConfig") -> None:
     """Validate the Tier-2 Slice-DS detection-stage surface at config-load.
 
@@ -1107,6 +1177,11 @@ def check_detection_config(cfg: "SimConfig") -> None:
     ValueError
         On any failed check above (fail-loud; CLAUDE.md principle 4).
     """
+    _reject_unknown_enum(
+        cfg.detection_droplet_retained_policy,
+        _KNOWN_DETECTION_RETAINED_POLICIES,
+        field="detection_droplet_retained_policy",
+    )
     if not cfg.detection_stage_enabled:
         return
 

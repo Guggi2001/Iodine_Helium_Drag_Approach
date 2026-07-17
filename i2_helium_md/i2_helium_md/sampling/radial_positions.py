@@ -78,6 +78,13 @@ def sample_radial_positions(
 
     Notes
     -----
+    Under ``cfg.birth_position_law == "uniform_volume"`` (Slice T7, Tier-2
+    plan §I.11) the thermal law is replaced by the 1D twin's L1 ensemble
+    law — p(r) ∝ r² on [0, R − margin], hard surface margin — and
+    ``cfg.initial_position_margin_angstrom`` is honored. The default
+    ``"boltzmann"`` path below is byte-identical to the pre-T7 sampler
+    (same code, same RNG draw order).
+
     The MATLAB version had an inner loop with batches of 1000 proposals.
     We use a single oversampled vectorized batch sized from an estimated
     acceptance rate. This is cleaner and equally fast in practice.
@@ -90,6 +97,13 @@ def sample_radial_positions(
         rng = np.random.default_rng(cfg.seed)
 
     droplet_radii = np.asarray(droplet_radii, dtype=float).ravel()
+
+    if cfg.birth_position_law == "uniform_volume":
+        return _sample_uniform_volume(
+            droplet_radii,
+            margin_angstrom=cfg.initial_position_margin_angstrom,
+            rng=rng,
+        )
 
     # Convert binding energy to eV (the unit of `droplet_potential`'s output).
     # Note: cfg.binding_energy_molecule_meV is meV; we want eV for the potential.
@@ -125,6 +139,49 @@ def sample_radial_positions(
 # ===========================================================================
 # Internals
 # ===========================================================================
+def _sample_uniform_volume(
+    droplet_radii: np.ndarray,
+    *,
+    margin_angstrom: float,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Sample radii from the twin's L1 law: p(r) ∝ r² on [0, R − margin].
+
+    Uniform-in-droplet-volume with a hard surface exclusion (Slice T7;
+    exactly the 1D chord model's birth law — no smoothing). Exact inverse-CDF
+    sampling: r = (R − margin) · U^(1/3) per molecule.
+
+    Parameters
+    ----------
+    droplet_radii : np.ndarray, shape (N,)
+        Per-molecule droplet radius R, in Angstrom.
+    margin_angstrom : float
+        Hard surface margin m ≥ 0; support is [0, R − m].
+    rng : np.random.Generator
+        Reproducible RNG (one uniform draw per molecule).
+
+    Returns
+    -------
+    r : np.ndarray, shape (N,)
+        Radial distance from droplet center per molecule, in Angstrom.
+
+    Raises
+    ------
+    ValueError
+        If the margin consumes the whole droplet for any molecule
+        (R − m <= 0) — fail loudly rather than emit an empty support.
+    """
+    cap = droplet_radii - margin_angstrom
+    if np.any(cap <= 0.0):
+        raise ValueError(
+            f"initial position margin {margin_angstrom} A leaves no support "
+            f"for droplet radii as small as {droplet_radii.min()} A "
+            "(require margin < R for every droplet)"
+        )
+    u = rng.uniform(0.0, 1.0, size=droplet_radii.shape[0])
+    return cap * np.cbrt(u)
+
+
 def _radial_probability_density(
     r: np.ndarray,
     droplet_radius: float,

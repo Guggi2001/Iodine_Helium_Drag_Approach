@@ -2075,7 +2075,91 @@ confirmation under them. The §I.10 T4 scoring gate is absorbed there.
 
 ---
 
-## 5. Consolidated insight register
+## 4m. T9 leg A′ — the position axis alone opens the two-sided race; twin-parity is quantitative on the class/histogram axis; the KE composition diverges through the real cascade
+
+Executed 2026-07-16 (T9 oracle-chain leg A′, all four C-configs, under
+the leg trigger; delivery record: log entry "T9 leg A′ EXECUTED").
+Exactly **one physics lever** flipped vs the delivered T3 dirs:
+`birth_position_law = "uniform_volume"` at the Step-1c full-house
+margin 3 Å (Slice T7) — plus the two consequences the lever forces
+(the V0-2 `exclude` retained policy; relaxation cap 8000 ps). Twin
+predictions were **pre-registered before any MD** (AP-P1..P4 + CSVs;
+log entry of the same day). Dirs: `…_tier2probe_conf270_apc{1..4}`.
+
+### The A/B (N = 50 → 100 ions; twin m = 20000 chords)
+
+Conventions: `droplet_retained` excluded from the read (trapped
+column, fraction of all ions); MD `suppressed` counted at bin 0 (the
+RQ3 spec-b bare-candidate class, exactly the twin's fate-map
+bookkeeping); W₁ over the full 0–21 histograms [bins].
+
+| config | trapped (twin/MD) | supp→bare (twin/MD) | n₁ (twin/MD) | n̄_det (twin/MD) | W₁ |
+|---|---|---|---|---|---|
+| c1 | 0.033 / 0.050 | 0.089 / **0.095** | 0.172 / **0.147** | 6.22 / 5.80 | 0.69 |
+| c2 | 0.035 / 0.060 | 0.035 / **0.032** | 0.170 / **0.160** | 6.55 / 5.97 | 0.69 |
+| c3 | 0.067 / 0.110 | 0.336 / **0.315** | 0.069 / **0.079** | 4.48 / 4.12 | 0.55 |
+| c4 | 0.033 / 0.050 | 0.118 / **0.116** | 0.138 / **0.126** | 6.05 / 5.75 | 0.58 |
+
+### Verdicts (pre-registered reads)
+
+1. **AP-P1 CONFIRMED.** Every MD histogram broadens from the T3 ±2-bin
+   park (I52: zero weight below n = 5) to the twin's near-full-range
+   two-sided shape; n₁ is the top solvated bin on all rq4graded/floor1
+   configs — the first MD weight ever at n = 1 and n = 0.
+2. **AP-P2 CONFIRMED, sharpened.** The twin−MD offset is −0.3 to
+   −0.6 He (twin slightly high) — smaller than leg A's +1.4 — and the
+   *shape* agreement is W₁ = 0.55–0.69 bins over 22 bins.
+3. **AP-P3 CONFIRMED.** The droplet-retained class is real in MD in
+   every config (5/6/11/5 ions), ~1.6× the twin's 150 ps chord read,
+   with c3 the largest on both sides.
+4. **AP-P4 CONFIRMED.** The suppressed/bare ordering
+   c3 ≫ c4 > c1 > c2 transfers **exactly** (twin 0.336/0.118/0.089/
+   0.035 → MD 0.315/0.116/0.095/0.032) — the Δ×-race weight physics
+   crosses the 1D→3D boundary quantitatively.
+
+### The divergence — histogram parity is NOT composition parity
+
+The one axis that does **not** transfer is per-bin mean detected KE at
+small n: MD n₁ ≈ 2.42–2.48 eV (near-ballistic; per-fragment budget
+2.70 eV) vs twin 0.97 (c1) — ×2.5; c3: MD 0.666 vs twin 0.261. In the
+twin's ε = 0 fate map, a bin's population and its speed ride the same
+chord exposure; in the MD, the real RRK cascade + per-shed kicks +
+live E_int dynamics let *different trajectories* feed the same bin.
+Same histogram, different occupants — visible only on the KE axis.
+This is the S2c-P4 *listed* fate-map↔real-cascade channel firing, not
+a model-structure surprise, but it is load-bearing: the (n, mean-KE)
+curve is composition-sensitive, so KE reads off undressed A′ bins are
+geometry-conditional, and leg B (T5 dressing) re-decides which
+trajectories feed small n. (The experimental n₁ mean 1.302 eV sits
+between the undressed-MD 2.48 and the twin 0.97 — noted, not scored.)
+
+### Structural findings of the execution itself (all guard-caught)
+
+1. **The trapped class collides with the detection decoupling
+   contract** → the `detection_droplet_retained_policy` arm (V0-2
+   convention; `refuse` default byte-inert).
+2. **Marginal ions fly conservative scattering orbits in E2** (the
+   relaxation "coulomb" mode is zero-gamma): apc3's "ion 9"
+   (+1.14 meV radial margin) turned out to be a **centrifugal
+   resonance** — above the radial threshold, below its effective-
+   potential barrier, drifting ~5 Å per 3000 ps. No relaxation cap
+   resolves such an ion; the `exclude` bound criterion was upgraded to
+   the exact conservative-mechanics condition
+   (E_tot < max_path [U + L²/2mr′²]).
+3. **The E2 zero-gamma convention is an open physics question**: a
+   real ion orbiting at ρ ≈ 0.1–0.5 feels drag and would be captured;
+   the conservative convention makes the resonance long-lived instead.
+   Recorded for user adjudication (a drag-live E2 arm) — required
+   before T9's N = 500, where marginal ions are guaranteed.
+
+### Boundaries
+
+N = 50 single seed (class fractions quantize at 1 %); one detection
+RNG realization per dir; the undressed KE read is geometry-conditional
+(above); cap 8000 ps is leg-specific adequacy, not a pin; the twin
+comparison is at p_couple = 0 / undressed n_eject = 21 by construction
+— nothing here reads on the experimental targets (that is the
+re-centered T9 re-pilot's job); nothing discharges F5.
 
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
@@ -2471,6 +2555,31 @@ confirmation under them. The §I.10 T4 scoring gate is absorbed there.
   position — physically indefensible for surface births at 2.666 Å
   kinematics, and exactly the H.3b "n_eject(depth)" surface that was
   designed and parked.
+- **I55 (leg A′, §4m).** **The position axis alone is a two-sided race
+  lever, and the twin transfers quantitatively on the class axis:**
+  undressed MD with only `uniform_volume` births (margin 3 Å)
+  reproduces the pre-registered twin histograms at W₁ = 0.55–0.69 bins,
+  with the suppressed/bare ordering across configs transferring exactly
+  (0.315/0.116/0.095/0.032 vs twin 0.336/0.118/0.089/0.035). Corollary:
+  the T3 park (I52) was center-pinning as much as missing dressing —
+  the first MD weight at n = 0 and n = 1 needed no shell dressing at
+  all.
+- **I56 (leg A′, §4m).** **The droplet-retained class is real in MD
+  (5–11 % per config) and includes centrifugal resonances** — marginal
+  ions above the radial escape threshold but below their
+  effective-potential barrier, effectively permanent under the
+  conservative (zero-gamma) E2 relaxation. Handled by the V0-2
+  `exclude` policy with the exact conservative-mechanics bound
+  criterion; whether E2 should carry drag (which would physically
+  capture such ions) is an **open question for user adjudication**
+  before any N = 500 run.
+- **I57 (leg A′, §4m).** **Histogram parity is not composition
+  parity:** MD small-n bins are fed by near-ballistic fragments (n₁
+  mean KE 2.42–2.48 eV vs the twin's 0.97; c3 0.67 vs 0.26) — the
+  fate-map↔real-cascade channel (S2c-P4, listed) decouples a bin's
+  weight from its occupants. The (n, mean-KE) curve is
+  composition-sensitive, so KE conclusions require the full dressed
+  geometry (leg B onward), not histogram agreement alone.
 
 ---
 

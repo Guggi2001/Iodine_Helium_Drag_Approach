@@ -2434,6 +2434,26 @@ re-scored at exactly that MD configuration** — the twin adapts to the
 MD (delta prior, realized birth law), never the reverse, so every
 stage is a quantitative oracle rather than a leap.
 
+> **NB (2026-07-16, user decision) — immediate goal sharpened:
+> reproduce the scratchpad (1D chord-model) closure in full 3D MD,
+> twin-parity birth law included.** The V0-1 quantification found the
+> repo Boltzmann sampler **center-pinned** at T = 0.4 K (see the V0-1
+> adjudication below), so the position axis the closure ensemble rides
+> is structurally inert under the physical sampler — T5's dressing and
+> T6's coupling would stay inert even after being built. Decision: the
+> Boltzmann law stays the physical default (byte-inert); the MD gains
+> the 1D ensemble's uniform-in-volume r² law + hard surface margin as
+> an explicit interchangeable arm (Slice T7, re-scoped unconditional
+> below) — a **twin-parity/capability lever, not a physical claim**;
+> whether physical heterogeneity is instead carried by the droplet
+> prior (T8) or the E₀ axis stays a later arbitration. The oracle
+> chain gains a leg **A′** (= A + `uniform_volume`) so the position
+> axis flips *first* — and the "twin adapts to the MD" rule is
+> unchanged: each leg's twin re-score uses the MD's *realized* birth
+> law (center-pinned delta at leg A, r² + margin from A′ on).
+> Sequencing: **V0-3 first** (commit the twin, with a birth-law
+> input), then T7 → A′ → T5 → T6 → B/C → T8 → D.
+
 ### I.11.V0 Pre-slice verification (zero-MD investigation; may run with the T5 build)
 
 1. **Birth-law reconciliation (decision).** The repo's off-center
@@ -2447,22 +2467,91 @@ stage is a quantitative oracle rather than a leap.
    hard margin) and adopt it into the 1D twin; the hard-margin knob
    (T7) is then built only if the realized exclusion falls outside the
    firm band.
-2. **Trapped-class convention (flag).** The droplet well enters the
-   ion stage as E_pot *bookkeeping only* (no force on the drag path:
-   accelerations are Coulomb + drag) — the §4j trapped droplet-retained
-   class (6–11 %, current-law, sub-0.117 eV fragments) **cannot exist
-   in the MD as built**. Quantify the weight the twin assigns it at
-   each oracle configuration and fix the normalization convention for
-   scoring (report as a documented 1D↔MD difference; whether a
-   droplet-well force on the ion is a physics gap is a separate OQ for
-   the user, not a build item here).
+
+   **ADJUDICATED 2026-07-16 (quantified + decided; proposed mapping
+   REJECTED).** Preliminary quantification (scratch integration of
+   the repo density at R = 27.94 Å / N = 2000, T = 0.4 K, molecule
+   steepness 14.3324 Å, E_b = 49.4 meV; to be re-issued from the
+   committed twin at V0-3 for reproducibility): the realized law is
+   **center-pinned**, not r²-with-soft-exclusion — median birth
+   radius 1.37 Å, 95 % < 2.75 Å, 99 % < 3.41 Å, mode 1.16 Å. The
+   wide erf tail leaves U ≈ 4.2·k_BT at the droplet *center*, so the
+   inward gradient beats the r² volume factor everywhere. The law
+   shape is the *opposite* of L1 (L1 median r ≈ 17–20 Å at margins
+   3–6 Å), so adopting Boltzmann into the twin would leave the
+   closure's position axis — and with it T5's dressing and T6's
+   coupling spreads — structurally inert (the T3 lesson repeated one
+   level up). Decision (user): **reproduction-first** — Boltzmann
+   stays the physical byte-inert default; the MD gains the 1D law as
+   an explicit arm (T7, unconditional); the twin gains a birth-law
+   input at the V0-3 commit so every T9 leg re-scores at the realized
+   MD law. Physically, center-pinning of a heliophilic dopant is
+   defensible — which is exactly why the r² arm is recorded as a
+   capability lever, not a physics claim.
+2. **Trapped-class convention (premise REFUTED + read EXECUTED
+   2026-07-16).** The claim originally recorded here ("the droplet
+   well enters the ion stage as E_pot *bookkeeping only* — no force on
+   the drag path") is **false** and is withdrawn. The drag-path
+   conservative acceleration is Coulomb **+ droplet well**
+   (`_ion_accel_fn` via `make_ion_accel_fn`, `physics/leapfrog.py` —
+   the documented single source of the ion `acc_fn`, consumed by the
+   BAOAB B/A kicks and rebuilt every step in `simulation/ion.py` for
+   *all* mass scenarios incl. `biphasic`; the E2 relaxation
+   `"coulomb"` mode binds the same `acc_fn`). Verified numerically
+   (surface ion, Coulomb partner at 500 Å: a_x = −0.5694 Å/ps² vs
+   −0.5667 droplet-only analytic; residual = the Coulomb tail). The
+   well the ion feels is the Method-B jointly-fitted
+   `effective_binding_energy_I_ion_eV = 0.11676 eV` (bundle stamp,
+   §6.5.1 exact-pairing guard; presets copy it into
+   `binding_energy_I_ion_eV`; confirmed in the T3 `cfg.json`s) — the
+   *same* ≈ 0.117 eV barrier the twin's §4j trapped class uses, so
+   twin and MD already share one barrier and no reconciliation rule
+   is needed. **Tier-0/1a trajectory matching is untouched** — it was
+   calibrated with the well force on (that is what the §6.5.1 stamp
+   records). **Trapped-class read of the T3 pilots (zero-MD artifact
+   re-read):** 0/100 ions bound in every config C1–C4 at both the
+   30 ps and 1000 ps reads (escape margin KE + U − E_b positive
+   everywhere; slowest ion C3 at +0.167 eV, all others ≥ +0.212 eV;
+   all ions outside the droplet already at 30 ps). The class is
+   therefore *expressible* in MD but *unpopulated* at the undressed
+   configuration — a geometry-conditional read, re-taken at each T9
+   leg. Scoring convention fixed now: if bound ions appear in any
+   leg, they are counted as droplet-retained weight, excluded from
+   the IHe_n histogram, and reported alongside it (matching the
+   twin's trapped-class bookkeeping).
 3. **The 1D twin becomes reproducible (decision).** `h2b_feasibility.py`
    survives only in expired session scratchpads (two copies located).
    Proposal: recover, verify its recorded wiring oracles (K 0.74460 /
    0.89767, Σ(21) = 0.18783720), and commit it (e.g.
    `scripts/tier2_h2b_forward_model.py`) so every T5–T9 oracle
    comparison is reproducible in-repo. Without this the twin re-scores
-   are unverifiable hand-me-downs.
+   are unverifiable hand-me-downs. **Scope addition (2026-07-16):** the
+   committed twin gains a **birth-law input** (r² + margin — its native
+   L1 law — plus the realized Boltzmann/center-pinned law) so each T9
+   leg re-scores at the MD's realized configuration; the V0-1
+   quantification is re-issued from the committed script as its first
+   reproducible output. **Sequenced first** among all V0/I.11 items
+   (user decision) — both remaining V0 items and every twin re-score
+   depend on it.
+
+   > **NB (2026-07-16): V0-3 DELIVERED** under its own trigger (log
+   > entry "V0-3 DELIVERED"). The two surviving scratchpad copies are
+   > **byte-identical** (cmp); the recovery is committed as
+   > `scripts/tier2_h2b_forward_model.py` — code verbatim except the
+   > V0-3 scope: repo-relative bootstrap, outputs to the gitignored
+   > `data/runs/h2b_forward_model/`, the `BIRTH_LAW` input
+   > (`uniform_volume` native / `boltzmann` realized-repo-law with a
+   > margin guard, per-law fragment cache), and the new `birthlaw`
+   > stage. **All recorded wiring oracles reproduce exactly:**
+   > Σ(21) = 0.18783720 eV, production center-pin K = 0.74460, 9 Å
+   > K = 0.89767 (plus O-L2/O2/O3/O-B/O4/O-dt as recorded). The V0-1
+   > quantification re-issued reproducibly: Boltzmann analytic median
+   > 1.36 Å / q95 2.75 / q99 3.40 / mode 1.16 (the adjudication's 1.37
+   > was the same integral on a slightly different grid convention);
+   > empirical draw through the actual repo sampler agrees (median
+   > 1.35). Tests: `tests/test_tier2_h2b_forward_model.py` (10 —
+   > oracle pins, fate-map O4, ladder variants, both birth laws,
+   > margin guard, birthlaw smoke).
 
 ### Slice T5 — initial-shell dressing arm (revives H.3b verbatim)
 
@@ -2502,13 +2591,52 @@ per-ion values. Both arms built; the 1D verdict (p = 1 wins, p = 0
 over-suppresses — §4j finding 1) is a prior, and the arm is swept in
 the T9 A/B chain, not hard-wired.
 
-### Slice T7 — hard birth-margin knob (conditional)
+### Slice T7 — birth-position-law arm (re-scoped UNCONDITIONAL 2026-07-16; was: conditional hard-margin knob)
 
-`initial_position_margin_angstrom` (default 0.0, byte-inert): birth
-radius support [0, R − margin], firm band 3–6 Å. **Built only if
-V0-1 finds the Boltzmann law's realized exclusion outside the firm
-band** — otherwise the legacy sampler is the accepted L1 realization
-and this slice is closed unbuilt (recorded, rule-2-clean).
+The V0-1 conditional fired in its strongest form: the realized
+Boltzmann law is center-pinned — a *law-shape* mismatch, not a margin
+mismatch — so the margin-only knob is superseded by a law selector.
+Config enum `birth_position_law ∈ {"boltzmann" (default, byte-inert =
+the delivered `sample_radial_positions` path), "uniform_volume"}` plus
+`initial_position_margin_angstrom` (float ≥ 0, default 0.0; read only
+under `uniform_volume`, guard-refused if set under `boltzmann` — no
+silent carry):
+
+    p(r) ∝ r²  on  [0, R − margin],  0 outside    [dimensionless]
+
+— uniform in droplet volume with a hard surface exclusion, exactly
+the 1D twin's L1 law; margins per the H.2b firm band {3, 4.67, 6} Å.
+The arm is a **twin-parity/capability lever, not a physical claim**
+(the Boltzmann default remains the physical arm; see the I.11.0 NB).
+Oracles/tests: `boltzmann` default byte-identical to a delivered dir;
+`uniform_volume` realized quantiles match the analytic r² CDF on
+[0, R − m] (fixed-seed quantile pins); margin 0 reaches the surface;
+guard behavior. The law is exactly the scratchpad's — hard margin, no
+smoothing (user decision 2026-07-16).
+
+> **NB (2026-07-16): Slice T7 DELIVERED** under its own trigger (log
+> entry "Slice T7 DELIVERED"; TDD, RED watched first — ImportError on
+> the missing guard). As built: `BirthPositionLaw` Literal +
+> `birth_position_law`/`initial_position_margin_angstrom` fields
+> (config.py, next to `single_initial_position`);
+> `check_birth_position_config` guard wired into `SimConfig.validate`
+> (typo guard, finite/≥ 0 margin, margin-under-boltzmann refusal);
+> `_sample_uniform_volume` in `sampling/radial_positions.py` — exact
+> inverse-CDF `r = (R − m)·U^(1/3)` per molecule, loud failure when
+> the margin consumes any droplet — dispatched *before* the Boltzmann
+> code so the default path is untouched. **Byte-identity proven
+> exactly**: the default-path draws equal the pre-T7 (`git show HEAD`)
+> sampler's draws elementwise at fixed seed (stronger than the
+> delivered-dir oracle, which it implies at the sampler level);
+> pre-T7 `cfg.json` loads with the inert defaults (Slice-DS
+> precedent). Tests: `tests/test_birth_position_law.py` (16 — config
+> surface/guards/back-compat/round-trip, r² CDF quantile pins, hard
+> margin edge, twin-comparator median 18.47 Å at m = 4.67,
+> per-droplet support, boltzmann-vs-uniform liveness, initial-state
+> integration). Full suite **2354 passed**. CALIBRATION_MAP row 25 +
+> tally propagated (law = arm; margin Bounded {3, 4.67, 6} Å). No
+> preset or generator selects the arm yet — that is the T9 leg-A′
+> re-pilot's job.
 
 ### Slice T8 — droplet prior (the D4 family; supersedes the S2-D4 deferral)
 
@@ -2531,6 +2659,15 @@ re-scored at exactly that configuration:
 
 - **A** = the delivered T3 dirs (all arms off) — byte-identity
   regression anchor;
+- **A′** = + `uniform_volume` birth law at the closure cell's margin
+  (T7) — the position axis flips first (2026-07-16 re-scope: T5's
+  dressing is inert under the center-pinned default law; S2c-P1's
+  small-n/broadening statement reads at this first position-live leg);
+  **EXECUTED 2026-07-16 — AP-P1..P4 all CONFIRMED** (findings §4m +
+  I55–I57; W₁(MD, twin) 0.55–0.69 bins, suppressed ordering exact;
+  the KE composition diverges through the real cascade — I57; the
+  V0-2 retained policy + barrier-corrected bound criterion delivered
+  under the leg trigger; E2-drag OQ opened);
 - **B** = + `density_tied` (T5);
 - **C** = + `sigma_proportional` (T6);
 - **D** = + droplet prior (T8; fixed-N legs A–C).
@@ -2567,12 +2704,86 @@ re-scores before each leg executes — program convention):**
 
 ### I.11.1 Sequencing, gating, boundaries
 
-T5 → T6 (needs T5 to be live) → T9 legs B/C (fixed N) → T8 → T9 leg D
-+ re-pilot + scoring; V0 precedes or accompanies T5; T7 conditional on
-V0-1. Every slice TDD behind its own trigger; every new field/enum
+**V0-3 first** (commit the twin + birth-law input; V0-1 adjudicated,
+V0-2 closed as corrected — see the log) → T7 → T9 leg A′ → T5 → T6
+(needs T5 to be live) → T9 legs B/C (fixed N) → T8 → T9 leg D +
+re-pilot + scoring (re-sequenced 2026-07-16; supersedes the "T7
+conditional on V0-1" clause — the conditional fired, T7 is
+unconditional). Every slice TDD behind its own trigger; every new field/enum
 byte-inert by default with a back-compat cfg.json test (the Slice-DS
 precedent). CALIBRATION_MAP: T5/T6 add **arms, not knobs** (the tied
 law and the p-law are parameter-free); T8 adds the prior selection
 (Bounded, δ family Sourced from Kornilov). Nothing here discharges F5;
 the bare bin stays RQ8-gated; RQ4 remains the external arbiter of the
 rq4graded taper.
+
+### I.11.2 Post-leg-A′ open decisions (discussion 2026-07-17; entry point for the next session)
+
+Leg A′ is EXECUTED (findings §4m + I55–I57; log entry "T9 leg A′
+EXECUTED"). AP-P1..P4 all confirmed; the one divergence is **I57** —
+histogram parity without composition parity, visible on the KE axis.
+Three items follow, in the suggested order:
+
+**1. The n₁-composition re-read (zero MD, on-disk apc dirs; do this
+before T5).** The undressed-MD n₁ bin sits at mean KE 2.42–2.48 eV
+(experiment 1.302 eV; twin at A′ 0.97 eV). The kinematics already
+prove short chords / low drag cannot be the whole story: at the n₁
+detected mass (~131 amu), 2.48 eV means v ≈ 19.1 Å/ps — *above* the
+symmetric zero-drag limit of 15.4 Å/ps (both fragments at m₂₁ through
+the Coulomb acceleration). The excess requires the **mass-asymmetric
+Coulomb split**: E_A = E_pair·m_B/(m_A+m_B), so a fragment that sheds
+*early, mid-acceleration* is light while the force acts and takes a
+larger share (instant-bare vs m₂₁ partner → 3.37 eV, v = 22.6 Å/ps;
+the measured 19.1 sits between). The A′ twin is structurally blind to
+this route (both chords pinned at m₂₁ — the fate map has no in-flight
+m(t)), which is I57's mechanism. The near-edge-birth hypothesis
+(short outward chords, early gate-open) is the plausible *correlate*
+— early shed ⇒ light early ⇒ less drag AND bigger share, the two
+mechanisms compound. The re-read decomposes the n₁ (and bare) bins:
+per ion, birth radius, chord cosine, shed-time history (from the
+stored n(t)), and the partner's mass history → attribute the KE
+excess drag-deficit vs Coulomb-share. Zero new MD; probe-convention
+scratch read; sharpens exactly what leg B must move.
+
+**2. The E2 dissipation adjudication (user decision; required before
+any N = 500 run).** The E2 relaxation translation is **zero-gamma**
+(conservative: Coulomb + well; pickup also off, λ₀ = 0) — correct
+by construction for ejected ions (ρ̂ underflows ⇒ all arms
+identical), but the A′ position axis produces still-helium-coupled
+ions at handover, for which E2 omits real physics (leg-A′ execution
+record: the centrifugal-resonance "ion 9", the 1000→8000 ps cap
+chase, the barrier-criterion classification). Candidate arms:
+  (a) **zero-gamma** (status quo): resonances persist; handled by the
+      `_conservatively_bound` classification + a leg-level cap;
+  (b) **drag-live E2**: extrapolates the pure-cubic γ = b·v² below
+      its Tier-0 calibration band (in-window speeds ~5–15 Å/ps) —
+      captures every marginal ion dynamically, but may *overdamp*
+      slow motion;
+  (c) **Landau-gated drag**: γ = 0 below the config's Landau cutoff
+      (`v_limit` — the legacy E_min machinery), drag above — the
+      slow orbits in question (|v| ~ 0.3–1 Å/ps) straddle exactly
+      that regime, and sub-Landau superfluid motion is physically
+      dissipationless, so (a) may be *more* physical than (b) below
+      the cutoff. Arguably the most physical arm; needs the
+      domain-expert read.
+Scope: affects only the droplet-retained/marginal class (5–11 % at
+A′) — never the ejected read; but N = 500 makes marginal ions a
+certainty, so the arm must be selected (and built behind a byte-inert
+enum) before the T9 endgame.
+
+**3. Leg-B (T5) pre-registration amendment.** After I57, histogram
+agreement alone no longer counts as twin parity: the leg-B twin
+re-score must pre-register **per-bin mean detected KE** alongside the
+histograms/classes, and the A/B verdict reads both axes. Note the
+1D stake: the Step-1c full-house cells passed the KE bar (12/12
+within ×1.25, incl. n₁ vs the experimental 1.302 eV) on the *dressed*
+ensemble — so the dressed twin claims n₁ ≈ 1.0–1.6 eV, and T5 also
+weakens the early-shed asymmetry route (same-depth birth ⇒ symmetric
+birth masses per pair; less shell to shed near the surface). Whether
+the real cascade agrees is leg B's question. Bracket worth keeping in
+view: undressed MD n₁ KE spans 0.67 eV (c3, current law) to 2.48 eV
+(capped tails) — the experimental 1.302 sits inside the form bracket.
+
+**Suggested order: (1) → (2) → T5 trigger** (leg B with the amended
+per-bin-KE pre-registration). All three stay behind their own
+adjudication/trigger; nothing here discharges F5.

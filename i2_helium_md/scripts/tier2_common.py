@@ -112,6 +112,9 @@ def build_biphasic_cfg(
     E_coulomb_scale: Optional[float] = None,
     single_initial_position: Optional[bool] = None,
     detection_time_ps: Optional[float] = None,
+    birth_position_law: Optional[str] = None,
+    initial_position_margin_angstrom: Optional[float] = None,
+    detection_droplet_retained_policy: Optional[str] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -202,6 +205,18 @@ def build_biphasic_cfg(
         and stamps this Sourced flight time [ps] (CALIBRATION_MAP row 24 --
         8.53e6). ``None`` -> stage stays disabled (the pre-DS scope). Mirrors
         the ``relaxation_time_ps`` pattern.
+    birth_position_law : str or None
+        Slice-T7 molecule-centre birth law (``"boltzmann"`` /
+        ``"uniform_volume"``). ``None`` -> the config default (``boltzmann``,
+        byte-inert).
+    initial_position_margin_angstrom : float or None
+        Slice-T7 hard surface margin [A] (uniform_volume only; the config-load
+        guard refuses it under boltzmann). ``None`` -> the config default 0.0.
+    detection_droplet_retained_policy : str or None
+        T9 leg-A' handling of energetically bound (well-trapped) ions at the
+        detection handover (``"refuse"`` / ``"exclude"`` -- the V0-2
+        droplet-retained convention). ``None`` -> the config default
+        (``refuse``, the delivered loud guard).
 
     Returns
     -------
@@ -307,6 +322,16 @@ def build_biphasic_cfg(
     if detection_time_ps is not None:
         overrides["detection_stage_enabled"] = True
         overrides["detection_time_ps"] = float(detection_time_ps)
+    if birth_position_law is not None:
+        overrides["birth_position_law"] = birth_position_law
+    if initial_position_margin_angstrom is not None:
+        overrides["initial_position_margin_angstrom"] = float(
+            initial_position_margin_angstrom
+        )
+    if detection_droplet_retained_policy is not None:
+        overrides["detection_droplet_retained_policy"] = (
+            detection_droplet_retained_policy
+        )
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
