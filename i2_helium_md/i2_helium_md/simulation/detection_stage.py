@@ -41,10 +41,12 @@ Event loop (per ion, exact; design §2.2)
 ----------------------------------------
 ``k = rrk_rate(E_int, n)``; ``k == 0`` -> permanent state (reason recorded);
 else draw ``dt = -ln(u)/k``; past ``t_detect`` -> ``time_exhausted``; else
-fire: ``n -> n-1``, the **cold-shed velocity/mass/KE-defect reset**
-(:func:`~i2_helium_md.physics.mass_jump.cold_shed`: ``v -> m/(m-m_He) * v`` --
-NB the design doc's early "v unchanged" phrasing was corrected as-built; the
-kick never feeds back into the (E_int, n) jump chain, which reads neither
+fire: ``n -> n-1``, the **shed velocity/mass/ledger reset** per
+``cfg.evaporation_shed_convention`` (``"cold"`` default:
+:func:`~i2_helium_md.physics.mass_jump.cold_shed`, ``v -> m/(m-m_He) * v``;
+``"co_moving"``: :func:`~i2_helium_md.physics.mass_jump.continuous_velocity_shed`,
+``v`` unchanged -- NB the design doc's early phrasing predates the OQ-J arm;
+the kick never feeds back into the (E_int, n) jump chain, which reads neither
 ``v`` nor positions), the K1 drain ``E_int -= D_0(n_pre)``
 (:func:`~i2_helium_md.physics.internal_energy_budget.dE_int_shed_eV`), and
 the ``e_bind_pair`` fold ``E_pot += D_0(n_pre)``. Termination is
@@ -106,6 +108,7 @@ from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.evaporation import gate_margin_eV, rrk_rate
 from ..physics.helium_density import rho_he_ratio
+from ..physics.interactions import ion_interaction_potential
 from ..physics.internal_energy_budget import dE_int_shed_eV
 from ..physics.mass_jump import cold_shed, continuous_velocity_shed
 from ..physics.potentials import droplet_potential
@@ -131,8 +134,14 @@ DETECTION_STREAM_KEY: int = 0xD5_2026
 #: equals the fractional E_int error committed by treating cooling as zero.
 EPS_DRAIN: float = 1e-6
 
-#: Legal per-ion permanent/terminal state reasons (design §2.3).
-STATE_REASONS: tuple[str, ...] = ("frozen", "suppressed", "time_exhausted")
+#: Legal per-ion permanent/terminal state reasons (design §2.3; the fourth
+#: member is the T9 leg-A' V0-2 exclude-policy class -- review fix 2026-07-18:
+#: it was emitted by the event loop but missing here, so the stage's own
+#: ``detection.npz`` failed its load-time reason check and
+#: ``reason_fractions`` silently dropped the retained class).
+STATE_REASONS: tuple[str, ...] = (
+    "frozen", "suppressed", "time_exhausted", "droplet_retained",
+)
 
 # detection.npz schema (this artifact's own version counter; it is NOT an
 # IonCheckpoint and does not participate in the v5->v6->v7 cascade).
@@ -183,9 +192,13 @@ class DetectionResult:
     state_reason : np.ndarray, shape (2N,), unicode
         Per-ion terminal reason: ``"frozen"`` (energetic floor -- converged
         terminal), ``"suppressed"`` (ejected net-self-unbound complex, rides
-        to the detector at its handover ``n``; OQ-B untouched), or
+        to the detector at its handover ``n``; OQ-B untouched),
         ``"time_exhausted"`` (cascade live at the detector -- the physical
-        in-flight snapshot).
+        in-flight snapshot), or ``"droplet_retained"`` (well-trapped ion
+        under ``detection_droplet_retained_policy="exclude"``; its per-ion
+        rows hold the **verbatim in-droplet handover state**, never a
+        detector arrival -- every numeric read over the detected ensemble
+        must mask with :attr:`detected_mask`).
     event_offsets : np.ndarray, shape (2N+1,), int
         Ragged-record offsets into the flat event arrays; ``event_offsets[0]
         == 0`` and ``event_offsets[-1] == num_events``.
@@ -200,7 +213,10 @@ class DetectionResult:
     event_dE_bind_fold_eV : np.ndarray, shape (num_events,)
         ``e_bind_pair`` E_pot fold per fire (``+D_0(n_pre)`` > 0) [eV].
     event_dE_mass_transfer_eV : np.ndarray, shape (num_events,)
-        Cold-shed KE defect per fire (< 0) [eV].
+        Per-fire mass-transfer ledger entry [eV]. Sign follows
+        ``cfg.evaporation_shed_convention``: under ``"cold"`` it is the
+        cold-shed KE defect (< 0); under ``"co_moving"`` it is the carried-KE
+        of the co-moving He (> 0 for a moving ion).
     """
 
     num_molecules: int
@@ -233,6 +249,21 @@ class DetectionResult:
         disambiguates the ``"detected"`` provenance from E2's ``"relaxed"``.
         """
         return self.n_detected
+
+    @property
+    def detected_mask(self) -> np.ndarray:
+        """Boolean (2N,) mask of ions that actually reached the detector.
+
+        ``droplet_retained`` rows carry the verbatim in-droplet handover
+        state (large ``n_shell``, in-droplet velocity/``E_int``) -- they are
+        NOT detector arrivals. Every numeric aggregate over the detected
+        ensemble (``n_detected`` histograms/means, ``E_kin_detected_eV``,
+        ``mass_detected_kg``) must select through this mask (review fix
+        2026-07-18: the exclude policy previously excluded retained ions
+        from the event loop only, and unmasked consumers silently folded
+        their handover state into the terminal IHe_n read).
+        """
+        return np.asarray(self.state_reason) != "droplet_retained"
 
     def events_for_ion(self, ion_id: int) -> slice:
         """The flat-array slice holding ion ``ion_id``'s event records."""
@@ -623,13 +654,19 @@ def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
     special case; a near-threshold ion on a mostly-tangential orbit can sit
     *above* the radial threshold yet *below* its centrifugal barrier — a
     quasi-bound resonance that never decouples (the leg-A' apc3 "ion 9":
-    +1.1 meV radial margin, ~5 A of outward drift in 3000 ps). The residual
-    pair Coulomb (repulsive, partner >> 100 A away) only aids escape, so
-    ignoring it keeps the criterion conservative in the correct direction:
-    no genuinely escaping ion is ever classified retained... the reverse —
-    Coulomb could push a marginally-retained ion out — is bounded by the
-    partner distance and is negligible at the guard's operating point
-    (< 0.1 meV beyond ~10^4 A).
+    +1.1 meV radial margin, ~5 A of outward drift in 3000 ps).
+
+    The residual pair Coulomb (repulsive) is **included** in E_tot (review
+    fix 2026-07-18: the earlier "partner >> 100 A away, negligible" argument
+    was never verified against the actual partner distance, and the omitted
+    term — 14.4 eV·A / r_sep, ~14 meV at r_sep = 1000 A — exceeds the meV
+    classification margins this guard actually operates at). The **full**
+    pair energy is credited to each fragment: an over-estimate of either
+    ion's escapable energy, which keeps the criterion conservative in the
+    required direction — a `retained` verdict is certain (even the whole
+    Coulomb reservoir cannot push the ion over its barrier); a marginal ion
+    the pair term *might* expel is handed back to the loud violator guard
+    instead of being silently retained.
 
     Returns a boolean (2N,) mask. Units: masses kg -> amu; energies eV via
     the amu*A^2/ps^2 conversion (strict dimensional bookkeeping).
@@ -653,7 +690,23 @@ def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
         steepness=cfg.potential_steepness,
         binding_energy=cfg.binding_energy_I_ion_eV,
     )
-    E_tot = E_kin + U_here                                   # eV
+    # Residual pair Coulomb [eV], the delivered pair physics verbatim
+    # (charges all 1.0 in scope -- the ion_propagation unsupported-feature
+    # guard refuses single_charge_ionization on the biphasic path). Fragments
+    # pair as the [:N]/[N:] halves (the leapfrog convention). The full pair
+    # energy is credited to BOTH fragments (conservative over-estimate, see
+    # docstring); coincident synthetic fragments are distance-clamped -- the
+    # blown-up energy just lands them in the loud violator arm.
+    n_mol = x.size // 2
+    dx = x[:n_mol] - x[n_mol:]
+    dy = y[:n_mol] - y[n_mol:]
+    dz = z[:n_mol] - z[n_mol:]
+    r_sep = np.maximum(np.sqrt(dx**2 + dy**2 + dz**2), 1e-12)
+    ones = np.ones(n_mol)
+    E_coul_pair = np.asarray(
+        ion_interaction_potential(r_sep, ones, ones, cfg), dtype=float
+    )
+    E_tot = E_kin + U_here + np.tile(E_coul_pair, 2)         # eV
 
     # |r x v|^2 per ion [A^4/ps^2]; L^2/(2 m r'^2) = m*h2/(2 r'^2) in
     # amu*A^2/ps^2 -> eV.

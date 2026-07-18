@@ -374,21 +374,38 @@ class TestDropletRetainedPolicy:
         with pytest.raises(ValueError, match="P1-P3"):
             run_detection_stage(seed, cfg)
 
-    def test_exclude_classifies_bound_ion_and_processes_the_rest(self):
+    def test_exclude_classifies_bound_ion_and_processes_the_rest(
+        self, tmp_path
+    ):
         cfg = _detect_cfg(seed=3,
                           detection_droplet_retained_policy="exclude")
         # KE at speed 0.2 A/ps ~ 0.4 meV << the 116.8 meV well: bound.
+        # Partners at 1e5 A: pair Coulomb 0.14 meV -- part of E_tot since the
+        # 2026-07-18 review fix, negligible against the well here.
         seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
                          inside=True)
-        seed.positions_z[1:, 0] = 1000.0  # ions 1..3 properly ejected
+        seed.positions_z[1:, 0] = 1.0e5  # ions 1..3 properly ejected
         res = run_detection_stage(seed, cfg)
         assert res.state_reason[0] == "droplet_retained"
         assert set(res.state_reason[1:]) == {"frozen"}
         # handover state carried verbatim; zero events for the retained ion
         assert res.n_detected[0] == 21.0
         assert res.event_offsets[1] == res.event_offsets[0] == 0
-        # the artifact round-trips the new reason value
-        assert "droplet_retained" in np.asarray(res.state_reason).tolist()
+        # the artifact round-trips the new reason value (real save -> load;
+        # review fix 2026-07-18: the in-memory check missed the stale
+        # STATE_REASONS load refusal)
+        p = save_detection_result(res, tmp_path / "detection.npz")
+        loaded = load_detection_result(p)
+        assert loaded.state_reason.tolist() == res.state_reason.tolist()
+        # reason_fractions covers the retained class and sums to 1
+        fr = loaded.reason_fractions()
+        assert fr["droplet_retained"] == pytest.approx(0.25)
+        assert sum(fr.values()) == pytest.approx(1.0)
+        # numeric consumers select through detected_mask ...
+        assert loaded.detected_mask.tolist() == [False, True, True, True]
+        # ... and the IHe_n histogram source excludes the retained ion
+        dist = compute_terminal_shell_distribution(loaded)
+        assert int(dist.counts.sum()) == 3
 
     def test_exclude_classifies_centrifugal_resonance(self):
         """A mostly-tangential orbit just above the *radial* escape
@@ -402,7 +419,9 @@ class TestDropletRetainedPolicy:
                           detection_droplet_retained_policy="exclude")
         seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
                          inside=True)
-        seed.positions_z[1:, 0] = 1000.0  # others properly ejected
+        # others properly ejected; 1e5 A keeps the pair Coulomb (0.14 meV)
+        # far below the ~15 meV centrifugal margin this test targets
+        seed.positions_z[1:, 0] = 1.0e5
         # ion 0 at the droplet surface (r = R = 30) with tangential v such
         # that E_kin + U = E_bind + 0.5 meV (radially unbound by 0.5 meV);
         # its centrifugal barrier at h = r*v_t ~ 70 A^2/ps sits ~15 meV
@@ -426,6 +445,23 @@ class TestDropletRetainedPolicy:
         res = run_detection_stage(seed, cfg)
         assert res.state_reason[0] == "droplet_retained"
         assert set(res.state_reason[1:]) == {"frozen"}
+
+    def test_exclude_counts_partner_coulomb_toward_escape(self):
+        """The residual pair Coulomb is escapable energy (review fix
+        2026-07-18): a slow in-droplet ion whose partner is still close
+        enough that the pair term outweighs the well (14.4/120 A = 120 meV
+        > the 116.8 meV binding) is NOT conservatively bound -- it lands in
+        the loud violator arm instead of being silently booked
+        droplet_retained. The partner itself (depth +90 A, erfc underflow,
+        frozen) is guard-clean, so ion 0 is the only violator."""
+        cfg = _detect_cfg(seed=3,
+                          detection_droplet_retained_policy="exclude")
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True)
+        seed.positions_z[1:, 0] = 1.0e5  # ions 1..3 ejected...
+        seed.positions_z[2, 0] = 120.0   # ...but ion 0's partner stays close
+        with pytest.raises(ValueError, match="P1-P3"):
+            run_detection_stage(seed, cfg)
 
     def test_exclude_still_refuses_unbound_in_bubble_ion(self):
         # speed 5 A/ps -> KE ~ 0.27 eV > the 0.117 eV well: NOT trapped --
@@ -852,6 +888,7 @@ class TestArtifactAndIntegration:
         assert row["frac_det_frozen"] == pytest.approx(1.0)
         assert row["frac_det_suppressed"] == pytest.approx(0.0)
         assert row["frac_det_time_exhausted"] == pytest.approx(0.0)
+        assert row["frac_det_droplet_retained"] == pytest.approx(0.0)
         assert row["n_detect_mean"] == pytest.approx(row["n_relaxed_mean"])
         assert row["n_detect_min"] == row["n_relaxed_min"]
 

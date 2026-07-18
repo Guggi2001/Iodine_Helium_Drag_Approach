@@ -34,7 +34,7 @@ Recorded wiring oracles (``oracles`` stage; plan SI.11 V0-3): production
 center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
-        w12pred | birthlaw
+        w12pred | birthlaw | legaprime
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 """
 
@@ -402,8 +402,16 @@ def prior_weight(prior, N):
     return w
 
 
-def margin_weight(margin, x, R):
-    if BIRTH_LAW == "boltzmann":
+def margin_weight(margin, x, R, birth_law=None):
+    """Importance weight of the hard surface margin for a ``draw_master``
+    sample. ``birth_law`` resolves exactly like ``draw_master``'s (None ->
+    the module-global ``BIRTH_LAW``): a caller that drew with an explicit
+    law must weight with the same one, or the 1/cap^3 uniform-volume
+    weights would silently reweight a Boltzmann sample (review fix
+    2026-07-18 -- the two halves of the importance scheme previously could
+    not be kept in sync per-call)."""
+    law = BIRTH_LAW if birth_law is None else birth_law
+    if law == "boltzmann":
         # Margins belong to the uniform_volume law; under the realized
         # Boltzmann law the sample already carries its own radial density.
         if margin != 0.0:
@@ -530,8 +538,7 @@ def stage_levers(tab):
             K = tab["K_cl"].reshape(-1)
             sel = w > 0
             q = lambda a, p: float(
-                np.quantile(np.repeat(a[sel], 1), p, weights=w[sel],
-                            method="inverted_cdf")
+                np.quantile(a[sel], p, weights=w[sel], method="inverted_cdf")
             )
             rows.append({
                 "margin_A": margin, "prior": prior,
@@ -1040,7 +1047,8 @@ def main():
     else:
         raise SystemExit(
             f"unknown mode {mode!r} "
-            "(oracles | levers | scan | report | w12pred | birthlaw)"
+            "(oracles | levers | scan | report | w12pred | birthlaw | "
+            "legaprime)"
         )
 
 

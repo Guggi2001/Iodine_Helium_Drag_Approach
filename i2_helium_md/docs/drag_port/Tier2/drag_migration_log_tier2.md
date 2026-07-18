@@ -7030,3 +7030,112 @@ construction, satisfying the item-3 stated-basis amendment. The apc
 I.11 sequence: **Slice T5** (initial-shell dressing arm) behind its own
 trigger, with the leg-B twin re-score pre-registering histograms *and*
 per-bin mean KE at the dressed configuration. Nothing here discharges F5.
+
+## I11 post-A″ code review EXECUTED — fixes applied; the exclude-policy retained class is now actually excluded from every IHe_n read and its artifacts load; one rule-1 carry recorded (2026-07-18)
+
+High-effort multi-agent review of `c175e2f..069a166` (Slice T3 generator
+— delivered alongside the I11 plan, never reviewed — plus the I11 work:
+V0-3 twin, Slice T7, T9 leg A′ detection-stage changes, the OQ-J
+shed-convention enum, leg A″): 4 finders / 16 independent verifiers,
+19 candidates verified, 0 refuted, merged to 10 distinct findings. All
+fixed under the user's `[PROCEED TO IMPLEMENTATION]` **except finding 9,
+which the user scoped to this log entry only** (the carry below). Full
+suite green after the fixes (count in the commit record).
+
+**F1+F2 (CONFIRMED, the severe cluster): the
+`detection_droplet_retained_policy="exclude"` class was excluded from
+the event loop only.** `STATE_REASONS` was never extended with
+`"droplet_retained"`, so (a) `load_detection_result` refused the very
+`detection.npz` the stage saves (reproduced round-trip) and (b)
+`reason_fractions` silently dropped the retained class (fractions
+summed < 1). Worse, retained rows carry the **verbatim in-droplet
+handover state** in `n_detected` / `E_kin_detected_eV` /
+`mass_detected_kg`, and no numeric consumer masked them — the
+generator's `n_detect_mean` and any histogram built from the arrays
+folded the trapped subpopulation into the terminal IHe_n read. Fixes:
+`STATE_REASONS` gains the fourth member; new
+`DetectionResult.detected_mask` property (documented mask contract in
+the data-contract docstring); `_terminal_n_and_source`
+(`postprocess/size_distribution.py` — the single histogram source)
+excludes retained rows on the detected branch (all-retained → loud
+empty-ensemble error); the generator print masks and now reports
+`droplet_retained=k/2N`; the staircase report gains the
+`frac_det_droplet_retained` column. Tests: real save→load round trip
+(the old test checked the in-memory array only and missed the load
+refusal), fractions-sum-to-1, mask contract, histogram exclusion.
+**Residual risk flagged:** the §4m/§4o leg reads were made with scratch
+conventions; the delivered apc/apcm `detection.npz` artifacts (which
+were unloadable through the delivered loader until this fix) should be
+re-read once through the now-masked pipeline to confirm the recorded
+histogram/class numbers are unchanged.
+
+**F3 (CONFIRMED): `uniform_volume` under `single_initial_position=True`
+was silently inert.** `build_initial_state` zeroes `r0` after sampling,
+so the advertised T7 lever would not move positions while still
+*shifting the RNG draw stream* (different draw count than the Boltzmann
+rejection sampler) — a run reproducing neither leg A nor leg A′.
+`check_birth_position_config` now refuses the combination loudly (rule
+4 in its docstring); the test fixture selects the position-live arm.
+
+**F4 (CONFIRMED): `_conservatively_bound` omitted the residual pair
+Coulomb on an unverified "partner far away" assumption.** The omitted
+term (14.4 eV·Å / r_sep ≈ 14 meV at 1000 Å, ~0.3 eV in-droplet)
+exceeds the guard's actual meV operating margins (apc3 "ion 9":
++1.1 meV), so a near-threshold escaper with a close partner could be
+silently booked `droplet_retained`. The criterion now credits the
+**full** pair energy (via the delivered `ion_interaction_potential`,
+`[:N]/[N:]` pairing, `E_coulomb_scale` respected) to each fragment —
+an over-estimate that keeps `retained` verdicts certain and hands
+Coulomb-marginal ions back to the loud violator guard. Directly
+relevant to the A″-P3 refinement (1–3 marginal ions flipping retained
+per config): the marginal class is now classified with the pair term
+in. New test: a close partner (120 Å) flips a well-trapped ion to the
+loud refusal; existing retained tests re-pinned with partners at 10⁵ Å.
+
+**F5 (CONFIRMED, leaked debug state):** `tier0_drag_comparison.py`
+`ENERGY_FIGURE`/`FORCE_FIGURE` were committed flipped `False→True`
+inside `1e64b37` (unrelated to its scope; the post-processing layer is
+bug-fix-only). Reverted to the delivered defaults.
+
+**F6 (CONFIRMED):** the twin's `legaprime` stage was missing from both
+the module-docstring Usage line and the unknown-mode `SystemExit` list —
+the leg-A′/A″ re-score stage was undiscoverable from the script's own
+help. Both lists now include it.
+
+**F7 (CONFIRMED, latent):** `margin_weight` branched on the module
+global `BIRTH_LAW` while `draw_master` takes a per-call `birth_law` —
+the two halves of the importance scheme could silently disagree.
+`margin_weight` now takes the same optional `birth_law` parameter with
+the same resolution rule (call sites unchanged; numerics identical).
+
+**F8 (CONFIRMED, test hygiene):**
+`test_leg_aprime_cm_flips_exactly_one_lever_vs_aprime` asserted the
+mutable USER SETTING `script.LEG == "aprime_cm"`; it now monkeypatches
+like every sibling, so routine leg rotation no longer turns the suite
+red.
+
+**F10 (CONFIRMED, stale data contract):** `DetectionResult` docstrings
+updated — `event_dE_mass_transfer_eV` sign is convention-dependent
+(cold < 0 / co_moving > 0), `state_reason` documents all four legal
+values, and the module-header event-loop paragraph names both shed
+operators. Plus the trivial `np.repeat(a, 1)` no-op removed from the
+twin's `stage_levers` (bit-identical).
+
+**F9 — rule-1 carry (user decision 2026-07-18: log entry only, no code
+change).** The committed twin `scripts/tier2_h2b_forward_model.py`
+re-implements physics the package exports: `complex_mass_amu`
+(`physics/shell_schedule`), the Coulomb constant `14.39964548`, the
+eV↔amu·Å²/ps² conversion, and an integer-support Wasserstein. This is
+the deliberate V0-3 verbatim-recovery trade-off (the scratchpad is
+committed byte-faithfully so the recorded wiring oracles pin the exact
+code that produced the Step-1b/1c closure). **Carry condition:** if any
+package constant or the mass table is ever corrected, the twin's copies
+drift silently and every T5–T9 oracle comparison scores against stale
+physics — the carry is retired by re-syncing (and re-pinning the
+oracles) at the first twin edit that touches those numbers, or at the
+T9 endgame, whichever comes first.
+
+**Not changed:** checkpoint schema (v7 untouched — `detection.npz` is
+not an IonCheckpoint and its own version stays 1: the reason vocabulary
+widened but no field changed), RNG draw order (the F3 guard *prevents*
+an accidental stream shift), physical constants, presets.

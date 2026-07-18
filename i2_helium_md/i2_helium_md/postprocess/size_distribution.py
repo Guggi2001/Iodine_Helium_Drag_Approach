@@ -146,10 +146,20 @@ def _terminal_n_and_source(source) -> tuple[np.ndarray, str]:
                 "empty ensemble: terminal_n has size 0, nothing to histogram."
             )
         # A DetectionResult also exposes terminal_n; its state_reason array
-        # (frozen/suppressed/time_exhausted) is the attribute that separates
-        # the detector-arrival read from E2's matched-time relaxed read.
-        if getattr(source, "state_reason", None) is not None:
-            return arr, "detected"
+        # is the attribute that separates the detector-arrival read from
+        # E2's matched-time relaxed read. droplet_retained rows (the V0-2
+        # exclude-policy class) carry the verbatim in-droplet handover
+        # state, not a detector arrival -- they are excluded from the IHe_n
+        # read here, the single histogram source (review fix 2026-07-18).
+        reasons = getattr(source, "state_reason", None)
+        if reasons is not None:
+            keep = np.asarray(reasons).ravel() != "droplet_retained"
+            if not np.any(keep):
+                raise ValueError(
+                    "empty detected ensemble: every ion is droplet_retained; "
+                    "nothing reaches the detector to histogram."
+                )
+            return arr[keep], "detected"
         return arr, "relaxed"
 
     raise TypeError(
@@ -172,6 +182,10 @@ def compute_terminal_shell_distribution(
     source
         Either an ``IonCheckpoint`` (``n_shell (2N, T)`` -> sim-end upper bound)
         or an E2 ``RelaxationResult`` (``terminal_n (2N,)`` -> matched time).
+        A ``DetectionResult`` is admitted through the same ``terminal_n``
+        duck-type; its ``droplet_retained`` ions (the V0-2 exclude-policy
+        class) are excluded from the histogram -- they never reach the
+        detector.
     n_max
         Upper edge of the integer support (default :data:`N_STAR` = 21). ``n =
         n_max`` is a legal outcome; ``n > n_max`` fails loud.

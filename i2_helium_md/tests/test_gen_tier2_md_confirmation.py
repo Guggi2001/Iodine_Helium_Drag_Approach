@@ -299,7 +299,10 @@ def test_leg_aprime_cm_flips_exactly_one_lever_vs_aprime(tmp_path, monkeypatch):
     convention adjudication, 2026-07-17) -- exactly one field differs vs A',
     and the run dirs carry the apcm_ prefix (distinct from both the T3 and
     the A' dirs, same conf namespace)."""
-    assert script.LEG == "aprime_cm"  # the active USER SETTING for this leg
+    # LEG is a mutable USER SETTING (it rotates per oracle-chain leg), so the
+    # test pins it via monkeypatch like every sibling -- asserting the ambient
+    # value would turn routine leg rotation into a test failure.
+    monkeypatch.setattr(script, "LEG", "aprime_cm")
     acm = script.build_confirmation(tmp_path)
     monkeypatch.setattr(script, "LEG", "aprime")
     aprime = script.build_confirmation(tmp_path)

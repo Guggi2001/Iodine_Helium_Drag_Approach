@@ -124,6 +124,7 @@ PROBE_TABLE_COLUMNS = [
     "frac_det_frozen",
     "frac_det_suppressed",
     "frac_det_time_exhausted",
+    "frac_det_droplet_retained",   # V0-2 exclude-policy class (T9 leg A'+)
     # wiring diagnostic
     "ledger_max_resid_eV",
 ]
@@ -317,7 +318,7 @@ def score_probe_run(
     detect_cols: dict[str, Any] = {
         "n_detect_mean": None, "n_detect_spread": None, "n_detect_min": None,
         "frac_det_frozen": None, "frac_det_suppressed": None,
-        "frac_det_time_exhausted": None,
+        "frac_det_time_exhausted": None, "frac_det_droplet_retained": None,
     }
     detection_path = run_dir / _DETECTION_FILENAME
     if detection_path.exists():
@@ -346,6 +347,7 @@ def score_probe_run(
             "frac_det_frozen": fractions["frozen"],
             "frac_det_suppressed": fractions["suppressed"],
             "frac_det_time_exhausted": fractions["time_exhausted"],
+            "frac_det_droplet_retained": fractions["droplet_retained"],
         }
 
     closure = ion_ledger_closure(ion)

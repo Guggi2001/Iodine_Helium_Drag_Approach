@@ -399,11 +399,19 @@ def _run_one(label: str, cfg, run_dir: Path) -> None:
     )
 
     n_relax = float(relax.terminal_n.mean())
-    n_detect = float(detect.n_detected.mean())
+    # droplet_retained ions carry their in-droplet handover state verbatim --
+    # they must never enter a detected aggregate (review fix 2026-07-18).
+    det_mask = detect.detected_mask
+    n_retained = int(np.count_nonzero(~det_mask))
+    n_detect = (
+        float(detect.n_detected[det_mask].mean())
+        if det_mask.any() else float("nan")
+    )
     print(
         f"[{label}] done -> {run_dir} "
         f"(ion {ion.time_ps.size} steps; relaxed {relax.time_relaxed_ps:.2f} ps, "
-        f"n_relax_mean={n_relax:.2f}, n_detect_mean={n_detect:.2f})"
+        f"n_relax_mean={n_relax:.2f}, n_detect_mean={n_detect:.2f}, "
+        f"droplet_retained={n_retained}/{det_mask.size})"
     )
 
 

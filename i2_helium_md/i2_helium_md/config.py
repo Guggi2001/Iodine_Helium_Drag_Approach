@@ -586,6 +586,12 @@ def check_birth_position_config(cfg: "SimConfig") -> None:
     3. The margin belongs to the ``uniform_volume`` law only: a non-zero
        margin under ``boltzmann`` is refused loudly (no silent carry —
        CLAUDE.md rule 2 convention).
+    4. ``uniform_volume`` under ``single_initial_position=True`` is refused
+       (review fix 2026-07-18): ``build_initial_state`` zeroes ``r0`` after
+       sampling, so the advertised law would be silently inert on positions
+       while still shifting the RNG draw stream (the uniform draw count
+       differs from the Boltzmann rejection sampler's) — the run would
+       reproduce neither the boltzmann leg nor the uniform_volume one.
 
     The margin-vs-droplet-radius bound is enforced at sampling time
     (:func:`i2_helium_md.sampling.radial_positions.sample_radial_positions`),
@@ -608,6 +614,15 @@ def check_birth_position_config(cfg: "SimConfig") -> None:
             "birth_position_law='uniform_volume' only; got "
             f"margin={margin} under 'boltzmann' (set the margin to 0.0 "
             "or select the uniform_volume law)"
+        )
+    if cfg.birth_position_law == "uniform_volume" and cfg.single_initial_position:
+        raise ValueError(
+            "birth_position_law='uniform_volume' requires "
+            "single_initial_position=False: build_initial_state zeroes r0 "
+            "under single_initial_position=True, so the uniform_volume law "
+            "would be silently inert on positions while still shifting the "
+            "RNG draw stream (set single_initial_position=False or keep the "
+            "boltzmann default)"
         )
 
 

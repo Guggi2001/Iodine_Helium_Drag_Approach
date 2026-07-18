@@ -69,9 +69,9 @@ SHOW_FIGURE = True
 # Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
 # vs time, with the droplet binding-depth line). Same gating pattern as the
 # positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
-ENERGY_FIGURE = True
+ENERGY_FIGURE = False
 
-FORCE_FIGURE = True
+FORCE_FIGURE = False
 
 # =============================================================================
 # IMPORT SETUP

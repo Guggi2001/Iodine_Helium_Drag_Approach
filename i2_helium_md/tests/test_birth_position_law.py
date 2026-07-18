@@ -27,6 +27,10 @@ from i2_helium_md.simulation.run_directory import RunDirectory
 
 
 def _uniform_cfg(margin: float = 0.0, **kw) -> SimConfig:
+    # uniform_volume is refused under single_initial_position=True (the
+    # SimConfig default zeroes r0, leaving the law silently inert -- review
+    # fix 2026-07-18), so the fixture selects the position-live arm.
+    kw.setdefault("single_initial_position", False)
     return SimConfig(
         birth_position_law="uniform_volume",
         initial_position_margin_angstrom=margin,
@@ -53,6 +57,15 @@ class TestConfigSurface:
         # No silent carry: the margin is uniform_volume-only (plan T7).
         cfg = SimConfig(initial_position_margin_angstrom=3.0)
         with pytest.raises(ValueError, match="uniform_volume"):
+            cfg.validate()
+
+    def test_uniform_volume_under_single_position_refused(self):
+        # review fix 2026-07-18: under single_initial_position=True the
+        # sampled r0 is zeroed, so the advertised law would be silently
+        # inert on positions while still shifting the RNG draw stream --
+        # the combination is refused loudly at config-load.
+        cfg = _uniform_cfg(single_initial_position=True)
+        with pytest.raises(ValueError, match="single_initial_position"):
             cfg.validate()
 
     @pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf")])
