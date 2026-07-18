@@ -7139,3 +7139,239 @@ T9 endgame, whichever comes first.
 not an IonCheckpoint and its own version stays 1: the reason vocabulary
 widened but no field changed), RNG draw order (the F3 guard *prevents*
 an accidental stream shift), physical constants, presets.
+
+## F1/F2 residual-risk re-read EXECUTED — all eight apc/apcm `detection.npz` load through the fixed pipeline and reproduce the recorded §4m/§4o numbers exactly; the leg-B baseline is certified (2026-07-18)
+
+The review entry above flagged that the delivered leg-A′/A″
+`detection.npz` artifacts (unloadable through the delivered loader until
+the F1 fix; the §4m/§4o reads were made with scratch conventions) should
+be re-read once through the now-masked pipeline. Executed as a zero-MD,
+read-only scratch check (probe convention, zero repo-code change):
+each of the eight dirs (`…_conf270_apc{1..4}` cold /
+`…_conf270_apcmc{1..4}` co_moving) loaded via the delivered
+`load_detection_result`, aggregated under `detected_mask` +
+`reason_fractions`, and histogrammed through the fixed
+`compute_terminal_shell_distribution` (§4m conventions: retained
+excluded, suppressed at bin 0, fractions over the detected ensemble).
+
+**Result: ALL PASS — every recorded number reproduces.** Per config:
+retained counts 5/6/11/5 (apc) and 6/7/14/6 (apcm; c3 = 14 as the
+A″-P3 refinement recorded — the apcm c1/c2/c4 counts were previously
+implicit and are now on record); suppressed fractions
+0.095/0.032/0.315/0.116 (A′) and 0.096/0.032/0.326/0.117 (A″); n₁
+fractions, n̄_det, n₁ mean KE (2.479/2.473/0.666/2.423 cold;
+1.005/1.025/0.312/0.991 co-moving) and n₁ speeds (19.10 cold c1;
+12.16/12.28/6.77/12.08 co-moving) all match the §4m/§4n/§4o tables to
+print precision. `reason_fractions` sums to exactly 1.0 with the
+`droplet_retained` member populated on every dir; the histogram source
+tags `detected` and drops exactly the retained rows.
+
+**Consequence:** the F1/F2 residual risk is discharged — the scratch
+reads behind §4m/§4o and the delivered masked pipeline agree, so the
+apcm dirs stand as the certified leg-B (T5) A/B baseline with no
+regeneration needed. Script: session scratchpad
+(`reread_apc_apcm_detection.py`), not committed (read-only check, no
+repo surface). Next per the I.11 sequence: **Slice T5** (initial-shell
+dressing arm) behind its own trigger, with the leg-B twin re-score
+pre-registering histograms *and* per-bin mean detected KE on the stated
+co-moving basis. Nothing here discharges F5.
+
+## Slice T5 DELIVERED — `initial_shell_model ∈ {full (byte-inert default), density_tied}`: the H.3b depth-dependent dressing law in the biphasic seed, per-ion n₀/mass/E_pot fold from the shared erf-complement surface (2026-07-18)
+
+Executed under its own `[PROCEED TO IMPLEMENTATION]` (plan §I.11 Slice
+T5, reviving §H.3b verbatim; entry preconditions met — the apcm leg-B
+baseline certified by the re-read entry above). TDD: the 16-test suite
+watched RED (ImportError on the missing guard) before any
+implementation.
+
+**As built.**
+- `config.py`: `InitialShellModel = Literal["full", "density_tied"]`;
+  field `initial_shell_model = "full"` (byte-inert default, declared in
+  its own T5 block beside the Slice-Q evaporation surface);
+  `check_initial_shell_config` wired into `SimConfig.validate` — typo
+  guard via `_reject_unknown_enum`, and `density_tied` **refused outside
+  `mass_scenario='biphasic'`** (the dressing is read only by the
+  biphasic column-0 seed; silent inertness would repeat the F3 class —
+  refused loudly instead). Center-pinned births + `density_tied` stay
+  deliberately legal: physically inert (ρ̂(center) ≈ 1 → n₀ = 21
+  exactly, the H.3b oracle) with no RNG-stream shift.
+- `simulation/ion_initial_state.py`: under `biphasic` + `density_tied`
+  the seed computes `d_birth,i = |r_i(0)| − R_i` and
+  `n₀ᵢ = rint(n*·ρ̂(d_birth,i))` through
+  `rho_he_ratio(depth, steepness=drag_gate_steepness(cfg))` — the
+  **same** erf-complement surface the drag/pickup/cooling gates share
+  (function-local import of the steepness resolver: `ion.py` imports the
+  seed module). Per-ion consequences exactly per H.3b:
+  `mass_kg(0) = complex_mass_amu(n₀ᵢ)·U` (mass history/final ride it),
+  the t0 `e_bind_pair(n₀ᵢ)` E_pot fold (the fold call takes
+  `n0_initial` — scalar `ANCHOR_N_START` under `full`, byte-identical to
+  the delivered call; vectorised array under `density_tied`), and
+  `n_shell(0)` via the unchanged mass→n rint rule. **No checkpoint
+  schema change** (v7 untouched — all arrays were already per-ion).
+  **E_int(0) stays the constant `f_int·E_avail`** — the Σ-ratio coupling
+  is Slice T6's p-law, not this arm.
+- `scripts/tier2_common.py :: build_biphasic_cfg`: None-sentinel
+  `initial_shell_model` kwarg (T7 pattern). No preset, generator, or
+  production config selects the arm — the T9 leg-B generator stamps it.
+
+**Verification.** `tests/test_initial_shell_model.py` — 16 focused
+tests: config default/typo-guard/biphasic-only refusal/validating
+density-tied cfg/back-compat (pre-T5 `cfg.json` loads with `full` —
+the Slice-DS precedent)/round-trip; the dressed seed against an
+**independent** hand oracle (`math.erf` formula, not `rho_he_ratio`);
+per-ion fold and E_kin↔mass consistency by difference-oracle against
+the `full` arm (E_pot is mass-independent, so the arms differ exactly
+by the fold); the H.3b wiring oracles (center-pinned ⇒ n₀ = 21 exactly
+and elementwise-identical seed; n₀ monotone non-increasing in birth
+radius); the T5/T6 boundary (E_int(0) uncoupled); `build_biphasic_cfg`
+pass-through. Byte-identity of the `full` default: neighboring suites
+(ion_initial_state, biphasic_step, tier2_common, shed convention, birth
+law, gen_tier2_md_confirmation) **178 passed** unchanged; **full suite
+2404 passed**.
+
+**CALIBRATION_MAP:** row 27 — the dressing law is an **arm, not a
+knob** (parameter-free tied law; the shell-averaged-ρ̂ variant stays a
+stated sensitivity, never a fit).
+
+**Boundaries carried (H.3b):** first-order occupancy statement, no
+shell-restructuring dynamics; the dressing↔pickup interplay
+(under-dressed ions re-filling via the live Langmuir channel — a
+channel the 1D twin does not have) is read from the leg-B runs and
+reported as a twin-divergence candidate (S2c-P4 listed channel).
+
+Next per the I.11 sequence: **T9 leg B** behind its own leg trigger —
+the leg-B twin re-score at the dressed configuration (pre-registering
+histograms *and* per-bin mean detected KE on the stated co-moving
+basis, per the item-3 amendment), then the four dressed A/B dirs
+against the certified apcm baseline. Nothing here discharges F5.
+
+## T9 leg B TRIGGERED — A″ + T5 `density_tied`; twin re-scored at the dressed configuration; predictions PRE-REGISTERED before any MD (2026-07-18)
+
+User trigger ("Go ahead with leg B run and compare to twin"), following
+the T5 delivery entry above. Leg B flips exactly **one lever vs the
+certified apcm baseline**: `initial_shell_model = "density_tied"`.
+
+**Builds delivered under this trigger (both TDD, RED watched first):**
+- Twin: `stage_legb` in `scripts/tier2_h2b_forward_model.py` — the
+  leg-A′ stage with per-fragment
+  `n_eject = clip(rint(n*·ρ̂(r₀ − R₂₀₀₀)), 0, n*)` at the shared
+  `STEEP_A = 14.2` surface and chords integrated at the dressed birth
+  mass `complex_mass_amu(n_eject)` (the H.2b `build_fragment_table`
+  convention); same SEED/draws as `stage_legaprime` so the in-stage
+  `b_undressed` anchor rows must equal the A′ twin rows — **verified
+  exactly at m = 20000** (c1 0.033/0.089/6.22, c3 0.067/0.336/4.48 …
+  the §4m twin column verbatim) and locked by the smoke test at
+  m = 200. Usage + SystemExit mode lists updated (the F6 lesson).
+  Wiring oracles re-verified after the edit (Σ(21) = 0.18783720,
+  K = 0.74460 / 0.89767). Twin suite 16 passed.
+- Generator: `LEG = "b"` in `gen_tier2_md_confirmation.py` — identical
+  to `aprime_cm` except `initial_shell_model="density_tied"` stamped
+  through the delivered kwarg; dirs `…_tier2probe_conf270_bc{1..4}`.
+  Lock test asserts the field-diff vs A″ is exactly
+  `{initial_shell_model}` (monkeypatched — the F8 lesson);
+  `test_unknown_leg_rejected` rotated its example to `"z"`. Generator +
+  common + T5 suites 93 passed.
+
+**Twin re-score at the dressed configuration (m = 20000; outputs
+`h2b_leg_b_predictions.csv` / `h2b_leg_b_ke.csv`).** Dressed
+`n_eject`: mean 16.71 (margin-3 floor 13 — the I45 band). The dressing
+is a **large lever on the suppressed/bare side** (smaller Σ(n₀) for
+near-surface births ⇒ suppression easier at fixed E₀):
+
+| config | supp (dressed / undressed) | n̄_det (dr/undr) | n₁ (dr/undr) | trapped (dr/undr) |
+|---|---|---|---|---|
+| c1 | **0.389** / 0.089 | 3.94 / 6.22 | 0.101 / 0.172 | 0.055 / 0.033 |
+| c2 | **0.349** / 0.035 | 4.17 / 6.55 | 0.105 / 0.170 | 0.060 / 0.035 |
+| c3 | **0.533** / 0.336 | 2.78 / 4.48 | 0.049 / 0.069 | 0.093 / 0.067 |
+| c4 | **0.436** / 0.118 | 3.67 / 6.05 | 0.077 / 0.138 | 0.055 / 0.033 |
+
+**Pre-registered predictions (all KE claims on the co-moving basis —
+twin-native and the MD's A″/leg-B convention; same N = 50 bridge seed,
+margin 3 Å, exclude policy, 8000 ps cap):**
+
+- **BP-P1 (suppressed/bare jump — the headline).** MD suppressed
+  fractions rise from the A″ 0.096/0.032/0.326/0.117 to ≈ the twin's
+  0.389/0.349/0.533/0.436; the ordering stays c3 > c4 > c1 > c2 with
+  compressed spacing. Directional caveat (listed divergence): MD may
+  land **below** the twin — in-bubble pickup re-fills under-dressed
+  shells (Σ grows before gate-open), a channel the twin does not have.
+- **BP-P2 (histogram shape).** n̄_det drops to ≈ 3.9/4.2/2.8/3.7; the
+  deep-shell tail truncates near the dressed n_eject band (essentially
+  no detected weight above n ≈ 14–15, vs A″ weight to n ≈ 18+);
+  W₁(MD, dressed twin) at the leg-A′/A″ scale (≲ 0.7 bins over 22).
+- **BP-P3 (the KE axis).** Per-bin mean detected KE at n₁ lands ≈
+  **0.549 / 0.512 / 0.176 / 0.499 eV** (c1..c4; vs A″ measured
+  1.005/1.025/0.312/0.991 — the dressed n₁ occupants are deeper-born,
+  slower); bare-class (suppressed, intact-complex) KE ≈
+  **0.999 / 0.892 / 0.352 / 0.945 eV**; the whole small-n curve shifts
+  down vs A″ per the twin table.
+- **BP-P4 (trapped class).** Rises to twin 0.055/0.060/0.093/0.055;
+  the MD read has run ~1.6× the twin's 150 ps chord read (A′
+  precedent), so ≈ 6–14 ions/100 with c3 the largest.
+
+**Listed twin-divergence channels (S2c-P4 — an unlisted one is a
+model-structure finding):** (a) pickup re-filling after under-dressed
+birth (direction: MD supp ≤ twin supp, MD deep bins ≥ twin); (b) the
+MD dresses per **atom** at ion-t0 positions (±R0/2 chord offset +
+neutral drift) vs the twin's molecule-center birth dressing (±1 rung
+near the surface); (c) trapped-class dynamics beyond the twin's chord
+read. MD pilots (`bc1..4`) launch next; scored against the dressed
+twin, the A″ baseline, and these pre-registrations. Nothing here
+discharges F5.
+
+## T9 leg B EXECUTED — BP-P1..P4 all CONFIRMED: the T5 dressing transfers quantitatively (W₁ 0.41–0.51 bins, the chain's best); pickup re-filling measured at ≈ 7 ions/100; the bare-bin KE gap resolves into RQ3 bookkeeping; no unlisted divergence (2026-07-18)
+
+Full record: findings **§4p + I62–I64**. Four dirs on disk
+(`…_tier2probe_conf270_bc{1..4}`, all five artifacts; bc1 from the
+first launch, bc2 regenerated after two background-task kills — the
+partial dir removed per the generator's documented recovery path each
+time, bc3/4 fresh; final run detached with artifact monitoring; resume
+guard exercised as designed).
+
+**Verdicts vs the pre-registered twin numbers (same-day entry above;
+all KE on the co-moving basis on both sides):**
+- **BP-P1 CONFIRMED, caveat fired as stated** — supp→bare
+  0.322/0.267/0.464/0.378 (A″ 0.096/0.032/0.326/0.117; twin
+  0.389/0.349/0.533/0.436): the class triples, ordering
+  c3 > c4 > c1 > c2 exact, and the uniform 0.06–0.08 deficit vs the
+  twin is the listed pickup-re-filling channel — **first direct
+  measurement of the dressing↔pickup interplay** (the H.3b boundary;
+  I63).
+- **BP-P2 CONFIRMED** — n̄_det 4.13/4.40/3.08/3.97; tail truncates at
+  the dressed band (weight ends n ≈ 12–14 vs A″ n ≈ 18+);
+  **W₁(B, twin_b) = 0.41–0.51 bins, the best twin↔MD agreement of the
+  oracle chain**, with the lever's own move 2–4× larger
+  (W₁(B, A″) = 1.0–1.9).
+- **BP-P3 CONFIRMED (solvated); bare bin resolved** — n₁ KE
+  0.661/0.626/0.263/0.601 eV onto the twin's 0.549/0.512/0.176/0.499
+  (×1.2; c3's ×1.5 is a 6-ion bin); the apparent ×1.6 bare-bin excess
+  collapses to **×1.08–1.12** under the co-moving break-up rescale
+  m_I/m_complex (MD reports the intact dressed complex at
+  m̄ ≈ 187–191 amu, the twin books the RQ3 spec-b bare fragment) —
+  the §4n convention-decided fragmentation read, now with numbers
+  (I64). The experimental bare-bin mean KE is a direct fragmentation-
+  convention discriminator.
+- **BP-P4 CONFIRMED** — trapped 10/10/16/10 per 100 (twin
+  5.5/6.0/9.3/5.5 → the A′-precedent ×1.6–1.8 chord-to-MD factor; c3
+  largest both sides; dressing raises the class vs A″ 6/7/14/6 in the
+  predicted direction).
+
+Seed wiring: MD dressed n₀ q05 13.9 / mean 17.18 vs twin 13.0 / 16.71
+(the per-atom ±R0/2 offset ≈ +0.5 He, one atom at n₀ = 12 below the
+molecule-center margin floor — listed channel (b), measured small).
+**S2c-P4 holds: no unlisted divergence.**
+
+**Consequences:** the Step-2c geometry-closure chain now has legs
+A → A′ → A″ → B all landing their pre-registrations — position axis,
+shed convention, and shell dressing each validated as one-lever flips
+with the twin quantitative at every step. The ensemble-side suppressed/
+bare weight problem (OQ-B's Tier-2 face) is now expressible in MD at
+production kinematics: the dressed geometry puts 27–46 % in the
+bare-candidate class at these knob values, bracketing the experimental
+43.5 % — **reported, not adjudicated** (the C-matrix knobs were located
+under the 1D ensemble; the re-centered re-pilot after T6/T8 scores the
+experimental targets). Next per the I.11 sequence: **Slice T6**
+(E₀–dressing coupling p-law; needs T5 live — now is) behind its own
+trigger, then T9 legs B/C at fixed N, T8, leg D. The E2 Landau-gated
+build remains adjudicated-but-unbuilt, required before any N = 500 run.
+Nothing here discharges F5.

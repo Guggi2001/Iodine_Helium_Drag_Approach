@@ -3,8 +3,9 @@
 
 > **Status:** consolidated findings record, written 2026-07-07 after the fourth
 > probe wave (cooling-spatial-gate total-strip A/B) executed; last updated
-> **2026-07-17 after T9 leg A″ (§4o, I61 — co-moving convention lands the
-> twin's KE axis in MD; two-axis parity)**; the I.11.2 item-1
+> **2026-07-18 after T9 leg B (§4p, I62–I64 — the T5 dressing transfers
+> quantitatively; pickup re-filling measured; the bare-bin KE gap is RQ3
+> bookkeeping)**; T9 leg A″ is §4o (I61); the I.11.2 item-1
 > n₁-composition re-read is §4n (I58–I60, OQ-J); T9 leg A′ is §4m
 > (I55–I57); the Slice-T3 pilot
 > first look is §4l (I52–I54); Wave 11 (the RQ7 production-kinematics
@@ -2341,6 +2342,94 @@ realization; the twin's KE basis and the MD's are now the same convention
 by construction (the item-3 amendment's stated-basis requirement is
 satisfied for leg B); nothing discharges F5.
 
+---
+
+## 4p. T9 leg B — the T5 dressing transfers quantitatively: the suppressed/bare class triples along the twin's prediction, the tail truncates at the dressed band, and every deviation is a pre-listed channel
+
+Executed 2026-07-18 (leg trigger "Go ahead with leg B run and compare to
+twin"; delivery + pre-registration record: log entries "T9 leg B
+TRIGGERED" / "EXECUTED"). Exactly **one lever** flipped vs the certified
+apcm (A″) baseline: `initial_shell_model = "density_tied"` (Slice T5; the
+one-lever lock test asserts it). Dirs: `…_tier2probe_conf270_bc{1..4}`,
+all five artifacts, N = 50 bridge seed, margin 3 Å, `exclude` policy,
+8000 ps cap, co-moving shed convention (the A″ basis). Twin: `stage_legb`
+re-score at the dressed configuration (m = 20000; dressed chord mass;
+`b_undressed` anchor rows equal to the A′ twin **exactly** — the in-stage
+wiring oracle).
+
+### The A/B/twin read (conventions as §4m; KE co-moving on both sides)
+
+| config | supp→bare (B / A″ / twin_b) | n̄_det (B / A″ / twin_b) | n₁ (B / A″ / twin_b) | W₁(B, twin_b) | W₁(B, A″) |
+|---|---|---|---|---|---|
+| c1 | **0.322** / 0.096 / 0.389 | 4.13 / 5.89 / 3.94 | 0.100 / 0.149 / 0.101 | **0.49** | 1.76 |
+| c2 | **0.267** / 0.032 / 0.349 | 4.40 / 6.14 / 4.17 | 0.122 / 0.151 / 0.105 | **0.51** | 1.74 |
+| c3 | **0.464** / 0.326 / 0.533 | 3.08 / 4.08 / 2.78 | 0.071 / 0.081 / 0.049 | **0.41** | 1.00 |
+| c4 | **0.378** / 0.117 / 0.436 | 3.97 / 5.84 / 3.67 | 0.067 / 0.117 / 0.076 | **0.46** | 1.87 |
+
+Seed verification: MD dressed n₀ q05 = 13.9 / mean = 17.18 per config
+(twin n_eject q05 = 13.0 / mean = 16.71; min single-atom n₀ = 12 — the
+per-atom ±R0/2 offset reaching just below the twin's molecule-center
+margin floor). Trapped: B 10/10/16/10 per 100 vs twin
+0.055/0.060/0.093/0.055 and A″ 6/7/14/6.
+
+| config | n₁ KE: B | twin_b | A″ (undressed) | bare-class KE: B (intact complex) | B rescaled to bare mass | twin_b (bare) |
+|---|---|---|---|---|---|---|
+| c1 | **0.661** | 0.549 | 1.005 | 1.598 | **1.084** | 0.999 |
+| c2 | **0.626** | 0.512 | 1.025 | 1.461 | **0.999** | 0.891 |
+| c3 | **0.263** | 0.176 | 0.312 | 0.585 | **0.392** | 0.352 |
+| c4 | **0.601** | 0.499 | 0.991 | 1.516 | **1.023** | 0.945 |
+
+### Verdicts (pre-registered BP-P1..P4)
+
+1. **BP-P1 CONFIRMED — with the pre-registered caveat firing in the
+   stated direction.** The suppressed/bare class roughly triples
+   (c1 0.096 → 0.322; c2 0.032 → 0.267; c4 0.117 → 0.378) and the
+   ordering c3 > c4 > c1 > c2 transfers exactly. MD lands systematically
+   **0.06–0.08 below the twin** on every config — the listed
+   pickup-re-filling channel (under-dressed shells re-fill in-bubble, Σ
+   grows before gate-open, fewer ions stay self-unbound), now measured
+   at ≈ 7 ions/100.
+2. **BP-P2 CONFIRMED.** n̄_det lands 4.13/4.40/3.08/3.97 (pre-reg ≈
+   3.9/4.2/2.8/3.7; MD +0.2–0.3 above twin — the same re-filling
+   direction); the deep tail truncates near the dressed band (top
+   detected weight ends by n ≈ 12–14 vs A″ weight to n ≈ 18+);
+   **W₁(B, twin_b) = 0.41–0.51 bins — the best twin↔MD histogram
+   agreement of the whole oracle chain** (A′/A″: 0.51–0.71), while the
+   lever's own move is 2–4× larger (W₁(B, A″) = 1.0–1.9).
+3. **BP-P3 CONFIRMED on the solvated curve; the bare bin resolves into
+   RQ3 bookkeeping.** n₁ mean KE drops from the A″
+   1.005/1.025/0.312/0.991 to **0.661/0.626/0.263/0.601** — onto the
+   dressed twin's 0.549/0.512/0.176/0.499 at ×1.20/×1.22/×1.50/×1.20
+   (c3's ×1.50 is a 6-ion bin; the mid-bins n5–n12 straddle the twin
+   within ~±30 % with no systematic sign). The apparent ×1.6 bare-bin
+   excess (1.598 vs 0.999 at c1) is **not dynamics**: the MD reports the
+   intact dressed complex (m̄ ≈ 187–191 amu) while the twin books the
+   RQ3 spec-b bare fragment at m_I; rescaling the MD read by
+   m_I/m_complex (the co-moving break-up value) collapses it to
+   **×1.08–1.12** on every config — exactly the §4n "fragmentation read
+   is convention-decided" note, pre-listed, now with numbers.
+4. **BP-P4 CONFIRMED.** Trapped 10/10/16/10 per 100 = ×1.7–1.8 the
+   twin's 150 ps chord read (the A′ precedent was ×1.6), c3 largest on
+   both sides; the dressing raises the trapped class vs A″ (6/7/14/6)
+   in the twin-predicted direction.
+
+**S2c-P4 holds:** every observed deviation is one of the three listed
+channels (pickup re-filling; per-atom vs molecule-center dressing —
+measured at ≈ +0.5 He mean and a single n₀ = 12 atom; trapped-class
+dynamics beyond the chord read). No unlisted divergence appeared.
+
+### Boundaries
+
+N = 50 single seed, one detection RNG realization per dir (class
+fractions quantize at ~1 %); the dressed read is at the C-matrix knob
+values — the Step-1c closure basin was located under the 1D ensemble
+with droplet priors, so **nothing here scores the experimental
+targets** (that is the re-centered T9 re-pilot's job after T6/T8);
+the bare-bin KE remains RQ3/RQ8-gated (the rescale above is a
+bookkeeping identity, not a fragmentation model); T6 (p-law) not
+flipped — E_int(0) is constant across the dressed ensemble; nothing
+discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -2798,6 +2887,28 @@ satisfied for leg B); nothing discharges F5.
   retained; c3 11 → 14) — raising the E2-dissipation adjudication's
   stakes for N = 500. The leg-B baseline is the A″ dirs, on the same
   convention basis as the twin by construction.
+- **I62 (leg B, §4p).** **The T5 dressing transfers quantitatively
+  across the 1D→3D boundary:** one lever (density_tied) triples the
+  suppressed/bare class along the twin's prediction (ordering exact),
+  truncates the deep tail at the dressed band, and lands
+  W₁(MD, twin) = 0.41–0.51 bins — the chain's best histogram agreement
+  — while moving the histogram itself by 2–4× that (W₁ vs A″ 1.0–1.9).
+  The dressing, not the position axis alone, is what feeds the
+  bare-candidate class at scale.
+- **I63 (leg B, §4p).** **Pickup re-filling is real and measurable:**
+  the MD suppressed fraction sits uniformly 0.06–0.08 below the twin
+  (and n̄_det 0.2–0.3 above) — the live Langmuir channel re-dresses
+  under-dressed shells in-bubble before gate-open, a channel the 1D
+  twin lacks. First direct quantification of the dressing↔pickup
+  interplay (the H.3b boundary), ≈ 7 ions/100 at these knob values.
+- **I64 (leg B, §4p).** **The bare-bin KE gap is bookkeeping, not
+  dynamics:** MD reports the suppressed class as an intact dressed
+  complex (m̄ ≈ 190 amu); the twin books the RQ3 spec-b bare fragment.
+  The co-moving break-up rescale m_I/m_complex collapses the ×1.6 gap
+  to ×1.08–1.12 on every config. The experimental bare-bin mean KE
+  therefore reads directly on the fragmentation convention (sharpens
+  I60); the solvated KE curve needs no such caveat — it lands on the
+  twin at ×1.2.
 
 ---
 

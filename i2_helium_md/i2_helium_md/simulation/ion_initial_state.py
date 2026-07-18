@@ -58,6 +58,7 @@ import numpy as np
 from ..config import SimConfig
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.dissociation_ladder import resolve_ladder
+from ..physics.helium_density import rho_he_ratio
 from ..physics.interactions import partner_interaction_ion
 from ..physics.internal_energy_budget import e_int_onset_eV
 from ..physics.potentials import droplet_potential
@@ -180,7 +181,36 @@ def build_initial_ion_state(
         # (a bundle-less biphasic cfg never reaches a propagation loop); the
         # biphasic column-0 seeds (S2 onset + E_pot binding fold) live below
         # with the other column-0 physics.
-        mass_kg_initial = np.full(two_N, complex_mass_amu(ANCHOR_N_START) * U)
+        if (
+            cfg.mass_scenario == "biphasic"
+            and cfg.initial_shell_model == "density_tied"
+        ):
+            # Slice T5 (plan §I.11; H.3b revived): dress each ion's t0 shell
+            # by the local He availability at its birth position,
+            # n_0i = round(n* * rho_hat(d_birth,i)), through the SAME
+            # erf-complement surface the drag/pickup/cooling gates share --
+            # zero new free parameters. A first-order occupancy statement:
+            # under-dressed ions may re-fill via the live pickup channel.
+            # density_tied is biphasic-only (config.check_initial_shell_config),
+            # so the anchored_discrete path can never reach this branch.
+            from .ion import drag_gate_steepness  # local: ion.py imports us
+
+            depth_birth_angstrom = (
+                np.sqrt(x0 ** 2 + y0 ** 2 + z0 ** 2)
+                - neutral_ckpt.droplet_radii
+            )
+            n0_initial = np.rint(
+                ANCHOR_N_START
+                * rho_he_ratio(
+                    depth_birth_angstrom, steepness=drag_gate_steepness(cfg)
+                )
+            )
+            mass_kg_initial = complex_mass_amu(n0_initial) * U
+        else:
+            n0_initial = ANCHOR_N_START
+            mass_kg_initial = np.full(
+                two_N, complex_mass_amu(ANCHOR_N_START) * U
+            )
     else:
         mass_kg_initial = neutral_ckpt.mass_kg.copy()
     droplet_radii_angstrom = neutral_ckpt.droplet_radii.copy()
@@ -253,8 +283,9 @@ def build_initial_ion_state(
     # * E_pot binding fold: fold E_bind^pair(n) = -Sigma(n) into E_pot so the
     #   5-term invariant closes when the pickup/evaporation channels shift the
     #   rung ladder (a shed adds +D_0(n), a pickup removes -D_0(n+1) -- exactly
-    #   the MASS §6 "E_pot += D_0 / -= D_0" bookings). Seeded at t0 (n=21) so the
-    #   offset is consistent from column 0; the electrostriction marginal stays
+    #   the MASS §6 "E_pot += D_0 / -= D_0" bookings). Seeded at the t0 shell
+    #   n_0 (21 under the `full` arm; per-ion dressed under T5 `density_tied`)
+    #   so the offset is consistent from column 0; the electrostriction marginal stays
     #   the untracked "A8 -> bath" collective term. The driver re-applies the
     #   fold each step from the genuine n_shell state (solvation_cooling.
     #   e_bind_pair_eV; MASS §6).
@@ -264,14 +295,20 @@ def build_initial_ion_state(
     if cfg.mass_scenario == "biphasic":
         # Slice T2 (§I.10): the t0 fold rides the same resolved ladder as the
         # driver/stages (fail-loud on a tabulated selector without a table).
+        # Slice T5: the fold is seeded at the ion's actual t0 shell --
+        # n0_initial is the scalar ANCHOR_N_START under the `full` arm
+        # (byte-identical to the delivered call) or the per-ion dressed
+        # array under `density_tied` (e_bind_pair_eV is vectorised).
         E_pot_eV[:, 0] += e_bind_pair_eV(
-            ANCHOR_N_START,
+            n0_initial,
             picture=cfg.ladder_electronic_picture,
             kappa=cfg.ladder_steepness,
             ladder=resolve_ladder(
                 cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV
             ),
         )
+        # The S2 onset stays the constant f_int * E_avail per ion under both
+        # shell arms -- the Sigma-ratio coupling is Slice T6's p-law.
         E_int_eV[:, 0] = e_int_onset_eV(
             f_int=cfg.internal_energy_partition_fraction,
             e_avail_eV=cfg.coulomb_available_eV,

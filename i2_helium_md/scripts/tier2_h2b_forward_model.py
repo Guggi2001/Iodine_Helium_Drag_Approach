@@ -34,7 +34,7 @@ Recorded wiring oracles (``oracles`` stage; plan SI.11 V0-3): production
 center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
-        w12pred | birthlaw | legaprime
+        w12pred | birthlaw | legaprime | legb
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 """
 
@@ -1024,6 +1024,142 @@ def stage_legaprime(m=20000):
     print(f"KE table    -> {OUT / 'h2b_leg_aprime_ke.csv'}")
 
 
+# --------------------------------------------------------------------------
+# T9 leg B twin re-score (plan SI.11 Slice T5; dressed configuration)
+# --------------------------------------------------------------------------
+def stage_legb(m=20000):
+    """Twin re-score at the T9 leg-B MD configuration exactly.
+
+    Leg-B configuration (one lever flipped vs leg A''): the Slice-T5
+    initial-shell dressing ``density_tied`` — per-fragment
+    n_eject = clip(rint(N_STAR * rho_hat(r_birth - R2000)), 0, N_STAR)
+    through the shared erf-complement surface (STEEP_A == the MD's
+    drag_gate_steepness), chords integrated at the dressed birth mass
+    complex_mass_amu(n_eject) (the H.2b L2 convention, build_fragment_table
+    verbatim). Everything else rides the leg-A' twin: fixed N = 2000 delta
+    prior, uniform_volume births at margin 3 A, E0-coupling p = 0 (T6 not
+    flipped), per-C-config (drag tail, tau, ladder, E0) from the SI.10
+    matrix via the MD generator's exact rung tables. The MD's co-moving
+    shed convention (leg A'') is the twin's native KE bookkeeping, so the
+    KE table is directly comparable — every KE value below is on the
+    **co-moving basis** (the item-3 stated-basis amendment).
+
+    The ``b_undressed`` rows re-run the leg-A' ensemble (same seed, same
+    draws, n_eject = 21) as the in-stage wiring oracle — they must equal
+    stage_legaprime's ``aprime`` rows exactly.
+
+    Twin-divergence channels *listed* for the MD A/B (S2c-P4): pickup
+    re-filling after under-dressed birth (the twin has no live Langmuir
+    channel — the MD may land above the twin at small n_eject); the MD
+    dresses per ATOM at ion-t0 positions (±R0/2 chord offset + neutral
+    drift) while the twin dresses per molecule center at birth; no trapped
+    dynamics in the twin beyond the 150 ps chord read.
+
+    Writes h2b_leg_b_predictions.csv (histograms + classes + n_eject
+    quantiles) and h2b_leg_b_ke.csv (per-bin mean detected KE) — the
+    pre-registered prediction record for the leg-B MD pilots.
+    """
+    from scripts.gen_tier2_md_confirmation import (
+        floor1_rungs_eV,
+        form_u_rungs_eV,
+        rq4graded_rungs_eV,
+    )
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    tables = {
+        "flat": form_u_rungs_eV(),
+        "rq4graded": rq4graded_rungs_eV(),
+        "floor1": floor1_rungs_eV(),
+    }
+    R2000 = float(droplet_radius_bulk_angstrom(2000.0))
+    m21 = float(complex_mass_amu(N_STAR))
+
+    # Identical draws to stage_legaprime (same SEED, same order) so the
+    # undressed anchor is bit-comparable and the dressed leg differs only
+    # by the dressing law — never by sampling noise.
+    rng = np.random.default_rng(SEED)
+    r0_ap = (R2000 - LEG_APRIME_MARGIN_A) * np.cbrt(rng.uniform(0.0, 1.0, m))
+    mu_ap = rng.uniform(-1.0, 1.0, m)
+
+    # Slice-T5 dressing at the molecule birth center (twin convention;
+    # fragments of a pair share n_eject — mass-symmetric pairs).
+    rho_b = rho_he_ratio(r0_ap - R2000, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho_b), 0, N_STAR).astype(int)
+
+    legs = {
+        "b_undressed": (np.full(m, N_STAR), np.full(m, m21)),
+        "b": (ne_mol, complex_mass_amu(ne_mol).astype(float)),
+    }
+
+    hist_rows, ke_rows = [], []
+    for label, v_c, p_tail, tau, ladder_key, e0 in APRIME_CONFIGS:
+        sig = sigma_cum(np.asarray(tables[ladder_key][:N_STAR], dtype=float))
+        for leg, (ne_m, mass_m) in legs.items():
+            res = integrate_pairs(
+                r0_ap, mu_ap, np.full(m, R2000), mass_m,
+                r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+            )
+            K = res["K"].reshape(-1) * (TAU_PS / tau)  # exact tau rescale
+            trapped = res["trapped"].reshape(-1).astype(bool)
+            v = res["v_inf"].reshape(-1)
+            ne = np.concatenate([ne_m, ne_m])  # (2, M).reshape(-1) order
+            n_det, sup = fate_map(ne, K, e0, 0, sig)
+            w = np.where(trapped, 0.0, 1.0)
+            w_tot = w.sum()
+            trapped_frac = float(trapped.mean())
+            sup_frac = float(w[sup].sum() / w_tot)
+            hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
+            nbar = float((np.arange(N_STAR + 1) * hist).sum())
+            nef = ne.astype(float)
+            row = {
+                "leg": leg, "config": label, "ladder": ladder_key,
+                "tau_ps": tau, "E0_eV": e0,
+                "v_c": "" if v_c is None else v_c,
+                "p_tail": "" if p_tail is None else p_tail,
+                "trapped_frac": round(trapped_frac, 4),
+                "suppressed_frac": round(sup_frac, 4),
+                "bare_frac": round(float(hist[0]), 4),
+                "nbar_det": round(nbar, 3),
+                "K_q05": round(float(np.quantile(K, 0.05)), 4),
+                "K_q50": round(float(np.quantile(K, 0.50)), 4),
+                "K_q95": round(float(np.quantile(K, 0.95)), 4),
+                "n_eject_q05": round(float(np.quantile(nef, 0.05)), 2),
+                "n_eject_q50": round(float(np.quantile(nef, 0.50)), 2),
+                "n_eject_mean": round(float(nef.mean()), 3),
+            }
+            row.update({f"h{k}": round(float(hist[k]), 4)
+                        for k in range(N_STAR + 1)})
+            hist_rows.append(row)
+            ke = kinetic_energy_eV(complex_mass_amu(n_det), v)
+            for k in range(0, N_STAR + 1):
+                mask = (n_det == k) & ~trapped
+                if mask.sum() >= 20:
+                    ke_rows.append({
+                        "leg": leg, "config": label, "n": k,
+                        "weight": round(float(w[mask].sum() / w_tot), 4),
+                        "mean_KE_eV": round(
+                            float((w[mask] * ke[mask]).sum() / w[mask].sum()), 4
+                        ),
+                    })
+            top = ", ".join(
+                f"n{k}:{hist[k]:.3f}" for k in range(N_STAR + 1) if hist[k] > 0.02
+            )
+            print(f"[{leg:11s} {label}] trapped={trapped_frac:.3f} "
+                  f"supp={sup_frac:.3f} nbar={nbar:.2f} "
+                  f"ne_mean={nef.mean():.2f}  {top}")
+
+    with open(OUT / "h2b_leg_b_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(hist_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(hist_rows)
+    with open(OUT / "h2b_leg_b_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(ke_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(ke_rows)
+    print(f"predictions -> {OUT / 'h2b_leg_b_predictions.csv'}")
+    print(f"KE table    -> {OUT / 'h2b_leg_b_ke.csv'}")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -1035,6 +1171,8 @@ def main():
         stage_birthlaw()
     elif mode == "legaprime":
         stage_legaprime()
+    elif mode == "legb":
+        stage_legb()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -1048,7 +1186,7 @@ def main():
         raise SystemExit(
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
-            "legaprime)"
+            "legaprime | legb)"
         )
 
 

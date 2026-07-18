@@ -116,6 +116,7 @@ def build_biphasic_cfg(
     initial_position_margin_angstrom: Optional[float] = None,
     detection_droplet_retained_policy: Optional[str] = None,
     evaporation_shed_convention: Optional[str] = None,
+    initial_shell_model: Optional[str] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -224,6 +225,13 @@ def build_biphasic_cfg(
         the working convention for the twin-parity legs, stamped explicitly).
         ``None`` -> the config default (``cold``, the delivered byte-inert
         bound arm).
+    initial_shell_model : str or None
+        Slice T5 initial-shell dressing arm (``"full"`` / ``"density_tied"``).
+        ``density_tied`` dresses each ion's t0 shell by the local He
+        availability at its birth position, ``n_0 = round(n* * rho_hat(d))``
+        through the shared erf-complement surface; biphasic-only by
+        config-load guard. ``None`` -> the config default (``full``, the
+        delivered 21-for-all byte-inert arm).
 
     Returns
     -------
@@ -341,6 +349,8 @@ def build_biphasic_cfg(
         )
     if evaporation_shed_convention is not None:
         overrides["evaporation_shed_convention"] = evaporation_shed_convention
+    if initial_shell_model is not None:
+        overrides["initial_shell_model"] = initial_shell_model
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()

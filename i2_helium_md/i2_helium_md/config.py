@@ -127,6 +127,21 @@ BirthPositionLaw = Literal["boltzmann", "uniform_volume"]
 # RQ10 (co-moving + thermal recoil ε, coupled to RQ2) stays open.
 EvaporationShedConvention = Literal["cold", "co_moving"]
 
+# Slice T5 (Tier-2 plan §I.11; revives H.3b): the t = 0 shell-dressing law of
+# the biphasic seed. ``full`` (byte-inert default) keeps the delivered
+# 21-for-all convention — every ion born with the complete n* = 21 first
+# shell. ``density_tied`` dresses each ion by the local He availability at
+# its birth position, ``n_0i = round(n* * rho_He/rho_bulk(d_birth,i))``,
+# through the SAME erf-complement surface the drag/pickup/cooling gates share
+# (``helium_density.rho_he_ratio`` at ``drag_gate_steepness(cfg)``) — zero
+# new free parameters. Read by the biphasic column-0 seed only (per-ion
+# ``n_shell(0)`` / mass / ``e_bind_pair`` E_pot fold; the E_int(0) onset is
+# NOT coupled here — that is Slice T6's p-law); biphasic-only by guard
+# (check_initial_shell_config). A first-order occupancy statement, not
+# shell-restructuring dynamics — under-dressed ions may re-fill via the live
+# pickup channel (a reported twin-divergence candidate, plan §T5 boundary).
+InitialShellModel = Literal["full", "density_tied"]
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -391,6 +406,14 @@ class SimConfig:
     # "co_moving" = the physical co-moving He (T5+/leg-B legs stamp it explicitly).
     evaporation_shed_convention: EvaporationShedConvention = "cold"
 
+    # -- Tier-2 Slice T5 initial-shell dressing (plan §I.11; H.3b revived) --
+    # "full" = delivered 21-for-all (byte-inert default); "density_tied" =
+    # per-ion n_0 = round(n* * rho_hat(d_birth)) through the shared
+    # erf-complement surface (see InitialShellModel above). Biphasic-only
+    # (check_initial_shell_config); no preset or generator selects the arm —
+    # the T5+/leg-B legs stamp it explicitly (the T7 precedent).
+    initial_shell_model: InitialShellModel = "full"
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -543,6 +566,7 @@ class SimConfig:
         check_helium_density_config(self)
         check_pickup_config(self)
         check_evaporation_config(self)
+        check_initial_shell_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
         check_detection_config(self)
@@ -889,6 +913,54 @@ def check_evaporation_config(cfg: "SimConfig") -> None:
             raise ValueError(
                 msg + " (set allow_gate_onset_override=True to override)"
             )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Slice T5 initial-shell-model config-load guard (plan §I.11)
+# ---------------------------------------------------------------------------
+_KNOWN_INITIAL_SHELL_MODELS = ("full", "density_tied")
+
+
+def check_initial_shell_config(cfg: "SimConfig") -> None:
+    """Validate the initial-shell dressing surface of ``cfg`` at config-load (T5).
+
+    Rules
+    -----
+    1. ``initial_shell_model`` must be a known selector (typo guard).
+    2. ``density_tied`` is a biphasic-seed law: the dressing is read only by
+       the biphasic column-0 seed (per-ion ``n_0`` / mass / E_pot binding
+       fold), so under any other ``mass_scenario`` the advertised arm would
+       be silently inert — refused loudly instead (the T7/F3
+       no-silent-inert convention).
+
+    ``density_tied`` under center-pinned births (``single_initial_position=
+    True``) is deliberately **legal**: the arm is then *physically* inert
+    (``rho_hat(center) ≈ 1`` → ``n_0 = 21`` exactly — the H.3b wiring
+    oracle), and unlike the T7 ``uniform_volume`` case there is no RNG
+    draw-stream shift, so nothing is silently broken.
+
+    Raises
+    ------
+    ValueError
+        On an unknown ``initial_shell_model``, or ``density_tied`` outside
+        ``mass_scenario='biphasic'``.
+    """
+    _reject_unknown_enum(
+        cfg.initial_shell_model,
+        _KNOWN_INITIAL_SHELL_MODELS,
+        field="initial_shell_model",
+    )
+    if (
+        cfg.initial_shell_model == "density_tied"
+        and cfg.mass_scenario != "biphasic"
+    ):
+        raise ValueError(
+            "initial_shell_model='density_tied' requires mass_scenario="
+            "'biphasic': the dressing law is read only by the biphasic "
+            "column-0 seed (per-ion n_0 / mass / E_pot binding fold), so "
+            f"under mass_scenario={cfg.mass_scenario!r} it would be silently "
+            "inert (keep the 'full' default there)"
+        )
 
 
 # ---------------------------------------------------------------------------

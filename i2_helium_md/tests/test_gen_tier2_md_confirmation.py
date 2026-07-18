@@ -325,8 +325,36 @@ def test_leg_aprime_cm_flips_exactly_one_lever_vs_aprime(tmp_path, monkeypatch):
         assert not fnmatch(dir_cm.name, "*_tier2_*")
 
 
-def test_unknown_leg_rejected(tmp_path, monkeypatch):
+def test_leg_b_flips_exactly_one_lever_vs_aprime_cm(tmp_path, monkeypatch):
+    """Leg B = leg A'' + the Slice-T5 density_tied initial-shell dressing --
+    exactly one field differs vs A'', and the run dirs carry the b prefix
+    (distinct from the T3/A'/A'' dirs, same conf namespace)."""
     monkeypatch.setattr(script, "LEG", "b")
+    b = script.build_confirmation(tmp_path)
+    monkeypatch.setattr(script, "LEG", "aprime_cm")
+    acm = script.build_confirmation(tmp_path)
+
+    import dataclasses
+
+    for (_, cfg_b, dir_b), (_, cfg_cm, dir_cm), spec in zip(
+        b, acm, script.CONFIRMATION_MATRIX
+    ):
+        assert cfg_b.initial_shell_model == "density_tied"
+        assert cfg_b.evaporation_shed_convention == "co_moving"
+        cfg_b.validate()
+        diff = {
+            f.name
+            for f in dataclasses.fields(type(cfg_b))
+            if getattr(cfg_b, f.name) != getattr(cfg_cm, f.name)
+        }
+        assert diff == {"initial_shell_model"}
+        assert dir_b.name != dir_cm.name
+        assert f"_tier2probe_conf270_b{spec.label}" in dir_b.name
+        assert not fnmatch(dir_b.name, "*_tier2_*")
+
+
+def test_unknown_leg_rejected(tmp_path, monkeypatch):
+    monkeypatch.setattr(script, "LEG", "z")
     with pytest.raises(ValueError, match="LEG"):
         script.build_confirmation(tmp_path)
 

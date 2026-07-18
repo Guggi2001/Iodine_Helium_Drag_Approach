@@ -2577,6 +2577,37 @@ carried: first-order occupancy statement; the dressing↔pickup interplay
 channel the 1D twin does *not* have) is read from the runs and reported
 as a twin-divergence candidate.
 
+> **NB (2026-07-18): Slice T5 DELIVERED** under its own trigger (log
+> entry "Slice T5 DELIVERED"; TDD, RED watched first — ImportError on
+> the missing guard). As built: `InitialShellModel` Literal + field
+> `initial_shell_model = "full"` (config.py, T5 block beside the Slice-Q
+> evaporation surface); `check_initial_shell_config` guard wired into
+> `SimConfig.validate` (typo reject; `density_tied` refused outside
+> `mass_scenario='biphasic'` — the T7/F3 no-silent-inert convention;
+> center-pinned + `density_tied` deliberately legal: physically inert
+> with no RNG-stream shift). Seed: `ion_initial_state.build_initial_ion_
+> state` computes per-ion `n₀ = rint(n*·ρ̂(d_birth))` via
+> `rho_he_ratio(depth, steepness=drag_gate_steepness(cfg))` (the shared
+> surface, function-local import — ion.py imports the seed module);
+> per-ion `mass_kg(0) = complex_mass_amu(n₀)·U`; the t0 `e_bind_pair`
+> fold rides `n0_initial` (scalar 21 under `full` — the delivered call
+> byte-identical; per-ion array under `density_tied`); `n_shell(0)`
+> follows from the mass rint rule unchanged; **E_int(0) onset untouched**
+> (T6 boundary). `build_biphasic_cfg` gains the None-sentinel
+> `initial_shell_model` kwarg (T7 pattern); no preset or generator
+> selects the arm — leg B stamps it. Tests:
+> `tests/test_initial_shell_model.py` (16 — config default/guards/
+> back-compat (pre-T5 `cfg.json` loads `full`)/round-trip; per-ion
+> hand oracle against the independent erf formula; per-ion fold and
+> E_kin-mass consistency by difference-oracle vs the `full` arm; the
+> center-pinned-inert and monotone H.3b oracles; T6-boundary E_int
+> check; cfg pass-through). Full suite **2404 passed** (byte-inert
+> default locked by the delivered suites). CALIBRATION_MAP row 27
+> (arm, not knob). The leg-B (T9 "B") execution — dressed twin
+> re-score with the amended per-bin-KE pre-registration on the
+> co-moving basis, then the four apcm-baseline A/B dirs — stays behind
+> its own leg trigger.
+
 ### Slice T6 — E₀–dressing coupling (the D2 p-law)
 
 Config enum `internal_energy_partition_law ∈ {"constant" (default,

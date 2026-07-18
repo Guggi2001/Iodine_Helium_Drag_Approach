@@ -87,7 +87,13 @@ SINGLE_INITIAL_POSITION = False  # off-center births, margin 0 (recorded caveat)
 #               lever flipped vs leg A'; run dirs carry the "apcm" prefix —
 #               apcmc1..apcmc4). Validates the enum end-to-end and re-baselines
 #               the KE axis on the twin's co-moving basis before leg B (T5).
-LEG = "aprime_cm"
+# "b"         = leg B — A'' + initial_shell_model="density_tied" (the Slice-T5
+#               dressing arm, 2026-07-18; exactly one lever flipped vs A'';
+#               run dirs carry the "b" prefix — bc1..bc4). The dressed A/B
+#               against the certified apcm baseline and the twin's legb
+#               re-score (pre-registered histograms + per-bin mean KE on the
+#               co-moving basis).
+LEG = "b"
 BIRTH_MARGIN_ANGSTROM = 3.0     # the Step-1c full-house cells' margin (§4k)
 # The position axis creates near-barrier transients: marginal E > 0 ions
 # (apc3 ion 9: escape margin +1.1 meV) fly *conservative* scattering orbits
@@ -284,8 +290,9 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         retained_policy: Optional[str] = None  # delivered loud guard
         relaxation_ps = RELAXATION_TIME_PS    # the T3 cap exactly
         shed_convention: Optional[str] = None  # ride the cold default
+        shell_model: Optional[str] = None      # ride the `full` default
         label_prefix = ""
-    elif LEG in ("aprime", "aprime_cm"):
+    elif LEG in ("aprime", "aprime_cm", "b"):
         birth_law = "uniform_volume"
         birth_margin = BIRTH_MARGIN_ANGSTROM
         # The position axis populates the V0-2 droplet-retained class (well-
@@ -296,15 +303,18 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         relaxation_ps = APRIME_RELAXATION_TIME_PS
         # Leg A'': exactly one lever vs A' -- the OQ-J co-moving shed
         # convention (adjudicated working convention, 2026-07-17). None on A'
-        # keeps the delivered cold default byte-identically.
-        shed_convention = "co_moving" if LEG == "aprime_cm" else None
-        # tag charset is [a-z0-9] -> "apc1".. (A') / "apcmc1".. (A'')
-        label_prefix = "ap" if LEG == "aprime" else "apcm"
+        # keeps the delivered cold default byte-identically. Leg B rides A''.
+        shed_convention = None if LEG == "aprime" else "co_moving"
+        # Leg B: exactly one lever vs A'' -- the Slice-T5 dressing arm. None
+        # elsewhere keeps the delivered `full` default byte-identically.
+        shell_model = "density_tied" if LEG == "b" else None
+        # tag charset is [a-z0-9] -> "apc1" (A') / "apcmc1" (A'') / "bc1" (B)
+        label_prefix = {"aprime": "ap", "aprime_cm": "apcm", "b": "b"}[LEG]
     else:
         raise ValueError(
-            f"unknown LEG {LEG!r}; expected 'a', 'aprime', or 'aprime_cm' (a "
-            "new oracle-chain leg is a plan amendment, not a config value -- "
-            "§I.11)."
+            f"unknown LEG {LEG!r}; expected 'a', 'aprime', 'aprime_cm', or "
+            "'b' (a new oracle-chain leg is a plan amendment, not a config "
+            "value -- §I.11)."
         )
     scheduled: list[tuple[str, SimConfig, Path]] = []
     for spec in CONFIRMATION_MATRIX:
@@ -339,6 +349,7 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             initial_position_margin_angstrom=birth_margin,
             detection_droplet_retained_policy=retained_policy,
             evaporation_shed_convention=shed_convention,
+            initial_shell_model=shell_model,
         )
         run_dir = project_root / "data" / "runs" / tier2_confirmation_run_dir_name(
             CASE,

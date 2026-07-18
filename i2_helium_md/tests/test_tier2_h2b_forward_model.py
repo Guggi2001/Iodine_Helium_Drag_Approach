@@ -202,3 +202,38 @@ def test_stage_legaprime_smoke(twin, monkeypatch, tmp_path):
     text = hist.read_text()
     # both legs x all four configs present
     assert text.count("aprime,") == 4 and text.count("\na,") == 4
+
+
+# ---------------------------------------------------------------------------
+# Leg-B extension (Slice T5 dressed re-score)
+# ---------------------------------------------------------------------------
+def test_stage_legb_smoke_and_anchor(twin, monkeypatch, tmp_path):
+    """The leg-B re-score runs at small m, writes both CSVs, and its
+    undressed anchor rows reproduce stage_legaprime's aprime rows exactly
+    (same seed, same draws — the in-stage wiring oracle)."""
+    import csv as _csv
+
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    twin.stage_legaprime(m=200)
+    twin.stage_legb(m=200)
+    hist = tmp_path / "h2b_leg_b_predictions.csv"
+    ke = tmp_path / "h2b_leg_b_ke.csv"
+    assert hist.exists() and ke.exists()
+
+    def rows(path, leg):
+        with open(path, newline="") as fh:
+            return [r for r in _csv.DictReader(fh) if r["leg"] == leg]
+
+    anchor = rows(hist, "b_undressed")
+    ap = rows(tmp_path / "h2b_leg_aprime_predictions.csv", "aprime")
+    assert len(anchor) == 4 and len(ap) == 4
+    for ra, rb in zip(ap, anchor):
+        for key in ra:
+            if key == "leg":
+                continue
+            assert ra[key] == rb[key], (key, ra[key], rb[key])
+    # the dressed leg exists and genuinely moves: n_eject < 21 fragments
+    dressed = rows(hist, "b")
+    assert len(dressed) == 4
+    for r in dressed:
+        assert float(r["n_eject_q05"]) < twin.N_STAR
