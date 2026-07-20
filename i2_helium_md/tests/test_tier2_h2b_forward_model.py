@@ -237,3 +237,51 @@ def test_stage_legb_smoke_and_anchor(twin, monkeypatch, tmp_path):
     assert len(dressed) == 4
     for r in dressed:
         assert float(r["n_eject_q05"]) < twin.N_STAR
+
+
+# ---------------------------------------------------------------------------
+# Leg-C extension (Slice T6 E_int(0)-dressing p-law re-score)
+# ---------------------------------------------------------------------------
+def test_stage_legc_smoke_and_oracle(twin, monkeypatch, tmp_path):
+    """The leg-C re-score (one lever flipped vs leg B: the T6 p = 1 onset
+    coupling) runs at small m, writes both CSVs, and its ``c_p0`` rows (dressed,
+    p = 0) reproduce stage_legb's ``b`` rows exactly (the in-stage wiring
+    oracle). p = 1 can only lower the onset (ratio <= 1), so it regularizes the
+    over-suppression: suppressed_frac falls and nbar_det rises vs p = 0."""
+    import csv as _csv
+
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    twin.stage_legb(m=200)
+    twin.stage_legc(m=200)
+    hist = tmp_path / "h2b_leg_c_predictions.csv"
+    ke = tmp_path / "h2b_leg_c_ke.csv"
+    assert hist.exists() and ke.exists()
+
+    def rows(path, leg):
+        with open(path, newline="") as fh:
+            return [r for r in _csv.DictReader(fh) if r["leg"] == leg]
+
+    # wiring oracle: c_p0 (dressed, p = 0) == leg-B `b` (dressed, p = 0) exactly
+    anchor = rows(tmp_path / "h2b_leg_b_predictions.csv", "b")
+    c_p0 = rows(hist, "c_p0")
+    assert len(anchor) == 4 and len(c_p0) == 4
+    for rb, rc in zip(anchor, c_p0):
+        for key in rb:
+            if key == "leg":
+                continue
+            assert rb[key] == rc[key], (key, rb[key], rc[key])
+
+    # the p = 1 leg genuinely moves in the pre-registered direction
+    dressed = {r["config"]: r for r in rows(hist, "c")}
+    base = {r["config"]: r for r in c_p0}
+    assert len(dressed) == 4
+    for cfg in base:
+        assert float(dressed[cfg]["suppressed_frac"]) <= float(
+            base[cfg]["suppressed_frac"]
+        ) + 1e-9
+        assert float(dressed[cfg]["nbar_det"]) >= float(base[cfg]["nbar_det"]) - 1e-9
+    # at least one config strictly de-suppresses (the mechanism is live)
+    assert any(
+        float(dressed[cfg]["suppressed_frac"]) < float(base[cfg]["suppressed_frac"])
+        for cfg in base
+    )

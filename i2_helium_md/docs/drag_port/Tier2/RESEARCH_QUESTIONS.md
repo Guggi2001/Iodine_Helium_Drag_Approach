@@ -1123,20 +1123,30 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
 
 ### RQ8 — Bare-I⁺ channel provenance & branching (opened 2026-07-11, two-channel adjudication)
 
-- **Experimental input:** mean fragment KE falls ~3 eV (n = 0) →
-  < 0.1 eV (n = 17); bare I⁺ is KE-distinct from every snowball → the
+- **Experimental input:** mean fragment KE falls 3.706 eV (n = 0) →
+  0.066 eV (n = 17); bare I⁺ is KE-distinct from every snowball → the
   experimental reading is a **different ionization channel** for bare I⁺
   vs I⁺Heₙ ejection. (The n = 1 gate `vmi_iplus_he.csv` peaks at
   10.1 Å/ps ↔ 0.69 eV at mass 131.)
-- **NB (2026-07-11, H.2b design freeze):** the full per-n **mean-KE
-  table** is now on record (`TIER2_STAIRCASE_PROBE_PLAN.md` §H.2b D7;
-  supersedes the earlier 0.69 eV n = 1 quote, which was not the mean):
-  bare 2.9 eV, n = 1 0.974 eV → < 0.1 eV for n ≥ 13 (provenance-pending;
-  the export prerequisite stands). **Kinematic corroboration of the
-  two-channel reading:** bare at 2.9 eV sits above the ≈ 2.71 eV
-  per-fragment ballistic ceiling of the 2.70 eV channel (at face value;
-  no error bars) — bare cannot come from the production channel under
-  *any* drag law, independently favouring candidates (a)/(b).
+- **NB (2026-07-11, H.2b design freeze; committed-reference update
+  2026-07-18):** the full per-n **mean-KE table** is **committed** at
+  `data/reference/ihe_ked/IHe_KED_reference.csv` (per-n `meanKE_eV` =
+  first moment of the 3-D P(E) — the value an MD forward model compares
+  its own ⟨E⟩ against; `COLUMNS.md` + `IHe_KED_reference.provenance.json`;
+  full n0/n1 spectra + trusted 3-D curves n0–n4). **The export
+  prerequisite is SATISFIED** — the earlier "provenance-pending / the
+  export prerequisite stands" language is retired. Committed values
+  supersede the provisional quotes: **bare (n = 0) meanKE = 3.706 eV**
+  (mode 4.758 eV; the stale ~2.9 eV is retired), **n = 1 meanKE =
+  1.302 eV** (the stale 0.974 eV retired), decreasing monotonically to
+  0.066 eV at n = 17; `noiseLimited = 0` on all 18 fragments (every value
+  a genuine measurement). Error model (the scoring tolerance): per-point
+  √(statErr² + sysErr²) + the calib (4 %) and condition (6 %) fractional
+  bands as two *correlated* whole-curve shifts. **Kinematic corroboration
+  of the two-channel reading (firmer on committed data):** bare at
+  3.706 eV sits ≈ 1.4× above the ≈ 2.71 eV per-fragment ballistic ceiling
+  of the 2.70 eV channel — bare cannot come from the production channel
+  under *any* drag law, independently favouring candidates (a)/(b).
 - **Question:** what channel produces fast bare I⁺, and what is the
   branching vs the biphasic (solvated) channel? Candidates:
   (a) vertical ionization near the inner turning point (R ≈ 2.4–2.55 Å,
@@ -1155,7 +1165,16 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   Addendum H §H.2). The Wave-9/10/11 "bare lands untuned" results are
   reinterpreted as coincidental under this reading. Model-side bare
   production is *reported* (an upper-bound consistency check), pending
-  this RQ.
+  this RQ. **Leg B (findings §4p / I62–I64, 2026-07-18) is the newest
+  instance:** the dressed suppressed/bare class brackets 43.5 %
+  *coincidentally*, and its detected KE resolves to fragmentation
+  bookkeeping (the co-moving-vs-momentum-conserving break-up read), not
+  the experimental bare channel. **Standing scoring convention (decided
+  post-leg-B):** every remaining leg (C, D) and the re-pilot **renormalize
+  n = 0 out** and score the **solvated branch** (n ≥ 1 histogram + the
+  per-n mean-KE curve) against the committed `IHe_KED_reference.csv` and
+  its error model — see `TIER2_STAIRCASE_PROBE_PLAN.md` §I.11 T9 and the
+  migration-log decision entry (2026-07-18).
 - **Method:** deep-research pass (CE channels of I₂ ionized in/on He
   droplets; vertical vs sequential double ionization; KER distributions)
   + experimental cross-checks above + the (n, mean-KE) reference export

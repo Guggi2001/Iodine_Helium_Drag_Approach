@@ -142,6 +142,18 @@ EvaporationShedConvention = Literal["cold", "co_moving"]
 # pickup channel (a reported twin-divergence candidate, plan §T5 boundary).
 InitialShellModel = Literal["full", "density_tied"]
 
+# Slice T6 (Tier-2 plan §I.11; the D2 p-law): how the S2 Coulomb onset E_int(0)
+# couples to the T5 initial-shell dressing. ``constant`` (byte-inert default,
+# p = 0) keeps the delivered per-ion onset E_int(0) = f_int * E_avail (no
+# coupling). ``sigma_proportional`` (p = 1) scales the onset by the
+# ladder-resolved ratio (Sigma(n0)/Sigma(n*))^1, so under-dressed births
+# (n0 < n*) get less onset (the §4j direction — p = 0 over-suppresses). The
+# factor is supplied by ``internal_energy_budget.sigma_partition_factor``;
+# structurally inert at n0 = n* (ratio 1) regardless of law, and read by the
+# biphasic column-0 seed only (the E_int(0) onset). Biphasic-only by guard
+# (check_internal_energy_partition_config); a parameter-free arm, not a knob.
+InternalEnergyPartitionLaw = Literal["constant", "sigma_proportional"]
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -414,6 +426,15 @@ class SimConfig:
     # the T5+/leg-B legs stamp it explicitly (the T7 precedent).
     initial_shell_model: InitialShellModel = "full"
 
+    # -- Tier-2 Slice T6 E_int(0)-dressing coupling (plan §I.11; the D2 p-law) --
+    # "constant" = delivered onset E_int(0) = f_int * E_avail (byte-inert
+    # default, p = 0); "sigma_proportional" = onset * (Sigma(n0)/Sigma(n*))^1
+    # (see InternalEnergyPartitionLaw above). Structurally inert without the T5
+    # dressing (ratio 1 at n0 = n*); biphasic-only
+    # (check_internal_energy_partition_config); no preset or generator selects
+    # the arm -- the T9 legs stamp it explicitly (the T5/T7 precedent).
+    internal_energy_partition_law: InternalEnergyPartitionLaw = "constant"
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -567,6 +588,7 @@ class SimConfig:
         check_pickup_config(self)
         check_evaporation_config(self)
         check_initial_shell_config(self)
+        check_internal_energy_partition_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
         check_detection_config(self)
@@ -960,6 +982,48 @@ def check_initial_shell_config(cfg: "SimConfig") -> None:
             "column-0 seed (per-ion n_0 / mass / E_pot binding fold), so "
             f"under mass_scenario={cfg.mass_scenario!r} it would be silently "
             "inert (keep the 'full' default there)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Slice T6 E_int(0)-dressing p-law config-load guard (plan §I.11)
+# ---------------------------------------------------------------------------
+_KNOWN_INTERNAL_ENERGY_PARTITION_LAWS = ("constant", "sigma_proportional")
+
+
+def check_internal_energy_partition_config(cfg: "SimConfig") -> None:
+    """Validate the E_int(0)-dressing coupling surface of ``cfg`` at config-load (T6).
+
+    Rules
+    -----
+    1. ``internal_energy_partition_law`` must be a known selector (typo guard).
+    2. ``sigma_proportional`` couples the S2 onset to the t0 shell, and that
+       onset is deposited only by the biphasic column-0 seed, so under any other
+       ``mass_scenario`` the advertised arm would be silently inert -- refused
+       loudly instead (the T5/T7 no-silent-inert convention). ``constant`` (the
+       byte-inert default) is legal everywhere.
+
+    Raises
+    ------
+    ValueError
+        On an unknown ``internal_energy_partition_law``, or
+        ``sigma_proportional`` outside ``mass_scenario='biphasic'``.
+    """
+    _reject_unknown_enum(
+        cfg.internal_energy_partition_law,
+        _KNOWN_INTERNAL_ENERGY_PARTITION_LAWS,
+        field="internal_energy_partition_law",
+    )
+    if (
+        cfg.internal_energy_partition_law == "sigma_proportional"
+        and cfg.mass_scenario != "biphasic"
+    ):
+        raise ValueError(
+            "internal_energy_partition_law='sigma_proportional' requires "
+            "mass_scenario='biphasic': the p-law couples the S2 onset E_int(0) "
+            "to the t0 shell, which is deposited only by the biphasic column-0 "
+            f"seed, so under mass_scenario={cfg.mass_scenario!r} it would be "
+            "silently inert (keep the 'constant' default there)"
         )
 
 

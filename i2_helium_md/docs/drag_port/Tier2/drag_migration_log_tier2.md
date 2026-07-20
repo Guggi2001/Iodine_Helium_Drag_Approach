@@ -7375,3 +7375,256 @@ experimental targets). Next per the I.11 sequence: **Slice T6**
 trigger, then T9 legs B/C at fixed N, T8, leg D. The E2 Landau-gated
 build remains adjudicated-but-unbuilt, required before any N = 500 run.
 Nothing here discharges F5.
+
+## Post-leg-B documentation reconciliation — bare-bin reframe reaffirmed as the standing scoring convention; the (n, mean-KE) data contract is SATISFIED; endgame scoring adopts the committed error model (2026-07-18)
+
+Discussion outcome (post-leg-B; **no MD, no code, no schema change** —
+records decisions and reconciles stale doc language so the reframe need
+not be re-derived next session):
+
+1. **The bare bin (n = 0) is renormalized out of the arbitration target
+   for every remaining leg (C, D) and the re-pilot.** RQ8's standing
+   verdict (2026-07-11: bare is a channel-branching quantity, not a model
+   target) is reaffirmed by leg B (findings §4p / I62–I64): the dressed
+   suppressed/bare class brackets 43.5 % *coincidentally*, and its detected
+   KE is a fragmentation-convention bookkeeping read (co-moving vs
+   momentum-conserving break-up), not the experimental bare channel. The
+   biphasic arbitration surface is the **solvated branch**: the n ≥ 1
+   renormalized histogram + the per-n mean-KE curve. Leg-C/T6 and leg-D
+   pre-registrations state this explicitly (plan §I.11 T9 + §I.11.2 NBs).
+
+2. **The (n, mean-KE) data-contract prerequisite is SATISFIED, not
+   pending.** The committed reference is
+   `data/reference/ihe_ked/IHe_KED_reference.csv` (per-n `meanKE_eV` =
+   first moment of the 3-D P(E); `COLUMNS.md` +
+   `IHe_KED_reference.provenance.json`; full n0/n1 spectra + trusted 3-D
+   curves n0–n4). The RQ8 / §H.2b-D7 language calling the export "pending"
+   or "the export prerequisite stands" was stale — corrected in
+   `RESEARCH_QUESTIONS.md` RQ8.
+
+3. **Committed bare meanKE = 3.706 eV** (mode 4.758), superseding the stale
+   ~2.9 eV quote in RQ8/§H.2b-D7. That is ≈ 1.4× the 2.71 eV per-fragment
+   ballistic ceiling of the 2.70 eV solvated channel — the foreign-channel
+   verdict is on *firmer* committed ground than the stale number implied.
+   Committed n = 1 meanKE = 1.302 eV (matches the value used throughout;
+   the D7 "0.974" was stale), → 0.066 eV at n = 17.
+
+4. **Endgame (T9) scoring adopts the committed error model as the
+   tolerance** (recommended; confirm at the T9 scoring build): per-point
+   √(statErr² + sysErr²) for point-to-point scatter, plus the calib (4 %)
+   and condition (6 %) fractional bands as two *correlated* whole-curve
+   shifts — superseding the ad-hoc flat ×1.25 bar (retained as a coarse
+   fallback). `noiseLimited = 0` on all 18 fragments (every value a genuine
+   measurement). Plan §I.11 T9 scoring NB added.
+
+Also noted (not a change): the pickup-re-filling channel (leg B I63,
+≈ 7 ions/100) makes the 1D twin a **basin-locator, not a predictor**, at
+the endgame — the final knobs are MD-located in the re-pilot.
+
+Next per the I.11 sequence: **Slice T6** behind its own
+`[PROCEED TO IMPLEMENTATION]` trigger, then T9 leg C. Nothing here
+discharges F5.
+
+## Slice T6 DELIVERED — `internal_energy_partition_law ∈ {constant (byte-inert default, p = 0), sigma_proportional (p = 1)}`: the D2 E_int(0)-dressing coupling; onset × (Σ(n₀)/Σ(n*))^p in the biphasic seed; CALIBRATION_MAP row 28 (2026-07-18)
+
+Delivered under its own `[PROCEED TO IMPLEMENTATION]` trigger (TDD, RED
+watched first — ImportError on the missing
+`check_internal_energy_partition_config` guard). Exactly one new physics
+lever, parameter-free, composing on the certified leg-B baseline.
+
+**As built.**
+
+- **Physics** (`physics/internal_energy_budget.py`): new pure helper
+  `sigma_partition_factor(n0, *, law, picture, kappa, ladder)` returning the
+  dimensionless p-law factor `(Σ(n0)/Σ(n*))^p`. `constant` returns the
+  multiplicative identity `1.0` exactly (ignores n0/ladder — the byte-inert
+  p = 0 path); `sigma_proportional` returns `ladder_cumsum(n0)/ladder_cumsum(
+  N_STAR)` (Slice L's Σ at the cfg picture/kappa/ladder — the *same* Σ the
+  §U self-unbound floor and the K-cooling asymptote consume, no duplicate
+  physics). Vectorised scalar→float / array→ndarray; fail-loud on an
+  unrecognised `law` (CLAUDE.md principle 4). Inert at n0 = n* (ratio 1)
+  under either law.
+- **Config** (`config.py`): `InternalEnergyPartitionLaw` Literal + field
+  `internal_energy_partition_law = "constant"` (byte-inert default, beside
+  the Slice-T5 `initial_shell_model` block); guard
+  `check_internal_energy_partition_config` wired into `SimConfig.validate`
+  (typo reject via the shared `_reject_unknown_enum`; `sigma_proportional`
+  refused outside `mass_scenario='biphasic'` — the T5/T7 no-silent-inert
+  convention, since the S2 onset is deposited only by the biphasic column-0
+  seed).
+- **Seed** (`simulation/ion_initial_state.py`): the T5/T6-boundary comment is
+  retired — the S2 onset now multiplies `e_int_onset_eV(...)` by
+  `sigma_partition_factor(n0_initial, law=..., picture=..., kappa=...,
+  ladder=resolve_ladder(...))`, riding the **same** per-ion t0 shell
+  `n0_initial` (scalar 21 under `full`, per-ion dressed under `density_tied`)
+  and resolved ladder as the E_pot binding fold. E_int(0) is the **only**
+  seed quantity T6 touches — mass, n_shell, and the E_pot fold are unchanged
+  (Slice T5's). Byte-inert default: under `constant` the factor is a scalar
+  `1.0`, so `E_int_eV[:, 0]` is byte-identical to the delivered onset.
+- **Pass-through** (`scripts/tier2_common.py`): `build_biphasic_cfg` gains the
+  None-sentinel `internal_energy_partition_law` kwarg (the T5/T7 pattern); no
+  preset or generator selects the arm — the T9 legs stamp it (leg C flips
+  p = 0 → 1 vs the certified leg-B baseline).
+- **Tests** (`tests/test_internal_energy_partition_law.py`, 20): the pure
+  factor (constant-unity scalar/array + n0-agnostic; `sigma_proportional`
+  scalar/array hand oracles against an independent `ladder_cumsum`; inert at
+  n*; strictly increasing in n0 with under-dressed < 1; unknown-law reject);
+  config default/guards/back-compat (pre-T6 `cfg.json` loads `constant`)/
+  round-trip; the coupled seed (constant arm = delivered onset even under a
+  live T5 dressing; `sigma_proportional`+`full` inert; `sigma_proportional`+
+  `density_tied` per-ion hand oracle with under-dressed ions getting less
+  onset; the law touches E_int **only**, not mass/n_shell/E_pot fold); the
+  pass-through pair.
+
+Full suite **2426 passed** (byte-inert default locked by the delivered
+suites; the T5 boundary test `test_E_int_onset_not_coupled_to_dressing`
+stays green — the default `constant` arm keeps that boundary). CALIBRATION_MAP
+row 28 (arm, not knob). The p = 1 prior (§4j finding 1: p = 0 over-suppresses)
+is **not** hard-wired — the arm is swept in the T9 A/B chain.
+
+Next per the I.11 sequence: **T9 leg C** (flip `internal_energy_partition_law
+= sigma_proportional` vs the certified leg-B `bc` baseline, pre-registered
+against the 1D twin re-scored on the solvated branch), behind its own leg
+trigger. The E2 Landau-gated drag arm (§I.11.2 item 2, arm (c)) stays
+adjudicated-but-unbuilt — required before any N = 500 run, not before the
+N = 50 legs C/D. Nothing here discharges F5.
+
+## T9 leg C TRIGGERED — B + T6 `sigma_proportional`; twin re-scored at p = 1; predictions PRE-REGISTERED before any MD (2026-07-18)
+
+User trigger ("Go ahead with the leg-C pre-registration"), following the
+T6 delivery entry above. Leg C flips exactly **one lever vs the certified
+`bc` baseline**: `internal_energy_partition_law = "sigma_proportional"`
+(p = 1) — cumulative on leg B (the `density_tied` dressing and the
+co-moving shed convention carry over).
+
+**Builds delivered under this trigger (both TDD, RED watched first):**
+- Twin: `stage_legc` in `scripts/tier2_h2b_forward_model.py` — the leg-B
+  dressed stage with the E₀-coupling exponent flipped `0 → 1`
+  (`fate_map` applies `E0_i = E0·(Σ(n_eject)/Σ(21))^p` — **the same closed
+  form as the MD's `internal_energy_budget.sigma_partition_factor`**, so
+  the A/B is valid). Same SEED/draws as `stage_legb`, so the in-stage
+  `c_p0` rows (dressed, p = 0) must equal the leg-B `b` rows — **verified
+  exactly at m = 20000** (supp 0.389/0.349/0.533/0.436, n̄ 3.94/4.17/2.78/
+  3.67, n₁ KE 0.549/0.512/0.176/0.499 — the §4p leg-B twin verbatim) and
+  locked by the smoke/oracle test at m = 200. Usage + SystemExit mode
+  lists updated. Twin suite 17 passed.
+- Generator: `LEG = "c"` in `gen_tier2_md_confirmation.py` — cumulative on
+  leg B (`density_tied` + co-moving carry over) plus
+  `internal_energy_partition_law="sigma_proportional"` stamped through the
+  delivered T6 kwarg; dirs `…_tier2probe_conf270_cc{1..4}` (distinct from
+  the T3 `c{1..4}`). Lock test asserts the field-diff vs leg B is exactly
+  `{internal_energy_partition_law}` (monkeypatched). Generator suite 19
+  passed.
+
+**Twin re-score at p = 1 (m = 20000; outputs `h2b_leg_c_predictions.csv` /
+`h2b_leg_c_ke.csv` under the gitignored `data/runs/h2b_forward_model/`;
+the pre-registered numbers are recorded here).** The p = 1 coupling lowers
+the onset for under-dressed births (E0_i = E0·Σ(n₀)/Σ(21) ≤ E0), so it
+**de-suppresses the over-suppressed side** — the §4j "p = 0 over-suppresses"
+direction, now quantified against leg B (= c_p0):
+
+| config | supp (p0 → p1) | n̄_det (p0 → p1) | n₁ frac (p0 → p1) | n₁ KE (p0 → p1) | trapped |
+|---|---|---|---|---|---|
+| c1 | 0.389 → **0.111** | 3.94 → **4.98** | 0.101 → **0.212** | 0.549 → **0.998** | 0.055 |
+| c2 | 0.349 → **0.051** | 4.17 → **5.31** | 0.105 → **0.217** | 0.512 → **0.964** | 0.060 |
+| c3 | 0.533 → **0.343** | 2.78 → **3.77** | 0.049 → **0.084** | 0.176 → **0.253** | 0.093 |
+| c4 | 0.436 → **0.143** | 3.67 → **4.88** | 0.077 → **0.172** | 0.499 → **0.973** | 0.055 |
+
+The suppressed ordering **c3 > c4 > c1 > c2 transfers** (0.343 > 0.143 >
+0.111 > 0.051); trapped is p-invariant (the p-law never touches the chord
+dynamics, only the onset).
+
+**Pre-registered predictions (all KE claims on the co-moving basis —
+twin-native and the MD's leg-B/C convention; same N = 50 bridge seed,
+margin 3 Å, exclude policy, 8000 ps cap; scoring is the solvated branch,
+bare renormalised out — post-leg-B decision):**
+
+- **CP-P1 (de-suppression — the headline).** MD `cc` suppressed fractions
+  drop from the leg-B `bc` measured 0.322/0.267/0.464/0.378 toward the
+  twin p = 1 **0.111/0.051/0.343/0.143**, ordering c3 > c4 > c1 > c2.
+  Directional caveat (listed divergence, as leg B): in-bubble pickup
+  re-filling means the MD may land **above** the twin (Σ grows before
+  gate-open → fewer stay self-unbound; leg B measured ≈ +7 ions/100 of this).
+- **CP-P2 (solvated histogram).** n̄_det rises to ≈ **4.98/5.31/3.77/4.88**
+  (from bc ≈ 4.13/4.40/3.08/3.97); weight shifts off bin 0 into the shallow
+  solvated bins (n₁ ≈ doubles); the deep tail still truncates near the
+  dressed n_eject band (top weight to n ≈ 14–15). W₁(MD, twin) expected at
+  the chain scale (≲ 0.5 bins on the solvated branch, cf. leg B 0.41–0.51).
+- **CP-P3 (KE axis).** Per-bin n₁ mean KE **rises** to ≈
+  **0.998/0.964/0.253/0.973 eV** (from bc 0.661/0.626/0.263/0.601) — the
+  de-suppressed n₁ occupants ride shallower descents; this lands **near the
+  A″ undressed** (1.005/1.025/0.312/0.991) and **closer to the committed
+  experimental n₁ = 1.302 eV** than either leg B or the undressed A″. The
+  whole solvated KE curve shifts up modestly. Bare-bin KE stays RQ3/RQ8
+  bookkeeping (renormalised out).
+- **CP-P4 (trapped class).** p-invariant: ≈ 0.055/0.060/0.093/0.055 twin /
+  ~1.7× the 150 ps chord read in MD (the A′/leg-B precedent), c3 largest.
+
+**Listed twin-divergence channels (S2c-P4 — an unlisted one is a
+model-structure finding):** (a) pickup re-filling after under-dressed birth
+(MD supp ≥ twin supp; MD deep bins possibly below twin); (b) per-**atom**
+ion-t0 dressing vs the twin's molecule-center birth dressing (±1 rung near
+the surface); (c) trapped-class dynamics beyond the twin's 150 ps chord
+read. MD pilots (`cc1..4`) launch next under this trigger; scored against
+the p = 1 twin, the certified `bc` baseline, and these pre-registrations on
+the solvated branch. Nothing here discharges F5.
+
+## T9 leg C EXECUTED — CP-P1..P4 all CONFIRMED: the T6 p-law de-suppresses to the twin (W₁ 0.31–0.47, the chain's best); n̄ + solvated KE transfer; n₁ KE moves toward experiment; no unlisted divergence (2026-07-19)
+
+The four `cc{1..4}` pilots ran to completion (all five artifacts each) and
+were scored against the pre-registered p = 1 twin and the certified `bc`
+baseline (findings §4q + I65–I67). One lever vs `bc`
+(`internal_energy_partition_law = "sigma_proportional"`).
+
+**Execution accommodation (session-specific, physics-neutral — user-approved
+2026-07-19).** Each config's E2 relaxation compute (~15–20 min) plus the
+~380 MB compressed `relaxation.npz` save exceeded this session's ~25-min
+process window (two full-pipeline background runs were terminated mid-save,
+leaving a truncated npz). Resolution: a scratchpad per-stage-resume driver
+(`run_legc_resume.py`) that (a) resumes each config from its last completed
+artifact and (b) shrinks the relaxation checkpoint byte budget so the save
+is instant. Verified scored-read-neutral **before** running: detection seeds
+from the terminal column only (`detection_stage.py:396`) and the stage always
+stores the true final state last (`relaxation_stage.py:439–440`), so the
+coarser stride leaves every CP-P1..P4 read bit-exact and touches only the
+unused intermediate trajectory (I67). The `cc` `relaxation.npz` are ~2 MB vs
+the `bc` dirs' ~380 MB; zero repo-code change (the driver composes delivered
+stage functions). All four completed in one pass with the small checkpoint.
+
+**Scored A/B/twin (droplet_retained excluded; suppressed→bin 0; W₁ over 0–21;
+KE co-moving):**
+
+| config | supp (C / twin_c / B) | n̄_det (C / twin / B) | n₁ (C / twin) | W₁(C, twin) | n₁ KE (C / twin / B) | trapped (C / twin) |
+|---|---|---|---|---|---|---|
+| c1 | **0.101** / 0.111 / 0.322 | 4.87 / 4.98 / 4.13 | 0.191 / 0.212 | **0.44** | 1.077 / 0.998 / 0.661 | 0.110 / 0.055 |
+| c2 | **0.022** / 0.051 / 0.267 | 5.27 / 5.31 / 4.40 | 0.202 / 0.217 | **0.47** | 1.104 / 0.964 / 0.626 | 0.110 / 0.060 |
+| c3 | **0.301** / 0.343 / 0.464 | 3.76 / 3.77 / 3.08 | 0.108 / 0.084 | **0.31** | 0.317 / 0.253 / 0.263 | 0.170 / 0.093 |
+| c4 | **0.124** / 0.143 / 0.378 | 4.87 / 4.88 / 3.97 | 0.146 / 0.172 | **0.45** | 1.089 / 0.973 / 0.601 | 0.110 / 0.055 |
+
+**Verdicts (pre-registered CP-P1..P4):**
+- **CP-P1 CONFIRMED (de-suppression headline).** p = 1 drops supp to ≈ a
+  third of `bc`, landing on the twin (ordering c3 > c4 > c1 > c2 exact). The
+  re-filling channel fires in the **corrected** direction: MD ≈ 1–3 ions/100
+  **below** twin ("fewer stay self-unbound" — the TRIGGERED "above"/"≥" was a
+  wording slip; the parenthetical mechanism was right, and leg B measured the
+  same MD-below-twin sign at ≈ 7/100).
+- **CP-P2 CONFIRMED.** n̄_det matches the twin to ≤ 0.11 He; **W₁(C, twin) =
+  0.31–0.47 — the best twin↔MD histogram agreement of the oracle chain**
+  (A′ 0.55–0.69 / A″ 0.51–0.68 / B 0.41–0.51).
+- **CP-P3 CONFIRMED.** n₁ KE rises to 1.08/1.10/0.32/1.09 eV (from `bc`
+  0.66/0.63/0.26/0.60) — ≈ A″ undressed and the closest of any leg to the
+  committed experimental n₁ = 1.302 eV; MD ×1.08–1.15 above twin (small
+  composition residual). Bare-class KE (1.99/1.95/0.69/1.94, intact dressed
+  complex) stays RQ3/RQ8 bookkeeping, renormalised out.
+- **CP-P4 CONFIRMED.** Trapped p-invariant (0.11/0.11/0.17/0.11 ≈ `bc`), c3
+  largest, ≈ 1.8× the twin's 150 ps chord read.
+- **S2c-P4 holds:** every deviation is a listed channel (re-filling; per-atom
+  dressing; trapped dynamics). No unlisted divergence.
+
+Next per the I.11 sequence: **Slice T8** (the droplet-prior D4 family; audit
+the legacy `use_single_droplet_size=False` machinery first, then wire the
+Kornilov log-normal + pickup-weighted variant behind config), then **T9 leg D**
+(+ droplet prior, fixed-N legs A–C carried) → the re-pilot at the MD-located
+knobs → the T4/ihe_ked solvated-branch scoring. The E2 Landau-gated drag arm
+(§I.11.2 item 2, arm (c)) stays adjudicated-but-unbuilt — required before any
+N = 500 run. Nothing here discharges F5.

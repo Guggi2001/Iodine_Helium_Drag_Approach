@@ -117,6 +117,7 @@ def build_biphasic_cfg(
     detection_droplet_retained_policy: Optional[str] = None,
     evaporation_shed_convention: Optional[str] = None,
     initial_shell_model: Optional[str] = None,
+    internal_energy_partition_law: Optional[str] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -232,6 +233,13 @@ def build_biphasic_cfg(
         through the shared erf-complement surface; biphasic-only by
         config-load guard. ``None`` -> the config default (``full``, the
         delivered 21-for-all byte-inert arm).
+    internal_energy_partition_law : str or None
+        Slice T6 E_int(0)-dressing coupling arm (``"constant"`` /
+        ``"sigma_proportional"``). ``sigma_proportional`` scales the S2 onset by
+        ``(Sigma(n0)/Sigma(n*))^1`` so under-dressed births get less onset
+        (structurally inert without the T5 dressing); biphasic-only by
+        config-load guard. ``None`` -> the config default (``constant``, the
+        delivered byte-inert p = 0 arm).
 
     Returns
     -------
@@ -351,6 +359,8 @@ def build_biphasic_cfg(
         overrides["evaporation_shed_convention"] = evaporation_shed_convention
     if initial_shell_model is not None:
         overrides["initial_shell_model"] = initial_shell_model
+    if internal_energy_partition_law is not None:
+        overrides["internal_energy_partition_law"] = internal_energy_partition_law
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()

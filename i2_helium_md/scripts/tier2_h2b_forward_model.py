@@ -34,7 +34,7 @@ Recorded wiring oracles (``oracles`` stage; plan SI.11 V0-3): production
 center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
-        w12pred | birthlaw | legaprime | legb
+        w12pred | birthlaw | legaprime | legb | legc
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 """
 
@@ -1160,6 +1160,151 @@ def stage_legb(m=20000):
     print(f"KE table    -> {OUT / 'h2b_leg_b_ke.csv'}")
 
 
+# --------------------------------------------------------------------------
+# T9 leg C twin re-score (plan SI.11 Slice T6; E_int(0)-dressing p-law)
+# --------------------------------------------------------------------------
+def stage_legc(m=20000):
+    """Twin re-score at the T9 leg-C MD configuration exactly.
+
+    Leg-C configuration (one lever flipped vs leg B): the Slice-T6
+    E_int(0)-dressing coupling ``sigma_proportional`` (p = 1) — the S2 onset
+    is regularised to the dressed shell,
+
+        E0_i = E0 * (Sigma(n_eject)/Sigma(21))**1 ,
+
+    so under-dressed births (small n_eject near the surface) get proportionally
+    less onset. Everything else rides leg B verbatim: the Slice-T5
+    ``density_tied`` dressing (per-fragment n_eject via the shared
+    erf-complement surface, chords at the dressed mass), fixed N = 2000 delta
+    prior, ``uniform_volume`` births at margin 3 A, the co-moving KE basis
+    (leg A''), and the per-C-config knobs (drag tail, tau, ladder, E0) from the
+    SI.10 matrix. The MD flips exactly the same one lever
+    (``internal_energy_partition_law = "sigma_proportional"``, T6) on the
+    certified leg-B ``bc`` baseline — the twin's p-law (fate_map arg 4) and the
+    MD's (``internal_energy_budget.sigma_partition_factor``) are the same
+    ``(Sigma(n0)/Sigma(n*))**p`` closed form, so the A/B is valid.
+
+    The ``c_p0`` rows re-run the leg-B **dressed** ensemble (same seed, same
+    draws, p = 0) as the in-stage wiring oracle — they must equal stage_legb's
+    ``b`` rows exactly.
+
+    S2c-P2 mechanism (pre-registered direction): p = 1 lowers the onset
+    (ratio <= 1), so it de-suppresses the over-suppressed under-dressed births
+    (p = 0 over-suppresses — the SS4j direction), shifting weight off the
+    suppressed/bare side into the shallow solvated bins (suppressed_frac down,
+    nbar_det up vs p = 0).
+
+    Twin-divergence channels *listed* for the MD A/B (S2c-P4): as leg B (pickup
+    re-filling after under-dressed birth; per-atom vs per-molecule-center
+    dressing; no trapped dynamics beyond the 150 ps chord read). Experimental
+    scoring is deferred to T9 on the **solvated branch** (bare renormalised out;
+    post-leg-B decision).
+
+    Writes h2b_leg_c_predictions.csv (histograms + classes + n_eject quantiles)
+    and h2b_leg_c_ke.csv (per-bin mean detected KE, co-moving basis) — the
+    pre-registered prediction record for the leg-C MD pilots.
+    """
+    from scripts.gen_tier2_md_confirmation import (
+        floor1_rungs_eV,
+        form_u_rungs_eV,
+        rq4graded_rungs_eV,
+    )
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    tables = {
+        "flat": form_u_rungs_eV(),
+        "rq4graded": rq4graded_rungs_eV(),
+        "floor1": floor1_rungs_eV(),
+    }
+    R2000 = float(droplet_radius_bulk_angstrom(2000.0))
+
+    # Identical draws to stage_legb (same SEED, same order) so the dressed
+    # p = 0 oracle is bit-comparable and leg C differs from leg B only by the
+    # p-law exponent — never by sampling noise.
+    rng = np.random.default_rng(SEED)
+    r0_ap = (R2000 - LEG_APRIME_MARGIN_A) * np.cbrt(rng.uniform(0.0, 1.0, m))
+    mu_ap = rng.uniform(-1.0, 1.0, m)
+
+    # Slice-T5 dressing at the molecule birth center (leg-B convention verbatim).
+    rho_b = rho_he_ratio(r0_ap - R2000, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho_b), 0, N_STAR).astype(int)
+    mass_mol = complex_mass_amu(ne_mol).astype(float)
+
+    # Both legs share the dressed shell/mass; only the onset coupling p differs.
+    legs = {
+        "c_p0": 0,   # dressed, p = 0 == leg-B `b` (the wiring oracle)
+        "c": 1,      # dressed, p = 1 (leg C)
+    }
+
+    hist_rows, ke_rows = [], []
+    for label, v_c, p_tail, tau, ladder_key, e0 in APRIME_CONFIGS:
+        sig = sigma_cum(np.asarray(tables[ladder_key][:N_STAR], dtype=float))
+        for leg, p_law in legs.items():
+            res = integrate_pairs(
+                r0_ap, mu_ap, np.full(m, R2000), mass_mol,
+                r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+            )
+            K = res["K"].reshape(-1) * (TAU_PS / tau)  # exact tau rescale
+            trapped = res["trapped"].reshape(-1).astype(bool)
+            v = res["v_inf"].reshape(-1)
+            ne = np.concatenate([ne_mol, ne_mol])  # (2, M).reshape(-1) order
+            n_det, sup = fate_map(ne, K, e0, p_law, sig)
+            w = np.where(trapped, 0.0, 1.0)
+            w_tot = w.sum()
+            trapped_frac = float(trapped.mean())
+            sup_frac = float(w[sup].sum() / w_tot)
+            hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
+            nbar = float((np.arange(N_STAR + 1) * hist).sum())
+            nef = ne.astype(float)
+            row = {
+                "leg": leg, "config": label, "ladder": ladder_key,
+                "tau_ps": tau, "E0_eV": e0,
+                "v_c": "" if v_c is None else v_c,
+                "p_tail": "" if p_tail is None else p_tail,
+                "trapped_frac": round(trapped_frac, 4),
+                "suppressed_frac": round(sup_frac, 4),
+                "bare_frac": round(float(hist[0]), 4),
+                "nbar_det": round(nbar, 3),
+                "K_q05": round(float(np.quantile(K, 0.05)), 4),
+                "K_q50": round(float(np.quantile(K, 0.50)), 4),
+                "K_q95": round(float(np.quantile(K, 0.95)), 4),
+                "n_eject_q05": round(float(np.quantile(nef, 0.05)), 2),
+                "n_eject_q50": round(float(np.quantile(nef, 0.50)), 2),
+                "n_eject_mean": round(float(nef.mean()), 3),
+            }
+            row.update({f"h{k}": round(float(hist[k]), 4)
+                        for k in range(N_STAR + 1)})
+            hist_rows.append(row)
+            ke = kinetic_energy_eV(complex_mass_amu(n_det), v)
+            for k in range(0, N_STAR + 1):
+                mask = (n_det == k) & ~trapped
+                if mask.sum() >= 20:
+                    ke_rows.append({
+                        "leg": leg, "config": label, "n": k,
+                        "weight": round(float(w[mask].sum() / w_tot), 4),
+                        "mean_KE_eV": round(
+                            float((w[mask] * ke[mask]).sum() / w[mask].sum()), 4
+                        ),
+                    })
+            top = ", ".join(
+                f"n{k}:{hist[k]:.3f}" for k in range(N_STAR + 1) if hist[k] > 0.02
+            )
+            print(f"[{leg:5s} {label}] trapped={trapped_frac:.3f} "
+                  f"supp={sup_frac:.3f} nbar={nbar:.2f} "
+                  f"ne_mean={nef.mean():.2f}  {top}")
+
+    with open(OUT / "h2b_leg_c_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(hist_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(hist_rows)
+    with open(OUT / "h2b_leg_c_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(ke_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(ke_rows)
+    print(f"predictions -> {OUT / 'h2b_leg_c_predictions.csv'}")
+    print(f"KE table    -> {OUT / 'h2b_leg_c_ke.csv'}")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -1173,6 +1318,8 @@ def main():
         stage_legaprime()
     elif mode == "legb":
         stage_legb()
+    elif mode == "legc":
+        stage_legc()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -1186,7 +1333,7 @@ def main():
         raise SystemExit(
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
-            "legaprime | legb)"
+            "legaprime | legb | legc)"
         )
 
 

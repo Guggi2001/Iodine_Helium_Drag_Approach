@@ -3,9 +3,11 @@
 
 > **Status:** consolidated findings record, written 2026-07-07 after the fourth
 > probe wave (cooling-spatial-gate total-strip A/B) executed; last updated
-> **2026-07-18 after T9 leg B (§4p, I62–I64 — the T5 dressing transfers
+> **2026-07-19 after T9 leg C (§4q, I65–I67 — the T6 `sigma_proportional` p-law
+> de-suppresses to the twin; W₁ 0.31–0.47, the chain's best; n₁ KE moves toward
+> experiment)**; T9 leg B is §4p (I62–I64 — the T5 dressing transfers
 > quantitatively; pickup re-filling measured; the bare-bin KE gap is RQ3
-> bookkeeping)**; T9 leg A″ is §4o (I61); the I.11.2 item-1
+> bookkeeping); T9 leg A″ is §4o (I61); the I.11.2 item-1
 > n₁-composition re-read is §4n (I58–I60, OQ-J); T9 leg A′ is §4m
 > (I55–I57); the Slice-T3 pilot
 > first look is §4l (I52–I54); Wave 11 (the RQ7 production-kinematics
@@ -2430,6 +2432,100 @@ bookkeeping identity, not a fragmentation model); T6 (p-law) not
 flipped — E_int(0) is constant across the dressed ensemble; nothing
 discharges F5.
 
+---
+
+## 4q. T9 leg C — the T6 `sigma_proportional` p-law lands on the twin: p = 1 de-suppresses the over-suppressed side to the twin's prediction (W₁ 0.31–0.47, the chain's best), n̄ and the solvated KE curve transfer, and every deviation is a pre-listed channel
+
+Executed 2026-07-19 (leg trigger "Go ahead with the leg-C
+pre-registration" → "can we also make the actual C runs?"; delivery +
+pre-registration record: log entries "T9 leg C TRIGGERED" / "EXECUTED").
+Exactly **one lever** flipped vs the certified `bc` (leg-B) baseline:
+`internal_energy_partition_law = "sigma_proportional"` (Slice T6, p = 1;
+the one-lever lock test asserts it — cumulative on leg B's `density_tied`
++ co-moving). Dirs: `…_tier2probe_conf270_cc{1..4}`, all five artifacts,
+N = 50 bridge seed, margin 3 Å, `exclude` policy, 8000 ps cap, co-moving
+shed. Twin: `stage_legc` re-score at p = 1 (m = 20000; the `c_p0` anchor
+rows equal the leg-B dressed twin **exactly** — the in-stage wiring oracle,
+verified at m = 20000).
+
+**Execution-provenance note (session-specific, physics-neutral).** The
+`cc` `relaxation.npz` are ~2 MB (vs the `bc` dirs' ~380 MB): the E2
+checkpoint byte-budget was shrunk for this session's execution window (the
+full-trajectory compressed save otherwise exceeded the process lifetime).
+This coarsens only the *intermediate* relaxation trajectory; detection
+seeds from the **terminal column only** (`detection_stage.py`
+`ion_state_from_checkpoint_column(seed_ckpt, -1)`) and the stage always
+stores the true final state last (`relaxation_stage.py` 439–440), so every
+scored read below (all terminal/detected) is **bit-exact** — the coarser
+stride touches no CP-P1..P4 quantity. Per-stage resume via a scratchpad
+driver over the delivered stage functions (zero repo-code change).
+
+### The A/B/twin read (conventions as §4m; KE co-moving on both sides)
+
+| config | supp→bare (C / twin_c / B) | n̄_det (C / twin_c / B) | n₁ (C / twin_c / B) | W₁(C, twin_c) | trapped (C / twin) |
+|---|---|---|---|---|---|
+| c1 | **0.101** / 0.111 / 0.322 | 4.87 / 4.98 / 4.13 | 0.191 / 0.212 / 0.100 | **0.44** | 0.110 / 0.055 |
+| c2 | **0.022** / 0.051 / 0.267 | 5.27 / 5.31 / 4.40 | 0.202 / 0.217 / 0.122 | **0.47** | 0.110 / 0.060 |
+| c3 | **0.301** / 0.343 / 0.464 | 3.76 / 3.77 / 3.08 | 0.108 / 0.084 / 0.071 | **0.31** | 0.170 / 0.093 |
+| c4 | **0.124** / 0.143 / 0.378 | 4.87 / 4.88 / 3.97 | 0.146 / 0.172 / 0.067 | **0.45** | 0.110 / 0.055 |
+
+| config | n₁ KE: C | twin_c | B (bc) | A″ undressed | bare-class KE: C (intact) |
+|---|---|---|---|---|---|
+| c1 | **1.077** | 0.998 | 0.661 | 1.005 | 1.990 |
+| c2 | **1.104** | 0.964 | 0.626 | 1.025 | 1.953 |
+| c3 | **0.317** | 0.253 | 0.263 | 0.312 | 0.694 |
+| c4 | **1.089** | 0.973 | 0.601 | 0.991 | 1.939 |
+
+The solvated per-bin KE curve tracks the twin (c1 n2 0.74/0.67, n3 0.53/0.47,
+n4 0.37/0.36, n5 0.28/0.29; same quality c2–c4).
+
+### Verdicts (pre-registered CP-P1..P4)
+
+1. **CP-P1 CONFIRMED — the de-suppression headline.** p = 1 drops the
+   suppressed/bare class to roughly a third of leg B (c1 0.322 → 0.101;
+   c2 0.267 → 0.022; c3 0.464 → 0.301; c4 0.378 → 0.124) and lands **on the
+   twin p = 1** (0.111/0.051/0.343/0.143), ordering c3 > c4 > c1 > c2 exact.
+   The pre-registered pickup-re-filling channel fires in the **corrected**
+   direction: MD lands **≈ 1–3 ions/100 below** the twin ("fewer stay
+   self-unbound" — under-dressed shells re-fill, Σ grows before gate-open;
+   the TRIGGERED entry's word "above" was a slip, the parenthetical
+   mechanism was right, and leg B measured the same MD-below-twin sign at a
+   larger ≈ 7/100 gap — the gap shrinks at p = 1 because there is less
+   suppression to re-fill).
+2. **CP-P2 CONFIRMED.** n̄_det rises to 4.87/5.27/3.76/4.87 (from `bc`
+   4.13/4.40/3.08/3.97), matching the twin to ≤ 0.11 He; n₁ ≈ doubles vs
+   `bc`; the deep tail truncates near the dressed band (top weight to
+   n ≈ 12–14). **W₁(C, twin_c) = 0.31–0.47 bins — the best twin↔MD histogram
+   agreement of the whole oracle chain** (A′ 0.55–0.69, A″ 0.51–0.68, B
+   0.41–0.51), while the lever's own move (`bc` → `cc`) is far larger.
+3. **CP-P3 CONFIRMED.** n₁ mean KE **rises** to 1.077/1.104/0.317/1.089 eV
+   (from `bc` 0.661/0.626/0.263/0.601) — the de-suppressed n₁ occupants ride
+   shallower descents. It lands ≈ the A″ undressed (1.005/1.025/0.312/0.991)
+   and **closest to the committed experimental n₁ = 1.302 eV of any leg** on
+   the solvated branch; MD sits ×1.08–1.15 above twin (the same small uniform
+   composition residual as A″). Bare-class KE (1.99/1.95/0.69/1.94, intact
+   dressed complex) stays RQ3/RQ8 bookkeeping — renormalised out.
+4. **CP-P4 CONFIRMED.** Trapped 0.110/0.110/0.170/0.110 (≈ `bc`
+   0.10/0.10/0.16/0.10 — p-invariant, as pre-registered: the p-law never
+   touches the chord dynamics), c3 largest, ≈ 1.8× the twin's 150 ps chord
+   read (the A′/leg-B precedent).
+
+**S2c-P4 holds:** every deviation is one of the three listed channels
+(pickup re-filling, now measured ≈ 1–3 ions/100; per-atom vs
+molecule-center dressing; trapped-class dynamics). No unlisted divergence.
+
+### Boundaries
+
+N = 50 single seed, one detection RNG realization per dir (class fractions
+quantize at ~1 %); the shrunk-checkpoint provenance note above; the dressed
+read is at the C-matrix knob values — the Step-1c basin was located under
+the 1D ensemble, so **nothing here scores the experimental targets** (the
+re-centered T9 re-pilot's job after T8); the bare-bin KE stays RQ3/RQ8-gated;
+the E2 Landau-gated drag arm (§I.11.2 item 2) is still unbuilt — required
+before N = 500, not the N = 50 legs; nothing discharges F5.
+
+---
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -2909,6 +3005,31 @@ discharges F5.
   therefore reads directly on the fragmentation convention (sharpens
   I60); the solvated KE curve needs no such caveat — it lands on the
   twin at ×1.2.
+- **I65 (leg C, §4q).** **The T6 `sigma_proportional` p-law transfers
+  quantitatively and de-suppresses to the twin.** Flipping p = 0 → 1 on the
+  certified `bc` baseline drops the suppressed/bare class to ≈ a third
+  (0.322/0.267/0.464/0.378 → 0.101/0.022/0.301/0.124), landing on the twin
+  p = 1 (0.111/0.051/0.343/0.143) with ordering c3 > c4 > c1 > c2 exact and
+  **W₁(C, twin) = 0.31–0.47 bins — the best twin↔MD agreement of the whole
+  oracle chain**. The §4j "p = 0 over-suppresses" verdict is now demonstrated
+  in real MD: the under-dressed-birth onset regularised to Σ(n₀)/Σ(n*) is the
+  physical direction. Pickup re-filling puts MD ≈ 1–3 ions/100 **below** the
+  twin (smaller than leg B's ≈ 7/100 — less suppression to re-fill).
+- **I66 (leg C, §4q).** **p = 1 moves the solvated n₁ KE toward experiment.**
+  The de-suppressed n₁ occupants ride shallower descents, so n₁ mean KE rises
+  1.08/1.10/0.32/1.09 eV (from `bc` 0.66/0.63/0.26/0.60) — ≈ the A″ undressed
+  and the **closest of any leg to the committed experimental n₁ = 1.302 eV**
+  on the solvated branch; the whole solvated KE curve tracks the twin at
+  ×1.08–1.15. Trapped is p-invariant (0.11/0.11/0.17/0.11 ≈ `bc`), confirming
+  the p-law touches only the onset, never the chord dynamics.
+- **I67 (leg C, §4q — method).** **The E2 relaxation checkpoint is
+  scored-read-neutral under stride.** Detection seeds from the terminal column
+  only and the stage always stores the true final state last, so shrinking the
+  checkpoint byte budget (here ~380 MB → ~2 MB) leaves every terminal/detected
+  read bit-exact while only coarsening the unused intermediate trajectory — a
+  reusable accommodation when the full-trajectory compressed save exceeds an
+  execution window (used for the `cc` dirs; the `bc` dirs keep the full
+  trajectory).
 
 ---
 

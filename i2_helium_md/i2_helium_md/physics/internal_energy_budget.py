@@ -66,6 +66,47 @@ def e_int_onset_eV(*, f_int: float, e_avail_eV: float):
     return out
 
 
+def sigma_partition_factor(n0, *, law: str, picture: str = "statistical_mixture",
+                           kappa: float, ladder=None):
+    r"""Slice T6 E_int(0)-dressing p-law factor ``(Sigma(n0)/Sigma(n*))^p`` [dimensionless].
+
+    The multiplicative coupling of the S2 Coulomb onset (:func:`e_int_onset_eV`) to
+    the Slice-T5 initial-shell dressing ``n0``::
+
+        E_int(0)_i = f_int * E_avail * (Sigma(n0_i) / Sigma(n*))^p .
+
+    ``law`` selects the exponent ``p`` (TIER2_STAIRCASE_PROBE_PLAN §I.11 T6):
+
+    * ``"constant"`` (``p = 0``): returns the multiplicative identity ``1.0``
+      exactly, **ignoring** ``n0`` and the ladder entirely -- the byte-inert
+      default that preserves the delivered constant onset.
+    * ``"sigma_proportional"`` (``p = 1``): returns ``Sigma(n0)/Sigma(n*)``, the
+      ladder-resolved ratio (Slice L's :func:`ladder_cumsum` at ``n* = N_STAR``).
+      Under-dressed births (``n0 < n*``) get *less* onset (the §4j p = 1
+      direction; p = 0 over-suppresses).
+
+    Structurally inert at ``n0 = n*`` (ratio ``= 1``) under either law, so the arm
+    is a no-op without the T5 position/dressing axis. Consumes Slice L's
+    :func:`ladder_cumsum`; ``ladder`` injected table sets ``Sigma`` and
+    ``picture``/``kappa`` are ignored (the module convention, see
+    :func:`dE_int_pickup_eV`). ``constant`` -> scalar ``1.0``;
+    ``sigma_proportional`` is vectorised scalar-in -> float, array-in -> ndarray.
+
+    Raises ``ValueError`` on an unrecognised ``law`` (CLAUDE.md principle 4).
+    """
+    if law == "constant":
+        return 1.0
+    if law != "sigma_proportional":
+        raise ValueError(
+            f"unknown internal_energy_partition_law {law!r}; expected one of "
+            "('constant', 'sigma_proportional')"
+        )
+    sigma_n0 = ladder_cumsum(n0, picture=picture, kappa=kappa, ladder=ladder)
+    sigma_nstar = ladder_cumsum(N_STAR, picture=picture, kappa=kappa, ladder=ladder)
+    out = np.asarray(sigma_n0) / sigma_nstar
+    return float(out) if np.ndim(n0) == 0 else out
+
+
 def dE_int_pickup_eV(n, *, f_ret: float, picture: str = "statistical_mixture",
                      kappa: float, ladder=None):
     """S1 pickup heating ``dE_int = +f_ret * D_0(n+1)`` [eV] (``n`` = pre-pickup).

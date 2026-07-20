@@ -353,6 +353,37 @@ def test_leg_b_flips_exactly_one_lever_vs_aprime_cm(tmp_path, monkeypatch):
         assert not fnmatch(dir_b.name, "*_tier2_*")
 
 
+def test_leg_c_flips_exactly_one_lever_vs_b(tmp_path, monkeypatch):
+    """Leg C = leg B + the Slice-T6 sigma_proportional E_int(0)-dressing p-law
+    -- exactly one field differs vs B (cumulative: density_tied carries over),
+    and the run dirs carry the cc prefix (distinct from T3's c1..c4, same conf
+    namespace)."""
+    monkeypatch.setattr(script, "LEG", "c")
+    c = script.build_confirmation(tmp_path)
+    monkeypatch.setattr(script, "LEG", "b")
+    b = script.build_confirmation(tmp_path)
+
+    import dataclasses
+
+    for (_, cfg_c, dir_c), (_, cfg_b, dir_b), spec in zip(
+        c, b, script.CONFIRMATION_MATRIX
+    ):
+        # cumulative: leg C keeps every leg-B lever and adds the p-law
+        assert cfg_c.initial_shell_model == "density_tied"
+        assert cfg_c.evaporation_shed_convention == "co_moving"
+        assert cfg_c.internal_energy_partition_law == "sigma_proportional"
+        cfg_c.validate()
+        diff = {
+            f.name
+            for f in dataclasses.fields(type(cfg_c))
+            if getattr(cfg_c, f.name) != getattr(cfg_b, f.name)
+        }
+        assert diff == {"internal_energy_partition_law"}
+        assert dir_c.name != dir_b.name
+        assert f"_tier2probe_conf270_cc{spec.label[1:]}" in dir_c.name
+        assert not fnmatch(dir_c.name, "*_tier2_*")
+
+
 def test_unknown_leg_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(script, "LEG", "z")
     with pytest.raises(ValueError, match="LEG"):

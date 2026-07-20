@@ -60,7 +60,7 @@ from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
 from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.helium_density import rho_he_ratio
 from ..physics.interactions import partner_interaction_ion
-from ..physics.internal_energy_budget import e_int_onset_eV
+from ..physics.internal_energy_budget import e_int_onset_eV, sigma_partition_factor
 from ..physics.potentials import droplet_potential
 from ..physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
 from ..physics.solvation_cooling import e_bind_pair_eV
@@ -307,11 +307,24 @@ def build_initial_ion_state(
                 cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV
             ),
         )
-        # The S2 onset stays the constant f_int * E_avail per ion under both
-        # shell arms -- the Sigma-ratio coupling is Slice T6's p-law.
+        # S2 onset E_int(0) = f_int * E_avail, then the Slice-T6 p-law dressing
+        # coupling (Sigma(n0)/Sigma(n*))^p. Under the byte-inert "constant" arm
+        # the factor is exactly 1.0 (the delivered per-ion onset, unchanged);
+        # under "sigma_proportional" the onset rides the same per-ion t0 shell
+        # n0_initial and resolved ladder as the E_pot binding fold above, so
+        # under-dressed births get less onset. Inert at n0 = n* regardless of
+        # law (factor 1) -- a no-op without the T5 dressing axis.
         E_int_eV[:, 0] = e_int_onset_eV(
             f_int=cfg.internal_energy_partition_fraction,
             e_avail_eV=cfg.coulomb_available_eV,
+        ) * sigma_partition_factor(
+            n0_initial,
+            law=cfg.internal_energy_partition_law,
+            picture=cfg.ladder_electronic_picture,
+            kappa=cfg.ladder_steepness,
+            ladder=resolve_ladder(
+                cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV
+            ),
         )
 
     # 8. Static finals -- placeholder, the driver fills these at end.

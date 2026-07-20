@@ -93,7 +93,13 @@ SINGLE_INITIAL_POSITION = False  # off-center births, margin 0 (recorded caveat)
 #               against the certified apcm baseline and the twin's legb
 #               re-score (pre-registered histograms + per-bin mean KE on the
 #               co-moving basis).
-LEG = "b"
+# "c"         = leg C — B + internal_energy_partition_law="sigma_proportional"
+#               (the Slice-T6 E_int(0)-dressing p-law, 2026-07-18; exactly one
+#               lever flipped vs B — density_tied carries over cumulatively;
+#               run dirs carry the "c" prefix — cc1..cc4, distinct from the T3
+#               c1..c4). The p=1 A/B against the certified bc baseline and the
+#               twin's legc re-score (pre-registered on the solvated branch).
+LEG = "c"
 BIRTH_MARGIN_ANGSTROM = 3.0     # the Step-1c full-house cells' margin (§4k)
 # The position axis creates near-barrier transients: marginal E > 0 ions
 # (apc3 ion 9: escape margin +1.1 meV) fly *conservative* scattering orbits
@@ -291,8 +297,9 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         relaxation_ps = RELAXATION_TIME_PS    # the T3 cap exactly
         shed_convention: Optional[str] = None  # ride the cold default
         shell_model: Optional[str] = None      # ride the `full` default
+        partition_law: Optional[str] = None    # ride the `constant` (p=0) default
         label_prefix = ""
-    elif LEG in ("aprime", "aprime_cm", "b"):
+    elif LEG in ("aprime", "aprime_cm", "b", "c"):
         birth_law = "uniform_volume"
         birth_margin = BIRTH_MARGIN_ANGSTROM
         # The position axis populates the V0-2 droplet-retained class (well-
@@ -303,17 +310,24 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         relaxation_ps = APRIME_RELAXATION_TIME_PS
         # Leg A'': exactly one lever vs A' -- the OQ-J co-moving shed
         # convention (adjudicated working convention, 2026-07-17). None on A'
-        # keeps the delivered cold default byte-identically. Leg B rides A''.
+        # keeps the delivered cold default byte-identically. Legs B/C ride A''.
         shed_convention = None if LEG == "aprime" else "co_moving"
-        # Leg B: exactly one lever vs A'' -- the Slice-T5 dressing arm. None
-        # elsewhere keeps the delivered `full` default byte-identically.
-        shell_model = "density_tied" if LEG == "b" else None
-        # tag charset is [a-z0-9] -> "apc1" (A') / "apcmc1" (A'') / "bc1" (B)
-        label_prefix = {"aprime": "ap", "aprime_cm": "apcm", "b": "b"}[LEG]
+        # Legs B and C: the Slice-T5 dressing arm. Leg C is cumulative on B, so
+        # density_tied carries over; None elsewhere keeps the delivered `full`
+        # default byte-identically.
+        shell_model = "density_tied" if LEG in ("b", "c") else None
+        # Leg C: exactly one lever vs B -- the Slice-T6 E_int(0)-dressing p-law.
+        # None elsewhere keeps the delivered byte-inert `constant` (p=0).
+        partition_law = "sigma_proportional" if LEG == "c" else None
+        # tag charset is [a-z0-9] -> "apc1" (A') / "apcmc1" (A'') / "bc1" (B) /
+        # "cc1" (C)
+        label_prefix = {
+            "aprime": "ap", "aprime_cm": "apcm", "b": "b", "c": "c",
+        }[LEG]
     else:
         raise ValueError(
-            f"unknown LEG {LEG!r}; expected 'a', 'aprime', 'aprime_cm', or "
-            "'b' (a new oracle-chain leg is a plan amendment, not a config "
+            f"unknown LEG {LEG!r}; expected 'a', 'aprime', 'aprime_cm', 'b', "
+            "or 'c' (a new oracle-chain leg is a plan amendment, not a config "
             "value -- §I.11)."
         )
     scheduled: list[tuple[str, SimConfig, Path]] = []
@@ -350,6 +364,7 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             detection_droplet_retained_policy=retained_policy,
             evaporation_shed_convention=shed_convention,
             initial_shell_model=shell_model,
+            internal_energy_partition_law=partition_law,
         )
         run_dir = project_root / "data" / "runs" / tier2_confirmation_run_dir_name(
             CASE,
