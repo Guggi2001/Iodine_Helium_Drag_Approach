@@ -133,6 +133,13 @@ PROBE_TABLE_COLUMNS = [
 # glob in both directions -- the namespace lock).
 _PROBE_DIR_GLOB = "*_tier2probe_*"
 
+# The MD-confirmation namespace (``tier2_confirmation_run_tag``: T3 pilots,
+# T9 legs, the §I.11.4 re-pilot) shares the probe prefix but is scored by the
+# dedicated confirmation scorer, not this staircase report -- its knob surface
+# (drag form, ladder, droplet prior) is not in this report's columns. Excluded
+# at discovery (the T3 "exclude or ignore" note, closed by §I.11.4.1).
+_CONF_NAMESPACE_MARKER = "_tier2probe_conf"
+
 # A probe run dir is scorable with these two artifacts (``neutral.npz`` is
 # written but not read here). ``relaxation.npz`` became OPTIONAL at Slice DS
 # (review fix 2026-07-07): a skip-path run (relaxation_stage_enabled=False,
@@ -254,13 +261,18 @@ def discover_probe_run_dirs(runs_root: str | Path = RUNS_ROOT) -> list[Path]:
 
     The probe namespace is disjoint from the campaign glob by construction
     (``tier2_probe_run_tag``), so no bridge/campaign exclusion is needed here;
-    an incomplete (crashed or in-flight) dir is skipped, not scored.
+    an incomplete (crashed or in-flight) dir is skipped, not scored. The
+    MD-confirmation sub-namespace (``_tier2probe_conf``) is excluded -- those
+    dirs belong to the confirmation scorer (§I.11.4.1).
     """
     root = Path(runs_root)
     if not root.is_dir():
         return []
     return sorted(
-        p for p in root.glob(_PROBE_DIR_GLOB) if p.is_dir() and _run_is_complete(p)
+        p for p in root.glob(_PROBE_DIR_GLOB)
+        if p.is_dir()
+        and _CONF_NAMESPACE_MARKER not in p.name
+        and _run_is_complete(p)
     )
 
 

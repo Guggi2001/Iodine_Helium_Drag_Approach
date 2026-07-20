@@ -8018,3 +8018,103 @@ is ordering/direction only) → the T4/ihe_ked **solvated-branch** scoring →
 winner at N = 500 with the Landau arm stamped on (`v_L` re-pinning is the
 one open domain-expert calibration before that run). Nothing here
 discharges F5.
+
+## Re-pilot design ADJUDICATED — §I.11.4 frozen (RP-D1..D7 as recommended); Stage-0 scorer build OPENS under `[PROCEED TO IMPLEMENTATION]` (2026-07-20)
+
+The confirmation-matrix re-pilot design block (**§I.11.4**, drafted
+2026-07-20 post-leg-D) is adjudicated by the user — **all seven open
+decisions RP-D1..RP-D7 as recommended**:
+
+- **RP-D1** staged factorized sweep (I68-grounded: Stage 1 pins v_c on
+  the KE axis, Stage 2 sweeps (τ, E₀) for the histogram at v_c\*), with
+  the mandatory factorization guard (KE re-score at the Stage-2 winner;
+  bounded escalation to a local joint grid on drift).
+- **RP-D2** core arms rq4graded (p = −1) / floor1; **C3 dropped**
+  (control discharged); **C2 demoted to a 2–3-cell spot leg**.
+- **RP-D3** E₀ swept as a Stage-2 axis.
+- **RP-D4** T8 sensitivity ring (δ ∈ {0.40, 0.80},
+  `pickup_weighted_lognormal`, margin ∈ {4.67, 6} Å) at the provisional
+  winner only; reported as bands, never re-fit.
+- **RP-D5** the twin's registered quantitative authority on the KE axis
+  is the **×1.10 band** (measured ×1.03–1.07, legs A″–D); histogram /
+  droplet / suppression axes are ordering/direction only (I69).
+- **RP-D6** **two finalists — one per ladder — at N = 500**: the
+  I51/S2c-P3 split (n₁ ≥ 0.26 vs ≤ 0.24) is unreadable at N = 50
+  (SE(n₁) ≈ 0.045), so the ladder verdict belongs to the arbiter run.
+- **RP-D7** the `zero_gamma`-located / Landau-arbitrated asymmetry is
+  accepted; mitigation = a Landau sensitivity spot at the winner cell
+  once `v_L` arrives, as a re-rank trigger before the N = 500 spend.
+
+`[PROCEED TO IMPLEMENTATION]` given with the adjudication. Build order
+per §I.11.4: **Stage 0 — the T4-absorbed scoring machinery — first**
+(TDD behind this trigger; acceptance = the scorer reproduces the
+recorded §4r leg-D reads exactly on every column before any new cell is
+scored), then the Stage-1 pre-registration (twin re-scores committed
+before any MD) under the §I.11.4.5 convention. The `v_L` re-pinning
+request to the domain experts runs in parallel and gates only the
+N = 500 handoff. Nothing here discharges F5.
+
+## Re-pilot Stage 0 scorer DELIVERED — the T4-absorbed confirmation scorer is repo code; both oracle locks (§4r leg D + §4q cc) pass on every column; full suite 2494 passed (2026-07-20)
+
+Delivered under the standing `[PROCEED TO IMPLEMENTATION]` (TDD, RED
+watched first; 29 new tests). The T9 leg scoring — scratchpad-only through
+leg D — is now a committed surface:
+
+- **`i2_helium_md/postprocess/tier2_confirmation.py`** (new; exported via
+  `postprocess/__init__`): `read_confirmation_detection` /
+  `load_confirmation_run` freeze the §4m–§4r conventions
+  (`droplet_retained` excluded from every read via the `detected_mask`
+  contract, `suppressed` → bin 0 (RQ3 bare-candidate), histogram support
+  0..21, fail-loud on non-integer/out-of-range n and on an emptied
+  ensemble); `load_twin_prediction` / `load_twin_ke_curve` read the
+  committed `h2b_leg_*_{predictions,ke}.csv` contract (one-row selection,
+  4-decimal-rounding renormalization band 5·10⁻³, loud beyond it);
+  `wasserstein_between` adapts onto the **single** existing
+  `wasserstein_integer_support` (rule 1 — no second W₁);
+  `solvated_renormalized` is the RQ8 n ≥ 1 read (the committed abundance
+  reference reproduces the H.2b targets n₁ = 0.310 / n₂ = 0.142,
+  pinned by test); `score_histogram_vs_reference` (W₁/n₁/n₂/ratio on the
+  solvated branch) and `score_ke_curve_vs_reference` — the **first
+  implementation of the committed ihe_ked error model** (COLUMNS.md):
+  per-point √(statErr² + sysErr²), optionally ⊕ sim-bin SE, with the
+  calib (4 %) and condition (6 %) fractional bands as two *correlated*
+  whole-curve shifts profiled as unit-normal nuisances (closed-form 2×2
+  solve; hand-oracled single-band optimum + coherent-shift-absorption
+  tests), plus the ×1.25 coarse-fallback counter.
+- **`scripts/post_processing/tier2_confirmation_score.py`** (new; F3
+  idiom, pure scorer): leg/twin-parity table (the §4r columns) +
+  experimental table (RQ8 solvated histogram vs
+  `integrated_i_he_abundance.csv`; per-n mean-KE vs
+  `ihe_ked/IHe_KED_reference.csv` under the committed error model); knob
+  columns read from the authoritative `cfg.json`, never the tag.
+- **Conf-namespace exclusion closed** (the T3 "exclude or ignore" note,
+  §I.11.4.1): `discover_probe_run_dirs` in
+  `tier2_staircase_probe_report.py` now skips `_tier2probe_conf` dirs;
+  lock test extended in `test_tier2_staircase_probe_report.py`.
+
+**Acceptance (the I70 pattern):** the script reproduces the recorded
+**§4r leg-D** table at the printed precision on every column — MD side
+(supp 0.087/0.077/0.393/0.098; n̄ 3.89/4.19/2.82/3.93[5]; n₁
+0.228/0.154/0.067/0.196; W₁(D, twin) 0.71/0.73/0.54/0.68; n₁ KE
+1.037/0.982/0.317/1.038; trapped 0.08/0.09/0.11/0.08) *and* twin side —
+and the certified **§4q `cc`** baseline likewise (supp
+0.101/0.022/0.301/0.124; n̄ 4.87/5.27/3.76/4.87; n₁ KE
+1.077/1.104/0.317/1.089; trapped 0.11/0.11/0.17/0.11; W₁(C, twin)
+0.437/0.470/0.312/0.443 — the recorded 0.31–0.47 band, endpoints exact).
+Full suite **2494 passed** (2464 + 30).
+
+**First experimental-table read (wiring demonstration only — the
+§I.11.4 stance stands: these are pre-re-centering baseline numbers at
+the C-matrix knobs, NOT re-pilot verdicts):** leg-D dirs score
+W₁_solv 0.77/0.80/1.54/0.88, n₁/n₂ ratio 1.31/0.70/0.75/1.20 (ref
+2.18), KE profiled χ² 54/24/88/116 over 9–11 bins with both band pulls
+negative (the MD KE deficit vs the 1.302 eV n₁ anchor, I57/I68
+territory); c3 (current law) is the clear KE outlier (raw χ² 876,
+0 bins within ×1.25) — the §I.11.4.3 drop-C3 rationale, now in the
+committed metric. Stage-1 re-centering has real distance to close on
+both axes, as the design anticipated.
+
+Next per §I.11.4: **Stage-1 pre-registration** — twin re-scores at the
+v_c-bracket cells committed before any MD (§I.11.4.5), then the Stage-1
+KE-pin sweep behind the leg-trigger convention. Nothing here discharges
+F5.

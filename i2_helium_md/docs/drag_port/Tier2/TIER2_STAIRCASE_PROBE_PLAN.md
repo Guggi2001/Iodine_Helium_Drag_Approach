@@ -3073,3 +3073,203 @@ Nothing here discharges F5; the build stays behind its own
 > endgame: re-centering MD-driven → T4/ihe_ked solvated-branch scoring →
 > winner at N = 500 with the Landau arm on; `v_L` re-pinning is the one open
 > domain-expert calibration before that run). Nothing here discharges F5.
+
+### I.11.4 Confirmation-matrix re-pilot — design draft (2026-07-20; awaits adjudication of RP-D1..RP-D7)
+
+> **Status: DESIGN DRAFT — no build, no runs.** Entry documents: findings
+> §4r + I68–I70 (the leg-D measurement of channel (d)); the §I.11.1 endgame
+> sequence; the T9 scoring NB (committed error model). The T4-absorbed
+> scoring machinery is a repo-code build and stays behind its own
+> `[PROCEED TO IMPLEMENTATION]`; the sweep runs stay behind the leg-trigger
+> convention. Same stance as every wave: **reported, not auto-adjudicated**;
+> nothing here discharges F5; the bare bin stays RQ8-gated.
+
+#### I.11.4.0 Stance — what "MD-located" means after leg D
+
+The Step-1c closure basin (p = −1: v_c 7.5, τ 3.8 | p = 0: v_c 6.0–6.5,
+τ 3.8–4.0) was located under the 1D ensemble; leg D measured that on the
+droplet axis the twin under-models real MD by a uniform ≈ 0.5 He (I69).
+The re-centering is therefore **MD-driven by direct local sweep**. The
+bias-corrected-twin alternative (shift the twin by the measured softening,
+pre-select cells, MD-confirm a shortlist) is **rejected**: it promotes
+channel (d) from a measurement to an assumed constant offset — exactly the
+magnitude authority I69 revoked.
+
+Twin authority, per axis (the pre-registration currency of this design):
+
+- **Histogram / droplet / suppression axes:** ordering and direction only.
+- **KE axis:** quantitative within a **×1.10 band** (measured ×1.03–1.07
+  over legs A″–D; DP-P3).
+- **The ≈ 0.5 He softening is tracked, never corrected for:** each scored
+  cell records Δn̄(MD − twin); whether the offset stays uniform across the
+  matrix is a free channel-(d) characterization the re-pilot yields as a
+  by-product.
+
+#### I.11.4.1 Stage 0 (prerequisite) — the T4-absorbed scoring build
+
+The sweep's stopping rule is its score, so the scorer builds first (own
+trigger, TDD, the F-slice precedent). Contract (per the T9 scoring NB):
+
+- ihe_ked run-summary **mean-to-mean** vs the committed
+  `data/reference/ihe_ked/IHe_KED_reference.csv` (`meanKE_eV`), with the
+  **committed error model**: per-point √(statErr² + sysErr²) scatter plus
+  the calib (4 %) and condition (6 %) fractional bands as two *correlated*
+  whole-curve shifts; anchors n = 1 → 1.302 eV, n = 17 → 0.066 eV.
+- Solvated-branch histogram score: **n ≥ 1 renormalized** (bare
+  renormalized out per RQ8), W₁ over the reference support + n₁ + the
+  n₁/n₂ ratio.
+- Conventions frozen as scored in §4m–§4r: `droplet_retained` excluded,
+  suppressed → bin 0 (then renormalized out with the bare bin), KE
+  co-moving.
+- Conf-namespace-aware (the staircase report's `*_tier2probe_*` glob must
+  exclude conf/re-pilot dirs or its rows be disregarded — the T3 note).
+- **Wiring oracle:** the scorer reproduces the recorded §4r leg-D reads
+  exactly on every column before any new cell is scored (the I70 pattern).
+
+#### I.11.4.2 Stages 1–2 — the factorized sweep (exploits I68)
+
+I68 measured the factorization this design leans on: the solvated per-n KE
+curve is owned by the drag law + onset (droplet-prior-quiet, ≤ 0.12 eV
+under the prior flip), while the histogram moves on the τ/E₀/prior axes.
+A joint (v_c × τ × E₀ × arm) grid (~80+ cells) is replaced by:
+
+- **Stage 1 — pin v_c on the KE axis.** Per drag-form arm, sweep a v_c
+  bracket (working proposal: 5 values spanning ±1.0 Å/ps about the
+  Step-1c value) with all other knobs at the C-matrix values, on the full
+  leg-D configuration (all §I.11 arms on, `kornilov_lognormal` δ = 0.625,
+  margin 3 Å). Score **KE-only** (bar + n₁-anchor distance; leg D sits at
+  ≈ 1.04 vs 1.302 eV — real distance to close). Output: v_c\* per arm.
+- **Stage 2 — sweep (τ, E₀) for the histogram at v_c\*.** Working
+  proposal: τ × E₀ ≈ 4 × 4 cells per core arm bracketing the Step-1c
+  values (τ ∈ ≈ [3.2, 4.8] ps, E₀ ∈ ≈ [0.21, 0.27] eV; exact grids fixed
+  at trigger time with two-decimal f_int tags — the Wave-8 tag lesson).
+  Score: histogram (W₁, n₁, ratio) + the joint read with the Stage-1 KE.
+- **Factorization guard (mandatory).** The onset co-owns the KE curve, so
+  the v_c pin can drift under a large (τ, E₀) move: re-score the KE curve
+  at the Stage-2 winner cell; if it leaves the Stage-1 band, fall back to
+  a local joint grid around the miss (bounded escalation, not a redesign).
+
+#### I.11.4.3 Matrix composition (the arms that ride)
+
+- **Core arms (full Stages 1–2): rq4graded (p = −1) and floor1** — the
+  C1/C4 lineage; the S2c-P3 / I51 discrimination is still open (leg D:
+  n₁ 0.228 vs 0.196 — direction right, regime not reached).
+- **C3 (current-law control) is DROPPED.** Its role is discharged: the KE
+  axis discriminates it unambiguously (n₁ KE 0.317 vs 1.302 eV); its §4l/
+  §4r reads stay on disk as the record.
+- **C2 (p = 0) demoted to a spot leg:** 2–3 cells at the re-centered
+  knobs (its own v_c\* from Stage 1), keeping the form discrimination
+  falsifiable without doubling the matrix.
+- **Statistics boundary (load-bearing):** the S2c-P3 threshold
+  (n₁ ≥ 0.26 vs cap ≤ 0.24) is a 0.02 split; at N = 50 (~90 detected
+  fragments) SE(n₁) ≈ 0.045 — **the ladder verdict is unreadable at the
+  re-pilot.** The re-pilot ranks on W₁/KE and locates the winner region;
+  the ladder split is an N = 500 read by construction (→ RP-D6).
+- **Stage 3 — sensitivity ring at the provisional winner only:** δ ∈
+  {0.40, 0.80}, `pickup_weighted_lognormal`, margin ∈ {4.67, 6} Å —
+  ~5 cells, **reported as bands, never re-fit** (the T8 scope note's
+  "swept at the re-pilot" is satisfied at the winner, not per-cell).
+
+#### I.11.4.4 Pins, execution, cost
+
+N = 50 bridge seed; production kinematics (2.70 eV channel, R0_GS =
+2.666 Å); s_eff = 8; gated `density_scaled`; all §I.11 arms on
+(`uniform_volume` margin 3 Å, co-moving shed, `density_tied`, p = 1,
+`kornilov_lognormal` δ = 0.625); exclude policy; 8000 ps cap + I67
+shrunk-checkpoint accommodation; detection at 8.53 µs; **E2 =
+`zero_gamma`** (forced: `v_L` unpinned; T8-D4 reserves the Landau arm for
+the N = 500 gate — see RP-D7). Execution: the I70 pattern (per-config
+parallel resume drivers; scorer oracle-locked first). Rough cost at
+≈ 3.5 min/config: Stage 1 ~10–15, Stage 2 ~35, spots + ring ~8 →
+**~55 cells ≈ 3–4 h wall-clock**. Distinct conf-re-pilot tag (working
+name: `tier2probe_confrp_*`), non-collision verified at trigger time.
+
+#### I.11.4.5 Pre-registration convention (updated for the post-leg-D twin)
+
+Before each stage executes, the twin re-scores at the exact cells
+(`stage_legd` machinery), registering:
+
+- **ordering** of cells on the histogram axes + **direction** of each
+  knob's effect (the I69 currency),
+- **KE magnitudes within the ×1.10 band** (the axis where quantitative
+  authority survives),
+- the **expected uniform softening** as a check quantity: a
+  *non-uniform* Δn̄(MD − twin) across the matrix is a new channel-(d)
+  structure finding, reported not absorbed.
+
+An unlisted divergence class remains a model-structure finding (the
+S2c-P4 convention).
+
+#### I.11.4.6 Winner, handoff, and the N = 500 gate
+
+The winner (best joint score under the committed error model) hands off
+to the N = 500 arbiter run **with the Landau arm on** — gated on the one
+open external item, the domain-expert `v_L` re-pinning (request it now,
+in parallel; it does not block the re-pilot). Before committing the
+N = 500 spend: a **Landau sensitivity spot** at the winner cell (once
+`v_L` arrives) — the winner is otherwise *located* under `zero_gamma`
+but *arbitrated* under Landau, and a material shift at the spot is a
+re-rank trigger, not a silent carry.
+
+#### I.11.4.7 Open decisions (RP-D1..RP-D7 — await user adjudication)
+
+- **RP-D1** — staged factorized sweep (recommended; I68-grounded, with
+  the mandatory guard) vs full joint (v_c, τ, E₀) grid.
+- **RP-D2** — matrix composition as proposed (core rq4graded/floor1;
+  C3 dropped; C2 spot leg) — confirm each.
+- **RP-D3** — E₀ swept as a Stage-2 axis (recommended; it is a Bounded
+  knob and the closure cells only pinned it under the 1D ensemble) vs
+  pinned at the C-matrix values.
+- **RP-D4** — sensitivity ring at the winner only (recommended) vs in
+  the core matrix.
+- **RP-D5** — the ×1.10 KE band as the twin's registered quantitative
+  authority (measured ×1.03–1.07 + margin) — confirm the number.
+- **RP-D6** — **one winner vs two finalists (one per ladder) at
+  N = 500.** Recommended: two finalists — the I51/S2c-P3 split is
+  unreadable at N = 50 (SE(n₁) ≈ 0.045 vs a 0.02 threshold), so a single
+  pilot-ranked winner would decide the program's key bounded-physics
+  claim on noise. Cost: doubles the arbiter run.
+- **RP-D7** — accept the `zero_gamma`-located / Landau-arbitrated
+  asymmetry with the winner-cell Landau spot as mitigation (recommended)
+  vs blocking the re-pilot on `v_L`.
+
+**Boundaries.** N = 50 single seed throughout the sweep (class fractions
+quantize at ~1 %; SE(n̄) ≈ 0.47); the re-pilot scores the experimental
+targets for the first time in the §I.11 chain — but its verdicts are
+region-location and ranking, not the bar-level claim (that is the N = 500
+run's job, the absorbed S2-P4 gate); nothing here discharges F5.
+
+> **Status (2026-07-20, user adjudication).** **RP-D1..RP-D7 adjudicated
+> as recommended** (staged factorized sweep with the mandatory guard;
+> core rq4graded/floor1, C3 dropped, C2 spot leg; E₀ swept at Stage 2;
+> sensitivity ring at the winner only; ×1.10 KE band; **two finalists —
+> one per ladder — at N = 500**; `zero_gamma`-located / Landau-arbitrated
+> asymmetry accepted with the winner-cell Landau spot as mitigation) and
+> `[PROCEED TO IMPLEMENTATION]` given. The design draft above is frozen
+> as adjudicated. Build order: **Stage 0 (the T4-absorbed scorer) first**
+> (TDD; §4r oracle-lock as acceptance), then Stage-1 pre-registration
+> (twin re-scores committed before any MD) per §I.11.4.5. The `v_L`
+> re-pinning request to the domain experts is open in parallel (gates
+> only the N = 500 handoff). Log entry: "Re-pilot design ADJUDICATED".
+
+> **Status (2026-07-20, Stage 0 DELIVERED — log entry "Re-pilot Stage 0
+> scorer DELIVERED").** As-built: package module
+> `i2_helium_md/postprocess/tier2_confirmation.py` (the §4r detection-read
+> conventions — retained excluded / suppressed → bin 0 / support 0..21;
+> twin pre-registration CSV loaders; the W₁ adapter onto the single
+> `wasserstein_integer_support` implementation; the RQ8 solvated
+> renormalization; and the **committed ihe_ked error model** — per-point
+> √(statErr² + sysErr²) ⊕ sim-bin SE, calib/condition correlated bands
+> profiled as unit-normal nuisances, closed-form 2×2, plus the ×1.25
+> coarse-fallback counter), exported through `postprocess/__init__`;
+> report script `scripts/post_processing/tier2_confirmation_score.py`
+> (F3 idiom; leg/twin-parity table + experimental table; knob columns
+> from the authoritative `cfg.json`); the staircase report's
+> `discover_probe_run_dirs` now **excludes `_tier2probe_conf`** (the T3
+> "exclude or ignore" note closed, lock-tested). TDD (29 new tests, RED
+> watched); full suite **2494 passed**. **Both oracle locks pass at the
+> printed precision:** the script reproduces every recorded §4r leg-D
+> column (dc1..4, MD + twin sides) and every §4q `cc` column incl. the
+> W₁(C, twin) 0.31–0.47 band endpoints. Next: Stage-1 pre-registration
+> (twin re-scores at the v_c-bracket cells) behind the §I.11.4.5
+> convention.

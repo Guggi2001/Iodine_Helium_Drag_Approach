@@ -192,6 +192,13 @@ def test_discovery_honours_probe_namespace(tmp_path):
     for name in ("cfg.json", "ion.npz", "relaxation.npz"):
         (campaign / name).write_text("x", encoding="utf-8")
 
+    # the MD-confirmation sub-namespace shares the probe prefix but belongs
+    # to the confirmation scorer -- excluded even when "complete" (§I.11.4.1)
+    conf = tmp_path / "9A_drag_shared_pure_cubic_N50_tier2probe_conf270_dc1"
+    conf.mkdir()
+    for name in ("cfg.json", "ion.npz", "relaxation.npz"):
+        (conf / name).write_text("x", encoding="utf-8")
+
     assert report.discover_probe_run_dirs(tmp_path) == [complete]
 
 
