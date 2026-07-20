@@ -2524,6 +2524,96 @@ re-centered T9 re-pilot's job after T8); the bare-bin KE stays RQ3/RQ8-gated;
 the E2 Landau-gated drag arm (§I.11.2 item 2) is still unbuilt — required
 before N = 500, not the N = 50 legs; nothing discharges F5.
 
+## 4r. T9 leg D — the T8 kornilov droplet prior: the axis transfers directionally with the suppressed ordering exact and the KE axis prior-quiet as the twin claimed; but the frozen-geometry twin under-models the axis — W₁ regresses to 0.54–0.73 and the histogram softens ≈ 0.5 He below the twin (channel (d)'s first measured bite)
+
+Executed 2026-07-20 (log entries "T9 leg D TRIGGERED" / "EXECUTED"). One
+semantic lever vs the certified `cc` baseline:
+`droplet_size_prior = "kornilov_lognormal"` at the D4 primary (⟨N⟩ = 2000,
+δ = 0.625; the guard-paired `use_single_droplet_size=False` is the same
+lever) — legs A″/B/C carry over cumulatively (co-moving shed, `density_tied`,
+p = 1). N = 50 bridge seed, margin 3 Å, exclude policy, 8000 ps cap,
+`zero_gamma` (T8-D4: the Landau arm stays the N = 500 gate). The four `dc`
+dirs ran under the I67 shrunk-checkpoint accommodation (per-config parallel
+resume drivers; ~2 MB `relaxation.npz`; ≈ 14 min wall-clock for all four).
+The scorer re-implementation was oracle-locked first: it reproduces the
+recorded §4q `cc` numbers exactly on every column.
+
+### The A/B/twin read (conventions as §4m; KE co-moving on both sides)
+
+Pre-registered twin: `h2b_leg_d_predictions.csv` / `h2b_leg_d_ke.csv`
+(committed; the `d_delta` wiring oracle reproduces the leg-C twin verbatim
+at m = 20000). Realized prior N_q05/q50/q95 = 596/1638/4636.
+
+| config | supp (D / twin_d / C) | n̄_det (D / twin / C) | n₁ (D / twin) | W₁(D, twin) | n₁ KE (D / twin / C) | trapped (D / twin) |
+|---|---|---|---|---|---|---|
+| c1 | 0.087 / 0.127 / 0.101 | 3.89 / 4.42 / 4.87 | 0.228 / 0.236 | **0.71** | 1.037 / 0.992 / 1.077 | 0.080 / 0.051 |
+| c2 | 0.077 / 0.058 / 0.022 | 4.19 / 4.77 / 5.27 | 0.154 / 0.246 | **0.73** | 0.982 / 0.958 / 1.104 | 0.090 / 0.056 |
+| c3 | 0.393 / 0.383 / 0.301 | 2.82 / 3.35 / 3.76 | 0.067 / 0.087 | **0.54** | 0.317 / 0.245 / 0.317 | 0.110 / 0.081 |
+| c4 | 0.098 / 0.163 / 0.124 | 3.93 / 4.36 / 4.87 | 0.196 / 0.191 | **0.68** | 1.038 / 0.967 / 1.089 | 0.080 / 0.051 |
+
+### Verdicts (pre-registered DP-P1..P4)
+
+1. **DP-P1 SPLIT — ordering + twin band CONFIRMED, the net-rise-vs-`cc`
+   arm REFUTED on c1/c4 through the listed channel (a).** The suppressed
+   ordering transfers exactly (0.393 > 0.098 > 0.087 > 0.077 = c3 > c4 >
+   c1 > c2). c2/c3 rise as predicted (0.022 → 0.077, 0.301 → 0.393, both
+   within ~2 ions/100 of the twin — statistical at ~90 fragments). But
+   c1/c4 *fall* vs `cc` (0.101 → 0.087, 0.124 → 0.098), landing **below**
+   the twin by 4.0/6.5 ions/100 — inside the pre-listed re-filling band
+   (1–7 ions/100): where the small-droplet suppression push is modest,
+   in-bubble pickup re-filling overcompensates it.
+2. **DP-P2 SPLIT — direction CONFIRMED, magnitude ≈ 2× the prediction, the
+   W₁-scale claim MISSED.** n̄_det falls on every config, but by 0.94–1.08 He
+   (predicted 0.42–0.55) — MD sits a **uniform 0.43–0.58 He below the twin**.
+   n₁ lands in the predicted band on c1/c4 (0.228/0.196 vs 0.236/0.191), low
+   on c2 (0.154 vs 0.246) and c3 (0.067 vs 0.087). **W₁(D, twin) = 0.54–0.73
+   — the chain-best trend breaks** (A′ 0.55–0.69 → A″ 0.51–0.68 → B
+   0.41–0.51 → C 0.31–0.47 → D 0.54–0.73). Statistical context: the
+   per-config n̄ deficit is ≈ 1 SE (σ_n ≈ 4.5 over ~90 detected fragments →
+   SE(n̄) ≈ 0.47), but it is same-signed on all four configs — a systematic
+   softening, attributed to the *listed* channel (d): the twin's chord is
+   frozen at birth geometry while the MD's well depth, gate depth, and
+   pickup exposure follow each ion's R_i through the live cascade. The
+   droplet axis is exactly where that freeze bites first.
+3. **DP-P3 CONFIRMED — the structural claim of the leg.** The KE axis is
+   prior-quiet in MD exactly as the twin claimed: n₁ mean KE moves ≤ 0.12 eV
+   under the prior flip (1.077 → 1.037 / 1.104 → 0.982 / 0.317 → 0.317 at
+   the printed precision / 1.089 → 1.038), and MD tracks the twin at
+   ×1.03–1.07 (c3 ×1.29 — a 0.07 eV absolute gap in the low-KE regime).
+   The solvated KE curve stays owned by the drag law + onset, not the
+   droplet axis; distance to the experimental n₁ = 1.302 eV stays ≈ leg C's.
+4. **DP-P4 CONFIRMED (ratio refined).** Trapped drops under the prior
+   exactly as the twin said (0.110/0.110/0.170/0.110 → 0.080/0.090/0.110/
+   0.080), c3 largest, at ×1.4–1.6 the twin's 150 ps chord read (predicted
+   1.7–1.9): small-droplet marginal ions clear the shallower well even a
+   little more readily in real MD.
+
+**S2c-P4 holds:** every deviation lands in a listed channel — (a)
+re-filling on the suppression axis, (d) frozen-vs-dynamic geometry on the
+histogram axis, N = 50 statistics elsewhere. No unlisted divergence.
+
+### What leg D means for the endgame
+
+The §I.11 oracle chain A′→D is **complete**: every physics arm (position,
+shed convention, dressing, p-law, droplet prior) transfers directionally to
+real MD. The droplet axis is the first where the 1D twin's *quantitative*
+authority ends — the W₁ regression and the uniform softening turn the
+post-leg-B stance ("the twin is a basin-locator, not a predictor") from a
+caveat into a measurement. Consequence for the re-pilot: the
+confirmation-matrix re-centering must be MD-driven (as already decided),
+with the twin's droplet-axis output used for ordering/direction only; the
+N = 500 winner run (Landau arm on) is the statistical arbiter of the
+0.5 He softening.
+
+### Boundaries
+
+N = 50 single seed (~90 detected fragments per config; class fractions
+quantize at ~1 %, SE(n̄) ≈ 0.47 — the softening is a four-config joint
+read, not per-config significant); the `dc` dirs use the I67
+shrunk-checkpoint accommodation; the knob values are the C matrix —
+**nothing here scores the experimental targets** (the re-centered re-pilot's
+job); the bare bin stays RQ8-gated; nothing discharges F5.
+
 ---
 
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
@@ -3030,6 +3120,30 @@ before N = 500, not the N = 50 legs; nothing discharges F5.
   reusable accommodation when the full-trajectory compressed save exceeds an
   execution window (used for the `cc` dirs; the `bc` dirs keep the full
   trajectory).
+- **I68 (leg D, §4r).** **The droplet and KE axes are decoupled.** Flipping
+  the T8 kornilov prior on the certified `cc` baseline moves the histogram
+  (n̄ down ≈ 1 He, suppression re-ordered within the re-filling band,
+  ordering c3 > c4 > c1 > c2 exact) while the solvated n₁ KE moves ≤ 0.12 eV
+  (c3 unchanged at the printed precision) — exactly the twin's
+  prior-invariance claim (DP-P3). The solvated per-n KE curve is a pure
+  drag-law/onset observable; the droplet prior buys histogram freedom
+  without re-opening the KE calibration.
+- **I69 (leg D, §4r).** **The chain-best W₁ trend breaks at the droplet
+  axis, and the miss is the twin's frozen birth geometry.** W₁(D, twin) =
+  0.54–0.73 (vs leg C's 0.31–0.47) from a uniform 0.43–0.58 He MD-below-twin
+  softening (≈ 1 SE per config, same-signed on all four): the MD's well
+  depth, gate depth, and pickup exposure follow R_i through the live
+  cascade while the twin's chord is frozen at birth geometry — channel (d),
+  listed since the trigger, now measured. On the droplet axis the twin's
+  authority is ordering/direction, not magnitude: the basin-locator stance
+  (post-leg-B) is now a measurement, and the re-pilot re-centering must be
+  MD-driven.
+- **I70 (leg D, §4r — method).** **The I67 accommodation composes with
+  per-config parallelism.** Four per-config resume drivers (shrunk
+  relaxation checkpoints) ran the whole leg in ≈ 14 min wall-clock / ≈ 1
+  CPU-hour, with the scorer oracle-locked against the recorded §4q numbers
+  before any leg-D data was read — the leg-execution pattern for the
+  re-pilot matrix.
 
 ---
 

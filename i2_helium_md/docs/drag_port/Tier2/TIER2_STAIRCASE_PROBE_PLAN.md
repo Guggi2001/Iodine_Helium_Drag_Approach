@@ -3058,3 +3058,18 @@ Nothing here discharges F5; the build stays behind its own
 > `stage_legd` at m = 20000 before any MD, then the four `dc` pilots flip
 > exactly `droplet_size_prior="kornilov_lognormal"` on the certified `cc`
 > baseline (N = 50, `zero_gamma` retained; T8-D4).
+
+> **Status (2026-07-20, post-leg-D — the oracle chain is complete).**
+> **T9 leg D is EXECUTED** (findings **§4r** + I68–I70; log entries "T9 leg D
+> TRIGGERED" / "EXECUTED"): DP-P3/P4 CONFIRMED — the KE axis is prior-quiet
+> in MD exactly as the twin claimed (≤ 0.12 eV; the droplet and KE axes are
+> decoupled, I68) and trapped drops under the prior; DP-P1/P2 SPLIT — the
+> suppressed ordering transfers exactly and every deviation lands in a
+> listed channel, but **W₁(D, twin) = 0.54–0.73 breaks the chain-best trend**
+> on a uniform ≈ 0.5 He MD-below-twin softening: the twin's frozen birth
+> geometry, measured (channel (d) → I69). The A′→D chain is complete; on the
+> droplet axis the twin's authority is ordering/direction only. **Next per
+> §I.11.1: the confirmation-matrix re-pilot at MD-located knobs** (T9
+> endgame: re-centering MD-driven → T4/ihe_ked solvated-branch scoring →
+> winner at N = 500 with the Landau arm on; `v_L` re-pinning is the one open
+> domain-expert calibration before that run). Nothing here discharges F5.
