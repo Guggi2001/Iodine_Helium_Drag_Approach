@@ -3273,3 +3273,28 @@ run's job, the absorbed S2-P4 gate); nothing here discharges F5.
 > W₁(C, twin) 0.31–0.47 band endpoints. Next: Stage-1 pre-registration
 > (twin re-scores at the v_c-bracket cells) behind the §I.11.4.5
 > convention.
+
+> **Status (2026-07-20, Stage-1 PRE-REGISTERED — log entry "Re-pilot
+> Stage-1 pre-registration EXECUTED"; no MD has run).** The Stage-1 grids
+> are frozen: v_c brackets **c1/c4 ∈ {6.5, 7.0, 7.5, 8.0, 8.5}**,
+> **c2 ∈ {5.5, 6.0, 6.5, 7.0, 7.5}** (5 values, ±1.0 Å/ps about the
+> Step-1c centers; C3 dropped per RP-D2), cell labels `s1c1v75`-style
+> (run-tag-safe). The twin re-scored all 15 cells at the full leg-D
+> configuration (`stage_repilot1`, m = 20000, stage_legd draw discipline;
+> chord integration cached per drag tail — the c1/c4 KE degeneracy is
+> structural); committed:
+> `data/runs/h2b_forward_model/h2b_repilot_s1_{predictions,ke}.csv`.
+> **S1-P1 (wiring) VERIFIED at generation:** the three bracket-center
+> cells reproduce the committed leg-D `d` rows exactly (predictions +
+> KE). Registered predictions S1-P2..P5 (numbers + tables in the log
+> entry): KE monotone ↑ as v_c ↓ with MD in the ×1.10 twin band; the MD
+> profiled-χ² argmin lands at the twin's cell or one step toward higher
+> v_c (twin argmins: c1 v75–v80, c2 v70, c4 v80); the p = −1 arms reach
+> the 1.302 eV n₁ anchor only at the bracket low edge while the **p = 0
+> arm cannot reach it in-bracket** (twin cap 1.129 eV ⇒ ≤ 1.24 at band
+> top) — a form-discrimination read either way; histogram side-effect
+> directions (v_c ↓ ⇒ supp ↑, n̄ ↓, trapped ↓) are ordering-only
+> authority (I69); the leg-D ≈ 0.5 He uniform softening is the
+> channel-(d) check quantity across all 15 cells. Next: the Stage-1 MD
+> sweep (15 × N = 50 under the I70 pattern) behind its own leg trigger,
+> scored KE-first by the delivered Stage-0 scorer.

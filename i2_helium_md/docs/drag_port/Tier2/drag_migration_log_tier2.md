@@ -8118,3 +8118,85 @@ Next per §I.11.4: **Stage-1 pre-registration** — twin re-scores at the
 v_c-bracket cells committed before any MD (§I.11.4.5), then the Stage-1
 KE-pin sweep behind the leg-trigger convention. Nothing here discharges
 F5.
+
+## Re-pilot Stage-1 pre-registration EXECUTED — twin re-scores at the frozen v_c brackets committed before any MD; S1-P1 wiring oracle passes at m = 20000; S1-P2..P5 registered (2026-07-20)
+
+Under the standing trigger, `scripts/tier2_h2b_forward_model.py` gained
+`stage_repilot1` (mode `repilots1`) + `REPILOT_S1_VC_BRACKETS` +
+`repilot_s1_cell_label`; two new pytest cases (smoke + in-stage-oracle at
+m = 200; fail-loud without the leg-D record). **Frozen grids (the
+§I.11.4.2 working proposal, now fixed):** v_c ∈ {6.5, 7.0, 7.5, 8.0,
+8.5} for c1/c4 (p = −1; centers 7.5), v_c ∈ {5.5, 6.0, 6.5, 7.0, 7.5}
+for c2 (p = 0 spot leg; center 6.5); C3 dropped (RP-D2); cell labels
+`s1<config>v<v_c×10>` (run-tag-safe for the MD dirs). Every cell rides
+the full leg-D configuration (kornilov δ = 0.625, uniform_volume margin
+3 Å, density_tied, p = 1, co-moving; per-config τ/ladder/E₀); the draw
+discipline is stage_legd's verbatim, and the chord integration is cached
+per drag tail — **c1/c4 differ only through ladder/τ bookkeeping, never
+through the chord (test-locked)**.
+
+Committed pre-registration records (force-added, the leg precedent):
+`data/runs/h2b_forward_model/h2b_repilot_s1_predictions.csv` (15 rows,
+leg = `s1`) and `h2b_repilot_s1_ke.csv` (per-bin KE to n = 17 at
+m = 20000). **S1-P1 (wiring) VERIFIED at generation:** the bracket-center
+cells (`s1c1v75`, `s1c2v65`, `s1c4v75`) reproduce the committed leg-D
+`d` rows exactly on every shared column, predictions *and* KE.
+
+**Twin table (histogram axis — ordering/direction authority ONLY, I69):**
+
+| cell | trapped | supp | n̄_det | | cell | trapped | supp | n̄_det |
+|---|---|---|---|---|---|---|---|---|
+| s1c1v65 | 0.015 | 0.140 | 3.53 | | s1c4v65 | 0.015 | 0.178 | 3.53 |
+| s1c1v70 | 0.032 | 0.134 | 3.96 | | s1c4v70 | 0.032 | 0.172 | 3.92 |
+| s1c1v75 | 0.051 | 0.127 | 4.42 | | s1c4v75 | 0.051 | 0.163 | 4.36 |
+| s1c1v80 | 0.067 | 0.119 | 4.88 | | s1c4v80 | 0.067 | 0.153 | 4.78 |
+| s1c1v85 | 0.077 | 0.109 | 5.30 | | s1c4v85 | 0.077 | 0.140 | 5.20 |
+| s1c2v55 | 0.026 | 0.066 | 4.11 | | s1c2v70 | 0.067 | 0.054 | 5.09 |
+| s1c2v60 | 0.041 | 0.062 | 4.44 | | s1c2v75 | 0.075 | 0.049 | 5.40 |
+| s1c2v65 | 0.056 | 0.058 | 4.77 | | | | | |
+
+**Twin table (KE axis — ×1.10 quantitative band, RP-D5; n₁ mean KE [eV]
+and the twin-side profiled χ² under the committed error model, 17 pts):**
+
+| cell | n₁ KE | χ²_prof | | cell | n₁ KE | χ²_prof | | cell | n₁ KE | χ²_prof |
+|---|---|---|---|---|---|---|---|---|---|---|
+| s1c1v65 | 1.229 | 2257 | | s1c2v55 | 1.129 | 928 | | s1c4v65 | 1.211 | 3695 |
+| s1c1v70 | 1.114 | 584 | | s1c2v60 | 1.042 | 375 | | s1c4v70 | 1.093 | 1283 |
+| s1c1v75 | 0.992 | **52** | | s1c2v65 | 0.958 | 74 | | s1c4v75 | 0.967 | 242 |
+| s1c1v80 | 0.863 | **47** | | s1c2v70 | 0.877 | **28** | | s1c4v80 | 0.835 | **32** |
+| s1c1v85 | 0.731 | 154 | | s1c2v75 | 0.800 | 80 | | s1c4v85 | 0.702 | 64 |
+
+**Registered predictions (S1-P2..P5; MD = the 15 × N = 50 Stage-1 sweep):**
+
+- **S1-P2 (KE monotony + band).** MD per-bin KE rises monotonically as
+  v_c decreases within each arm; MD tracks the twin within **×1.10 per
+  bin** (historical ×1.03–1.07, MD above twin); c1/c4 are KE-degenerate
+  at equal v_c (twin n₁ split 0.019–0.029 eV; MD registered ≤ 0.06 eV).
+- **S1-P3 (whole-curve landing).** Under the committed error model the
+  MD profiled-χ² argmin lands **at the twin's cell or one bracket step
+  toward higher v_c** (the ×1.03–1.07 bias direction): c1 ∈ {v75, v80,
+  v85}, c2 ∈ {v70, v75}, c4 ∈ {v80, v85}.
+- **S1-P4 (n₁-anchor reach — the form-discrimination read).** The
+  p = −1 arms reach the experimental n₁ = 1.302 eV only at the bracket
+  low edge (twin 1.229/1.211 at v65 ⇒ MD 1.27–1.35 in-band); the
+  **p = 0 arm cannot reach it anywhere in-bracket** (twin cap 1.129 at
+  v55 ⇒ ≤ 1.24 at band top). An MD c2 cell at ≥ 1.30 breaks the ×1.10
+  band — a model-structure finding either way. The registered tension —
+  the χ² optimum sits mid-bracket while the n₁ anchor pulls to the low
+  edge (lowering v_c lifts n₂/n₃ past the reference *faster* than n₁:
+  v65/v75 ratios 1.24 at n₁ but 1.49/1.76 at n₂/n₃) — is the H.2b
+  speed-selective residual (I45) expressed inside the bracket; **where
+  MD resolves it is Stage 1's actual measurement.**
+- **S1-P5 (histogram side-effect + the channel-(d) check).** Directions
+  (ordering authority only): v_c ↓ ⇒ suppressed ↑, n̄_det ↓, trapped ↓,
+  monotone within each arm. MD n̄ is expected a **uniform ≈ 0.4–0.6 He
+  below the twin** across all 15 cells (the leg-D channel-(d)
+  measurement, I69); a *non-uniform* Δn̄(MD − twin) across the bracket
+  is a new channel-(d) structure finding, reported not absorbed.
+
+Boundaries: twin cells inherit the frozen-birth-geometry authority limit
+(I69) on every histogram column; the χ² values are twin-side ranking
+aids, not MD predictions of absolute goodness (the bar-level verdict
+stays the N = 500 run's); nothing here discharges F5. Next: the
+**Stage-1 MD sweep** (15 × N = 50, I70 execution pattern, scored
+KE-first by the Stage-0 scorer) behind its own leg trigger.

@@ -333,3 +333,60 @@ def test_stage_legd_smoke_and_oracle(twin, monkeypatch, tmp_path):
     # and the delta rows pin the N quantiles at exactly 2000
     for r in d_delta:
         assert float(r["N_q05"]) == 2000.0 and float(r["N_q95"]) == 2000.0
+
+
+def test_stage_repilot1_smoke_and_oracle(twin, monkeypatch, tmp_path):
+    """The Stage-1 v_c-bracket re-score (SI.11.4 pre-registration) runs at
+    small m, writes both CSVs, spans exactly the three adjudicated brackets
+    (c1/c4: 6.5..8.5; c2: 5.5..7.5 -- C3 dropped, RP-D2), and its in-stage
+    S1-P1 wiring oracle passes: the bracket-center cells reproduce the leg-D
+    ``d`` rows exactly (same SEED/draw order -- cells differ only through the
+    drag tail, never through sampling noise)."""
+    import csv as _csv
+
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    twin.stage_legd(m=200)  # provides the in-stage oracle's reference record
+    twin.stage_repilot1(m=200)
+
+    hist = tmp_path / "h2b_repilot_s1_predictions.csv"
+    ke = tmp_path / "h2b_repilot_s1_ke.csv"
+    assert hist.exists() and ke.exists()
+
+    with open(hist, newline="") as fh:
+        rows = [r for r in _csv.DictReader(fh) if r["leg"] == "s1"]
+    assert len(rows) == 15
+    labels = [r["config"] for r in rows]
+    assert len(set(labels)) == 15
+    # bracket coverage + cell-label convention (v_c x 10)
+    for config, bracket in twin.REPILOT_S1_VC_BRACKETS.items():
+        for v_c in bracket:
+            cell = twin.repilot_s1_cell_label(config, v_c)
+            row = next(r for r in rows if r["config"] == cell)
+            assert float(row["v_c"]) == v_c
+    assert "s1c1v75" in labels and "s1c2v55" in labels
+    # C3 never rides (RP-D2)
+    assert not any("c3" in lab for lab in labels)
+
+    # c1/c4 share the chord integration (same drag tail): at equal v_c the
+    # K quantiles must be identical -- the registered KE-degeneracy claim
+    for v_c in twin.REPILOT_S1_VC_BRACKETS["c1"]:
+        r1 = next(r for r in rows
+                  if r["config"] == twin.repilot_s1_cell_label("c1", v_c))
+        r4 = next(r for r in rows
+                  if r["config"] == twin.repilot_s1_cell_label("c4", v_c))
+        # tau rescale differs (3.8 vs 4.4), so compare tau-unscaled K; the
+        # CSV stores K_q50 rounded at 4 decimals, so the tau re-multiply
+        # carries up to ~tau * 5e-5 of pure round-off -- tolerance sized to
+        # that, far below any physical K difference between drag tails
+        k1 = float(r1["K_q50"]) * float(r1["tau_ps"])
+        k4 = float(r4["K_q50"]) * float(r4["tau_ps"])
+        assert abs(k1 - k4) < 5e-4
+
+
+def test_stage_repilot1_requires_legd_record(twin, monkeypatch, tmp_path):
+    """Without the leg-D prediction record on disk the S1-P1 oracle cannot
+    run -- the stage must fail loud, not silently pre-register unverified
+    rows."""
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    with pytest.raises(FileNotFoundError, match="leg-D"):
+        twin.stage_repilot1(m=50)
