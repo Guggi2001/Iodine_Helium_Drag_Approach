@@ -118,6 +118,7 @@ def build_biphasic_cfg(
     evaporation_shed_convention: Optional[str] = None,
     initial_shell_model: Optional[str] = None,
     internal_energy_partition_law: Optional[str] = None,
+    droplet_size_prior: Optional[str] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -240,6 +241,15 @@ def build_biphasic_cfg(
         (structurally inert without the T5 dressing); biphasic-only by
         config-load guard. ``None`` -> the config default (``constant``, the
         delivered byte-inert p = 0 arm).
+    droplet_size_prior : str or None
+        Slice T8 droplet-size prior arm (``"kornilov_lognormal"`` /
+        ``"pickup_weighted_lognormal"``): the analytic D4 family at the
+        config-default (⟨N⟩ = 2000, delta = 0.625) parameters, exact
+        inverse-CDF on the twin's [250, 16000] window. An analytic arm also
+        stamps ``use_single_droplet_size=False`` — one semantic lever (the
+        T8 guard refuses the analytic arm without it). ``None`` -> the
+        config default (``legacy``: the delivered boolean-driven dispatch,
+        byte-inert).
 
     Returns
     -------
@@ -361,6 +371,13 @@ def build_biphasic_cfg(
         overrides["initial_shell_model"] = initial_shell_model
     if internal_energy_partition_law is not None:
         overrides["internal_energy_partition_law"] = internal_energy_partition_law
+    if droplet_size_prior is not None:
+        overrides["droplet_size_prior"] = droplet_size_prior
+        if droplet_size_prior != "legacy":
+            # The paired boolean is the same semantic lever: the analytic
+            # arms sample per-molecule sizes, guard-refused under the
+            # fixed-size branch (T8-D1).
+            overrides["use_single_droplet_size"] = False
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()

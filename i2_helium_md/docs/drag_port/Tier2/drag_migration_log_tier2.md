@@ -7872,3 +7872,96 @@ m = 20000 before any MD; the four `dc` pilots flip exactly
 N = 50, `zero_gamma` retained per T8-D4) → re-pilot → T4/ihe_ked
 solvated-branch scoring. The E2 Landau arm stands ready for the N = 500 run.
 Nothing here discharges F5.
+
+## T9 leg D TRIGGERED — C + T8 `kornilov_lognormal` droplet prior; twin re-scored at the D4 primary; predictions PRE-REGISTERED before any MD (2026-07-20)
+
+User trigger ("PROCEED TO IMPLEMENTATION of T9 leg D"), following the T8
+delivery entry above. Leg D flips exactly **one semantic lever vs the
+certified `cc` baseline**: `droplet_size_prior = "kornilov_lognormal"` at
+the config-default D4 primary (⟨N⟩ = 2000, δ = 0.625; the guard-paired
+`use_single_droplet_size=False` is the same lever) — cumulative on leg C
+(`density_tied`, co-moving shed, and the p = 1 onset coupling carry over).
+N = 50, `zero_gamma` retained (T8-D4: the Landau arm remains the N = 500
+gate, never a leg lever).
+
+**Builds delivered under this trigger (TDD, RED watched first):**
+- Generator: `LEG = "d"` in `gen_tier2_md_confirmation.py` — cumulative on
+  leg C plus the T8 prior stamped through a new `build_biphasic_cfg`
+  passthrough kwarg (`droplet_size_prior`; an analytic arm also stamps the
+  paired boolean — one lever). Dirs `…_tier2probe_conf270_dc{1..4}`. Lock
+  test asserts the field-diff vs leg C is exactly `{droplet_size_prior,
+  use_single_droplet_size}`. Generator suite 20 passed.
+- Scorer wiring oracle (session tool, zero repo change): the §4q scoring
+  conventions (droplet_retained excluded; suppressed→bin 0; W₁ over 0–21;
+  KE co-moving) re-implemented and **verified to reproduce the recorded
+  leg-C `cc` numbers exactly** (all four configs, every column) before any
+  leg-D data existed.
+- Twin: `stage_legd` was delivered with Slice T8 (entry above); run here at
+  m = 20000. **The `d_delta` wiring oracle reproduces the leg-C twin
+  verbatim at m = 20000** (supp 0.111/0.051/0.343/0.143, n̄ 4.98/5.31/3.77/
+  4.88, trapped 0.055/0.060/0.093/0.055 — the TRIGGERED-entry table above),
+  so the `d` rows differ from leg C only through the droplet axis.
+
+**Twin re-score at the kornilov prior (m = 20000; outputs
+`h2b_leg_d_predictions.csv` / `h2b_leg_d_ke.csv` under
+`data/runs/h2b_forward_model/`, committed; the pre-registered numbers are
+recorded here).** Realized prior quantiles N_q05/q50/q95 = 596/1638/4636
+(the truncated ln-normal about ⟨N⟩ = 2000); dressing softens (n_eject mean
+16.71 → 16.53) and the chord-K spread widens hugely (c1: K_q95 → 15.1 —
+deep-strip exposure on the large-droplet side; K_q05 → 0.15 on the small):
+
+| config | supp (δ → kor) | n̄_det (δ → kor) | n₁ frac (δ → kor) | n₁ KE (δ → kor) | trapped (δ → kor) |
+|---|---|---|---|---|---|
+| c1 | 0.111 → **0.127** | 4.98 → **4.42** | 0.212 → **0.236** | 0.998 → **0.992** | 0.055 → **0.051** |
+| c2 | 0.051 → **0.058** | 5.31 → **4.77** | 0.217 → **0.246** | 0.964 → **0.958** | 0.060 → **0.056** |
+| c3 | 0.343 → **0.383** | 3.77 → **3.35** | 0.084 → **0.087** | 0.253 → **0.245** | 0.093 → **0.081** |
+| c4 | 0.143 → **0.163** | 4.88 → **4.36** | 0.172 → **0.191** | 0.973 → **0.967** | 0.055 → **0.051** |
+
+The droplet axis works both ends of the K spectrum at once: the
+small-droplet side (short chords, low K) adds suppressed/bare weight and
+n₁ occupants (the F.2b low-K direction), the large-droplet side strips
+deeper, and the net histogram **softens** (n̄ down 0.42–0.55 He) while the
+**KE axis is prior-quiet** (≤ 0.008 eV on every n₁ entry — the descent
+speeds are set by the drag law and the onset, not the droplet size).
+Suppressed ordering c3 > c4 > c1 > c2 preserved; trapped *drops* slightly
+(marginal ions in small droplets clear the shallower well).
+
+**Pre-registered predictions DP-P1..P4 (all KE claims co-moving; same
+N = 50 bridge seed, margin 3 Å, exclude policy, 8000 ps cap, `zero_gamma`;
+scoring on the solvated branch, bare renormalised out):**
+
+- **DP-P1 (droplet-axis direction).** MD `dc` suppressed fractions rise
+  from the `cc` measured 0.101/0.022/0.301/0.124 toward the twin kornilov
+  **0.127/0.058/0.383/0.163**, ordering c3 > c4 > c1 > c2. Re-filling
+  caveat carries (legs B/C measured MD *below* twin by ≈ 1–7 ions/100 —
+  in-bubble pickup closes self-unbound gaps before gate-open).
+- **DP-P2 (solvated histogram).** n̄_det **falls** ≈ 0.4–0.55 He vs `cc`
+  (to ≈ **4.42/4.77/3.35/4.36**); n₁ rises to ≈
+  **0.236/0.246/0.087/0.191**; the deep tail extends (large-droplet
+  deep-strip side). W₁(MD, twin) expected at the chain scale (≲ 0.5 bins,
+  cf. leg C 0.31–0.47).
+- **DP-P3 (KE axis — the twin claims prior-invariance).** Per-bin n₁ mean
+  KE ≈ **unchanged vs leg C** (twin 0.992/0.958/0.245/0.967 eV, ≤ 0.008 eV
+  off the delta-prior values); MD expected ×1.08–1.15 above twin (the
+  leg-C composition residual). A large MD KE move under the prior flip
+  would be a **model-structure finding** (the twin says the KE axis cannot
+  see the droplet axis).
+- **DP-P4 (trapped class).** Twin ≈ 0.051/0.056/0.081/0.051 (down vs
+  delta), c3 largest; MD ≈ 1.7–1.9× the twin's 150 ps chord read (the
+  A′/B/C precedent).
+
+**Listed twin-divergence channels (S2c-P4 — an unlisted one is a
+model-structure finding):** (a) pickup re-filling after under-dressed birth;
+(b) per-**atom** ion-t0 dressing vs the twin's molecule-center dressing;
+(c) trapped-class dynamics beyond the 150 ps chord read; **(d, new — the
+droplet-axis pair):** the MD's well/gate depths follow each ion's R_i
+dynamically through the cascade (the twin's chord is frozen at birth
+geometry), and small-droplet ejections reach exposure underflow earlier;
+(e) the prior draw shifts the neutral-stage RNG stream, so leg D is an
+ensemble-level A/B like every T9 leg (no trajectory matching claimed).
+
+MD pilots (`dc1..4`) launch next under this trigger via the leg-C
+per-stage-resume accommodation (shrunk relaxation checkpoint,
+scored-read-neutral per I67); scored against the kornilov twin, the
+certified `cc` baseline, and these pre-registrations on the solvated
+branch. Nothing here discharges F5.

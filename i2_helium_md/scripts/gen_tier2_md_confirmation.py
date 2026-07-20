@@ -99,7 +99,15 @@ SINGLE_INITIAL_POSITION = False  # off-center births, margin 0 (recorded caveat)
 #               run dirs carry the "c" prefix — cc1..cc4, distinct from the T3
 #               c1..c4). The p=1 A/B against the certified bc baseline and the
 #               twin's legc re-score (pre-registered on the solvated branch).
-LEG = "c"
+# "d"         = leg D — C + droplet_size_prior="kornilov_lognormal" (the
+#               Slice-T8 analytic D4 prior at the ⟨N⟩=2000/delta=0.625 primary,
+#               2026-07-20; exactly one semantic lever vs C — the paired
+#               use_single_droplet_size=False is the same lever by guard; the
+#               C levers carry over cumulatively; run dirs carry the "d"
+#               prefix — dc1..dc4). The droplet-axis A/B against the certified
+#               cc baseline and the twin's legd re-score (pre-registered on
+#               the solvated branch; T8-D4: N = 50, zero_gamma retained).
+LEG = "d"
 BIRTH_MARGIN_ANGSTROM = 3.0     # the Step-1c full-house cells' margin (§4k)
 # The position axis creates near-barrier transients: marginal E > 0 ions
 # (apc3 ion 9: escape margin +1.1 meV) fly *conservative* scattering orbits
@@ -298,8 +306,9 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         shed_convention: Optional[str] = None  # ride the cold default
         shell_model: Optional[str] = None      # ride the `full` default
         partition_law: Optional[str] = None    # ride the `constant` (p=0) default
+        size_prior: Optional[str] = None       # ride the `legacy` default
         label_prefix = ""
-    elif LEG in ("aprime", "aprime_cm", "b", "c"):
+    elif LEG in ("aprime", "aprime_cm", "b", "c", "d"):
         birth_law = "uniform_volume"
         birth_margin = BIRTH_MARGIN_ANGSTROM
         # The position axis populates the V0-2 droplet-retained class (well-
@@ -312,23 +321,27 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
         # convention (adjudicated working convention, 2026-07-17). None on A'
         # keeps the delivered cold default byte-identically. Legs B/C ride A''.
         shed_convention = None if LEG == "aprime" else "co_moving"
-        # Legs B and C: the Slice-T5 dressing arm. Leg C is cumulative on B, so
-        # density_tied carries over; None elsewhere keeps the delivered `full`
-        # default byte-identically.
-        shell_model = "density_tied" if LEG in ("b", "c") else None
-        # Leg C: exactly one lever vs B -- the Slice-T6 E_int(0)-dressing p-law.
+        # Legs B..D: the Slice-T5 dressing arm carries over cumulatively;
+        # None elsewhere keeps the delivered `full` default byte-identically.
+        shell_model = "density_tied" if LEG in ("b", "c", "d") else None
+        # Legs C..D: the Slice-T6 E_int(0)-dressing p-law carries over.
         # None elsewhere keeps the delivered byte-inert `constant` (p=0).
-        partition_law = "sigma_proportional" if LEG == "c" else None
+        partition_law = "sigma_proportional" if LEG in ("c", "d") else None
+        # Leg D: exactly one semantic lever vs C -- the Slice-T8 analytic
+        # droplet prior at the D4 primary (kornilov delta=0.625, <N>=2000;
+        # the config-default family params). None elsewhere keeps the
+        # delivered byte-inert `legacy` dispatch.
+        size_prior = "kornilov_lognormal" if LEG == "d" else None
         # tag charset is [a-z0-9] -> "apc1" (A') / "apcmc1" (A'') / "bc1" (B) /
-        # "cc1" (C)
+        # "cc1" (C) / "dc1" (D)
         label_prefix = {
-            "aprime": "ap", "aprime_cm": "apcm", "b": "b", "c": "c",
+            "aprime": "ap", "aprime_cm": "apcm", "b": "b", "c": "c", "d": "d",
         }[LEG]
     else:
         raise ValueError(
             f"unknown LEG {LEG!r}; expected 'a', 'aprime', 'aprime_cm', 'b', "
-            "or 'c' (a new oracle-chain leg is a plan amendment, not a config "
-            "value -- §I.11)."
+            "'c', or 'd' (a new oracle-chain leg is a plan amendment, not a "
+            "config value -- §I.11)."
         )
     scheduled: list[tuple[str, SimConfig, Path]] = []
     for spec in CONFIRMATION_MATRIX:
@@ -365,6 +378,7 @@ def build_confirmation(project_root: Path) -> list[tuple[str, SimConfig, Path]]:
             evaporation_shed_convention=shed_convention,
             initial_shell_model=shell_model,
             internal_energy_partition_law=partition_law,
+            droplet_size_prior=size_prior,
         )
         run_dir = project_root / "data" / "runs" / tier2_confirmation_run_dir_name(
             CASE,

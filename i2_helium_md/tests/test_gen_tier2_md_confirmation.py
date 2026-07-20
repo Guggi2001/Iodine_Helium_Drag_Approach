@@ -384,6 +384,44 @@ def test_leg_c_flips_exactly_one_lever_vs_b(tmp_path, monkeypatch):
         assert not fnmatch(dir_c.name, "*_tier2_*")
 
 
+def test_leg_d_flips_exactly_one_lever_vs_c(tmp_path, monkeypatch):
+    """Leg D = leg C + the Slice-T8 kornilov_lognormal droplet prior --
+    exactly one *semantic* lever vs C: the paired
+    ``use_single_droplet_size=False`` is the same lever (the T8 guard
+    refuses the analytic arm without it -- no independent freedom), the
+    C levers carry over cumulatively, and the run dirs carry the dc
+    prefix."""
+    monkeypatch.setattr(script, "LEG", "d")
+    d = script.build_confirmation(tmp_path)
+    monkeypatch.setattr(script, "LEG", "c")
+    c = script.build_confirmation(tmp_path)
+
+    import dataclasses
+
+    for (_, cfg_d, dir_d), (_, cfg_c, dir_c), spec in zip(
+        d, c, script.CONFIRMATION_MATRIX
+    ):
+        # cumulative: leg D keeps every leg-C lever and adds the prior
+        assert cfg_d.initial_shell_model == "density_tied"
+        assert cfg_d.evaporation_shed_convention == "co_moving"
+        assert cfg_d.internal_energy_partition_law == "sigma_proportional"
+        assert cfg_d.droplet_size_prior == "kornilov_lognormal"
+        assert cfg_d.use_single_droplet_size is False
+        # the D4 primary family exactly (T8-D4): defaults untouched
+        assert cfg_d.droplet_prior_mean_N == 2000.0
+        assert cfg_d.droplet_prior_delta == 0.625
+        cfg_d.validate()
+        diff = {
+            f.name
+            for f in dataclasses.fields(type(cfg_d))
+            if getattr(cfg_d, f.name) != getattr(cfg_c, f.name)
+        }
+        assert diff == {"droplet_size_prior", "use_single_droplet_size"}
+        assert dir_d.name != dir_c.name
+        assert f"_tier2probe_conf270_dc{spec.label[1:]}" in dir_d.name
+        assert not fnmatch(dir_d.name, "*_tier2_*")
+
+
 def test_unknown_leg_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(script, "LEG", "z")
     with pytest.raises(ValueError, match="LEG"):
