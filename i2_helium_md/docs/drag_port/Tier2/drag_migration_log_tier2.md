@@ -7765,3 +7765,110 @@ relaxation, the three guard suites, forward-model/partition/generator (56), then
 **full suite 2445 passed** (2443 baseline + 2 new; 230 s). No F-register item is
 discharged or opened; F5 stands. Next per the I.11 sequence is unchanged:
 **Slice T8** (droplet prior) → T9 leg D → re-pilot → T4/ihe_ked scoring.
+
+## Slice T8 pre-build decision block OPENED — rule-1 audit executed; the slice re-scopes downward (plumbing exists end-to-end); five decisions T8-D1..T8-D5 await adjudication (2026-07-20)
+
+The rule-1 audit demanded by the T8 spec (§I.10 / §I.11) ran read-only, zero
+MD. Headline findings (full detail + the decision register: plan **§I.11.3**):
+
+1. **The legacy `use_single_droplet_size=False` machinery is already ported
+   and live** — `sampling/droplet_sizes.py` is the literal
+   `generate_droplet_sizes.m` port (log-normal source + full pickup-cell MC),
+   consumed at `initial_state.py:72–78`. δ = 0.625 is a module constant, and
+   the source correlation at the droplet-distribution preset's conditions
+   gives ⟨N⟩ ≈ 1.86 k — close to but **not** the D4 pin of 2000.
+2. **The pipeline is per-ion droplet-radius-aware end to end** (both birth
+   laws; every gate depth in the ion step; the T5 dressing seed; relaxation +
+   detection via the pass-through `droplet_radii_angstrom` field). F.4's
+   feared "new wiring surface" does not exist and **no checkpoint schema
+   change is needed** — T8's build surface is the prior selection only.
+3. **The twin already implements the D4 family** (H.2b: uniform-in-lnN
+   proposal on [250, 16000]; µ_ln = ln 2000 − δ²/2; pickup variant
+   = × N^(2/3) un-re-centered, realized mean ≈ 2.6 k) — `stage_legd` is a
+   near-free reuse.
+4. **The analytic D4 family ≠ the legacy pickup MC** (single-pickup selection
+   + evaporation distort the log-normal); twin↔MD parity requires the MD arm
+   to sample the analytic family; the MC stays as the legacy arm.
+
+Open decisions (recommendations in §I.11.3): **T8-D1** enum surface
+(`droplet_size_prior ∈ {legacy (byte-inert default), kornilov_lognormal,
+pickup_weighted_lognormal}` + ⟨N⟩/δ fields, `_require_pairing` against
+`use_single_droplet_size=True`); **T8-D2** family pinned to the twin's
+convention verbatim incl. the [250, 16000] truncation (logged mass);
+**T8-D3** exact draw on the MD side (pickup family is itself log-normal with
+µ_ln′ = µ_ln + (2/3)δ²); **T8-D4** leg-D = one lever vs leg C at the δ = 0.625
+primary, N = 50, `zero_gamma`, sensitivity family deferred to the re-pilot;
+**T8-D5** `stage_legd` twin stage before any MD. Build stays behind its own
+`[PROCEED TO IMPLEMENTATION]`; nothing here discharges F5.
+
+## Slice T8 DELIVERED — `droplet_size_prior ∈ {legacy (byte-inert default), kornilov_lognormal, pickup_weighted_lognormal}`: the analytic D4 prior family, exact-draw on the twin's window; twin `stage_legd` with a bit-exact leg-C oracle; CALIBRATION_MAP row 30; full suite 2464 passed (2026-07-20)
+
+T8-D1..T8-D5 adjudicated by the user **as recommended** (same day as the
+decision block) and `[PROCEED TO IMPLEMENTATION]` given. TDD, RED watched
+first (ImportError/AttributeError on every new surface, then the two
+convention fixes: guards fire at config-load via the check function — the E2
+test precedent, not at construction — and the checkpoint stores per-**atom**
+(2N) radii).
+
+**Physics (frozen — T8-D2/D3, the twin's convention verbatim).**
+
+```
+kornilov_lognormal:        lnN ~ Normal(µ_ln, δ),  µ_ln = ln⟨N⟩ − δ²/2
+pickup_weighted_lognormal: lnN ~ Normal(µ_ln + (2/3)δ², δ)
+```
+
+both truncated to the twin's proposal window **[250, 16000] He** by exact
+inverse-CDF (`z = Φ⁻¹(Φ(a) + u·(Φ(b)−Φ(a)))` — one uniform per molecule, no
+importance weighting, no rejection). The pickup arm is the exact ln-normal
+identity `N^(2/3)·LogNormal(µ_ln) ∝ LogNormal(µ_ln + (2/3)δ²)`, deliberately
+**not** re-centered (realized mean ⟨N⟩·e^(2δ²/3) ≈ 2.6 k at δ = 0.625 — the
+shift *is* the pickup physics). Defaults ⟨N⟩ = 2000.0 (the D4 pin), δ = 0.625
+(Kornilov 2009). R(N) stays the single-source `droplet_radius_bulk_angstrom`.
+
+**Surface (byte-inert).**
+- `config.py`: `DropletSizePrior` Literal + window constants
+  `DROPLET_PRIOR_N_LO/HI` (rule-1 pinned to the twin's `N_LO/N_HI` by test);
+  fields `droplet_size_prior="legacy"`, `droplet_prior_mean_N=2000.0`,
+  `droplet_prior_delta=0.625`; `check_droplet_prior_config` wired into the
+  validate chain — typo reject + the **both-direction** no-silent-inert
+  guard: analytic arms refused under `use_single_droplet_size=True` (shared
+  `_require_pairing`), off-default family params refused under `legacy` (the
+  T7 margin-under-boltzmann precedent), δ > 0 and ⟨N⟩-inside-window under the
+  analytic arms (no-silent-caps). Back-compat: old `cfg.json` without the
+  keys loads the defaults (dataclass-default path, field-default test).
+- `sampling/droplet_sizes.py`: `sample_droplet_sizes_analytic` (exact draw,
+  RuntimeWarning when the truncation discards > 5 % of the family's mass) +
+  `analytic_prior_truncated_mass` (closed form: ≈ 0.14 % at δ = 0.625,
+  ≈ 1.5 % at δ = 0.80 — the provenance record). Legacy MC untouched.
+- `simulation/initial_state.py`: three-way dispatch — non-`legacy` arms call
+  the analytic sampler; under the default the branch pair is literally the
+  pre-T8 code (monkeypatch test proves the analytic sampler is never touched).
+- `scripts/tier2_h2b_forward_model.py`: `stage_legd` (mode `legd`) — same
+  SEED and u/µ draw order as `stage_legc`, prior drawn *after* the legc
+  stream via the **package sampler** (twin and MD share the prior by
+  construction); `d_delta` (delta N = 2000) is the in-stage wiring oracle,
+  `d` scales the same u/µ draws to the per-molecule radii (leg D differs from
+  leg C only through the droplet axis, never sampling noise); rows add
+  N_q05/N_q50/N_q95; the F2 `w_tot == 0` guard carried.
+
+**Verification (7-step order).** New suites `tests/test_droplet_prior_config.py`
+(10) + `tests/test_droplet_prior_sampler.py` (8) + the twin oracle test (1):
+defaults/back-compat field defaults; typo + all four guard directions;
+inverse-CDF uniformity (3σ sample bands, n = 20000); window containment;
+pickup-shift = (2/3)δ² within stated tolerance; truncated-mass hand-computed
+pins (0.00142 / 0.01528); heavy-truncation warning; initial-state dispatch
+(per-atom radii vary, window-bounded); legacy path never touches the analytic
+sampler; `stage_legd` `d_delta` rows ≡ `stage_legc` `c` rows **exactly**
+(string-equal CSV cells at m = 200) + `d` rows spread the N axis. Narrow →
+broad: T8 suites, initial-state/foundations/birth-law/shell neighbors (105),
+then **full suite 2464 passed** (2445 baseline + 19 new; 218 s).
+
+The audit finding stands delivered: no checkpoint schema change, no RNG
+change on any default path, the legacy pickup MC untouched. CALIBRATION_MAP
+row 30 (arm + Sourced δ family, not knobs). Next per the I.11 sequence:
+**T9 leg D** behind its own trigger (pre-registration = `stage_legd` at
+m = 20000 before any MD; the four `dc` pilots flip exactly
+`droplet_size_prior="kornilov_lognormal"` on the certified `cc` baseline,
+N = 50, `zero_gamma` retained per T8-D4) → re-pilot → T4/ihe_ked
+solvated-branch scoring. The E2 Landau arm stands ready for the N = 500 run.
+Nothing here discharges F5.

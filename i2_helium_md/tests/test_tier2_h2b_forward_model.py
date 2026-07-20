@@ -285,3 +285,51 @@ def test_stage_legc_smoke_and_oracle(twin, monkeypatch, tmp_path):
         float(dressed[cfg]["suppressed_frac"]) < float(base[cfg]["suppressed_frac"])
         for cfg in base
     )
+
+
+# ---------------------------------------------------------------------------
+# Leg-D extension (Slice T8 droplet-prior re-score)
+# ---------------------------------------------------------------------------
+def test_stage_legd_smoke_and_oracle(twin, monkeypatch, tmp_path):
+    """The leg-D re-score (one lever flipped vs leg C: the T8
+    ``kornilov_lognormal`` droplet prior, delta = 0.625 about <N> = 2000) runs
+    at small m, writes both CSVs, and its ``d_delta`` rows (prior off — delta
+    N = 2000) reproduce stage_legc's ``c`` rows exactly (the in-stage wiring
+    oracle: same seed, same u/mu draws — leg D differs from leg C only through
+    the droplet axis, never through sampling noise). The ``d`` rows genuinely
+    spread the droplet axis (T8-D4)."""
+    import csv as _csv
+
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    twin.stage_legc(m=200)
+    twin.stage_legd(m=200)
+    hist = tmp_path / "h2b_leg_d_predictions.csv"
+    ke = tmp_path / "h2b_leg_d_ke.csv"
+    assert hist.exists() and ke.exists()
+
+    def rows(path, leg):
+        with open(path, newline="") as fh:
+            return [r for r in _csv.DictReader(fh) if r["leg"] == leg]
+
+    # wiring oracle: d_delta (dressed, p = 1, delta prior) == leg-C `c` exactly.
+    # Compared over the leg-C schema (the d rows add the N_q* columns).
+    anchor = rows(tmp_path / "h2b_leg_c_predictions.csv", "c")
+    d_delta = rows(hist, "d_delta")
+    assert len(anchor) == 4 and len(d_delta) == 4
+    for rc, rd in zip(anchor, d_delta):
+        for key in rc:
+            if key == "leg":
+                continue
+            assert rc[key] == rd[key], (key, rc[key], rd[key])
+
+    # the kornilov leg genuinely samples the droplet axis
+    d = rows(hist, "d")
+    assert len(d) == 4
+    for r in d:
+        assert float(r["N_q05"]) < 2000.0 < float(r["N_q95"])
+        hist_sum = sum(float(r[f"h{k}"]) for k in range(twin.N_STAR + 1))
+        # 22 columns rounded at 4 decimals -> 2e-3 accumulation allowance
+        assert abs(hist_sum - 1.0) < 2e-3
+    # and the delta rows pin the N quantiles at exactly 2000
+    for r in d_delta:
+        assert float(r["N_q05"]) == 2000.0 and float(r["N_q95"]) == 2000.0

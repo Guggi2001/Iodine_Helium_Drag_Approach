@@ -12,6 +12,12 @@ The sampler can run in two modes, controlled by ``mode``:
                        post-pickup distribution (default; matches the full
                        legacy `generate_droplet_sizes`).
 
+Slice T8 (Tier-2 plan §I.11.3) adds the *analytic* D4 prior family beside
+the legacy machinery: :func:`sample_droplet_sizes_analytic` draws exactly
+from the truncated Kornilov ln-normal (or its pickup-weighted × N^(2/3)
+shift) about a directly-pinned ⟨N⟩ — the closed form the 1D twin and every
+Wave-10/11 scan used — selected via ``cfg.droplet_size_prior``.
+
 Physics references
 ------------------
 * Lackner dissertation (TU Graz)            -- nozzle correlation, Kornilov delta
@@ -25,11 +31,13 @@ Default source parameters reproduce the legacy `generate_droplet_sizes_simpler`
 
 from __future__ import annotations
 
+import warnings
 from typing import Literal
 
 import numpy as np
+from scipy.special import ndtr, ndtri
 
-from ..config import SimConfig
+from ..config import DROPLET_PRIOR_N_HI, DROPLET_PRIOR_N_LO, SimConfig
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +245,121 @@ def sample_droplet_sizes(
                 factor *= 4   # try harder on the next round
 
     raise ValueError(f"unknown mode {mode!r}; expected 'raw' or 'post_pickup'")
+
+
+# ===========================================================================
+# Slice T8: analytic droplet-size priors (the D4 family; plan §I.11.3)
+# ===========================================================================
+def _analytic_prior_mu_ln(cfg: SimConfig) -> float:
+    """ln-space location of the selected analytic prior (dimensionless lnN).
+
+    ``kornilov_lognormal``: mu_ln = ln(<N>) - delta^2/2 (the mean-<N>
+    convention shared by :func:`sample_droplet_sizes` and the twin).
+    ``pickup_weighted_lognormal``: + (2/3)*delta^2 — the exact ln-normal
+    identity N^(2/3) * LogNormal(mu_ln) ∝ LogNormal(mu_ln + (2/3)delta^2),
+    deliberately NOT re-centered (T8-D2: the realized-mean shift is the
+    pickup physics).
+
+    Raises
+    ------
+    ValueError
+        If ``cfg.droplet_size_prior`` is not an analytic arm (``legacy``
+        has no closed-form family — a dispatch error upstream).
+    """
+    delta = cfg.droplet_prior_delta
+    mu_ln = float(np.log(cfg.droplet_prior_mean_N) - 0.5 * delta**2)
+    if cfg.droplet_size_prior == "pickup_weighted_lognormal":
+        return mu_ln + (2.0 / 3.0) * delta**2
+    if cfg.droplet_size_prior == "kornilov_lognormal":
+        return mu_ln
+    raise ValueError(
+        f"droplet_size_prior {cfg.droplet_size_prior!r} has no analytic "
+        f"family (the 'legacy' arm dispatches to the boolean-driven "
+        f"sampler) — this function must not be reached for it."
+    )
+
+
+def _analytic_prior_window_z(cfg: SimConfig) -> tuple[float, float]:
+    """Standardized window edges (a, b) of the truncation in z-space."""
+    mu_ln = _analytic_prior_mu_ln(cfg)
+    delta = cfg.droplet_prior_delta
+    a = (np.log(DROPLET_PRIOR_N_LO) - mu_ln) / delta
+    b = (np.log(DROPLET_PRIOR_N_HI) - mu_ln) / delta
+    return float(a), float(b)
+
+
+def analytic_prior_truncated_mass(cfg: SimConfig) -> float:
+    """Prior mass discarded by the truncation window, in [0, 1] (closed form).
+
+    ``1 - (Phi(b) - Phi(a))`` for the selected analytic arm's ln-normal on
+    ``[DROPLET_PRIOR_N_LO, DROPLET_PRIOR_N_HI]``. Reference values about
+    ⟨N⟩ = 2000 (kornilov arm): ≈ 0.0014 at delta = 0.625, ≈ 0.015 at
+    delta = 0.80. The no-silent-caps record for a T8 run's provenance.
+    """
+    a, b = _analytic_prior_window_z(cfg)
+    return float(1.0 - (ndtr(b) - ndtr(a)))
+
+
+def sample_droplet_sizes_analytic(
+    cfg: SimConfig,
+    *,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
+    """Draw ``cfg.num_molecules`` droplet sizes from the analytic D4 prior.
+
+    Exact inverse-CDF draw of the truncated ln-normal (T8-D3 — no
+    importance weighting, no rejection): with (a, b) the standardized
+    window edges,
+
+        u ~ U(0, 1)
+        z = Phi^-1( Phi(a) + u * (Phi(b) - Phi(a)) )
+        N = exp(mu_ln + delta * z)          [He atoms, float]
+
+    so every sample lies inside ``[DROPLET_PRIOR_N_LO,
+    DROPLET_PRIOR_N_HI]`` by construction and the realized distribution is
+    the twin's family exactly (see ``_analytic_prior_mu_ln`` for the two
+    arms). Consumes exactly one uniform per molecule from ``rng``.
+
+    Parameters
+    ----------
+    cfg : SimConfig
+        Uses ``droplet_size_prior`` (must be an analytic arm — guarded at
+        config-load), ``droplet_prior_mean_N``, ``droplet_prior_delta``,
+        ``num_molecules``, and ``seed`` (when ``rng`` is None).
+    rng : np.random.Generator, optional
+        Reproducible RNG. If None, built from ``cfg.seed``.
+
+    Returns
+    -------
+    N : np.ndarray, shape (num_molecules,)
+        Sampled droplet sizes (numbers of He atoms, float).
+
+    Warns
+    -----
+    RuntimeWarning
+        When the truncation discards > 5 % of the family's mass
+        (no-silent-caps; the D4 members about ⟨N⟩ = 2000 sit at ≤ 1.5 %).
+    """
+    if rng is None:
+        rng = np.random.default_rng(cfg.seed)
+
+    lost = analytic_prior_truncated_mass(cfg)
+    if lost > 0.05:
+        warnings.warn(
+            f"droplet_size_prior={cfg.droplet_size_prior!r} with "
+            f"mean_N={cfg.droplet_prior_mean_N}, delta={cfg.droplet_prior_delta} "
+            f"is truncated to [{DROPLET_PRIOR_N_LO}, {DROPLET_PRIOR_N_HI}] He, "
+            f"discarding {lost:.1%} of the family's mass — the realized prior "
+            f"is materially narrower than the nominal one.",
+            RuntimeWarning,
+        )
+
+    mu_ln = _analytic_prior_mu_ln(cfg)
+    a, b = _analytic_prior_window_z(cfg)
+    lo, hi = ndtr(a), ndtr(b)
+    u = rng.uniform(0.0, 1.0, cfg.num_molecules)
+    z = ndtri(lo + u * (hi - lo))
+    return np.exp(mu_ln + cfg.droplet_prior_delta * z)
 
 
 # ===========================================================================

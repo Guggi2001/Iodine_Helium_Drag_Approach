@@ -155,6 +155,33 @@ InitialShellModel = Literal["full", "density_tied"]
 # (check_internal_energy_partition_config); a parameter-free arm, not a knob.
 InternalEnergyPartitionLaw = Literal["constant", "sigma_proportional"]
 
+# Slice T8 (Tier-2 plan §I.11.3; the D4 family): the droplet-size prior.
+# ``legacy`` (byte-inert default) keeps the delivered boolean-driven dispatch
+# exactly — fixed N under ``use_single_droplet_size=True``, else the ported
+# pickup-cell MC (``sampling.droplet_sizes.sample_droplet_sizes``, source-
+# correlation ⟨N⟩). The analytic arms are the Wave-10/11 closed-form family
+# every scan and the Step-1c closure basin were computed on (T8-D2, the twin's
+# convention verbatim): ``kornilov_lognormal`` draws lnN ~ Normal(mu_ln, δ)
+# with mu_ln = ln(droplet_prior_mean_N) − δ²/2 (Kornilov 2009 width δ);
+# ``pickup_weighted_lognormal`` is that family × N^(2/3) (geometric pickup
+# cross-section bias), drawn exactly as the shifted ln-normal
+# mu_ln' = mu_ln + (2/3)δ² — deliberately NOT re-centered (the realized-mean
+# shift ≈ ⟨N⟩·e^(2δ²/3) IS the pickup physics). Both truncated to the twin's
+# proposal window below (T8-D3, exact inverse-CDF draw — no importance
+# weighting on the MD side). Read by ``simulation.initial_state`` only; the
+# per-molecule radii then flow through the delivered per-ion plumbing
+# (birth laws, gate depths, T5 dressing, relaxation, detection) unchanged.
+DropletSizePrior = Literal[
+    "legacy", "kornilov_lognormal", "pickup_weighted_lognormal"
+]
+
+# The analytic-prior truncation window [He atoms] — the twin's uniform-in-lnN
+# proposal support (``tier2_h2b_forward_model.N_LO/N_HI``; rule-1 pinned by
+# test). Discarded mass is closed-form (``analytic_prior_truncated_mass``):
+# ≈ 0.14 % at δ = 0.625, ≈ 1.5 % at δ = 0.80 about ⟨N⟩ = 2000.
+DROPLET_PRIOR_N_LO = 250.0
+DROPLET_PRIOR_N_HI = 16000.0
+
 # Mass<->coefficient consistency band (§6.5/§6.6). A *physical* statement -- the
 # drag curve is mass-insensitive within ~1-2 He -- NOT a user knob. 8.0 amu is
 # the 2-He edge (2 x 4.0026), the looser, safer-against-false-refuse choice.
@@ -245,6 +272,14 @@ class SimConfig:
     single_droplet_size: int = 2000     # number of He atoms per droplet
     p_source_mbar: float = 40.0         # nozzle pressure (only for size dist)
     T_source_K: float = 14.0            # nozzle temperature
+    # Slice T8 (plan §I.11.3): analytic droplet-size prior (the D4 family).
+    # The family parameters are read only under the analytic arms
+    # (guard-refused off-default under ``legacy`` — no silent carry);
+    # δ family {0.40, 0.625, 0.80} Sourced (Kornilov 2009), ⟨N⟩ = 2000 the
+    # D4 pin. See the ``DropletSizePrior`` block for the exact law.
+    droplet_size_prior: DropletSizePrior = "legacy"
+    droplet_prior_mean_N: float = 2000.0
+    droplet_prior_delta: float = 0.625
 
     # droplet solvation potential
     potential_steepness: float = 14.2                # atoms
@@ -587,6 +622,7 @@ class SimConfig:
                     f"got {self.anchor_n_final!r}."
                 )
         check_birth_position_config(self)
+        check_droplet_prior_config(self)
         check_drag_config(self)
         check_ladder_config(self)
         check_solvation_cooling_config(self)
@@ -1059,6 +1095,78 @@ def check_internal_energy_partition_config(cfg: "SimConfig") -> None:
             "silently inert otherwise (keep the 'constant' default there)"
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 Slice T8 droplet-size-prior config-load guard (plan §I.11.3)
+# ---------------------------------------------------------------------------
+_KNOWN_DROPLET_SIZE_PRIORS = (
+    "legacy", "kornilov_lognormal", "pickup_weighted_lognormal"
+)
+
+
+def check_droplet_prior_config(cfg: "SimConfig") -> None:
+    """Validate the droplet-size-prior surface of ``cfg`` at config-load (T8).
+
+    Rules
+    -----
+    1. ``droplet_size_prior`` must be a known selector (typo guard).
+    2. The analytic arms sample per-molecule sizes, so they are meaningless
+       under ``use_single_droplet_size=True`` — the fixed-size branch never
+       reads the family; refused loudly instead of silently inert (the
+       T5/T6/E2 pairing convention).
+    3. Under ``legacy`` the family parameters (``droplet_prior_mean_N``,
+       ``droplet_prior_delta``) are never read: any off-default value would
+       be silently ignored and is refused (the T7 margin-under-boltzmann
+       precedent).
+    4. Under an analytic arm the family must be well-formed: ``delta > 0``
+       and the mean inside the truncation window ``[DROPLET_PRIOR_N_LO,
+       DROPLET_PRIOR_N_HI]`` — a mean outside it would silently discard
+       most of the prior mass (no-silent-caps).
+
+    Raises
+    ------
+    ValueError
+        On any of the four rules above.
+    """
+    _reject_unknown_enum(
+        cfg.droplet_size_prior,
+        _KNOWN_DROPLET_SIZE_PRIORS,
+        field="droplet_size_prior",
+    )
+    for arm in ("kornilov_lognormal", "pickup_weighted_lognormal"):
+        _require_pairing(
+            field="droplet_size_prior", value=cfg.droplet_size_prior,
+            trigger=arm, dep_field="use_single_droplet_size",
+            dep_value=False, actual=cfg.use_single_droplet_size,
+            reason=(
+                "the fixed-size branch never samples droplet sizes, so the "
+                "advertised analytic family would be silently inert (keep "
+                "the 'legacy' default there)"
+            ),
+        )
+    if cfg.droplet_size_prior == "legacy":
+        if cfg.droplet_prior_mean_N != 2000.0 or cfg.droplet_prior_delta != 0.625:
+            raise ValueError(
+                f"droplet_prior_mean_N/droplet_prior_delta are read only by the "
+                f"analytic droplet_size_prior arms; under 'legacy' the "
+                f"off-default values ({cfg.droplet_prior_mean_N!r}, "
+                f"{cfg.droplet_prior_delta!r}) would be silently ignored. "
+                f"Select an analytic arm or keep the defaults (2000.0, 0.625)."
+            )
+    else:
+        if not (cfg.droplet_prior_delta > 0.0):
+            raise ValueError(
+                f"droplet_prior_delta must be > 0 for the analytic "
+                f"droplet-size priors; got {cfg.droplet_prior_delta!r}"
+            )
+        if not (DROPLET_PRIOR_N_LO < cfg.droplet_prior_mean_N < DROPLET_PRIOR_N_HI):
+            raise ValueError(
+                f"droplet_prior_mean_N must lie inside the truncation window "
+                f"({DROPLET_PRIOR_N_LO}, {DROPLET_PRIOR_N_HI}) He — outside it "
+                f"the truncated draw would silently discard most of the prior "
+                f"mass; got {cfg.droplet_prior_mean_N!r}"
+            )
 
 
 # ---------------------------------------------------------------------------

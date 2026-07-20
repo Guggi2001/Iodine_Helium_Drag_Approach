@@ -24,7 +24,10 @@ from ..config import SimConfig
 from ..physics.constants import EV, HC, MASS_I_AMU, U, droplet_radius_bulk_angstrom
 from ..physics.interactions import partner_interaction_neutral
 from ..physics.potentials import droplet_potential
-from ..sampling.droplet_sizes import sample_droplet_sizes
+from ..sampling.droplet_sizes import (
+    sample_droplet_sizes,
+    sample_droplet_sizes_analytic,
+)
 from ..sampling.orientations import sample_orientations
 from ..sampling.radial_positions import sample_radial_positions
 from .checkpoint import NeutralCheckpoint, _NEUTRAL_SCHEMA_VERSION
@@ -69,7 +72,12 @@ def build_initial_state(
     N = cfg.num_molecules
 
     # 1. Sample droplet sizes -> per-molecule droplet count.
-    if cfg.use_single_droplet_size:
+    #    Slice T8 (plan §I.11.3): the analytic D4 arms bypass the legacy
+    #    boolean dispatch entirely; under the byte-inert 'legacy' default the
+    #    branch pair below is literally the pre-T8 code.
+    if cfg.droplet_size_prior != "legacy":
+        droplet_counts = sample_droplet_sizes_analytic(cfg, rng=rng)
+    elif cfg.use_single_droplet_size:
         droplet_counts = np.full(N, cfg.single_droplet_size, dtype=float)
     else:
         droplet_counts = sample_droplet_sizes(cfg, mode="post_pickup", rng=rng)

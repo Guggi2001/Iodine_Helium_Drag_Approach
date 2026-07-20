@@ -1319,6 +1319,168 @@ def stage_legc(m=20000):
     print(f"KE table    -> {OUT / 'h2b_leg_c_ke.csv'}")
 
 
+def stage_legd(m=20000):
+    """Twin re-score at the T9 leg-D MD configuration exactly.
+
+    Leg-D configuration (one lever flipped vs leg C): the Slice-T8 droplet
+    prior ``kornilov_lognormal`` — per-molecule N drawn exactly from the
+    truncated ln-normal (mu_ln = ln(2000) − 0.625²/2 on [N_LO, N_HI]; the
+    package sampler ``sample_droplet_sizes_analytic``, T8-D2/D3, so the twin
+    and the MD share the prior by construction) with R(N) the bulk-density
+    convention. Everything else rides leg C verbatim: ``uniform_volume``
+    births at the absolute margin 3 A *per droplet* ([0, R_i − 3]), the
+    Slice-T5 ``density_tied`` dressing at the per-molecule surface
+    (rho_hat(r_birth − R_i)), the Slice-T6 p = 1 onset coupling, the
+    co-moving KE basis, and the per-C-config knobs (drag tail, tau, ladder,
+    E0) from the SI.10 matrix. The MD flips exactly the same one lever
+    (``droplet_size_prior = "kornilov_lognormal"``, T8) on the certified
+    leg-C ``cc`` baseline.
+
+    The ``d_delta`` rows re-run the leg-C dressed p = 1 ensemble (same seed,
+    same u/mu draws, delta N = 2000) as the in-stage wiring oracle — they
+    must equal stage_legc's ``c`` rows exactly. The ``d`` rows scale the SAME
+    u/mu draws to the per-molecule radii (maximum draw coupling: d vs
+    d_delta differs only through the droplet axis, never sampling noise).
+
+    Twin-divergence channels *listed* for the MD A/B (S2c-P4): as leg C
+    (pickup re-filling after under-dressed birth; per-atom vs
+    per-molecule-center dressing; no trapped dynamics beyond the 150 ps
+    chord read), plus the droplet-axis-specific pair: the MD well/gate
+    depths follow R_i dynamically during the cascade (the twin's chord is
+    frozen at birth geometry), and small-droplet chords truncate earlier.
+    Experimental scoring is deferred to T9 on the **solvated branch**.
+
+    Writes h2b_leg_d_predictions.csv (histograms + classes + n_eject and N
+    quantiles) and h2b_leg_d_ke.csv (per-bin mean detected KE, co-moving
+    basis) — the pre-registered prediction record for the leg-D MD pilots.
+    """
+    from dataclasses import replace as _replace
+
+    from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes_analytic
+
+    from scripts.gen_tier2_md_confirmation import (
+        floor1_rungs_eV,
+        form_u_rungs_eV,
+        rq4graded_rungs_eV,
+    )
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    tables = {
+        "flat": form_u_rungs_eV(),
+        "rq4graded": rq4graded_rungs_eV(),
+        "floor1": floor1_rungs_eV(),
+    }
+    R2000 = float(droplet_radius_bulk_angstrom(2000.0))
+
+    # Identical u/mu draws to stage_legc (same SEED, same order) so the
+    # d_delta oracle is bit-comparable; the prior draw comes AFTER the legc
+    # stream so it cannot disturb it.
+    rng = np.random.default_rng(SEED)
+    u_ap = rng.uniform(0.0, 1.0, m)
+    mu_ap = rng.uniform(-1.0, 1.0, m)
+    cfg_d = _replace(
+        _CFG,
+        droplet_size_prior="kornilov_lognormal",
+        use_single_droplet_size=False,
+        num_molecules=m,
+    )
+    N_d = sample_droplet_sizes_analytic(cfg_d, rng=rng)
+    R_d = droplet_radius_bulk_angstrom(N_d)
+
+    # Per-leg geometry: births r^2 on [0, R − 3] at each leg's radii, and the
+    # T5 dressing at each leg's surface (leg-C convention, per-molecule R).
+    legs = {}
+    for leg, R_leg, N_leg in (
+        ("d_delta", np.full(m, R2000), np.full(m, 2000.0)),
+        ("d", np.asarray(R_d, dtype=float), np.asarray(N_d, dtype=float)),
+    ):
+        r0 = (R_leg - LEG_APRIME_MARGIN_A) * np.cbrt(u_ap)
+        rho = rho_he_ratio(r0 - R_leg, steepness=STEEP_A)
+        ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+        legs[leg] = {
+            "R": R_leg, "N": N_leg, "r0": r0, "ne_mol": ne_mol,
+            "mass_mol": complex_mass_amu(ne_mol).astype(float),
+        }
+
+    hist_rows, ke_rows = [], []
+    for label, v_c, p_tail, tau, ladder_key, e0 in APRIME_CONFIGS:
+        sig = sigma_cum(np.asarray(tables[ladder_key][:N_STAR], dtype=float))
+        for leg, g in legs.items():
+            res = integrate_pairs(
+                g["r0"], mu_ap, g["R"], g["mass_mol"],
+                r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+            )
+            K = res["K"].reshape(-1) * (TAU_PS / tau)  # exact tau rescale
+            trapped = res["trapped"].reshape(-1).astype(bool)
+            v = res["v_inf"].reshape(-1)
+            ne = np.concatenate([g["ne_mol"], g["ne_mol"]])  # (2, M) order
+            n_det, sup = fate_map(ne, K, e0, 1, sig)  # p = 1 (leg-C carry)
+            w = np.where(trapped, 0.0, 1.0)
+            w_tot = w.sum()
+            if w_tot == 0.0:
+                raise ValueError(
+                    f"[{leg} {label}] every fragment is trapped (w_tot == 0): the "
+                    "histogram / fraction normalisation would be 0/0 and write NaN "
+                    "into the pre-registered prediction CSV. A config that traps the "
+                    "whole ensemble cannot produce a prediction record."
+                )
+            trapped_frac = float(trapped.mean())
+            sup_frac = float(w[sup].sum() / w_tot)
+            hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
+            nbar = float((np.arange(N_STAR + 1) * hist).sum())
+            nef = ne.astype(float)
+            row = {
+                "leg": leg, "config": label, "ladder": ladder_key,
+                "tau_ps": tau, "E0_eV": e0,
+                "v_c": "" if v_c is None else v_c,
+                "p_tail": "" if p_tail is None else p_tail,
+                "trapped_frac": round(trapped_frac, 4),
+                "suppressed_frac": round(sup_frac, 4),
+                "bare_frac": round(float(hist[0]), 4),
+                "nbar_det": round(nbar, 3),
+                "K_q05": round(float(np.quantile(K, 0.05)), 4),
+                "K_q50": round(float(np.quantile(K, 0.50)), 4),
+                "K_q95": round(float(np.quantile(K, 0.95)), 4),
+                "n_eject_q05": round(float(np.quantile(nef, 0.05)), 2),
+                "n_eject_q50": round(float(np.quantile(nef, 0.50)), 2),
+                "n_eject_mean": round(float(nef.mean()), 3),
+                "N_q05": round(float(np.quantile(g["N"], 0.05)), 1),
+                "N_q50": round(float(np.quantile(g["N"], 0.50)), 1),
+                "N_q95": round(float(np.quantile(g["N"], 0.95)), 1),
+            }
+            row.update({f"h{k}": round(float(hist[k]), 4)
+                        for k in range(N_STAR + 1)})
+            hist_rows.append(row)
+            ke = kinetic_energy_eV(complex_mass_amu(n_det), v)
+            for k in range(0, N_STAR + 1):
+                mask = (n_det == k) & ~trapped
+                if mask.sum() >= 20:
+                    ke_rows.append({
+                        "leg": leg, "config": label, "n": k,
+                        "weight": round(float(w[mask].sum() / w_tot), 4),
+                        "mean_KE_eV": round(
+                            float((w[mask] * ke[mask]).sum() / w[mask].sum()), 4
+                        ),
+                    })
+            top = ", ".join(
+                f"n{k}:{hist[k]:.3f}" for k in range(N_STAR + 1) if hist[k] > 0.02
+            )
+            print(f"[{leg:7s} {label}] trapped={trapped_frac:.3f} "
+                  f"supp={sup_frac:.3f} nbar={nbar:.2f} "
+                  f"ne_mean={nef.mean():.2f}  {top}")
+
+    with open(OUT / "h2b_leg_d_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(hist_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(hist_rows)
+    with open(OUT / "h2b_leg_d_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(ke_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(ke_rows)
+    print(f"predictions -> {OUT / 'h2b_leg_d_predictions.csv'}")
+    print(f"KE table    -> {OUT / 'h2b_leg_d_ke.csv'}")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -1334,6 +1496,8 @@ def main():
         stage_legb()
     elif mode == "legc":
         stage_legc()
+    elif mode == "legd":
+        stage_legd()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -1347,7 +1511,7 @@ def main():
         raise SystemExit(
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
-            "legaprime | legb | legc)"
+            "legaprime | legb | legc | legd)"
         )
 
 
