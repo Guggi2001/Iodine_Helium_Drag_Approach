@@ -8294,3 +8294,57 @@ grid-center cells reproduce the Stage-1 rows exactly (predictions + KE).
 
 Execution: one-cell-per-process (the Stage-1 lesson), ~4–5 parallel,
 I67 accommodation. Nothing here discharges F5.
+
+## Re-pilot Stage-2 MD sweep EXECUTED — all 67 cells scored; S2s-P2/P3/P4 CONFIRMED (the twin is quantitative at v65 across the whole budget plane — channel (d) is (τ, E₀)-blind), S2s-P5 SPLIT; each experimental axis lands at different cells and the joint landing does not exist in the swept family (findings §4t, I74–I76) (2026-07-21)
+
+62 new N = 50 dirs completed under one-cell-per-process heal drivers
+(run/resume/regenerate per artifact state; several session kill-sweeps
+absorbed at zero rework beyond the in-flight stage — the execution
+pattern now includes the heal driver). Full table + verdicts: findings
+**§4t**. Summary:
+
+- **S2s-P2 CONFIRMED** — n̄/supp monotone along both budget axes on all
+  four (arm, v_c) columns (32 column-checks, no exceptions).
+- **S2s-P3 CONFIRMED emphatically** — v65 Δn̄(MD − twin): 32/32 within
+  ±0.25 He (mean −0.036, no budget trend). **S2s-P4 CONFIRMED** — v85:
+  31/32 inside [−0.9, −0.5] He (mean −0.715). Channel (d) is a pure
+  drag-exposure function across the whole (τ, E₀) plane (I74).
+- **S2s-P5 SPLIT** — the KE non-factorization is real in MD (n₁ KE moves
+  ~0.5 eV across the grid at fixed v_c); the per-cell twin band holds at
+  v65 (34/35 within ×1.10) but v85 sits 21/32 within ×1.15.
+- **The joint read (I75):** the KE axis lands exactly at
+  (v85, τ3.2, E₀0.23) — n₁ KE 1.310 vs the 1.302 anchor, profiled χ²
+  13.9 — with a shell-retaining histogram (n₁ 0.10); the histogram axis
+  lands at (v85, τ3.8, E₀0.27) / (v65, τ3.2, E₀0.27) — n₁_solv
+  0.320/0.326 ≈ the H.2b 0.31 target, **first MD cells to reach it** —
+  with the KE axis missed (0.52 eV / χ² 162). The registered candidate
+  region crossed the n₁ anchor exactly as the twin predicted; the
+  Stage-1 χ² right-censoring resolves interior (deferred extension (a)
+  is moot); **no (v_c, τ, E₀) cell lands both observables** — I72 is now
+  a three-knob, cell-resolved taper-shape statement.
+- **Ladder direction (I76):** rq4graded > floor1 on the histogram axis
+  at every matched knob (N = 50-soft; formal verdict = the RP-D6
+  two-finalist N = 500 read).
+
+**Endgame decision block (user adjudication — the reporting gate).** The
+re-pilot has located the winner *regions*; the §I.11.4 sequence now
+reaches Stage 3 (sensitivity ring) → Landau spot → N = 500 finalists.
+Open choices:
+
+- **(E-1) Finalist cells per ladder** for the ring + N = 500. Natural
+  candidates: c1 = the joint-compromise (v65, τ3.2, E₀0.27) — histogram
+  landed, KE ×0.92 of anchor — or the W₁-best (v85, τ3.8, E₀0.27) —
+  histogram landed, KE badly missed; c4 = (v65, τ3.2, E₀0.27). The
+  arbitration observable (the size distribution) argues for the
+  histogram-side cells; the KE co-observable argues for v65 over v85.
+- **(E-2) Whether to open the taper-shape discussion before the N = 500
+  spend:** the persistent two-axis tension is a statement about the
+  capped-cubic *shape*; a small p_tail probe (p ∈ {−2, −3} at the
+  compromise cell — existing config surface, no new physics) could test
+  whether a more speed-selective taper reconciles the axes, at ~2–4
+  cells' cost. Alternatively accept the bounded-family miss as the
+  documented model statement and proceed.
+- **(E-3)** the `v_L` re-pinning (external) still gates only the
+  N = 500 handoff.
+
+Nothing here discharges F5.

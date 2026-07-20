@@ -3316,3 +3316,22 @@ run's job, the absorbed S2-P4 gate); nothing here discharges F5.
 > (b) two-candidate v_c carry / (c) v65 + documented χ² conflict — see
 > the log entry). One-cell-per-process is the execution pattern (the
 > worker-kill wrinkle, §4s).
+
+> **Status (2026-07-21, Stage 2 EXECUTED under adjudication (b) —
+> findings §4t + I74–I76; log entries "Stage-2 … pre-registration
+> EXECUTED" / "Stage-2 MD sweep EXECUTED").** The frozen 67-cell grid is
+> on disk and scored. S2s-P2/P3/P4 CONFIRMED — **the twin is
+> quantitatively exact at v65 across the whole (τ, E₀) plane** (32/32
+> within ±0.25 He; channel (d) is a pure drag-exposure function, I74);
+> S2s-P5 SPLIT (KE non-factorization real; v85 band partial). **Each
+> experimental axis is landed at different cells** — KE:
+> (v85, τ3.2, E₀0.23) n₁ KE 1.310 ≈ the 1.302 anchor, χ² 13.9;
+> histogram: (v65, τ3.2, E₀0.27) / (v85, τ3.8, E₀0.27) n₁_solv
+> 0.326/0.320 ≈ the H.2b 0.31 target (first MD cells ever) — **and the
+> joint landing does not exist in the swept capped-cubic family**
+> (I75); the Stage-1 χ² censoring resolved interior (deferred (a) is
+> moot). Ladder direction: rq4graded > floor1 on the histogram axis
+> (I76, N = 50-soft). **Next: the endgame decision block E-1..E-3 in
+> the log entry awaits user adjudication** (finalist cells per ladder;
+> whether to probe the taper shape (p_tail) before the N = 500 spend;
+> `v_L` still external).

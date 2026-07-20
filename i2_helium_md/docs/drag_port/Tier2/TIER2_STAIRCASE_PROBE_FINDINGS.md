@@ -2731,6 +2731,86 @@ histogram's own levers and have not moved yet); ledger closure not
 re-checked per cell (the delivered pipeline's standing residual);
 `zero_gamma` E2 throughout (RP-D7); nothing here discharges F5.
 
+---
+
+## 4t. Re-pilot Stage 2 — the (τ, E₀) grid at two carried v_c: the twin is quantitatively exact at v65 across the whole budget plane, the KE and histogram axes each land the experimental target at different cells, and the joint landing does not exist inside the swept capped-cubic family
+
+Executed 2026-07-20/21 (log entries "Stage-2 … pre-registration EXECUTED" /
+"Stage-2 MD sweep EXECUTED"). Adjudication (b): 62 new N = 50 cells +
+5 Stage-1/`dc2` center reuses = the frozen 67-cell grid (c1/c4 ×
+v_c ∈ {6.5, 8.5} × τ ∈ {3.2, 3.8, 4.4, 5.0} × E₀ ∈ {0.21, 0.23, 0.25,
+0.27} + the c2 spot diagonal). Execution: one-cell-per-process heal
+drivers (run/resume/regenerate per artifact state — several session
+kill-sweeps were absorbed at zero rework beyond the in-flight stage).
+Scored by the Stage-0 scorer (conventions §4r; χ² = profiled committed
+error model, min 2 ions/bin, sim-SE widened).
+
+### Verdicts (pre-registered S2s-P1..P5)
+
+1. **S2s-P1 CONFIRMED** (twin generation oracle; recorded at
+   pre-registration).
+2. **S2s-P2 CONFIRMED.** n̄_det monotone decreasing in E₀ at fixed τ and
+   in τ at fixed E₀, and suppressed monotone increasing in E₀, on **all
+   four** (arm, v_c) columns — no exceptions in 32 column-checks.
+3. **S2s-P3 CONFIRMED emphatically — the twin is quantitative at v65.**
+   Δn̄(MD − twin) at the v65 cells: **32/32 within ±0.25 He** (mean
+   −0.036, range [−0.17, +0.08]) with *no* systematic growth along
+   either budget axis: channel (d) has no budget-dependence at low
+   drag. Combined with S2s-P4 (**31/32** v85 cells inside the carried
+   [−0.9, −0.5] He band, mean −0.715, one marginal at −0.91): the
+   frozen-geometry bias is a **pure drag-exposure function** across the
+   entire (τ, E₀) plane — I73 extended from a line to the full plane.
+4. **S2s-P5 SPLIT.** The KE non-factorization is **real in MD** (c1v65
+   n₁ KE runs 1.73 → 1.20 eV across the grid — fate-map composition,
+   exactly as the twin predicted); the per-cell twin band holds at v65
+   (**34/35** within ×1.10) but at v85 only **21/32** sit within ×1.15
+   (breaks ×1.14–1.16 — the drag-end bias, again). The Stage-1 KE pin
+   demonstrably does not transfer: the §I.11.4.2 guard fired as
+   designed.
+
+### The joint-landing read (the leg's real question)
+
+Each experimental axis is **individually landed** — at different cells:
+
+| cell | τ | E₀ | n₁ KE [eV] | χ²_prof | W₁_solv | n₁_solv | n₁/n₂ |
+|---|---|---|---|---|---|---|---|
+| **s2c1v85t32e23** (KE-best) | 3.2 | 0.23 | **1.310** (anchor 1.302) | **13.9** | 1.520 | 0.101 | 1.00 |
+| s2c1v85t32e25 | 3.2 | 0.25 | 1.009 | **13.0** | 1.292 | 0.098 | 0.53 |
+| **s2c1v85t38e27** (W₁-best) | 3.8 | 0.27 | 0.518 | 62.9 | **0.594** | **0.320** | 3.43 |
+| **s2c1v65t32e27** (joint compromise) | 3.2 | 0.27 | 1.197 | 162.4 | 0.736 | **0.326** | 2.80 |
+| s2c4v65t32e27 (best c4) | 3.2 | 0.27 | 1.099 | 227.1 | 0.793 | 0.229 | 2.00 |
+
+(References: n₁ KE 1.302 eV; solvated n₁ = 0.310, n₁/n₂ = 2.18. The
+registered v65 × τ3.2 × E₀{0.25, 0.27} candidate region did exactly what
+the twin said: the n₁ anchor is *crossed* inside it — 1.355 at e25,
+1.197 at e27 — and e27 lands n₁_solv 0.326 ≈ the H.2b 0.31 target, the
+first MD cells ever to reach it. The Stage-1 χ² right-censoring is
+**resolved interior** by the budget axes: the KE optimum sits at
+(v85, τ3.2, E₀ 0.23–0.25), not beyond the v_c bracket — the deferred
+extension (a) is likely moot.)
+
+**But no cell lands both.** KE-best cells miss the histogram by ×2–3
+(n₁ 0.10 vs 0.31); histogram-best cells miss the KE axis (χ² ≥ 63; the
+W₁-best cell's n₁ KE is 0.52 eV — 2.5× low). The I72 drag-form-shape
+statement is now **cell-resolved across a 3-knob family**: within
+capped_cubic, (v_c, τ, E₀) cannot land the KE curve and the solvated
+histogram simultaneously anywhere in the swept volume. The miss
+direction is stable: cells that strip enough to populate n₁ ≈ 0.31
+arrive there too slow (or, at v85, with the whole curve dragged down);
+cells that keep the KE curve keep too much shell.
+
+**Ladder discrimination (I51/S2c-P3 direction, N = 50-soft):** rq4graded
+(c1) beats floor1 (c4) on the histogram axis at every matched knob
+(top-4 W₁_solv are all c1; c4's best is 0.793); formal verdict stays the
+N = 500 finalists' job (RP-D6).
+
+### Boundaries
+
+N = 50 single seed (n₁/n₂ ratio reads carry SE ≈ ±0.5–0.7 — n₁_solv is
+the stable histogram read); the c2 spot leg confirms directions only
+(3 cells); `zero_gamma` E2 (RP-D7); ledger closure not re-checked per
+cell; nothing here discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -3281,6 +3361,32 @@ re-checked per cell (the delivered pipeline's standing residual);
   the chain's best parity anywhere); the bias is a *function of
   in-droplet residence time*, not a constant offset — pre-registered
   check S1-P5's non-uniformity arm, fired as designed.
+- **I74 (re-pilot Stage 2, §4t).** **The twin is a quantitative
+  histogram predictor at low drag across the whole budget plane.** At
+  v65, Δn̄(MD − twin) sits within ±0.17 He on all 32 (τ, E₀) cells with
+  no budget trend; at v85 the softening is a uniform −0.72 He. Channel
+  (d) is a pure drag-exposure function — (τ, E₀)-blind. Consequence:
+  low-drag twin sweeps can be trusted near-quantitatively for histogram
+  design work; the KE axis cannot be factorized the same way (the
+  fate-map composition moves n₁ KE by ~0.5 eV across the grid at fixed
+  v_c — S2s-P5, predicted by the twin and confirmed in MD).
+- **I75 (re-pilot Stage 2, §4t).** **Each experimental axis is landed —
+  at different cells — and the joint landing does not exist inside the
+  swept capped-cubic family.** KE: (v85, τ3.2, E₀0.23) hits the n₁
+  anchor exactly (1.310 vs 1.302 eV; profiled χ² 13.9, grid-best band)
+  with a badly shell-retaining histogram (n₁ 0.10). Histogram: (v85,
+  τ3.8, E₀0.27) and (v65, τ3.2, E₀0.27) land n₁_solv 0.320/0.326 ≈ the
+  H.2b 0.31 target (first MD cells ever) with the KE axis missed (0.52
+  eV / χ² 162). The registered candidate region behaved exactly as the
+  twin said (the anchor is crossed inside it), the Stage-1 χ²
+  right-censoring resolves *interior* on the budget axes (extension (a)
+  moot) — and still no (v_c, τ, E₀) point lands both. I72 sharpened to
+  a three-knob, cell-resolved statement about the taper *shape*.
+- **I76 (re-pilot Stage 2, §4t).** **rq4graded > floor1 on the histogram
+  axis at matched knobs** (top-4 W₁_solv all c1; c4 best 0.793 vs c1
+  0.594) — the I51/S2c-P3 direction expressed across the full grid,
+  still N = 50-soft; the formal ladder verdict remains the N = 500
+  two-finalist read (RP-D6).
 
 ---
 
