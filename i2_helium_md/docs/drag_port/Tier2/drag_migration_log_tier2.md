@@ -7694,3 +7694,74 @@ Next per the I.11 sequence is still **Slice T8** (droplet prior) → T9 leg D �
 T4/ihe_ked scoring; the arm now stands ready for the first `N = 500` run. `v_L`
 re-pinning (domain-expert Landau critical velocity) is the one deferred calibration.
 Nothing here discharges F5.
+
+## Post-E2 code review EXECUTED — high-effort review of `1e4b91d..HEAD` (T5 + leg B, T6/T7 + leg C, E2 Landau arm); 4 verified findings + 2 cosmetics fixed, byte-inert defaults preserved, full suite 2445 passed (2026-07-20)
+
+High-effort multi-agent review (4 finder angles + a per-location adversarial
+verify pass) of everything delivered after the `1e4b''` post-A″ review: Slice
+T5 + leg B, Slice T6 + leg C, and the E2 Landau-gated drag arm. 6 verified
+candidates, 1 refuted (the "legb/legc/legaprime are copy-paste" dedup — refused:
+they are deliberately-explicit pre-registration oracle stages). All fixed; no
+new physics, no schema/RNG/constants touch, every delivered leg stays
+byte-identical (the changed paths are the *default* arms only).
+
+**F1 (correctness — the headline). The relaxation freeze-all early-exit
+truncated the Landau drag arm for exactly the class it targets.** The loop broke
+at `freeze_flags.all()` (`_freeze_mask` = `n ≤ 0 | E_int < D_0`, a pure
+*evaporation* freeze). Drag touches neither `n` nor `E_int`, so the freeze
+instant is drag-independent — but `landau_gated_drag` exists to damp the
+droplet-retained ions' residual super-Landau oscillation, which continues *past*
+the evaporation freeze. A retained ion frozen while still oscillating above `v_L`
+kept the KE the arm is meant to remove (latent: the arm is byte-inert default and
+has not run production, so no committed result moved — but it defeats the arm
+ahead of the N = 500 run it gates). Fix: extracted
+`_relaxation_converged(state, freeze_flags, *, dissipation, v_limit)` —
+`zero_gamma`/`free_flight` still exit on the freeze alone (byte-identical), the
+drag arm additionally requires all speeds ≤ `v_limit`. Regression:
+`test_relaxation_converged_requires_sub_landau_under_the_drag_arm` (unit) +
+`test_landau_arm_damps_past_the_evaporation_freeze` (end-to-end; `time_relaxed`
+≫ one step vs the `zero_gamma` arm's one-step stop). Confirmed
+`test_above_cutoff_dissipates_and_isolates_the_drag_channel` is undisturbed (its
+window hits no preempting freeze, so the arms stay same-length there).
+
+**F2 (correctness — script). Unguarded `w_tot == 0` in the leg-B/leg-C twin
+stages wrote NaN into the pre-registered prediction CSVs.** `stage_legb` /
+`stage_legc` normalise the histogram + fractions by `w_tot = w.sum()` (non-trapped
+weight); an all-trapped config gives `0/0 → NaN`, silently corrupting the
+pre-registration record rather than raising. Fix: a `w_tot == 0` guard that raises
+in both new stages. `stage_legaprime`'s identical pre-existing copy left untouched
+(out of the review range).
+
+**F3 (cleanup/perf). `base_gamma` was evaluated for every ion via `np.where`**,
+including the sub-Landau majority (the retained population the arm is about) whose
+coefficient is discarded. Fix: masked assignment — the erf-gated cubic is computed
+only where `speed > v_limit`; numerically identical to the old `np.where` on the
+array contract.
+
+**F4 (cleanup/DRY). The "typo-reject + no-silent-inert pairing" guard pattern was
+triplicated** across `check_initial_shell_config`, `check_internal_energy_partition_config`,
+and the dissipation block of `check_relaxation_config`. Fix: a shared
+`_require_pairing(*, field, value, trigger, dep_field, dep_value, actual, reason)`
+helper (mirrors the existing `_reject_unknown_enum` idiom); each guard passes its
+own physics `reason`, so the three cannot drift apart. Pinned message substrings
+(field names, `biphasic`/`landau_gated_drag`) preserved — the guard suites stay
+green.
+
+**Cosmetics.** `_KNOWN_RELAXATION_DISSIPATIONS` moved *before* `check_relaxation_config`
+(the other `_KNOWN_*` tuples precede their guards). `sigma_partition_factor`
+docstring: "picture/kappa ignored" made conditional on table injection (only true
+when an explicit ladder table is injected; the analytic ladder consumes them).
+
+Also cleared on independent inspection (no fix needed): `n0_initial` is always
+defined on the biphasic seed path (both sub-branches of the wrapping `elif` bind
+it); the MD seed's missing `np.clip(n0, 0, N_STAR)` is harmless because
+`rho_he_ratio ∈ [0, 1]` saturates at exactly `1.0`, so `rint(21·ρ̂) ≤ 21` and never
+indexes past the 21-rung ladder (the twin's clip is defensive only).
+
+**Verification.** Files changed: `config.py`, `physics/internal_energy_budget.py`,
+`simulation/relaxation_stage.py`, `scripts/tier2_h2b_forward_model.py`,
+`tests/test_relaxation_landau_gamma.py` (+2 tests). Narrow→broad: Landau (11),
+relaxation, the three guard suites, forward-model/partition/generator (56), then
+**full suite 2445 passed** (2443 baseline + 2 new; 230 s). No F-register item is
+discharged or opened; F5 stands. Next per the I.11 sequence is unchanged:
+**Slice T8** (droplet prior) → T9 leg D → re-pilot → T4/ihe_ked scoring.

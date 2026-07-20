@@ -157,3 +157,69 @@ def test_five_term_invariant_closes_under_landau_arm():
     closure = ion_ledger_closure(ck)
     e0 = abs(closure.E_system_eV[0])
     assert closure.max_abs_residual_eV / e0 < 1e-4
+
+
+# ---------------------------------------------------------------------------
+# Finding-1: the freeze-all early-exit must not truncate the drag arm for the
+# droplet-retained class it exists to relax (evaporation freeze != translational
+# equilibrium once drag is on).
+# ---------------------------------------------------------------------------
+def test_relaxation_converged_requires_sub_landau_under_the_drag_arm():
+    from i2_helium_md.physics.dissociation_ladder import resolve_ladder
+    from i2_helium_md.simulation.ion_propagation_step import (
+        ion_state_from_checkpoint_column,
+    )
+    from i2_helium_md.simulation.relaxation_stage import (
+        _freeze_mask,
+        _relaxation_converged,
+    )
+
+    cfg = _landau_cfg()
+    ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
+    # E_int = 0 -> evaporation-frozen; speed 5 A/ps -> super-Landau (v_L = 0.4).
+    st = ion_state_from_checkpoint_column(
+        _seed_at_speed(cfg, 5.0, E_int_eV=0.0), -1,
+    )
+    frozen = _freeze_mask(st, picture=cfg.ladder_electronic_picture,
+                          kappa=cfg.ladder_steepness, ladder=ladder)
+    assert bool(frozen.all())   # the seed really is evaporation-frozen
+
+    v_L = cfg.v_limit_angstrom_per_ps
+    # zero_gamma: the evaporation freeze alone ends the loop (delivered behaviour).
+    assert _relaxation_converged(st, frozen, dissipation="zero_gamma", v_limit=v_L)
+    # landau_gated_drag: still super-Landau -> NOT converged (drag must keep going).
+    assert not _relaxation_converged(
+        st, frozen, dissipation="landau_gated_drag", v_limit=v_L,
+    )
+    # ...and once damped sub-Landau, the drag arm does converge.
+    st_slow = replace(st, vx=np.zeros_like(st.vx), vy=np.zeros_like(st.vy),
+                      vz=np.zeros_like(st.vz))
+    assert _relaxation_converged(
+        st_slow, frozen, dissipation="landau_gated_drag", v_limit=v_L,
+    )
+
+
+def test_landau_arm_damps_past_the_evaporation_freeze():
+    # End-to-end: a seed evaporation-frozen from t0 (E_int=0) but super-Landau.
+    # The freeze-all early-exit alone would stop the loop at the first step; the
+    # drag arm must keep braking past it, so it runs many more steps than the
+    # zero_gamma arm (which correctly stops at the freeze).
+    cfg = _landau_cfg(relaxation_time_ps=5.0)
+    dt = cfg.dt_ion if cfg.relaxation_dt_ps is None else cfg.relaxation_dt_ps
+
+    resL = run_relaxation_stage(_seed_at_speed(cfg, 5.0, E_int_eV=0.0), cfg)
+    res0 = run_relaxation_stage(
+        _seed_at_speed(cfg, 5.0, E_int_eV=0.0),
+        replace(cfg, relaxation_dissipation="zero_gamma"),
+    )
+
+    # zero_gamma stops at the freeze (~one step); the drag arm runs well past it.
+    assert res0.time_relaxed_ps <= 2.0 * dt
+    assert resL.time_relaxed_ps > 5.0 * dt
+    assert resL.time_relaxed_ps > res0.time_relaxed_ps
+    # Drag fired and braked the retained ion below the seed speed.
+    ckL = resL.checkpoint
+    assert np.all(ckL.E_dissip_eV[:, -1] > 0.0)
+    vT = np.sqrt(ckL.velocities_x[:, -1] ** 2 + ckL.velocities_y[:, -1] ** 2
+                 + ckL.velocities_z[:, -1] ** 2)
+    assert np.all(vT < 5.0)

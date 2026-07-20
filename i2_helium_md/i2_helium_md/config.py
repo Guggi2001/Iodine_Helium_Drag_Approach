@@ -624,6 +624,33 @@ def _reject_unknown_enum(value: object, known: tuple, *, field: str) -> None:
         raise ValueError(f"unknown {field} {value!r}; expected one of {known}")
 
 
+def _require_pairing(
+    *, field: str, value: object, trigger: object,
+    dep_field: str, dep_value: object, actual: object, reason: str,
+) -> None:
+    """Enforce the no-silent-inert pairing convention (Slices T5/T6, E2 arm (c)).
+
+    Several interchangeable arms are read by only one upstream configuration --
+    a biphasic-seed law, or the coulomb translation's drag O-step. When the
+    advertised arm (``value == trigger``) is selected but its consumer is absent
+    (``actual != dep_value``), the arm would be silently inert; refuse loudly
+    instead. This is the single shared pairing arm (the ``_reject_unknown_enum``
+    idiom for the typo guard); each caller passes its ``reason`` so the message
+    stays field-specific. Centralising it keeps the three T5/T6/E2 guards from
+    drifting apart when the convention changes.
+
+    Raises
+    ------
+    ValueError
+        When ``value == trigger`` and ``actual != dep_value``.
+    """
+    if value == trigger and actual != dep_value:
+        raise ValueError(
+            f"{field}={trigger!r} requires {dep_field}={dep_value!r}: {reason}; "
+            f"got {dep_field}={actual!r}."
+        )
+
+
 # ---------------------------------------------------------------------------
 # Slice T7 birth-position-law config-load guard (Tier-2 plan §I.11)
 # ---------------------------------------------------------------------------
@@ -980,17 +1007,16 @@ def check_initial_shell_config(cfg: "SimConfig") -> None:
         _KNOWN_INITIAL_SHELL_MODELS,
         field="initial_shell_model",
     )
-    if (
-        cfg.initial_shell_model == "density_tied"
-        and cfg.mass_scenario != "biphasic"
-    ):
-        raise ValueError(
-            "initial_shell_model='density_tied' requires mass_scenario="
-            "'biphasic': the dressing law is read only by the biphasic "
-            "column-0 seed (per-ion n_0 / mass / E_pot binding fold), so "
-            f"under mass_scenario={cfg.mass_scenario!r} it would be silently "
-            "inert (keep the 'full' default there)"
-        )
+    _require_pairing(
+        field="initial_shell_model", value=cfg.initial_shell_model,
+        trigger="density_tied", dep_field="mass_scenario",
+        dep_value="biphasic", actual=cfg.mass_scenario,
+        reason=(
+            "the dressing law is read only by the biphasic column-0 seed "
+            "(per-ion n_0 / mass / E_pot binding fold), so it would be "
+            "silently inert otherwise (keep the 'full' default there)"
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1022,17 +1048,17 @@ def check_internal_energy_partition_config(cfg: "SimConfig") -> None:
         _KNOWN_INTERNAL_ENERGY_PARTITION_LAWS,
         field="internal_energy_partition_law",
     )
-    if (
-        cfg.internal_energy_partition_law == "sigma_proportional"
-        and cfg.mass_scenario != "biphasic"
-    ):
-        raise ValueError(
-            "internal_energy_partition_law='sigma_proportional' requires "
-            "mass_scenario='biphasic': the p-law couples the S2 onset E_int(0) "
-            "to the t0 shell, which is deposited only by the biphasic column-0 "
-            f"seed, so under mass_scenario={cfg.mass_scenario!r} it would be "
-            "silently inert (keep the 'constant' default there)"
-        )
+    _require_pairing(
+        field="internal_energy_partition_law",
+        value=cfg.internal_energy_partition_law,
+        trigger="sigma_proportional", dep_field="mass_scenario",
+        dep_value="biphasic", actual=cfg.mass_scenario,
+        reason=(
+            "the p-law couples the S2 onset E_int(0) to the t0 shell, which is "
+            "deposited only by the biphasic column-0 seed, so it would be "
+            "silently inert otherwise (keep the 'constant' default there)"
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1238,6 +1264,10 @@ def check_biphasic_config(cfg: "SimConfig") -> None:
 # genuinely needs a longer *bounded* relaxation.
 _DENSITY_SCALED_MAX_RELAX_STEPS = 10_000_000
 
+# Dissipation arm selectors (§I.11.2 item 2, arm (c)); defined before the guard
+# that reads it (the other _KNOWN_* tuples precede their guards).
+_KNOWN_RELAXATION_DISSIPATIONS = ("zero_gamma", "landau_gated_drag")
+
 
 def check_relaxation_config(cfg: "SimConfig") -> None:
     """Validate the Tier-2 Phase-E relaxation-stage surface (Slice E2).
@@ -1336,17 +1366,15 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
         cfg.relaxation_dissipation, _KNOWN_RELAXATION_DISSIPATIONS,
         field="relaxation_dissipation",
     )
-    if (cfg.relaxation_dissipation == "landau_gated_drag"
-            and cfg.relaxation_forces != "coulomb"):
-        raise ValueError(
-            "relaxation_dissipation='landau_gated_drag' requires "
-            "relaxation_forces='coulomb': the free_flight arm is ballistic (no "
-            "drag O-step), so the dissipation coefficient would be silently "
-            f"inert; got relaxation_forces={cfg.relaxation_forces!r}."
-        )
-
-
-_KNOWN_RELAXATION_DISSIPATIONS = ("zero_gamma", "landau_gated_drag")
+    _require_pairing(
+        field="relaxation_dissipation", value=cfg.relaxation_dissipation,
+        trigger="landau_gated_drag", dep_field="relaxation_forces",
+        dep_value="coulomb", actual=cfg.relaxation_forces,
+        reason=(
+            "the free_flight arm is ballistic (no drag O-step), so the "
+            "dissipation coefficient would be silently inert"
+        ),
+    )
 
 
 _KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude")

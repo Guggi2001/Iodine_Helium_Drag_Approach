@@ -1106,6 +1106,13 @@ def stage_legb(m=20000):
             n_det, sup = fate_map(ne, K, e0, 0, sig)
             w = np.where(trapped, 0.0, 1.0)
             w_tot = w.sum()
+            if w_tot == 0.0:
+                raise ValueError(
+                    f"[{leg} {label}] every fragment is trapped (w_tot == 0): the "
+                    "histogram / fraction normalisation would be 0/0 and write NaN "
+                    "into the pre-registered prediction CSV. A config that traps the "
+                    "whole ensemble cannot produce a prediction record."
+                )
             trapped_frac = float(trapped.mean())
             sup_frac = float(w[sup].sum() / w_tot)
             hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
@@ -1251,6 +1258,13 @@ def stage_legc(m=20000):
             n_det, sup = fate_map(ne, K, e0, p_law, sig)
             w = np.where(trapped, 0.0, 1.0)
             w_tot = w.sum()
+            if w_tot == 0.0:
+                raise ValueError(
+                    f"[{leg} {label}] every fragment is trapped (w_tot == 0): the "
+                    "histogram / fraction normalisation would be 0/0 and write NaN "
+                    "into the pre-registered prediction CSV. A config that traps the "
+                    "whole ensemble cannot produce a prediction record."
+                )
             trapped_frac = float(trapped.mean())
             sup_frac = float(w[sup].sum() / w_tot)
             hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot

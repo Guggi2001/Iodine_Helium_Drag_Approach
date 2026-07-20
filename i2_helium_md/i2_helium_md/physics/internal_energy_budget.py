@@ -87,9 +87,10 @@ def sigma_partition_factor(n0, *, law: str, picture: str = "statistical_mixture"
 
     Structurally inert at ``n0 = n*`` (ratio ``= 1``) under either law, so the arm
     is a no-op without the T5 position/dressing axis. Consumes Slice L's
-    :func:`ladder_cumsum`; ``ladder`` injected table sets ``Sigma`` and
-    ``picture``/``kappa`` are ignored (the module convention, see
-    :func:`dE_int_pickup_eV`). ``constant`` -> scalar ``1.0``;
+    :func:`ladder_cumsum`; when an explicit ``ladder`` table is injected it sets
+    ``Sigma`` and ``picture``/``kappa`` are then ignored, otherwise the analytic
+    ladder consumes them (the module convention, see :func:`dE_int_pickup_eV`).
+    ``constant`` -> scalar ``1.0``;
     ``sigma_proportional`` is vectorised scalar-in -> float, array-in -> ndarray.
 
     Raises ``ValueError`` on an unrecognised ``law`` (CLAUDE.md principle 4).

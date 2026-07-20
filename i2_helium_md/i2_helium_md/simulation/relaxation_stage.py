@@ -204,10 +204,17 @@ def _make_relaxation_gamma_fn(
         v_limit = cfg.v_limit_angstrom_per_ps
 
         def _landau_gated_gamma(speed: np.ndarray, depth: np.ndarray) -> np.ndarray:
-            speed = np.asarray(speed, dtype=float)
-            # base_gamma is regular everywhere (evaluated for all samples); the
-            # gate zeroes the sub-Landau side so decay = 1 there (drag off).
-            return np.where(speed > v_limit, base_gamma(speed, depth), 0.0)
+            speed, depth = np.broadcast_arrays(
+                np.asarray(speed, dtype=float), np.asarray(depth, dtype=float),
+            )
+            gamma = np.zeros(speed.shape, dtype=float)
+            # Evaluate the erf-gated cubic ONLY on the super-Landau samples; the
+            # sub-Landau majority (the marginal retained population this arm
+            # targets) stays frictionless with no wasted drag_gamma call. Numerically
+            # identical to np.where(speed > v_limit, base_gamma(...), 0.0).
+            hot = speed > v_limit
+            gamma[hot] = base_gamma(speed[hot], depth[hot])
+            return gamma
 
         return _landau_gated_gamma
     # check_relaxation_config rejects unknown arms at config-load; defensive.
@@ -247,6 +254,30 @@ def _freeze_mask(state: IonStepState, *, picture: str, kappa: float,
         d0_of_n(np.maximum(n, 1.0), picture=picture, kappa=kappa, ladder=ladder)
     )
     return (n <= 0.0) | (E_int < d0)
+
+
+def _relaxation_converged(
+    state: IonStepState, freeze_flags: np.ndarray, *,
+    dissipation: str, v_limit: float,
+) -> bool:
+    """True when every ion is quiescent, so the relaxation loop may stop early.
+
+    ``zero_gamma`` / ``free_flight``: quiescence is the evaporation freeze alone
+    (:func:`_freeze_mask`) -- with no drag there is no translational relaxation
+    left once the mass subsystem freezes.
+
+    ``landau_gated_drag`` (§I.11.2 item 2, arm (c)): the drag arm keeps damping
+    droplet-retained ions *past* the evaporation freeze, so a still-oscillating
+    super-Landau ion is NOT done -- also require its speed at/below the Landau
+    cutoff ``v_limit``. Terminating on the evaporation freeze alone (which is
+    drag-independent: the mass subsystem freezes at the same step either way)
+    would truncate the arm for exactly the marginal retained class it exists to
+    relax, leaving the super-Landau KE the arm is meant to remove.
+    """
+    if dissipation != "landau_gated_drag":
+        return bool(freeze_flags.all())
+    speed = np.sqrt(state.vx ** 2 + state.vy ** 2 + state.vz ** 2)
+    return bool((freeze_flags & (speed <= v_limit)).all())
 
 
 def _coulomb_translate(
@@ -501,7 +532,11 @@ def run_relaxation_stage(
 
         freeze_flags = _freeze_mask(state, picture=picture, kappa=kappa,
                                     ladder=ladder)
-        if bool(freeze_flags.all()):
+        if _relaxation_converged(
+            state, freeze_flags,
+            dissipation=cfg.relaxation_dissipation,
+            v_limit=cfg.v_limit_angstrom_per_ps,
+        ):
             break
 
     if stored[-1] is not state:
