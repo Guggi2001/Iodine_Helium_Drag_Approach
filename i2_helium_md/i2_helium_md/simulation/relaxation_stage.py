@@ -89,8 +89,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, replace
+from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -98,6 +99,7 @@ from ..config import SimConfig, check_relaxation_config
 from ..physics.constants import U
 from ..physics.baoab import make_ion_baoab_step
 from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
+from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import (
@@ -158,6 +160,62 @@ def _zero_gamma(speed: np.ndarray, depth: np.ndarray) -> np.ndarray:
     return np.zeros_like(np.asarray(speed, dtype=float))
 
 
+def _make_relaxation_gamma_fn(
+    cfg: SimConfig, gate_steepness: float,
+) -> Callable[[np.ndarray, np.ndarray], np.ndarray]:
+    """Resolve the coulomb-translate friction coefficient for the dissipation arm.
+
+    ``zero_gamma`` (default) returns the delivered :func:`_zero_gamma` closure
+    **verbatim** -- same function object, so the translate path is byte-identical.
+
+    ``landau_gated_drag`` (plan §I.11.2 item 2, arm (c)) returns a **speed-gated**
+    coefficient: ``gamma = 0`` for ``speed <= cfg.v_limit_angstrom_per_ps`` (the
+    Landau cutoff -- sub-Landau superfluid motion is dissipationless) and the
+    locked pure-cubic drag ``g(depth)*b*speed**2`` above it. ``b`` and the erf
+    spatial gate come from the config's production drag bundle via
+    :func:`~i2_helium_md.physics.drag.drag_gamma` (single source, CLAUDE.md rule
+    1), so the arm never re-derives the coefficient. The gate is on **speed**, not
+    kinetic energy: the Landau critical velocity is mass-independent, and drag.py
+    is mass-agnostic by contract. Heaviside is strict ``>`` -- exactly at the
+    cutoff there is no friction.
+
+    Parameters
+    ----------
+    cfg : SimConfig
+        Carries ``relaxation_dissipation``, the drag bundle, and the cutoff. The
+        ``landau_gated_drag`` arm requires ``drag_coefficients is not None`` (the
+        biphasic scenario guarantees it; validated at config-load).
+    gate_steepness : float
+        The drag erf-gate width [Angstrom], resolved once by
+        :func:`~i2_helium_md.simulation.ion.drag_gate_steepness`.
+
+    Returns
+    -------
+    Callable[[speed, depth], np.ndarray]
+        A ``gamma_fn(speed, depth) -> gamma [amu/ps]`` matching the
+        :func:`~i2_helium_md.physics.baoab.make_ion_baoab_step` contract.
+    """
+    if cfg.relaxation_dissipation == "zero_gamma":
+        return _zero_gamma
+    if cfg.relaxation_dissipation == "landau_gated_drag":
+        base_gamma = partial(
+            drag_gamma, coeffs=cfg.drag_coefficients, steepness=gate_steepness,
+        )
+        v_limit = cfg.v_limit_angstrom_per_ps
+
+        def _landau_gated_gamma(speed: np.ndarray, depth: np.ndarray) -> np.ndarray:
+            speed = np.asarray(speed, dtype=float)
+            # base_gamma is regular everywhere (evaluated for all samples); the
+            # gate zeroes the sub-Landau side so decay = 1 there (drag off).
+            return np.where(speed > v_limit, base_gamma(speed, depth), 0.0)
+
+        return _landau_gated_gamma
+    # check_relaxation_config rejects unknown arms at config-load; defensive.
+    raise ValueError(
+        f"unknown relaxation_dissipation {cfg.relaxation_dissipation!r}"
+    )
+
+
 def _zero_accel_fn(num_molecules: int):
     """Conservative-force-free acceleration closure for the free-flight arm.
 
@@ -199,16 +257,20 @@ def _coulomb_translate(
     charge: np.ndarray,
     picture: str,
     kappa: float,
+    gamma_fn,
     ladder=None,
 ) -> IonStepState:
-    """One conservative (zero-gamma BAOAB) translation step + the e_bind_pair fold.
+    """One conservative BAOAB translation step + the e_bind_pair fold.
 
-    Byte-for-byte the ion driver's biphasic translation, with the drag ``gamma_fn``
-    replaced by :func:`_zero_gamma` (decay = 1, dE_dissip = 0).
+    Byte-for-byte the ion driver's biphasic translation. ``gamma_fn`` selects the
+    dissipation arm (:func:`_make_relaxation_gamma_fn`): the default
+    :func:`_zero_gamma` (decay = 1, dE_dissip = 0) or the Landau-gated pure-cubic
+    drag. Either way the BAOAB step threads its ``dE_dissip`` into ``E_dissip`` on
+    top of the K2 cooling drain, so the 5-term invariant closes.
     """
     acc_fn = make_ion_accel_fn(relax_cfg, state.mass_kg, droplet_radii, charge)
     step = make_ion_baoab_step(
-        state.mass_kg / U, droplet_radii, acc_fn, _zero_gamma, T_eff=0.0,
+        state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,
     )
     new_state = baoab_propagation_step(
         state, step=step, cfg=relax_cfg, droplet_radii=droplet_radii,
@@ -388,6 +450,11 @@ def run_relaxation_stage(
     ladder = resolve_ladder(cfg.dissociation_ladder, cfg.tabulated_ladder_rungs_eV)
     forces = cfg.relaxation_forces
     gate_steepness = drag_gate_steepness(cfg)
+    # Dissipation arm (§I.11.2 item 2, arm (c)): zero_gamma (default) or the
+    # Landau-gated pure-cubic drag. Built once from relax_cfg (carries the drag
+    # bundle + cutoff); only the coulomb translation consumes it (the config-load
+    # guard forbids landau_gated_drag under free_flight).
+    gamma_fn = _make_relaxation_gamma_fn(relax_cfg, gate_steepness)
 
     seed = ion_state_from_checkpoint_column(ion, -1)
 
@@ -419,7 +486,8 @@ def run_relaxation_stage(
         if forces == "coulomb":
             state = _coulomb_translate(
                 state, relax_cfg=relax_cfg, droplet_radii=droplet_radii,
-                charge=charge, picture=picture, kappa=kappa, ladder=ladder,
+                charge=charge, picture=picture, kappa=kappa, gamma_fn=gamma_fn,
+                ladder=ladder,
             )
         else:
             state = _free_flight_translate(

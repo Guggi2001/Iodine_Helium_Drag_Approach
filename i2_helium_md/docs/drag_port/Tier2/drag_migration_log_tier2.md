@@ -7628,3 +7628,69 @@ Kornilov log-normal + pickup-weighted variant behind config), then **T9 leg D**
 knobs → the T4/ihe_ked solvated-branch scoring. The E2 Landau-gated drag arm
 (§I.11.2 item 2, arm (c)) stays adjudicated-but-unbuilt — required before any
 N = 500 run. Nothing here discharges F5.
+
+## E2 Landau-gated drag arm DELIVERED — §I.11.2 item 2, arm (c); byte-inert `relaxation_dissipation` enum; full suite 2443 passed (2026-07-20)
+
+`[PROCEED TO IMPLEMENTATION]` given for the adjudicated arm (c). Built ahead of the
+pre-registered I.11 next-step (Slice T8) at the user's call — legitimate because the
+arm is **byte-inert** (default preserves every delivered leg) and only needs to exist
+before the first `N = 500` run. Two user sign-offs before the trigger: (i) gate on
+**speed** with the threshold pinned at the existing legacy `v_limit = 40 m/s`
+(0.4 Å/ps) — re-pinning is a separate domain-expert calibration; (ii) `b` drawn from
+the config's production drag bundle (single source, no hard-wired constant). TDD, RED
+watched first.
+
+**Physics (frozen).** Replaces the E2 coulomb-translate's `_zero_gamma` with a
+speed-gated friction coefficient:
+
+```
+γ(v, depth) = 0                      for v ≤ v_L      (sub-Landau superfluid, frictionless)
+γ(v, depth) = g(depth)·b·v²          for v >  v_L      (the locked pure cubic)
+```
+
+`v_L = cfg.v_limit_angstrom_per_ps` (0.4 Å/ps), `b = 2.5153509 amu·ps/Å²` and the erf
+spatial gate `g(depth)` both from `cfg.drag_coefficients` via `physics.drag.drag_gamma`
+(rule-1 single source). Units balance both branches (`b·v² = amu/ps`). The gate is on
+**speed**, not KE: the Landau critical velocity is mass-independent, which is also the
+choice that preserves `drag.py`'s mass-agnostic contract (a KE gate would force `m`
+into the drag evaluation). Heaviside is strict `>` — frictionless exactly at `v_L`.
+
+**Surface (byte-inert).**
+- `config.py`: `RelaxationDissipation = Literal["zero_gamma", "landau_gated_drag"]`;
+  field `relaxation_dissipation = "zero_gamma"` (default) beside `relaxation_forces`.
+  `check_relaxation_config` gains the typo-reject (`_reject_unknown_enum` against
+  `_KNOWN_RELAXATION_DISSIPATIONS`) **and** the no-silent-inert pairing guard —
+  `landau_gated_drag` is refused under `relaxation_forces != "coulomb"` (free_flight is
+  ballistic, no drag O-step; the T5/T7 `sigma_proportional`-refused-outside-biphasic
+  precedent). Back-compat: an old `cfg.json` missing the key loads `zero_gamma`
+  (dataclass default, `RunDirectory.load_cfg`'s `SimConfig(**payload)` path).
+- `simulation/relaxation_stage.py`: `_make_relaxation_gamma_fn(cfg, gate_steepness)`
+  returns the delivered `_zero_gamma` **object** for the default (translate path
+  literally unchanged) or the Landau closure `np.where(v > v_L, drag_gamma(...), 0.0)`.
+  `_coulomb_translate` takes the `gamma_fn`; `run_relaxation_stage` builds it once from
+  `relax_cfg` next to `gate_steepness`. `_free_flight_translate` unchanged (guard
+  forbids the landau+free_flight pairing). No change to `drag.py`, `drag_form`, the main
+  ion driver, the checkpoint schema, or the RNG draw order.
+
+**Invariant.** The BAOAB step already threads its drag `dE_dissip` into `E_dissip`
+(`ion_propagation_step.py:395`) on top of the K2 cooling drain that `biphasic_step`
+books (`:630`) — the exact machinery that closes the ion-stage ledger — so the
+**5-term invariant closes with drag on**, verified on the real-driver seed
+(`test_five_term_invariant_closes_under_landau_arm`). Scope: the marginal
+droplet-retained class only; the ejected read is arm-invariant (`g → 0` outside).
+
+**Verification (7-step order).** New suites `tests/test_relaxation_dissipation_config.py`
+(6) + `tests/test_relaxation_landau_gamma.py` (9): closed-form γ both sides of `v_L`,
+boundary-belongs-to-below, spatial-gate-off-outside, array elementwise, above-cutoff ==
+`drag_gamma`; byte-inert identity (`fn is _zero_gamma`); below-cutoff run == zero_gamma
+bit-for-bit; above-cutoff isolates the drag channel (n/E_int identical, strictly more
+`E_dissip`, colder); real-seed invariant closure. The delivered relaxation suite (36,
+incl. `test_e_dissip_equals_cumulative_k2_drain`) stays green — the byte-inert oracle.
+**Full suite: 2443 passed** (233 s). CALIBRATION_MAP row 29 (arm, not knob); `v_limit`
+gains a physics-live reader beyond the superseded collision path (retires that rule-2
+carry's guard-only status for the relaxation stage).
+
+Next per the I.11 sequence is still **Slice T8** (droplet prior) → T9 leg D → re-pilot →
+T4/ihe_ked scoring; the arm now stands ready for the first `N = 500` run. `v_L`
+re-pinning (domain-expert Landau critical velocity) is the one deferred calibration.
+Nothing here discharges F5.

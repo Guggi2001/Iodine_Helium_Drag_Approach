@@ -60,6 +60,7 @@ NoiseLowVBehavior = Literal["vanish", "blend_to_isotropic"]
 PickupRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
 RelaxationForces = Literal["coulomb", "free_flight"]   # Tier-2 Phase-E relaxation translation arm
+RelaxationDissipation = Literal["zero_gamma", "landau_gated_drag"]  # Tier-2 §I.11.2 item 2 arm (c)
 
 # Tier-2 Phase-B pickup channel (Slice P). ``PickupOccupancyCap`` selects the
 # Langmuir shell-saturation factor ``(1 - n/n*)_+^p`` (``langmuir``, default) vs the
@@ -453,6 +454,13 @@ class SimConfig:
     relaxation_time_ps: Optional[float] = None           # required-when-enabled (no sourced t_exp)
     relaxation_dt_ps: Optional[float] = None             # None -> dt_ion; guard nu*dt <= 0.1
     relaxation_forces: RelaxationForces = "coulomb"      # translation arm (coulomb default; free_flight)
+    # Dissipation arm (Tier-2 plan §I.11.2 item 2, arm (c)). "zero_gamma" (default,
+    # byte-inert) is the delivered conservative closure; "landau_gated_drag" turns
+    # the locked pure-cubic drag on ABOVE the Landau cutoff (cfg.v_limit) and keeps
+    # sub-Landau motion frictionless -- captures the marginal droplet-retained ions
+    # the zero-gamma convention leaves as artificial long-lived resonances. Read by
+    # simulation/relaxation_stage; only the coulomb translation arm consumes it.
+    relaxation_dissipation: RelaxationDissipation = "zero_gamma"
 
     # -- Tier-2 Slice DS detection-time continuation stage (opt-in) --
     # Event-driven (Gillespie) continuation of the post-ejection evaporation
@@ -1319,6 +1327,26 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
             "relaxation_forces must be 'coulomb' (default) or 'free_flight'; got "
             f"{cfg.relaxation_forces!r}."
         )
+
+    # 6. Dissipation arm (§I.11.2 item 2, arm (c)): typo-reject, then enforce the
+    #    no-silent-inert pairing -- only the coulomb translation has a drag O-step,
+    #    so landau_gated_drag under free_flight would be read by nothing (the
+    #    T5/T7 sigma_proportional precedent: refuse rather than silently ignore).
+    _reject_unknown_enum(
+        cfg.relaxation_dissipation, _KNOWN_RELAXATION_DISSIPATIONS,
+        field="relaxation_dissipation",
+    )
+    if (cfg.relaxation_dissipation == "landau_gated_drag"
+            and cfg.relaxation_forces != "coulomb"):
+        raise ValueError(
+            "relaxation_dissipation='landau_gated_drag' requires "
+            "relaxation_forces='coulomb': the free_flight arm is ballistic (no "
+            "drag O-step), so the dissipation coefficient would be silently "
+            f"inert; got relaxation_forces={cfg.relaxation_forces!r}."
+        )
+
+
+_KNOWN_RELAXATION_DISSIPATIONS = ("zero_gamma", "landau_gated_drag")
 
 
 _KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude")

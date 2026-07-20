@@ -2821,7 +2821,11 @@ Three items follow, in the suggested order:
 > coupled to RQ2's ε). **Item 2 ADJUDICATED:
 > arm (c) Landau-gated drag** selected by the user; build stays behind
 > its own `[PROCEED TO IMPLEMENTATION]`, required before any N = 500
-> run. **Item 3 ADOPTED and sharpened by item 1:** leg-B twin
+> run. **[DELIVERED 2026-07-20** — `relaxation_dissipation ∈ {zero_gamma
+> (byte-inert default), landau_gated_drag}`; γ = 0 for v ≤ v_L (0.4 Å/ps
+> legacy cutoff), locked pure cubic above; coulomb-only guard; 5-term
+> invariant closes with drag on; full suite 2443 passed. Log entry "E2
+> Landau-gated drag arm DELIVERED"; CALIBRATION_MAP row 29.] **Item 3 ADOPTED and sharpened by item 1:** leg-B twin
 > re-scores pre-register per-bin mean detected KE alongside the
 > histograms, **stating the shed-convention basis of every KE claim**
 > (the twin is co-moving by construction; the delivered MD is
