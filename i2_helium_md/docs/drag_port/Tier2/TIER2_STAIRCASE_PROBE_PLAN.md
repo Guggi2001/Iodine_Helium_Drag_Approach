@@ -3298,3 +3298,21 @@ run's job, the absorbed S2-P4 gate); nothing here discharges F5.
 > channel-(d) check quantity across all 15 cells. Next: the Stage-1 MD
 > sweep (15 × N = 50 under the I70 pattern) behind its own leg trigger,
 > scored KE-first by the delivered Stage-0 scorer.
+
+> **Status (2026-07-20, Stage-1 MD sweep EXECUTED — findings §4s +
+> I71–I73; log entry "Re-pilot Stage-1 MD sweep EXECUTED").** All 15
+> cells on disk and scored (13 new dirs; dc2/dc4 center reuse; the fresh
+> s1c1v75 pipeline-identity oracle reproduces dc1 exactly). S1-P1..P4
+> CONFIRMED (χ² argmin = twin + 1 step on every arm — but
+> **right-censored at the bracket edge**); S1-P5's non-uniformity check
+> FIRED: **channel (d) scales with drag exposure** (Δn̄ ≈ 0 at v65 →
+> −0.8 He at v85; twin parity W₁ 0.21 → 1.04). Physics headline (I72):
+> the speed-selective tension survives real MD — the whole-curve KE χ²,
+> the n₁ anchor, and the solvated n₁/n₂ ratio prefer three different
+> v_c; the v65 cells land ratio 2.14/2.08 (ref 2.18) and n₁ ≈ 0.30 (the
+> H.2b target, first time in MD). **The §I.11.4.2 "Stage 1 pins one
+> v_c\* per arm" assumption did not survive contact — the Stage-2 entry
+> is an open user adjudication** (options (a) bracket extension /
+> (b) two-candidate v_c carry / (c) v65 + documented χ² conflict — see
+> the log entry). One-cell-per-process is the execution pattern (the
+> worker-kill wrinkle, §4s).

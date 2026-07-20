@@ -8200,3 +8200,53 @@ aids, not MD predictions of absolute goodness (the bar-level verdict
 stays the N = 500 run's); nothing here discharges F5. Next: the
 **Stage-1 MD sweep** (15 × N = 50, I70 execution pattern, scored
 KE-first by the Stage-0 scorer) behind its own leg trigger.
+
+## Re-pilot Stage-1 MD sweep EXECUTED — 15 cells scored; S1-P1..P4 confirmed (χ² argmin = twin + 1 step on every arm, right-censored at the bracket edge); S1-P5's non-uniformity check FIRED (channel (d) scales with drag exposure); the speed-selective tension survives real MD (findings §4s, I71–I73) (2026-07-20)
+
+Executed under the leg trigger ("Continue with Stage-1 MD sweep"). 13 new
+N = 50 dirs (`tier2probe_conf270_s1*`) + `dc2`/`dc4` reused as bracket
+centers; `s1c1v75` re-run fresh as the **pipeline-identity oracle** — it
+reproduces the certified `dc1` scored row exactly on every column.
+Execution wrinkle recorded in §4s: the four 4-cell workers were killed by
+the session process window; recovery = **one-cell-per-process** per-stage
+resume drivers (the leg-C I67 route; intact `ion.npz` verified before
+resuming). That is the execution pattern going forward.
+
+Full 15-cell table: findings **§4s**. Verdict summary (pre-registered
+S1-P1..P5):
+
+- **S1-P1 CONFIRMED** (twin-side at generation + MD pipeline identity).
+- **S1-P2 CONFIRMED with one edge break** — n₁-KE monotone on all arms;
+  c1/c4 degeneracy ≤ 0.048 eV; the ×1.10 band holds 12/15, breaking only
+  at the v85 cells (×1.13; the MD-above-twin bias *grows with v_c* and
+  vanishes at the low edge).
+- **S1-P3 CONFIRMED, right-censored** — MD χ² argmin = twin argmin + 1
+  step toward higher v_c on every arm (c1 v85 / c2 v75 / c4 v85), all in
+  the registered sets; but the c-arm argmins sit at the bracket edge with
+  χ² still falling — **the whole-curve v_c\* is not closed from above**.
+- **S1-P4 CONFIRMED** — p = 0 caps at 1.134 eV in-bracket (cannot reach
+  the 1.302 anchor, as registered); p = −1 reaches 1.240/1.250 at v65
+  (anchor extrapolates to v_c ≈ 6.2–6.3, below the bracket).
+- **S1-P5 SPLIT — the structure finding.** Directions confirmed; but
+  **Δn̄(MD − twin) is non-uniform: ≈ 0 at v65 → −0.6…−0.8 He at v85,
+  monotone on every arm** — channel (d) scales with drag exposure (I73);
+  W₁(MD, twin) runs 0.21 (chain-best parity) → 1.04 across the bracket.
+
+**Physics headline (I72):** the H.2b speed-selective tension survives the
+real cascade — within capped_cubic, the whole-curve KE χ² pulls v_c up
+(≥ 8.5, censored) while the n₁ anchor and the solvated n₁/n₂ ratio pull
+it down (v65: ratio 2.14/2.08 vs experimental 2.18; n₁ ≈ 0.30 ≈ the
+H.2b 0.31 target, first time in MD). Three observables prefer three
+different v_c — a drag-form-*shape* statement, not a calibration one.
+
+**Stage-2 entry decision (user adjudication required — the reporting
+gate):** Stage 1 cannot hand a single v_c\* per arm to Stage 2 as the
+design assumed. Options: (a) extend the bracket upward (v90/v95 on the
+p = −1 arm) to un-censor the χ² argmin — cheap (~2 cells, one process
+each) but chases an axis that moves *away* from the anchor/ratio; (b)
+carry **two v_c candidates per arm** (the χ² edge cell + the
+anchor/ratio cell v65) into the Stage-2 (τ, E₀) sweep — doubles Stage 2
+but respects the measured two-sidedness; (c) treat the tension as the
+finding and take v65 (the experimental-target side) as v_c\* into
+Stage 2, reporting the χ² preference as a documented conflict. Nothing
+here discharges F5.
