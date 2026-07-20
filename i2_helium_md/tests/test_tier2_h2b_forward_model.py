@@ -390,3 +390,44 @@ def test_stage_repilot1_requires_legd_record(twin, monkeypatch, tmp_path):
     monkeypatch.setattr(twin, "OUT", tmp_path)
     with pytest.raises(FileNotFoundError, match="leg-D"):
         twin.stage_repilot1(m=50)
+
+
+def test_stage_repilot2_smoke_and_oracle(twin, monkeypatch, tmp_path):
+    """The Stage-2 (tau, E0)-grid re-score (adjudication (b): two-candidate
+    v_c carry) runs at small m, writes both CSVs, spans exactly the frozen
+    67-cell grid (c1/c4 x {6.5, 8.5} x 4tau x 4E0 + the 3-cell c2 spot
+    diagonal), and its in-stage S2s-P1 oracle passes: the five grid-center
+    cells reproduce the Stage-1 rows exactly."""
+    import csv as _csv
+
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    twin.stage_legd(m=200)      # leg-D record (repilot1's oracle input)
+    twin.stage_repilot1(m=200)  # Stage-1 record (repilot2's oracle input)
+    twin.stage_repilot2(m=200)
+
+    hist = tmp_path / "h2b_repilot_s2_predictions.csv"
+    ke = tmp_path / "h2b_repilot_s2_ke.csv"
+    assert hist.exists() and ke.exists()
+
+    with open(hist, newline="") as fh:
+        rows = [r for r in _csv.DictReader(fh) if r["leg"] == "s2"]
+    assert len(rows) == 67
+    labels = [r["config"] for r in rows]
+    assert len(set(labels)) == 67
+    assert "s2c1v65t38e25" in labels and "s2c4v85t50e27" in labels
+    assert "s2c2v65t40e24" in labels
+    # tau/E0 budget-direction sanity on one v65 column: at fixed tau,
+    # higher E0 must strip deeper (nbar down) -- the fate-map mechanics
+    col = sorted(
+        (float(r["E0_eV"]), float(r["nbar_det"]))
+        for r in rows
+        if r["config"].startswith("s2c1v65t38")
+    )
+    assert all(a[1] >= b[1] for a, b in zip(col, col[1:]))
+
+
+def test_stage_repilot2_requires_stage1_record(twin, monkeypatch, tmp_path):
+    """Without the Stage-1 record the S2s-P1 oracle cannot run -- fail loud."""
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    with pytest.raises(FileNotFoundError, match="Stage-1"):
+        twin.stage_repilot2(m=50)

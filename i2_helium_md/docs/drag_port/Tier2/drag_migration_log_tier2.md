@@ -8250,3 +8250,47 @@ but respects the measured two-sidedness; (c) treat the tension as the
 finding and take v65 (the experimental-target side) as v_c\* into
 Stage 2, reporting the χ² preference as a documented conflict. Nothing
 here discharges F5.
+
+## Stage-2 entry ADJUDICATED (b) — two-candidate v_c carry; grid frozen; twin pre-registration EXECUTED (S2s-P1 oracle passes; the twin predicts KE is NOT (τ, E₀)-quiet — the factorization guard is load-bearing — and names a v65 joint-landing candidate region) (2026-07-20)
+
+User decision: **(b)** — carry v_c ∈ {6.5, 8.5} per core arm into
+Stage 2; the bracket extension (a) is **deferred, not rejected**.
+
+**Frozen Stage-2 grid:** core c1/c4 × v_c ∈ {6.5, 8.5} ×
+τ ∈ {3.2, 3.8, 4.4, 5.0} ps × E₀ ∈ {0.21, 0.23, 0.25, 0.27} eV
+(64 cells; the four grid centers are the on-disk Stage-1 cells) + the
+c2 spot diagonal at v65: (3.2, 0.21) / (4.0, 0.24 — on disk) /
+(5.0, 0.27). **62 new MD cells.** Cell labels `s2c1v65t38e25`-style.
+Twin: `stage_repilot2` (mode `repilots2`; chord cached per drag tail —
+τ/E₀ enter only the exposure bookkeeping and the fate map) + 2 pytest
+cases; committed `h2b_repilot_s2_{predictions,ke}.csv` (67 rows,
+m = 20000). **S2s-P1 (wiring) VERIFIED at generation:** all five
+grid-center cells reproduce the Stage-1 rows exactly (predictions + KE).
+
+**Registered predictions (S2s-P2..P5; authority per I73):**
+
+- **S2s-P2 (directions, ordering authority).** n̄_det falls and
+  suppressed rises monotonically in E₀ at fixed τ and in τ at fixed E₀,
+  on every (arm, v_c) column (twin range: supp 0 → 0.45, n̄ 7.1 → 1.8 —
+  the grid genuinely spans the histogram axis).
+- **S2s-P3 (v65 near-quantitative carry).** At v65 cells MD n̄ tracks
+  the twin within **±0.25 He** (Stage-1 measured Δn̄ = −0.04/+0.06 at
+  the v65 centers). A *systematic* growth of |Δn̄| with E₀ or τ is
+  channel-(d) budget-dependence — a new structure read this leg
+  measures, reported not absorbed.
+- **S2s-P4 (v85 softening carry).** At v85 cells MD n̄ sits **0.5–0.9 He
+  below** the twin (the I73 drag-end softening).
+- **S2s-P5 (KE non-factorization — the twin's sharpest new claim).**
+  Twin n₁ KE spans **0.82–1.64 eV across the (τ, E₀) grid at fixed
+  v_c = 6.5** (fate-map composition, not drag): the Stage-1 KE pin does
+  NOT transfer unchecked, the §I.11.4.2 guard is load-bearing, and
+  Stage 2's winner is a **joint per-cell read**. MD tracks the twin's
+  *per-cell* n₁ KE within ×1.10 at v65 (×1.10–1.15 at v85).
+  **Joint-landing candidate region registered:** v65 × τ = 3.2 ×
+  E₀ ∈ {0.25, 0.27} — twin W₁_solv 0.47–0.52, ratio 1.68–1.73, n₁ KE
+  1.16–1.34 eV (straddling the 1.302 anchor); counter-candidate
+  `s2c1v85t50e23` (twin's best W₁_solv 0.436, ratio 2.05, but n₁ KE
+  0.85 — the two-sidedness carried into Stage 2).
+
+Execution: one-cell-per-process (the Stage-1 lesson), ~4–5 parallel,
+I67 accommodation. Nothing here discharges F5.

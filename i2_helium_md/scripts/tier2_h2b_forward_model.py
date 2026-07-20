@@ -1684,6 +1684,224 @@ def stage_repilot1(m=20000):
     print(f"KE table    -> {OUT / 'h2b_repilot_s1_ke.csv'}")
 
 
+# --------------------------------------------------------------------------
+# SI.11.4 re-pilot Stage-2 pre-registration ((tau, E0) grid, two-candidate
+# v_c carry -- user adjudication (b), 2026-07-20)
+# --------------------------------------------------------------------------
+# Core arms c1/c4 at v_c in {6.5, 8.5} (the anchor/ratio cell + the chi2
+# edge cell -- Stage 1 measured the two-sidedness, I72); tau x E0 grid
+# centered on the C-matrix values (grid centers are the on-disk Stage-1
+# cells). Spot leg: c2 at v_c = 6.5 along a grid diagonal.
+REPILOT_S2_TAU_GRID = (3.2, 3.8, 4.4, 5.0)
+REPILOT_S2_E0_GRID = (0.21, 0.23, 0.25, 0.27)
+REPILOT_S2_VC_CARRY = (6.5, 8.5)
+REPILOT_S2_SPOT = (  # (config, v_c, tau_ps, E0_eV)
+    ("c2", 6.5, 3.2, 0.21),
+    ("c2", 6.5, 4.0, 0.24),   # the on-disk s1c2v65 point (oracle)
+    ("c2", 6.5, 5.0, 0.27),
+)
+
+
+def repilot_s2_cell_label(config, v_c, tau, e0):
+    """``s2c1v65t38e25``-style cell label (all knobs x10/x100, tag-safe)."""
+    return (f"s2{config}v{round(v_c * 10):02d}"
+            f"t{round(tau * 10):02d}e{round(e0 * 100):02d}")
+
+
+def repilot_s2_cells():
+    """The frozen Stage-2 cell list: (config, v_c, tau_ps, E0_eV)."""
+    cells = [
+        (config, v_c, tau, e0)
+        for config in ("c1", "c4")
+        for v_c in REPILOT_S2_VC_CARRY
+        for tau in REPILOT_S2_TAU_GRID
+        for e0 in REPILOT_S2_E0_GRID
+    ]
+    cells.extend(REPILOT_S2_SPOT)
+    return cells
+
+
+def stage_repilot2(m=20000):
+    """Twin re-score over the Stage-2 (tau, E0) grid at the carried v_c.
+
+    The SI.11.4.5 pre-registration record for the Stage-2 histogram sweep
+    under adjudication (b): every cell rides the full leg-D configuration
+    with (v_c, tau, E0) set per cell; the drag chord is cached per
+    (v_c, p_tail) (tau and E0 enter only the exposure bookkeeping and the
+    fate map -- SI.8 mechanics), so all 35 cells of one drag tail share
+    one integration.
+
+    In-stage wiring oracle (S2s-P1): the four grid-center cells (the
+    C-matrix (tau, E0) at each carried v_c) plus the spot center must
+    reproduce the committed ``h2b_repilot_s1_*`` rows exactly on every
+    shared column (same draws, same computation, same m).
+
+    Registered-authority note (I73 refinement of I69/RP-D5): the v65
+    cells' histogram rows carry *measured near-quantitative* authority
+    (Stage 1: dnbar ~ 0, W1 0.21-0.26 at v65); the v85 rows carry the
+    measured -0.6..-0.8 He channel-(d) softening; KE columns keep the
+    x1.10 band.
+
+    Writes h2b_repilot_s2_predictions.csv / h2b_repilot_s2_ke.csv
+    (leg = "s2", config = the ``s2c1v65t38e25``-style cell label).
+    """
+    from dataclasses import replace as _replace
+
+    from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes_analytic
+
+    from scripts.gen_tier2_md_confirmation import (
+        floor1_rungs_eV,
+        form_u_rungs_eV,
+        rq4graded_rungs_eV,
+    )
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    tables = {
+        "flat": form_u_rungs_eV(),
+        "rq4graded": rq4graded_rungs_eV(),
+        "floor1": floor1_rungs_eV(),
+    }
+
+    # stage_legd / stage_repilot1 draw discipline, verbatim.
+    rng = np.random.default_rng(SEED)
+    u_ap = rng.uniform(0.0, 1.0, m)
+    mu_ap = rng.uniform(-1.0, 1.0, m)
+    cfg_d = _replace(
+        _CFG,
+        droplet_size_prior="kornilov_lognormal",
+        use_single_droplet_size=False,
+        num_molecules=m,
+    )
+    N_d = np.asarray(sample_droplet_sizes_analytic(cfg_d, rng=rng), dtype=float)
+    R_d = np.asarray(droplet_radius_bulk_angstrom(N_d), dtype=float)
+
+    r0 = (R_d - LEG_APRIME_MARGIN_A) * np.cbrt(u_ap)
+    rho = rho_he_ratio(r0 - R_d, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    mass_mol = complex_mass_amu(ne_mol).astype(float)
+    ne = np.concatenate([ne_mol, ne_mol])
+    nef = ne.astype(float)
+
+    configs = {c[0]: c for c in APRIME_CONFIGS}
+    chord_cache = {}
+    hist_rows, ke_rows = [], []
+    for config, v_c, tau, e0 in repilot_s2_cells():
+        _, _, p_tail, _, ladder_key, _ = configs[config]
+        sig = sigma_cum(np.asarray(tables[ladder_key][:N_STAR], dtype=float))
+        key = (v_c, p_tail)
+        if key not in chord_cache:
+            chord_cache[key] = integrate_pairs(
+                r0, mu_ap, R_d, mass_mol,
+                r0_sep=R0_SEP_PROD_A, drag_on=True,
+                v_c=v_c, p_tail=p_tail,
+            )
+        res = chord_cache[key]
+        K = res["K"].reshape(-1) * (TAU_PS / tau)
+        trapped = res["trapped"].reshape(-1).astype(bool)
+        v = res["v_inf"].reshape(-1)
+        n_det, sup = fate_map(ne, K, e0, 1, sig)  # p = 1 (leg-C carry)
+        w = np.where(trapped, 0.0, 1.0)
+        w_tot = w.sum()
+        if w_tot == 0.0:
+            raise ValueError(
+                f"[s2 {config} v_c={v_c} tau={tau} E0={e0}] every fragment "
+                "trapped -- no prediction record possible."
+            )
+        cell = repilot_s2_cell_label(config, v_c, tau, e0)
+        trapped_frac = float(trapped.mean())
+        sup_frac = float(w[sup].sum() / w_tot)
+        hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
+        nbar = float((np.arange(N_STAR + 1) * hist).sum())
+        row = {
+            "leg": "s2", "config": cell, "ladder": ladder_key,
+            "tau_ps": tau, "E0_eV": e0,
+            "v_c": v_c, "p_tail": p_tail,
+            "trapped_frac": round(trapped_frac, 4),
+            "suppressed_frac": round(sup_frac, 4),
+            "bare_frac": round(float(hist[0]), 4),
+            "nbar_det": round(nbar, 3),
+            "K_q05": round(float(np.quantile(K, 0.05)), 4),
+            "K_q50": round(float(np.quantile(K, 0.50)), 4),
+            "K_q95": round(float(np.quantile(K, 0.95)), 4),
+            "n_eject_q05": round(float(np.quantile(nef, 0.05)), 2),
+            "n_eject_q50": round(float(np.quantile(nef, 0.50)), 2),
+            "n_eject_mean": round(float(nef.mean()), 3),
+            "N_q05": round(float(np.quantile(N_d, 0.05)), 1),
+            "N_q50": round(float(np.quantile(N_d, 0.50)), 1),
+            "N_q95": round(float(np.quantile(N_d, 0.95)), 1),
+        }
+        row.update({f"h{k}": round(float(hist[k]), 4)
+                    for k in range(N_STAR + 1)})
+        hist_rows.append(row)
+        ke = kinetic_energy_eV(complex_mass_amu(n_det), v)
+        for k in range(0, N_STAR + 1):
+            mask = (n_det == k) & ~trapped
+            if mask.sum() >= 20:
+                ke_rows.append({
+                    "leg": "s2", "config": cell, "n": k,
+                    "weight": round(float(w[mask].sum() / w_tot), 4),
+                    "mean_KE_eV": round(
+                        float((w[mask] * ke[mask]).sum() / w[mask].sum()), 4
+                    ),
+                })
+        print(f"[s2 {cell}] trapped={trapped_frac:.3f} supp={sup_frac:.3f} "
+              f"nbar={nbar:.2f}")
+
+    # ---- S2s-P1 in-stage wiring oracle: grid centers == the Stage-1 rows
+    s1_hist_path = OUT / "h2b_repilot_s1_predictions.csv"
+    s1_ke_path = OUT / "h2b_repilot_s1_ke.csv"
+    if not (s1_hist_path.exists() and s1_ke_path.exists()):
+        raise FileNotFoundError(
+            "Stage-1 prediction CSVs not found -- the S2s-P1 oracle needs "
+            "the committed Stage-1 record (run stage_repilot1 at the same "
+            "m first)."
+        )
+    with open(s1_hist_path, newline="") as fh:
+        s1_hist = {r["config"]: r for r in csv.DictReader(fh)}
+    with open(s1_ke_path, newline="") as fh:
+        s1_ke_rows = [r for r in csv.DictReader(fh)]
+    center_map = {
+        repilot_s2_cell_label("c1", 6.5, 3.8, 0.25): "s1c1v65",
+        repilot_s2_cell_label("c1", 8.5, 3.8, 0.25): "s1c1v85",
+        repilot_s2_cell_label("c4", 6.5, 4.4, 0.23): "s1c4v65",
+        repilot_s2_cell_label("c4", 8.5, 4.4, 0.23): "s1c4v85",
+        repilot_s2_cell_label("c2", 6.5, 4.0, 0.24): "s1c2v65",
+    }
+    for s2_cell, s1_cell in center_map.items():
+        mine = next(r for r in hist_rows if r["config"] == s2_cell)
+        ref = s1_hist[s1_cell]
+        for key, val in mine.items():
+            if key in ("leg", "config"):
+                continue
+            if str(val) != ref[key]:
+                raise AssertionError(
+                    f"S2s-P1 oracle FAILED: {s2_cell} vs {s1_cell} differ "
+                    f"at {key}: {val!r} != {ref[key]!r}"
+                )
+        mine_ke = [(r["n"], str(r["weight"]), str(r["mean_KE_eV"]))
+                   for r in ke_rows if r["config"] == s2_cell]
+        ref_ke = [(int(r["n"]), r["weight"], r["mean_KE_eV"])
+                  for r in s1_ke_rows if r["config"] == s1_cell]
+        if mine_ke != ref_ke:
+            raise AssertionError(
+                f"S2s-P1 oracle FAILED: KE rows of {s2_cell} differ from "
+                f"{s1_cell}."
+            )
+    print("S2s-P1 wiring oracle PASSED: all five grid-center cells "
+          "reproduce the Stage-1 rows exactly (predictions + KE).")
+
+    with open(OUT / "h2b_repilot_s2_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(hist_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(hist_rows)
+    with open(OUT / "h2b_repilot_s2_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(ke_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(ke_rows)
+    print(f"predictions -> {OUT / 'h2b_repilot_s2_predictions.csv'}")
+    print(f"KE table    -> {OUT / 'h2b_repilot_s2_ke.csv'}")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -1703,6 +1921,8 @@ def main():
         stage_legd()
     elif mode == "repilots1":
         stage_repilot1()
+    elif mode == "repilots2":
+        stage_repilot2()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -1716,7 +1936,7 @@ def main():
         raise SystemExit(
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
-            "legaprime | legb | legc | legd | repilots1)"
+            "legaprime | legb | legc | legd | repilots1 | repilots2)"
         )
 
 
