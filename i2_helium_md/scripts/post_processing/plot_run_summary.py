@@ -104,6 +104,12 @@ from i2_helium_md.postprocess.paper_cov_plotting import (  # noqa: E402
     load_optional_high_snr_radial,
     load_optional_phi_reference as load_optional_paper_cov_phi_reference,
 )
+from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
+    load_confirmation_run,
+    score_histogram_vs_reference,
+    score_ke_curve_vs_reference,
+    solvated_renormalized,
+)
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
@@ -143,6 +149,17 @@ IHE_KED_MEAN_ENERGY_SPLIT_N = 5
 PAIR_DIST_NUM_BINS = 100
 TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
+
+# Detection-stage sections (Tier-2 confirmation runs only; adjudication D4
+# option (a), log entry "PRODUCTION POINT ADJUDICATED" 2026-07-21): scorer
+# kwargs mirror scripts/post_processing/tier2_confirmation_score.py — the
+# solvated branch n >= 1, thin bins need >= 2 ions, sim-side SE widens the
+# per-point sigma, and the n = 1 anchor is the I77 operative "median"
+# (the mean-legacy chi^2 is annotated alongside, never substituted).
+DETECTED_KE_N_MIN = 1
+DETECTED_KE_MIN_BIN_COUNT = 2
+DETECTED_KE_INCLUDE_SIM_SE = True
+DETECTED_KE_N1_ANCHOR = "median"
 
 
 # =============================================================================
@@ -232,6 +249,10 @@ def main() -> int:
     cfg = run.load_cfg() if run.has_cfg() else None
     neutral = run.load_neutral() if run.has_neutral() else None
     ion = run.load_ion() if run.has_ion() else None
+    # Tier-2 confirmation runs only: None on a legacy run dir (no
+    # detection.npz), which keeps the section list — and every legacy
+    # figure — exactly as before.
+    detection_read = _load_detection_read(run.root)
 
     hedft = load_hedft_trajectory(hedft_ref) if hedft_ref else None
     ked_ref = (
@@ -293,6 +314,18 @@ def main() -> int:
                  lambda: _section_paper_cov_radial(ion, paper_cov_ref_dir)),
                 ("paper_cov_pair_cov_traces",
                  lambda: _section_paper_cov_traces(ion, paper_cov_ref_dir)),
+            ]
+        if detection_read is not None:
+            sections += [
+                ("detected_size_distribution",
+                 lambda: _section_detected_size_distribution(
+                     detection_read, abundance)),
+                ("detected_ihe_ked_mean_energy",
+                 lambda: _section_detected_ked_mean_energy(
+                     detection_read, ked_ref)),
+                ("detected_ke_anatomy",
+                 lambda: _section_detected_ke_anatomy(
+                     detection_read, ked_ref)),
             ]
         if neutral is not None and hedft is not None:
             sections += [
@@ -978,6 +1011,216 @@ def _section_boltzmann(cfg, ion) -> plt.Figure:
     ax.set(title="Initial population vs Boltzmann reference",
            xlabel=r"|r| / $\mathrm{\AA}$", ylabel=r"density / $1/\mathrm{\AA}$")
     ax.legend(frameon=False)
+    return fig
+
+
+# =============================================================================
+# Detection-stage sections (Tier-2 confirmation runs; adjudication D4 (a))
+# =============================================================================
+def _load_detection_read(run_root: Path):
+    """The detected read for a Tier-2 confirmation run dir, or ``None``.
+
+    Gating contract: a legacy run dir (no ``detection.npz``) returns
+    ``None`` and the summary renders exactly as before. All scoring
+    conventions (retained-excluded, suppressed at n = 0) live in
+    ``i2_helium_md.postprocess.tier2_confirmation``.
+    """
+    run_root = Path(run_root)
+    if not (run_root / "detection.npz").exists():
+        return None
+    return load_confirmation_run(run_root)
+
+
+def _section_detected_size_distribution(read, abundance) -> plt.Figure:
+    """Detected I$^+$He$_n$ size distribution at t_detect (the Tier-2
+    scored surface: ``droplet_retained`` excluded, suppressed ions in the
+    n = 0 bare bin). Left: the full scored histogram. Right: the solvated
+    (n >= 1 renormalized, RQ8) branch vs the experimental abundance
+    reference with the W1/n1/ratio scores annotated; sim-only single
+    panel when no reference is configured (mass-spectrum precedent)."""
+    n_vals = read.n_values
+    frac = read.fraction
+
+    ncols = 2 if abundance is not None else 1
+    fig, axes = plt.subplots(
+        1, ncols, figsize=(6.0 * ncols + 0.5, 4.5), constrained_layout=True,
+        squeeze=False,
+    )
+    ax = axes[0][0]
+    ax.bar(n_vals, 100.0 * frac, width=0.8, color="tab:red",
+           edgecolor="black", linewidth=0.4)
+    ax.set(title="Detected size distribution (scored read)",
+           xlabel="n (attached He atoms; suppressed at n = 0)",
+           ylabel="scored fraction / %")
+    fig.suptitle(f"Detected I$^+$He$_n$ at t_detect — {read.label}",
+                 fontsize=11)
+    ax.text(
+        0.97, 0.95,
+        f"scored {read.num_scored}/{read.num_ions} ions\n"
+        f"retained excluded: {read.num_ions - read.num_scored}\n"
+        f"suppressed (bare): {100.0 * read.suppressed_frac:.1f} %\n"
+        rf"$\bar{{n}}_\mathrm{{det}}$ = {read.n_mean:.3f}",
+        transform=ax.transAxes, ha="right", va="top", fontsize=9,
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
+
+    if abundance is None:
+        return fig
+
+    score = score_histogram_vs_reference(read, abundance)
+    sim_n, sim_f = solvated_renormalized(n_vals, frac, n_min=score.n_min)
+    ref_n, ref_f = solvated_renormalized(
+        abundance.n, abundance.ion_fraction, n_min=score.n_min
+    )
+    ax = axes[0][1]
+    width = 0.4
+    ax.bar(ref_n - width / 2, 100.0 * ref_f, width=width, color="tab:blue",
+           label="experiment (solvated)")
+    ax.bar(sim_n + width / 2, 100.0 * sim_f, width=width, color="tab:red",
+           label="simulation (solvated)")
+    ratio = score.ratio_n1_over_n2
+    ax.text(
+        0.97, 0.95,
+        rf"$W_1$(solv) = {score.w1_solvated:.3f} bins" "\n"
+        rf"$n_1$ = {score.sim_n1:.3f} (ref {score.ref_n1:.3f})" "\n"
+        rf"$n_1/n_2$ = {ratio:.2f} (ref "
+        rf"{score.ref_n1 / score.ref_n2:.2f})",
+        transform=ax.transAxes, ha="right", va="top", fontsize=9,
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
+    ax.set(title="Solvated branch (n ≥ 1 renormalized) vs abundance",
+           xlabel="n (attached He atoms)", ylabel="fraction / %")
+    ax.legend(frameon=False)
+    return fig
+
+
+def _detected_ke_scores(read, ked_ref):
+    """The committed KE-curve score under the operative median anchor,
+    plus the mean-legacy chi^2 (both always reported side by side)."""
+    kwargs = dict(
+        n_min=DETECTED_KE_N_MIN,
+        min_count=DETECTED_KE_MIN_BIN_COUNT,
+        include_sim_se=DETECTED_KE_INCLUDE_SIM_SE,
+    )
+    med = score_ke_curve_vs_reference(
+        read, ked_ref, n1_anchor=DETECTED_KE_N1_ANCHOR, **kwargs
+    )
+    legacy = (
+        med if DETECTED_KE_N1_ANCHOR == "mean"
+        else score_ke_curve_vs_reference(
+            read, ked_ref, n1_anchor="mean", **kwargs
+        )
+    )
+    return med, legacy
+
+
+def _section_detected_ked_mean_energy(read, ked_ref) -> plt.Figure:
+    """Detected per-n mean KE vs the ihe_ked reference under the committed
+    error model (per-point stat (+) sys; correlated bands as envelopes),
+    with the n = 1 median anchor (I77) marked and both chi^2 columns
+    annotated. Same split-panel layout as the ion-stage section."""
+    if ked_ref is None:
+        raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
+
+    med, legacy = _detected_ke_scores(read, ked_ref)
+    ke = read.ke_by_n(min_count=DETECTED_KE_MIN_BIN_COUNT)
+
+    split = IHE_KED_MEAN_ENERGY_SPLIT_N
+    mean = ked_ref.mean_KE_eV
+    n_max = int(ked_ref.n.max())
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.0),
+                             constrained_layout=True)
+    panel_specs = (
+        (axes[0], ked_ref.n < split,
+         f"n = 1–{split - 1} (detected read)", True),
+        (axes[1], ked_ref.n >= split,
+         f"n = {split}–{n_max} (detected read)", False),
+    )
+    for ax, subset, panel_title, show_legend in panel_specs:
+        subset = subset & (ked_ref.n >= DETECTED_KE_N_MIN)
+        if not np.any(subset):
+            ax.set_axis_off()
+            continue
+        for frac, label, alpha in (
+            (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
+            (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
+        ):
+            ax.fill_between(
+                ked_ref.n[subset],
+                mean[subset] * (1.0 - frac[subset]),
+                mean[subset] * (1.0 + frac[subset]),
+                color="tab:blue", alpha=alpha, linewidth=0, label=label,
+            )
+        ax.errorbar(
+            ked_ref.n[subset], mean[subset],
+            yerr=ked_ref.point_err_eV[subset], fmt="o",
+            color="tab:blue", markersize=4, capsize=2,
+            label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
+        anchor_hit = subset & (ked_ref.n == 1)
+        if np.any(anchor_hit):
+            ax.plot(ked_ref.n[anchor_hit], ked_ref.median_KE_eV[anchor_hit],
+                    "D", markersize=7, markerfacecolor="none",
+                    markeredgecolor="tab:purple", markeredgewidth=1.5,
+                    label="n = 1 median anchor (I77, operative)")
+        in_panel = (ke.n < split) if ax is axes[0] else (ke.n >= split)
+        in_panel = in_panel & (ke.n >= DETECTED_KE_N_MIN)  # unscored bare bin stays off
+        if np.any(in_panel):
+            ax.errorbar(
+                ke.n[in_panel], ke.mean_eV[in_panel],
+                yerr=ke.se_eV[in_panel], fmt="s", linestyle="none",
+                color="tab:red", markersize=5, capsize=2,
+                label=r"detected simulation $\langle E\rangle$",
+            )
+        ax.set(title=panel_title, xlabel="n (attached He atoms)",
+               ylabel="mean kinetic energy / eV")
+        if show_legend:
+            ax.legend(frameon=False, fontsize=8)
+    axes[0].text(
+        0.03, 0.05,
+        rf"$\chi^2$_med = {med.chi2_profiled:.1f}"
+        rf" (mean-legacy {legacy.chi2_profiled:.1f});"
+        f" {med.n_points} bins",
+        transform=axes[0].transAxes, ha="left", va="bottom", fontsize=9,
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
+    fig.suptitle(
+        f"Detected mean KE vs ihe_ked reference ({read.label})", fontsize=11
+    )
+    return fig
+
+
+def _section_detected_ke_anatomy(read, ked_ref) -> plt.Figure:
+    """Per-bin profiled residuals z of the detected KE curve (the §4z
+    anatomy read): positive = simulation hot vs reference, negative =
+    cold; the two correlated bands are already profiled out."""
+    if ked_ref is None:
+        raise _SectionSkipped("IHE_KED_REFERENCE_DIR is None")
+
+    med, legacy = _detected_ke_scores(read, ked_ref)
+    z = med.z_profiled
+    colors = ["tab:red" if v > 0 else "tab:blue" for v in z]
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.5), constrained_layout=True)
+    ax.bar(med.n, z, width=0.8, color=colors, edgecolor="black",
+           linewidth=0.4)
+    ax.axhline(0.0, color="black", linewidth=0.8)
+    for lvl in (-2.0, 2.0):
+        ax.axhline(lvl, color="gray", linewidth=0.8, linestyle="--")
+    ax.set(
+        title="Detected KE per-bin anatomy (profiled residual z)",
+        xlabel="n (attached He atoms)",
+        ylabel="z (sim − ref, per-point $\\sigma$)",
+    )
+    ax.text(
+        0.03, 0.05,
+        rf"$\chi^2$_med = {med.chi2_profiled:.1f}"
+        rf" (mean-legacy {legacy.chi2_profiled:.1f}), {med.n_points} bins"
+        "\n"
+        f"a_calib = {med.a_calib:.2f}, b_cond = {med.b_condition:.2f}",
+        transform=ax.transAxes, ha="left", va="bottom", fontsize=9,
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
     return fig
 
 
