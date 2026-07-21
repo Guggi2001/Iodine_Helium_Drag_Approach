@@ -2804,6 +2804,43 @@ cells that keep the KE curve keep too much shell.
 (top-4 W₁_solv are all c1; c4's best is 0.793); formal verdict stays the
 N = 500 finalists' job (RP-D6).
 
+### NB (2026-07-21, post-§4t discussion) — the KE-miss anatomy at the landed cells: the two histogram-landing cells fail the KE axis in opposite ways, and the v65 miss is a mid-bin bulge, not an n₁ miss
+
+Per-bin read of the three key cells (sim/ref mean-KE ratio per bin;
+counts 2–28 ions/bin at N = 50):
+
+- **(v65, τ3.2, E₀0.27) — histogram landed, low drag.** n₁ is ×0.92
+  (1.197 vs 1.302 eV — within the correlated bands' reach) and the deep
+  tail n ≥ 9 sits **on** the reference (×0.93–0.99). The whole χ² = 162
+  is a **mid-bin bulge**: n₂–n₈ run ×1.40–1.90 (n₃: 0.855 vs 0.496 eV).
+  The experimental curve falls much more steeply from n₁ to n₈ than the
+  model's.
+- **(v85, τ3.8, E₀0.27) — histogram landed, heavy drag.** A coherent
+  whole-curve depression: ×0.40–0.83 on every bin, worst at n₁ (0.518).
+- **(v85, τ3.2, E₀0.23) — KE landed.** ×0.84–1.23 on all 13 scored
+  bins — the curve *shape* is expressible; this cell just retains shell.
+
+**Physics reading.** At weak drag the model's fragment speed barely
+differentiates by retention class — moderately-stripped fragments keep
+nearly the n₁-class speed — while the experiment couples retention to
+slowness strongly. The data asks for a **bin-selective** correction:
+leave the fastest fragments (n₁, already right at v65) and the slowest
+(deep tail, already right) untouched, and slow specifically the
+*intermediate-speed* band that populates n₂–n₈.
+
+**E-2 design consequence.** A more negative `p_tail` alone acts only
+*above* v_c — i.e. on the n₁-class fragments that need no fixing at
+v65. The promising joint move is **v_c raised toward 7.0–7.5** (pulling
+the mid-speed band back under full cubic drag → damping n₂–n₈) **with
+p ∈ {−2, −3}** (keeping the above-cap n₁ population fast) — sharper
+speed selectivity from both sides of the threshold; the locked
+pure-cubic `b` below the cap stays untouched throughout. Whether a
+joint cell exists in that (v_c, p_tail, τ, E₀) volume is the twin-first
+E-2 scan's question (I74 licenses the twin as the quantitative search
+tool at low drag). Caveat: single mid-bin ratios are soft (5–11
+ions/bin), but a same-signed ×1.4–1.9 excess across seven consecutive
+bins is not noise.
+
 ### Boundaries
 
 N = 50 single seed (n₁/n₂ ratio reads carry SE ≈ ±0.5–0.7 — n₁_solv is
