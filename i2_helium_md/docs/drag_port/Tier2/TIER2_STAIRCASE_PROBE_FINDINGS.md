@@ -3439,6 +3439,61 @@ surface insulated at N = 50); the n ≥ 14 sim means still carry 2–6
 ions/bin at N = 500; the suppressed/bare channel stays RQ8-gated.
 Nothing here discharges F5.
 
+---
+
+## 4aa. RP-D4 riders at the blessed production point (D1–D2 adjudication) — the 0.40 Landau spot is bit-flat (RP-D7 mitigation complete); every sensitivity-ring perturbation DEGRADES W₁ (+0.18..+0.33: the pinned leg-D configuration sits at the basin optimum); the birth margin is the sensitive lever (6 Å moves n₁_solv −0.17, out of window); N = 50 χ² deltas carry the I85 caveat
+
+Executed 2026-07-21 under `[PROCEED TO IMPLEMENTATION]` (the D1–D4
+adjudication block, log entry "PRODUCTION POINT ADJUDICATED"). Six
+N = 50 cells, **one lever each** off the on-disk `s2c1v725t32e27`
+baseline (same seed 20260604 — paired A/B); all six cfg oracles passed
+with exact single-key diffs (`r725l40`'s diff is
+`{relaxation_dissipation}` alone — v_limit 40 is the config default).
+
+### The ring read (§4r scoring, median anchor; deltas vs baseline)
+
+| cell (lever) | supp | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | χ²_med |
+|---|---|---|---|---|---|---|---|
+| baseline s2c1v725t32e27 | 0.138 | 3.904 | 0.3086 | 2.273 | 0.4240 | 1.0163 | 66.3 |
+| r725d040 (δ 0.40) | 0.138 | 4.372 | 0.2346 | 1.583 | 0.5993 | 1.0886 | 32.6 |
+| r725d080 (δ 0.80) | 0.137 | 3.695 | 0.3293 | 2.250 | 0.6081 | 1.0008 | 9.5 |
+| r725pick (pickup prior) | 0.143 | 4.297 | 0.2308 | 1.636 | 0.6617 | 1.1179 | 26.8 |
+| r725m467 (margin 4.67 Å) | 0.116 | 4.347 | 0.2143 | 1.385 | 0.6006 | 1.1038 | 31.8 |
+| r725m600 (margin 6.0 Å) | 0.084 | 4.632 | 0.1379 | 0.571 | 0.7513 | 1.1563 | 40.3 |
+| r725l40 (Landau v_L 0.40) | 0.138 | 3.904 | 0.3086 | 2.273 | 0.4240 | 1.0161 | 66.6 |
+
+### Findings
+
+1. **The 0.40 Landau spot is bit-flat — RP-D7 mitigation complete.**
+   Δn₁_solv = Δratio = ΔW₁ = Δn̄ = 0.0000; ΔmidHot −0.0002 (the §4y
+   erf-tail residual); Δχ²_med +0.36. Combined with S5's three-point
+   bracket at v7.5 and the N = 500 Landau-on production run, the
+   `v_L` axis is measured quiet at the winner cell family on the
+   scored surface across its full credible range.
+2. **Every perturbation degrades W₁_solv** (+0.175 δ0.40 / +0.184
+   δ0.80 / +0.238 pickup / +0.177 m4.67 / +0.327 m6.0): the pinned
+   leg-D configuration sits at/near the basin optimum of every
+   robustness lever swept. Reported as bands, never re-fit (RP-D4).
+3. **The birth margin is the sensitive lever.** n₁_solv −0.094 at
+   4.67 Å and −0.171 at 6.0 Å (≈ 1.9σ / 3.4σ at the N = 50
+   SE ≈ 0.05), with the ratio collapsing (2.27 → 0.57) and the
+   suppressed channel halving (0.138 → 0.084). **Recorded caveat: the
+   leg-D margin 3 Å is a pinned convention and the histogram landing
+   depends on it at the multi-σ level.**
+4. **The droplet-prior axis is asymmetric.** Narrower (δ 0.40) and the
+   pickup-weighted family are material (n₁_solv −0.074 / −0.078,
+   ≈ 1.5σ); wider (δ 0.80) is noise-level (+0.021) — the D4 primary
+   (kornilov δ 0.625) is not knife-edge in the wide direction.
+5. **N = 50 χ²_med deltas are direction-only** (the I85 sim-SE
+   unmasking caveat): δ0.80's 9.5 is NOT evidence a ring cell beats
+   the baseline at N = 500 statistics.
+
+### Boundaries
+
+N = 50, single seed, one lever at a time (no interaction terms);
+bands never re-fit; the ring rode `zero_gamma` (clean one-lever cfg
+diffs — licensed by finding 1 + §4y). Nothing here discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -4145,6 +4200,18 @@ Nothing here discharges F5.
   (E2/exposure vs ladder tail vs missing relaxation channel) is
   unadjudicated. Sub-finding: v7.5's N = 50 Δn̄(MD − twin) = −0.68 was
   the outlier — N = 500 regresses to the −0.3..−0.6 interpolation band.
+- **I88 (RP-D4 riders at the blessed point, §4aa).** **The 0.40 Landau
+  spot is bit-flat** (RP-D7 mitigation complete; the v_L axis is quiet
+  on the scored surface across its credible range at the winner cell
+  family) and **every sensitivity-ring perturbation degrades W₁_solv**
+  (+0.18..+0.33) — the pinned leg-D configuration sits at the basin
+  optimum of the swept robustness levers. **The birth margin is the
+  sensitive lever** (n₁_solv −0.094 / −0.171 at 4.67 / 6.0 Å,
+  ≈ 1.9σ / 3.4σ; ratio collapses; suppression halves): the leg-D
+  margin 3 Å is a pinned convention the histogram landing depends on.
+  Droplet-prior axis asymmetric (δ 0.40 and pickup material ≈ 1.5σ;
+  δ 0.80 noise-level). N = 50 χ² deltas direction-only (I85 caveat).
+  Bands recorded, never re-fit.
 
 ---
 

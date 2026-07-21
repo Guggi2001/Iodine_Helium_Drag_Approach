@@ -8885,3 +8885,44 @@ state by decision:
 
 Docs-only this entry (RQ11 + this record); riders and the run_summary
 code await `[PROCEED TO IMPLEMENTATION]`. Nothing here discharges F5.
+
+## D1-D4 EXECUTED — riders fired at the blessed point (0.40 Landau spot bit-flat, RP-D7 complete; margin the sensitive lever, every perturbation degrades W1 — findings 4aa, I88); run_summary detection-stage sections delivered (9 new tests, suite 2516 green); the finc1v725 figure set generated (2026-07-21)
+
+Under `[PROCEED TO IMPLEMENTATION]` (the D1-D4 adjudication block).
+
+- **Riders (D2):** six N=50 cells, one lever each off s2c1v725t32e27
+  (same seed, paired A/B; all cfg oracles passed with exact single-key
+  diffs). The 0.40 Landau spot is bit-flat on every scored observable
+  (dmidHot -0.0002, dchi2 +0.4 — the 4y erf-tail residual): **RP-D7's
+  mitigation is complete and the v_L axis is closed on the scored
+  surface.** Sensitivity ring: every perturbation degrades W1_solv
+  (+0.18..+0.33 — the pinned leg-D configuration sits at the basin
+  optimum); the birth margin is the sensitive lever (n1_solv -0.094 /
+  -0.171 at 4.67/6.0 A — the margin-3A pin is a load-bearing
+  convention, recorded); droplet-prior axis asymmetric (d040/pickup
+  material ~1.5 sigma, d080 quiet). N=50 chi2 deltas direction-only
+  (I85 caveat). Bands recorded, never re-fit.
+- **run_summary extension (D4, option (a); commit c5c7f5f):**
+  `plot_run_summary.py` + `tests/test_plot_run_summary_detection.py`
+  built TDD (9 tests watched RED on the missing surface, then GREEN;
+  full suite 2516 passed). Three sections gated on `detection.npz`
+  (legacy run dirs render byte-identically, locked by the loader
+  gating test): detected size distribution (scored + solvated vs
+  abundance, W1/n1/ratio annotated), detected mean-KE vs the ihe_ked
+  reference (committed error model, I77 median anchor marked, both
+  chi2 columns annotated — the median-anchor value is locked against
+  the committed scorer by test), and the per-bin z anatomy panel.
+  Scorer kwargs mirror tier2_confirmation_score.py; every convention
+  imported from `i2_helium_md.postprocess.tier2_confirmation` (rule 1).
+- **Figures (D1):** the full summary (PDF + 21 PNGs incl. the three
+  detection sections) generated into
+  `.../N500_tier2probe_conf270_finc1v725/figures/` (run-dir artifacts,
+  not committed per the data-contract rule). The detected KE panel
+  displays the RQ11 deep-bin undershoot honestly; the solvated
+  histogram panel is the standing-result headline.
+
+The standing production result: **finc1v725, histogram-level landing
+(n1_solv 0.272 / midHot 0.990 / W1 0.524) with the RQ11 cold tail as
+the named open miss; robustness bands on record (I88).** Next
+discussion: the F5 reconciliation + the RQ11 follow-up. Nothing here
+discharges F5.
