@@ -15,7 +15,14 @@
 > the first MD cell to land both axes; §4t's "no joint cell in capped_cubic"
 > was a sparse-v_c-grid artifact), and the v_c ring (§4w, I81) mapped it as a
 > *basin* v_c ∈ [7.25, 7.5] with the optimum refining to ≈ 7.25 on the
-> histogram — the c1 N=500 finalist center)**;
+> histogram — the c1 N=500 finalist center), then the §I.11.5 endgame legs
+> S4 + S5 (§4x–§4y, I82–I84): the c4/floor1 joint region EXISTS in MD at
+> (v7.0–7.25, τ3.8, E₀0.25) — n₁_solv 0.312/0.303 dead-on, W₁ ≈ 0.63 vs c1's
+> 0.42–0.50, so the N=500 ladder contest is real with the c4 finalist at
+> (v7.0, τ3.8, E₀0.25) — and the Landau v_L gate DISSOLVES (scored
+> observables bit-flat across v_L ∈ {0.30, 0.40, 0.58} while the arm acts on
+> the retained class; N=500 runs Landau-on at 0.58, external re-pinning
+> non-blocking)**;
 > re-pilot Stage 2 is §4t (I74–I76 — the (τ, E₀) grid at two carried v_c;
 > the twin is quantitative at v65; each axis lands at different cells and no
 > joint cell exists in capped_cubic); re-pilot Stage 1 is §4s (I71–I73 — the
@@ -3169,6 +3176,174 @@ thin-bin-noisy (finding 3) and per-cell differences within [7.25, 7.5] are
 below the N=50 resolution. median-anchored n₁ (I77); `zero_gamma` E2,
 8000 ps cap. Nothing here discharges F5.
 
+---
+
+## 4x. S4 — c4/floor1 twin-first finalist location: a c4 joint region EXISTS at (v7.0–7.25, τ3.8, E₀0.25) — n₁_solv lands dead-on in MD (0.312/0.303) with midHot in-band, W₁ stays ≈ 0.63–0.65 (c1's basin: 0.42–0.50) so the N=500 ladder contest is real, not a strawman; the twin→MD strip lift is budget-dependent on the floor1 arm (+0.10 at E₀0.25, ≈ 0 at the high-suppression E₀0.27 corner)
+
+Executed 2026-07-21 under `[PROCEED TO IMPLEMENTATION]` (S4 + S5 in
+parallel; plan §I.11.5.1). **Twin scan** (m = 6000, stage_repilot2 draw
+discipline verbatim, scratchpad driver importing the committed module —
+zero repo-code change): v_c ∈ {6.5..8.5, 0.25-spaced} × τ ∈ {3.2, 3.8} ×
+E₀ ∈ {0.23, 0.25, 0.27} on floor1/p−1, with the rq4graded twin riding the
+same nine chords (the ladder enters only the fate map). Committed:
+`h2b_s4_c4scan_{predictions,ke}.csv` (m = 6000, 108 rows) +
+`h2b_s4_c4_final_{predictions,ke}.csv` (m = 20000 refreeze). Then
+**4 MD confirm cells** (N = 50, τ3.8, zero_gamma E2, leg-D arms; each cfg
+byte-oracle vs its on-disk s2c4v65t38e{25,27} sibling — v_c-only diffs,
+all passed).
+
+### Verdicts (pre-registered S4c-P1..P4)
+
+1. **S4c-P1 CONFIRMED.** The m = 6000 anchor cell reproduces the
+   committed m = 20000 dc4 row: n̄ 4.354 vs 4.359 (Δ −0.005), n₁ KE
+   0.9688 vs 0.9668 (Δ +0.0020) — tighter than the §4u c1 precedent.
+2. **S4c-P2 CONFIRMED (KE-axis ladder-blindness).** max |midHot(c4) −
+   midHot(c1)| ≤ 0.045 over the whole grid, shrinking with v_c (0.045 at
+   v6.5 → 0.010 at v8.5). The c4 midHot ≈ 1 crossing sits at the same
+   v_c as c1's.
+3. **S4c-P3 SPLIT.** The c4 < c1 n₁_solv ordering holds on the
+   E₀ ∈ {0.25, 0.27} region but **inverts at the E₀ = 0.23 corner** —
+   there c1's suppressed channel closes entirely (supp ≈ 0.000 on every
+   rq4graded E₀0.23 cell) and its n₁_solv collapses to ≈ 0.16 with
+   ratio ≈ 1.0; floor1 keeps a small suppressed population and sits
+   above it. A budget-corner regime change, not sampling noise.
+   The registered *expectation* (bias-corrected c4 peak below the
+   window ⇒ outcome (b)) was **wrong**: candidates exist — at τ3.8, not
+   the c1-like τ3.2.
+4. **S4c-P4 REFINED.** The candidate region is contiguous but sits at
+   **(v_c ≈ 6.75–8.0, τ3.8)** with the best cells at v7.0–7.25 —
+   overlapping the registered v7.25–7.5 guess only at its low edge (the
+   floor1 histogram needs the longer τ to populate n₁).
+
+### The MD confirm quartet (§4r scoring, median-anchored n₁)
+
+| cell | supp | ret | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | n₁ KE | χ²_med |
+|---|---|---|---|---|---|---|---|---|---|
+| s2c4v65t38e27 (anchor) | 0.424 | 1 | 2.68 | 0.211 | 1.20 | 0.797 | 1.275 | 0.935 | 47.8 |
+| s2c4v65t38e25 (anchor) | 0.212 | 1 | 3.41 | 0.282 | 2.44 | 0.811 | 1.504 | 1.153 | 147.9 |
+| s4c4v675t38e27 | 0.427 | 4 | 2.58 | 0.236 | 1.62 | 0.878 | 1.056 | 0.845 | 167.6 |
+| s4c4v700t38e27 | 0.432 | 5 | 2.79 | 0.185 | 1.11 | 0.873 | 0.894 | 0.776 | 36.8 |
+| **s4c4v700t38e25** | 0.189 | 5 | 3.49 | **0.312** | 3.00 | 0.651 | **1.121** | 1.019 | 61.9 |
+| **s4c4v725t38e25** | 0.191 | 6 | 3.64 | **0.303** | 3.29 | **0.630** | **0.975** | 0.945 | 77.1 |
+
+(targets: n₁_solv 0.310, n₁/n₂ 2.18, midHot ~1, n₁ KE median-anchor
+1.128.)
+
+### Findings
+
+1. **The c4 joint region exists in MD — outcome (a) at the MD level.**
+   (v7.0, τ3.8, E₀0.25) lands n₁_solv 0.312 (target 0.310, dead-on) with
+   midHot 1.121; (v7.25, τ3.8, E₀0.25) lands 0.303 / 0.975. Both pass
+   the robust joint bars (n₁_solv ∈ [0.26, 0.36] ∧ midHot ∈ [0.80, 1.20]);
+   both fail the strict χ²_med ≤ 30 gate at N = 50 — the §4w
+   thin-bin-noise pattern (I81), read on W₁/midHot until N = 500.
+   Under the frozen tie-break (lower χ²_med subject to the robust bars)
+   the **S4-located c4 finalist is (v7.0, τ3.8, E₀0.25)** — χ² 61.9 vs
+   77.1 and the exact n₁_solv — with v7.25/e25 the adjacent basin cell.
+2. **The ladder contest at N = 500 is real, not a strawman — and c1
+   still leads.** c4's best W₁_solv is 0.630–0.651 vs c1's basin
+   0.424–0.496, and its ratio overshoots (3.0–3.3 vs 2.18 — n₂
+   under-filled where c1's v7.25 gives 2.27). c4 now enters the RP-D6
+   arbiter at its own basin-located best, so a c1 win at N = 500 is a
+   defensible bounded-physics verdict (I51/S2c-P3), not a sparse-grid
+   artifact.
+3. **The twin→MD under-strip lift is NOT universal (channel-(d)-family
+   structure).** Measured lifts on floor1: **+0.100 / +0.097** at the
+   E₀0.25 cells (twin 0.212/0.206 → MD 0.312/0.303) — ≈ double the
+   c1-measured +0.05..0.065 band — but **+0.019 / −0.022** at the
+   E₀0.27 cells, where the suppressed channel is heavily populated
+   (supp ≈ 0.43). The lift collapses when suppression is large. The
+   §I.11.5.1 discipline (bias bands as *search guidance only*, never a
+   correction) is vindicated: the band found the region, MD placed the
+   cells.
+4. **Drag exposure moves the retained class on c4 too:** retained 1/100
+   at the v65 anchors → 4–6/100 at v6.75–7.25, the §4v/§4w c1 pattern.
+
+### Boundaries
+
+N = 50 single seed on the MD quartet (ratio reads carry SE ≈ ±0.5–0.7;
+n₁_solv is the stable read); twin scan m = 6000 refrozen at m = 20000 for
+the named cells only; the E₀0.23 corner regime change is a twin-level
+read (no MD cell there); `zero_gamma` E2 (the S5 outcome licenses the
+N = 500 Landau configuration separately); the finalist designation
+follows the frozen outcome-(a) rule and is **reported** — the S6
+pre-registration freezes it. Nothing here discharges F5.
+
+---
+
+## 4y. S5 — the Landau v_L bracket at the §4v cell: the gate DISSOLVES — every scored observable is bit-flat across v_L ∈ {0.30, 0.40, 0.58} while the arm demonstrably acts on the retained class (E_dissip +0.58–0.60 eV; retained KE 0.277 → 0.005–0.023 eV, monotone in v_L); pre-E2 identity holds by hash despite the E_min shared reader
+
+Executed 2026-07-21 under `[PROCEED TO IMPLEMENTATION]` (plan §I.11.5.2).
+Three N = 50 cells at the s2c1v75t32e27 pins with
+`relaxation_dissipation = "landau_gated_drag"`, v_L ∈ {0.30, 0.40, 0.58}
+Å/ps (`v_limit_m_per_s` 30/40/58), vs the on-disk zero_gamma baseline.
+Scratchpad driver reusing the committed generator (zero repo-code
+change).
+
+**A latent shared reader was identified at build time and measured:**
+`v_limit_m_per_s` also feeds the *neutral-stage* collision threshold
+through the derived `cfg.E_min_eV` (propagation_step.py /
+collisions.sample_collision_events), so a v_L change could in principle
+perturb pre-E2 physics. At these kinematics it does not fire: **on all
+three arms `neutral.npz` and `ion.npz` are sha256-identical to the
+baseline** (the eV-scale fragment energies never cross the 1.05 ↔ 2.21
+meV threshold window). S5L-P2 therefore holds **by measurement**, and
+the S5L-P1 cfg oracles passed on every arm (l40 diff =
+{relaxation_dissipation} only; l30/l58 + {v_limit_m_per_s}).
+
+### The bracket read (§4r scoring, median-anchored n₁)
+
+| arm | ret | supp | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | χ²_med | E_dissip(ret) [eV] | E_kin(ret) [eV] |
+|---|---|---|---|---|---|---|---|---|---|---|
+| zero_gamma (base) | 8 | 0.141 | 3.97 | 0.291 | 2.30 | 0.496 | 0.909 | 14.4 | 21.179 | 0.277 |
+| landau v_L 0.30 | 8 | 0.141 | 3.97 | 0.291 | 2.30 | 0.496 | 0.909 | 14.4 | 21.784 | 0.0053 |
+| landau v_L 0.40 | 8 | 0.141 | 3.97 | 0.291 | 2.30 | 0.496 | 0.909 | 14.4 | 21.777 | 0.0093 |
+| landau v_L 0.58 | 8 | 0.141 | 3.97 | 0.291 | 2.30 | 0.496 | 0.909 | 14.4 | 21.761 | 0.0229 |
+
+### Verdicts (pre-registered S5L-P1..P4)
+
+1. **S5L-P1 CONFIRMED** (cfg byte-oracles, above).
+2. **S5L-P2 CONFIRMED by hash** (pre-E2 identity; the shared-reader
+   hazard measured quiet).
+3. **S5L-P3 CONFIRMED, stronger than registered.** Not merely "below
+   N = 50 resolution": Δn₁_solv = 0.0000, ΔW₁ = 0.0000, Δretained = 0 on
+   every arm; ΔmidHot = −0.0002 (the listed residual coupling — the erf
+   spatial gate's tail just outside the surface — four orders below the
+   bar). χ²_med 14.4 on all four arms, which simultaneously re-confirms
+   the recorded §4v value through the **committed** median-anchor scorer.
+4. **S5L-P4 CONFIRMED — quiet is a dissolved gate, not a silent arm.**
+   The retained class books +0.605/+0.598/+0.582 eV of E2 drag
+   dissipation and its residual KE collapses 0.277 → 0.0053/0.0093/
+   0.0229 eV — monotone in v_L exactly as the physics demands (lower
+   v_L = wider gate = colder endpoint).
+
+### Findings
+
+1. **Outcome (a): the `v_L` gate dissolves.** The scored observables are
+   structurally insulated from the Landau arm (ejected class:
+   g → 0 outside; retained class: excluded from every IHe_n read), and
+   the bracket confirms the insulation is airtight at the detected
+   surface across the full credible v_L range. Consequence (per the
+   frozen outcome shape): **N = 500 runs Landau-on at v_L = 0.58** (the
+   physics-motivated bulk ceiling), the legacy 0.40 becomes the
+   winner-cell sensitivity spot (RP-D7 mitigation, now data-backed), and
+   the external re-pinning reply is demoted to a recorded spot value —
+   it no longer gates anything.
+2. **The arm's physical output is the retained-class endpoint** (colder
+   by ~0.25–0.27 eV, v_L-graded) — invisible to Tier-2 scoring but the
+   physically-correct configuration for the marginal class the N = 500
+   arbiter carries.
+
+### Boundaries
+
+One cell (v7.5), one seed — the bracket licenses the *gate*, not a v_L
+calibration; nothing measures which v_L is physically right (that
+remains the external question, now non-blocking). The retained-class
+endpoint state is diagnostic-only under the exclude policy. The E_min
+shared-reader quietness is measured **at these kinematics** — a future
+low-energy channel would need the hash check repeated (recorded as an
+execution convention, not a code change). Nothing here discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -3818,6 +3993,39 @@ below the N=50 resolution. median-anchored n₁ (I77); `zero_gamma` E2,
   above ~7.75 (v8.0 genuinely over-dragged, whole curve ×0.68–0.88). c1 N=500
   finalist: center v_c ≈ 7.25–7.5, χ² re-adjudicates once N=500 stabilises
   the deep bins.
+- **I82 (S4 c4 location, §4x).** **The c4/floor1 joint region exists in
+  MD — at (v7.0–7.25, τ3.8, E₀0.25), not the c1-like τ3.2.** MD lands
+  n₁_solv 0.312/0.303 (target 0.310) with midHot 1.121/0.975 — both
+  robust joint bars pass — while W₁_solv stays 0.630–0.651 vs c1's
+  0.424–0.496 and the ratio overshoots (3.0–3.3 vs 2.18, n₂
+  under-filled). The S4-located c4 finalist is **(v7.0, τ3.8, E₀0.25)**
+  (frozen tie-break); the RP-D6 ladder contest at N = 500 is thereby
+  real — c4 enters at its own basin-located best and c1 still leads on
+  the histogram shape. Registered-expectation miss recorded: S4c-P3
+  predicted no c4 window (outcome (b)); candidates existed at the longer
+  τ. Sub-finding: c1's suppressed channel closes entirely at the
+  E₀ = 0.23 corner (supp ≈ 0), inverting the c4 < c1 n₁_solv ordering
+  there — a budget-corner regime change.
+- **I83 (S4, channel-(d) family).** **The twin→MD under-strip lift is
+  budget- and arm-dependent, not universal:** +0.100/+0.097 on the
+  floor1 E₀0.25 cells (≈ 2× the c1-measured +0.05..0.065 band) but
+  +0.019/−0.022 at the high-suppression E₀0.27 corner (supp ≈ 0.43) —
+  the lift collapses when the suppressed channel is heavily populated.
+  Bias bands remain *search guidance only* (the I69 discipline); any
+  quantitative twin claim near a high-suppression corner must be
+  MD-confirmed cell-by-cell.
+- **I84 (S5 Landau bracket, §4y).** **The `v_L` gate dissolves:** every
+  scored observable is bit-flat across v_L ∈ {0.30, 0.40, 0.58}
+  (Δn₁_solv = ΔW₁ = 0.0000, ΔmidHot = −0.0002, retained 8/100 unchanged,
+  χ²_med 14.4 on all arms) while the arm demonstrably acts on the
+  retained class (E_dissip +0.58–0.60 eV; retained KE 0.277 →
+  0.005–0.023 eV, monotone in v_L) — quiet because the scored surface is
+  structurally insulated, not because the arm is inert. N = 500 runs
+  Landau-on at v_L = 0.58 with 0.40 as the winner spot; the external
+  re-pinning is non-blocking. Execution finding: `v_limit_m_per_s` is a
+  latent shared reader (it also sets the neutral-stage collision
+  threshold `E_min_eV`) — measured quiet here by neutral/ion sha256
+  identity, to be re-checked at any lower-energy channel.
 
 ---
 

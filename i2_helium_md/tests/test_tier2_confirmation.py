@@ -20,6 +20,7 @@ production checkpoints, no figures (testing rules).
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 import numpy as np
@@ -94,14 +95,25 @@ def make_ked_reference(
     n,
     mean_KE_eV,
     *,
+    median_KE_eV=None,
     stat_err=0.01,
     sys_err=0.0,
     calib_frac=0.04,
     condition_frac=0.06,
+    bg_off_shift=0.0,
 ) -> IHeKedReference:
-    """Tiny in-memory ihe_ked reference with uniform error columns."""
+    """Tiny in-memory ihe_ked reference with uniform error columns.
+
+    ``median_KE_eV`` defaults to a copy of the mean (the pre-I77 fixtures);
+    pass distinct values to exercise the ``n1_anchor`` convention.
+    """
     n = np.asarray(n, dtype=int)
     mean = np.asarray(mean_KE_eV, dtype=float)
+    median = (
+        mean.copy()
+        if median_KE_eV is None
+        else np.asarray(median_KE_eV, dtype=float)
+    )
     ones = np.ones(n.size, dtype=float)
     return IHeKedReference(
         n=n,
@@ -111,13 +123,13 @@ def make_ked_reference(
         N_eff=800.0 * ones,
         mean_KE_eV=mean,
         mode_KE_eV=mean.copy(),
-        median_KE_eV=mean.copy(),
+        median_KE_eV=median,
         sigma_KE_eV=0.5 * ones,
         stat_err_mean_KE_eV=stat_err * ones,
         sys_err_mean_KE_eV=sys_err * ones,
         calib_syst_frac=calib_frac * ones,
         condition_syst_frac=condition_frac * ones,
-        bg_off_shift_eV=0.0 * ones,
+        bg_off_shift_eV=bg_off_shift * ones,
         dominant_error=np.asarray(["calib"] * n.size, dtype="<U16"),
         noise_limited=np.zeros(n.size, dtype=int),
         source_path=Path("synthetic"),
@@ -527,3 +539,197 @@ class TestScoreKeCurveVsReference:
         with_se = score_ke_curve_vs_reference(read, ref, include_sim_se=True)
         without = score_ke_curve_vs_reference(read, ref, include_sim_se=False)
         assert with_se.chi2_profiled < without.chi2_profiled
+
+
+class TestN1AnchorConvention:
+    """The median-anchored n=1 KE convention (I77, design frozen 2026-07-21).
+
+    The experimental n=1 mean KE (1.302 eV) is a two-population mixture
+    mean; the solvated core the drag model produces is the median (1.128).
+    ``n1_anchor``: ``"mean"`` is the byte-identical legacy behaviour (the
+    §4s/§4t recorded-χ² regression anchor), ``"median"`` (new default)
+    substitutes the loaded ``median_KE_eV`` at n = 1 only, ``"exclude"``
+    drops the n = 1 bin like n = 0.
+    """
+
+    @staticmethod
+    def _two_bin_inputs(median_n1=1.1):
+        # sim n=1 -> 1.4 eV, n=2 -> 0.8 eV; ref mean 1.3/0.7 with a distinct
+        # n=1 median; bands off, stat_err 0.1, single-ion bins (SE = 0).
+        det = make_detection(
+            n_detected=[1.0, 2.0],
+            state_reason=["frozen"] * 2,
+            ke_eV=[1.4, 0.8],
+        )
+        read = read_confirmation_detection(det, label="t")
+        ref = make_ked_reference(
+            [1, 2], [1.3, 0.7],
+            median_KE_eV=[median_n1, 0.7],
+            stat_err=0.1, calib_frac=0.0, condition_frac=0.0,
+        )
+        return read, ref
+
+    def test_mean_anchor_is_legacy_and_ignores_median_column(self):
+        # regression lock: the "mean" path reproduces the pre-kwarg closed
+        # form exactly, independent of whatever the median column holds.
+        read, ref = self._two_bin_inputs(median_n1=0.123)
+        score = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="mean"
+        )
+        expected = (0.1 / 0.1) ** 2 + (0.1 / 0.1) ** 2
+        assert score.chi2_profiled == pytest.approx(expected)
+        assert score.ref_mean_eV.tolist() == [1.3, 0.7]
+        assert score.n1_anchor == "mean"
+
+    def test_median_anchor_substitutes_loaded_n1_median_only(self):
+        # closed form with ref n1 -> median (1.1, NOT the frozen file's
+        # 1.128 — proves the loaded column is used, not a hardcoded value);
+        # the n=2 bin still scores against the mean.
+        read, ref = self._two_bin_inputs(median_n1=1.1)
+        score = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="median"
+        )
+        expected = ((1.4 - 1.1) / 0.1) ** 2 + ((0.8 - 0.7) / 0.1) ** 2
+        assert score.chi2_profiled == pytest.approx(expected)
+        assert score.ref_mean_eV.tolist() == [1.1, 0.7]
+        assert score.n1_anchor == "median"
+
+    def test_median_is_the_default(self):
+        read, ref = self._two_bin_inputs(median_n1=1.1)
+        default = score_ke_curve_vs_reference(read, ref, include_sim_se=False)
+        explicit = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="median"
+        )
+        assert default.n1_anchor == "median"
+        assert default.chi2_profiled == explicit.chi2_profiled
+
+    def test_exclude_drops_n1_and_matches_nmin2(self):
+        det = make_detection(
+            n_detected=[1.0, 2.0, 3.0],
+            state_reason=["frozen"] * 3,
+            ke_eV=[1.4, 0.8, 0.6],
+        )
+        read = read_confirmation_detection(det, label="t")
+        ref = make_ked_reference(
+            [1, 2, 3], [1.3, 0.7, 0.5], median_KE_eV=[1.1, 0.7, 0.5]
+        )
+        excl = score_ke_curve_vs_reference(read, ref, n1_anchor="exclude")
+        nmin2 = score_ke_curve_vs_reference(read, ref, n_min=2)
+        assert excl.n.tolist() == [2, 3]
+        assert excl.n_points == nmin2.n_points == 2
+        assert excl.chi2_profiled == nmin2.chi2_profiled
+        assert excl.n1_anchor == "exclude"
+
+    def test_md_at_median_scores_lower_under_median_than_mean(self):
+        # the §4u direction: an MD read sitting at the solvated core
+        # (median) is rewarded under "median", penalized under "mean".
+        det = make_detection(
+            n_detected=[1.0, 2.0],
+            state_reason=["frozen"] * 2,
+            ke_eV=[1.128, 0.7],
+        )
+        read = read_confirmation_detection(det, label="t")
+        ref = make_ked_reference(
+            [1, 2], [1.302, 0.7], median_KE_eV=[1.128, 0.7]
+        )
+        med = score_ke_curve_vs_reference(read, ref, n1_anchor="median")
+        mean = score_ke_curve_vs_reference(read, ref, n1_anchor="mean")
+        assert med.chi2_profiled < mean.chi2_profiled
+
+    def test_unknown_anchor_raises(self):
+        read, ref = self._two_bin_inputs()
+        with pytest.raises(ValueError, match="n1_anchor"):
+            score_ke_curve_vs_reference(read, ref, n1_anchor="mode")
+
+    def test_widen_bg_widens_only_the_n1_sigma(self):
+        # median + n1_widen_bg folds bgOffShift into the n=1 per-point
+        # sigma in quadrature (the §4u "median+bg ~ exclude" direction);
+        # other bins untouched.
+        read, ref = self._two_bin_inputs(median_n1=1.1)
+        ref = make_ked_reference(
+            [1, 2], [1.3, 0.7],
+            median_KE_eV=[1.1, 0.7],
+            stat_err=0.1, calib_frac=0.0, condition_frac=0.0,
+            bg_off_shift=0.378,
+        )
+        plain = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="median"
+        )
+        widened = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="median",
+            n1_widen_bg=True,
+        )
+        assert widened.sigma_eV[0] == pytest.approx(
+            np.sqrt(0.1**2 + 0.378**2)
+        )
+        assert widened.sigma_eV[1] == pytest.approx(0.1)
+        assert widened.chi2_profiled < plain.chi2_profiled
+
+    def test_widen_bg_requires_median_anchor(self):
+        read, ref = self._two_bin_inputs()
+        with pytest.raises(ValueError, match="n1_widen_bg"):
+            score_ke_curve_vs_reference(
+                read, ref, n1_anchor="mean", n1_widen_bg=True
+            )
+
+
+class TestReportBothChi2Columns:
+    """The report prints both χ² columns (operative + mean-legacy) so the
+    §4s/§4t recorded numbers stay reproducible on every row."""
+
+    @staticmethod
+    def _load_script_module():
+        import importlib.util
+
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "scripts" / "post_processing" / "tier2_confirmation_score.py"
+        )
+        spec = importlib.util.spec_from_file_location(
+            "tier2_confirmation_score_under_test", script
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_experimental_row_round_trips_both_chi2_columns(self, tmp_path):
+        mod = self._load_script_module()
+        assert mod.N1_ANCHOR == "median"
+
+        det = make_detection(
+            n_detected=[1.0, 2.0],
+            state_reason=["frozen"] * 2,
+            ke_eV=[1.4, 0.8],
+        )
+        read = read_confirmation_detection(det, label="t")
+        abundance = make_abundance_reference([0, 1, 2], [0.2, 0.5, 0.3])
+        ked = make_ked_reference(
+            [1, 2], [1.302, 0.7], median_KE_eV=[1.128, 0.7]
+        )
+
+        row = mod.experimental_row(
+            "t", "c1", read, abundance, ked,
+            n1_anchor="median", min_ke_bin_count=1,
+        )
+        med = score_ke_curve_vs_reference(
+            read, ked, min_count=1, n1_anchor="median"
+        )
+        legacy = score_ke_curve_vs_reference(
+            read, ked, min_count=1, n1_anchor="mean"
+        )
+        assert row["n1_anchor"] == "median"
+        assert row["ke_chi2_prof"] == med.chi2_profiled
+        assert row["ke_chi2_mean_legacy"] == legacy.chi2_profiled
+        assert row["ke_chi2_mean_legacy"] != row["ke_chi2_prof"]
+
+        out = mod.write_rows_csv(tmp_path / "exp.csv", [row])
+        with open(out, newline="", encoding="utf-8") as fh:
+            back = list(csv.DictReader(fh))
+        assert len(back) == 1
+        assert float(back[0]["ke_chi2_prof"]) == pytest.approx(
+            med.chi2_profiled
+        )
+        assert float(back[0]["ke_chi2_mean_legacy"]) == pytest.approx(
+            legacy.chi2_profiled
+        )
+        assert back[0]["n1_anchor"] == "median"

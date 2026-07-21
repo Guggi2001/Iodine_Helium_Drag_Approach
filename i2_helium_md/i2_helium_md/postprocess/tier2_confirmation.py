@@ -497,6 +497,10 @@ class KECurveScore:
     ``chi2_profiled`` is minimized over ``(a, b)`` with the ``a^2 + b^2``
     prior penalty included. ``n_within_1p25`` is the coarse fallback bar
     (bins with sim/ref ratio within x1.25, both directions).
+
+    ``n1_anchor`` / ``n1_widen_bg`` record the n = 1 comparison convention
+    in force (I77 provenance): under ``"median"`` the ``ref_mean_eV`` entry
+    at n = 1 holds the substituted ``median_KE_eV`` value.
     """
 
     n: np.ndarray
@@ -513,6 +517,8 @@ class KECurveScore:
     n_points: int
     n_within_1p25: int
     include_sim_se: bool
+    n1_anchor: str
+    n1_widen_bg: bool
 
 
 def score_ke_curve_vs_reference(
@@ -523,6 +529,8 @@ def score_ke_curve_vs_reference(
     n_max: int | None = None,
     min_count: int = 1,
     include_sim_se: bool = True,
+    n1_anchor: str = "median",
+    n1_widen_bg: bool = False,
 ) -> KECurveScore:
     """Score one run's per-n mean detected KE against the ihe_ked reference.
 
@@ -541,12 +549,44 @@ def score_ke_curve_vs_reference(
         Widen the per-point sigma by the sim bin SE in quadrature (the sim
         mean at N = 50 carries its own statistical error; reported so the
         choice is visible).
+    n1_anchor
+        The n = 1 comparison convention (I77: the experimental n = 1 mean
+        KE is a two-population mixture mean; the solvated core the drag
+        model produces sits at the median). One of:
+
+        - ``"mean"`` — legacy behaviour, byte-identical to the pre-I77
+          scorer (the §4s/§4t recorded-χ² regression anchor);
+        - ``"median"`` (default) — the n = 1 reference comparison value is
+          ``ref.median_KE_eV`` [eV] instead of ``ref.mean_KE_eV``; all
+          other bins, the per-point errors, and the two correlated bands
+          are unchanged;
+        - ``"exclude"`` — drop the n = 1 bin from the fit (treated like
+          the bare n = 0 bin; ``n_points`` shrinks by one).
+    n1_widen_bg
+        Robustness sub-variant (default off; only legal with
+        ``n1_anchor="median"``): additionally fold the n = 1
+        ``bg_off_shift_eV`` [eV] into that bin's per-point sigma in
+        quadrature (a symmetric Gaussian stand-in for the one-sided
+        background-off systematic; §4u showed median+bg ≈ exclude).
 
     Raises
     ------
     ValueError
-        If no sim bin overlaps the reference in the scored range.
+        If no sim bin overlaps the reference in the scored range, on an
+        unknown ``n1_anchor``, or if ``n1_widen_bg`` is combined with an
+        anchor other than ``"median"``.
     """
+    if n1_anchor not in ("mean", "median", "exclude"):
+        raise ValueError(
+            f"unknown n1_anchor {n1_anchor!r}; "
+            f"expected 'mean', 'median', or 'exclude'."
+        )
+    if n1_widen_bg and n1_anchor != "median":
+        raise ValueError(
+            f"n1_widen_bg=True requires n1_anchor='median'; "
+            f"got n1_anchor={n1_anchor!r}."
+        )
+
     ke = read.ke_by_n(min_count=min_count)
     hi = int(ref.n.max()) if n_max is None else n_max
 
@@ -554,6 +594,7 @@ def score_ke_curve_vs_reference(
     keep = [
         i for i, n in enumerate(ke.n)
         if n_min <= int(n) <= hi and int(n) in ref_index
+        and not (n1_anchor == "exclude" and int(n) == 1)
     ]
     if not keep:
         raise ValueError(
@@ -565,13 +606,19 @@ def score_ke_curve_vs_reference(
     s = ke.mean_eV[keep]
     se = ke.se_eV[keep]
     count = ke.count[keep]
-    ridx = [ref_index[int(n)] for n in n_sel]
-    r = ref.mean_KE_eV[ridx]
+    ridx = np.asarray([ref_index[int(n)] for n in n_sel], dtype=int)
+    r = ref.mean_KE_eV[ridx].copy()
     point_err = ref.point_err_eV[ridx]
     c_frac = ref.calib_syst_frac[ridx]
     d_frac = ref.condition_syst_frac[ridx]
 
+    n1_hits = np.nonzero(n_sel == 1)[0]
+    if n1_anchor == "median" and n1_hits.size:
+        r[n1_hits] = ref.median_KE_eV[ridx[n1_hits]]
+
     sigma_sq = point_err**2 + (se**2 if include_sim_se else 0.0)
+    if n1_widen_bg and n1_hits.size:
+        sigma_sq[n1_hits] += ref.bg_off_shift_eV[ridx[n1_hits]] ** 2
     if np.any(sigma_sq <= 0.0):
         raise ValueError(
             "zero per-point sigma — the reference carries no error at a "
@@ -607,4 +654,6 @@ def score_ke_curve_vs_reference(
             np.count_nonzero(np.maximum(ratio, 1.0 / ratio) <= 1.25)
         ),
         include_sim_se=include_sim_se,
+        n1_anchor=n1_anchor,
+        n1_widen_bg=n1_widen_bg,
     )

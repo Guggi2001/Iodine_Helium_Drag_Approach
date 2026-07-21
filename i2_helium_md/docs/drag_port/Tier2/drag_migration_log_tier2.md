@@ -8558,3 +8558,201 @@ committed `IHe_KED_reference.csv`):**
 `SimConfig` field (a scorer kwarg, not a physics enum); CALIBRATION_MAP +
 findings I77 cross-referenced. **Awaits its own `[PROCEED TO IMPLEMENTATION]`.**
 Nothing here discharges F5.
+
+## Median-anchored n₁ KE scorer convention DELIVERED — `n1_anchor ∈ {mean, median (default), exclude}` + `n1_widen_bg`; `"mean"` reproduces the recorded §4s χ² at printed precision; the report prints both χ² columns (2026-07-21)
+
+Under `[PROCEED TO IMPLEMENTATION]` (user, this session), built exactly to the
+frozen spec above. TDD — 9 new tests watched RED (missing-kwarg TypeErrors /
+missing script surface) before any production edit, then GREEN.
+
+**As-built:**
+
+- `i2_helium_md/postprocess/tier2_confirmation.py` —
+  `score_ke_curve_vs_reference` gains `n1_anchor: {"mean","median","exclude"}
+  = "median"` and the robustness sub-variant `n1_widen_bg: bool = False`
+  (median-only; folds the n = 1 `bg_off_shift_eV` into that bin's per-point
+  sigma in quadrature — a symmetric Gaussian stand-in for the one-sided
+  background-off systematic, documented in the docstring). `"median"`
+  substitutes the **loaded** `median_KE_eV` at n = 1 only; per-point errors
+  and both correlated bands untouched; `"exclude"` drops the bin like n = 0
+  (`n_points` −1, χ² ≡ the `n_min = 2` value — locked by test). Unknown
+  anchor / illegal `n1_widen_bg` pairing fail loudly (rule 4).
+  `KECurveScore` records `n1_anchor` + `n1_widen_bg` (provenance).
+- `scripts/post_processing/tier2_confirmation_score.py` — USER-SETTINGS
+  `N1_ANCHOR = "median"`; the experimental row-building factored into a
+  testable `experimental_row()` helper (no behavior fork), every row now
+  carrying `n1_anchor`, `ke_chi2_prof` (operative) **and**
+  `ke_chi2_mean_legacy` (computed at `n1_anchor="mean"`; equal by
+  construction when the operative anchor is `"mean"`).
+- `tests/test_tier2_confirmation.py` — `TestN1AnchorConvention` (8 tests:
+  legacy lock ignoring the median column, loaded-median substitution at a
+  non-1.128 value, median-is-default, exclude ≡ n_min=2, the §4u direction
+  test, unknown-anchor raise, bg-widen n₁-only sigma + raise off-median) +
+  `TestReportBothChi2Columns` (script helper round-trips both χ² columns
+  through `write_rows_csv`). Fixture `make_ked_reference` gains
+  `median_KE_eV` / `bg_off_shift` kwargs (defaults preserve the pre-I77
+  fixtures, so all 29 existing tests pass unmodified — the byte-identity
+  regression surface).
+
+**Verification.** Full suite **2507 passed**. Real-data oracle: the report
+script re-run on the on-disk leg-D dirs reproduces the recorded §4s
+mean-anchor χ² in the `ke_chi2_mean_legacy` column at printed precision
+(dc1 54.35 → "54.4", dc2 24.14 → "24.1", dc4 115.9 → "115.9"), with the
+operative median column reading 51.4/18.3/83.3/115.4 — the I77 direction
+(median ≤ mean everywhere, largest drop on the c2 low-KE arm).
+
+No `SimConfig` field, no checkpoint/RNG/propagation/reference-data touch;
+no CALIBRATION_MAP row (a scorer kwarg is not a calibration parameter —
+the map indexes physics knobs; I77/§4u are the grounds record). The
+**c1 N=500 finalist prerequisite is discharged**; the finalist run itself
+(and the RP-D6 second-ladder finalist + the `v_L` Landau spot) stay behind
+their own triggers. Nothing here discharges F5.
+
+## Endgame finalist block DESIGN FROZEN — §I.11.5 added (S4 c4 twin-first location / S5 Landau v_L bracket / S6 three-cell N=500 finalists); E-1..E-3 adjudicated; per-leg execution behind its own trigger (2026-07-21)
+
+User adjudications (this session), resolving the §4t E-block:
+
+- **E-1:** c1/rq4graded sends **both** §4w basin cells — (v7.25, τ3.2,
+  E₀0.27) and (v7.5, τ3.2, E₀0.27) — to N = 500 (the robust-metric and
+  χ²_med optima straddle the joint optimum; choosing one at N = 50 would
+  pre-commit a metric family on thin-bin noise; +1 arbiter run vs RP-D6
+  accepted). c4/floor1 is located **twin-first (leg S4)** — the §4v play
+  replayed for the second ladder, because its Stage-2 best (W₁ 0.793,
+  χ² 227) was sampled only at v_c ∈ {6.5, 8.5}, the exact sparse-grid
+  artifact §4v refuted for c1. Rejected: single c1 cell / c4 as-is /
+  one-ladder finalist (reverses RP-D6).
+- **E-2:** closed — already resolved by the §4u taper corner (p_tail
+  re-couples the axes) + the §4v joint landing; no taper work before
+  N = 500.
+- **E-3:** reframed from "wait for the external `v_L`" to **measure the
+  gate now (leg S5)**: the plausible range is narrow and in hand — bulk
+  roton-minimum ceiling 0.58 Å/ps (droplet-preserved), legacy repo pin
+  0.40, ion-channel floor 0.30 (vortex-ring / local-pressure softening).
+  User decision: **no literature pass**; the band is adopted as the
+  design range, any expert reply slots in as a spot value.
+
+**The frozen design (full detail: plan §I.11.5):**
+
+- **S4 — c4 finalist location.** Zero-MD twin scan (m = 6000, floor1 /
+  p_tail −1) over v_c {6.5..8.5, 0.25-spaced core} × τ {3.2, 3.8} × E₀
+  {0.23, 0.25, 0.27}; candidates re-frozen at m = 20000; twin→MD bias
+  bands (+0.05..0.065 n₁_solv under-strip; 0/−0.5/−0.8 He drag-exposure
+  Δn̄, arm-blind per I74) used directionally for search only. S4c-P1
+  wiring oracle (committed c4 `d` row: n̄ 4.359 / n₁ KE 0.9668);
+  S4c-P2 KE-axis c1≡c4 (structural chord-cache identity); S4c-P3 the
+  registered expectation — bias-corrected c4 peak n₁_solv ≈ 0.25–0.29,
+  **below** the 0.31 target (floor1 strips past n = 1); S4c-P4 any c4
+  window sits at v_c ≈ 7.25–7.5. Outcomes: (a) candidate → ≤ 5 N = 50
+  confirm cells; (b) no c4 joint region → best-compromise cell +
+  1 MD spot-check (the carry is never twin-only), the shortfall itself
+  the twin-level half of the ladder verdict.
+- **S5 — Landau bracket.** 3 × N = 50 at the §4v cell pins:
+  `relaxation_dissipation = landau_gated_drag`, v_L ∈ {0.30, 0.40,
+  0.58}, vs the on-disk `zero_gamma` baseline (v_L → ∞; lower v_L =
+  more E2 drag). S5L-P1 cfg byte-oracle; S5L-P2 pipeline identity up to
+  E2; S5L-P3 the quiet claim (ejected-class scored moves below N = 50
+  resolution; retained count ≤ ±2, non-decreasing); S5L-P4
+  no-silent-inert (E_dissip > 0 on a retained ion + extended
+  time_relaxed under the post-F1 convergence — quiet-without-acting is
+  a failed read, not a dissolved gate). Outcomes: (a) quiet → N = 500
+  Landau-on at 0.58, 0.40 as the winner-cell sensitivity spot (RP-D7
+  mitigation, now data-backed), external reply demoted; (b) material
+  shift → the RP-D7 re-rank trigger fired early and cheaply, N = 500
+  holds for the expert value with the measured severity band on record.
+- **S6 — N = 500 finalists (the absorbed S2-P4 bar-level gate).** Three
+  cells: c1 v7.25 + c1 v7.5 + the S4 c4 cell; fresh seed (deliberately
+  not a pilot superset); Landau per S5; twin m = 20000 re-scores
+  committed before any MD (§I.11.4.5). Prediction classes frozen
+  (S6f-P1 wiring/scorer locks, P2 robust-metric basin carry, P3 χ²
+  spike resolution at stable deep bins, P4 the 2σ ladder read at
+  SE(n₁_solv) ≈ 0.014 — direction c1 > c4 per I76, P5 channel-(d)
+  band −0.3..−0.6 He tracked-never-corrected); numbers committed at the
+  pre-registration step. **Joint acceptance frozen:** n₁_solv ∈
+  [0.26, 0.36] ∧ midHot ∈ [0.80, 1.20] ∧ χ²_med ≤ 30 (median anchor
+  operative, mean-legacy alongside). Winner v7.25 vs v7.5 = lower
+  χ²_med subject to all three bars. Riders at the winner only (RP-D4):
+  Stage-3 sensitivity ring (δ {0.40, 0.80}, pickup-weighted prior,
+  margin {4.67, 6} Å, N = 50, bands never re-fit) + the S5(a) 0.40
+  Landau spot.
+
+Sequencing: S4 ∥ S5 independent; S6 needs both + its own
+pre-registration. Cost ≈ 2.5–3 h wall-clock total. Docs-only this
+session (plan §I.11.5 + this entry); no code, no runs. Each leg's
+execution awaits its own `[PROCEED TO IMPLEMENTATION]`. After the S6
+verdict: the F5 reconciliation pass (discharge vs re-scope) is its own
+discussion. Nothing here discharges F5.
+
+## S4 EXECUTED — the c4/floor1 joint region exists in MD at (v7.0–7.25, τ3.8, E₀0.25), against the registered outcome-(b) expectation; the c4 finalist is (v7.0, τ3.8, E₀0.25); the twin→MD strip lift is budget-dependent (findings §4x, I82–I83) (2026-07-21)
+
+Under `[PROCEED TO IMPLEMENTATION]` (user: S4 + S5 in parallel). Zero
+repo-code change throughout (scratchpad drivers importing the committed
+generator + twin modules).
+
+- **Twin scan** (m = 6000, stage_repilot2 draw discipline): 54 cells ×
+  2 ladders on 9 shared chords + the dc4 anchor. **S4c-P1 PASSED**
+  (n̄ 4.354 vs 4.359; n₁ KE +0.0020). **S4c-P2 CONFIRMED** — the KE axis
+  is ladder-blind (max |ΔmidHot| ≤ 0.045). **S4c-P3 SPLIT** — the
+  c4 < c1 ordering holds at E₀ ≥ 0.25 but inverts at the E₀0.23 corner
+  (c1 suppression closes, supp ≈ 0.000). Bias-corrected joint candidates
+  appeared at **τ3.8** (the registered outcome-(b) expectation was
+  wrong). Committed: `h2b_s4_c4scan_{predictions,ke}.csv` (m = 6000) +
+  `h2b_s4_c4_final_{predictions,ke}.csv` (m = 20000 refreeze).
+- **MD confirm quartet** (N = 50, leg-D arms, zero_gamma, τ3.8; tags
+  `s4c4v{675,700}t38e27`, `s4c4v{700,725}t38e25`; each cfg byte-oracle
+  vs its on-disk s2c4v65t38e{25,27} sibling — v_c-only diffs, 4/4
+  passed): **(v7.0, e25) n₁_solv 0.312 / midHot 1.121 / W₁ 0.651 /
+  χ²_med 61.9** and **(v7.25, e25) 0.303 / 0.975 / 0.630 / 77.1** pass
+  both robust joint bars (strict χ² ≤ 30 fails at N = 50 — the I81
+  thin-bin pattern); the e27 pair misses the histogram. **The c4
+  finalist: (v7.0, τ3.8, E₀0.25)** per the frozen tie-break; v7.25/e25
+  the adjacent basin cell. c4's W₁ stays 0.63–0.65 vs c1's 0.42–0.50
+  and ratio overshoots (3.0–3.3 vs 2.18) — the RP-D6 N = 500 ladder
+  contest is real and c1 leads (I82).
+- **Structure finding (I83):** the twin→MD under-strip lift is
+  budget-/arm-dependent — +0.100/+0.097 at the floor1 e25 cells (≈ 2×
+  the c1 band) vs +0.019/−0.022 at the supp ≈ 0.43 e27 corner. Bias
+  bands stay search-guidance-only (I69).
+- Execution note: the first confirm-cell launch tripped its own cfg
+  oracle on a scratchpad-driver artifact (in-memory tuples vs JSON
+  lists in `tabulated_ladder_rungs_eV`) — guard-caught pre-compute,
+  driver fixed, all four cells re-run clean; zero MD wasted.
+
+N = 50 single seed; finalist designation reported, frozen at the S6
+pre-registration. Nothing here discharges F5.
+
+## S5 EXECUTED — the Landau v_L gate dissolves: scored observables bit-flat across v_L ∈ {0.30, 0.40, 0.58} while the arm acts on the retained class; N = 500 goes Landau-on at 0.58 with the 0.40 winner spot; the E_min shared reader identified and measured quiet (findings §4y, I84) (2026-07-21)
+
+Under `[PROCEED TO IMPLEMENTATION]` (user: S4 + S5 in parallel). Three
+N = 50 cells at the s2c1v75t32e27 pins (tags `s5c1v75l{30,40,58}`),
+`relaxation_dissipation = landau_gated_drag`, scored vs the on-disk
+zero_gamma baseline by the committed Stage-0 scorer (median anchor).
+
+- **S5L-P1 CONFIRMED** — base cfg byte-reproduces the on-disk baseline;
+  arm diffs exactly {relaxation_dissipation} (+ {v_limit_m_per_s} on
+  l30/l58).
+- **Shared-reader hazard found at build time, then measured:**
+  `v_limit_m_per_s` also feeds the neutral-stage collision threshold
+  via the derived `cfg.E_min_eV` — a v_L change could in principle
+  perturb pre-E2 physics and RNG consumption. **It does not fire at
+  production kinematics: neutral.npz and ion.npz are sha256-identical
+  to the baseline on all three arms** (S5L-P2 CONFIRMED by hash; the
+  eV-scale fragment energies never cross the 1.05 ↔ 2.21 meV window).
+  Recorded as an execution convention: re-check the hash at any future
+  low-energy channel.
+- **S5L-P3 CONFIRMED, stronger than registered** — Δn₁_solv = ΔW₁ =
+  0.0000, ΔmidHot = −0.0002 (the listed erf-tail residual coupling),
+  retained 8/100 unchanged, χ²_med 14.4 on all four arms (which also
+  re-confirms the recorded §4v value through the committed scorer).
+- **S5L-P4 CONFIRMED — the arm acts:** retained-class E_dissip
+  +0.605/+0.598/+0.582 eV; retained residual KE 0.277 →
+  0.0053/0.0093/0.0229 eV, monotone in v_L (lower v_L = wider gate =
+  colder). Quiet is a dissolved gate, not a silent arm.
+
+**Outcome (a) as frozen:** the N = 500 finalists run **Landau-on at
+v_L = 0.58** (bulk ceiling), legacy 0.40 as the winner-cell sensitivity
+spot (RP-D7 mitigation, data-backed); the external `v_L` re-pinning is
+demoted to a recorded spot value — non-blocking. One cell, one seed —
+the bracket licenses the gate, not a v_L calibration. With S4 + S5 both
+landed, **S6 is fully specified** (c1 × {v7.25, v7.5} at τ3.2/E₀0.27 +
+c4 × (v7.0, τ3.8, E₀0.25); Landau 0.58; N = 500 fresh seed) and awaits
+its own pre-registration + trigger. Nothing here discharges F5.

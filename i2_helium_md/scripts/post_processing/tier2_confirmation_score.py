@@ -12,7 +12,9 @@ the T3/T9/re-pilot matrix) on the two §I.11.4.1 surfaces:
    (``W₁``, ``n₁``, ``n₂``, ``n₁/n₂``), and the per-n mean-KE curve vs the
    committed ihe_ked reference under the **committed error model**
    (per-point sqrt(statErr² + sysErr²) + the calib/condition correlated
-   bands profiled as unit-normal nuisances).
+   bands profiled as unit-normal nuisances). The n = 1 bin scores under
+   the ``N1_ANCHOR`` convention (I77; default ``"median"``), with the
+   mean-legacy chi² printed alongside on every row.
 
 Pure scorer — runs nothing, mutates nothing. Every physics convention
 lives in ``i2_helium_md.postprocess.tier2_confirmation``; knob columns are
@@ -88,6 +90,14 @@ KE_N_MIN = 1
 MIN_KE_BIN_COUNT = 2
 INCLUDE_SIM_SE = True
 
+# The n = 1 KE comparison anchor (I77 convention; design frozen 2026-07-21):
+# "median" (operative default) scores MD's solvated core against the
+# reference median_KE_eV at n = 1; "mean" is the pre-I77 legacy; "exclude"
+# drops the n = 1 bin. The report always prints BOTH chi^2 columns —
+# ke_chi2_prof (this anchor) and ke_chi2_mean_legacy — so the §4s/§4t
+# recorded numbers stay reproducible on every row.
+N1_ANCHOR = "median"
+
 SAVE_LEG_CSV_PATH = None  # e.g. PROJECT_ROOT / "data" / "runs" / "conf_leg_table.csv"
 SAVE_EXPERIMENT_CSV_PATH = None
 
@@ -145,6 +155,61 @@ def _knob_columns(run_dir: Path) -> dict[str, Any]:
     }
 
 
+def experimental_row(
+    label: str,
+    twin_config: str,
+    read,
+    abundance_ref,
+    ked_ref,
+    *,
+    n1_anchor: str = N1_ANCHOR,
+    ke_n_min: int = KE_N_MIN,
+    min_ke_bin_count: int = MIN_KE_BIN_COUNT,
+    include_sim_se: bool = INCLUDE_SIM_SE,
+) -> dict[str, Any]:
+    """One experimental-table row: histogram score + the KE-curve score
+    under the operative ``n1_anchor``, plus the mean-legacy chi^2 column
+    (byte-identical to the pre-I77 scorer) for §4s/§4t reproducibility."""
+    hist = score_histogram_vs_reference(read, abundance_ref)
+    ke_score = score_ke_curve_vs_reference(
+        read,
+        ked_ref,
+        n_min=ke_n_min,
+        min_count=min_ke_bin_count,
+        include_sim_se=include_sim_se,
+        n1_anchor=n1_anchor,
+    )
+    if n1_anchor == "mean":
+        ke_legacy_chi2 = ke_score.chi2_profiled
+    else:
+        ke_legacy_chi2 = score_ke_curve_vs_reference(
+            read,
+            ked_ref,
+            n_min=ke_n_min,
+            min_count=min_ke_bin_count,
+            include_sim_se=include_sim_se,
+            n1_anchor="mean",
+        ).chi2_profiled
+    return {
+        "label": label,
+        "config": twin_config,
+        "w1_solv": hist.w1_solvated,
+        "n1_solv": hist.sim_n1,
+        "n2_solv": hist.sim_n2,
+        "ratio_n1_n2": hist.ratio_n1_over_n2,
+        "ref_n1": hist.ref_n1,
+        "ref_n2": hist.ref_n2,
+        "n1_anchor": ke_score.n1_anchor,
+        "ke_chi2_prof": ke_score.chi2_profiled,
+        "ke_chi2_mean_legacy": ke_legacy_chi2,
+        "ke_npts": ke_score.n_points,
+        "ke_a_calib": ke_score.a_calib,
+        "ke_b_cond": ke_score.b_condition,
+        "ke_within_1p25": ke_score.n_within_1p25,
+        "ke_chi2_raw": ke_score.chi2_unprofiled,
+    }
+
+
 def main() -> None:
     abundance_ref = load_he_abundance_reference(ABUNDANCE_REFERENCE_CSV)
     ked_ref = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
@@ -189,31 +254,8 @@ def main() -> None:
             }
         )
 
-        hist = score_histogram_vs_reference(read, abundance_ref)
-        ke_score = score_ke_curve_vs_reference(
-            read,
-            ked_ref,
-            n_min=KE_N_MIN,
-            min_count=MIN_KE_BIN_COUNT,
-            include_sim_se=INCLUDE_SIM_SE,
-        )
         exp_rows.append(
-            {
-                "label": label,
-                "config": twin_config,
-                "w1_solv": hist.w1_solvated,
-                "n1_solv": hist.sim_n1,
-                "n2_solv": hist.sim_n2,
-                "ratio_n1_n2": hist.ratio_n1_over_n2,
-                "ref_n1": hist.ref_n1,
-                "ref_n2": hist.ref_n2,
-                "ke_chi2_prof": ke_score.chi2_profiled,
-                "ke_npts": ke_score.n_points,
-                "ke_a_calib": ke_score.a_calib,
-                "ke_b_cond": ke_score.b_condition,
-                "ke_within_1p25": ke_score.n_within_1p25,
-                "ke_chi2_raw": ke_score.chi2_unprofiled,
-            }
+            experimental_row(label, twin_config, read, abundance_ref, ked_ref)
         )
 
     print("=== Leg / twin-parity table (conventions: §4r) ===")
