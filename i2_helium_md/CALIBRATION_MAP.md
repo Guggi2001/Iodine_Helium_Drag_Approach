@@ -327,11 +327,18 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
   2026-07-16), $f_\text{ret}$, $f_\text{int}$,
   $s_\text{eff}$ (promoted 2026-07-06, band ≈[5, 20], staircase landing
   [8, 12]), $v_c$ (the realized `capped_cubic` cap, 2026-07-16; was the
-  contingent $v_\text{ceiling}$ — Derived at the §I.10 T4 winner),
+  contingent $v_\text{ceiling}$ — Derived at the §I.10 T4 winner; **the
+  re-pilot + v_c sensitivity ring (§4w/I81, 2026-07-21) locate the c1
+  joint-landing basin at $v_c\approx7.25$–$7.5$** at τ3.2/E₀0.27 — the
+  N=500 finalist center, read on $W_1$/midHot since the N=50 χ² is
+  thin-bin-noisy),
   the birth margin $m\in\{3, 4.67, 6\}$ Å (row 25, Slice T7 2026-07-16;
   active only under the `uniform_volume` twin-parity arm),
   ($T_\text{eff}$/noise). *Plus one new Free choice:* the tail exponent
-  $p_\text{tail}\in\{0,-1\}$ (row 4b, discrimination via the §I.10 pilot).
+  $p_\text{tail}\in\{0,-1\}$ (row 4b, discrimination via the §I.10 pilot;
+  **pinned $p_\text{tail}=-1$ for the c1 finalist** — the E-2 twin scan
+  §4u/I78 showed steeper $p\in\{-2,-3\}$ re-couples the KE↔histogram axes
+  and has no joint cell, 2026-07-21).
 - **Free (2):** the ladder **steepness** $\kappa$ (Form U sigmoid, $D_0(n{>}1)$)
   and the **electronic picture** (now 3 options — mix/$X_2$/cooling_relaxed — but
   one selection) — both choices the Tier-2 size distribution

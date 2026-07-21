@@ -53,7 +53,9 @@ Repo root:
 
 Compact state (verify against the log before relying on it): production law is
 `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the shared bundle; drag
-form is settled (pure-cubic); **Tier 0 is complete** (18 Å clean pass, 9 Å
+form is settled pure-cubic in-band (the production arbitration adds the
+`capped_cubic` tail, cap **v_c ≈ 7.25–7.5** / `p_tail = −1` — the §4w
+joint-landing basin); **Tier 0 is complete** (18 Å clean pass, 9 Å
 non-radial flag). **Tier 1a is delivered** — anchored kinematic mass-dynamics
 validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT loss curve and a
 controlled `fixed` vs `anchored_discrete` A/B was built (variable-mass integrator
@@ -66,8 +68,14 @@ invariant) arbitrated against the experimental I⁺Heₙ size distribution
 `docs/drag_port/Tier2/` (`TIER2_IMPLEMENTATION_PLAN.md` overview + per-phase A–F
 detail plans; 11 slices / 6 phases; full program, validation-first at 0.80 eV then
 2.70 eV production, with a generative-vs-anchored bridge). Tier 2 is
-in the planning→implementation stage and stays behind the `[PROCEED TO
-IMPLEMENTATION]` trigger. Noise (Tier 3) stays stubbed/inert behind its enum; the
+**mid-execution**: the biphasic mechanism is built, the pre-F5 probe program
+and the §I.11.4 re-pilot ran, and the **first joint MD landing** (experimental
+I⁺Heₙ histogram *and* fragment mean-KE, together) was found at `capped_cubic`
+v_c ≈ 7.25–7.5 / τ3.2 / E₀0.27 (findings §4v–§4w, I80–I81; the §4t "no joint
+cell" was a sparse-v_c-grid artifact + the n₁ mixture-mean anchor, I77). Next:
+the median-anchored n₁ KE scorer convention (I77) + the c1 N=500 finalist —
+new code still behind the `[PROCEED TO IMPLEMENTATION]` trigger. Noise (Tier 3)
+stays stubbed/inert behind its enum; the
 `IonCheckpoint` schema bump to **v7** adds the `E_int` field at Tier 2.
 
 ## Current Scope

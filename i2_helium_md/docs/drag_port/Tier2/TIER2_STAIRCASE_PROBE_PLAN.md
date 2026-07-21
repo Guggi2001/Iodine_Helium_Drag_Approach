@@ -5,6 +5,18 @@
 > `[PROCEED TO IMPLEMENTATION]` trigger. Module descriptions are *interface
 > contracts*; the run matrix is a *specification*.
 >
+> **Status (current standing, 2026-07-21):** the probe program **and** the
+> §I.11.4 re-pilot (Stages 0–2 + the n=1-deweight/E-2/ladder twin scans + the
+> v7.5 spot-check + the v_c sensitivity ring) are complete. The **first joint
+> MD landing** — experimental I⁺Heₙ histogram *and* fragment mean-KE together —
+> sits at `capped_cubic` **v_c ≈ 7.25–7.5** / τ3.2 / E₀0.27 (findings §4v–§4w,
+> I80–I81), the c1 N=500 finalist center; §4t's "no joint cell" was a
+> sparse-v_c-grid artifact + the n₁ mixture-mean anchor (I77). Next: wire the
+> median-anchored n₁ KE scorer convention (I77) + the N=500 finalist. Full
+> chain of findings/insights: `TIER2_STAIRCASE_PROBE_FINDINGS.md`
+> (§4a–§4w, I1–I81); decisions/deliveries: `drag_migration_log_tier2.md`.
+> *The original probe status is preserved below.*
+>
 > **Status:** DELIVERED 2026-07-05 under the `[PROCEED TO IMPLEMENTATION]`
 > trigger (delivery record: `drag_migration_log_tier2.md`, "Pre-F5 —
 > Staircase capability probe"). The `f_int = 0.5` pin (§2) stood when the

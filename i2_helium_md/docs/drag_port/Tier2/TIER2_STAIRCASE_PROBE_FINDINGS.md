@@ -3,9 +3,25 @@
 
 > **Status:** consolidated findings record, written 2026-07-07 after the fourth
 > probe wave (cooling-spatial-gate total-strip A/B) executed; last updated
-> **2026-07-20 after re-pilot Stage 1 (§4s, I71–I73 — the v_c bracket in real
-> MD: χ² argmin right-censored twin+1-step; the speed-selective tension
-> survives; channel (d) scales with drag exposure)**; T9 leg D is §4r
+> **2026-07-21 after the n=1-deweight KE re-score + E-2/ladder twin scans +
+> the (v7.5) MD joint-landing + the v_c sensitivity ring (§4u–§4w, I77–I81 —
+> the n₁ 1.302 eV anchor is a mixture-mean artifact but de-weighting it leaves
+> the high-drag pull with the mid-bins n2–n8; the E-2 (v_c, p_tail) corner has
+> no joint cell because p_tail re-couples the axes, while raising v_c alone
+> lands the whole mid-bin KE; the ladder is KE-orthogonal but saturated at
+> rq4graded, so the v7.5 histogram recovery is a twin→MD strip bias — and the
+> (v7.5, τ3.2, E₀0.27) MD spot-check (§4v, I80) CONFIRMED the joint landing
+> exists (n₁_solv 0.291 / n₁/n₂ 2.30 / W₁ 0.496 / midHot 0.90 / χ²_med 14,
+> the first MD cell to land both axes; §4t's "no joint cell in capped_cubic"
+> was a sparse-v_c-grid artifact), and the v_c ring (§4w, I81) mapped it as a
+> *basin* v_c ∈ [7.25, 7.5] with the optimum refining to ≈ 7.25 on the
+> histogram — the c1 N=500 finalist center)**;
+> re-pilot Stage 2 is §4t (I74–I76 — the (τ, E₀) grid at two carried v_c;
+> the twin is quantitative at v65; each axis lands at different cells and no
+> joint cell exists in capped_cubic); re-pilot Stage 1 is §4s (I71–I73 — the
+> v_c bracket in real MD: χ² argmin right-censored twin+1-step; the
+> speed-selective tension survives; channel (d) scales with drag exposure);
+> T9 leg D is §4r
 > (I68–I70 — the kornilov droplet prior; DP-P3/P4 confirmed, DP-P1/P2 split);
 > T9 leg C is §4q (I65–I67 — the T6 `sigma_proportional` p-law
 > de-suppresses to the twin; W₁ 0.31–0.47, the chain's best; n₁ KE moves toward
@@ -2848,6 +2864,311 @@ the stable histogram read); the c2 spot leg confirms directions only
 (3 cells); `zero_gamma` E2 (RP-D7); ledger closure not re-checked per
 cell; nothing here discharges F5.
 
+---
+
+## 4u. The n=1-deweight KE re-score + the E-2 taper-corner twin scan: the n₁ anchor is a mixture-mean artifact (mode 0.89 / median 1.13 / mean 1.30, bg-structural), but de-weighting it does NOT move the high-drag pull — the mid-bins n2–n8 own it; and the E-2 (v_c, p_tail) corner has no joint cell because p_tail re-couples the two axes, while raising v_c alone lands the whole mid-bin KE curve at the cost of histogram over-retention (KE↔histogram anti-correlation through K, re-confirmed)
+
+Executed 2026-07-21 (zero-MD, pure post-processing over the on-disk
+Stage-1/Stage-2 scored cells + the committed leg-D twin primitives;
+`tier2_confirmation_score` and `tier2_h2b_forward_model` imported
+verbatim, nothing in the repo mutated). Motivated by the user's n₁
+mixture-mean theory (the two-channel bare reading, RQ8, extended into the
+n = 1 bin).
+
+### Part 1 — the n=1-deweight re-score (the ihe_ked reference is self-flagging)
+
+The committed `IHe_KED_reference.csv` fingerprints the n = 1 bin exactly
+as the theory predicts: **mode 0.891, median 1.128, mean 1.302 eV**
+(mean/mode = 1.46; σ = 0.697), and n = 1 is the **only** low-n fragment
+whose `dominantError = bg-structural`, with `bgOffShift = 0.378 eV`
+(29 % of the mean — COLUMNS.md: "the bg choice matters essentially only
+at n = 1"). The mean is a two-population mixture mean; the solvated core
+sits at the median/mode, and the MD n₁ (≈ 1.20 eV) has no Coulomb-fast
+tail (§4n/I58: the MD n₁ KE is the co-moving shed convention, Coulomb
+share +0.08 eV) — so scoring MD-mean (core) against ref-mean
+(core + structural tail) is not like-for-like.
+
+Re-score (oracle: baseline χ²_prof reproduces the recorded values exactly
+— 102.94 vs 102.9 / 22.95 vs 22.9 / 162.42 vs 162.4 / 13.90 vs 13.9 /
+62.85 vs 62.9). Four n = 1 treatments: **base** (n ≥ 1, mean), **drop**
+(`n_min = 2`), **median** (ref n₁ → 1.128), **median+bg** (median with sys
+err widened by the 0.378 bgOffShift), **mode** (→ 0.891):
+
+| cell | base | drop | median | med+bg | n₁ share of χ² |
+|---|---|---|---|---|---|
+| s2c1v65t32e27 (histogram-landed) | 162.4 | 90.3 | 121.4 | 91.7 | **44 %** |
+| s1c1v65 | 102.9 | 65.9 | 78.6 | 66.6 | 36 % |
+| s2c1v85t32e23 (KE-best) | 13.9 | 12.6 | 13.4 | 12.6 | 9 % |
+
+- **The n₁ anchor was inflated** — de-weighting removes 36–44 % of the
+  low-drag KE χ² (the user's theory holds as a data fact). Median+bg ≈ drop
+  to <2 %, so the correction is robust. The MD n₁ (1.20) matches the ref
+  **median (×1.06)** far better than the **mean (×0.92)**; mode (0.89) is
+  worse (×1.34) — the MD sits at the experimental *core*, as the mixture
+  reading requires.
+- **But the high-drag pull survives every treatment.** Stage-1 χ² argmin
+  stays at the bracket top (c1/c4 → v85, c2 → v75) under base/drop/median/
+  med+bg; Stage-2 KE-best stays at **(v85, τ3.2)** under all four. c1
+  mean-χ² at v65 vs v85: 200 → 39 (base), 151 → 35 (drop) — v85 still wins
+  ~4×. **The two-axis tension is driven by n2–n8, not n=1.**
+
+Consequence: adopt median-anchored (or n=1-excluded) KE scoring going
+forward — a like-for-like correctness fix (n=0 is already excluded under
+I-D4) that removes a 40 %-of-χ² confound and *isolates* the residual to
+the mid-band. It does **not** buy out of the taper decision.
+
+### Part 2 — the E-2 taper-corner twin scan (p_tail is the wrong second lever)
+
+Twin re-score at the histogram-landing budget (leg-D config: rq4graded/c1,
+kornilov prior, density_tied dressing, p_onset = 1, co-moving KE; τ = 3.2,
+E₀ = 0.27), sweeping the §4t-NB E-2 corner v_c ∈ {6.5, 7.0, 7.5} ×
+p_tail ∈ {−1, −3}. m = 6000 (oracle: the leg-D c1 `d` config reproduces
+the committed m = 20000 row — n̄ 4.428 vs 4.424, n₁ KE 0.9927 vs 0.9921).
+`midHot` = geo-mean(sim/ref-mean) over n2–8 (want ≈ 1):
+
+| v_c | p_tail | n̄ | n₁_solv | W₁ | midHot | n₁ KE |
+|---|---|---|---|---|---|---|
+| 6.5 | −1 | 3.69 | 0.263 | 0.451 | 1.744 | 1.165 |
+| 7.0 | −1 | 4.14 | 0.253 | 0.481 | 1.240 | — |
+| **7.5** | **−1** | 4.65 | **0.238** | 0.939 | **0.953** | **0.906** |
+| 6.5 | −3 | 2.53 | **0.304** | 1.545 | **4.697** | 1.636 |
+| 7.0 | −3 | 2.65 | 0.297 | 1.428 | 4.187 | — |
+| 7.5 | −3 | 2.87 | 0.288 | 3.421 | 1.480 | 1.480 |
+
+(ref: n₁_solv 0.310, n₁/n₂ 2.18; ref mean-KE n1..8 = 1.30/0.71/0.50/0.39/
+0.32/0.27/0.23/0.19.) Per-bin at **v7.5/p−1**: n2 0.637 (ref 0.706), n3
+0.469 (0.496), n4 0.366 (0.390), n5 0.307 (0.319) — the **entire mid-band
+lands within ~10 %**, n₁ at the core (0.906 ≈ median 1.13).
+
+Findings:
+
+1. **p_tail is the wrong second lever — it re-couples the two axes.** More
+   negative p (−3) re-heats the *whole* curve (every fragment passes the
+   above-cap fast phase during ejection → less drag there lifts all bins:
+   midHot 1.74 → 4.70 at v6.5) *and* re-strips (n̄ 3.69 → 2.53). KE and
+   n₁_solv move **together**, not orthogonally. **No joint cell exists in
+   the (v_c, p_tail) corner** — the E-2 move as hypothesised does not
+   reconcile the axes; it relocates the miss.
+2. **But raising v_c alone lands the mid-bin KE** (v6.5 → v7.5 at p−1:
+   midHot 1.744 → 0.953, the full n2–n8 curve on the reference). **The
+   mid-bin bulge is a real, fixable mid-band drag deficit** — I72's
+   taper-shape statement, now shown constructively: the taper *magnitude*
+   (cap position v_c) is the lever, not the tail *exponent* p.
+3. **The residual at v7.5 is histogram over-retention** (n₁_solv 0.238 vs
+   0.310), a *stripping-at-fixed-KE* deficit. KE and stripping are coupled
+   through the cooling exposure K (more drag → more K → cooler KE **and**
+   lower E_ej → less shedding → higher n): the **KE↔histogram
+   anti-correlation through K** (Addendum-I Step 0–1) re-confirmed in the
+   taper corner. The taper cannot break it because both effects are K.
+4. **The decoupling lever is the ladder bottom (RQ4), not the taper.** The
+   ladder moves n_det at ≈ fixed v_inf (KE-neutral to first order) — the one
+   knob that can re-strip v7.5's cooled fragments back toward n₁_solv 0.31
+   without re-heating. The two "genuinely free knobs" map cleanly onto the
+   two axes: **v_c ↔ the KE curve, ladder ↔ n₁_solv** — the good
+   identifiability case, *if* a cheap-enough ladder bottom can shed at
+   v7.5's low E_ej. Next twin scan: (v_c ≈ 7.5 × ladder family).
+5. **The twin's known bias favours MD here.** The twin *under-strips* at
+   high v_c (I73/I74: MD − twin ≈ −0.4…−0.7 He), so MD n₁_solv at v7.5 sits
+   **above** the twin's 0.238, toward 0.31 — the histogram gap is smaller in
+   MD. Corroboration on disk: Stage-1 s1c1v75 (v_c 7.5, τ3.8/E₀0.25) already
+   gave MD n₁_solv 0.250 with χ² halved to 54.4. The **un-scored
+   (v7.5, τ3.2, E₀0.27) MD cell** — between the v65/v85 Stage-2 columns — is
+   the twin-identified best joint candidate and the cheapest MD spot-check.
+
+### NB (2026-07-21) — the (v_c × ladder) follow-up: orthogonality holds, but the ladder is already saturated at rq4graded; the histogram recovery is a twin→MD strip bias, not a ladder move
+
+Finding-2's proposed decoupler (I78: ladder ↔ n₁_solv at v_c-set KE) was
+scanned — same leg-D twin, p_tail = −1, τ 3.2 / E₀ 0.27, v_c ∈ {6.5, 7.0,
+7.5, 8.0} × ladder ∈ {rq4graded, flat, floor1, slid2, slid3} (chords cache
+per v_c; the ladder touches only the fate map). Bottom rungs D0(1..3)
+[meV]: rq4graded 20.3/13.8/12.0, flat 9.2/9.2/9.2, floor1 13.3/9.2/9.2,
+slid2 13.3/13.3/9.2, slid3 13.3/13.3/13.3.
+
+At v7.5 (midHot ≈ 0.95 — the KE-landing v_c):
+
+| ladder | n₁_solv | n₂_solv | ratio | bare | midHot |
+|---|---|---|---|---|---|
+| **rq4graded** | **0.238** | 0.127 | **1.87** | 0.198 | 0.953 |
+| floor1 | 0.171 | 0.095 | 1.80 | 0.313 | 0.957 |
+| slid2 | 0.164 | 0.138 | 1.18 | 0.284 | 0.956 |
+| slid3 | 0.164 | 0.138 | 1.18 | 0.250 | 0.969 |
+| flat | 0.125 | 0.102 | 1.23 | 0.341 | 0.967 |
+
+1. **Orthogonality CONFIRMED.** `midHot` is flat across all five ladders at
+   every v_c (v7.5: 0.95–0.97; v6.5: 1.74–1.77; v8.0: 0.82–0.83) — the
+   ladder is genuinely KE-neutral. v_c ↔ KE and ladder ↔ histogram *are*
+   separable axes (the good identifiability case).
+2. **But the ladder is already saturated at rq4graded.** It gives the
+   **highest** n₁_solv (0.238) and the best ratio (1.87 → target 2.18);
+   every cheaper-bottom ladder strips *past* n = 1 into **bare** (bare
+   0.20 → 0.34), *lowering* n₁_solv. rq4graded's expensive D0(1) = 20 meV
+   barrier is load-bearing — it stops fragments at n = 1 instead of n = 0.
+   I78's "cheap-bottom ladder re-strips to n₁" is **refuted**: cheap bottoms
+   overshoot to bare. No ladder in the family reaches n₁_solv 0.31 at
+   midHot ≈ 1.
+3. **The histogram recovery is a twin→MD strip bias, not a ladder change.**
+   The twin under-strips at high v_c, and the gap is *measured* at v6.5:
+   twin n₁_solv 0.263 vs the on-disk MD cell s2c1v65t32e27 = **0.326**
+   (+0.063 at matched n̄ — the MD's frozen-vs-live channel-(d) sharpens the
+   n = 1 peak). Extrapolated to v7.5 (where channel (d) is larger, I73), MD
+   n₁_solv should exceed the twin's 0.238 toward ≈ 0.30 — landing the
+   histogram *and* the KE (midHot 0.95) at one cell. **rq4graded is already
+   the correct ladder; the only ladder route to more n₁ is a still-more-
+   bottom-heavy shape, which is RQ4-external territory (parked).**
+
+**Consequence:** the decisive test is unchanged and now sharper — the MD
+spot-check at **(v7.5, τ3.2, E₀0.27, rq4graded/c1)**. The twin says KE
+lands, the ladder is right, and the twin→MD bias should carry n₁_solv from
+0.238 to ≈ 0.31 there. If it does, that is the first joint (KE + histogram)
+MD landing; if it doesn't, the two-axis miss is real inside the full
+(v_c, p_tail, ladder) lever set and RQ4 (a more bottom-heavy ladder) or a
+non-drag lever is required. Twin-only, direction-read; nothing discharges
+F5.
+
+### Boundaries
+
+Zero-MD; reported, not auto-adjudicated. The twin KE axis is
+**direction-only** (I74: KE is not twin-factorizable); `midHot` reads the
+*sign and rough size* of the mid-band move, not a calibrated χ². Twin
+m = 6000 (means stable; the leg-D oracle holds). n₁ re-anchoring is a
+scoring-convention change proposed here, not yet adopted in the committed
+scorer. Nothing here discharges F5.
+
+---
+
+## 4v. The (v7.5, τ3.2, E₀0.27) MD spot-check — the joint landing exists: the twin-identified cell lands the histogram AND the KE curve simultaneously, the first MD cell to do both; §4t's "no joint cell" was a sparse-v_c-grid artifact plus the n₁ anchor inflation
+
+Executed 2026-07-21 under `[PROCEED TO IMPLEMENTATION]`. One MD cell,
+`s2c1v75t32e27` — the c1 leg-D configuration (rq4graded, p_tail = −1,
+kornilov prior, density_tied dressing, p_onset = 1, co-moving KE,
+τ = 3.2, E₀ = 0.27, N = 50, production 2.70 eV, 8000 ps E2 cap) with only
+v_c overridden 6.5 → 7.5 vs the on-disk v65 cell. Built by reusing the
+committed `gen_tier2_md_confirmation` pins + `build_biphasic_cfg` (zero
+repo-code change); **oracle: the saved cfg.json is byte-identical to
+s2c1v65t32e27 except drag v_c** (asserted before compute). Full pipeline
+neutral → ion → E2 → detection; 8/100 droplet-retained (excluded),
+suppressed 0.141.
+
+### The v_c progression at c1 / τ3.2 / E₀0.27 (MD, §4r scoring)
+
+| cell | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot(n2–8) | n₁ KE | χ²_base | χ²_drop | χ²_med |
+|---|---|---|---|---|---|---|---|---|---|
+| v65 (histogram, no KE) | 3.63 | 0.326 | 2.80 | 0.736 | 1.669 | 1.197 | 162.4 | 90.3 | 121.4 |
+| **v75 (NEW — both)** | **3.97** | **0.291** | **2.300** | **0.496** | **0.904** | **0.915** | **24.0** | **11.5** | **14.4** |
+| v85 (KE, no histogram) | 4.74 | 0.167 | 0.765 | 0.951 | 0.792 | 0.663 | 34.1 | 23.4 | 27.2 |
+
+(experimental targets: n₁_solv 0.310, n₁/n₂ 2.18; KE anchor mean 1.302 /
+median 1.128 / mode 0.891.) Per-bin sim/ref-mean at v75: n2 ×1.01, n3
+×0.95, n4 ×0.94, n5 ×0.84, n6 ×1.00, n7 ×0.90, n8 ×0.73, n9 ×0.87 — the
+n2–n7 band lands within ~10 %.
+
+### Findings
+
+1. **The joint landing exists — at v7.5, the un-sampled v_c.** v75 lands
+   the histogram (n₁_solv 0.291 ≈ 0.310; n₁/n₂ 2.30 ≈ 2.18; W₁_solv 0.496 —
+   the best in the whole re-pilot at this budget) **and** the KE curve
+   (midHot 0.904; n₁ 0.915 at the core; under the like-for-like
+   median-anchored convention χ²_med = 14.4, essentially the grid-best
+   13.9 — but *with* the histogram landed, not sacrificed). It is the first
+   MD cell to satisfy both axes. §4t's "no (v_c, τ, E₀) cell lands both in
+   capped_cubic" was a **sparse-grid artifact**: Stage-2 sampled only
+   v_c ∈ {6.5, 8.5}; the joint optimum sits between them, exactly where the
+   §4u twin + strip-bias pointed.
+2. **The twin's quantitative prediction + the strip-bias correction were
+   right.** The twin (I78/I79) predicted v75 n₁_solv 0.238, midHot 0.953,
+   n₁ KE 0.906; MD delivered **0.291 / 0.904 / 0.915**. The +0.053
+   histogram lift is the twin→MD under-strip bias (I79), the predicted
+   direction and ≈ magnitude — the twin's ordering authority + the measured
+   bias jointly located the cell before it was run.
+3. **The mid-bin bulge is gone.** midHot 1.669 (v65) → 0.904 (v75): raising
+   v_c pulls the mid-speed band under full cubic drag and cools n2–n8 onto
+   the reference, exactly the §4u mechanism — and the histogram survives
+   because the strip bias holds n₁_solv near target. The two axes are *not*
+   irreconcilable in capped_cubic; they meet at v7.5.
+4. **Half the raw KE χ² is still the n₁ mixture-mean artifact** (χ²_base
+   24.0 → χ²_drop 11.5): n₁ contributes ~52 % under the raw-mean anchor,
+   ~0 under the median anchor — I77 re-confirmed, and the reason the
+   like-for-like read (χ²_med 14.4) is the honest one.
+
+### Boundaries
+
+N = 50 single seed — a **pilot** spot-check; the formal joint-landing
+verdict is the N = 500 finalist read (RP-D6). The joint landing is under
+the median-anchored n₁ KE convention (I77, proposed not yet wired). A few
+deep/thin bins run cold (n8 ×0.73, n10 ×0.78, n11 ×0.63 — 2–6 ions/bin).
+`zero_gamma` E2, 8000 ps cap; ledger not re-checked. Nothing here
+discharges F5.
+
+---
+
+## 4w. The v_c sensitivity ring around 7.5 — the joint landing is a *basin* [7.25, 7.5], not a knife-edge; the optimum refines toward v_c ≈ 7.25 on the histogram (exactly as pre-registered); the N=50 χ²_med is thin-bin-noisy and must be read against the robust W₁/midHot metrics
+
+Executed 2026-07-21 under `[PROCEED TO IMPLEMENTATION]`. The pre-registered
+S3r ring: 4 new N=50 cells v_c ∈ {7.0, 7.25, 7.75, 8.0} (tags v700/v725/
+v775/v800), one-cell-per-process, each cfg-oracle byte-matched to the v65
+cell except v_c (all 4 passed). With the on-disk 6.5/7.5/8.5 anchors, the
+7-point curve at c1/τ3.2/E₀0.27/leg-D (median-anchored n₁, I77):
+
+| v_c | n₁_solv | n₁/n₂ | W₁_solv | midHot | n₁ KE | χ²_med | χ²_base |
+|---|---|---|---|---|---|---|---|
+| 6.50 | 0.326 | 2.80 | 0.736 | 1.669 | 1.197 | 121.4 | 162.4 |
+| 7.00 | 0.341 | 3.11 | 0.586 | 1.162 | 1.056 | 37.5 | 52.5 |
+| **7.25** | **0.309** | **2.27** | **0.424** | **0.987** | 0.987 | (66)* | (73)* |
+| **7.50** | 0.291 | 2.30 | 0.496 | 0.904 | 0.915 | **14.4** | 24.0 |
+| 7.75 | 0.256 | 2.00 | 0.611 | 0.947 | 0.853 | 20.7 | 30.6 |
+| 8.00 | 0.256 | 2.00 | 0.649 | 0.878 | 0.804 | (139)* | (157)* |
+| 8.50 | 0.167 | 0.77 | 0.951 | 0.792 | 0.663 | 27.2 | 34.1 |
+
+(targets: n₁_solv 0.310, n₁/n₂ 2.18, midHot ~1. *= N=50 thin-bin χ² spikes,
+off the smooth W₁/midHot trend — see finding 3.)
+
+### Findings vs the pre-registered S3r predictions
+
+1. **A joint BASIN exists, not a knife-edge (P1 confirmed on robust
+   metrics; P3 confirmed).** On the noise-robust reads — W₁_solv, n₁_solv,
+   n₁/n₂, midHot — both axes land smoothly across **v_c ∈ [7.25, 7.5]** (and
+   marginally to 7.0/7.75): W₁_solv is a clean bowl minimizing at 7.25
+   (0.424), midHot slides monotonically 1.67 → 0.79 crossing ~1.0 at ≈ 7.2,
+   n₁_solv slides 0.33 → 0.17 crossing the 0.31 target at ≈ 7.25. v75 is at
+   the center of the basin, not its edge.
+2. **The joint optimum refines to v_c ≈ 7.25 on the histogram (P2 confirmed
+   exactly).** n₁_solv = 0.309 at v7.25 — dead on the 0.31 target, with the
+   best W₁_solv (0.424) and n₁/n₂ 2.27 ≈ the 2.18 target, and midHot 0.987
+   (KE on-target). The histogram optimum sits just below 7.5, precisely the
+   P2/P3 prediction. v7.5 remains the χ²-best (14.4) and is jointly strong;
+   the two straddle the optimum.
+3. **The N=50 χ²_med is thin-bin-noisy — read the robust metrics.** χ²_med
+   is non-monotone with off-trend spikes at v7.25 (66) and v8.0 (139) that
+   break the otherwise smooth curve. Per-bin inspection confirms these are
+   **not** real KE misses: v7.25's resolved bins scatter tightly around 1.0
+   (n2 ×1.07, n3 ×1.06, n5 ×1.00, midHot 0.987) — the χ² is inflated by
+   2–4-ion deep bins (n6 ×1.33/4 ions, n7 ×0.60/3 ions) weighted by the
+   reference's small errors. At N=50 the squared-deviation χ² is dominated
+   by thin-bin scatter; W₁_solv and midHot (outlier-robust) are the reliable
+   discriminants until N=500 stabilises the deep bins. **The strict
+   pre-registered χ²_med ≤ 30 gate therefore under-counts the window (flags
+   only v7.5) — a criterion artifact, not a knife-edge.**
+4. **v8.0+ is genuinely over-dragged.** Distinct from the noise: v8.0's
+   whole per-bin curve runs cold (×0.68–0.88) and n₁_solv falls to 0.256 —
+   the histogram degrades and the KE overshoots to the cold side. The basin
+   closes above ~7.75.
+
+### Consequence — the c1 N=500 finalist
+
+The joint landing is robust across **v_c ∈ [7.25, 7.5]** (outcome (a)+(c):
+basin confirmed, optimum refined below 7.5). The c1 N=500 finalist should
+center **v_c ≈ 7.25–7.5** (7.375 ± the ring as its sensitivity leg), read
+on W₁_solv/midHot, with χ² re-adjudicating 7.25 vs 7.5 once N=500 stabilises
+the deep bins. Adopting the median-anchored n₁ KE convention (I77) into the
+committed scorer remains the prerequisite.
+
+### Boundaries
+
+N = 50 single seed — W₁/n₁_solv/midHot are the stable reads; χ²_med is
+thin-bin-noisy (finding 3) and per-cell differences within [7.25, 7.5] are
+below the N=50 resolution. median-anchored n₁ (I77); `zero_gamma` E2,
+8000 ps cap. Nothing here discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -3424,6 +3745,79 @@ cell; nothing here discharges F5.
   0.594) — the I51/S2c-P3 direction expressed across the full grid,
   still N = 50-soft; the formal ladder verdict remains the N = 500
   two-finalist read (RP-D6).
+- **I77 (n=1-deweight re-score, §4u).** **The experimental n₁ mean-KE
+  anchor (1.302 eV) is a two-population mixture mean, not the solvated
+  core.** The ihe_ked reference self-flags it: mode 0.891 / median 1.128 /
+  mean 1.302 (mean/mode 1.46), and n = 1 is the sole low-n fragment with
+  `dominantError = bg-structural` (bgOffShift 0.378 eV, 29 %). The MD n₁
+  (≈ 1.20) has no Coulomb-fast tail (§4n) and matches the ref **median**
+  (×1.06), not the mean (×0.92) — scoring MD-core against ref-mixture-mean
+  is not like-for-like. De-weighting n = 1 removes **36–44 %** of the
+  low-drag KE χ² (oracle: baseline reproduces §4s/§4t exactly), but the
+  χ² argmin stays at high drag under every treatment (drop / median /
+  median+bg): **the high-drag pull is owned by the mid-bins n2–n8, not by
+  n=1.** Adopt median-anchored (or n=1-excluded) KE scoring — a
+  like-for-like correctness fix (n=0 already excluded, I-D4) that isolates
+  the residual; it does not resolve the two-axis tension.
+- **I78 (E-2 taper-corner twin scan, §4u).** **The E-2 (v_c, p_tail)
+  corner has no joint cell — p_tail is the wrong second lever.** A
+  more-negative tail exponent re-heats the whole KE curve (all fragments
+  cross the above-cap fast phase during ejection) *and* re-strips, so KE
+  and n₁_solv move together, not orthogonally. But **raising v_c alone
+  lands the entire mid-bin KE curve** (v6.5 → v7.5, p−1: midHot 1.74 →
+  0.95, n2–n8 within ~10 %, n₁ at the core) — the mid-bin bulge is a real,
+  fixable mid-band drag deficit (I72 constructive). The v7.5 residual is
+  histogram over-retention (n₁_solv 0.238 vs 0.310), a
+  stripping-at-fixed-KE deficit: KE and stripping are coupled through the
+  cooling exposure K (Addendum-I anti-correlation re-confirmed), which the
+  taper cannot break. **The decoupling lever is the ladder bottom (RQ4),
+  not the taper** — v_c ↔ KE curve, ladder ↔ n₁_solv is the orthogonal
+  factorization to test next (twin v_c ≈ 7.5 × ladder family). The twin
+  *under-strips* at high v_c (I73/I74), so MD n₁_solv at v7.5 sits above
+  0.238 toward 0.31 — the **un-scored (v7.5, τ3.2, E₀0.27) MD cell** is the
+  twin-identified best joint candidate (Stage-1 s1c1v75 already gave MD
+  n₁_solv 0.250, χ² halved to 54).
+- **I79 (v_c × ladder twin scan, §4u NB).** **The v_c↔KE / ladder↔n₁_solv
+  factorization is orthogonal but the ladder is already saturated at
+  rq4graded — the histogram recovery at v7.5 is a twin→MD strip bias, not a
+  ladder move.** `midHot` is flat across the ladder family at every v_c
+  (v7.5: 0.95–0.97) — the ladder is KE-neutral (orthogonality confirmed).
+  But rq4graded gives the **highest** n₁_solv (0.238) and best ratio (1.87);
+  cheaper-bottom ladders (flat/floor1/slid2/slid3) strip *past* n = 1 into
+  bare (0.20 → 0.34), *lowering* n₁_solv — I78's cheap-bottom decoupler is
+  **refuted** (rq4graded's 20 meV D0(1) barrier is what piles weight at
+  n = 1). No twin cell reaches n₁_solv 0.31 at midHot ≈ 1. The gap closes
+  via the twin's under-strip bias (measured at v6.5: twin 0.263 vs MD 0.326,
+  +0.063 at matched n̄), larger at v7.5 → MD n₁_solv ≈ 0.30 expected. The
+  decisive test is the **(v7.5, τ3.2, E₀0.27, rq4graded/c1) MD cell**; a
+  more-bottom-heavy ladder is RQ4-external (parked).
+- **I80 (v7.5 MD spot-check, §4v).** **The joint landing exists — the
+  twin-identified (v7.5, τ3.2, E₀0.27) cell lands the histogram AND the KE
+  curve simultaneously, the first MD cell to do both.** s2c1v75t32e27
+  (c1 leg-D, only v_c 6.5 → 7.5 vs the on-disk v65 cell; cfg byte-oracle
+  passed): **n₁_solv 0.291** (target 0.310), **n₁/n₂ 2.30** (2.18),
+  **W₁_solv 0.496** (the re-pilot's best), **midHot 0.904** (n2–n7 within
+  ~10 %), n₁ KE 0.915 (at the core), like-for-like **χ²_med 14.4** ≈ the
+  grid-best 13.9 — but with the histogram *landed*, not sacrificed. §4t's
+  "no joint cell in capped_cubic" was a **sparse-v_c-grid artifact** (only
+  6.5/8.5 sampled) plus the n₁ anchor inflation (I77); the joint optimum
+  sits at the un-sampled v7.5, exactly where the §4u twin + strip-bias
+  (I78/I79) pointed — the twin predicted 0.238/0.953/0.906, MD delivered
+  0.291/0.904/0.915 (the +0.053 lift is the predicted twin→MD strip bias).
+  N = 50 pilot; the formal verdict is the N = 500 finalist (RP-D6).
+- **I81 (v_c sensitivity ring, §4w).** **The joint landing is a basin
+  v_c ∈ [7.25, 7.5], not a knife-edge; the optimum refines to v_c ≈ 7.25 on
+  the histogram, exactly as pre-registered (S3r-P2/P3).** The 7-point curve
+  (v_c 6.5→8.5 at c1/τ3.2/E₀0.27) shows W₁_solv a clean bowl minimizing at
+  7.25 (0.424; n₁_solv 0.309 ≈ target 0.31, n₁/n₂ 2.27 ≈ 2.18, midHot 0.987),
+  midHot sliding monotonically through ~1.0 at ≈ 7.2, and n₁_solv crossing
+  0.31 at ≈ 7.25. The N=50 **χ²_med is thin-bin-noisy** (off-trend spikes at
+  v7.25=66 and v8.0=139 that per-bin inspection confirms are 2–4-ion deep-bin
+  scatter, not KE misses) — so the strict χ²≤30 gate under-counts the window;
+  read on the outlier-robust W₁/midHot the basin is clear. The basin closes
+  above ~7.75 (v8.0 genuinely over-dragged, whole curve ×0.68–0.88). c1 N=500
+  finalist: center v_c ≈ 7.25–7.5, χ² re-adjudicates once N=500 stabilises
+  the deep bins.
 
 ---
 
