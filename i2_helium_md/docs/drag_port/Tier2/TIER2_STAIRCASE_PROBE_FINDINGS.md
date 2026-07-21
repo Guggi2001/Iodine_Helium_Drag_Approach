@@ -22,7 +22,11 @@
 > (v7.0, τ3.8, E₀0.25) — and the Landau v_L gate DISSOLVES (scored
 > observables bit-flat across v_L ∈ {0.30, 0.40, 0.58} while the arm acts on
 > the retained class; N=500 runs Landau-on at 0.58, external re-pinning
-> non-blocking)**;
+> non-blocking)**; **then S6 (§4z, I85–I87): the N=500
+> finalists land NO cell under the frozen joint bars — N=500 unmasks a
+> systematic deep-bin KE miss (χ²_med 69–202) while the robust
+> histogram metrics carry and the ladder contest resolves for
+> c1/rq4graded; riders winner-gated, not fired**;
 > re-pilot Stage 2 is §4t (I74–I76 — the (τ, E₀) grid at two carried v_c;
 > the twin is quantitative at v65; each axis lands at different cells and no
 > joint cell exists in capped_cubic); re-pilot Stage 1 is §4s (I71–I73 — the
@@ -3344,6 +3348,97 @@ shared-reader quietness is measured **at these kinematics** — a future
 low-energy channel would need the hash check repeated (recorded as an
 execution convention, not a code change). Nothing here discharges F5.
 
+---
+
+## 4z. S6 — the N = 500 finalists: NO cell lands the frozen joint acceptance — N = 500 unmasks a systematic KE-curve miss that the N = 50 sim-SE-dominated sigmas had absorbed (χ²_med RISES everywhere, refuting S6f-P3's direction, with the mechanism identified); the robust histogram carry holds (P2: v7.25 fully in-band) and the RP-D6 ladder contest resolves decisively for c1/rq4graded (P4, ≫ 2σ); the winner-gated riders do not fire
+
+Executed 2026-07-21 under the S6 `[PROCEED TO IMPLEMENTATION]`
+(pre-registration plan §I.11.5.5 committed before any MD). Three N = 500
+cells, fresh seed 20260721, Landau-on v_L = 0.58, production 2.70 eV,
+8000 ps E2 cap, 8.53 µs detection; every cfg oracle passed (diff exactly
+the amended `{num_molecules, seed, relaxation_dissipation,
+v_limit_m_per_s}` set); scored by the committed median-anchor scorer
+(mean-legacy alongside).
+
+### The scored read (targets: n₁_solv 0.310, n₁/n₂ 2.18, midHot ≈ 1, χ²_med ≤ 30)
+
+| cell | scored | trapped | supp | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | χ²_med | χ²_mean | bars |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| finc1v725 | 943 | 0.057 | 0.161 | 4.003 | **0.2718** | 2.048 | 0.5238 | **0.9905** | 125.7 | 132.0 | n₁ ✓ midHot ✓ χ² ✗ |
+| finc1v750 | 935 | 0.065 | 0.162 | 4.252 | 0.2551 | 1.923 | 0.6572 | 0.9095 | **68.6** | 73.2 | n₁ ✗(−0.005) midHot ✓ χ² ✗ |
+| finc4v700 | 952 | 0.048 | 0.249 | 3.537 | 0.2322 | 1.953 | 0.8426 | 1.1018 | 202.5 | 219.1 | n₁ ✗ midHot ✓ χ² ✗ |
+
+### Verdicts (pre-registered S6f-P1..P5)
+
+1. **S6f-P1 CONFIRMED** (cfg oracles in-process + independent diff check;
+   scorer lock pre-registered in §I.11.5.5).
+2. **S6f-P2 SPLIT.** n₁_solv and midHot carry at every cell (v7.25
+   0.2718 ∈ [0.206, 0.411]; every midHot within ± 0.15 of its N = 50
+   value). W₁_solv exceeds its ± 0.12 band at v7.5 (0.657 vs
+   [0.376, 0.616]) and c4 (0.843 vs [0.531, 0.771]) — and the worsening
+   is same-direction at all three cells (0.424 → 0.524, 0.496 → 0.657,
+   0.651 → 0.843): an N-resolution tail structure emerging, not pure
+   seed luck (v7.25, fully in-band, is the seed-robustness read that
+   holds).
+3. **S6f-P3 REFUTED — with the mechanism identified.** χ²_med rose at
+   every cell (66.3 → 125.7, 14.4 → 68.6, 61.9 → 202.5). The N = 50
+   per-point sigma was **dominated by the sim-side SE** (0.03–0.08 eV);
+   at N = 500 it collapses to the reference's own error (0.010–0.03 eV)
+   and the same fractional miss costs ~5–10× more χ², while five more
+   deep bins enter the fit (ke_npts 12 → 17). The "thin-bin spike"
+   diagnosis (I81) had the mechanism backwards: N = 500 does not smooth
+   χ² down — it **unmasks a systematic KE-curve miss** the pilot
+   statistics could not see.
+4. **S6f-P4 CONFIRMED, decisively — the ladder verdict.** c1 beats c4 on
+   every histogram read at N = 500: W₁_solv 0.524/0.657 vs 0.843,
+   χ²_med 125.7/68.6 vs 202.5, n₁_solv 0.272/0.255 vs 0.232
+   (c1 − c4 ≈ +0.04 ≈ 2σ at SE ≈ 0.015 — the I76 direction resurfaces
+   at N = 500 after the S4 N = 50 near-tie). The registered direction
+   (W₁: c1 < c4) lands far beyond 2σ; the I51/S2c-P3 bounded-physics
+   claim is formally read: **rq4graded > floor1**.
+5. **S6f-P5: 2/3 in-band.** Δn̄(MD − twin): v7.25 −0.384 ∈
+   [−0.63, −0.33] ✓; c4 −0.264 ∈ [−0.46, −0.16] ✓; v7.5 −0.395
+   **outside** its own [−0.83, −0.53] band but **inside** the original
+   §I.11.5.3 drag-exposure interpolation guess (−0.3..−0.6): the N = 50
+   measurement (−0.68) was the outlier and N = 500 regresses to the
+   interpolation. Tracked never corrected (I69/I83).
+
+### The KE-miss anatomy (per-bin z², committed error model, median anchor)
+
+- **c1 cells — coherent deep-bin undershoot.** Sim mean KE at n ≥ 12
+  sits 30–60 % below the reference (v7.25: n = 16 sim 0.028 vs ref
+  0.069 eV, z² 59.7; the n ≥ 12 tail carries ≈ 91 of 125.7; v7.5:
+  ≈ 37 of 68.6), plus a mild n = 2–4 overshoot at v7.25 (z² 11/9/6).
+  The n = 1 bin is clean under the median anchor (z² 0.1/0.0) — the
+  I77 convention did its job.
+- **c4 — whole-curve rotation.** Hot at n = 2–4 (z² 28/31) and cold
+  from n ≥ 8 (z² 8–24 per bin): the floor1 KE curve fails
+  structurally, corroborating the histogram-side rejection.
+- **Physics read:** the model's deeply-solvated survivors arrive **too
+  cold** at the detector — invisible at N = 50 (2–6 ions/bin), now the
+  sharpest experimental constraint the program has produced. Whether
+  this is an E2/exposure artifact, a ladder-tail artifact, or a real
+  relaxation-channel gap is NOT adjudicated here.
+
+### Formal outcome
+
+Under the frozen rule (winner = lower χ²_med subject to all three
+bars) **no finalist lands and no winner exists; the winner-gated riders
+(Stage-3 sensitivity ring + the 0.40 Landau spot) do not fire.**
+finc1v725 is the best cell on the robust bars (both n₁_solv and midHot
+in-band; midHot 0.990 dead-on); finc1v750 holds the lowest χ²_med
+(68.6) but sits 0.005 below the n₁_solv window. Reported, not
+auto-adjudicated: the F5 reconciliation (discharge vs re-scope) and any
+deep-bin KE follow-up are the next user adjudication.
+
+### Boundaries
+
+Single seed per cell (the P2 carry is the seed read); Landau-on per the
+S5 license (zero_gamma untested at N = 500; S5 measured the scored
+surface insulated at N = 50); the n ≥ 14 sim means still carry 2–6
+ions/bin at N = 500; the suppressed/bare channel stays RQ8-gated.
+Nothing here discharges F5.
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -4026,6 +4121,30 @@ execution convention, not a code change). Nothing here discharges F5.
   latent shared reader (it also sets the neutral-stage collision
   threshold `E_min_eV`) — measured quiet here by neutral/ion sha256
   identity, to be re-checked at any lower-energy channel.
+- **I85 (S6 no-landing + the sigma unmasking, §4z).** **No N = 500 cell
+  lands the frozen joint acceptance** — every cell fails χ²_med ≤ 30
+  (125.7 / 68.6 / 202.5) and only finc1v725 holds both robust bars
+  (n₁_solv 0.2718, midHot 0.9905). S6f-P3 is refuted with its mechanism:
+  the N = 50 χ² was sim-SE-dominated (σ 0.03–0.08 eV vs the reference's
+  0.010–0.03), so N = 500 does not resolve a spike — it unmasks a
+  systematic KE-curve miss. The winner-gated riders did not fire; the
+  F5 reconciliation is the next adjudication.
+- **I86 (S6 ladder verdict, §4z).** **The RP-D6 contest resolves for
+  c1/rq4graded at N = 500 on every histogram read:** W₁_solv 0.524/0.657
+  vs c4's 0.843, χ²_med 125.7/68.6 vs 202.5, n₁_solv 0.272/0.255 vs
+  0.232 (≈ 2σ; the I76 direction resurfaces after the S4 N = 50
+  near-tie). The I51/S2c-P3 bounded-physics claim is formally read:
+  rq4graded > floor1 — c4's KE curve also fails structurally
+  (whole-curve rotation, hot shallow / cold deep).
+- **I87 (S6 deep-bin KE miss, §4z).** **The model's deeply-solvated
+  survivors arrive too cold:** sim mean KE at n ≥ 12 sits 30–60 % below
+  the reference on the c1 cells (n ≥ 12 carries ≈ 72 % / 54 % of
+  χ²_med at v7.25 / v7.5), and W₁_solv worsens same-direction at all
+  three cells vs N = 50 — an N-resolution tail structure, the sharpest
+  experimental constraint the program has produced. Provenance
+  (E2/exposure vs ladder tail vs missing relaxation channel) is
+  unadjudicated. Sub-finding: v7.5's N = 50 Δn̄(MD − twin) = −0.68 was
+  the outlier — N = 500 regresses to the −0.3..−0.6 interpolation band.
 
 ---
 

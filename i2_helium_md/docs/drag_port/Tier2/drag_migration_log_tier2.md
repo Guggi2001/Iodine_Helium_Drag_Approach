@@ -8798,3 +8798,41 @@ committed twin module / generator ladders / scorer helpers).
 
 Next: the three N=500 runs launch (one cell per process, cfg
 byte-oracle pre-compute). Nothing here discharges F5.
+
+## S6 EXECUTED — no N=500 cell lands the frozen joint acceptance (chi2_med 125.7/68.6/202.5 vs the <=30 gate); S6f-P3 refuted with mechanism (N=500 unmasks the deep-bin KE undershoot the N=50 sim-SE-dominated sigmas absorbed); the RP-D6 ladder contest resolves decisively for c1/rq4graded; winner-gated riders not fired (findings 4z, I85-I87) (2026-07-21)
+
+Under the S6 `[PROCEED TO IMPLEMENTATION]`. Three N = 500 cells
+(finc1v725 / finc1v750 / finc4v700; fresh seed 20260721; Landau-on
+v_L = 0.58; production 2.70 eV; 8000 ps E2 cap; 8.53 us detection),
+one cell per process, zero repo-code change (scratchpad drivers
+building each cfg from its on-disk N = 50 sibling via load_cfg +
+dataclasses.replace on exactly the amended S6f-P1 field set — every
+cfg oracle passed in-process and by independent diff).
+
+- **Scored read (committed median-anchor scorer):** finc1v725
+  n1_solv 0.2718 / ratio 2.048 / W1 0.5238 / midHot 0.9905 /
+  chi2_med 125.7; finc1v750 0.2551 / 1.923 / 0.6572 / 0.9095 / 68.6;
+  finc4v700 0.2322 / 1.953 / 0.8426 / 1.1018 / 202.5. **No cell meets
+  the frozen joint bars; no winner; riders (Stage-3 ring + the 0.40
+  Landau spot) stay unfired per RP-D4.**
+- **P1 confirmed; P2 split** (n1_solv + midHot carry everywhere; the
+  W1 band breaks at v7.5 and c4, same-direction at all three cells —
+  an N-resolution tail structure); **P3 refuted with mechanism** (the
+  N=50 sigma was sim-SE-dominated, 0.03-0.08 eV, collapsing to the
+  reference's 0.010-0.03 at N=500 while ke_npts grows 12 -> 17; the
+  I81 "thin-bin noise" diagnosis had the mechanism backwards);
+  **P4 confirmed decisively** (ladder verdict: rq4graded > floor1 on
+  every histogram read, the I51/S2c-P3 formal read; c4's KE curve
+  also rotates hot-shallow/cold-deep); **P5 2/3** (v7.5's N=50
+  dn = -0.68 was the outlier; N=500 regresses to the -0.3..-0.6
+  interpolation band).
+- **Structural finding (I87):** the deeply-solvated survivors arrive
+  too cold — sim mean KE at n >= 12 sits 30-60 % below the reference
+  (n >= 12 carries ~72 %/54 % of chi2_med on the c1 cells). Provenance
+  (E2/exposure vs ladder tail vs missing relaxation channel)
+  deliberately unadjudicated.
+
+Run dirs on disk under the fin* conf270 namespace (not committed, per
+the data-contract rule). Next adjudications (user): the F5
+reconciliation (discharge vs re-scope) and the deep-bin KE follow-up.
+Nothing here discharges F5.

@@ -3665,3 +3665,18 @@ the winner only: the Stage-3 sensitivity ring (δ ∈ {0.40, 0.80},
 re-fit) + the 0.40 Landau spot. Single seed per cell — the fresh-seed
 P2 carry is the seed-robustness read. The suppressed/bare channel stays
 RQ8-gated; **nothing here discharges F5**.
+
+> **Status (2026-07-21, S6 EXECUTED under `[PROCEED TO IMPLEMENTATION]`
+> — findings §4z + I85–I87; log entry "S6 EXECUTED").** Three N = 500
+> cells ran clean (cfg oracles passed; fresh seed 20260721; Landau-on
+> 0.58). **No cell lands the frozen joint acceptance:** every cell
+> fails χ²_med ≤ 30 (125.7 / 68.6 / 202.5) — S6f-P3 refuted with
+> mechanism (the N = 50 χ² was sim-SE-dominated; N = 500 unmasks a
+> systematic deep-bin KE undershoot, n ≥ 12 sim 30–60 % cold) — while
+> the robust histogram carry holds (P2: finc1v725 n₁_solv 0.2718 /
+> midHot 0.9905 both in-band). **The RP-D6 ladder contest resolves
+> decisively for c1/rq4graded** (P4: W₁ 0.524/0.657 vs 0.843, ≫ 2σ).
+> P5 2/3 in-band (the v7.5 N = 50 Δn̄ was the outlier). **No winner
+> exists under the frozen rule; the winner-gated riders did not fire.**
+> The F5 reconciliation and the deep-bin KE follow-up are the next
+> user adjudication.
