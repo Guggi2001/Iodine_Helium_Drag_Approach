@@ -3680,3 +3680,12 @@ RQ8-gated; **nothing here discharges F5**.
 > exists under the frozen rule; the winner-gated riders did not fire.**
 > The F5 reconciliation and the deep-bin KE follow-up are the next
 > user adjudication.
+
+> **Adjudication addendum (2026-07-21, post-S6):** the no-winner state
+> is resolved **by decision** — `finc1v725` is the standing production
+> reference at the histogram level (the frozen bars' failure stands in
+> the record; the KE miss is RQ11). The RP-D4 riders re-arm at the
+> winner-by-decision (spec in the log entry "PRODUCTION POINT
+> ADJUDICATED"); `plot_run_summary.py` gains detection-stage sections
+> (option (a), user-approved scoped exception to the post-processing
+> freeze). F5 deferred. Execution behind `[PROCEED TO IMPLEMENTATION]`.

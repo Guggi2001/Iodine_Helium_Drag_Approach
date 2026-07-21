@@ -8836,3 +8836,52 @@ Run dirs on disk under the fin* conf270 namespace (not committed, per
 the data-contract rule). Next adjudications (user): the F5
 reconciliation (discharge vs re-scope) and the deep-bin KE follow-up.
 Nothing here discharges F5.
+
+## PRODUCTION POINT ADJUDICATED — finc1v725 blessed as the standing production reference at the histogram level (frozen joint acceptance explicitly NOT met; the deep-bin KE miss fired as RQ11); riders re-armed at the winner-by-decision; run_summary detection-stage extension approved as option (a); F5 deferred (2026-07-21)
+
+User adjudications (this session, D1-D4), resolving the S6 no-winner
+state by decision:
+
+- **D1 — the standing production run IS the on-disk finc1v725**
+  (N = 500, fresh seed 20260721, Landau-on 0.58, production 2.70 eV,
+  8.53 us detection) — no new MD. Adopted **at the histogram level**:
+  n1_solv 0.2718 + midHot 0.9905 land, chi2_med 125.7 fails the frozen
+  <= 30 gate — the standing result is "histogram-level landing with a
+  localized, characterized KE miss", not a full pass. The miss is
+  **RQ11** (deep-bin KE undershoot, findings I87); a larger-N re-run
+  stays available later if figures/statistics demand it.
+- **D2 — the winner-gated riders fire at finc1v725 as the
+  winner-by-decision** (the S6 formal read "no winner" stands in the
+  record; this adjudication re-arms RP-D4 at the blessed point).
+  Frozen rider spec: **Stage-3 sensitivity ring, 5 x N = 50,
+  one lever per cell off the s2c1v725t32e27 sibling cfg** —
+  delta 0.40 / delta 0.80 (`droplet_prior_delta`), the
+  `pickup_weighted_lognormal` prior, margin 4.67 / 6.0 A
+  (`initial_position_margin_angstrom`) — zero_gamma E2 (clean
+  one-lever diffs vs the on-disk zero_gamma baseline), scored deltas
+  reported as bands, never re-fit; **plus the 0.40 Landau spot**
+  (1 x N = 50: `relaxation_dissipation = landau_gated_drag` only —
+  v_limit 40 is the config default, so the cfg diff is one key).
+  Working tags r725d040 / r725d080 / r725pick / r725m467 / r725m600 /
+  r725l40; non-collision verified at trigger.
+- **D3 — bookkeeping as agreed:** RQ11 added to RESEARCH_QUESTIONS.md;
+  **F5 deferred, not discharged** — the reconciliation pass is the
+  standing-result discussion that follows the riders + figures.
+- **D4 — run_summary extension = option (a), explicit user approval
+  overriding the post-processing "bug-fix-only" freeze for this
+  addition.** Frozen spec: `plot_run_summary.py` gains
+  detection-stage sections **gated on `detection.npz` existing**
+  (legacy run dirs render byte-identically): (1) detected IHe_n
+  histogram (retained-excluded; full + solvated-renormalized vs the
+  abundance reference) beside the existing ion-stage mass spectrum;
+  (2) detected per-n mean-KE curve vs the IHe_KED reference under the
+  committed error model (sim SE bars; the n = 1 median anchor marked;
+  chi2_med + chi2_mean_legacy annotated); (3) per-bin z^2 anatomy
+  panel (the S4z read). All detected-read physics imported from
+  `i2_helium_md.postprocess.tier2_confirmation` (rule 1 — no duplicate
+  conventions); tests: synthetic-conf-run smoke + a legacy-gating test
+  (no detection.npz -> section list unchanged). Output lands in the
+  run dir `figures/` per the RunDirectory convention.
+
+Docs-only this entry (RQ11 + this record); riders and the run_summary
+code await `[PROCEED TO IMPLEMENTATION]`. Nothing here discharges F5.

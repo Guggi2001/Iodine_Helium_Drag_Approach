@@ -1292,6 +1292,38 @@ interchangeable enum arm, behind `[PROCEED TO IMPLEMENTATION]`. Nothing
 in this phase touches code, checkpoints, or the delivered probe
 artifacts.
 
+### RQ11 — Deep-bin KE undershoot: why do deeply-solvated survivors arrive too cold? (= findings I87, fired 2026-07-21 by the S6 N = 500 read)
+
+- **Question:** at the adjudicated standing production point
+  (`finc1v725`: capped_cubic v_c 7.25 / τ3.2 / E₀0.27 / rq4graded,
+  N = 500) the detected mean KE at n ≥ 12 sits **30–60 % below** the
+  experimental IHe_KED reference (n = 16: sim 0.028 vs ref 0.069 eV),
+  carrying ≈ 72 % of χ²_med, while n = 1–11 agrees under the committed
+  error model. Which mechanism owns the cold tail: (i) E2
+  exposure/over-cooling of the slow deeply-solvated class, (ii) the
+  ladder tail (rungs above the tapered bottom ride Form U verbatim —
+  a freeze-out-ordering effect on the KE axis), or (iii) a missing
+  recoil/relaxation channel (per-shed ε recoil — RQ2-coupled) whose
+  cumulative effect is largest on deep survivors?
+- **Why it matters (measured, findings §4z / I85–I87):** the sharpest
+  experimental constraint the program has produced — the sole reason no
+  S6 finalist lands the frozen joint acceptance (χ²_med 68.6–202.5 vs
+  ≤ 30) while both histogram axes land; invisible at N = 50
+  (sim-SE-dominated sigmas, the I85 unmasking mechanism), i.e. a
+  genuinely new N = 500 observable.
+- **Couples with:** RQ2/RQ10 (what leaves with each shed He — recoil
+  and momentum-convention effects accumulate over the deep cascade);
+  RQ5 (µs-flight channels). The E2 Landau arm is **excluded as the
+  owner**: §4y measured the scored KE bins bit-flat across
+  v_L ∈ {0.30, 0.40, 0.58} (the deep bins were already cold under
+  `zero_gamma`).
+- **Candidate resolution:** onset-n anatomy + velocity-class
+  decomposition of the deep survivors at the standing point (read-only);
+  the RQ2 per-shed ε literature number; a ladder-tail counterfactual in
+  the twin (the KE axis is chord-cached — cheap). Any accepted model
+  change enters as an interchangeable enum behind
+  `[PROCEED TO IMPLEMENTATION]`.
+
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);
 `TIER2_DETECTION_STAGE_DESIGN.md` (§4 scope caveats → RQ5);
