@@ -8756,3 +8756,45 @@ the bracket licenses the gate, not a v_L calibration. With S4 + S5 both
 landed, **S6 is fully specified** (c1 × {v7.25, v7.5} at τ3.2/E₀0.27 +
 c4 × (v7.0, τ3.8, E₀0.25); Landau 0.58; N = 500 fresh seed) and awaits
 its own pre-registration + trigger. Nothing here discharges F5.
+
+## S6 PRE-REGISTERED — twin m=20000 re-scores committed at the exact three finalist cells (oracle: the h2b_s4_c4_final rows reproduce string-identically); scorer lock passed on the three N=50 siblings; diff-set amendment, fresh seed 20260721, Landau-on 0.58, and all prediction numbers frozen before any N=500 MD (2026-07-21)
+
+Under the S6 `[PROCEED TO IMPLEMENTATION]` (user: "adjudicate the
+plan" — the two §I.11.5.3 open items delegated). Full record: plan
+§I.11.5.5. Zero repo-code change (scratchpad drivers importing the
+committed twin module / generator ladders / scorer helpers).
+
+- **Adjudications:** S6f-P1 diff set amended to `{num_molecules, seed,
+  relaxation_dissipation, v_limit_m_per_s}` (the N=50 siblings ran
+  `zero_gamma`; Landau-on adds two fields); fresh seed **20260721**;
+  tags `finc1v725` / `finc1v750` / `finc4v700` (non-collision
+  verified); the `E_min_eV` shared-reader hash check is impossible at a
+  fresh seed and is carried by the S5 kinematics-level argument
+  (eV-scale fragment energies vs the meV threshold window —
+  seed-independent).
+- **Scorer lock (S6f-P1 first half) PASSED:** the committed
+  median-anchor scorer reproduces the recorded §4w/§4x sibling rows at
+  printed precision (v7.25: 0.3086/2.273/0.4240/66.26/73.16; v7.5:
+  0.2911/2.300/0.4959/14.42/23.96; c4: 0.3117/3.000/0.6509/61.94).
+  **Convention drift found and frozen:** §4w's ring-table midHot was
+  the geo-mean variant (0.987/0.904); §4x/§4y and the committed twin
+  CSVs use the arithmetic mean (1.0163/0.9089/1.1213) — ≤0.03 apart,
+  direction-preserving; **arithmetic is operative for S6**
+  (oracle-locked against `h2b_s4_c4_final`).
+- **Twin re-scores committed** (`h2b_s6_final_{predictions,ke}.csv`,
+  m=20000, stage_repilot2 draw discipline; wiring oracle reproduced
+  all three `h2b_s4_c4_final` rows string-identically first): c1 v7.25
+  n₁_solv 0.2429 / n̄ 4.387 / W₁ 0.678 / midHot 1.067; c1 v7.5 0.2343
+  / 4.647 / 0.923 / 0.950; c4 v7.0 0.2122 / 3.801 / 0.739 / 1.148.
+  Twin→MD lifts at N=50: +0.066/+0.057/+0.099 (inside the I83 bands).
+- **Frozen numbers:** P2 n₁_solv bands [0.206, 0.411] / [0.189, 0.393]
+  / [0.206, 0.417] (± 2·binomial SE on the solvated count); W₁ ± 0.12,
+  midHot ± 0.15; P4 SE(n₁_solv)@N=500 ≈ 0.016 by formula, split read
+  on the histogram shape (W₁: c1 < c4 registered; the I76 n₁_solv
+  direction superseded by S4 — both ladders target-adjacent on n₁);
+  P5 Δn̄(MD−twin) within ±0.15 of the measured −0.48/−0.68/−0.31
+  (the §I.11.5.3 −0.3..−0.6 guess recorded as missed at v7.5).
+- Joint acceptance / winner rule / riders restated unchanged.
+
+Next: the three N=500 runs launch (one cell per process, cfg
+byte-oracle pre-compute). Nothing here discharges F5.

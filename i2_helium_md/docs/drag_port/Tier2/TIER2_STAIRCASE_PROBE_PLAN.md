@@ -3559,3 +3559,109 @@ reconciliation pass.
 > c4 × (v7.0, τ3.8, E₀0.25), Landau-on at v_L = 0.58 with the 0.40
 > winner spot, N = 500 fresh seed — behind its own pre-registration +
 > `[PROCEED TO IMPLEMENTATION]`.
+
+#### I.11.5.5 S6 pre-registration (2026-07-21, committed before any N = 500 MD)
+
+> Executed under the S6 `[PROCEED TO IMPLEMENTATION]` (user, this
+> session, "adjudicate the plan"): the two open items from the §I.11.5.3
+> design were delegated and are adjudicated here; every number below is
+> frozen **before** the first N = 500 molecule is drawn.
+
+**Execution pins (adjudicated).**
+
+- **Cells / tags:** `finc1v725` = c1 (v_c 7.25, τ3.2, E₀0.27),
+  `finc1v750` = c1 (v_c 7.5, τ3.2, E₀0.27), `finc4v700` = c4
+  (v_c 7.0, τ3.8, E₀0.25) — dir names
+  `9A_drag_shared_pure_cubic_N500_tier2probe_conf270_<tag>`,
+  verified non-colliding.
+- **Fresh seed 20260721** (pilots: 20260604 — the fresh-draw test as
+  frozen). **N = 500**; one-cell-per-process scratchpad drivers
+  importing only committed modules (zero repo-code change).
+- **Landau-on at v_L = 0.58 Å/ps on all three cells**
+  (`relaxation_dissipation = landau_gated_drag`,
+  `v_limit_m_per_s = 58.0`), per the S5 outcome (a); the 0.40 spot is a
+  winner-only rider.
+- **S6f-P1 diff set (amended, adjudicated):** each S6 cfg is its N = 50
+  sibling cfg (`s2c1v725t32e27` / `s2c1v75t32e27` / `s4c4v700t38e25`)
+  loaded and re-saved with exactly
+  `{num_molecules, seed, relaxation_dissipation, v_limit_m_per_s}`
+  replaced (the tag lives in the dir name, not the cfg). The §I.11.5.3
+  wording predates the S5 outcome — the two Landau fields join the diff
+  set because the siblings ran `zero_gamma`; asserted pre-compute.
+- **`E_min_eV` shared reader:** the S5 hash check cannot be repeated at
+  a fresh seed (no same-seed baseline exists). Carried instead by the
+  S5 measurement's kinematics-level argument — the eV-scale fragment
+  energies never approach the 1.05 ↔ 2.21 meV neutral-collision
+  threshold window, which is seed-independent at production kinematics.
+  Recorded, not assumed silently.
+
+**S6f-P1 scorer lock — PASSED (pre-MD).** The committed scorer
+(median anchor operative, mean-legacy alongside) reproduces the
+recorded N = 50 rows on all three sibling dirs at printed precision:
+
+| sibling | n₁_solv | n₁/n₂ | W₁_solv | midHot | χ²_med | χ²_mean |
+|---|---|---|---|---|---|---|
+| s2c1v725t32e27 | 0.3086 | 2.273 | 0.4240 | 1.0163 | 66.26 | 73.16 |
+| s2c1v75t32e27 | 0.2911 | 2.300 | 0.4959 | 0.9089 | 14.42 | 23.96 |
+| s4c4v700t38e25 | 0.3117 | 3.000 | 0.6509 | 1.1213 | 61.94 | 75.51 |
+
+**midHot convention frozen:** arithmetic mean over n = 2–8 of
+(mean KE)/(reference `meanKE_eV`) — the recipe oracle-locked against
+the committed `h2b_s4_c4_final` twin rows and matching the recorded
+§4x/§4y values (1.121 / 0.909). **Recorded drift:** the §4w ring table
+used the geo-mean variant (0.987 / 0.904 at v7.25 / v7.5) — ≤ 0.03
+apart, direction-preserving, both deep inside the [0.80, 1.20] bar;
+the arithmetic form is operative for S6.
+
+**Twin re-scores at the exact three cells (m = 20000, committed
+`h2b_s6_final_{predictions,ke}.csv`).** Wiring oracle: the rebuilt
+driver reproduces all three committed `h2b_s4_c4_final` rows
+string-identically (predictions + KE) before any S6 cell is read.
+
+| cell | supp | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | n₁ KE |
+|---|---|---|---|---|---|---|---|
+| c1 v7.25 τ3.2 E₀0.27 | 0.2019 | 4.387 | 0.2429 | 1.805 | 0.6782 | 1.0673 | 0.9719 |
+| c1 v7.50 τ3.2 E₀0.27 | 0.1969 | 4.647 | 0.2343 | 1.849 | 0.9232 | 0.9504 | 0.9057 |
+| c4 v7.00 τ3.8 E₀0.25 | 0.2814 | 3.801 | 0.2122 | 1.728 | 0.7386 | 1.1479 | 0.9526 |
+
+Twin→MD n₁_solv lifts at N = 50 (search-guidance consistency, I83):
++0.066 / +0.057 / +0.099 — inside the measured c1 band (+0.05..0.065,
+edge) and the floor1-E₀0.25 ≈ +0.10 band respectively.
+
+**Frozen prediction numbers.**
+
+- **S6f-P2 (robust-metric carry):** each c1 N = 500 cell lands within
+  its N = 50 band, band = N = 50 value ± 2·SE₅₀ with
+  SE₅₀ = √(p(1−p)/n_solv) on n₁_solv (n_solv = solvated fragment
+  count): **v7.25 n₁_solv ∈ [0.206, 0.411]** (SE 0.0513, n_solv 81),
+  **v7.5 ∈ [0.189, 0.393]** (SE 0.0511, n_solv 79), **c4 ∈
+  [0.206, 0.417]** (SE 0.0528, n_solv 77). W₁_solv within ± 0.12 and
+  midHot within ± 0.15 of the N = 50 values (empirical adjacent-cell
+  scale from the §4w ring; no analytic SE claimed).
+- **S6f-P3 (χ² spike resolution):** at N = 500 the v7.25 χ²_med drops
+  from the 66.3 thin-bin spike toward the robust-metric trend and the
+  (v7.25, v7.5) pair reads smoothly; the ≤ 30 gate is applied as
+  frozen (median anchor; mean-legacy printed alongside).
+- **S6f-P4 (ladder verdict):** per-cell SE(n₁_solv) at N = 500 ≈ 0.016
+  (same formula, n_solv ≈ 790; the §I.11.5.3 ≈ 0.014 assumed all 1000
+  fragments solvated — formula frozen, not the rounder guess). The
+  c1 − c4 split is read at 2σ **on the histogram shape**: registered
+  direction **W₁_solv(c1) < W₁_solv(c4)** (N = 50: 0.42–0.50 vs 0.65)
+  and ratio c1 ≈ 2.3 vs c4 ≈ 3.0 (target 2.18). The I76 "c1 > c4 on
+  n₁_solv" direction is **superseded by the S4 landing** — both
+  ladders are now target-adjacent on n₁_solv itself (0.309/0.291 vs
+  0.312); recorded, not silently rewritten.
+- **S6f-P5 (channel-(d) carry):** Δn̄(MD − twin) within ± 0.15 of the
+  N = 50-measured values **−0.48 / −0.68 / −0.31** (v7.25 / v7.5 /
+  c4). The §I.11.5.3 band guess (≈ −0.3..−0.6) was set before these
+  twin rows existed and v7.5's measured value sits outside it —
+  recorded; tracked never corrected (I69/I83).
+
+**Joint acceptance (restated frozen, unchanged):** a finalist lands iff
+n₁_solv ∈ [0.26, 0.36] ∧ midHot ∈ [0.80, 1.20] ∧ χ²_med ≤ 30. Winner
+between the c1 cells: lower χ²_med subject to all three bars. Riders at
+the winner only: the Stage-3 sensitivity ring (δ ∈ {0.40, 0.80},
+`pickup_weighted_lognormal`, margin ∈ {4.67, 6} Å, N = 50, bands never
+re-fit) + the 0.40 Landau spot. Single seed per cell — the fresh-seed
+P2 carry is the seed-robustness read. The suppressed/bare channel stays
+RQ8-gated; **nothing here discharges F5**.
