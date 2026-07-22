@@ -60,23 +60,25 @@ non-radial flag). **Tier 1a is delivered** — anchored kinematic mass-dynamics
 validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT loss curve and a
 controlled `fixed` vs `anchored_discrete` A/B was built (variable-mass integrator
 SQ1–SQ3, v6 checkpoint, four-term ledger; continuous-velocity shed is the physical
-path, cold-shed retained as a diagnostic bound). **The current goal is the Tier 2
-build** — the *generative* `biphasic_energy_gated` mass mechanism (Poisson pickup +
-energy-gated RRK evaporation + `E_int` reservoir + Newton cooling, **5-term**
-invariant) arbitrated against the experimental I⁺Heₙ size distribution
-(`data/reference/integrated_i_he_abundance.csv`). Plan + slices live under
-`docs/drag_port/Tier2/` (`TIER2_IMPLEMENTATION_PLAN.md` overview + per-phase A–F
-detail plans; 11 slices / 6 phases; full program, validation-first at 0.80 eV then
-2.70 eV production, with a generative-vs-anchored bridge). Tier 2 is
-**mid-execution**: the biphasic mechanism is built, the pre-F5 probe program
-and the §I.11.4 re-pilot ran, and the **first joint MD landing** (experimental
-I⁺Heₙ histogram *and* fragment mean-KE, together) was found at `capped_cubic`
-v_c ≈ 7.25–7.5 / τ3.2 / E₀0.27 (findings §4v–§4w, I80–I81; the §4t "no joint
-cell" was a sparse-v_c-grid artifact + the n₁ mixture-mean anchor, I77). Next:
-the median-anchored n₁ KE scorer convention (I77) + the c1 N=500 finalist —
-new code still behind the `[PROCEED TO IMPLEMENTATION]` trigger. Noise (Tier 3)
-stays stubbed/inert behind its enum; the
-`IonCheckpoint` schema bump to **v7** adds the `E_int` field at Tier 2.
+path, cold-shed retained as a diagnostic bound). **Tier 2 is CLOSED (F5
+reconciled 2026-07-22; not program closure)** — the *generative*
+`biphasic_energy_gated` mass mechanism (Poisson pickup + energy-gated RRK
+evaporation + `E_int` reservoir + Newton cooling, **5-term** invariant,
+`IonCheckpoint` **v7** with `E_int`) was built and arbitrated against the
+experimental I⁺Heₙ size distribution and fragment mean-KE at production
+2.70 eV. **Standing production point: `finc1v725`** (`capped_cubic` v_c 7.25 /
+τ 3.2 / E₀ 0.27 / c1 rq4graded ladder / Landau-on 0.58), statistical reference
+= the pooled **N = 5000 battery** (5 × N = 1000 fresh seeds, findings §4cc):
+histogram-level landing seed-robust (n₁_solv 0.243, midHot 1.014,
+W₁ 0.571 ± 0.04). Figure surface: `plot_run_summary.py` (MD window) +
+`plot_detection_summary.py` (detected ensemble, 14 sections) + the pooled
+figures container. **Open improvement axes (the current discussion space):**
+RQ11 deep-bin KE cold tail (a slope, sim/ref 0.81 → 0.38 over n = 10–17 —
+set inside the 30 ps MD window, §4bb/§4cc, I89–I92), Tier-3 noise
+(second-moment under-dispersion, visible in the cov/VMI panels; stubbed
+behind its enum, NOT retired), RQ3 bare-peak and RQ5 µs-flight reads, the
+margin-3 Å pinned convention (I88). New drag-program code stays behind the
+`[PROCEED TO IMPLEMENTATION]` trigger.
 
 ## Current Scope
 
@@ -219,16 +221,19 @@ before introducing the next unknown:
   diagnostic bound. The predictive shell-timing variant ("1b") is **rejected**
   (TDDFT is not ground truth — experiment arbitrates at Tier 2). Plan + slices:
   `TIER1A_IMPLEMENTATION_PLAN.md`.
-- **Tier 2 — ACTIVE (current goal). Terminal I⁺(He)ₙ size distribution** vs.
-  experimental detector data — the only observable that separates the mass scenarios
-  *and* arbitrates the two genuinely-free knobs (ladder shape + electronic picture).
-  This is where the biphasic *generative* mechanism (Poisson pickup + energy-gated
-  RRK evaporation + `E_int` reservoir + Newton cooling, **5-term** invariant) is
-  built and falsified. Plan + slices: `TIER2_IMPLEMENTATION_PLAN.md` (11 slices /
-  6 phases; full program, validation-first 0.80 eV → 2.70 eV production, with a
-  generative-vs-anchored bridge). Schema bumps to **v7** (`E_int` field). Stays
-  behind the `[PROCEED TO IMPLEMENTATION]` trigger.
-- **Tier 3 — ensemble second moments** (noise) vs. VMI references.
+- **Tier 2 — CLOSED (F5 reconciled 2026-07-22). Terminal I⁺(He)ₙ size
+  distribution** vs. experimental detector data — the only observable that
+  separates the mass scenarios *and* arbitrates the two genuinely-free knobs
+  (ladder shape + electronic picture). The biphasic *generative* mechanism
+  (Poisson pickup + energy-gated RRK evaporation + `E_int` reservoir + Newton
+  cooling, **5-term** invariant; schema **v7**, `E_int` field) was built and
+  arbitrated: standing point finc1v725, pooled N = 5000 battery reference,
+  histogram-level landing seed-robust; the deep-bin KE miss stays open as RQ11.
+  Plan + slices: `TIER2_IMPLEMENTATION_PLAN.md`; closure record: the F5
+  reconciliation entry in `drag_migration_log_tier2.md`.
+- **Tier 3 — NEXT (open, not started). Ensemble second moments** (noise) vs.
+  VMI references — the under-dispersed cov/VMI panels are its measured
+  motivation; stays stubbed behind its enum until its own plan + trigger.
 
 A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at config-load
 (§6.5): constant-mass coefficients are self-consistent only with

@@ -9349,3 +9349,61 @@ Tier-3 under-dispersion caveat. README updated with the layout
 requirement. Lesson recorded: any pooled/synthetic detection
 container must preserve the block pair layout, or the five cov
 panels are invalid.
+
+## F5 RECONCILED — Tier 2 CLOSED (not the program): the production-switch intent is discharged-by-equivalent through the S6→battery chain; `total_strip` retired unbuilt; both conditional triggers evaluated and NOT fired; Tier 3 + RQ11 stay open as the improvement axes (2026-07-22)
+
+User adjudication (this session): Tier 2 closes at the standing
+result; **this is not program closure** — deviations from experiment
+remain and are the named improvement targets; Tier 3 stays parked as
+the next tier, not retired.
+
+The reconciliation, item by item against the frozen F5 spec
+(`TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` §F5):
+
+1. **Production switch (2.70 eV) — DISCHARGED-BY-EQUIVALENT.** The
+   planned route (flip the staged F2 generator to 2.70 eV after the
+   0.80 eV landing) was superseded by the delivered route: the 0.80 eV
+   probe program (Waves 1–11) established the mechanism, the twin
+   chain + re-pilot + S4–S6 arbitrated at production 2.70 eV directly,
+   and the standing point (finc1v725, D1) is now backed by the pooled
+   N = 5000 battery (§4cc) — with pre-registration discipline, seed
+   bands, and full detection-stage figure sets the original F5 never
+   specified. The intent (arbitrate the generative mechanism against
+   the experimental size distribution at production budget) is
+   delivered and exceeded; re-running the staged campaign would add
+   no information.
+2. **`total_strip` secondary runs — RETIRED UNBUILT.** The regime
+   far-end sensitivity question it probed (OQ6 ladder-bottom
+   reachability) was answered by the probe program and the ladder
+   contest (RP-D6 → c1/rq4graded, S6f-P4); no observable the user
+   needs draws on it. Revivable only as a new decision.
+3. **Conditional triggers — EVALUATED, NOT FIRED, closed.** R6 (9-Å
+   option-3 drag re-extraction) required mass↔coefficient sensitivity
+   in the production scoreboard: the rider ring (§4aa) measured every
+   swept lever quiet except the birth margin, and the §6.6 defense
+   stands — not fired. p↔κ (occupancy-cap split) required the
+   first-shell cutoff to bite in the size distribution: n₁_solv lands
+   in-band at pooled N = 5000 (BN-P2) — not fired.
+4. **The Tier-2 standing result, formally:** production point
+   finc1v725 (`capped_cubic` v_c 7.25 / τ 3.2 / E₀ 0.27 /
+   c1/rq4graded / Landau-on 0.58), statistical reference = the pooled
+   N = 5000 battery; **histogram-level landing, seed-robust** (n₁_solv
+   0.2433, midHot 1.0139, W₁ 0.571 ± 0.04, supp 0.187, all in-band);
+   figure sets: finc1v725 run_summary + detection_summary, and the
+   pooled detection_summary (pair-preserving container). **Open
+   ledger, carried forward as the improvement axes:** RQ11 (deep-bin
+   KE cold tail, pinned as a slope 0.81 → 0.38 over n = 10–17; χ²_med
+   gate unmet by design decision D1), the Tier-3 under-dispersion
+   (visible as narrow cov bars / VMI second moments — the noise
+   channel is the designed fix, stubbed behind its enum), RQ3
+   (bare-peak: ≈ 1745 pooled suppressed fragments unscored), RQ5
+   (µs-flight channels / retained class), and the margin-3 Å pinned
+   convention (I88).
+
+Tier-2 chapter accounting: phases A–F all accepted or reconciled
+(A–E delivered per their entries; F1–F4 delivered as the probe/
+scoreboard surface; F5 reconciled here; F6's intent delivered by the
+D4/detection-summary figure program). CLAUDE.md compact state updated
+under this entry. The `[PROCEED TO IMPLEMENTATION]` discipline stays
+in force for all future drag-program code (Tier 3, RQ11 model
+changes).
