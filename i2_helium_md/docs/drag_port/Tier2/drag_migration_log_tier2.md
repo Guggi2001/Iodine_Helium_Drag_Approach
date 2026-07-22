@@ -9191,3 +9191,64 @@ the suppressed/retained classes (they ride at handover n on disk; the
 0/NaN forcing lives in `DetectedEnsembleView`). Next: freeze the
 large-N re-run design + pre-registration (D1's "larger-N re-run stays
 available" clause). Nothing here discharges F5.
+
+## Large-N production battery PRE-REGISTERED — 5 × N = 1000 fresh-seed siblings of finc1v725 (pooled N = 5000; per-run cfg diff exactly {num_molecules, seed}); BN-P1..P6 frozen before any MD (2026-07-22)
+
+User-approved under `[PROCEED TO IMPLEMENTATION]`, exercising D1's
+"larger-N re-run stays available" clause. **Battery, not monolith:**
+one N = 5000 run would hold ≈ 10 GB of E2 time-series in memory (the
+machine has 15.9 GB total; the N = 500 siblings measure 0.58 GB of npz
+each), so the pooled-equivalent design is five sequential N = 1000
+runs. Molecules are independent in this ensemble — pooling is
+statistically equivalent — and the battery yields the first per-seed
+scatter measurement (the S6f-P2 "single seed" boundary), plus graceful
+early stop (every completed run is independently scoreable).
+
+**Cells:** seeds 20260722–20260726, N = 1000 each, dirs
+`9A_drag_shared_pure_cubic_N1000_tier2probe_conf270_bigc1v725s1..s5`.
+Base cfg = the on-disk finc1v725 `cfg.json` via
+`RunDirectory.load_cfg()`; per-run serialized diff **exactly**
+`{num_molecules, seed}`, oracle-checked in-driver before any
+propagation (refuses to run otherwise). Scratchpad driver per the
+S4/S6 driver precedent. Scoring: the committed median-anchor scorer
+per run (zero new code); pooled reads reuse
+`i2_helium_md.postprocess.tier2_confirmation` functions on
+concatenated detection arrays (rule 1), scratchpad-side.
+
+**Pre-registered predictions (frozen now; measurement bands are 2.5σ
+around the finc1v725 value with the √1.1 anchor-vs-pooled inflation):**
+
+- **BN-P1 (oracles).** All five cfg diffs land exactly; the committed
+  scorer re-run on finc1v725 reproduces the §4z row at printed
+  precision before any new-run scoring.
+- **BN-P2 (histogram carry, pooled).** n₁_solv ∈ [0.230, 0.313]
+  (SE 0.0158) and inside the frozen window [0.206, 0.411];
+  midHot ∈ [0.84, 1.14]; suppressed fraction ∈ [0.130, 0.193]
+  (SE 0.0120); trapped ∈ [0.038, 0.076] (SE 0.0073).
+- **BN-P3 (the W₁ three-point read).** Pooled W₁_solv ∈
+  [0.404, 0.644] (the S6 ± 0.12 convention around 0.524) ⇒ the
+  N-resolution structure is converged; > 0.644 ⇒ the same-direction
+  drift continues unconverged; < 0.404 ⇒ the N = 500 value was
+  seed-high. Per-seed W₁ SD is reported — the first seed-scatter
+  measurement on this observable.
+- **BN-P4 (RQ11 persistence + shape).** Pooled n ≥ 12 solvated KE
+  mean ∈ [0.043, 0.069] eV (2.5σ around 0.0556, SE 0.0049; NB the
+  upper edge coincides with the n = 16 reference 0.069 — landing
+  above the band would mean the deficit closes, which is NOT
+  predicted); the 30–60 % per-bin deficit persists; χ²_med > 30 at
+  every seed and pooled (no rescue — I89; soft expectation, not a
+  bar: roughly N-stable now that σ is reference-dominated). The
+  deep-bin miss *shape* (uniform scale vs n-slope) becomes resolvable
+  at 20–60 ions/bin and is REPORTED, not predicted.
+- **BN-P5 (twin Δn̄ carry).** Pooled Δn̄(MD − twin 4.387) ∈
+  [−0.72, −0.05] (2.5σ anchor band around −0.384); the tighter S6
+  interpolation carry [−0.63, −0.33] reported alongside.
+- **BN-P6 (I89 invariance spot-check).** E2 `E_dissip` gain 0.0000
+  (4 dp) on every solvated bin in each run; KE settled within 100 ps
+  of handover.
+
+Rider (reported, not predicted): pooled suppressed ≈ 760 fragments
+turn the RQ3 bare-peak speed panel into a distribution read.
+Sequential execution, background; wall time unknown (first battery at
+this scale). The standing headline figures remain finc1v725 until the
+battery is scored and adjudicated. Nothing here discharges F5.
