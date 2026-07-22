@@ -9252,3 +9252,21 @@ turn the RQ3 bare-peak speed panel into a distribution read.
 Sequential execution, background; wall time unknown (first battery at
 this scale). The standing headline figures remain finc1v725 until the
 battery is scored and adjudicated. Nothing here discharges F5.
+
+**Launch record (same day, before any MD read):** BN-P1 passed in
+full — all five cfg diffs exactly `{num_molecules, seed}` (in-driver
+oracle), and the committed-scorer re-run on finc1v725 reproduced the
+§4z row column-for-column at printed precision (943 / 0.057 / 0.161 /
+4.003 / 0.2718 / 2.048 / 0.5238 / 125.7 / 132.0). The lock also
+**pinned the midHot definition**, which had no repo home: midHot =
+the *unweighted mean over n = 2..8 of per-n (sim mean KE / reference
+mean KE)* = 0.9905 exact; the sum-ratio (1.0188) and
+fraction-weighted (1.0149) variants are discriminated against. One
+launch abort recorded: the first invocation passed the variant string
+`drag_shared_pure_cubic` to `tier2_confirmation_run_dir_name` (which
+prepends `drag_` itself), producing `9A_drag_drag_...` dirs — stopped
+≈ 30 s in, the partial misnamed s1 dir deleted, relaunched with
+`shared_pure_cubic`; on-disk names now match the frozen roster. The
+§6.5 pairing guard warns (biphasic ↔ constant coefficients) exactly
+as on every biphasic production run
+(`allow_inconsistent_mass_pairing=True`, §6.6 defense).
