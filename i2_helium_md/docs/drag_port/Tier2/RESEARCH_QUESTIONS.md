@@ -1323,6 +1323,20 @@ artifacts.
   the twin (the KE axis is chord-cached — cheap). Any accepted model
   change enters as an interchangeable enum behind
   `[PROCEED TO IMPLEMENTATION]`.
+- **Status (2026-07-22, findings §4bb / I89–I90):** the read-only
+  decomposition ran at the standing point. **Candidate (i) is refuted**
+  — KE is frozen at handover on every solvated bin (E2 `E_dissip` gain
+  0.0000; the Landau-gated E2 drag touches only the in-droplet retained
+  class; detection-stage sheds are n ≤ 15 and KE-negligible), so the E2
+  cap is causally disconnected from the KE curve. The deficit accrues
+  **inside the 30 ps MD window**, in the in-band pure-cubic segment
+  ≈ 2–14 ps at v ≈ 2–7 Å/ps; fate is birth-dressing/droplet-size
+  ordered and the post-window n-mapping is near-diagonal. Remaining:
+  (ii) reframed as the in-window (KE, n) exit correlation, (iii) sized
+  at ~4–8 meV recoil per shed over the ≈ 5-shed deep cascade, and a new
+  (iv) beam-frame-dependent retained-population channel (RQ5-coupled;
+  the retained class sits on the Landau floor at 0.0025 eV in the MD
+  frame).
 
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);

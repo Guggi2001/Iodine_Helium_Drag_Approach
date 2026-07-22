@@ -3494,6 +3494,85 @@ N = 50, single seed, one lever at a time (no interaction terms);
 bands never re-fit; the ring rode `zero_gamma` (clean one-lever cfg
 diffs — licensed by finding 1 + §4y). Nothing here discharges F5.
 
+---
+
+## 4bb. RQ11 exposure diagnostic (read-only) — the cold tail is set inside the 30 ps MD window: candidate (i) E2 exposure is REFUTED (E_dissip gain 0.0000 on every solvated bin; KE frozen at handover), the deficit accrues in the in-band cubic phase ≈ 2–14 ps at v ≈ 2–7 Å/ps, and fate is birth-dressing/droplet-size-ordered
+
+Executed 2026-07-22, read-only (two scratchpad scripts over the on-disk
+`finc1v725` npz surface; no repo code, no MD — the RQ11 "candidate
+resolution: onset-n anatomy + velocity-class decomposition, read-only"
+pass). Convention check: raw `state_reason`-masked per-n means reproduce
+the committed scorer's deep bins at printed precision (n = 16: 0.0285 vs
+the recorded 0.028 eV; census frozen 742 / time_exhausted 49 /
+suppressed 152 / droplet_retained 57 = the §4z scored 943). NB the
+on-disk `n_detected` rides at handover n for the suppressed/retained
+classes — the 0/NaN forcing lives in `DetectedEnsembleView`; a raw read
+that ignores `state_reason` pollutes n ≥ 12 with both classes.
+
+### The stage-localization read (relaxation.npz + detection.npz)
+
+Per detected solvated bin (means): KE at handover ≈ KE at E2-end ≈ KE at
+detection everywhere — n ≥ 12: 0.0485 → 0.0557 → 0.0556 eV (the small
+early rise is shed recoil); KE settle times 30–70 ps into the 8000 ps
+E2 window; **zero** fragments still KE-decaying at the cap; cumulative
+`E_dissip` gain across E2 = **0.0000 eV on every solvated bin**. The E2
+Landau-gated drag acts only on the in-droplet retained class (as §4y
+measured); escaped ions coast. Detection-stage sheds are a low-n
+phenomenon: all 140 events sit on fragments detected at n ≤ 15,
+overwhelmingly n ≤ 10, and move KE negligibly (n = 1: 1.0340 → 1.0299).
+The Landau floor is irrelevant to the scored deep bins (KE at v_L 0.58
+≈ 0.0030–0.0036 eV for n = 12–20 vs their ≈ 0.055 eV) — only the
+excluded retained class sits on it (0.0025 eV, n ≈ 16.7), which
+*explains* the §4y/§4aa v_L-quietness of the scored surface. E2 trims
+the mapping near-diagonally: deep survivors go handover n 14.4 →
+detected 13.4 (≈ 1 shed in 8.5 µs); n = 1 arrives from handover n 2.0.
+
+### The in-window read (ion.npz, 0–30 ps)
+
+All fate groups launch identically (peak KE 1.69–1.80 eV, ≈ 13 Å/ps at
+0.5 ps) and differentiate by dressing: birth n_shell 15.5 (future
+n = 1) → 18.4 (future n ≥ 12), initial droplet radius 25.7 → 30.1 Å
+(retained: 34.0 Å) — fate is exposure-ordered end to end (total
+E_dissip 1.258 → 2.576 → 2.676 eV monotone across the groups). For the
+60 future n ≥ 12 survivors the above-cap phase ends at t ≈ 2.1 ps
+(spread 1.94–2.31; 79 % of their E_dissip accrues above v_c 7.25, vs
+99 % for the n = 1 group), but they fall below the experimental
+deep-bin KE level (0.069 eV, the n = 16 reference) only at mean
+13.5 ps (range 6.2–30, 60/60 cross): **the deficit-critical cooling is
+the in-band pure-cubic segment ≈ 2–14 ps at v ≈ 2–7 Å/ps**, followed
+by a flat coast (mild recoil recovery 0.046 → 0.049 eV after 20 ps).
+Every solvated fragment is outside its droplet by 30 ps (deep group at
+r ≈ 80 Å ≈ 2.7 droplet radii); the retained class is 77 % inside.
+
+### What this does to RQ11's candidate list
+
+- **(i) E2 exposure/over-cooling — REFUTED.** The E2 cap is causally
+  disconnected from the KE curve; a longer/shorter cap changes nothing
+  for detected survivors. A large-N re-run needs no cfg change on this
+  axis (diff stays `{num_molecules, seed}`).
+- **(ii) ladder tail / freeze-out ordering — alive, reframed:** the
+  mapping is near-diagonal post-window, so the lever is the *in-window*
+  (KE, n) exit correlation, not late-time re-mapping.
+- **(iii) missing recoil/relaxation channel — alive, sized:** deep
+  survivors shed ≈ 5 He total (18.4 → 13.4); closing the 0.02–0.04 eV
+  deficit needs only ~4–8 meV recoil per shed (RQ2's per-shed ε).
+- **(iv) NEW — deep-bin population channel:** experiment's n ≥ 12 mass
+  may draw on the excluded droplet-retained class via µs droplet
+  evaporation (RQ5); in the MD frame those are colder still
+  (0.0025 eV), so this explanation requires a beam-frame/detection
+  argument before it can be scored.
+
+### Boundaries
+
+Single run, single seed, N = 500 (60 deep solvated fragments); raw-npz
+means, not a `DetectedEnsembleView` re-derivation (spot-checked against
+the committed scorer at n = 16 and the class census only); the
+0.069 eV crossing threshold applies the n = 16 reference level
+group-wide; scripts scratchpad-only per the S4/S6 driver precedent.
+Nothing here discharges F5.
+
+---
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -4212,6 +4291,29 @@ diffs — licensed by finding 1 + §4y). Nothing here discharges F5.
   Droplet-prior axis asymmetric (δ 0.40 and pickup material ≈ 1.5σ;
   δ 0.80 noise-level). N = 50 χ² deltas direction-only (I85 caveat).
   Bands recorded, never re-fit.
+- **I89 (RQ11 stage localization, §4bb).** **The deep-bin cold tail is
+  set inside the 30 ps MD window.** KE is frozen at handover on every
+  solvated bin (settle 30–70 ps into E2; E2 `E_dissip` gain 0.0000 —
+  the Landau-gated E2 drag touches only the in-droplet retained class);
+  detection-stage sheds are n ≤ 15 / KE-negligible; the Landau floor
+  (≈ 0.003 eV) is an order of magnitude below the scored deep bins
+  (≈ 0.055 eV) and hosts only the excluded retained class — explaining
+  the §4y/§4aa v_L-quietness. RQ11 candidate (i) E2 exposure is
+  **refuted**; the E2 cap is causally disconnected from the KE curve,
+  so a larger-N re-run keeps the cfg diff at `{num_molecules, seed}`.
+- **I90 (RQ11 in-window anatomy, §4bb).** **The deficit accrues in the
+  in-band cubic phase, and fate is birth-dressing-ordered.** All fate
+  groups launch identically (≈ 1.7–1.8 eV peak at 0.5 ps); the future
+  n ≥ 12 survivors leave the above-cap regime at ≈ 2.1 ps (79 % of
+  their dissipation) yet cross below the experimental deep-bin KE
+  (0.069 eV) only at ≈ 6–30 ps (mean 13.5): the deficit-critical
+  segment is in-band pure-cubic drag at v ≈ 2–7 Å/ps. Birth dressing
+  (n_shell 15.5 → 18.4) and droplet radius (25.7 → 30.1 Å; retained
+  34.0 Å) order the fate classes; the post-window n-mapping is
+  near-diagonal (deep: ≈ 1 E2 shed), so the remaining RQ11 levers are
+  the in-window (KE, n) exit correlation (ii), per-shed recoil ε
+  (~4–8 meV/shed suffices, iii), or a beam-frame-dependent retained
+  population channel (iv, RQ5-coupled).
 
 ---
 

@@ -9147,3 +9147,47 @@ direct diff of every moved builder). All findings fixed same day:
 Tests: 4 new smoke tests (suite file now 11); focused sweep
 (detection summary, detected view, retitles, tier2_confirmation,
 ihe_ked) green; full suite green (2542).
+
+## RQ11 exposure diagnostic EXECUTED (read-only) — candidate (i) E2 exposure REFUTED: the cold tail is set inside the 30 ps MD window (in-band cubic segment ≈ 2–14 ps); findings §4bb, I89–I90; RQ11 status updated (2026-07-22)
+
+Housekeeping first: the detection-summary post-delivery review fixes
+(previous entry) committed as 0b1798f (focused sweep 162 green before
+commit).
+
+Read-only decomposition of the deep-bin KE undershoot at the standing
+production point (`finc1v725`), per RQ11's named candidate resolution
+("onset-n anatomy + velocity-class decomposition … read-only"). Two
+scratchpad scripts over the on-disk npz surface (ion.npz /
+relaxation.npz / detection.npz); no repo code, no MD, no figures.
+Convention check: raw `state_reason`-masked per-n means reproduce the
+committed scorer's deep bins at printed precision (n = 16: 0.0285 vs
+recorded 0.028 eV) and the §4z census (943 scored).
+
+- **Stage localization (I89):** KE at handover ≈ KE at E2-end ≈ KE at
+  detection on every solvated bin; E2 `E_dissip` gain 0.0000 (the
+  Landau-gated E2 drag acts only on the in-droplet retained class, as
+  §4y measured); all 140 detection-stage sheds sit at n ≤ 15 and move
+  KE negligibly; the Landau floor (≈ 0.003 eV) hosts only the excluded
+  retained class (0.0025 eV, n ≈ 16.7) — explaining the §4y/§4aa
+  v_L-quietness. **Consequence: the E2 cap is causally disconnected
+  from the KE curve — a larger-N re-run keeps the cfg diff at
+  `{num_molecules, seed}`.**
+- **In-window anatomy (I90):** all fate groups launch identically;
+  the future n ≥ 12 survivors leave the above-cap regime at ≈ 2.1 ps
+  but cross below the experimental deep-bin KE level (0.069 eV) only
+  at ≈ 6–30 ps (mean 13.5): the deficit-critical cooling is in-band
+  pure-cubic drag at v ≈ 2–7 Å/ps. Fate is birth-dressing /
+  droplet-size ordered (n_shell 15.5 → 18.4; R 25.7 → 30.1 Å across
+  the fate groups); the post-window n-mapping is near-diagonal.
+- **RQ11 re-scope:** (i) refuted; (ii) reframed to the in-window
+  (KE, n) exit correlation; (iii) sized (~4–8 meV recoil per shed over
+  the ≈ 5-shed deep cascade closes the deficit); new (iv) beam-frame-
+  dependent retained-population channel (RQ5-coupled).
+
+Docs-only this entry (findings §4bb + I89/I90; RQ11 status block).
+First-pass bug recorded in §4bb as a convention warning: a raw
+`n_detected` read without `state_reason` masks pollutes n ≥ 12 with
+the suppressed/retained classes (they ride at handover n on disk; the
+0/NaN forcing lives in `DetectedEnsembleView`). Next: freeze the
+large-N re-run design + pre-registration (D1's "larger-N re-run stays
+available" clause). Nothing here discharges F5.
