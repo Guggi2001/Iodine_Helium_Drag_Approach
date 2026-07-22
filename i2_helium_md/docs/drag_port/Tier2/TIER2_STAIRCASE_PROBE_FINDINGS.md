@@ -3573,6 +3573,97 @@ Nothing here discharges F5.
 
 ---
 
+## 4cc. The N = 5000 battery (5 × N = 1000 fresh seeds) — BN-P2 fully in-band (the histogram carry is seed-robust), the W₁ scare was seed scatter (SD ± 0.095 measured; pooled 0.571 = the converged branch), the blessed cell's draw was mildly favorable (≈ 2σ on n₁/supp — winner's curse quantified, not dramatic), and the RQ11 deficit is a SLOPE in n (sim/ref 0.81 → 0.38 across n = 10–17), not a uniform scale
+
+Executed 2026-07-22 under the BN `[PROCEED TO IMPLEMENTATION]`
+(pre-registration frozen and committed before any MD; launch record in
+the log). Five sequential N = 1000 cells, seeds 20260722–26, cfg diff
+exactly `{num_molecules, seed}` off the on-disk finc1v725 cfg
+(oracle-checked at every launch); ≈ 26–38 min/cell. Execution note:
+the harness background-task layer killed the driver four times on a
+per-cell cadence (machine healthy — no OOM, no crash, clean event
+log); cells resumed loss-free from their fixed seeds, and the final
+two cells ran in a harness-detached process. Scored by the committed
+median-anchor scorer per cell; the pooled read via
+`read_confirmation_detection` on the concatenated
+(state_reason, n_detected, E_kin) arrays (rule 1).
+
+### The scored read (per cell + pooled; §4r conventions, midHot per the pinned launch-record definition)
+
+| cell | scored | trap | supp | n̄_det | n₁_solv | n₁/n₂ | W₁_solv | midHot | χ²_med | n≥12 KE |
+|---|---|---|---|---|---|---|---|---|---|---|
+| s1 | 1862 | 0.069 | 0.192 | 4.189 | 0.2292 | 1.675 | 0.7284 | 1.0355 | 154.8 | 0.0576 |
+| s2 | 1873 | 0.064 | 0.185 | 4.187 | 0.2462 | 1.741 | 0.6062 | 1.0226 | 114.2 | 0.0618 |
+| s3 | 1858 | 0.071 | 0.188 | 4.054 | 0.2485 | 1.682 | 0.5192 | 1.0212 | 129.2 | 0.0588 |
+| s4 | 1869 | 0.066 | 0.192 | 3.917 | 0.2462 | 1.706 | 0.5595 | 1.0109 | 136.3 | 0.0657 |
+| s5 | 1868 | 0.066 | 0.180 | 3.991 | 0.2462 | 1.604 | 0.4822 | 0.9805 | 123.0 | 0.0583 |
+| **pooled** | **9330** | **0.067** | **0.187** | **4.068** | **0.2433** | **1.680** | **0.5713** | **1.0139** | **242.0** | **0.0603** |
+
+Per-seed SDs (the first seed-scatter measurement on this surface):
+n₁_solv ± 0.0079, supp ± 0.0048, trapped ± 0.0030, W₁ ± 0.0954,
+midHot ± 0.0207, χ²_med ± 15.4, deep KE ± 0.0033.
+
+### Verdicts (pre-registered BN-P1..P6)
+
+1. **BN-P1 CONFIRMED at launch** (all five cfg oracles; scorer lock
+   reproduced the §4z row column-for-column; midHot definition pinned
+   — see the launch record).
+2. **BN-P2 CONFIRMED — all four bars in-band pooled.** n₁_solv 0.2433
+   ∈ [0.230, 0.313] and well inside the frozen window [0.206, 0.411];
+   midHot 1.0139 ∈ [0.84, 1.14]; suppressed 0.187 ∈ [0.130, 0.193];
+   trapped 0.067 ∈ [0.038, 0.076]. The histogram-level landing is
+   seed-robust.
+3. **BN-P3 CONFIRMED on the converged branch.** Pooled W₁ 0.5713 ∈
+   [0.404, 0.644]. The measured seed SD (± 0.095) retro-diagnoses the
+   §4z/s1 "drift" scare: 0.424 (N = 50), 0.524 (N = 500) and 0.728
+   (s1) are all within ≈ 2σ of the seed mean 0.579 — the
+   "N-resolution tail structure" reading of S6f-P2 was seed scatter,
+   not an N-effect. Best estimate of the true model-vs-experiment
+   W₁_solv: **≈ 0.57 ± 0.04**.
+4. **BN-P4 CONFIRMED — and the shape read is the battery's physics
+   headline.** Pooled n ≥ 12 KE 0.0603 ∈ [0.043, 0.069]; χ²_med > 30
+   at every seed (114–155) and pooled (242.0 — the I85 σ-shrink
+   continues at pooling; no rescue, exactly as registered). The
+   deficit **shape is a monotone slope, not a scale**: pooled sim/ref
+   mean-KE ratio falls 0.81 → 0.75 → 0.74 → 0.67 → 0.59 → 0.58 →
+   0.55 → 0.38 across n = 10–17 (N/bin 301 → 17). Both surviving
+   RQ11 candidates are slope-compatible (drag exposure grows with
+   dressing; per-shed recoil heating shrinks with terminal n since
+   deep survivors shed least) — but uniform-scale stories are dead.
+5. **BN-P5 SPLIT (registered primary in, S6 carry marginally out).**
+   Pooled Δn̄(MD − twin 4.387) = −0.319 ∈ [−0.72, −0.05]; the tighter
+   S6 interpolation carry [−0.63, −0.33] is missed by 0.011 — the
+   N = 500 value (−0.384) regresses mildly toward the twin.
+6. **BN-P6 CONFIRMED in substance (letter: 23/25 bin-readings at
+   0.0000, two at 0.0001).** The 0.1 meV residuals trace to ~10–16
+   deep fragments per run (n_det 10–18, ≤ 5 meV each — late escapers
+   catching a sliver of in-droplet Landau-gated E2 drag): ≲ 1 % of
+   fragments, two orders below the 30–60 meV deficit, and
+   energy-*removing* — I89's causal disconnection of the E2 stage
+   from the KE curve stands.
+
+### Winner's curse, quantified
+
+Every fresh seed sits below the blessed cell on n₁_solv (0.229–0.249
+vs 0.2718, ≈ +1.8σ favorable draw) and above it on suppression
+(0.180–0.192 vs 0.161, ≈ −2.2σ) — finc1v725's histogram numbers were
+mildly seed-favorable, as regression-to-the-mean predicts for a
+selected winner. But the effect is ≈ 2σ, and **every pooled bar stays
+in-band**: the standing-result structure (histogram-level landing +
+characterized KE miss) survives out-of-sample. The pooled battery is
+now the better statistical reference for the standing point.
+
+### Boundaries
+
+One cell family (v7.25 only — no cross-cell contest at N = 5000); the
+pooled χ²_med (242.0) carries the same committed error model, so its
+absolute scale rides the I85 σ-mechanics; the RQ3 bare-peak
+distribution read (≈ 1745 pooled suppressed fragments) is available
+in the run dirs but not scored here; the deep-bin slope read thins to
+17 fragments at n = 17. Nothing here discharges F5.
+
+---
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -4314,6 +4405,27 @@ Nothing here discharges F5.
   the in-window (KE, n) exit correlation (ii), per-shed recoil ε
   (~4–8 meV/shed suffices, iii), or a beam-frame-dependent retained
   population channel (iv, RQ5-coupled).
+- **I91 (battery seed-robustness + winner's curse, §4cc).** **The
+  finc1v725 histogram landing is seed-robust at pooled N = 5000**:
+  BN-P2 all in-band (n₁_solv 0.2433, midHot 1.0139, supp 0.187,
+  trapped 0.067) and W₁ lands the converged branch (pooled 0.5713;
+  true value ≈ 0.57 ± 0.04). First seed-scatter measurement:
+  W₁ SD ± 0.095 — the §4z "N-resolution tail structure" (S6f-P2) and
+  the s1 = 0.728 scare were seed scatter, not an N-effect. The
+  blessed cell's draw was ≈ 2σ favorable on n₁/supp (winner's curse,
+  quantified, mild); the pooled battery supersedes the single N = 500
+  run as the statistical reference for the standing point.
+- **I92 (RQ11 shape, §4cc).** **The deep-bin KE deficit is a monotone
+  slope in n, not a uniform scale**: pooled sim/ref falls 0.81 → 0.38
+  across n = 10–17 (301 → 17 ions/bin). χ²_med > 30 at every seed
+  (114–155) and pooled (242.0) — no statistical rescue, per I89.
+  Slope-compatible survivors: in-window exposure growing with
+  dressing (ii) and per-shed recoil shrinking with terminal n (iii);
+  uniform-scale explanations are excluded. Δn̄(MD − twin) regresses
+  to −0.319 (in the registered band; 0.011 outside the tighter S6
+  carry). E2-quietness holds to ≤ 0.1 meV at bin level (a ≲ 1 %
+  deep-fragment residual of ≤ 5 meV late in-droplet drag,
+  sign-irrelevant) — I89 stands.
 
 ---
 

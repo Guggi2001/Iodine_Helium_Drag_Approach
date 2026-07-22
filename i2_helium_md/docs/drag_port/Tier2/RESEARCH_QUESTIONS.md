@@ -1337,6 +1337,15 @@ artifacts.
   (iv) beam-frame-dependent retained-population channel (RQ5-coupled;
   the retained class sits on the Landau floor at 0.0025 eV in the MD
   frame).
+- **Status (2026-07-22, battery §4cc / I92):** the pooled N = 5000
+  battery pins the deficit **shape: a monotone slope in n** (sim/ref
+  mean-KE 0.81 → 0.38 across n = 10–17), not a uniform scale —
+  single-global-offset explanations are excluded. Candidates (ii)
+  (exposure grows with dressing) and (iii) (per-shed recoil: deep
+  survivors shed least, so recoil heating shrinks with terminal n)
+  are both slope-compatible and remain the discrimination targets;
+  the deficit is seed-robust (deep-bin KE 0.0603 ± 0.0033 across
+  five seeds).
 
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);

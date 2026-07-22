@@ -9270,3 +9270,41 @@ prepends `drag_` itself), producing `9A_drag_drag_...` dirs — stopped
 §6.5 pairing guard warns (biphasic ↔ constant coefficients) exactly
 as on every biphasic production run
 (`allow_inconsistent_mass_pairing=True`, §6.6 defense).
+
+## Large-N battery EXECUTED — BN-P2/P3/P4 CONFIRMED (histogram carry seed-robust at pooled N = 5000; W₁ scare was seed scatter, pooled 0.571 = converged; RQ11 deficit is a SLOPE 0.81 → 0.38 over n = 10–17), BN-P5 SPLIT, BN-P6 confirmed in substance; winner's curse quantified at ≈ 2σ (findings §4cc, I91–I92) (2026-07-22)
+
+All five cells completed same day (≈ 26–38 min each; seeds
+20260722–26). Execution note: the harness background-task layer
+killed the sequential driver four times on a per-cell cadence
+(machine verified healthy — no OOM, no crash, no orphan processes);
+cells resumed loss-free from their fixed seeds and the final two ran
+in a harness-detached process watched by a file-condition monitor.
+Scored per cell by the committed median-anchor scorer; pooled read
+via `read_confirmation_detection` on concatenated arrays (rule 1;
+scratchpad scoring drivers per the S4/S6 precedent).
+
+Headline numbers (full table + verdicts in findings §4cc): pooled
+n₁_solv 0.2433 / midHot 1.0139 / supp 0.187 / trapped 0.067 — **all
+BN-P2 bars in-band**; pooled W₁_solv 0.5713 — **converged branch**,
+with the first measured seed SD (± 0.095) retro-diagnosing the
+S6f-P2 "N-resolution tail structure" and the s1 0.728 read as seed
+scatter; pooled deep-bin KE 0.0603 in-band with χ²_med > 30
+everywhere (pooled 242.0, no rescue) and the **deficit shape pinned
+as a monotone slope in n** (sim/ref 0.81 → 0.38, n = 10–17) —
+uniform-scale RQ11 stories excluded, candidates (ii)/(iii) both
+slope-compatible. Δn̄(MD − twin) −0.319 (registered band in; S6
+carry missed by 0.011). E2-quietness holds at bin level (two 0.0001
+readings from a ≲ 1 % deep-fragment ≤ 5 meV residual; I89 stands).
+Winner's curse quantified: every fresh seed sits ≈ 2σ unfavorable of
+the blessed cell on n₁/supp — mild, and every pooled bar stays
+in-band. **The pooled battery (N = 5000, 9330 scored fragments)
+supersedes the single N = 500 run as the statistical reference for
+the standing production point; the standing-result structure
+(histogram-level landing + characterized RQ11 KE miss) survives
+out-of-sample.**
+
+Docs-only this entry (findings §4cc + I91/I92; RQ11 status
+addendum). Open follow-ups: the RQ3 bare-peak distribution read on
+the ≈ 1745 pooled suppressed fragments; pooled detection_summary
+figures; the F5 reconciliation (still deferred, now with the battery
+in hand). Nothing here discharges F5.
