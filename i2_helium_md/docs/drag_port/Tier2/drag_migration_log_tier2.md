@@ -9328,3 +9328,24 @@ n̄ 4.068 / scored 9330/10000, the KE panel annotates χ²_med 242.0
 reference at n = 5–7 and peels away progressively from n ≈ 8. These
 figures are the pooled-reference figure set for the standing
 production point.
+
+**Correction (same day, user-caught):** the first pooled container
+concatenated the five cells *sequentially*, which silently broke the
+`(i, i + num_molecules)` fragment-pairing convention the cov recipes
+use (`pair_correlation.py` block layout) — every "pair" joined two
+independent fragments from different runs, factorizing the joint
+angular distribution into marginal × marginal: the angular pair-cov
+panel showed **four quadrant spots** (two cos² lobes squared)
+instead of the two back-to-back anti-diagonal bars, with the pair
+count collapsed to 170 accidental gate coincidences. All five cov
+panels were affected (every per-fragment panel — histogram, KED,
+VMI, polar — is permutation-invariant and was correct). Rebuilt
+pair-preserving (`[all fragment-1 blocks | all fragment-2 blocks]`,
+event CSR permuted per fragment, pairing oracle asserted in the
+builder), re-rendered all 14 sections: the angular pair covariance
+now shows the two anti-diagonal bars (184 true pairs), matching the
+experimental structure — sim bars narrower than experiment per the
+Tier-3 under-dispersion caveat. README updated with the layout
+requirement. Lesson recorded: any pooled/synthetic detection
+container must preserve the block pair layout, or the five cov
+panels are invalid.
