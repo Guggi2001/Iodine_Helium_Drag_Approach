@@ -9350,12 +9350,15 @@ requirement. Lesson recorded: any pooled/synthetic detection
 container must preserve the block pair layout, or the five cov
 panels are invalid.
 
-## F5 RECONCILED — Tier 2 CLOSED (not the program): the production-switch intent is discharged-by-equivalent through the S6→battery chain; `total_strip` retired unbuilt; both conditional triggers evaluated and NOT fired; Tier 3 + RQ11 stay open as the improvement axes (2026-07-22)
+## F5 RECONCILED — Tier 2 enters its OPTIMIZATION stage (plan bookkeeping resolved; the tier stays ACTIVE): the production-switch intent is discharged-by-equivalent through the S6→battery chain; `total_strip` retired unbuilt; both conditional triggers evaluated and NOT fired; RQ11 is the in-tier optimization target, Tier 3 stays next (2026-07-22)
 
-User adjudication (this session): Tier 2 closes at the standing
-result; **this is not program closure** — deviations from experiment
-remain and are the named improvement targets; Tier 3 stays parked as
-the next tier, not retired.
+User adjudication (this session; wording re-scoped same day at user
+request — an earlier phrasing said "Tier 2 CLOSED", which overstated
+it): the F5 *plan bookkeeping* is reconciled and the build program of
+phases A–F is complete, but **Tier 2 remains the active stage, now in
+optimization** — deviations from experiment remain (RQ11 foremost)
+and improving them is Tier-2 work against the Tier-2 observables.
+Tier 3 stays parked as the next tier, not retired.
 
 The reconciliation, item by item against the frozen F5 spec
 (`TIER2_PHASE_F_IMPLEMENTATION_PLAN.md` §F5):
@@ -9390,20 +9393,21 @@ The reconciliation, item by item against the frozen F5 spec
    N = 5000 battery; **histogram-level landing, seed-robust** (n₁_solv
    0.2433, midHot 1.0139, W₁ 0.571 ± 0.04, supp 0.187, all in-band);
    figure sets: finc1v725 run_summary + detection_summary, and the
-   pooled detection_summary (pair-preserving container). **Open
-   ledger, carried forward as the improvement axes:** RQ11 (deep-bin
+   pooled detection_summary (pair-preserving container). **The
+   in-tier optimization ledger (active Tier-2 work):** RQ11 (deep-bin
    KE cold tail, pinned as a slope 0.81 → 0.38 over n = 10–17; χ²_med
-   gate unmet by design decision D1), the Tier-3 under-dispersion
-   (visible as narrow cov bars / VMI second moments — the noise
-   channel is the designed fix, stubbed behind its enum), RQ3
-   (bare-peak: ≈ 1745 pooled suppressed fragments unscored), RQ5
-   (µs-flight channels / retained class), and the margin-3 Å pinned
-   convention (I88).
+   gate unmet by design decision D1), RQ3 (bare-peak: ≈ 1745 pooled
+   suppressed fragments unscored), RQ5 (µs-flight channels / retained
+   class), and the margin-3 Å pinned convention (I88). The
+   second-moment under-dispersion (narrow cov bars / VMI widths)
+   stays assigned to Tier 3 (the noise channel, stubbed behind its
+   enum).
 
-Tier-2 chapter accounting: phases A–F all accepted or reconciled
-(A–E delivered per their entries; F1–F4 delivered as the probe/
-scoreboard surface; F5 reconciled here; F6's intent delivered by the
-D4/detection-summary figure program). CLAUDE.md compact state updated
-under this entry. The `[PROCEED TO IMPLEMENTATION]` discipline stays
-in force for all future drag-program code (Tier 3, RQ11 model
-changes).
+Tier-2 chapter accounting: the *build* program of phases A–F is
+complete (A–E delivered per their entries; F1–F4 delivered as the
+probe/scoreboard surface; F5 reconciled here; F6's intent delivered
+by the D4/detection-summary figure program); the tier continues in
+optimization against its own observables. CLAUDE.md compact state
+updated under this entry. The `[PROCEED TO IMPLEMENTATION]`
+discipline stays in force for all further drag-program code (RQ11
+model changes, Tier 3).
