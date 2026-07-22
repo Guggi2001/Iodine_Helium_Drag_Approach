@@ -9308,3 +9308,23 @@ addendum). Open follow-ups: the RQ3 bare-peak distribution read on
 the ≈ 1745 pooled suppressed fragments; pooled detection_summary
 figures; the F5 reconciliation (still deferred, now with the battery
 in hand). Nothing here discharges F5.
+
+### Pooled detection_summary figures generated (2026-07-22)
+
+The pooled figures container
+`data/runs/..._N5000_tier2probe_conf270_bigc1v725pooled/` was built
+by concatenating the five cells' `detection.npz` (per-fragment
+arrays concatenated; event CSR offsets rebased; scalars verified
+identical; 10 000 fragments / 1307 post-E2 events) + the s1 cfg with
+`num_molecules = 5000`; a `README_POOLED.txt` in the dir records
+that it is a figures container, not an MD run (the cfg `seed` field
+necessarily shows only s1's seed; the five seeds are in the BN
+entries). `plot_detection_summary.py` rendered **all 14 sections**
+into its `figures/` (PDF + PNGs; run-dir artifacts, not committed
+per the data-contract rule). Spot-verified against the §4cc scored
+read: the size panel annotates W₁ 0.571 / n₁ 0.243 / supp 18.7 % /
+n̄ 4.068 / scored 9330/10000, the KE panel annotates χ²_med 242.0
+(17 bins) — and the I92 slope is now *visible*: sim tracks the
+reference at n = 5–7 and peels away progressively from n ≈ 8. These
+figures are the pooled-reference figure set for the standing
+production point.
