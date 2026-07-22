@@ -120,6 +120,20 @@ class TestDetectedSectionBuilders:
         assert isinstance(fig, plt.Figure)
         plt.close(fig)
 
+    def test_size_distribution_renders_when_reference_lacks_n2(self, mod):
+        # ratio-annotation guard (post-review hardening, 2026-07-22): a
+        # reference with no n = 2 mass must render (ratio inf/nan), not
+        # raise ZeroDivisionError; the committed reference cannot fire
+        # this, so the guard is locked synthetically
+        abundance = t2c.make_abundance_reference(
+            n=[0, 1, 3], fraction=[0.4, 0.4, 0.2]
+        )
+        fig = mod._section_detected_size_distribution(
+            _synthetic_read(), abundance
+        )
+        assert isinstance(fig, plt.Figure)
+        plt.close(fig)
+
     def test_ked_mean_energy_renders_and_annotates_chi2(self, mod):
         _, ked = _synthetic_refs()
         fig = mod._section_detected_ked_mean_energy(_synthetic_read(), ked)

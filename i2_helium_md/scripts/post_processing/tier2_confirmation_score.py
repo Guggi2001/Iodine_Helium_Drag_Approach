@@ -104,6 +104,11 @@ SAVE_EXPERIMENT_CSV_PATH = None
 # ---------------------------------------------------------------------------
 
 
+def _nan_if_none(value: float | None) -> float:
+    """None -> NaN missing-value stand-in; 0.0 is a value, not missing."""
+    return float("nan") if value is None else value
+
+
 def _fmt(value: Any) -> str:
     if isinstance(value, float):
         return f"{value:.4g}"
@@ -249,7 +254,7 @@ def main() -> None:
                     read.n_values, read.fraction, read.n_values, twin.h
                 ),
                 "n1_ke_md_eV": n1_ke_md,
-                "n1_ke_twin_eV": twin_ke.mean_ke_for(1) or float("nan"),
+                "n1_ke_twin_eV": _nan_if_none(twin_ke.mean_ke_for(1)),
                 "twin_trapped": twin.trapped_frac,
             }
         )

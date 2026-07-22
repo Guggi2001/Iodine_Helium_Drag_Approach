@@ -495,8 +495,12 @@ class KECurveScore:
     scaling the reference curve coherently
     (``r -> r * (1 + a*calib_frac + b*condition_frac)``); the reported
     ``chi2_profiled`` is minimized over ``(a, b)`` with the ``a^2 + b^2``
-    prior penalty included. ``n_within_1p25`` is the coarse fallback bar
-    (bins with sim/ref ratio within x1.25, both directions).
+    prior penalty included. ``chi2_unprofiled`` uses the SAME per-point
+    sigma as the profiled fit (including the sim SE when
+    ``include_sim_se``) with the bands simply not profiled (a = b = 0) —
+    it is not a reference-error-only chi^2. ``n_within_1p25`` is the
+    coarse fallback bar (bins with sim/ref ratio within x1.25, both
+    directions).
 
     ``n1_anchor`` / ``n1_widen_bg`` record the n = 1 comparison convention
     in force (I77 provenance): under ``"median"`` the ``ref_mean_eV`` entry
@@ -558,8 +562,11 @@ def score_ke_curve_vs_reference(
           scorer (the §4s/§4t recorded-χ² regression anchor);
         - ``"median"`` (default) — the n = 1 reference comparison value is
           ``ref.median_KE_eV`` [eV] instead of ``ref.mean_KE_eV``; all
-          other bins, the per-point errors, and the two correlated bands
-          are unchanged;
+          other bins, the per-point errors, and the two correlated band
+          *fractions* are unchanged. The band substitution happens before
+          the basis is formed, so at n = 1 the correlated-band lever is
+          ``frac * median`` (the fractional band scales the reference
+          value actually scored, not the discarded mean; test-locked);
         - ``"exclude"`` — drop the n = 1 bin from the fit (treated like
           the bare n = 0 bin; ``n_points`` shrinks by one).
     n1_widen_bg

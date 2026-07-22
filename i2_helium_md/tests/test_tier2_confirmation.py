@@ -672,6 +672,41 @@ class TestN1AnchorConvention:
                 read, ref, n1_anchor="mean", n1_widen_bg=True
             )
 
+    def test_median_anchor_band_basis_scales_substituted_median(self):
+        # Bands-ON lock of the I77 convention detail (post-review
+        # hardening, 2026-07-22): under "median" the correlated-band
+        # basis at n = 1 is calib_frac * (substituted median) — the
+        # fractional band scales the reference value actually scored,
+        # not the discarded mean. Single point, calib band only, so the
+        # single-band closed form applies with u = c * r_med.
+        det = make_detection(
+            n_detected=[1.0], state_reason=["frozen"], ke_eV=[1.4]
+        )
+        read = read_confirmation_detection(det, label="t")
+        sigma, r_mean, r_med, s, c = 0.1, 1.3, 1.1, 1.4, 0.04
+        ref = make_ked_reference(
+            [1], [r_mean], median_KE_eV=[r_med],
+            stat_err=sigma, calib_frac=c, condition_frac=0.0,
+        )
+        score = score_ke_curve_vs_reference(
+            read, ref, include_sim_se=False, n1_anchor="median"
+        )
+        w = 1.0 / sigma**2
+        rho = s - r_med
+
+        def _closed_form(u):
+            a = w * u * rho / (w * u * u + 1.0)
+            return a, w * (rho - a * u) ** 2 + a**2
+
+        a_expected, chi2_expected = _closed_form(c * r_med)
+        assert score.a_calib == pytest.approx(a_expected)
+        assert score.chi2_profiled == pytest.approx(chi2_expected)
+        # the alternative reading (basis on the discarded mean) is a
+        # different number — this pin is what a refactor must not
+        # silently flip
+        _, chi2_alt = _closed_form(c * r_mean)
+        assert abs(chi2_expected - chi2_alt) > 1e-3
+
 
 class TestReportBothChi2Columns:
     """The report prints both χ² columns (operative + mean-legacy) so the
@@ -733,3 +768,15 @@ class TestReportBothChi2Columns:
             legacy.chi2_profiled
         )
         assert back[0]["n1_anchor"] == "median"
+
+
+class TestLegTableNanConvention:
+    """The leg-table missing-value stand-in must be None-based, not
+    falsy-based: a legitimate 0.0 eV twin mean KE is a value, not a
+    missing bin (post-review hardening, 2026-07-22)."""
+
+    def test_nan_if_none_passes_zero_through(self):
+        mod = TestReportBothChi2Columns._load_script_module()
+        assert mod._nan_if_none(0.0) == 0.0
+        assert mod._nan_if_none(1.25) == 1.25
+        assert np.isnan(mod._nan_if_none(None))

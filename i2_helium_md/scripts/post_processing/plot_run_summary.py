@@ -1079,12 +1079,18 @@ def _section_detected_size_distribution(read, abundance) -> plt.Figure:
     ax.bar(sim_n + width / 2, 100.0 * sim_f, width=width, color="tab:red",
            label="simulation (solvated)")
     ratio = score.ratio_n1_over_n2
+    if score.ref_n2 > 0.0:
+        ref_ratio = score.ref_n1 / score.ref_n2
+    else:
+        # scorer convention (score_histogram_vs_reference): inf when only
+        # the numerator carries mass, nan when both are empty
+        ref_ratio = float("inf") if score.ref_n1 > 0.0 else float("nan")
     ax.text(
         0.97, 0.95,
         rf"$W_1$(solv) = {score.w1_solvated:.3f} bins" "\n"
         rf"$n_1$ = {score.sim_n1:.3f} (ref {score.ref_n1:.3f})" "\n"
         rf"$n_1/n_2$ = {ratio:.2f} (ref "
-        rf"{score.ref_n1 / score.ref_n2:.2f})",
+        rf"{ref_ratio:.2f})",
         transform=ax.transAxes, ha="right", va="top", fontsize=9,
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
     )
