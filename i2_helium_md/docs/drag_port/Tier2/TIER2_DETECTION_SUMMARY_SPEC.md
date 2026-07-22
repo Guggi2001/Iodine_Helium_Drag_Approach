@@ -1,6 +1,8 @@
 # Tier-2 Detection-Stage Summary — Design Spec
 
-**Status: DESIGN FROZEN 2026-07-22 — awaits its own `[PROCEED TO IMPLEMENTATION]`.**
+**Status: DELIVERED 2026-07-22** (trigger given same day; §3 as amended
+by the implementation-survey entries below; delivery record in
+`drag_migration_log_tier2.md`).
 Provenance: the post-production run_summary review (log entry 2026-07-22,
 "run_summary stage-mismatch review") found the legacy detector-facing
 sections rendering the 30 ps handover state against detector references

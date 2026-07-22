@@ -9035,3 +9035,69 @@ mass gates), retained excluded, suppressed = the n = 0 ensemble
 (newly populates the RQ3 bare-peak speed panel), partner-ballistic
 cov pairing, Tier-3 under-dispersion caveat labels. No schema or
 physics change. New code awaits `[PROCEED TO IMPLEMENTATION]`.
+
+## Detection summary DELIVERED — plot_detection_summary.py (14-section roster) + shared summary_sections + DetectedEnsembleView; run_summary handover retitles live; two spec amendments from the implementation survey (2026-07-22)
+
+Trigger given; built per `TIER2_DETECTION_SUMMARY_IMPLEMENTATION_PLAN.md`
+(Tasks 0–6, TDD throughout, every new test watched RED first).
+
+**Spec amendments (recorded in the spec §3, adjudicated by survey
+evidence before any code):**
+
+- **Two-detected-fragments convention supersedes partner-ballistic.**
+  `detection.npz` is (2N,): both iodine fragments are independent
+  detections (E1 convention carried through the stage) — cov panels
+  pair the molecule's two *detected* rows; `plot_detection_summary.py`
+  never loads `ion.npz`.
+- **View-based n-selection supersedes both the "no mass gates" clause
+  and the planned `ConfirmationDetectionRead` velocity extension.**
+  New `i2_helium_md/postprocess/detected_view.py`:
+  `DetectedEnsembleView` duck-types exactly the checkpoint surface the
+  shared mass-gate reads (`mass_final_kg`, `velocities_final_{x,y,z}`,
+  `b_ion_outside` all-True, `num_molecules`), so every legacy recipe
+  runs **verbatim** (rule 1, zero recipe duplication, zero changes to
+  the frozen postprocess helpers). Forcing rules: frozen/time_exhausted
+  pass through (`mass == m(n_detected)` bit-exact — the equivalence
+  pin test); suppressed → `m(0)` (they ride at handover n on disk; the
+  frozen suppressed→0 convention is realized in the view); retained →
+  NaN (match no gate; per-fragment exclusion incl. the pair-AND).
+
+**Delivered:**
+
+- `scripts/post_processing/summary_sections.py` — the detector-facing
+  builders factored out of `plot_run_summary.py` verbatim (constants
+  re-exported through `plot_run_summary` for the three thin interactive
+  comparison scripts); paper-family builders now take `mass_amu`
+  explicitly (the USER SETTING keeps steering them); all builders grew
+  `stage_note` (+ `include_reference` on the KED pair), defaults
+  preserving legacy rendering exactly.
+- `scripts/post_processing/plot_detection_summary.py` — fail-loud
+  without `detection.npz` (no legacy mode); §4 roster: metadata cover
+  (stage identity, t_handover/t_detect, per-reason census, cfg.json
+  knobs — F3), the three D4 detected sections, detected KED curves
+  3d/2d (n = 0 = suppressed channel — populated for the first time),
+  detected mass-resolved, VMI/polar + five cov panels under the Tier-3
+  caveat. Writes `detection_summary.pdf` + `detected_*.png`.
+- `plot_run_summary.py` on detection runs only: the four detector-facing
+  legacy sections drop the experimental overlay and retitle as
+  ion-stage handover diagnostics pointing at detection_summary; the
+  VMI/cov/mass_resolved family carries the handover banner. Legacy dirs
+  byte-identical (existing gating tests + positional-call tests).
+- Deviation from the frozen plan text, recorded: `include_reference=
+  False` still uses `ked_ref` for the n-grid and keeps the legacy skip
+  on `ked_ref=None` (dropping the overlay is the point; a
+  reference-free n-grid would be invented behavior).
+
+**Verified on the blessed run (finc1v725):** all 14 detection-summary
+sections render; the n = 0 panel shows the suppressed channel (N = 152)
+— the simulated bare peak sits at ~1400 m/s, far narrower and slower
+than the broad experimental n = 0 curve (an RQ3-relevant read now
+visible for the first time); n = 1–3 sim peaks track the reference
+peaks. run_summary regenerated: handover banners + sim-only legacy
+panels confirmed. Known cosmetic limits (deferred, recipe-frozen): the
+sim-only mass-spectrum crop at 147 amu hides the handover tail beyond
+n = 5; the stage-note banner can overlap a bottom x-label.
+
+Tests: 8 (view) + 4 (retitles) + 7 (detection summary) new, all
+RED→GREEN; 309-test affected sweep green after the refactor; full suite
+green at close-out (count in the close-out commit).
