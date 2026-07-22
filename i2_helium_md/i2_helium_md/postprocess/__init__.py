@@ -53,6 +53,10 @@ from .abundance_loader import (
     HeAbundanceReference,
     load_he_abundance_reference,
 )
+from .detected_view import (
+    DetectedEnsembleView,
+    detected_ensemble_view,
+)
 from .derived_diagnostics import (
     Diagnostics,
     TCrossSummary,

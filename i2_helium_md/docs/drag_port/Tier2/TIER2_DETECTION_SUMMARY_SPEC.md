@@ -63,28 +63,45 @@ plot changes stay local to the scripts layer; the one package change is
 
 ## 3. Data contracts
 
-- **Detection ensemble read.** `ConfirmationDetectionRead`
-  (`i2_helium_md/postprocess/tier2_confirmation.py`) is extended to
-  surface the per-ion terminal velocity vectors and detected masses
-  already present in `detection.npz` (`vx/vy/vz_detected` [Å/ps],
-  `mass_detected_kg`, `n_detected`, `state_reason`). No schema change —
-  read-side only. Shape/unit validation on load (rule 4).
-- **n-selection.** Sections select by integer `n_detected` directly.
-  The legacy m(n) ± 0.5 amu mass-gate machinery does **not** come
-  along (it exists only because `ion.npz` has no fragment label).
-- **Retained ions** (`state_reason = droplet_retained`) are excluded
-  from every panel by the standing detection contract.
-- **Suppressed channel = the n = 0 ensemble.** Suppressed ions are
-  bare I⁺ at detection; they populate the n = 0 panels (size
-  distribution bin 0 as today; *newly*, the n = 0 speed-distribution
-  panel — the RQ3 bare-peak observable, which the legacy summary could
-  never populate). Panels label the channel explicitly.
-- **Partner-ballistic convention (cov panels).** The neutral partner
-  feels no forces after the MD window, so its handover velocity
-  (`ion.npz`) *is* its `t_detect` velocity. Cov panels pair detected
-  ion velocities with handover partner velocities and carry a one-line
-  label recording this. `plot_detection_summary.py` therefore also
-  loads `ion.npz` — for partner velocities only.
+- **Detected ensemble view (amended 2026-07-22, implementation
+  survey).** The recipe sections consume a checkpoint-shaped
+  `DetectedEnsembleView` (`i2_helium_md/postprocess/detected_view.py`)
+  duck-typing exactly the `IonCheckpoint` surface the shared
+  mass-gated diagnostics read (`mass_final_kg`,
+  `velocities_final_{x,y,z}`, `b_ion_outside`, `num_molecules`),
+  populated from `detection.npz` (`vx/vy/vz_detected` [Å/ps],
+  `mass_detected_kg`, `n_detected`, `state_reason`). Every legacy
+  recipe then runs verbatim — rule 1 with zero recipe changes. The
+  originally-specced `ConfirmationDetectionRead` velocity extension is
+  superseded (the read keeps its scoring role). No schema change.
+  Shape validation in the view factory (rule 4).
+- **n-selection (amended).** Selection runs through the existing
+  single mass-gate convention (`select_final_mass_gate`) applied to
+  the view; no *new* gate machinery. This is provably equivalent to
+  `n_detected` selection: for detected in-band ions
+  `mass_detected_kg = m(n_detected)` exactly (discrete shed), pinned
+  by test.
+- **Retained ions** (`state_reason = droplet_retained`): their
+  `detection.npz` rows hold the verbatim in-droplet handover state,
+  never a detector arrival — the view forces their mass to NaN so
+  they match **no** gate (per-fragment exclusion in every panel,
+  including pair panels via the pair-AND).
+- **Suppressed channel = the n = 0 ensemble.** Suppressed ions ride at
+  their handover n in `detection.npz`; the view forces their mass to
+  the bare gate `m(0)`, realizing the frozen suppressed → n = 0
+  convention with their stored detected velocities. They populate the
+  n = 0 panels (size distribution bin 0 as today; *newly*, the n = 0
+  speed-distribution panel — the RQ3 bare-peak observable, which the
+  legacy summary could never populate). Panels label the channel
+  explicitly.
+- **Two-detected-fragments convention (cov panels; amended —
+  supersedes the partner-ballistic convention).** `detection.npz`
+  arrays are shape (2N,): *both* iodine fragments of every molecule
+  are independent I⁺Heₙ detections (the E1 convention carried through
+  the detection stage). Cov panels pair the molecule's two **detected**
+  rows; a pair enters only when both fragments are non-retained
+  (automatic through the per-fragment NaN-mass exclusion).
+  `plot_detection_summary.py` does **not** load `ion.npz`.
 - **Tier-3 caveat label.** VMI/polar (and cov) comparisons render with
   an explicit *"ensemble second moments under-dispersed — Tier-3 noise
   stubbed"* annotation. They are previews, not Tier-3 validation.
@@ -102,7 +119,7 @@ plot changes stay local to the scripts layer; the one package change is
 | 7 | `detected_mass_resolved_velocities` | detection read | legacy recipe, sim-only |
 | 8 | `detected_paper_v2_vmi` | detection read | Tier-3 caveat label |
 | 9 | `detected_paper_v2_polar` | detection read | Tier-3 caveat label |
-| 10–14 | `detected_paper_cov_*` (5 panels) | detection read + handover partners | partner-ballistic label + Tier-3 caveat |
+| 10–14 | `detected_paper_cov_*` (5 panels) | detected view (both fragments) | two-detected-fragments pairing + Tier-3 caveat |
 
 PNG naming: `detected_*` prefix throughout. The three D4 sections keep
 their existing filenames; `run_summary.pdf` and `detection_summary.pdf`
