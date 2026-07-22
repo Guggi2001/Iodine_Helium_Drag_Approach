@@ -35,6 +35,7 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 
@@ -53,6 +54,7 @@ __all__ = [
     "KECurveScore",
     "read_confirmation_detection",
     "load_confirmation_run",
+    "knob_columns_from_cfg",
     "load_twin_prediction",
     "load_twin_ke_curve",
     "wasserstein_between",
@@ -268,6 +270,38 @@ def load_confirmation_run(
     return read_confirmation_detection(
         detection, label=p.name if label is None else label, n_max=n_max
     )
+
+
+def knob_columns_from_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
+    """The F3 knob columns from a loaded ``cfg.json`` dict.
+
+    The F3 convention: physics knobs are read from the authoritative
+    ``cfg.json``, never parsed from the run-directory tag. Single roster
+    shared by the scorer report and the detection-summary metadata cover
+    (rule 1). Missing keys render as ``"-"``.
+
+    Parameters
+    ----------
+    cfg
+        Parsed ``cfg.json`` payload (``json.loads``), not a path.
+
+    Returns
+    -------
+    dict[str, Any]
+        Ordered ``{column_name: value}`` mapping: ``drag_form``, ``v_c``,
+        ``p_tail``, ``tau_ps``, ``ladder``, ``f_int``, ``prior``.
+    """
+    drag = cfg.get("drag_coefficients", {})
+    coeff = drag.get("coefficients", {}) if isinstance(drag, dict) else {}
+    return {
+        "drag_form": cfg.get("drag_form", "-"),
+        "v_c": coeff.get("v_c", "-"),
+        "p_tail": coeff.get("p_tail", "-"),
+        "tau_ps": cfg.get("internal_energy_cooling_tau_ps", "-"),
+        "ladder": cfg.get("dissociation_ladder", "-"),
+        "f_int": cfg.get("internal_energy_partition_fraction", "-"),
+        "prior": cfg.get("droplet_size_prior", "-"),
+    }
 
 
 # ---------------------------------------------------------------------------

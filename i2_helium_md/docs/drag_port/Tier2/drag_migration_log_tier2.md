@@ -9101,3 +9101,49 @@ n = 5; the stage-note banner can overlap a bottom x-label.
 Tests: 8 (view) + 4 (retitles) + 7 (detection summary) new, all
 RED→GREEN; 309-test affected sweep green after the refactor; full suite
 green at close-out (count in the close-out commit).
+
+---
+
+## 2026-07-22 — Detection-summary post-delivery code review: findings fixed
+
+Independent post-delivery review of the `eb8cd1f..1603a35` range (verdict:
+mergeable, no Critical findings; refactor verified behavior-preserving by
+direct diff of every moved builder). All findings fixed same day:
+
+- **Spec §5 smoke-coverage gap (Important):** the reference-backed roster
+  sections (curves 2d, VMI, polar, all five cov panels) were never
+  rendered from a `DetectedEnsembleView` in tests — only their skip
+  paths. Added `TestReferenceBackedSmoke` (synthetic cov `.mat` +
+  polar-image `images/` fixtures per the `test_plot_paper_cov_smoke` /
+  `test_paper_v2` recipes; VMI renders against an empty reference dir via
+  the placeholder panel). The view's five-attribute surface is now locked
+  by test against the frozen VMI/polar/cov helper stack.
+- **Dead re-exports (Important, rule 2):** trimmed the
+  `summary_sections` import in `plot_run_summary.py` to the names
+  actually consumed through its namespace (four ihe_ked constants +
+  `_nan_aware_moving_mean` + the three externally-called builders +
+  `_SectionSkipped`); the 11 unconsumed constant re-exports
+  (`DETECTED_KE_*`, `MASS_*`, `HIST_BIN_WIDTH/EDGE/NUM`, …) are gone and
+  the comment now names the exact consumer set.
+- **Knob-roster duplication (Minor):** the F3 knob mapping now lives
+  once as `knob_columns_from_cfg(cfg)` in
+  `i2_helium_md/postprocess/tier2_confirmation.py` (the module the scorer
+  docstring already names as the conventions home); both
+  `tier2_confirmation_score._knob_columns` and the detection-summary
+  metadata cover delegate to it. Supersedes the plan's
+  "config-reads, not physics" duplication adjudication — the shared home
+  removes the trade-off.
+- **Double `detection.npz` load (Minor):** `_load_inputs` now builds the
+  read via `read_confirmation_detection(det, label=run_dir.name)` from
+  the already-loaded payload (one disk read; read/view guaranteed from
+  the same bytes).
+- **Cosmetics (Minor):** `_HANDOVER_NOTE` says "(t = t_handover)" per
+  spec §2.3 (was "(end of MD window)"); stray `rf` prefix removed;
+  `plot_detection_summary` save loop carries the same `fig is None`
+  guard as run_summary. Spec §4 row 5 wording amended ("per-panel ion
+  counts" → the verbatim legacy recipe's single n = 0 legend + per-panel
+  empty-gate annotation).
+
+Tests: 4 new smoke tests (suite file now 11); focused sweep
+(detection summary, detected view, retitles, tier2_confirmation,
+ihe_ked) green; full suite green (2542).

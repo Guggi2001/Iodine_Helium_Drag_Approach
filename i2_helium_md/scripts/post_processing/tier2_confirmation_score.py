@@ -45,6 +45,7 @@ from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
 )
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
+    knob_columns_from_cfg,
     load_confirmation_run,
     load_twin_ke_curve,
     load_twin_prediction,
@@ -147,17 +148,7 @@ def write_rows_csv(path: str | Path, rows: list[dict[str, Any]]) -> Path:
 def _knob_columns(run_dir: Path) -> dict[str, Any]:
     """Knob columns from the authoritative cfg.json (never from the tag)."""
     cfg = json.loads((run_dir / "cfg.json").read_text(encoding="utf-8"))
-    drag = cfg.get("drag_coefficients", {})
-    coeff = drag.get("coefficients", {}) if isinstance(drag, dict) else {}
-    return {
-        "drag_form": cfg.get("drag_form", "-"),
-        "v_c": coeff.get("v_c", "-"),
-        "p_tail": coeff.get("p_tail", "-"),
-        "tau_ps": cfg.get("internal_energy_cooling_tau_ps", "-"),
-        "ladder": cfg.get("dissociation_ladder", "-"),
-        "f_int": cfg.get("internal_energy_partition_fraction", "-"),
-        "prior": cfg.get("droplet_size_prior", "-"),
-    }
+    return knob_columns_from_cfg(cfg)
 
 
 def experimental_row(

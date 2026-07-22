@@ -53,7 +53,8 @@ from i2_helium_md.postprocess import (  # noqa: E402
     load_ihe_ked_reference,
 )
 from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
-    load_confirmation_run,
+    knob_columns_from_cfg,
+    read_confirmation_detection,
 )
 from i2_helium_md.simulation.detection_stage import (  # noqa: E402
     STATE_REASONS,
@@ -151,24 +152,14 @@ def _section_detection_metadata(run_dir, cfg, det, read) -> plt.Figure:
         f"scored (retained excluded): {read.num_scored}/{read.num_ions}"
     )
     lines.append(
-        rf"  suppressed (bare) fraction: "
+        "  suppressed (bare) fraction: "
         f"{100.0 * read.suppressed_frac:.1f} %"
     )
     lines.append(f"  n_mean(det) = {read.n_mean:.3f}")
 
     if cfg is not None:
-        drag = cfg.get("drag_coefficients", {})
-        coeff = drag.get("coefficients", {}) if isinstance(drag, dict) else {}
         lines.append("knobs (cfg.json):")
-        for key, value in (
-            ("drag_form", cfg.get("drag_form", "-")),
-            ("v_c", coeff.get("v_c", "-")),
-            ("p_tail", coeff.get("p_tail", "-")),
-            ("tau_ps", cfg.get("internal_energy_cooling_tau_ps", "-")),
-            ("ladder", cfg.get("dissociation_ladder", "-")),
-            ("f_int", cfg.get("internal_energy_partition_fraction", "-")),
-            ("prior", cfg.get("droplet_size_prior", "-")),
-        ):
+        for key, value in knob_columns_from_cfg(cfg).items():
             lines.append(f"  {key} = {value}")
     else:
         lines.append("no cfg.json found")
@@ -195,7 +186,7 @@ def _load_inputs(run_dir: Path):
             "without a detection stage use plot_run_summary.py."
         )
     det = load_detection_result(det_path)
-    read = load_confirmation_run(run_dir)
+    read = read_confirmation_detection(det, label=run_dir.name)
     view = detected_ensemble_view(det)
     cfg_path = run_dir / "cfg.json"
     cfg = (
@@ -292,6 +283,8 @@ def main(run_dir: Path | None = None) -> int:
                 fig = builder()
             except _SectionSkipped as skip:
                 print(f"[detection_summary] skip {label}: {skip}")
+                continue
+            if fig is None:
                 continue
             pdf.savefig(fig)
             fig.savefig(out_dir / f"{label}.png", dpi=150)

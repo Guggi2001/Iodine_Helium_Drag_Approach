@@ -116,7 +116,7 @@ plot changes stay local to the scripts layer; the one package change is
 | 2 | `detected_size_distribution` | detection read | existing D4 builder (suppressed bin + solvated vs abundance, W1/n1/ratio) |
 | 3 | `detected_ihe_ked_mean_energy` | detection read | existing D4 builder (committed error model, I77 median anchor, both χ²) |
 | 4 | `detected_ke_anatomy` | detection read | existing D4 builder (signed per-bin z) |
-| 5 | `detected_ihe_ked_curves_3d` | detection read | legacy recipe, n = 0 = suppressed channel, per-panel ion counts (no silent caps) |
+| 5 | `detected_ihe_ked_curves_3d` | detection read | legacy recipe, n = 0 = suppressed channel; ion counts per the legacy recipe (sim curve labels carry N, legend on the n = 0 panel; an empty gate annotates "sim: no atoms in gate" on its own panel — amended 2026-07-22 post-review: the original "per-panel ion counts" wording overstated the verbatim-moved recipe, which renders one legend) |
 | 6 | `detected_ihe_ked_curves_2d` | detection read | as 5, in-plane projection |
 | 7 | `detected_mass_resolved_velocities` | detection read | legacy recipe, sim-only |
 | 8 | `detected_paper_v2_vmi` | detection read | Tier-3 caveat label |

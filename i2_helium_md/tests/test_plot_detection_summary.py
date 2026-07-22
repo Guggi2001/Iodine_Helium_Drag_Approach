@@ -22,6 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pytest  # noqa: E402
+from scipy.io import savemat  # noqa: E402
 
 from tests.test_detected_view import make_rich_detection  # noqa: E402
 
@@ -170,6 +171,130 @@ class TestDetectedSpeedPanels:
         )
         assert isinstance(fig, plt.Figure)
         plt.close(fig)
+
+
+def _write_synthetic_cov_reference(reference_dir: Path) -> None:
+    """Tiny covariance reference satisfying the loader contract
+    (the ``test_plot_paper_cov_smoke`` fixture recipe)."""
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    n_theta, n_v = 16, 20
+    cov_angular = np.zeros((n_theta, n_theta), dtype=float)
+    cov_radial = np.zeros((n_v, n_v), dtype=float)
+    cov_angular[3, 11] = cov_angular[11, 3] = 1.0
+    cov_radial[5, 7] = cov_radial[7, 5] = 1.0
+    savemat(
+        reference_dir / "iplus_he_covariance.mat",
+        {
+            "cov_angular": cov_angular,
+            "cov_radial": cov_radial,
+            "theta_centers_rad": np.linspace(
+                -np.pi, np.pi, n_theta, endpoint=False
+            ),
+            "velocity_centers_mps": np.linspace(0.0, 2500.0, n_v),
+        },
+    )
+
+
+def _write_synthetic_polar_reference(reference_dir: Path) -> None:
+    """Tiny polar VMI image reference (the ``test_paper_v2`` npz +
+    json-sidecar recipe, under the ``images/`` subdirectory the
+    optional-image loader searches)."""
+    image_dir = reference_dir / "images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    phi = np.linspace(0.0, 2.0 * np.pi, 12, endpoint=False)
+    v_radius_mps = np.linspace(0.0, 800.0, 9)
+    intensity = np.outer(np.cos(phi) ** 2 + 1.0, v_radius_mps + 1.0)
+    np.savez(
+        image_dir / "iplus_he_high_snr_vmi_polar_image.npz",
+        phi_rad=phi,
+        v_radius_mps=v_radius_mps,
+        intensity_polar=intensity,
+    )
+    (image_dir / "iplus_he_high_snr_vmi_polar_image.json").write_text(
+        json.dumps({"channel": "synthetic polar test fixture"}),
+        encoding="ascii",
+    )
+
+
+class TestReferenceBackedSmoke:
+    """Spec §5 'smoke render of every roster section on synthetic
+    fixtures' — the reference-backed sections rendered from a
+    ``DetectedEnsembleView``, locking the view's five-attribute surface
+    against the frozen VMI/polar/cov helpers (a sixth checkpoint
+    attribute read anywhere in that stack fails here, not at the next
+    production render)."""
+
+    MASS_AMU = 131.0  # detected n = 1 channel
+
+    def test_curves_2d_renders_from_view(self, mod):
+        if not IHE_KED_DIR.exists():
+            pytest.skip("committed ihe_ked reference not present")
+        view = detected_ensemble_view(_detection())
+        ked_ref = load_ihe_ked_reference(
+            IHE_KED_DIR / "IHe_KED_reference.csv"
+        )
+        fig = mod._section_ihe_ked_curves(
+            view, IHE_KED_DIR, ked_ref, "2d",
+            stage_note=mod._DETECTED_NOTE,
+        )
+        assert isinstance(fig, plt.Figure)
+        plt.close(fig)
+
+    def test_vmi_renders_from_view_without_image_export(self, mod, tmp_path):
+        # empty reference dir: the experimental panel renders its
+        # "not exported" placeholder; the simulated map is built from
+        # the view (the attribute-surface lock this test is for)
+        view = detected_ensemble_view(_detection())
+        ref_dir = tmp_path / "paper_v2_empty"
+        ref_dir.mkdir()
+        fig = mod._section_paper_v2_vmi(
+            view, ref_dir, 0.2, mass_amu=self.MASS_AMU,
+            stage_note=mod._TIER3_NOTE,
+        )
+        assert isinstance(fig, plt.Figure)
+        note = " ".join(t.get_text() for t in fig.texts)
+        assert "Tier-3" in note
+        plt.close(fig)
+
+    def test_polar_renders_from_view(self, mod, tmp_path):
+        view = detected_ensemble_view(_detection())
+        ref_dir = tmp_path / "paper_v2"
+        _write_synthetic_polar_reference(ref_dir)
+        fig = mod._section_paper_v2_polar(
+            view, ref_dir, 0.2, mass_amu=self.MASS_AMU,
+            stage_note=mod._TIER3_NOTE,
+        )
+        assert isinstance(fig, plt.Figure)
+        plt.close(fig)
+
+    def test_all_five_cov_sections_render_from_view(self, mod, tmp_path):
+        # the two-detected-fragments pairing: molecule 2's fragments
+        # (rows 2 and 6) are both detected at n = 1, so exactly one
+        # pair survives the pair-AND in the 131 amu gate
+        view = detected_ensemble_view(_detection())
+        cov_dir = tmp_path / "paper_cov"
+        _write_synthetic_cov_reference(cov_dir)
+        builders = (
+            lambda: mod._section_paper_cov_radial_distribution(
+                view, cov_dir, None, mass_amu=self.MASS_AMU,
+                stage_note=mod._TIER3_NOTE),
+            lambda: mod._section_paper_cov_phi_distribution(
+                view, cov_dir, mass_amu=self.MASS_AMU,
+                stage_note=mod._TIER3_NOTE),
+            lambda: mod._section_paper_cov_angular(
+                view, cov_dir, mass_amu=self.MASS_AMU,
+                stage_note=mod._TIER3_NOTE),
+            lambda: mod._section_paper_cov_radial(
+                view, cov_dir, mass_amu=self.MASS_AMU,
+                stage_note=mod._TIER3_NOTE),
+            lambda: mod._section_paper_cov_traces(
+                view, cov_dir, mass_amu=self.MASS_AMU,
+                stage_note=mod._TIER3_NOTE),
+        )
+        for builder in builders:
+            fig = builder()
+            assert isinstance(fig, plt.Figure)
+            plt.close(fig)
 
 
 class TestArtifactRoundTrip:

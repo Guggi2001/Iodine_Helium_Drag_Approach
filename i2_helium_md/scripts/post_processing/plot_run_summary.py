@@ -82,29 +82,18 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from summary_sections import (  # noqa: E402, F401  -- constants and
-    # _nan_aware_moving_mean are re-exported: the thin interactive
-    # comparison scripts (plot_speed_distribution_comparison.py,
-    # plot_mean_kinetic_comparison.py, plot_histogram_comparison.py) and
-    # the pin tests consume them through this module's namespace.
-    DETECTED_KE_INCLUDE_SIM_SE,
-    DETECTED_KE_MIN_BIN_COUNT,
-    DETECTED_KE_N1_ANCHOR,
-    DETECTED_KE_N_MIN,
-    HIST_BIN_WIDTH_APS,
-    HIST_EDGE_MAX_APS,
-    HIST_NUM_BINS,
+from summary_sections import (  # noqa: E402, F401  -- the four constants
+    # and _nan_aware_moving_mean are re-exported: the thin interactive
+    # comparison scripts consume exactly these names through this module's
+    # namespace (plot_speed_distribution_comparison.py: _section_ihe_ked_curves,
+    # _nan_aware_moving_mean + the four constants;
+    # plot_mean_kinetic_comparison.py: _section_ihe_ked_mean_energy;
+    # plot_histogram_comparison.py: _section_mass_spectrum, _SectionSkipped),
+    # as do the test_ihe_ked pin tests (_nan_aware_moving_mean).
     HIST_SMOOTHING_WINDOW,
     IHE_KED_EXP_SMOOTHING_WINDOW,
     IHE_KED_HIST_NUM_BINS,
     IHE_KED_HIST_V_MAX_APS,
-    IHE_KED_MEAN_ENERGY_SPLIT_N,
-    IHE_KED_PLOT_V_MAX_MPS,
-    MASS_I,
-    MASS_I_HE2_AMU,
-    MASS_I_HE_AMU,
-    MASS_SPECTRUM_MAX_AMU,
-    VELOCITY_PLOT_V_MAX_APS,
     _SectionSkipped,
     _load_detection_read,
     _nan_aware_moving_mean,
@@ -138,7 +127,7 @@ TIME_HEATMAP_N_R_BINS = 100
 # observable once the detection stage exists — they stay as diagnostics,
 # lose their experimental overlays, and point at the detection summary.
 _HANDOVER_NOTE = (
-    "ion-stage handover state (end of MD window) — pre-detection "
+    "ion-stage handover state (t = t_handover) — pre-detection "
     "diagnostic; detector comparison: detection_summary"
 )
 
