@@ -159,6 +159,71 @@ class TestDetectedSectionBuilders:
             mod._section_detected_ke_anatomy(_synthetic_read(), None)
 
 
+class TestHandoverRetitles:
+    """Spec §2.3 (detection-summary spec, 2026-07-22): on detection runs
+    the detector-facing legacy sections drop the experimental overlay and
+    carry a handover stage note. Builder-level lock; defaults preserve the
+    legacy rendering exactly (positional-call tests in test_ihe_ked)."""
+
+    @staticmethod
+    def _fig_text(fig):
+        return " ".join(
+            t.get_text() for ax in fig.axes for t in ax.texts
+        ) + " " + " ".join(t.get_text() for t in fig.texts)
+
+    @staticmethod
+    def _legend_labels(fig):
+        return [
+            t.get_text() for ax in fig.axes for leg in [ax.get_legend()]
+            if leg is not None for t in leg.get_texts()
+        ]
+
+    def test_mass_spectrum_stage_note_renders_sim_only(self, mod):
+        from tests.test_ihe_ked import _smoke_ion
+        fig = mod._section_mass_spectrum(
+            _smoke_ion(), None, stage_note="ion-stage handover state"
+        )
+        assert "handover" in self._fig_text(fig)
+        assert all("experiment" not in lab
+                   for lab in self._legend_labels(fig))
+        plt.close(fig)
+
+    def test_mean_energy_without_reference_overlay(self, mod):
+        from tests.test_ihe_ked import _smoke_ion
+        _, ked = _synthetic_refs()
+        fig = mod._section_ihe_ked_mean_energy(
+            _smoke_ion(), ked, include_reference=False,
+            stage_note="ion-stage handover state",
+        )
+        labels = self._legend_labels(fig)
+        assert labels, "sim points must still be drawn and legended"
+        assert all("experiment" not in lab and "band" not in lab
+                   for lab in labels)
+        assert "handover" in self._fig_text(fig)
+        plt.close(fig)
+
+    def test_curves_without_reference_overlay(self, mod):
+        from tests.test_ihe_ked import _smoke_ion, IHE_KED_DIR
+        _, ked = _synthetic_refs()
+        fig = mod._section_ihe_ked_curves(
+            _smoke_ion(), IHE_KED_DIR, ked, "3d",
+            include_reference=False, stage_note="ion-stage handover state",
+        )
+        assert all("experiment" not in lab
+                   for lab in self._legend_labels(fig))
+        assert "handover" in self._fig_text(fig)
+        assert "handover" in (fig.get_suptitle() or "").lower()
+        plt.close(fig)
+
+    def test_mass_resolved_stage_note(self, mod):
+        from tests.test_ihe_ked import _smoke_ion
+        fig = mod._section_mass_resolved(
+            _smoke_ion(), stage_note="ion-stage handover state"
+        )
+        assert "handover" in self._fig_text(fig)
+        plt.close(fig)
+
+
 class TestMedianAnchorConvention:
     def test_ked_section_uses_median_anchor_at_n1(self, mod):
         """The annotated chi2_med must equal the committed scorer's

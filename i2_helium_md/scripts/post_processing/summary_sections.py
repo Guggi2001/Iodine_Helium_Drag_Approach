@@ -122,7 +122,19 @@ class _SectionSkipped(RuntimeError):
     pass
 
 
-def _section_mass_spectrum(ion, abundance) -> plt.Figure:
+def _apply_stage_note(fig: plt.Figure, stage_note: str | None) -> plt.Figure:
+    """Stamp the stage-identity banner onto a figure (no-op on ``None``).
+
+    Spec §2.3: on detection runs the run_summary renders the legacy
+    detector-facing sections as handover diagnostics; the detection
+    summary stamps its own detected-ensemble / Tier-3 caveat notes."""
+    if stage_note:
+        fig.text(0.005, 0.005, stage_note, fontsize=8, color="tab:red",
+                 style="italic", ha="left", va="bottom")
+    return fig
+
+
+def _section_mass_spectrum(ion, abundance, *, stage_note=None) -> plt.Figure:
     """Final ion mass spectrum; side-by-side with the experimental
     I+He_n abundance when the reference is configured.
 
@@ -139,7 +151,7 @@ def _section_mass_spectrum(ion, abundance) -> plt.Figure:
                xlabel="m / u", ylabel="count")
         ax.set_xlim(left=MASS_I - 1, right=MASS_SPECTRUM_MAX_AMU + 1)
         ax.set_xticks(np.arange(MASS_I, MASS_SPECTRUM_MAX_AMU + 1, 4))
-        return fig
+        return _apply_stage_note(fig, stage_note)
 
     counts = fragment_gate_counts(ion, abundance.n)
     total = counts.sum()
@@ -158,10 +170,12 @@ def _section_mass_spectrum(ion, abundance) -> plt.Figure:
            xlabel="n (attached He atoms)", ylabel="fraction / %")
     ax.set_xticks(abundance.n)
     ax.legend(frameon=False)
-    return fig
+    return _apply_stage_note(fig, stage_note)
 
 
-def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
+def _section_ihe_ked_mean_energy(
+    ion, ked_ref, *, stage_note=None, include_reference=True,
+) -> plt.Figure:
     """Mean kinetic energy per fragment: sim vs experiment, mean-to-mean.
 
     Error model per the reference README: per-point error is
@@ -207,25 +221,29 @@ def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
             ax.set_axis_off()
             continue
 
-        for frac, label, alpha in (
-            (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
-            (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
-        ):
-            ax.fill_between(
-                ked_ref.n[subset],
-                mean[subset] * (1.0 - frac[subset]),
-                mean[subset] * (1.0 + frac[subset]),
-                color="tab:blue", alpha=alpha, linewidth=0, label=label,
-            )
-        ax.errorbar(
-            ked_ref.n[subset], mean[subset],
-            yerr=ked_ref.point_err_eV[subset], fmt="o",
-            color="tab:blue", markersize=4, capsize=2,
-            label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
-        gold_subset = gold & subset
-        ax.plot(ked_ref.n[gold_subset], mean[gold_subset], "o", markersize=10,
-                markerfacecolor="none", markeredgecolor="goldenrod",
-                markeredgewidth=1.5, label="gold points (calib-limited)")
+        if include_reference:
+            for frac, label, alpha in (
+                (ked_ref.calib_syst_frac,
+                 "calibration band (correlated)", 0.20),
+                (ked_ref.condition_syst_frac,
+                 "condition band (correlated)", 0.12),
+            ):
+                ax.fill_between(
+                    ked_ref.n[subset],
+                    mean[subset] * (1.0 - frac[subset]),
+                    mean[subset] * (1.0 + frac[subset]),
+                    color="tab:blue", alpha=alpha, linewidth=0, label=label,
+                )
+            ax.errorbar(
+                ked_ref.n[subset], mean[subset],
+                yerr=ked_ref.point_err_eV[subset], fmt="o",
+                color="tab:blue", markersize=4, capsize=2,
+                label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
+            gold_subset = gold & subset
+            ax.plot(ked_ref.n[gold_subset], mean[gold_subset], "o",
+                    markersize=10,
+                    markerfacecolor="none", markeredgecolor="goldenrod",
+                    markeredgewidth=1.5, label="gold points (calib-limited)")
 
         panel_sim = [p for p in sim_points if in_panel(p.n)]
         if panel_sim:
@@ -250,8 +268,14 @@ def _section_ihe_ked_mean_energy(ion, ked_ref) -> plt.Figure:
         if show_legend:
             ax.legend(frameon=False, fontsize=8)
 
-    fig.suptitle(r"I$^+$He$_n$ mean kinetic energy (mean-to-mean)")
-    return fig
+    if include_reference:
+        fig.suptitle(r"I$^+$He$_n$ mean kinetic energy (mean-to-mean)")
+    else:
+        fig.suptitle(
+            r"Ion-stage handover diagnostic — I$^+$He$_n$ mean kinetic "
+            "energy (sim only)"
+        )
+    return _apply_stage_note(fig, stage_note)
 
 
 def _nan_aware_moving_mean(values: np.ndarray, window: int) -> np.ndarray:
@@ -284,7 +308,10 @@ def _nan_aware_moving_mean(values: np.ndarray, window: int) -> np.ndarray:
     return out
 
 
-def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure:
+def _section_ihe_ked_curves(
+    ion, ked_dir, ked_ref, representation, *,
+    stage_note=None, include_reference=True,
+) -> plt.Figure:
     """Per-fragment speed-distribution overlays for n = 0..3.
 
     n = 4 is dropped from this display: it is the weakest trusted curve
@@ -318,21 +345,29 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
     fig, axes = plt.subplots(2, 2, figsize=(10.5, 7.0),
                              constrained_layout=True)
     axes = axes.ravel()
-    fig.suptitle(titles[representation])
+    if include_reference:
+        fig.suptitle(titles[representation])
+    else:
+        fig.suptitle(
+            f"Ion-stage handover diagnostic — {titles[representation]}"
+            " — sim only"
+        )
 
     for n in range(4):
         ax = axes[n]
-        curve = load_ihe_ked_curve(ked_dir, n)
-        ref_signal = getattr(curve, f"signal_{representation}_Pv")
-        # Raw export as faint points joined by a fine line; matplotlib
-        # breaks the line at the NaN cuts, so gaps stay gaps.
-        ax.plot(curve.v_mps, ref_signal, ".-", color="tab:blue",
-                markersize=2.5, linewidth=0.5, alpha=0.30,
-                label="experiment (raw)")
-        ax.plot(curve.v_mps,
-                _nan_aware_moving_mean(ref_signal, IHE_KED_EXP_SMOOTHING_WINDOW),
-                color="tab:blue", linewidth=1.4,
-                label="experiment (movmean 10)")
+        if include_reference:
+            curve = load_ihe_ked_curve(ked_dir, n)
+            ref_signal = getattr(curve, f"signal_{representation}_Pv")
+            # Raw export as faint points joined by a fine line; matplotlib
+            # breaks the line at the NaN cuts, so gaps stay gaps.
+            ax.plot(curve.v_mps, ref_signal, ".-", color="tab:blue",
+                    markersize=2.5, linewidth=0.5, alpha=0.30,
+                    label="experiment (raw)")
+            ax.plot(curve.v_mps,
+                    _nan_aware_moving_mean(
+                        ref_signal, IHE_KED_EXP_SMOOTHING_WINDOW),
+                    color="tab:blue", linewidth=1.4,
+                    label="experiment (movmean 10)")
 
         mass_amu = float(complex_mass_amu(n))
         sim_note = None
@@ -355,11 +390,12 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
 
         # v(<E>) markers (labelled v(<E>), not <v>): experiment from the
         # reference table, simulation from the mass-gated ensemble.
-        v_exp = speed_mps_of_energy_eV(
-            float(ked_ref.mean_KE_eV[n]), mass_amu,
-        )
-        ax.axvline(v_exp, color="tab:blue", linestyle=":", linewidth=1.0,
-                   label=r"exp $v(\langle E\rangle)$")
+        if include_reference:
+            v_exp = speed_mps_of_energy_eV(
+                float(ked_ref.mean_KE_eV[n]), mass_amu,
+            )
+            ax.axvline(v_exp, color="tab:blue", linestyle=":",
+                       linewidth=1.0, label=r"exp $v(\langle E\rangle)$")
         try:
             sim_mean = fragment_mean_kinetic_energy(ion, n)
         except ValueError:
@@ -378,23 +414,25 @@ def _section_ihe_ked_curves(ion, ked_dir, ked_ref, representation) -> plt.Figure
         ax.set_ylabel("signal / arb. units")
         if n == 0:
             ax.legend(frameon=False, fontsize=7)
-    return fig
+    return _apply_stage_note(fig, stage_note)
 
 
-def _section_paper_v2_vmi(ion, reference_dir, noise_floor, *, mass_amu) -> plt.Figure:
+def _section_paper_v2_vmi(
+    ion, reference_dir, noise_floor, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     if reference_dir is None:
         raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
     image_ref = load_optional_image(reference_dir, log_prefix="[run_summary]")
     velocity_map = paper_v2_velocity_map(ion, mass_amu=mass_amu)
-    return build_vmi_figure(
+    return _apply_stage_note(build_vmi_figure(
         image_ref=image_ref,
         velocity_map=velocity_map,
         experimental_noise_floor=noise_floor,
-    )
+    ), stage_note)
 
 
 def _section_paper_cov_radial_distribution(
-    ion, reference_dir, paper_v2_reference_dir, *, mass_amu,
+    ion, reference_dir, paper_v2_reference_dir, *, mass_amu, stage_note=None,
 ) -> plt.Figure:
     if reference_dir is None:
         raise _SectionSkipped("PAPER_COV_REFERENCE_DIR is None")
@@ -413,32 +451,36 @@ def _section_paper_cov_radial_distribution(
         )
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
-    return build_paper_cov_radial_distribution_figure(
+    return _apply_stage_note(build_paper_cov_radial_distribution_figure(
         high_snr_ref=high_snr_ref,
         sim_radial_curve=sim_radial_curve,
         sim_radial=sim_radial,
         cov_ref=cov_ref,
         title = 'run_summary'
-    )
+    ), stage_note)
 
 
-def _section_paper_cov_phi_distribution(ion, reference_dir, *, mass_amu) -> plt.Figure:
+def _section_paper_cov_phi_distribution(
+    ion, reference_dir, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     if reference_dir is None:
         raise _SectionSkipped("PAPER_COV_REFERENCE_DIR is None")
     phi_ref = load_optional_paper_cov_phi_reference(
         reference_dir, log_prefix="[run_summary]",
     )
     try:
-        return build_paper_cov_phi_distribution_figure(
+        return _apply_stage_note(build_paper_cov_phi_distribution_figure(
             phi_ref=phi_ref,
             ion=ion,
             mass_amu=mass_amu,
-        )
+        ), stage_note)
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
 
 
-def _section_paper_cov_angular(ion, reference_dir, *, mass_amu) -> plt.Figure:
+def _section_paper_cov_angular(
+    ion, reference_dir, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     cov_ref = _required_paper_cov_reference(reference_dir)
     try:
         sim_angular = paper_v4_angular_pair_covariance(
@@ -446,12 +488,14 @@ def _section_paper_cov_angular(ion, reference_dir, *, mass_amu) -> plt.Figure:
         )
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
-    return build_paper_cov_angular_cov_figure(
+    return _apply_stage_note(build_paper_cov_angular_cov_figure(
         cov_ref=cov_ref, sim_angular=sim_angular,
-    )
+    ), stage_note)
 
 
-def _section_paper_cov_radial(ion, reference_dir, *, mass_amu) -> plt.Figure:
+def _section_paper_cov_radial(
+    ion, reference_dir, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     cov_ref = _required_paper_cov_reference(reference_dir)
     try:
         sim_radial = radial_pair_speed_covariance(
@@ -459,12 +503,14 @@ def _section_paper_cov_radial(ion, reference_dir, *, mass_amu) -> plt.Figure:
         )
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
-    return build_paper_cov_radial_cov_figure(
+    return _apply_stage_note(build_paper_cov_radial_cov_figure(
         cov_ref=cov_ref, sim_radial=sim_radial,
-    )
+    ), stage_note)
 
 
-def _section_paper_cov_traces(ion, reference_dir, *, mass_amu) -> plt.Figure:
+def _section_paper_cov_traces(
+    ion, reference_dir, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     cov_ref = _required_paper_cov_reference(reference_dir)
     try:
         sim_angular = paper_v4_angular_pair_covariance(
@@ -475,11 +521,11 @@ def _section_paper_cov_traces(ion, reference_dir, *, mass_amu) -> plt.Figure:
         )
     except ValueError as exc:
         raise _SectionSkipped(str(exc))
-    return build_paper_cov_pair_cov_traces_figure(
+    return _apply_stage_note(build_paper_cov_pair_cov_traces_figure(
         cov_ref=cov_ref,
         sim_angular=sim_angular,
         sim_radial=sim_radial,
-    )
+    ), stage_note)
 
 
 def _required_paper_cov_reference(reference_dir):
@@ -491,7 +537,9 @@ def _required_paper_cov_reference(reference_dir):
     return cov_ref
 
 
-def _section_paper_v2_polar(ion, reference_dir, noise_floor, *, mass_amu) -> plt.Figure:
+def _section_paper_v2_polar(
+    ion, reference_dir, noise_floor, *, mass_amu, stage_note=None,
+) -> plt.Figure:
     if reference_dir is None:
         raise _SectionSkipped("PAPER_V2_REFERENCE_DIR is None")
     polar_ref = load_optional_polar_image(
@@ -502,13 +550,13 @@ def _section_paper_v2_polar(ion, reference_dir, noise_floor, *, mass_amu) -> plt
     polar_hist = polar_histogram_matched_to_reference(
         ion, polar_ref, mass_amu=mass_amu,
     )
-    return build_polar_image_figure(
+    return _apply_stage_note(build_polar_image_figure(
         polar_ref, polar_hist,
         experimental_noise_floor=noise_floor,
-    )
+    ), stage_note)
 
 
-def _section_mass_resolved(ion) -> plt.Figure:
+def _section_mass_resolved(ion, *, stage_note=None) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(9.0, 4.5), constrained_layout=True)
     drew_anything = False
     for mass, label, style in (
@@ -536,7 +584,7 @@ def _section_mass_resolved(ion) -> plt.Figure:
            xlabel=r"v / $\mathrm{\AA}/\mathrm{ps}$",
            ylabel="signal / arb. units")
     ax.legend(frameon=False)
-    return fig
+    return _apply_stage_note(fig, stage_note)
 
 
 # =============================================================================

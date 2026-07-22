@@ -133,6 +133,15 @@ PAIR_DIST_NUM_BINS = 100
 TIME_HEATMAP_N_SLICES = 60
 TIME_HEATMAP_N_R_BINS = 100
 
+# Stage banner for detection runs (spec §2.3): the legacy detector-facing
+# sections render the 30 ps handover state, which is NOT the detector
+# observable once the detection stage exists — they stay as diagnostics,
+# lose their experimental overlays, and point at the detection summary.
+_HANDOVER_NOTE = (
+    "ion-stage handover state (end of MD window) — pre-detection "
+    "diagnostic; detector comparison: detection_summary"
+)
+
 
 # =============================================================================
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
@@ -223,8 +232,11 @@ def main() -> int:
     ion = run.load_ion() if run.has_ion() else None
     # Tier-2 confirmation runs only: None on a legacy run dir (no
     # detection.npz), which keeps the section list — and every legacy
-    # figure — exactly as before.
+    # figure — exactly as before. On detection runs the detector-facing
+    # legacy sections become handover diagnostics (spec §2.3).
     detection_read = _load_detection_read(run.root)
+    is_legacy_run = detection_read is None
+    handover_note = None if is_legacy_run else _HANDOVER_NOTE
 
     hedft = load_hedft_trajectory(hedft_ref) if hedft_ref else None
     ked_ref = (
@@ -253,45 +265,61 @@ def main() -> int:
                 ("ion_temperature_diagnostic",
                  lambda: _section_temperature(ion)),
                 ("mass_spectrum",
-                 lambda: _section_mass_spectrum(ion, abundance)),
+                 lambda: _section_mass_spectrum(
+                     ion, abundance if is_legacy_run else None,
+                     stage_note=handover_note)),
                 ("ihe_ked_mean_energy",
-                 lambda: _section_ihe_ked_mean_energy(ion, ked_ref)),
+                 lambda: _section_ihe_ked_mean_energy(
+                     ion, ked_ref, include_reference=is_legacy_run,
+                     stage_note=handover_note)),
                 ("ihe_ked_curves_3d",
                  lambda: _section_ihe_ked_curves(
-                     ion, ihe_ked_dir, ked_ref, "3d")),
+                     ion, ihe_ked_dir, ked_ref, "3d",
+                     include_reference=is_legacy_run,
+                     stage_note=handover_note)),
                 ("ihe_ked_curves_2d",
                  lambda: _section_ihe_ked_curves(
-                     ion, ihe_ked_dir, ked_ref, "2d")),
+                     ion, ihe_ked_dir, ked_ref, "2d",
+                     include_reference=is_legacy_run,
+                     stage_note=handover_note)),
                 ("paper_v2_vmi_comparison",
                  lambda: _section_paper_v2_vmi(
                      ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR,
-                     mass_amu=PAPER_V2_MASS_AMU)),
+                     mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("paper_cov_radial_distribution",
                  lambda: _section_paper_cov_radial_distribution(
                      ion, paper_cov_ref_dir, paper_v2_ref_dir,
-                     mass_amu=PAPER_V2_MASS_AMU)),
+                     mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("paper_cov_phi_distribution",
                  lambda: _section_paper_cov_phi_distribution(
-                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU)),
+                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("paper_v2_polar_image_comparison",
                  lambda: _section_paper_v2_polar(
                      ion, paper_v2_ref_dir, EXPERIMENTAL_NOISE_FLOOR,
-                     mass_amu=PAPER_V2_MASS_AMU)),
+                     mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("mass_resolved_velocities",
-                 lambda: _section_mass_resolved(ion)),
+                 lambda: _section_mass_resolved(
+                     ion, stage_note=handover_note)),
                 ("radial_evolution_heatmap",
                  lambda: _section_radial_evolution(ion)),
                 ("interparticle_distance_histogram",
                  lambda: _section_pair_distance(ion)),
                 ("paper_cov_angular_pair_cov",
                  lambda: _section_paper_cov_angular(
-                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU)),
+                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("paper_cov_radial_pair_cov",
                  lambda: _section_paper_cov_radial(
-                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU)),
+                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
                 ("paper_cov_pair_cov_traces",
                  lambda: _section_paper_cov_traces(
-                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU)),
+                     ion, paper_cov_ref_dir, mass_amu=PAPER_V2_MASS_AMU,
+                     stage_note=handover_note)),
             ]
         if detection_read is not None:
             sections += [
