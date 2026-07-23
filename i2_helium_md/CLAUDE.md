@@ -47,6 +47,10 @@ Repo root:
   E_int(0) provenance, per-shed ε, suppressed fate/bare peak, ladder bottom,
   µs-flight channels, s_eff cross-check) — entry document of the
   literature-research / cross-validation phase (active since 2026-07-09)
+- `TIER2_SENSITIVITY_ATLAS_PLAN.md` — **current goal document** (designed
+  2026-07-23): the sensitivity-atlas study program
+- `TIER2_PARAMETER_INFLUENCE.md` — compact per-knob influence reference
+  (atlas D0; living doc — its GAP markers are the atlas targets)
 
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline
@@ -72,10 +76,14 @@ mean-KE at production 2.70 eV. **Standing production point: `finc1v725`**
 fresh seeds, findings §4cc): histogram-level landing seed-robust (n₁_solv
 0.243, midHot 1.014, W₁ 0.571 ± 0.04). Figure surface: `plot_run_summary.py`
 (MD window) + `plot_detection_summary.py` (detected ensemble, 14 sections) +
-the pooled figures container. **Active optimization targets (in-tier):** RQ11
-deep-bin KE cold tail (a slope, sim/ref 0.81 → 0.38 over n = 10–17 — set
-inside the 30 ps MD window, §4bb/§4cc, I89–I92), RQ3 bare-peak and RQ5
-µs-flight reads, the margin-3 Å pinned convention (I88). Tier-3 noise stays
+the pooled figures container. **Current goal (2026-07-23): the sensitivity
+atlas** (`TIER2_SENSITIVITY_ATLAS_PLAN.md` + the D0 reference
+`TIER2_PARAMETER_INFLUENCE.md`) — understanding-driven OAT influence mapping
+around finc1v725: droplet R × birth-position grid + sampling-law audit (D2b),
+E₀/τ curves, drag-form Method-B re-fits (doubles as the RQ11 form
+discrimination — candidates (i)–(iii) refuted, in-band low-v law + channel
+(iv) survive, I93–I100) and the E_bind scan. RQ3/RQ5 reads and the margin-3 Å
+pinned convention (I88) stay open in-tier. Tier-3 noise stays
 next (second-moment under-dispersion, visible in the cov/VMI panels; stubbed
 behind its enum, NOT retired). New drag-program code stays behind the
 `[PROCEED TO IMPLEMENTATION]` trigger.

@@ -434,6 +434,18 @@ gaps; item (2)'s in-flight part migrates to RQ5.
   third n = 1 route besides the RQ2-ε fringe and the RQ4 deep rung,
   active within one rung of the cliff in leak units (= 22.6 meV wide in
   E_int(0), D₀(1)·e^K).
+- **NB (2026-07-22, pooled conventions read — findings §4dd, I95):**
+  the fragmentation-convention discriminator now has pooled numbers
+  (1747 suppressed fragments, handover n̄ 14.06): intact 1.96 /
+  co-moving 1.36 / cold-shed 2.82 eV vs the reference n = 0 mean
+  3.706 ± 1.356 — direction **momentum-conserving**, but every
+  convention is 6–10× too narrow in σ, and the bare mean **exceeds any
+  momentum partition of the 5.401 eV pair budget** (symmetric 2.70;
+  full-shell-partner asymmetric cap ≈ 3.37 pre-drag). This quantifies
+  the 2026-07-11 two-channel adjudication: the main bare peak (mode
+  4.76 eV) is channel-external (→ RQ8), the droplet-suppressed class
+  belongs to the low-KE shoulder (1.5–3 eV), and the 43.5 % weight
+  target for the suppressed→bare route relaxes accordingly.
 
 #### RQ2+RQ3 joint findings — NB register (deep-research run, 2026-07-10)
 
@@ -1346,6 +1358,168 @@ artifacts.
   are both slope-compatible and remain the discrimination targets;
   the deficit is seed-robust (deep-bin KE 0.0603 ± 0.0033 across
   five seeds).
+- **Status (2026-07-22, discrimination pass §4dd / I93–I96):
+  candidates (ii) and (iii) are REFUTED as owners.** (ii): the twin
+  ladder-tail counterfactual at the standing cell shows deep-bin KE
+  and the histogram rigidly Σ-coupled (±5 % deep rungs ↔ ∓3.5 points
+  suppressed weight; no tail move lifts the deep bins while
+  preserving the landed histogram). (iii): the required ε_req(n) is
+  sign-changing (−3…−4 → +3…+9 meV/shed); flat ε closes the deep
+  slope only by breaking midHot, and the exact linearized drag
+  retention is inverted (deep-bin sheds happen in-bubble, 43 %
+  retention, vs 95 % at n₁) — the retention-weighted forward model
+  floors at χ²_med ≈ 198. **The surviving owner candidates are the
+  in-band pure-cubic drag law at low speed** (deficit-critical
+  segment v ≈ 2–7 Å/ps, t ≈ 2–14 ps, in-bubble — converging with
+  I40's VMI-side over-dissipation and I72's three-observable v_c
+  tension) **and the RQ5-coupled beam-frame channel (iv)** (frame
+  argument still required). Any drag-law modification enters as an
+  interchangeable enum behind `[PROCEED TO IMPLEMENTATION]`; a
+  sub-dominant ε ≈ 1–2 meV/shed (NB-RQ23-1 scale) remains compatible
+  with all reads.
+
+#### RQ11 low-v drag-law findings — NB register (deep-research run, 2026-07-23)
+
+> **Method/provenance.** Multi-agent literature search (5 angles:
+> TDDFT finite-droplet critical velocity; near-threshold drag law /
+> functional form; vortex-ring nucleation by ions; terminal/coast
+> speeds in droplets; snowball formation and dressed-ion drag).
+> 22 sources fetched (primary: Brauer/Mateo/Barranco/Pi/Ancilotto
+> PRL 111, 153002 (2013); the Ancilotto/Barranco/Pi review
+> arXiv:1708.02652; Schlesinger et al. arXiv:0909.4691;
+> Allum/Ellis/McClintock/Bowley Phil. Trans. R. Soc. 1985;
+> Skrbek & Sergeev Phys. Fluids 2025; Müller & Krstulovic PRB 105,
+> 014515 + arXiv:2605.24075; Muirhead/Vinen/Donnelly 1984), 102
+> claims extracted, top 25 adversarially verified by independent
+> 3-voter panels (Opus 4.8 verifiers): **25 confirmed, 0 refuted, 0
+> unverified**. Run under the RQ11 Step-0 go-ahead (log entry same
+> day). **Status: recorded; adjudication open.**
+
+**Confirmed NBs (vote 3-0 unless noted):**
+
+- **NB-RQ11-1 (threshold exists in droplets).** A Landau-type
+  dissipation-onset velocity persists in finite droplets down to
+  ~1000 He atoms (speed distributions of optically accelerated
+  atoms; TDDFT-confirmed). Brauer et al., PRL 111, 153002 (2013).
+- **NB-RQ11-2 (the headline — NOT raised by finite size).** The
+  effective critical velocity in droplets is essentially the **bulk
+  roton Landau value ~55–60 m/s = 0.55–0.60 Å/ps**: Ag ejection
+  distributions peak ~55 m/s; the K2 damping model best-fits
+  experiment with bulk v_c = 60 m/s and friction off below. **No
+  verified source supports a substantially raised finite-droplet
+  threshold** — the hypothesized v_f ≈ 2–3 Å/ps floor is
+  literature-orphaned (Free, not Bounded).
+- **NB-RQ11-3 (bulk anchors).** v_L = 58.76 m/s at 0 bar → 46.45 at
+  24 bar (roton branch); drag negligible below v_L and rising
+  sharply above; negative-ion drift agrees with the Landau model to
+  1.5 %. The model's `v_limit` 0.58 Å/ps is the Sourced value.
+- **NB-RQ11-4 (near-threshold form).** The measured supercritical
+  law for ions in bulk He II is **F ∝ (v − v_L)³** — cubic in the
+  velocity *excess* ((v−v_L) ∝ E^(1/3), roton-pair emission, the
+  mechanism at 2-1) — not (v² − v_c²), which is the macroscopic
+  vortex-shedding regime (mm/s-scale thresholds, not applicable at
+  nanoscale). Droplet-validated practice is the hard gate (constant
+  γ above v_c, zero below; Schlesinger).
+- **NB-RQ11-5 (small-object inversion).** For objects ≲ 100 healing
+  lengths (I⁺Heₙ ≈ 12–17 ξ), dissipation onset is **roton emission
+  at the Landau value**; vortex-ring nucleation needs much higher
+  speed (D = 20ξ sphere: rotons at M ≈ 0.3, vortices at M ≈ 0.8) —
+  inverting the macroscopic ordering. Caveat: bulk-domain GPE-family
+  models.
+- **NB-RQ11-6 (terminal/coast speeds).** Ejected impurities and
+  free-coasting ions sit **at ≈ v_L (~0.5–0.6 Å/ps)**, not at
+  1–5 Å/ps. Consequence: the experimental deep-bin arrival speeds
+  (2.5–3.3 Å/ps implied) must be **exit-truncation of the drag
+  phase, not a coast at a raised floor**.
+- **NB-RQ11-7 (vortex-shedding channel; medium, 2-1).** Ba⁺ TDDFT:
+  snowball dressing forms dynamically during solvation and a vortex
+  ring nucleates at the snowball equator (~13 ps) and detaches
+  (~24 ps) — a discrete ps-scale dissipation channel inside the MD
+  window that the continuous drag law does not represent.
+
+**Caveats (transfer risk):** the droplet anchors are a neutral atom
+(Ag) and a surface K₂ wave packet, not a translating cation; the
+250-atom end extrapolates below the ~1000-atom demonstrated floor;
+the cubic-in-excess law is measured for *negative* ions at 13–25 bar;
+the size-dependence results are bulk-domain GPE. Open questions
+recorded in the run report (positive-snowball onset inside a droplet;
+discrete-spectrum effects below ~1000 atoms; the positive-snowball
+near-threshold exponent; vortex shedding in a 25–35 Å droplet).
+
+**Consequence for RQ11 (as first recorded 2026-07-23, superseded in
+part by the deep-read NBs below):** the free raised-floor arm is dead
+as sourced physics. The literature-anchored candidate is the
+**shifted-cubic in-band law F = ρ̂·b′·(v − v_L)³ with v_L Sourced at
+0.58 Å/ps** — zero new free parameters, suppressing drag by exactly
+the measured near-threshold shape in the deficit window (×0.36 at
+v = 2, ×0.53 at v = 3, ×0.77 at v_c) — at the price of a Method-B
+re-fit of b′ (form discrimination against the existing TDDFT traces
+is the decisive, already-available test). The NB-RQ11-7 vortex
+channel is a separate candidate discussion (RQ5/(iv)-adjacent).
+
+**Deep-read NBs (2026-07-23, full-text pass on the two form-defining
+sources; agents' structured extractions in the session record):**
+
+- **NB-RQ11-8 (Schlesinger deep-read — the droplet gate is weaker
+  than the survey claim).** arXiv:0909.4691 = Schlesinger, Mudrich,
+  Stienkemeier, Strunz, published as *Chem. Phys. Lett.* **490**, 245
+  (2010). The model is a **Lindblad master equation** for the K₂
+  *vibrational* density operator with constant state-independent rate
+  γ = 0.15/ps (classical limit: linear-in-v friction, constant
+  coefficient — no velocity dependence above the gate); the cutoff is
+  a **hard unsmoothed switch on the ensemble-average WP velocity**,
+  with bulk v_c = 60 m/s *adopted*, never derived, scanned, or fit.
+  Load-bearing: the evidence is a binary damped/undamped contrast
+  between two velocity scales (A-state ±500 m/s, X-state ≤ 15 m/s) —
+  **the data cannot locate v_c anywhere inside ≈ [15, 500] m/s
+  ([0.15, 5] Å/ps)**. The droplet-side pinning of the threshold at
+  the bulk value therefore rests on Brauer's Ag-ejection peak
+  (~55 m/s) alone (one paper, one *neutral* species). Bath named as
+  "phonons or ripplons" (surface species); no roton discussion; no
+  transfer caveats stated.
+- **NB-RQ11-9 (Allum/Ellis/McClintock deep-read — the cubic-in-excess
+  law does NOT license a deterministic (v − v_L)³ drag at our
+  speeds).** Full text of Allum/McClintock/Phillips/Bowley, *Phil.
+  Trans. R. Soc. A* **284**, 179 (1977) (Lancaster EPrints
+  typescript); Ellis & McClintock 1985 abstract verbatim. (a) The
+  fitted law v = v_L + A·E^(1/3) (A = 0.144 ± 0.002 m s⁻¹(V m⁻¹)^{−1/3},
+  v_L = 46.30 ± 0.04 m/s at 25 bar) is verified over **excess
+  velocities ≈ 1–11 m/s only (≲ 25 % above v_L)** — the theory itself
+  predicts crossover (→ E^(1/2)) once the overshoot exceeds
+  Δv₂ = 2ħk₀/m_i ≈ 8.9 m/s. Our deficit window (v ≈ 2–7 Å/ps =
+  4–12× v_L) is far outside the law's domain. (b) The exponent 3 is
+  the **mean of a stochastic sawtooth** — ballistic free acceleration
+  between discrete roton-*pair* emission events with rate
+  ∝ (v − v₂′)² — not a measured deterministic drag curve; the
+  papers never write F = C(v − v_L)³, and the inverted prefactor
+  contains the probe's effective mass and matrix element. (c)
+  Negative ions (electron bubbles) at 13–25 bar only; the pair
+  matrix element **extrapolates to zero at P ≈ 3 bar** (droplet
+  internal pressures are lower still); no positive-ion analogue
+  exists — bulk **positive snowballs nucleate vortex rings at
+  ≈ 18–32 m/s, *below* v_L** (Takahashi/Ikegami/Kono, *J. Low Temp.
+  Phys.* **212**, 214 (2023)), in tension with the small-object
+  GPE inversion (NB-RQ11-5) and unresolved for a droplet-interior
+  cation.
+
+**Revised consequence (supersedes the paragraph above):** the
+shifted-cubic form is **de-anchored** — its exponent is a
+near-threshold (≲ 0.73 Å/ps), negative-ion, high-pressure,
+mean-of-sawtooth statement with no validity at v ≈ 2–7 Å/ps, and its
+overlap with the twin's empirical landing window (sub v_f 1.5–2.0) is
+coincidence, not corroboration. What the literature actually
+licenses: a **hard γ = 0 gate at v_L ≈ 0.58 Å/ps** (Schlesinger
+precedent + Brauer anchor) — which sits far below the deficit window
+and cannot close RQ11. Above ~1 Å/ps in a droplet the drag shape is
+**constrained by nothing in the literature; TDDFT is the only
+authority**. RQ11's drag-shape arbitration therefore devolves to:
+(1) the Method-B form discrimination / low-v re-inspection of the
+existing 9 Å/18 Å TDDFT traces + the collaborator ask (do the tails
+show a coast?), (2) the RQ5-coupled population channel (iv), and
+(3) — weakest, last resort — a phenomenological Free-parameter low-v
+suppression arbitrated only by the experimental deep bins (a fit to
+the observable it would explain; pre-registration discipline
+mandatory if ever pursued).
 
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);

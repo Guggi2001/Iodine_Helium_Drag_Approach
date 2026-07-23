@@ -9411,3 +9411,169 @@ optimization against its own observables. CLAUDE.md compact state
 updated under this entry. The `[PROCEED TO IMPLEMENTATION]`
 discipline stays in force for all further drag-program code (RQ11
 model changes, Tier 3).
+
+## RQ11 candidate discrimination + RQ3 conventions read EXECUTED (zero-MD) — candidates (ii) ladder tail and (iii) per-shed recoil REFUTED as owners of the deep-bin cold tail; RQ11 re-points at the low-v in-band drag law (RQ5-coupled (iv) stays open); RQ3: cold-shed closest, bare peak kinematically un-sourceable — n = 0 mixture reading (findings §4dd, I93–I96) (2026-07-22)
+
+Executed under the user go-ahead ("run 1 and 2 together"), read-only
+per the §4bb precedent (no formal P-register): four scratchpad
+drivers (`rq11_rq3_md_read.py`, `rq11_shed_context.py`,
+`rq11_eps_retention.py`, `rq11_ladder_tail_twin.py` + chord cache)
+over the on-disk pooled N = 5000 battery and the committed twin
+surface; zero repo code, zero new MD. Oracles exact before any new
+read: the finc1v725 launch-record scorer row, the §4cc pooled row
+column-for-column, and the reconstructed S6 twin v7.25 row
+bit-for-bit (leg-D draw discipline, m = 20000, including every deep
+KE bin).
+
+Verdicts (full tables in findings §4dd):
+
+- **(iii) per-shed ε recoil — REFUTED as owner (I94).** ε_req(n) is
+  sign-changing (−3…−4 meV/shed at n = 2–3, +3 → +9 over n = 10–17);
+  flat ε ≈ 6–8 meV closes the deep slope (χ²_med 242 → 66) only by
+  breaking midHot (1.25–1.33 vs the seed-robust [0.84, 1.14]); the
+  shed-context read inverts the needed selectivity (deep-bin sheds
+  in-bubble at ρ̂ 0.64 with 43 % linearized drag retention vs n₁
+  sheds at ρ̂ 0.02 / 95 %), so the retention-weighted forward floors
+  at χ²_med ≈ 198. Sub-dominant ε ≈ 1–2 meV stays compatible
+  (NB-RQ23-1).
+- **(ii) ladder tail — REFUTED (I93).** Twin counterfactual at the
+  standing cell: deep-KE direction confirmed but Σ-coupled ~×20 too
+  stiff — ±5 % deep rungs ↔ ∓3.5 points suppressed/bare weight;
+  Σ(21)-preserving transfers preserve suppression but blow W₁ to
+  1.1–2.0. No tail move lifts the deep bins while preserving the
+  landed histogram; the histogram landing is itself evidence the
+  deep rungs are approximately right.
+- **RQ11 re-pointing (I96).** With (i) (§4bb), (ii), (iii) excluded,
+  the cold tail points at the **in-band pure-cubic law at low speed**
+  (deficit-critical segment v ≈ 2–7 Å/ps, 2–14 ps, in-bubble; ~1.5 %
+  of the deep survivors' dissipation), converging with I40 and I72;
+  (iv) stays open pending the RQ5 beam-frame argument.
+- **RQ3 conventions (I95).** Pooled suppressed class (1747, handover
+  n̄ 14.06, m̄ 183 amu): intact 1.96 / co-moving 1.36 / cold-shed
+  2.82 eV vs ref n = 0 mean 3.706 σ 1.356 — direction
+  momentum-conserving, all conventions 6–10× too narrow, and the
+  bare mean exceeds any momentum partition of the 5.401 eV pair
+  budget (asymmetric cap ≈ 3.37 pre-drag) → the n = 0 bin is a
+  two-channel mixture (the 2026-07-11 adjudication, now quantified);
+  the suppressed class scores against the low-KE shoulder.
+
+Docs this entry: findings §4dd + I93–I96; RQ11 and RQ3 status
+addenda in `RESEARCH_QUESTIONS.md`. Next (user-opened): the low-v
+in-band drag-law discussion — any model change stays an
+interchangeable enum behind `[PROCEED TO IMPLEMENTATION]`. Nothing
+here discharges F5.
+
+## RQ11 low-v drag-law probe EXECUTED (Step 0 deep-research + Step 1 twin counterfactual, zero MD) — the raised-floor premise REFUTED (droplet v_c ≈ bulk 0.55–0.60 Å/ps; coast at v_L; near-threshold law F ∝ (v−v_L)³ sourced); twin sweep maps the suppression space (sub v_f 1.5–2.0 = landing window; hard/erf floors un-trap the marginal class; parameter-free shifted-cubic at locked b over-corrects) — form adoption = Method-B re-fit decision (findings §4ee, I97–I99; RQ11 NB register) (2026-07-23)
+
+Executed under the user go-ahead ("step0 and step1 in parallel").
+Step 0: deep-research workflow (5 angles, 22 sources, 102 claims,
+top 25 verified by 3-voter **Opus 4.8** panels at the user's request
+— 25 confirmed / 0 refuted / 0 unverified), recorded as the **RQ11
+NB register** (NB-RQ11-1..7) in `RESEARCH_QUESTIONS.md`. Step 1: the
+low-v suppression sweep through the reconstructed S6 twin at the
+standing cell (γ-tail seam patch, chord re-integrated per cell;
+oracle bit-exact on every run; 16 + 3 cells), findings **§4ee**.
+
+Headlines: (1) the hypothesized v_f ≈ 2–3 Å/ps floor is
+**literature-orphaned** — the droplet threshold is the bulk Landau
+0.55–0.60 Å/ps down to ~1000 atoms and free coast speeds sit at v_L,
+so the experimental deep-bin arrival speeds (2.5–3.3 Å/ps) are
+exit-truncation, not coast (I97); (2) the sourced near-threshold
+form is **F ∝ (v − v_L)³** with v_L = 0.58 Å/ps Sourced — zero new
+free parameters; (3) the twin's empirical landing window (sub form,
+v_f 1.5–2.0: deep → 1.06…0.83 at midHot ≤ 1.14, supp/n₁ frozen)
+numerically brackets that form's suppression profile at v ≈ 2–3
+(I98); (4) at locked b the parameter-free form over-corrects
+globally (midHot 1.40; W₁ improves 0.678 → 0.502) — **adoption is a
+Method-B re-fit program** (b′ under the new form, then (v_c, τ, E₀)
+re-arbitration), and the decisive cheap discriminator is a
+**form re-fit of the existing TDDFT traces** (v³ vs (v − v_L)³ over
+the calibrated band; I99). Side finding: hard/erf floors un-trap
+the marginal droplet-retained class (trap 0.042 → 0) — an in-model
+echo of candidate (iv) worth carrying into the RQ5 discussion.
+
+Open decision points (user adjudication): (a) run the Method-B form
+discrimination on the existing TDDFT traces (zero MD; the natural
+next step); (b) the collaborator ask — do the TDDFT trajectories'
+late-time tails show the coast/threshold directly; (c) whether the
+NB-RQ11-7 vortex-shedding channel enters the RQ5/(iv) discussion;
+(d) any MD spot-check needs the in-window low-v enum built, behind
+`[PROCEED TO IMPLEMENTATION]`. Nothing here discharges F5.
+
+## RQ11 deep-read pass EXECUTED — full-text reads of the two form-defining sources DE-ANCHOR the shifted-cubic (the (v−v_L)³ exponent is a near-threshold negative-ion mean-of-sawtooth law, invalid at our speeds; Schlesinger's droplet gate cannot locate v_c inside [0.15, 5] Å/ps); above ~1 Å/ps the droplet drag shape is literature-unconstrained — TDDFT is the only authority (NB-RQ11-8/9, I100) (2026-07-23)
+
+Two parallel deep-read agents under the user request ("Fetch and
+deep-read Schlesinger and Allum/McClintock"; one agent accidentally
+stopped and relaunched at user request). Schlesinger (arXiv:0909.4691
+= CPL 490, 245 (2010)) read in full via the ar5iv rendering;
+Allum/McClintock/Phillips/Bowley 1977 read in full via the Lancaster
+EPrints typescript (saved to the scratchpad); Ellis & McClintock 1985
+abstract verbatim (full text paywalled). Structured extractions in
+the session record; register updates NB-RQ11-8/9 + the revised
+consequence block in `RESEARCH_QUESTIONS.md`; insight I100 (+
+supersede notes on I97/I99).
+
+Headlines: (1) Schlesinger's gate is a hard unsmoothed switch on the
+*ensemble-average* WP velocity of a Lindblad vibrational model with
+constant rate γ = 0.15/ps — bulk v_c = 60 m/s **adopted, never
+scanned**; the data are a binary damped/undamped contrast between
+±500 m/s and ≤ 15 m/s scales, so **v_c is unconstrained anywhere in
+≈ [0.15, 5] Å/ps** — the droplet-threshold pinning rests on Brauer's
+neutral-Ag ejection peak alone. (2) The E^(1/3) law (1977: v = v_L +
+A·E^(1/3), A = 0.144, v_L = 46.30 m/s at 25 bar; 1985: high
+precision at 80 mK, 13–25 bar) is verified **only for excess
+velocities ≈ 1–11 m/s (≲ 25 % above v_L)** and is the **mean of a
+stochastic ballistic sawtooth** (roton-pair emission rate
+∝ (v − v₂′)²) — never a deterministic F ∝ (v − v_L)³ curve; the
+prefactor carries the probe's effective mass and a pair matrix
+element that extrapolates to zero at ≈ 3 bar. (3) No positive-ion
+analogue exists: bulk snowballs vortex-nucleate at 18–32 m/s,
+*below* v_L (Takahashi/Ikegami/Kono, JLTP 212, 214 (2023)) — in
+tension with the small-object GPE inversion for the droplet-interior
+case. Consequence: the shifted-cubic's overlap with the twin's
+landing window is coincidence, not corroboration; the sourced
+residue is only the hard gate at v_L ≈ 0.58 Å/ps (far below the
+deficit window). **RQ11 lever hierarchy now: TDDFT trace
+re-inspection / Method-B form re-fit + the collaborator ask ≫
+candidate (iv) ≫ a Free phenomenological low-v suppression (last
+resort, pre-registered only).** Nothing here discharges F5.
+
+## Sensitivity-atlas program DESIGNED + D0 parameter-influence reference DELIVERED (doc work, zero MD, zero code) — new study program: droplet size × birth position (incl. the D2b sampling-law audit), E₀/τ influence curves, drag-form variants + E_bind scan; atlas stance (reported, not adjudicated; finc1v725 stays) (2026-07-23)
+
+User-directed re-orientation from elimination-driven (RQ11 candidate
+refutation) to understanding-driven work: a **sensitivity atlas**
+mapping each knob's influence on the observables. Designed in a
+brainstorming session (stance, doc structure, grid designs, and the
+E_bind meaning all user-adjudicated), then written:
+
+- **`TIER2_SENSITIVITY_ATLAS_PLAN.md`** (the design): common protocol
+  (committed-scorer observable vector, battery seed-SD yardstick
+  [§4cc], twin-first cost ladder, OAT around finc1v725, anti-bloat
+  recording rule); Axis A = 3 × 3 droplet R (q10/mean/q90) ×
+  fractional offset r/R {0, 0.5, 0.8}, N = 500/cell + the **D2b
+  addendum** (provenance audit of the legacy sampling laws incl. the
+  E_solv 14-vs-30 meV discrepancy, distribution-level A/B, grid
+  re-weighting, defined salvageability verdict); Axis B = E₀
+  {0.17–0.37} / τ {1.6–6.4} OAT influence curves; Axis C = drag-form
+  variants (quadratic, linear+quadratic, linear+cubic, shifted-cubic
+  tagged Free/de-anchored per I100) each **Method-B re-fit against
+  the existing TDDFT traces** — Step 1 doubles as RQ11's form
+  discrimination — plus the E_bind OAT scan {×0.5–×1.5 of 0.1168 eV}
+  under `allow_unvalidated_binding_pairing`. Total spend stated:
+  ≈ 23–27 MD cells × N = 500. Every execution stage stays behind its
+  own `[PROCEED TO IMPLEMENTATION]` trigger.
+- **`TIER2_PARAMETER_INFLUENCE.md`** (D0, delivered): the compact
+  parameter→influence reference distilled from the findings doc
+  (§4a–§4ee, I1–I100) — 16 knob entries + summary table, calibration
+  classes per CALIBRATION_MAP, couplings, status; explicit **GAP**
+  markers at f_ret, E_bind, droplet geometry, and the sampling laws
+  (= the atlas target list). Pure distillation, no new analysis; the
+  findings doc stays archival.
+
+Clarified en route (user question): E_bind 0.1168 eV is the
+ion–droplet mean-field exit well (jointly Method-B-extracted with the
+drag coefficients, §6.5.1-guarded) — **not** connected to the He
+ladder D₀(n)/Σ (droplet exit well vs per-atom shell energetics; two
+distinct bookkeeping surfaces). Nothing here discharges F5; the RQ11
+lever hierarchy (previous entry) is unchanged — atlas Axis C Step 1
+is its step (1) executed under the atlas protocol.

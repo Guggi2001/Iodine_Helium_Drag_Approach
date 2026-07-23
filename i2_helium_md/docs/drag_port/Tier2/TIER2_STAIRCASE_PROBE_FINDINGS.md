@@ -3664,6 +3664,229 @@ in the run dirs but not scored here; the deep-bin slope read thins to
 
 ---
 
+## 4dd. RQ11 candidate discrimination + RQ3 conventions read (zero-MD) — (ii) ladder tail and (iii) per-shed recoil are both REFUTED as owners of the deep-bin cold tail (the ladder wrecks the histogram at ×1.05; flat-ε closes the deep bins only by breaking midHot and drag-retention inverts the needed selectivity); RQ11 re-points at the low-v in-band drag law; RQ3: cold-shed closest but the bare peak is kinematically un-sourceable — mixture reading
+
+Executed 2026-07-22 under the user go-ahead ("run 1 and 2 together"),
+read-only per the §4bb precedent (no formal P-register): four scratchpad
+drivers over the on-disk pooled battery + the committed twin surface; no
+repo code mutated, zero new MD. Oracles all exact before any new read:
+the committed median-anchor scorer reproduces the finc1v725 launch-record
+row (943 / 0.057 / 0.161 / 4.003 / 0.2718 / 2.048 / 0.5238 / χ²_med
+125.7 / legacy 132.0 / midHot 0.9905) and the §4cc pooled row
+column-for-column (9330 / 0.067 / 0.187 / 4.068 / 0.2433 / 1.680 /
+0.5713 / 1.0139 / 242.0 / deep KE 0.0603); the reconstructed S6 twin
+ensemble (leg-D draw discipline, m = 20000, chord-cached at v_c 7.25 /
+p_tail −1) reproduces the committed `h2b_s6_final` v7.25 row bit-for-bit
+(supp 0.2019, trapped 0.0416, n̄ 4.387, n₁_solv 0.2429, ratio 1.805,
+W₁ 0.6782, midHot 1.0673, n₁ KE 0.9719; deep KE n10 0.1401 / n12 0.1009 /
+n14 0.0794 / n16 0.0573 / n17 0.0468).
+
+### A. Candidate (iii) — per-shed ε recoil (pooled-battery forward model)
+
+Per-fragment total shed counts S_i (in-window `n_shell` decrements + E2
+net decrements + detection-stage CSR events; suppressed class 0.000 as
+required). Per detected bin: S̄(n) falls 14.8 (n = 1) → 8.9 → 4.7 over
+n = 10–17 while the deficit rises, so the required per-shed recoil
+ε_req(n) = deficit(n)/S̄(n) is **sign-changing and rising**: −3.2 / −4.2
+meV/shed at n = 2/3 (those bins are already hot), ≈ 0 at n = 6, then
++3.1 → +8.7 meV/shed monotone over n = 10–17 (deep-bin count-weighted
+LSQ ε\* = 3.87 meV/shed). Forward model KE′_i = KE_i + ε·S_i under the
+committed scorer:
+
+| ε [meV/shed] | midHot | χ²_med | deep sim/ref n = 10…17 |
+|---|---|---|---|
+| 0 | 1.014 | 242.0 | 0.81 … 0.38 |
+| 4 | 1.171 | 97.0 | 1.06 … 0.67 |
+| 6 | 1.250 | 68.3 | 1.19 … 0.81 |
+| 8 | 1.329 | 66.6 | 1.31 … 0.95 |
+
+A flat ε ≈ 6–8 meV/shed closes the deep slope (χ²_med 242 → 66) but
+breaks the seed-robust midHot band [0.84, 1.14] at every deficit-closing
+value — n = 2–3 overheat to ×1.19–1.30. And the flat model is generous:
+the shed-context read (event-weighted over all in-window sheds, pooled)
+shows the selectivity is **inverted** relative to what the deficit needs
+— n = 1 fragments shed effectively outside the bubble (ρ̂ at shed
+0.023, v̄ 12.0 Å/ps, remaining exposure K_rem 0.013 ps, 93 % of sheds
+in-window at t̄ 7.8 ps) while deep survivors shed deep inside it
+(n = 12–17: ρ̂ 0.635, v̄ 5.6, t̄ 5.0 ps, K_rem 2.85 ps). Weighting every
+event by its exact linearized drag decay (a recoil deposit δE decays at
+rate 4ρ̂bv²/m along the stored trajectory; post-window sheds retain
+fully) leaves the deep bins 42.6 % of their recoil vs 94.6 % for n₁
+(85.7 / 73.0 / 55.1 % for n = 2–3 / 4–8 / 9–11), and the
+retention-weighted forward model never gets below χ²_med ≈ 198 at any ε
+(midHot breaks before the deep bins close; deep n17 reaches only 0.53 at
+ε = 8). **A per-shed recoil channel cannot own the cold tail**: flat-ε
+is excluded by the mid-bin collateral, physically-retained ε cannot
+reach the deficit at all. A sub-dominant residual role (ε ≈ 1–2 meV,
+NB-RQ23-1's 0.5–0.6 meV prescription) stays compatible with everything
+measured.
+
+### B. Candidate (ii) — ladder tail (twin counterfactual at the standing cell)
+
+The base twin's own deep ratios run 0.99 → 0.71 over n = 10–17 (milder
+than the MD 0.81 → 0.38 — the frozen-chord channel-(d) softening, I73).
+Tail variants D₀(n ≥ k) × g on rq4graded, fate map otherwise verbatim:
+
+| variant | supp | midHot | W₁_solv | deep sim/ref n10…n17 |
+|---|---|---|---|---|
+| base | 0.202 | 1.067 | 0.678 | 0.99 … 0.71 |
+| n ≥ 12 ×1.05 | 0.167 | 1.158 | 0.725 | 1.07 … 0.75 |
+| n ≥ 12 ×1.10 | 0.131 | 1.254 | 0.767 | 1.16 … 0.78 |
+| n ≥ 12 ×1.20 | 0.066 | 1.463 | 0.901 | 1.35 … 0.86 |
+| n ≥ 12 ×1.50 | 0.000 | 2.242 | 2.018 | 2.11 … 1.13 |
+| n ≥ 12 ×0.70 | 0.403 | 0.660 | 0.605 | 0.62 … 0.54 |
+| xfer g1.2 (Σ(21)-preserving, n = 4–8 compensated) | 0.202 | 1.173 | 1.108 | 1.37 … 0.86 |
+| ramp 8→17 ×1.3 | 0.030 | 1.618 | 1.010 | 1.47 … 0.96 |
+
+The deep-KE direction is confirmed (wider deep windows capture
+less-exposed, hotter chords) but the coupling through Σ is structural
+and ~×20 too stiff: **a ±5 % deep-rung move trades ± 3.5 points of
+suppressed/bare weight for a ~5 % deep-KE lift**. The suppression
+criterion (E_ej > Σ(n₀)) and the descent bookkeeping read the same tail
+the KE re-mapping does — no tail move (scale, Σ-preserving transfer, or
+graded ramp) lifts the deep bins materially while preserving the landed
+histogram (supp 0.187, n₁_solv 0.243, midHot 1.014, W₁ 0.571 ± 0.04).
+**The ladder tail cannot own the cold tail.** Corollary: the §4cc
+histogram landing is itself evidence the deep rungs are approximately
+right — the deficit must live on an axis the histogram does not read.
+
+### C. RQ3 — pooled suppressed-class conventions read (1747 fragments)
+
+Handover n̄ 14.06 (q05/q50/q95 = 12/14/16), m̄ 183.2 amu. Against the
+committed n = 0 reference row (mean 3.706, median 3.776, mode 4.758,
+σ 1.356 eV):
+
+| convention | mean [eV] | σ [eV] | mean/ref |
+|---|---|---|---|
+| intact complex | 1.957 | 0.170 | 0.53 |
+| co-moving break-up (ε ≈ 0) | 1.358 | 0.139 | 0.37 |
+| cold-shed (momentum-conserving) | 2.821 | 0.217 | 0.76 |
+
+Three reads. (1) The convention discriminator points at
+**momentum-conserving fragmentation** (×0.76 vs co-moving ×0.37), but no
+convention reaches the peak. (2) Every convention is **6–10× too narrow**
+in σ. (3) A hard kinematic bound: 3.706 eV exceeds any momentum
+partition of the 5.401 eV pair budget — symmetric split caps at 2.70,
+and even a bare-I⁺ paired with a full-shell n\* = 21 partner caps at
+5.401·(211.1/338.0) ≈ 3.37 eV *before* drag. The main experimental bare
+peak (mode 4.76 eV) is un-sourceable from this dissociation channel
+under any fragmentation convention — quantitative confirmation of the
+2026-07-11 two-channel adjudication (RQ8), now with pooled statistics.
+The distribution's left skew (mean < mode) leaves a low-KE shoulder at
+1.5–3 eV, exactly where the model conventions land: the n = 0 bin is the
+I77 mixture story replayed at bare, and the droplet-suppressed class
+should be scored against the shoulder, not the bin mean — which also
+relaxes the 43.5 % weight target for RQ3.
+
+### What this does to RQ11's candidate list
+
+(i) E2 exposure refuted (§4bb); (ii) ladder tail refuted (B); (iii)
+per-shed recoil refuted as owner (A). The deficit-critical segment is
+the **in-band pure-cubic phase at v ≈ 2–7 Å/ps, t ≈ 2–14 ps, in-bubble**
+(I90), and the surviving owner candidates are: the **in-band drag law
+itself at low v** — converging with I40 (locked drag over-dissipates
+production fragments ~2–2.5× on the VMI speed axis) and I72 (three
+observables prefer three v_c: a form-shape statement) — and the
+RQ5-coupled beam-frame population channel (iv), which still needs its
+frame argument before it can be scored. The deficit is ~1.5 % of the
+deep survivors' 2.6 eV total dissipation: a subtle low-speed over-drag
+suffices.
+
+### Boundaries
+
+The ε forward model is weight-level (recoil does not feed back into the
+descent energetics, the histogram, or the trajectory); the retention
+factor is linearized about the frozen trajectory; the twin counterfactual
+inherits the frozen-chord authority limits (I69/I73); the deep-bin read
+thins to 17 fragments at n = 17; the RQ3 read inherits one
+detection-RNG realization per cell and the RQ3-unbuilt caveat
+(suppressed = bare stays a hypothesis). Drivers:
+`rq11_rq3_md_read.py`, `rq11_shed_context.py`, `rq11_eps_retention.py`,
+`rq11_ladder_tail_twin.py` (+ chord cache), scratchpad-only per the
+S4/S6 precedent. Nothing here discharges F5.
+
+---
+
+## 4ee. RQ11 low-v drag-law probe (Step 0 research + Step 1 twin counterfactual, zero MD) — the raised-floor premise is REFUTED by the literature (droplet v_c ≈ bulk 0.55–0.60 Å/ps; coast speeds sit AT v_L), the sourced near-threshold form is F ∝ (v − v_L)³; the twin sweep maps the suppression space: hard/erf floors are perfectly speed-selective and un-trap the marginal class, the sub form at v_f ≈ 1.5–2.0 is the twin's landing window, and the parameter-free shifted-cubic at locked b over-corrects globally — form adoption is a Method-B re-fit program, not a drop-in
+
+Executed 2026-07-23 under the user go-ahead ("step0 and step1 in
+parallel"). Step 0: the deep-research run recorded as the **RQ11 NB
+register** in `RESEARCH_QUESTIONS.md` (5 angles, 22 sources, 25/25
+claims confirmed by 3-voter Opus panels, 0 refuted). Step 1: the low-v
+suppression sweep through the reconstructed S6 twin at the standing cell
+(the §4dd machinery; oracle bit-exact on every run; multiplicative S(v)
+on the capped-cubic coefficient via the γ-tail seam, chord re-integrated
+per cell, cooling exposure K untouched — the cooling channel is not the
+drag channel). Driver: `rq11_lowv_twin.py` (+ `rq11_shifted_cubic_twin.py`),
+CSV in the scratchpad.
+
+### Step-0 headline (full register: RESEARCH_QUESTIONS.md NB-RQ11-1..7)
+
+The finite-droplet threshold is the **bulk roton Landau value
+0.55–0.60 Å/ps down to ~1000 atoms** (Brauer PRL 2013; Schlesinger K2
+best-fit at 60 m/s; no verified source supports a raised threshold);
+free coast speeds sit **at v_L**, so the experimental deep-bin implied
+arrival speeds (2.5–3.3 Å/ps) must be **exit-truncation, not coast at a
+floor**; the measured near-threshold law for ions in bulk He II is
+**F ∝ (v − v_L)³** (cubic-in-excess, roton-pair emission); atomic-scale
+objects are roton-first (vortex nucleation far above v_L); and Ba⁺ TDDFT
+shows a discrete **vortex-ring shedding channel at 10–25 ps** on a
+solvating cation (medium confidence). Consequence: a free v_f ≈ 2–3 Å/ps
+floor is literature-orphaned; the sourced lever is the shifted-cubic
+form with v_L = 0.58 Å/ps and zero new free parameters.
+
+### Step-1 twin sweep (16 + 3 cells; deep cols = twinKE/refKE n = 10…17)
+
+| cell | supp | trap | n̄ | n₁s | W₁ | midHot | n₁KE | deep n10…n17 |
+|---|---|---|---|---|---|---|---|---|
+| base (oracle, exact) | 0.202 | 0.042 | 4.39 | 0.243 | 0.678 | 1.067 | 0.972 | 0.99 … 0.71 |
+| hard v_f 2.5 | 0.200 | 0.032 | 4.49 | 0.240 | 0.756 | 1.067 | 0.972 | 0.99 … 0.73 |
+| hard v_f 3.5 | 0.194 | 0.000 | 4.81 | 0.230 | 1.093 | 1.067 | 0.971 | 1.01 … 1.17 |
+| erf v_f 3.0 (w 0.5) | 0.198 | 0.021 | 4.62 | 0.236 | 0.880 | 1.067 | 0.972 | 0.99 … 0.84 |
+| sub v_f 1.5 | 0.200 | 0.027 | 4.45 | 0.240 | 0.724 | 1.109 | 0.981 | 1.06 … 0.83 |
+| sub v_f 2.0 | 0.199 | 0.016 | 4.50 | 0.238 | 0.758 | 1.143 | 0.988 | 1.12 … 0.88 |
+| shift v_L 0.5876 (param-free) | 0.204 | 0.008 | 4.15 | 0.246 | **0.502** | 1.395 | 1.058 | 1.39 … 1.06 |
+| shift v_L 1.0 | 0.207 | 0.002 | 3.89 | 0.251 | 0.468 | 1.667 | 1.116 | 1.72 … 1.45 |
+
+Full 19-row table: `rq11_lowv_twin_results.csv` + the shifted-cubic run
+output. Three reads:
+
+1. **Hard/erf floors are perfectly speed-selective** (midHot and n₁ KE
+   bit-identical to base across the grid) and their dominant twin effect
+   is **un-trapping the marginal droplet-retained class** (trap 0.042 →
+   0 as v_f → 3.5), releasing max-exposure fragments into the deep bins
+   — an in-model echo of candidate (iv). Deep-bin KE barely moves below
+   v_f = 3 because the twin's chords arrive above that; the closure test
+   belongs to MD (below).
+2. **The sub form at v_f ≈ 1.5–2.0 is the twin's landing window**: deep
+   ratios flatten to 1.06…0.83 / 1.12…0.88 with midHot at/inside the
+   band edge (1.109/1.143), supp/n₁ frozen, ΔW₁ +0.05–0.08 ≲ one seed
+   SD. Numerically this window brackets exactly the suppression profile
+   the sourced shifted-cubic delivers at v ≈ 2–3 — the empirical
+   landing and the literature form point at the same shape.
+3. **The parameter-free shifted-cubic at locked b over-corrects
+   globally** (everything ×1.2–1.4 hotter incl. mid bins, midHot 1.40;
+   though W₁ *improves* 0.678 → 0.502 and trapped nearly vanishes):
+   adopting the sourced form is **not a drop-in** — b must be re-fit
+   against the TDDFT traces under the new form (Method-B re-extraction),
+   which re-opens the in-band calibration and cascades into the
+   (v_c, τ, E₀) arbitration. The decisive cheap test is **form
+   discrimination on the existing TDDFT traces**: does Method-B's
+   objective prefer v³ or (v − v_L)³ in the calibrated band
+   (18 Å 2.54–3.02, 9 Å 2.83–4.95 Å/ps)?
+
+### Authority boundary
+
+The twin's base deep ratios (0.99–0.71) sit near experiment while the
+MD's sit at 0.81–0.38 — the twin cannot express the MD's late low-v
+over-dissipation (channel (d) again), so this sweep is authoritative on
+**histogram back-reaction, mid-bin collateral, and direction**, not on
+the deep-bin closure magnitude; the MD spot-check (enum required, behind
+`[PROCEED TO IMPLEMENTATION]`) is the closure test. Nothing here
+discharges F5.
+
+---
+
 - **I1 (Wave 1).** In-band (κ, picture, τ) cannot land the staircase: freeze
   at n ≈ 20, max 1.7 sheds. Kinetic, not energetic — the RRK exponent
   (s−1 = 59) on x ≈ 0.032.
@@ -4426,6 +4649,95 @@ in the run dirs but not scored here; the deep-bin slope read thins to
   carry). E2-quietness holds to ≤ 0.1 meV at bin level (a ≲ 1 %
   deep-fragment residual of ≤ 5 meV late in-droplet drag,
   sign-irrelevant) — I89 stands.
+- **I93 (RQ11 (ii) refuted, §4dd).** **The ladder tail cannot own the
+  deep-bin cold tail.** In the fate-map frame the deep-bin KE and the
+  histogram are rigidly coupled through the same Σ: a ±5 % deep-rung
+  move trades ±3.5 points of suppressed/bare weight for a ~5 % deep-KE
+  lift (×1.05 already bleeds supp 0.202 → 0.167; ×1.2 wrecks midHot to
+  1.46; Σ(21)-preserving transfers preserve supp but blow W₁ to 1.1–2.0
+  by re-mapping weight deep). Corollary: the seed-robust histogram
+  landing is itself evidence the deep rungs are approximately right —
+  the deficit lives on an axis the histogram does not read.
+- **I94 (RQ11 (iii) refuted as owner, §4dd).** **Per-shed recoil cannot
+  own the cold tail.** The required ε_req(n) is sign-changing (−3…−4
+  meV/shed at n = 2–3, +3 → +9 over n = 10–17); a flat ε ≈ 6–8 meV/shed
+  closes the deep slope (χ²_med 242 → 66) only by breaking the
+  seed-robust midHot band (1.25–1.33 vs [0.84, 1.14]); and the physical
+  retention is inverted — deep-bin sheds happen in-bubble (ρ̂ 0.64,
+  K_rem 2.85 ps → 43 % linearized drag retention) while n₁ sheds are
+  effectively free (ρ̂ 0.02, 95 % retention), so the retention-weighted
+  forward model floors at χ²_med ≈ 198. A sub-dominant ε ≈ 1–2 meV
+  (NB-RQ23-1 scale) stays compatible.
+- **I95 (RQ3 conventions, §4dd).** **The experimental bare-bin mean KE
+  is kinematically un-sourceable from the production channel** (3.706 eV
+  vs symmetric-split 2.70 and the extreme full-shell-partner cap ≈ 3.37
+  eV pre-drag), and the model suppressed class (co-moving 1.36 /
+  intact 1.96 / cold-shed 2.82 eV, σ 0.14–0.22) is 6–10× narrower than
+  the reference (σ 1.356). The discriminator direction is
+  momentum-conserving (cold-shed ×0.76 of ref vs co-moving ×0.37), and
+  the left-skewed reference (mean 3.71 < mode 4.76) supports the n = 0
+  mixture reading: the droplet-suppressed class belongs to the low-KE
+  shoulder (1.5–3 eV), not the bin mean — the I77 story replayed at
+  bare, relaxing RQ3's 43.5 % weight target.
+- **I96 (RQ11 re-pointing, §4dd).** With (i) E2 (§4bb), (ii) ladder
+  tail, and (iii) per-shed recoil all excluded, the deep-bin cold tail
+  points at the **in-band pure-cubic drag law at low speed** (the
+  deficit-critical segment v ≈ 2–7 Å/ps, t ≈ 2–14 ps, in-bubble;
+  ~1.5 % of the deep survivors' 2.6 eV dissipation) — converging with
+  I40 (VMI-side ~2–2.5× over-dissipation at production) and I72 (three
+  observables prefer three v_c) — with the RQ5-coupled beam-frame
+  population channel (iv) still open pending its frame argument.
+- **I97 (RQ11 Step 0, §4ee + NB register).** **The raised-floor
+  premise is refuted by the literature**: the finite-droplet
+  dissipation threshold is the bulk roton Landau value 0.55–0.60 Å/ps
+  down to ~1000 atoms, free coast speeds sit at v_L (not 1–5 Å/ps),
+  and the measured near-threshold law for ions is **F ∝ (v − v_L)³**
+  (cubic-in-excess, roton-pair emission; hard gate with constant γ is
+  droplet-validated practice). The experimental deep-bin arrival
+  speeds are therefore exit-truncation, not coast; a v_f ≈ 2–3 Å/ps
+  floor would be a Free parameter contradicting sourced physics. New
+  sourced candidate channel: ps-scale vortex-ring shedding on a
+  solvating cation (Ba⁺ TDDFT, 10–25 ps; medium confidence).
+- **I98 (RQ11 Step 1, §4ee).** **The twin maps the low-v suppression
+  space**: hard/erf floors are perfectly speed-selective (mid bins
+  bit-identical) and act mainly by **un-trapping the marginal
+  retained class** (trap 0.042 → 0, an in-model candidate-(iv) echo);
+  the sub form at v_f ≈ 1.5–2.0 is the landing window (deep → 1.06…
+  0.83, midHot ≤ 1.14, supp/n₁ frozen, ΔW₁ ≲ 1 seed-SD) and brackets
+  numerically the suppression the sourced shifted-cubic delivers at
+  v ≈ 2–3. Twin authority limit: its base deep ratios already sit near
+  experiment (channel (d)), so closure magnitude is MD's question.
+- **I99 (RQ11 form adoption, §4ee).** **The parameter-free
+  shifted-cubic at locked b over-corrects globally** (all bins
+  ×1.2–1.4 hotter, midHot 1.40 — though W₁ improves 0.678 → 0.502 and
+  trapping nearly vanishes): adopting F = ρ̂·b′·(v − v_L)³ requires a
+  Method-B re-fit of b′ and re-opens the (v_c, τ, E₀) arbitration.
+  The decisive cheap discriminator is on the shelf: re-fit the
+  existing TDDFT traces under both forms and let the Method-B
+  objective choose between v³ and (v − v_L)³ in the calibrated band.
+  *[Superseded in sourcing by I100 (2026-07-23 deep-read): the
+  (v − v_L)³ exponent has no validity at our speeds — the form is now
+  phenomenological, not sourced; the TDDFT re-fit remains the right
+  test but arbitrates a Free form.]*
+- **I100 (RQ11 deep-read revision, NB-RQ11-8/9).** **Both
+  form-defining sources are weaker than the survey read.**
+  Schlesinger: a Lindblad vibrational model whose data cannot locate
+  v_c anywhere in ≈ [0.15, 5] Å/ps (bulk 60 m/s *adopted*; hard
+  unsmoothed gate on the mean WP velocity; constant rate above) — the
+  droplet threshold pinning rests on Brauer's neutral-Ag ejection
+  alone. Allum/McClintock: the E^(1/3) law is verified only for
+  excess velocities 1–11 m/s (≲ 25 % above v_L), is the mean of a
+  ballistic-sawtooth pair-emission process (rate ∝ excess²), applies
+  to negative ions at 13–25 bar (pair matrix element → 0 at
+  ≈ 3 bar), and bulk *positive* snowballs vortex-nucleate at
+  18–32 m/s, *below* v_L (Takahashi 2023) — in tension with the
+  small-object GPE inversion for a droplet-interior cation.
+  **Consequence: above ~1 Å/ps in a droplet the drag shape is
+  literature-unconstrained; TDDFT is the only authority there**, and
+  the RQ11 lever hierarchy becomes: TDDFT trace re-inspection /
+  Method-B form re-fit + the collaborator ask ≫ candidate (iv) ≫ a
+  Free phenomenological low-v suppression (last resort,
+  pre-registration mandatory).
 
 ---
 
