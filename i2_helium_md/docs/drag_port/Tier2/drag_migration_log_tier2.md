@@ -9577,3 +9577,82 @@ ladder D₀(n)/Σ (droplet exit well vs per-atom shell energetics; two
 distinct bookkeeping surfaces). Nothing here discharges F5; the RQ11
 lever hierarchy (previous entry) is unchanged — atlas Axis C Step 1
 is its step (1) executed under the atlas protocol.
+
+## Atlas D4 Step 1 AMENDED after the Tier-0 re-read (doc-only) — three-mode fit protocol (shared / held-out / per-case), Tier-0 form verdicts as registered priors (lq REJECTED stands), the γ(v) cap-need diagnostic column, and the S-shape framing (2026-07-23)
+
+Discussion outcome (user question: are per-case *and* shared fits both
+useful, and could linear+quadratic remove the hand-picked cap?).
+Re-read of `TIER0_FINDINGS.md` §9/§10 established that the form
+discrimination already ran there: shared power-law lands n̂ = 2.927 ≈ 3
+(cubic confirmed), linear+quadratic rejected (Δobj +0.034 outside the
+equivalence band; held-out 9 Å prediction 0.699 FAIL), identifiability
+case-asymmetric (9 Å pins n, 18 Å rails). Amendments folded into
+`TIER2_SENSITIVITY_ATLAS_PLAN.md` §6.1/§6.2:
+
+- Step 1 = the **full Tier-0 three-mode protocol per form** (shared =
+  gating physics claim; held-out = the Finding-3 trap-catcher;
+  per-case = identifiability/transferability diagnostic, never
+  preset-wired, 9 Å contamination caveat carried).
+- **Tier-0 verdicts are pre-registered priors** — a rejected form
+  stays rejected unless overturned under the same objective with a
+  stated reason; power law (free n) added to the form table.
+- **γ(v) cap-need column** at v = 2 / 7.25 / 10.5 Å/ps per form vs the
+  arbitrated capped-cubic. Already computable from Tier-0 numbers: lq
+  carries ~2.5× cubic's drag at v = 2 (γ ≈ 26 vs ≈ 10 amu/ps — wrong
+  direction for RQ11) and pure quadratic still grows ×2.1 from v_c to
+  the production peak — **no polynomial removes the cap**; the
+  principled cap-remover is extending TDDFT authority to production
+  kinematics (collaborator ask).
+- Framing recorded: I72 + I40 + RQ11 jointly sketch an **S-shaped
+  deviation from cubic at both ends** (steeper/gated < 2 Å/ps, cubic
+  mid-band, saturating > 7); the capped tail and the §4ee sub-window
+  are its two halves.
+
+Zero code, zero MD; the trigger discipline is untouched.
+
+Follow-up decisions (same discussion, 2026-07-23): (1) clarified that
+Step 1 **reuses the on-disk Tier-0 fit artifacts verbatim** — no
+re-running of existing fits; only the shared pure-cubic oracle re-run
+(must reproduce locked b = 2.5154) verifies the machinery; full reruns
+only on an explicit objective/window change. (2) The **shifted cubic
+is dropped from Step 1 by user decision** (it was the only form
+needing new fitting work); parked, re-addable if the trace-tail
+inspection shows genuine threshold structure. Step 1 is now
+fit-free: artifact compilation + oracle + trace-tail re-read + the
+γ(v) cap-need arithmetic. (3) **E_bind study re-designed zero-MD-first
+under a user-stressed learning goal** (does the co-extracted E_bind
+influence the histogram/KE shape): scan grid re-pinned to the Tier-0
+extracted spread {0.048, 0.071, 0.113, 0.1168, 0.154} eV (supersedes
+the ×0.5–×1.5 multipliers); Step 1 = scoring-level swap forward model
+on the pooled battery (escaper KE −δ shift + barrier-window
+ejected↔trapped re-classing — a literal run re-use is impossible since
+the well acts during propagation; weight-level caveat stated); Step 2
+= twin counterfactual (captures deceleration-under-drag); Step 3 = MD
+confirms only for > 1 seed-SD zero-MD effects. Budget total revised
+23–27 → 19–26 cells. (4) **Two parked candidate forms added** (entry
+gate = the zero-cost γ(v) arithmetic at implied parameters; fit only
+if it says they matter): the **saturating cubic (Padé)**
+F = ρ̂bv³/(1+(v/v_s)³) — cubic in-band, constant-force asymptote =
+the arbitrated p_tail = −1 behavior with one Free knob replacing
+(v_c, p_tail) — and the **subtractive cubic** γ = ρ̂(bv² − a)₊ (the
+existing linear_cubic family with a < 0 + clamp; v_f = √(a/b) ≈ the
+§4ee twin landing window, trace-constrainable in-band). Quadratic
+family closed; memory/Basset and density-exponent variants ruled out
+as candidates. **Tier-3 bridge recorded**: discrete-emission drag
+(same mean, adds fluctuations) as the physics-motivated noise-channel
+ansatz, matching the width-type residuals (RQ3 σ, cov/VMI
+under-dispersion). (5) **Anti-circularity note added to §6.1**
+(user-raised): the Tier-2 landing is weak form evidence (downstream
+knobs compensate through K); the form's authority is the
+downstream-independent Tier-0 trace instruments (free-n → 3, shared
+objective, held-out 18→9 Å prediction), band-limited to the
+calibrated band. (6) **Parked test added as plan §6.6** (user: "test 1
+is useful"): the **quadratic counterfactual arbitration** — lq with
+its own Tier-0 coefficients + E_bind 0.048 through the S6 twin with a
+(cap, τ, E₀) re-arbitration grid, pre-registered two-way
+interpretation (no-landing → the downstream-failure claim becomes
+measured; landing → the histogram cannot discriminate forms and the
+choice rests on Tier-0 alone); conditional follow-up = Method-B re-run
+under Tier-1a variable m(t) (the ±7 % in-window mass drift biases n by
+~0.2 per the scratch estimate — cannot move 3 → 2, but measurable).
+Parked, user-triggerable, zero MD, scratchpad-tier.
