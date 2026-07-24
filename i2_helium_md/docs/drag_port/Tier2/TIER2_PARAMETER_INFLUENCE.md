@@ -17,7 +17,9 @@
 > **Living doc.** Each sensitivity-atlas stage merges its results in and
 > closes its GAP marker. Last built: 2026-07-23 (distillation of
 > I1–I100); merged 2026-07-24: D4 Step 1 + §6.6 counterfactual
-> (twin + MD spot-check — the form-blindness result, §1).
+> (twin + MD spot-check — the form-blindness result, §1); §6.7 item 1
+> (lq sanity battery — over-suppression, §1) + item 2 (E_bind scan —
+> over-suppression is the FORM; **E_bind GAP closed, §9**).
 >
 > **Standing point (context for every "standing" value):** finc1v725 —
 > `capped_cubic` v_c 7.25 / p_tail −1, τ 3.2 ps, E₀ 0.27 eV, `rq4graded`
@@ -45,7 +47,7 @@
 | per-shed ε | Bounded small (NB-RQ23-1) | refuted as RQ11 owner; ε ≈ 1–2 meV/shed sub-dominant compatible | ε = 0 standing |
 | shed momentum convention | convention (two-valued) | cold-shed injects ×1.611 KE over a full strip; histogram convention-blind; bare-bin KE reads the fragmentation convention | co-moving basis for twin parity; RQ3-coupled |
 | birth margin | pinned convention (3 Å) | **the sensitive robustness lever**: 6 Å moves n₁_solv −0.171 (3.4σ) | standing 3 Å; in-tier open item (I88) |
-| E_bind (ion–droplet well) | Derived (joint Method-B) | gates the trapped class (5–11 %); never swept | **GAP** |
+| E_bind (ion–droplet well) | Derived (joint Method-B) | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well | measured (§9) |
 | droplet geometry (R × r) | sampled, never controlled | fate is droplet-size + birth-position ordered; prior decoupled from KE axis | **GAP** (Axis A) |
 | sampling laws (size + position) | theory-laden legacy ports | unaudited (E_solv 14 vs 30 meV discrepancy known) | **GAP** (D2b) |
 
@@ -378,7 +380,27 @@ blocking authority for the taper's *physics* (I42).
 | role | depth of the mean-field droplet exit barrier for the ion (`binding_energy_I_ion_eV`); decides eject vs trapped |
 | class | Derived — jointly extracted with the drag coefficients (Tier-0 Method-B); §6.5.1 guard enforces the exact pairing |
 
-**Influence (measured, indirect only):**
+**Influence (measured — DIRECT OAT sweep; §6.7 item-2 E_bind scan,
+2026-07-24; GAP CLOSED).** Swept on the lq system at N = 1000 × 3 paired
+seeds (well overridden, drag stamp held → honest under
+`allow_unvalidated_binding_pairing`). Δ per the 0.048 → 0.1168 eV step,
+mean ± SD:
+
+- **trap +0.058 ± 0.004 — the clean well lever** (deeper well retains
+  more; single-seed OAT trap 0.038 / 0.075 / 0.100 across
+  0.048 / 0.1168 / 0.154 eV).
+- **n̄ −0.50 ± 0.05, midHot −0.076 ± 0.003** — deeper well → smaller,
+  colder detected clusters (the large/slow ions are retained away).
+- supp +0.010 ± 0.002 (small); W₁ +0.023 ± 0.012 (marginal);
+  χ²_med not resolved (±35).
+- **Deep well 0.154 over-retains** — 2/3 N = 1000 cells trip the P1–P3
+  detection handover guard (~2/2000 ions never decouple from He in
+  8000 ps; ρ̂ ≈ 0.93, live drag exposure).
+- **Not the driver of lq's over-suppression** — that is the drag FORM:
+  the matched-well form gap Δsupp +0.034 (~8σ) survives, the well adds
+  only +0.010 (see §1). This scan's purpose was to separate that pair.
+
+Prior indirect reads (retained):
 
 - Defines the **trapped droplet-retained class**: 5–11 % of fragments
   (inward partners of off-center births, chord K up to ≈ 18) dissipated
@@ -388,8 +410,6 @@ blocking authority for the taper's *physics* (I42).
 - The §4ee low-v twin sweep moved this boundary *from the drag side*:
   un-trapping the marginal class (trap 0.042 → 0) was the floors'
   dominant effect — an in-model echo of RQ11 candidate (iv).
-- **Never swept directly — GAP** (Axis C §6.5 of the atlas plan; runs
-  require `allow_unvalidated_binding_pairing`).
 
 **Couplings:** drag law (jointly calibrated pair — "correct drag traps
 the ions", TIER0_FINDINGS); *not* connected to the ladder D₀(n)/Σ
