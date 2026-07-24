@@ -90,31 +90,14 @@ control; the twin's needle was a frozen-chord artifact; form authority
 rests solely on the Tier-0 traces where lq stays held-out-rejected;
 the landing is never evidence for any form). New RQ11 signal
 (NB-RQ11-12): the deep-KE lever sits in the **5–9 Å/ps mid-band**, not
-sub-2.5 — with the lq E_bind-0.048 confound caveat pending. **§6.7
-item 1 (lq sanity battery) EXECUTED 2026-07-24** (5 × N = 1000, qcc,
-seeds 20260722–26 paired-by-seed vs `bigc1v725s{1..5}`; generator
-`gen_tier2atlas_lqbattery.py`; oracles bit-exact): pre-registration
-**3 MET / 2 MISSED** — histogram form-blindness CONFIRMED at battery
-scale (W₁, midHot), but the §6.6 KE "lands better" is **REFUTED**
-(paired lq χ²_med worse on 5/5 seeds, Δ+13.3±10.0; the §6.6 halving was
-a seed-20260721/N = 500 artifact) and lq **over-suppresses** (supp
-0.213 vs 0.187, Δ+0.026 ~6σ; NB-RQ11-13). Mid-band deep-KE warming
-persists in direction (~300 counts) but buys no better KE landing.
-**§6.7 item 2 (E_bind pair-separation scan) EXECUTED 2026-07-24**
-(initial N = 500 single-seed + firm-up N = 1000 × 3 paired seeds;
-generators `gen_tier2atlas_ebindscan.py`/`ebindseeds.py`; only the
-climbed well overridden under the unvalidated-binding hatch, lq drag
-stamp unchanged; oracle bit-exact): **the over-suppression is DISCHARGED
-to the FORM, not the well** (matched-well 0.1168 Δsupp +0.034 ~8σ; well
-adds only +0.010), and item-1's histogram match is a **(form, well)
-co-compensation** — at a matched well lq is colder (midHot Δ−0.070 ~35σ)
-and smaller (n̄ Δ−0.57); **W₁ alone stays form-blind even at matched
-well**. Single-seed W₁ reads were seed-noise; χ²_med inconclusive even at
-N = 1000; deep well 0.154 over-retains (handover-guard trips, 2/3 cells).
-Net: forms are physically distinguishable; "form not limiting" holds only
-for coarse W₁, not KE/size/fate. **Next (plan §6.7 item 3, designed NOT
-triggered):** leave D → Axis A geometry grid → D2b → E₀/τ curves. RQ3/RQ5
-reads and
+sub-2.5 — with the lq E_bind-0.048 confound caveat pending. **§6.7 items 1–2 EXECUTED 2026-07-24** (lq sanity battery + E_bind
+pair-separation scan; full record in `drag_migration_log_tier2.md` +
+findings §6.7): cubic and quadratic are physically distinguishable — the
+histogram (W₁) is form-blind but the KE/size/fate observables are not, and
+the item-1 lq over-suppression is the FORM (the E_bind confound is
+discharged). Nothing moves finc1v725; Tier-0 still rejects lq. **Next
+(plan §6.7 item 3, untriggered):** leave D → Axis A geometry grid → D2b
+→ E₀/τ curves. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the
