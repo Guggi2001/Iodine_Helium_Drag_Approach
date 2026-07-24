@@ -19,6 +19,7 @@ import numpy as np
 from .physics.constants import EV, K_B, NU_EVAP_PER_PS, S_ABS_EV
 from .physics.drag import (
     CAPPED_CUBIC,
+    CAPPED_LINEAR_QUADRATIC,
     DragCoefficients,
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
@@ -48,7 +49,8 @@ CollisionMode = Literal[1, 2, 3]
 # surprising).
 # ---------------------------------------------------------------------------
 DragForm = Literal[
-    "linear_cubic", "linear_quadratic", "threshold", "power_law", "capped_cubic"
+    "linear_cubic", "linear_quadratic", "threshold", "power_law",
+    "capped_cubic", "capped_linear_quadratic"
 ]
 DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
 MassScenario = Literal["fixed", "biphasic", "anchored_discrete"]
@@ -208,6 +210,7 @@ _KNOWN_DRAG_FORMS = (
     THRESHOLD,
     POWER_LAW,
     CAPPED_CUBIC,
+    CAPPED_LINEAR_QUADRATIC,
 )
 
 
@@ -1739,6 +1742,38 @@ def check_drag_config(cfg: "SimConfig") -> None:
                 f"Step-1c-surviving tail set, TIER2_STAIRCASE_PROBE_PLAN "
                 f"§I.10; any other exponent needs a fresh adjudication), "
                 f"got p_tail={p_tail!r}"
+            )
+    elif form == CAPPED_LINEAR_QUADRATIC:
+        # Atlas §6.6 counterfactual instrument (2026-07-24): the lq in-band
+        # dissipativity arm (mirrors linear_quadratic: a >= 0, c >= 0,
+        # a + c > 0) plus the capped-tail conditions (mirrors capped_cubic:
+        # v_c > 0, p_tail in the adjudicated {0, -1} set).
+        a = float(c["a"])
+        cc = float(c["c"])
+        v_c = float(c["v_c"])
+        p_tail = float(c["p_tail"])
+        if a < 0.0 or cc < 0.0:
+            raise ValueError(
+                f"capped_linear_quadratic drag requires a >= 0 and c >= 0 "
+                f"(dissipative; METHOD_B §10.3), got a={a!r}, c={cc!r}"
+            )
+        if not (a + cc > 0.0):
+            raise ValueError(
+                f"capped_linear_quadratic drag requires a + c > 0 (a "
+                f"zero-drag law is not a drag law), got a={a!r}, c={cc!r}"
+            )
+        if not (v_c > 0.0):
+            raise ValueError(
+                f"capped_linear_quadratic drag requires v_c > 0 (the cap is "
+                f"a speed; v_c = inf is the linear_quadratic byte-identity "
+                f"limit), got v_c={v_c!r}"
+            )
+        if p_tail not in (0.0, -1.0):
+            raise ValueError(
+                f"capped_linear_quadratic drag requires p_tail in {{0, -1}} "
+                f"(the Step-1c-surviving tail set carried over to the atlas "
+                f"§6.6 instrument; any other exponent needs a fresh "
+                f"adjudication), got p_tail={p_tail!r}"
             )
     else:  # pragma: no cover -- membership already enforced above
         raise ValueError(f"unknown drag form {form!r}")

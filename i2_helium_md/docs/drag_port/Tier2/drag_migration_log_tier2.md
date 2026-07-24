@@ -9755,3 +9755,66 @@ lq-passing cell (requires the lq production enum behind
 variable-mass Method-B re-run (Tier-1a anchored m(t)) — the ±7 %
 in-window mass-drift exponent bias (~0.2 in n) becomes a measurement.
 Neither moves the standing point (atlas stance).
+
+## §6.6 MD spot-check EXECUTED — capped-lq enum built + three N = 500 cells run and scored: ALL THREE LAND incl. the off-needle control → (b) MD-CONFIRMED, the twin needle was a frozen-chord artifact; lq cells halve same-N χ²_med (reported, not adjudicated); deep-KE lever points at the 5–9 Å/ps mid-band (NB-RQ11-12) (2026-07-24)
+
+`[PROCEED TO IMPLEMENTATION]` given for the pre-registered spot-check
+(cases A/B/C adjudicated in discussion; sampling-surface alignment
+confirmed against the T9 leg-D chain — production already runs
+uniform-volume m3 / density_tied / kornilov, so twin↔MD divergence is
+attributable to dynamics/mechanism only). Delivered:
+
+1. **Enum** `capped_linear_quadratic` (`physics/drag.py`: form tag,
+   {a, c, v_c, p_tail} contract, force/γ branches through the shared
+   capped-tail scaffold, in-band byte-identical to `linear_quadratic`;
+   `config.py`: DragForm literal, known-forms, §3.3 guard mirroring the
+   lq dissipativity + capped-tail conditions). Tests:
+   `TestCappedLinearQuadratic` (byte-identity, constant-force tail,
+   cap continuity, v_c = ∞ identity, errstate sweep) + enum-completeness
+   pin updated; 169 passed drag/config, 86 neighboring.
+2. **Generator** `scripts/gen_tier2atlas_spotcheck.py`: cells built from
+   the `shared_lq` Tier-0 bundle (consistent §6.5.1 drag↔E_bind pair,
+   0.0482 eV, no binding escape hatch; the usual biphasic mass-pairing
+   flag), finc1v725 pins incl. the Landau-gated E2 arm, seed 20260721
+   (same neutral draws as the standing run), atlas namespace
+   `tier2atlas_conf270_qc{a,b,c}` with substring locks, and a
+   field-by-field cfg diff against the standing finc1v725 cfg.json
+   (mandatory {drag_form, drag_coefficients, binding} ⊆ diff ⊆ + τ;
+   caught two pin subtleties at build time). Tests:
+   `tests/test_gen_tier2atlas_spotcheck.py` (11; standing-diff class
+   skips where data/runs is absent).
+3. **Runs + scoring**: three detached parallel runs (neutral → ion →
+   E2 8000 ps Landau-gated → detection); committed-scorer session with
+   both oracles exact first (finc launch record; pooled §4cc row).
+   Results (supp / n₁s / W₁ / midHot / χ²_med): qca .202/.2715/.5231/
+   .919/64.7; qcb .158/.2621/.5597/1.069/61.3; qcc .191/.2725/.4956/
+   1.001/82.6 — vs same-N-same-seed cubic .161/.2718/.5238/.990/125.7.
+   **All three land; the twin-predicted qcb failure did not occur.**
+   Deep bins stay deficient in slope (form-robust) with qcb ~+0.1–0.2
+   warmer (the mid-band lever read, NB-RQ11-12; direction-only at
+   2–37 counts/bin).
+
+Verdict recorded in the findings §6.6 MD subsection; plan §6.6 status
+updated; D0 §1 synced. Standing point unmoved (atlas stance; adoption
+would require Method-B/TDDFT evidence, which continues to reject lq).
+Open follow-up: the variable-mass Method-B re-run (pre-registered).
+
+## D0 promoted to first-class + §6.6 follow-on program DESIGNED (doc work): form-blindness, mid-band deep-KE lever, and "lq-lands-better" written into the D0 influence entries WITH the E_bind confound caveat; next steps = lq battery (qcc, paired seeds) + E_bind pair-separation scan + leave D for Axis A (2026-07-24)
+
+User adjudication ("this is exactly why we do this parameter influence
+study"): the three §6.6 results promoted from status prose to
+first-class D0 measured-influence entries (§0 headline row; §1
+form-blindness bullet + the RQ11 owner-candidate bullet revised to the
+5–9 Å/ps mid-band; §1 "lands better" bullet; §2 mid-band-lever status
+entry) — each carrying the **E_bind confound caveat** (the lq cells'
+co-extracted 0.048 eV well is ~0.07 eV shallower; large on the deep-bin
+KE scale; attribution provisional until the §6.5 scan separates the
+pair). Follow-on program recorded as plan §6.7 (designed, NOT
+triggered): (1) lq sanity battery — qcc base, 5 × N = 1000 at the
+cubic battery's exact seeds 20260722–26 (paired-by-seed), light BN
+pre-registration before launch, doubles as the NB-RQ11-12 N = 1000
+escalation; (2) E_bind scan on qcc {0.1168, 0.154} under the
+unvalidated-binding escape hatch — the pair-separation experiment,
+run first; (3) then leave D → Axis A grid → D2b → Axis B. Also fixed
+a second stray-keystroke typo (D0 title "P#"; plan title "I#" earlier
+— user's editor buffers occasionally receive stray characters).

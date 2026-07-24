@@ -534,8 +534,55 @@ evidence for cubic. The lq landing is a needle (τ window ~0.3 ps,
 single E₀ grid point) vs cubic's §4w basin — twin-geometry statement,
 MD-unconfirmed. Pre-registered consequences now open (user decisions):
 MD spot-check of an lq-passing cell (enum build + trigger) and the
-variable-mass Method-B re-run. Full record:
+variable-mass Method-B re-run. **MD spot-check EXECUTED 2026-07-24**
+(3 × N = 500, `capped_linear_quadratic` enum + atlas-namespace
+generator): all three cells land — including the off-needle control —
+so (b) is **MD-confirmed** and the twin needle was a frozen-chord
+artifact (the MD basin is wide). The variable-mass Method-B re-run
+remains the open follow-up. Full record:
 `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` §6.6 section.
+
+## 6.7 — §6.6 follow-on program (designed 2026-07-24, user-adjudicated; NOT yet triggered)
+
+Agreed next steps after the §6.6 MD spot-check (all three lq cells
+landed; findings §6.6 MD subsection). Each item stays behind
+`[PROCEED TO IMPLEMENTATION]`.
+
+1. **lq sanity battery — pooled N = 5000.** Base cell **qcc**
+   (lq v_c 8.8 / τ 3.4 / E₀ 0.27; chosen on MD merit: W₁ 0.496,
+   midHot 1.001). 5 × N = 1000 with **the cubic battery's exact seeds
+   20260722–20260726** (paired-by-seed design: every observable
+   becomes a per-seed paired difference vs the corresponding
+   `bigc1v725s*` member — seed noise cancels; the form-blindness
+   statement gets a paired-SD error bar). Free bonus: pooled deep bins
+   (~300 fragments at n = 10) are the N = 1000-scale escalation of the
+   NB-RQ11-12 mid-band read. Light BN-style pre-registration frozen
+   before launch: pooled W₁ ∈ ~[0.46, 0.57]; midHot in the seed-robust
+   band; deep slope persists; per-member χ²_med below the paired cubic
+   member; supp within cell scatter of 0.187. Namespace
+   `tier2atlas_conf270_qccbigs{1..5}`.
+2. **E_bind scan on qcc — the pair-separation experiment (run first or
+   alongside).** Two N = 500 runs, qcc config, seed 20260721, only
+   E_bind overridden: **0.1168** (the standing cubic-pair value) and
+   **0.154** (top of the Tier-0 extracted spread) — §6.5's
+   physically-motivated grid. These deliberately break the §6.5.1
+   joint pairing → run under the unvalidated-binding escape hatch (the
+   §6.5 pre-registered exception), stamped per run. Headline question:
+   **does the lq KE advantage (χ²_med 62–83 vs cubic 125.7) survive at
+   E_bind 0.1168?** Collapse → the "lands better" finding re-attributes
+   to the shallow exit well; survival → the mid-band-γ attribution
+   firms up. Replaces the D0 §1/§2 confound caveats with a measurement.
+   Focus reads per §6.5: trapped, suppressed, deep-bin KE, χ²_med.
+3. **Then leave D** (parked: subtractive re-fit decision, variable-mass
+   Method-B re-run, collaborator ask) and proceed per the §7 order:
+   **Axis A geometry grid (2b)** → D2b audit → Axis B E₀/τ curves
+   (whose center cells then reuse both batteries).
+
+Cost: 5 × 1000 + 2 × 500 = 6,000 fragments ≈ 1.2× the cubic battery —
+the atlas's largest single spend; hence the pre-registration and
+seed-pairing discipline. Atlas stance unchanged: nothing here moves
+`finc1v725`; adoption of any form/E_bind value stays outside this
+program.
 
 ## 7. Execution order and budget
 

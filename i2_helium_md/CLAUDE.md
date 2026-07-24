@@ -76,16 +76,29 @@ mean-KE at production 2.70 eV. **Standing production point: `finc1v725`**
 fresh seeds, findings §4cc): histogram-level landing seed-robust (n₁_solv
 0.243, midHot 1.014, W₁ 0.571 ± 0.04). Figure surface: `plot_run_summary.py`
 (MD window) + `plot_detection_summary.py` (detected ensemble, 14 sections) +
-the pooled figures container. **Current goal (2026-07-23): the sensitivity
+the pooled figures container. **Current goal (2026-07-24): the sensitivity
 atlas** (`TIER2_SENSITIVITY_ATLAS_PLAN.md` + the D0 reference
-`TIER2_PARAMETER_INFLUENCE.md`) — understanding-driven OAT influence mapping
-around finc1v725: droplet R × birth-position grid + sampling-law audit (D2b),
-E₀/τ curves, drag-form Method-B re-fits (doubles as the RQ11 form
-discrimination — candidates (i)–(iii) refuted, in-band low-v law + channel
-(iv) survive, I93–I100) and the E_bind scan. RQ3/RQ5 reads and the margin-3 Å
-pinned convention (I88) stay open in-tier. Tier-3 noise stays
-next (second-moment under-dispersion, visible in the cov/VMI panels; stubbed
-behind its enum, NOT retired). New drag-program code stays behind the
+`TIER2_PARAMETER_INFLUENCE.md`; results in
+`TIER2_SENSITIVITY_ATLAS_FINDINGS.md`) — understanding-driven OAT influence
+mapping around finc1v725. **Executed so far:** stage 2a (D4 Step 1
+Method-B form table, artifact reuse, oracle bit-exact; Padé excluded by
+arithmetic, subtractive gate fired/fit pending, sub-2.5 Å/ps TDDFT-blind)
+and the §6.6 quadratic counterfactual **twin + MD spot-check → outcome
+(b), MD-measured: the Tier-2 landing is form-blind** (an lq system with
+its own artifacts lands all three N = 500 cells incl. the off-needle
+control; the twin's needle was a frozen-chord artifact; form authority
+rests solely on the Tier-0 traces where lq stays held-out-rejected;
+the landing is never evidence for any form). New RQ11 signal
+(NB-RQ11-12): the deep-KE lever sits in the **5–9 Å/ps mid-band**, not
+sub-2.5 — with the lq E_bind-0.048 confound caveat pending. **Next
+(plan §6.7, designed NOT triggered):** (1) E_bind pair-separation scan
+on qcc {0.1168, 0.154} under the unvalidated-binding hatch; (2) lq
+sanity battery (qcc, 5 × N = 1000, the cubic battery's seeds
+20260722–26, paired-by-seed, BN-style pre-registration first); (3) then
+leave D → Axis A geometry grid → D2b → E₀/τ curves. RQ3/RQ5 reads and
+the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
+stays next (second-moment under-dispersion; stubbed behind its enum,
+NOT retired). New drag-program code stays behind the
 `[PROCEED TO IMPLEMENTATION]` trigger.
 
 ## Current Scope

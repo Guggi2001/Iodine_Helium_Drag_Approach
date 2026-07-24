@@ -699,7 +699,7 @@ class TestEnumCompleteness:
     def test_all_members_present(self):
         assert set(typing.get_args(DragForm)) == {
             "linear_cubic", "linear_quadratic", "threshold", "power_law",
-            "capped_cubic",
+            "capped_cubic", "capped_linear_quadratic",
         }
         assert set(typing.get_args(DragSpatialGate)) == {
             "density_proportional", "erf_tied", "erf_independent", "sharp"

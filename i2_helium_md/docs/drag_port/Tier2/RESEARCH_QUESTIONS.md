@@ -1573,6 +1573,26 @@ mandatory if ever pursued).
   (d17 ≈ 0.67–0.75), so RQ11's deficit is form-robust at the twin
   level.
 
+- **NB-RQ11-12 (MD spot-check of the lq counterfactual — form-blindness
+  MD-confirmed; a mid-band deep-KE lever surfaces; 2026-07-24,
+  3 × N = 500 triggered runs).** All three capped-lq cells (v_c 9.0/8.8,
+  τ 3.2–3.5, own E_bind 0.0482) **land in full MD** — including the
+  off-needle control the twin predicted to fail by ~5 seed-SD: the twin
+  needle was a frozen-chord artifact and the MD landing basin is wide.
+  Consequences for RQ11: (a) the deep-bin *slope* persists under lq
+  (qca 0.85…0.55 / qcb 1.02…0.45 vs pooled cubic 0.81…0.38) — the
+  deficit is **form-robust in MD**, further weakening "the in-band low-v
+  law owns RQ11" in its simple form; (b) the standing-τ lq cell (qcb)
+  runs the deep bins ~+0.1–0.2 *warmer* than cubic, consistent with
+  lq's lower γ in the **5–9 Å/ps upper-mid band** (not its stronger
+  sub-2.5 drag) — the first direct MD evidence that the deep-KE lever
+  sits in the upper-mid band, where the capped tail and the Method-B
+  band top live, rather than below 2.5 Å/ps. Direction-only (deep
+  counts 2–37 per cell); N = 1000 confirmation is the escalation path.
+  (c) The lq cells halve the same-N χ²_med (61–83 vs 125.7) — reported
+  under the atlas stance, no adoption path; Tier-0 held-out authority
+  is unchanged.
+
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);
 `TIER2_DETECTION_STAGE_DESIGN.md` (§4 scope caveats → RQ5);

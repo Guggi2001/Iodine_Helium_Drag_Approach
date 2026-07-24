@@ -20,6 +20,7 @@ import pytest
 
 from i2_helium_md.physics.drag import (
     CAPPED_CUBIC,
+    CAPPED_LINEAR_QUADRATIC,
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
     POWER_LAW,
@@ -685,3 +686,113 @@ class TestSpatialGateSingleSource:
             spatial_gate(0.0, 0.0)
         with pytest.raises(ValueError):
             spatial_gate(0.0, -1.0)
+
+
+class TestCappedLinearQuadratic:
+    """Atlas §6.6 counterfactual form: gamma = g*(a + c*v) (v <= v_c),
+    g*(a + c*v_c)*(v/v_c)^p (v > v_c); F = gamma*v. Mirrors the
+    ``capped_cubic`` tail conventions exactly (shared tail scaffold), and the
+    in-band branch must be the SAME arithmetic as ``linear_quadratic`` --
+    the byte-identity the twin/MD comparison rides on. Analytical pins tight
+    (rtol 1e-12); byte-identity exact (``==``).
+    """
+
+    A = 9.805022771384936e-05  # amu/ps (the shared lq artifact value)
+    C = 12.792201727123915     # amu/A  (the shared lq artifact value)
+    V_C = 9.0                  # A/ps   (spot-check case-A cap)
+    DEPTHS = np.array([-400.0, -5.0, 0.0, 10.0])
+    V = np.array([0.0, 0.5, 2.0, 9.0, 9.5, 10.5, 12.0])
+
+    def _capped(self, p_tail, v_c=V_C, a=A, c=C):
+        return _bundle(
+            CAPPED_LINEAR_QUADRATIC,
+            {"a": a, "c": c, "v_c": v_c, "p_tail": p_tail},
+        )
+
+    # --- closed-form pins per branch ---
+    def test_in_band_explicit_values(self):
+        bundle = self._capped(p_tail=-1.0)
+        d, v = -400.0, 2.0
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.A * v + self.C * v**2, rel=1e-12
+        )
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.A + self.C * v, rel=1e-12
+        )
+
+    def test_tail_pm1_constant_force(self):
+        # p_tail = -1: F = g*(a + c*v_c)*v_c CONSTANT above the cap.
+        bundle = self._capped(p_tail=-1.0)
+        d = -400.0
+        F_sat = (self.A + self.C * self.V_C) * self.V_C
+        for v in (10.5, 12.0):
+            assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                F_sat, rel=1e-12
+            )
+            assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                F_sat / v, rel=1e-12
+            )
+
+    def test_in_band_byte_identity_with_linear_quadratic(self):
+        # v <= v_c must be the SAME arithmetic as the delivered lq branch
+        # (exact ==, no tolerance): the Tier-0 lq artifact semantics carry.
+        capped = self._capped(p_tail=-1.0)
+        lq = _bundle(LINEAR_QUADRATIC, {"a": self.A, "c": self.C})
+        v_in = self.V[self.V <= self.V_C]
+        for d in self.DEPTHS:
+            np.testing.assert_array_equal(
+                np.asarray(drag_force(v_in, d, capped, STEEPNESS_A)),
+                np.asarray(drag_force(v_in, d, lq, STEEPNESS_A)),
+            )
+            np.testing.assert_array_equal(
+                np.asarray(drag_gamma(v_in, d, capped, STEEPNESS_A)),
+                np.asarray(drag_gamma(v_in, d, lq, STEEPNESS_A)),
+            )
+
+    def test_v_c_inf_byte_identity_with_linear_quadratic(self):
+        # v_c = inf never enters the tail branch: full byte-identity.
+        capped = self._capped(p_tail=-1.0, v_c=np.inf)
+        lq = _bundle(LINEAR_QUADRATIC, {"a": self.A, "c": self.C})
+        for d in self.DEPTHS:
+            np.testing.assert_array_equal(
+                np.asarray(drag_force(self.V, d, capped, STEEPNESS_A)),
+                np.asarray(drag_force(self.V, d, lq, STEEPNESS_A)),
+            )
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_continuous_at_the_cap(self, p_tail):
+        bundle = self._capped(p_tail=p_tail)
+        d = -5.0
+        g = float(spatial_gate(d, STEEPNESS_A))
+        expected = g * (self.A + self.C * self.V_C)
+        eps = 1e-9
+        for v in (self.V_C - eps, self.V_C, self.V_C + eps):
+            assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                expected, rel=1e-6
+            )
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_dissipative_gate_shared_and_gamma_is_force_over_v(self, p_tail):
+        bundle = self._capped(p_tail=p_tail)
+        for d in self.DEPTHS:
+            F = drag_force(self.V, d, bundle, STEEPNESS_A)
+            gam = drag_gamma(self.V, d, bundle, STEEPNESS_A)
+            assert np.all(F >= 0.0)
+            assert np.all(gam >= 0.0)
+            np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_no_floating_point_warnings_across_the_cap(self, p_tail):
+        # Mixed arrays (rest + in-band + tail) and v_c = inf: no singular
+        # intermediate may be touched (errstate-raise makes leaks fatal).
+        for v_c in (self.V_C, np.inf):
+            bundle = self._capped(p_tail=p_tail, v_c=v_c)
+            with np.errstate(all="raise"):
+                drag_force(self.V, -5.0, bundle, STEEPNESS_A)
+                drag_gamma(self.V, -5.0, bundle, STEEPNESS_A)
+
+    def test_gamma_at_rest_is_regular_a(self):
+        # v = 0 sits in-band: gamma -> g*a (the lq rest limit), never the tail.
+        bundle = self._capped(p_tail=-1.0)
+        gam0 = float(drag_gamma(0.0, -400.0, bundle, STEEPNESS_A))
+        assert gam0 == pytest.approx(self.A, rel=1e-12)

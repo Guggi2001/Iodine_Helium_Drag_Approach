@@ -1,4 +1,4 @@
-P# Tier 2 — Parameter Influence Reference (compact)
+# Tier 2 — Parameter Influence Reference (compact)
 
 > **What this is.** The D0 deliverable of `TIER2_SENSITIVITY_ATLAS_PLAN.md`:
 > a **pure distillation** of `TIER2_STAIRCASE_PROBE_FINDINGS.md` (§4a–§4ee,
@@ -15,7 +15,9 @@ P# Tier 2 — Parameter Influence Reference (compact)
 > influence yet — atlas target).
 >
 > **Living doc.** Each sensitivity-atlas stage merges its results in and
-> closes its GAP marker. Last built: 2026-07-23 (distillation of I1–I100).
+> closes its GAP marker. Last built: 2026-07-23 (distillation of
+> I1–I100); merged 2026-07-24: D4 Step 1 + §6.6 counterfactual
+> (twin + MD spot-check — the form-blindness result, §1).
 >
 > **Standing point (context for every "standing" value):** finc1v725 —
 > `capped_cubic` v_c 7.25 / p_tail −1, τ 3.2 ps, E₀ 0.27 eV, `rq4graded`
@@ -28,7 +30,7 @@ P# Tier 2 — Parameter Influence Reference (compact)
 
 | knob | class | headline influence | status |
 |---|---|---|---|
-| drag form + b (in-band) | Derived (Method-B/TDDFT) | owns KE scale + fragment composition; sole surviving RQ11 owner-candidate | locked in-band; form question OPEN (RQ11) |
+| drag form + b (in-band) | Derived (Method-B/TDDFT) | owns KE scale + fragment composition; **the landed observables do NOT identify the form — cubic and quadratic systems both land in full MD (§6.6)**; deep-KE lever re-pointed at the 5–9 Å/ps mid-band | locked in-band by Tier-0 traces ONLY; landing form-blind (MD-measured) |
 | v_c, p_tail (capped tail) | Free | v_c owns the whole mid-bin KE curve; joint-landing basin v_c ∈ [7.25, 7.5]; p_tail is not a second lever | standing 7.25 / −1 |
 | τ (cooling clock) | Bounded | descent clock; joint closure only as a (v_c, τ) pair; race coordinate with f_int under the gate | standing 3.2 ps |
 | E₀ = E_int(0) | Bounded [0.2, 0.5] eV | fate-cliff position (bare↔shell split); re-landed at solvation scale 0.22–0.27 under full geometry | standing 0.27 eV |
@@ -70,6 +72,16 @@ P# Tier 2 — Parameter Influence Reference (compact)
   v ≈ 2–7 Å/ps, t ≈ 2–14 ps, in-bubble** (I90); with candidates
   (i)/(ii)/(iii) refuted, the in-band law at low v is the surviving
   owner-candidate (I96) — ~1.5 % of the deep survivors' dissipation.
+  **Revised by the §6.6 MD spot-check (NB-RQ11-12): the velocity window
+  that actually moves deep-bin KE is the upper-mid band v ≈ 5–9 Å/ps,
+  not the theorized sub-2.5 low band.** Measured: the lq cell at
+  standing τ (γ lower than capped-cubic above ~5 Å/ps, cap at 9)
+  lifts deep bins ~+0.1–0.2 (qcb 1.02…0.45 vs pooled cubic
+  0.81…0.38) *despite* carrying ×2.5 the drag at v = 2 — the sub-2.5
+  region barely registers on deep KE, the 5–9 window dominates. The
+  deficit's slope survives every form tested (form-robust).
+  Direction-only at N = 500 deep-bin counts; N = 1000 confirmation is
+  the escalation path.
 - Low-v form space mapped in the twin (§4ee): hard/erf floors are
   perfectly speed-selective and act by un-trapping the marginal retained
   class (trap 0.042 → 0); the sub form at v_f ≈ 1.5–2.0 is the twin's
@@ -90,28 +102,51 @@ P# Tier 2 — Parameter Influence Reference (compact)
   in-band (×0.65–0.38 at 2.54 for v_f 1.5–2.0 vs the whole 18 Å window
   at 2.54–3.02); its re-fit is a pending decision. Full tables:
   `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (NB-RQ11-10).
+- **The landed observables do not identify the in-band form — the
+  landing is form-blind, measured at every level (§6.6, 2026-07-24).**
+  A quadratic-form system with its own Tier-0 artifacts (a ≈ 0,
+  c = 12.79, E_bind 0.0482) and re-arbitrated downstream knobs lands
+  the full Tier-2 observable vector in *full MD*: three cells
+  (v_c 8.8–9.0 × τ 3.2–3.5), all landing, including the cell the twin
+  predicted to fail by ~5 seed-SD (the twin's needle-thin lq basin was
+  a frozen-chord artifact; the MD basin is wide — mechanism feedback
+  smooths the (τ, E₀) knife-edge). Consequences, program-level: the
+  experimental landing can never be cited as evidence for any drag
+  form (cubic included); form authority lives exclusively in the
+  Tier-0 trace instruments (held-out above all, where lq fails 0.699);
+  and a large share of the landing quality is owned by the downstream
+  mechanism's compensation capacity (through K, I47), not by the drag
+  law. This is the measured closure of the §6.1 anti-circularity
+  question.
+- **A quadratic law with its lower/softer high-v tail lands *better*
+  than the standing cubic on the KE surface (reported, not
+  adjudicated).** Same-N same-seed comparison: the three lq cells halve
+  the median-anchored KE χ² (64.7 / 61.3 / 82.6 vs cubic finc1v725
+  125.7) with midHot in-band (0.92–1.07), and the v_c 8.8 cell's
+  W₁ 0.496 beats the cubic same-seed 0.524. Candidate driver: the
+  softer effective drag between the band top and the production peak
+  (lq γ crosses below capped-cubic above ~5 Å/ps) — **entangled with
+  the co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well; the
+  §6.5 E_bind-only scan is the separation experiment, pending)**.
+  **Atlas stance: no adoption** — the Tier-0 traces reject this form;
+  the entry documents what the observables *reward* (less mid-band
+  dissipation and/or a shallower exit well), not a form change per se.
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).
 
-**Status:** locked in-band; the *form* question is RQ11's open axis
-(lever hierarchy: TDDFT re-inspection / Method-B form re-fit ≫ candidate
-(iv) ≫ Free phenomenological suppression). After atlas D4 Step 1: priors
-unchanged; Padé parked (see §2), subtractive fit-decision pending,
-shifted cubic's re-add condition not met. After the §6.6 quadratic
-counterfactual (2026-07-24, corrected same day by the user-caught fine
-rescan): **outcome (b) — the Tier-2 observable vector is measured to be
-form-blind.** A re-arbitrated lq system (v_c 8.8–9.0, τ 3.3–3.5,
-E₀ 0.27) lands the histogram + KE observables comparably to production
-cubic in the twin (six four-way passes; best cell beats base W₁ and
-midHot centering; n₁KE ~10 % colder; needle-width basin vs cubic's §4w
-basin). Consequence: the form choice rests **solely on the Tier-0
-trace instruments** (lq stays rejected there: held-out 0.699 FAIL,
-n̂ = 2.927), and the Tier-2 landing must never be cited as evidence
-for cubic — the anti-circularity caveat is upheld as a measured fact.
-Pre-registered follow-ups open: MD spot-check of an lq-passing cell;
-variable-mass Method-B re-run.
+**Status:** locked in-band **by the Tier-0 trace instruments only** —
+after §6.6 (twin + MD, 2026-07-24) the Tier-2 landing carries zero
+form-discrimination power (see the form-blindness influence bullet
+above), so the traces are not merely the *best* authority but the
+*sole* one; lq stays rejected there (held-out 0.699 FAIL, n̂ = 2.927).
+RQ11's drag-shape axis is re-pointed at the 5–9 Å/ps mid-band
+(NB-RQ11-12). Open items: subtractive-form re-fit decision
+(Step-1 gate fired), the variable-mass Method-B re-run
+(§6.6 pre-registered follow-up), the collaborator ask
+(sub-2.5 + production-kinematics traces). Chronology + full tables:
+`drag_migration_log_tier2.md`, `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`.
 
 ## 2. Capped tail — v_c and p_tail
 
@@ -150,7 +185,19 @@ zero-cost arithmetic** (atlas D4 Step 1): in-band cubicity forces
 v_s ≳ ~15 Å/ps, which forfeits the p_tail = −1 saturation at the
 production peak — the principled cap-remover remains extending TDDFT
 authority to production kinematics (the collaborator ask), not a
-different closed form.
+different closed form. **Mid-band γ magnitude (band top → cap,
+v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
+spot-check, NB-RQ11-12): the lq system's softer γ in exactly this
+window lifts deep bins ~+0.1–0.2 and halves the same-N χ²_med — i.e.
+what the KE observables reward is *less drag between the calibrated
+band and the cap*, a region where cubic-vs-quadratic differ most and
+TDDFT authority is absent (the collaborator-ask window). The cap
+arbitration (I72's three-observables-three-v_c tension) should be
+re-read in this light when the atlas reaches its synthesis stage.
+**Confound pending (§6.5 E_bind scan):** the lq cells also carry their
+co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well — large on
+the deep-bin KE scale), so the mid-band-γ attribution is provisional
+until the E_bind-only scan separates the jointly-extracted pair.
 
 ## 3. τ — Newton cooling clock
 

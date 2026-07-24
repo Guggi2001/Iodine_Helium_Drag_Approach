@@ -250,6 +250,68 @@ under-expressed); deep-bin columns direction-only; m = 20000 twin
 ensemble with fixed draws, not MD; the needle-vs-basin contrast is a
 twin-geometry statement pending MD/seed confirmation.
 
+### §6.6 MD spot-check (2026-07-24, 3 × N = 500, triggered) — all three cells LAND; (b) is MD-confirmed and the twin needle was a frozen-chord artifact
+
+**Build:** `capped_linear_quadratic` enum (`physics/drag.py` +
+`config.py` guard, tail conventions mirrored from `capped_cubic`,
+in-band byte-identical to `linear_quadratic`);
+`scripts/gen_tier2atlas_spotcheck.py` (atlas namespace
+`tier2atlas_conf270_qc{a,b,c}`, substring locks; cfg verified
+field-by-field against the standing finc1v725 `cfg.json` — diff exactly
+{drag_form, drag_coefficients, binding, τ}); cells built from the
+`shared_lq` Tier-0 bundle so drag ↔ E_bind (0.0482 eV) is a consistent
+§6.5.1 pair. Same seed as finc1v725 (20260721) — the same-N same-seed
+cubic row is the natural comparator. Scoring: committed scorer, oracle
+rows (finc launch record + pooled §4cc) reproduced before any new read.
+
+| cell (all E₀ 0.27) | supp | n₁s | W₁ | midHot | χ²_med | vs twin prediction |
+|---|---|---|---|---|---|---|
+| **qca** lq v_c 9.0 / τ 3.5 | 0.202 | 0.2715 | **0.5231** | 0.919 | **64.7** | twin PASS → **MD lands** |
+| **qcb** lq v_c 9.0 / τ 3.2 (control) | 0.158 | 0.2621 | **0.5597** | 1.069 | **61.3** | twin FAIL (W₁ 0.89) → **MD lands anyway** |
+| **qcc** lq v_c 8.8 / τ 3.4 | 0.191 | 0.2725 | **0.4956** | 1.001 | **82.6** | twin PASS → **MD lands** |
+| finc1v725 (cubic, same N + seed) | 0.161 | 0.2718 | 0.5238 | 0.990 | 125.7 | — |
+| pooled battery (cubic, N = 5000) | 0.187 | 0.2433 | 0.5713 | 1.014 | 242.0 | — |
+
+**Reads (pre-registered grid):**
+
+1. **A lands + B lands → the twin needle was a frozen-chord artifact.**
+   The off-needle control (τ 3.2, twin-predicted ~5-seed-SD W₁ failure)
+   lands *better* than the pooled cubic reference. Mechanism feedback
+   (generative pickup/evaporation/E_int dynamics) blurs the twin's
+   knife-edge into a wide MD basin — the needle-vs-basin contrast of the
+   twin table is **not** a physical discriminator.
+2. **Outcome (b) is MD-confirmed:** the Tier-2 observable surface cannot
+   discriminate the drag forms *in full MD* — an lq-based system lands
+   the histogram (W₁ 0.50–0.56 vs cubic 0.52/0.57) and the KE bands at
+   multiple (v_c, τ) points. The form choice rests solely on the Tier-0
+   trace instruments (lq held-out FAIL stands); the experimental landing
+   supports **no** form claim, cubic included — now an MD-measured
+   statement, closing the §6.1 anti-circularity question at every level.
+3. **The lq cells halve the median-anchored KE χ²** (61–83 vs the
+   same-N-same-seed cubic 125.7) with midHot staying in-band — under the
+   atlas stance this is *reported, not adjudicated*: no adoption path
+   exists here (plan §8), and Tier-0 trace authority still rejects lq.
+   What it demonstrates is methodological: downstream-mechanism
+   flexibility, not drag-form correctness, owns much of the landing
+   quality.
+4. **RQ11 signal (direction-only, thin bins):** deep-bin ratios per cell
+   — qca 0.85…0.55, qcb 1.02…0.45, qcc 0.83…—, vs pooled cubic
+   0.81…0.38. The deficit's *slope* persists under lq (form-robust),
+   but qcb (standing τ) runs ~+0.1–0.2 warmer across n = 10–15 —
+   consistent with lq's *lower* γ in the 5–9 Å/ps mid-band (its cap sits
+   at 9.0 and its γ crosses below capped-cubic above ~5), pointing the
+   deep-KE lever at the **upper-mid band (v ≈ 5–9)** rather than the
+   sub-2.5 region. Recorded to `RESEARCH_QUESTIONS.md` as NB-RQ11-12.
+   Counts n = 10–17 are ~2–37 per cell — direction-only; an N = 1000
+   confirmation is the escalation if this read is to become
+   headline-bearing.
+
+**Authority box:** single fixed seed per cell at N = 500 (seed-SD ×√2
+vs battery members); χ²_med compared same-N only (it scales with scored
+count); deep bins thin; suppressed-class spread (0.158–0.202) within
+the known cell-to-cell scatter. Nothing here moves the standing point;
+`finc1v725` remains production (atlas stance).
+
 ### Status of the D4 form axis after Step 1
 
 Registered priors unchanged: lq stays rejected (shared +0.0339, held-out

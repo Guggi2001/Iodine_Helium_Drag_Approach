@@ -78,15 +78,18 @@ from ._gates import _erf_complement
 
 
 # Drag-form tags. LINEAR_CUBIC (Slice 1), LINEAR_QUADRATIC and POWER_LAW
-# (METHOD_B §10 form phase), and CAPPED_CUBIC (Tier-2 Addendum I §I.10
-# Slice T1: locked pure cubic in-band + {0, -1}-exponent high-v tail) are
-# realised; THRESHOLD stays reserved behind the dispatch (see
-# :func:`_raise_unrealised_form`).
+# (METHOD_B §10 form phase), CAPPED_CUBIC (Tier-2 Addendum I §I.10
+# Slice T1: locked pure cubic in-band + {0, -1}-exponent high-v tail), and
+# CAPPED_LINEAR_QUADRATIC (atlas §6.6 MD spot-check, 2026-07-24: the lq
+# in-band law under the same tail convention -- counterfactual instrument,
+# never preset-wired) are realised; THRESHOLD stays reserved behind the
+# dispatch (see :func:`_raise_unrealised_form`).
 LINEAR_CUBIC = "linear_cubic"
 LINEAR_QUADRATIC = "linear_quadratic"
 THRESHOLD = "threshold"
 POWER_LAW = "power_law"
 CAPPED_CUBIC = "capped_cubic"
+CAPPED_LINEAR_QUADRATIC = "capped_linear_quadratic"
 
 # Required coefficient keys per form (variable arity by form, §3.8).
 # POWER_LAW's amplitude key is "C" (METHOD_B §10.3/§10.5 raw-{C, n} stamp);
@@ -99,6 +102,8 @@ _REQUIRED_COEFF_KEYS: dict[str, tuple[str, ...]] = {
     THRESHOLD: ("F_sat", "v0"),          # amu*A/ps^2, A/ps
     POWER_LAW: ("C", "n"),               # amu*A^(1-n)*ps^(n-2), dimensionless
     CAPPED_CUBIC: ("b", "v_c", "p_tail"),  # amu*ps/A^2, A/ps, dimensionless
+    # amu/ps, amu/A, A/ps, dimensionless
+    CAPPED_LINEAR_QUADRATIC: ("a", "c", "v_c", "p_tail"),
 }
 
 # The forms with realised force/gamma branches below -- the single source for
@@ -109,6 +114,7 @@ REALIZED_FORMS: tuple[str, ...] = (
     LINEAR_QUADRATIC,
     POWER_LAW,
     CAPPED_CUBIC,
+    CAPPED_LINEAR_QUADRATIC,
 )
 
 _VALID_MASS_MODELS = ("constant", "time_resolved")
@@ -279,6 +285,10 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         capped_cubic:     F_drag = g(depth) * b*v**3                (v <= v_c)
                           F_drag = g(depth) * b*v_c**2 * v * (v/v_c)**p_tail
                                                                     (v >  v_c)
+        capped_linear_quadratic:
+                          F_drag = g(depth) * (a*v + c*v**2)        (v <= v_c)
+                          F_drag = g(depth) * (a + c*v_c) * v * (v/v_c)**p_tail
+                                                                    (v >  v_c)
 
     Returns the **positive magnitude** form (drag opposes motion); the consumer
     applies ``-F_drag`` along ``v_hat`` at the integrator (Slice 2).
@@ -332,6 +342,19 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
             return g * (b * v**3)
         tail, v_t, tail_pow = masked
         return g * np.where(tail, b * v_c**2 * v_t * tail_pow, b * v**3)
+    if coeffs.form == CAPPED_LINEAR_QUADRATIC:
+        a = float(coeffs.coefficients["a"])
+        c = float(coeffs.coefficients["c"])
+        v_c = float(coeffs.coefficients["v_c"])
+        p_tail = float(coeffs.coefficients["p_tail"])
+        masked = _capped_cubic_tail_factor(v, v_c, p_tail)
+        if masked is None:
+            # In-band everywhere (v_c = inf byte-identity with linear_quadratic).
+            return g * (a * v + c * v**2)
+        tail, v_t, tail_pow = masked
+        return g * np.where(
+            tail, (a + c * v_c) * v_t * tail_pow, a * v + c * v**2
+        )
     _raise_unrealised_form(coeffs.form)
 
 
@@ -369,6 +392,10 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         power_law:        gamma = g(depth) * C * v**(n-1)
         capped_cubic:     gamma = g(depth) * b*v**2                 (v <= v_c)
                           gamma = g(depth) * b*v_c**2 * (v/v_c)**p_tail
+                                                                    (v >  v_c)
+        capped_linear_quadratic:
+                          gamma = g(depth) * (a + c*v)              (v <= v_c)
+                          gamma = g(depth) * (a + c*v_c) * (v/v_c)**p_tail
                                                                     (v >  v_c)
 
     Exposed via the **closed form**, *not* ``|F_drag|/v``: analytically equal,
@@ -431,4 +458,16 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
             return g * (b * v**2)
         tail, _v_t, tail_pow = masked
         return g * np.where(tail, b * v_c**2 * tail_pow, b * v**2)
+    if coeffs.form == CAPPED_LINEAR_QUADRATIC:
+        a = float(coeffs.coefficients["a"])
+        c = float(coeffs.coefficients["c"])
+        v_c = float(coeffs.coefficients["v_c"])
+        p_tail = float(coeffs.coefficients["p_tail"])
+        masked = _capped_cubic_tail_factor(v, v_c, p_tail)
+        if masked is None:
+            # In-band everywhere (v_c = inf byte-identity with
+            # linear_quadratic); v = 0 sits here, clear of the tail power.
+            return g * (a + c * v)
+        tail, _v_t, tail_pow = masked
+        return g * np.where(tail, (a + c * v_c) * tail_pow, a + c * v)
     _raise_unrealised_form(coeffs.form)
