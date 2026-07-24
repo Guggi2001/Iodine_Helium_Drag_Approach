@@ -102,8 +102,20 @@
   in-band (×0.65–0.38 at 2.54 for v_f 1.5–2.0 vs the whole 18 Å window
   at 2.54–3.02); its re-fit is a pending decision. Full tables:
   `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (NB-RQ11-10).
-- **The landed observables do not identify the in-band form — the
-  landing is form-blind, measured at every level (§6.6, 2026-07-24).**
+- **The landed *histogram* does not identify the in-band form — the
+  histogram landing is form-blind, measured at battery scale (§6.6 +
+  the §6.7 N = 1000 paired battery, 2026-07-24).** W₁, midHot, n̄, and
+  n₁_solv are all form-comparable (pooled lq W₁ 0.548 vs cubic 0.571,
+  midHot 1.023 vs 1.014). "Form-blind" is a **W₁-only** statement, and
+  the §6.7 item-2 E_bind scan sharpens why: item-1's midHot/n̄ *match* is
+  a **(form, well) co-compensation**, not form-insensitivity. At a
+  *matched* well (0.1168) the forms diverge strongly — lq is colder
+  (midHot Δ−0.070, ~35σ) and smaller (n̄ Δ−0.57, ~20σ) than cubic (§6.7
+  item-2 firm-up); item-1 saw them equal only because lq's shallower
+  0.048 well cancelled its intrinsic coldness. W₁ alone stays form-blind
+  even at matched well (Δ+0.009, ns), but the fate split (supp/trap) and
+  the KE/size (midHot/n̄) *do* separate the forms — so this is not a
+  claim that every observable is form-insensitive.
   A quadratic-form system with its own Tier-0 artifacts (a ≈ 0,
   c = 12.79, E_bind 0.0482) and re-arbitrated downstream knobs lands
   the full Tier-2 observable vector in *full MD*: three cells
@@ -118,19 +130,30 @@
   mechanism's compensation capacity (through K, I47), not by the drag
   law. This is the measured closure of the §6.1 anti-circularity
   question.
-- **A quadratic law with its lower/softer high-v tail lands *better*
-  than the standing cubic on the KE surface (reported, not
-  adjudicated).** Same-N same-seed comparison: the three lq cells halve
-  the median-anchored KE χ² (64.7 / 61.3 / 82.6 vs cubic finc1v725
-  125.7) with midHot in-band (0.92–1.07), and the v_c 8.8 cell's
-  W₁ 0.496 beats the cubic same-seed 0.524. Candidate driver: the
-  softer effective drag between the band top and the production peak
-  (lq γ crosses below capped-cubic above ~5 Å/ps) — **entangled with
-  the co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well; the
-  §6.5 E_bind-only scan is the separation experiment, pending)**.
-  **Atlas stance: no adoption** — the Tier-0 traces reject this form;
-  the entry documents what the observables *reward* (less mid-band
-  dissipation and/or a shallower exit well), not a form change per se.
+- **The §6.6 read that a quadratic law lands *better* on the KE surface
+  does NOT replicate — REFUTED by the §6.7 N = 1000 battery (2026-07-24).**
+  The §6.6 same-N same-seed comparison (three lq cells halving χ²_med,
+  64.7 / 61.3 / 82.6 vs cubic finc1v725 125.7) was a **single-seed
+  artifact** (seed 20260721, N = 500). Paired across the 5 fresh battery
+  seeds at N = 1000, lq's median-anchored KE χ²_med is *worse* than cubic
+  on **every** seed (paired Δ+13.3±10.0; pooled 277 vs 242). The KE
+  advantage was not even seed-robust — it evaporated *before* the E_bind
+  confound is addressed.
+- **lq over-suppresses — a resolved drag-form influence on the fate
+  split (§6.7 battery + item-2 scan).** supp 0.213 vs cubic 0.187 at the
+  battery (paired Δ+0.0255 ± 0.0041, ~6σ), with under-trapping. **The
+  §6.7 item-2 E_bind scan DISCHARGES the confound: the over-suppression
+  is the FORM, not the well** — at a *matched* well (0.1168) lq still
+  over-suppresses by Δ+0.034 ± 0.004 (~8σ, N = 1000 × 3 seeds); the well
+  adds only +0.010 more. lq also runs colder/smaller at matched well
+  (midHot Δ−0.070, n̄ Δ−0.57) — the intrinsic quadratic-form signature
+  that item-1's shallow co-calibrated well masked. (χ²_med stays
+  seed-noise-dominated and does not resolve form vs well even at N = 1000.
+  Deep well 0.154 over-retains: 2/3 cells trip the handover guard as
+  ~2/2000 ions never decouple in 8000 ps.)
+  **Atlas stance: no adoption** — the Tier-0 traces reject this form
+  (held-out 0.699 FAIL); these entries document what the observables
+  *reward/penalize*, not a form change.
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
@@ -187,17 +210,26 @@ production peak — the principled cap-remover remains extending TDDFT
 authority to production kinematics (the collaborator ask), not a
 different closed form. **Mid-band γ magnitude (band top → cap,
 v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
-spot-check, NB-RQ11-12): the lq system's softer γ in exactly this
-window lifts deep bins ~+0.1–0.2 and halves the same-N χ²_med — i.e.
-what the KE observables reward is *less drag between the calibrated
-band and the cap*, a region where cubic-vs-quadratic differ most and
-TDDFT authority is absent (the collaborator-ask window). The cap
-arbitration (I72's three-observables-three-v_c tension) should be
-re-read in this light when the atlas reaches its synthesis stage.
-**Confound pending (§6.5 E_bind scan):** the lq cells also carry their
-co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well — large on
-the deep-bin KE scale), so the mid-band-γ attribution is provisional
-until the E_bind-only scan separates the jointly-extracted pair.
+spot-check, NB-RQ11-12; escalated by the §6.7 item-1 lq battery to
+~300 counts/bin, 2026-07-24): the lq system's softer γ in exactly this
+window lifts deep bins ~+0.1–0.2 at n = 10–12 (direction confirmed at
+battery scale), a region where cubic-vs-quadratic differ most and TDDFT
+authority is absent (the collaborator-ask window). **CORRECTED by the
+§6.7 battery:** the §6.6 read that this mid-band softening *"halves the
+same-N χ²_med / lands the KE better"* **does NOT replicate paired** —
+across 5 fresh seeds at N = 1000, lq's median-anchored KE χ²_med is
+*worse* than cubic on every seed (paired Δ+13.3±10.0; pooled 277 vs
+242). The §6.6 halving was a favourable-seed artifact (seed 20260721,
+N = 500). So the mid-band warming is real (direction) but does **not**
+yield a better KE landing; and the lq system additionally
+**over-suppresses** (supp 0.213 vs 0.187, paired Δ+0.026 ~6σ) — a
+distinct resolved fate-split influence. Histogram form-blindness (W₁,
+midHot) still holds at battery scale. The cap arbitration (I72's
+three-observables-three-v_c tension) should be re-read in this light at
+synthesis. **Confound pending (§6.5 E_bind scan):** the lq cells carry
+their co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well), so
+the residual supp/deep-direction attribution is provisional until the
+E_bind-only scan separates the jointly-extracted pair.
 
 ## 3. τ — Newton cooling clock
 

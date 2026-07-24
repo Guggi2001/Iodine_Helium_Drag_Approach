@@ -1591,7 +1591,29 @@ mandatory if ever pursued).
   counts 2–37 per cell); N = 1000 confirmation is the escalation path.
   (c) The lq cells halve the same-N χ²_med (61–83 vs 125.7) — reported
   under the atlas stance, no adoption path; Tier-0 held-out authority
-  is unchanged.
+  is unchanged. **[(c) SUPERSEDED by NB-RQ11-13 — the halving does not
+  replicate paired.]**
+
+- **NB-RQ11-13 (lq sanity battery — the N = 1000 escalation of
+  NB-RQ11-12; 2026-07-24, 5 × N = 1000 paired-by-seed).** qcc base
+  (v_c 8.8 / τ 3.4 / E₀ 0.27, E_bind 0.0482), seeds 20260722–26 paired
+  1:1 with the cubic battery `bigc1v725s{1..5}`. Two RQ11-relevant
+  reads: (a) **the mid-band deep-KE warming persists in direction at
+  ~300 counts/bin** — pooled lq runs n = 10–12 warmer than cubic
+  (0.84/0.78/0.76 vs 0.81/0.75/0.74), the 5–9 Å/ps upper-mid-band lever
+  confirmed at battery scale; the deep-slope deficit persists under lq
+  (form-robust). But (b) **NB-RQ11-12(c) is REFUTED** — the "lq halves
+  χ²_med / lands the KE better" read does *not* replicate: paired across
+  the 5 fresh seeds, lq's median-anchored KE χ²_med is *worse* than
+  cubic on every seed (Δ+13.3±10.0; pooled 277 vs 242). The §6.6 halving
+  was a favourable-seed artifact (seed 20260721, N = 500). So the
+  mid-band softening is a real *direction* but does **not** buy a better
+  KE landing — RQ11's deep-bin deficit is not closed (and is arguably
+  worsened) by moving to the softer lq mid-band γ. Side finding
+  (fate-split, not RQ11): lq over-suppresses (supp 0.213 vs 0.187,
+  paired Δ+0.026 ~6σ). Full tables: `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
+  §6.7 item-1 RESULTS. Confound: E_bind 0.048 unseparated (§6.5 scan
+  pending). Atlas stance; Tier-0 still rejects lq.
 
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);

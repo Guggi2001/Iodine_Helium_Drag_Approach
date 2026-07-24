@@ -1,4 +1,4 @@
-# Tier 2 — Sensitivity Atlas: Findings
+L# Tier 2 — Sensitivity Atlas: Findings
 
 > Created 2026-07-23 at first execution (stage 2a). Protocol, yardstick,
 > and stance: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§1, §8) — reported, not
@@ -321,3 +321,232 @@ knowledge from the zero-cost gate: Padé excluded as a cap-replacement
 and awaits a promotion decision; sub-2.5 Å/ps stays TDDFT-blind. Step 2
 (twin sweeps) can proceed on the standing form list; Step 3 (MD
 spot-checks / enum build) has no candidate yet that survives to it.
+
+## §6.7 item 1 — lq sanity battery (5 × N = 1000, paired-by-seed) — PRE-REGISTRATION (frozen 2026-07-24, before launch)
+
+**Frozen before the first run** per plan §6.7 (BN-style pre-registration
+discipline). This block is the pre-commitment; the results subsection is
+appended below it *after* the runs land. Nothing here moves `finc1v725`
+(atlas stance).
+
+**Purpose.** Escalate the §6.6 MD spot-check (3 × N = 500, single seed) to
+the N = 1000 battery scale with a **paired-by-seed** design, so the
+form-blindness statement (outcome (b), MD-confirmed) carries a paired-SD
+error bar rather than a √2-inflated single-seed read; and escalate the
+NB-RQ11-12 deep-bin mid-band read (~300 fragments at n = 10 pooled) from
+direction-only to headline-bearing.
+
+**Design.** Base cell **qcc** (chosen on MD merit at N = 500:
+W₁ 0.496, midHot 1.001) — `capped_linear_quadratic`, `shared_lq` Tier-0
+bundle (a = 9.805e-05, c = 12.792, jointly-extracted E_bind = 0.0482 eV;
+a *consistent* §6.5.1 pair, **no** binding escape hatch), v_c 8.8 / p_tail
+−1, τ 3.4, E₀ 0.27, standing finc1v725 pins otherwise (leg-D uniform-volume
+birth, Landau-gated E2 arm). **5 members, N = 1000, seeds 20260722–20260726
+= the cubic battery's exact seeds** → each member pairs by seed with
+`bigc1v725s{1..5}` (same neutral draws), so every observable becomes a
+per-seed paired Δ and seed noise cancels. Namespace
+`tier2atlas_conf270_qccbigs{1..5}`.
+
+**cfg discipline.** Each member is verified field-by-field against **its
+paired cubic member's** `cfg.json` (matched N + seed) — the diff must be
+exactly {`drag_form`, `drag_coefficients`, `binding_energy_I_ion_eV`,
+`internal_energy_cooling_tau_ps`} (the form swap + the lq pair's E_bind +
+τ 3.2 → 3.4). Any other diff aborts the build (battery precedent: the
+run-dir cfg IS the spec).
+
+**FROZEN predicted pass bands** (met → landing reproduces at battery scale
+and form-blindness holds paired; deviation → a real finding, reported not
+adjudicated):
+
+| # | observable | frozen prediction |
+|---|---|---|
+| 1 | pooled W₁_solv | ∈ ~[0.46, 0.57] |
+| 2 | midHot (pooled) | in the seed-robust band [0.84, 1.14] |
+| 3 | deep-bin KE slope | deficit persists (form-robust); the NB-RQ11-12 mid-band warm read escalates, not reverses |
+| 4 | per-member χ²_med | below its paired cubic member (same-N paired) |
+| 5 | suppressed weight | within cell scatter of the standing 0.187 |
+
+**Confound caveat (carried in every results table).** qcc's E_bind 0.0482
+is ~0.07 eV shallower than the cubic pair's 0.1168 — large on the deep-bin
+KE scale. This battery tests **reproducibility of the landing and the
+deep-KE slope at scale**; it does **not** separate the drag-form effect
+from the E_bind effect. That separation is the deferred §6.7 item 2
+E_bind pair-separation scan; until it runs, any "lq lands better" / KE-χ²
+advantage stays attribution-provisional.
+
+**Authority box (pre-committed).** Paired-SD error bar from 5 seeds;
+χ²_med compared same-N paired only (scales with scored count); deep bins
+still thin per member but pooled ~300 at n = 10. Twin authority does not
+enter (this is MD). Adoption remains outside this program (plan §8);
+Tier-0 trace authority still rejects lq.
+
+**Status: FROZEN 2026-07-24, pre-launch. MD pending.**
+
+### §6.7 item 1 — lq sanity battery RESULTS (2026-07-24, 5 × N = 1000 executed) — histogram form-blindness CONFIRMED; the §6.6 KE advantage does NOT replicate (paired); lq over-suppresses
+
+**Runs.** `9A_drag_shared_lq_N1000_tier2atlas_conf270_qccbigs{1..5}` at seeds
+20260722–26, paired 1:1 with `bigc1v725s{1..5}` (same neutral draws).
+Scored with the §6.6 committed instrument reproduced verbatim
+(`atlas_spotcheck_score.py` → the battery driver `lqbattery_score.py`;
+midHot = mean of sim/ref over n = 2–8, mean-anchored; χ²_med = median-anchored
+KE chi-square). **Oracles PASS bit-exact before any new read:** finc1v725
+(943 / supp 0.161 / W₁ 0.5238 / midHot 0.9905 / χ²_med 125.7) and the pooled
+§4cc cubic row (9330 / W₁ 0.5713 / midHot 1.0139 / χ²_med 242.0).
+
+**Per-member, paired by seed** (cubic / lq; W₁ · midHot · supp · χ²_med):
+
+| seed | cubic W₁·midHot·supp·χ² | lq W₁·midHot·supp·χ² | χ²_med |
+|---|---|---|---|
+| s1 20260722 | 0.728 · 1.036 · 0.192 · 155 | 0.692 · 1.042 · 0.217 · 176 | lq **>** cub |
+| s2 20260723 | 0.606 · 1.023 · 0.185 · 114 | 0.615 · 1.029 · 0.213 · 120 | lq **>** cub |
+| s3 20260724 | 0.519 · 1.021 · 0.188 · 129 | 0.504 · 1.026 · 0.206 · 143 | lq **>** cub |
+| s4 20260725 | 0.560 · 1.011 · 0.192 · 136 | 0.481 · 1.008 · 0.219 · 161 | lq **>** cub |
+| s5 20260726 | 0.482 · 0.981 · 0.180 · 123 | 0.487 · 1.007 · 0.209 · 124 | lq **>** cub |
+
+**Paired Δ (lq − cubic), mean ± sample SD (n = 5):**
+
+| observable | Δ (lq − cubic) | read |
+|---|---|---|
+| supp | **+0.0255 ± 0.0041** | ~6σ paired — lq over-suppresses, consistent |
+| trap | **−0.0305 ± 0.0019** | ~16σ paired — lq under-traps (weight → suppressed/detected) |
+| χ²_med | **+13.3 ± 10.0** | lq KE chi² *worse* on all 5 seeds (pooled 277 vs 242) |
+| n̄_det | −0.059 ± 0.028 | marginally colder size |
+| W₁ | −0.023 ± 0.036 | comparable (lq mildly better, not significant) |
+| midHot | +0.008 ± 0.011 | comparable |
+| n₁_solv | +0.001 ± 0.006 | comparable |
+
+**Pooled (concat 5 × N = 1000):**
+
+| pool | scored | trap | supp | n̄ | n₁s | W₁ | midHot | χ²_med |
+|---|---|---|---|---|---|---|---|---|
+| lq | 9635 | 0.036 | 0.213 | 4.008 | 0.2447 | **0.5484** | **1.0232** | 277.3 |
+| cubic (=§4cc) | 9330 | 0.067 | 0.187 | 4.068 | 0.2433 | 0.5713 | 1.0139 | 242.0 |
+
+deep strip (n = 10–17, sim/ref, mean-anchored, counts): lq
+`0.84(312) 0.78 0.76 0.64 0.53 0.42 0.44 0.40(41)`; cubic
+`0.81(301) 0.75 0.74 0.67 0.59 0.58 0.55 0.38(17)`.
+
+**Frozen-band scorecard: 3 MET / 2 MISSED.**
+
+- **1 W₁ MET** (0.548 ∈ [0.46,0.57]); **2 midHot MET** (1.023 ∈ [0.84,1.14]);
+  **3 deep slope MET** (both forms decline n10→n17, deficit persists,
+  form-robust). → **Histogram-level form-blindness is confirmed at battery
+  scale** (outcome (b) holds for W₁/midHot/n̄/n₁_solv; lq lands the histogram
+  as well as — mildly better than — cubic on W₁).
+- **4 per-member χ²_med < paired cubic — MISSED, REVERSED.** Predicted lq
+  lower; measured lq **higher on all 5 seeds** (Δ+13.3±10.0; pooled 277 vs
+  242). **The §6.6 "lq halves χ²_med / lands better on KE" does NOT
+  replicate.** That read was a single-seed artifact: §6.6 compared qcc to
+  finc1v725 at seed 20260721/N = 500 (χ²_med 82.6 vs 125.7 — lq favoured);
+  across the 5 *different* battery seeds the sign flips. The form-χ²
+  difference is within seed-noise range and does **not** robustly favour lq.
+  (lq scores ~3 % more ions, which inflates χ² modestly — but the ~10–15 %
+  gap and 5/5 consistency exceed that; the direction is robust.)
+- **5 supp within cell scatter of 0.187 — MISSED.** lq pooled supp 0.213 vs
+  0.187; paired Δ+0.0255±0.0041 (member SD 0.0053) — a real, consistent
+  drag-form effect on the fate split: **lq shifts weight trapped → suppressed**
+  (Δtrap −0.031). This is a new resolved-influence entry, not noise.
+
+**Synthesis.** The paired battery cleanly separates two claims the §6.6 N = 500
+read had fused: (i) lq **lands the histogram** — confirmed and robust (W₁,
+midHot, n̄, n₁_solv all comparable to cubic; form-blindness (b) upheld at
+N = 1000); (ii) lq **lands the KE distribution better** — **refuted**: paired,
+lq's median-anchored KE chi² is worse on every seed, and lq over-suppresses.
+The §6.6 "lands better" was a favourable-seed artifact, exposed by the
+paired-by-seed design *before* the E_bind confound is even addressed.
+
+**Deep mid-band (NB-RQ11-12 escalation, ~300 counts/bin).** lq runs warmer
+than cubic at n = 10–12 (0.84/0.78/0.76 vs 0.81/0.75/0.74) and comparable/
+colder at n = 14–17 — the mid-band (v ≈ 5–9 Å/ps) warming signature, now at
+headline count. But the overall KE chi² is worse, so the mid-band warming
+does *not* translate into a better KE landing.
+
+**Confound status.** Both forms here carry lq's E_bind 0.0482; this battery
+does **not** separate form from E_bind. It does show the KE advantage was not
+even seed-robust, independent of E_bind — which the §6.7 item-2 E_bind
+pair-separation scan (deferred) will still probe for the supp/deep effects.
+
+**Atlas stance.** Nothing here moves `finc1v725`; Tier-0 trace authority still
+rejects lq (held-out FAIL). Reported, not adjudicated. **Status: EXECUTED
+2026-07-24; pre-registration outcome 3 MET / 2 MISSED (bands 4, 5).**
+
+## §6.7 item 2 — E_bind pair-separation scan RESULTS (2026-07-24) — the over-suppression is a FORM effect; item-1's histogram match is a (form, well) CO-COMPENSATION
+
+**Question.** Item 1's lq/cubic differences (over-suppression; colder KE) are
+entangled with lq's co-extracted **shallower exit well** (E_bind 0.0482 vs the
+cubic pair's 0.1168). This scan holds the lq drag law fixed and sweeps **only
+the well** so the form-vs-well attribution becomes a measurement. The drag
+bundle's stamped `effective_binding_energy_I_ion_eV` stays 0.0482 (provenance);
+only the run's climbed well is overridden, honestly under
+`allow_unvalidated_binding_pairing` (§6.5.1). Machinery:
+`gen_tier2atlas_ebindscan.py` (initial, N = 500) + `gen_tier2atlas_ebindseeds.py`
+(firm-up, N = 1000); scored with the committed row (`ebindscan_score.py` /
+`ebindseeds_score.py`), oracle A (finc) bit-exact first.
+
+### Initial single-seed scan (N = 500, seed 20260721) — directional
+
+lq E_bind OAT (well →): supp 0.191 / 0.194 / 0.196 (flat); trap 0.038 / 0.075 /
+0.100 (rises); W₁ 0.496 / 0.638 / 0.793; midHot 1.001 / 0.932 / 0.887 at
+E_bind 0.0482 / 0.1168 / 0.154. Read as directional only — the W₁ numbers proved
+seed-driven (see firm-up).
+
+### Firm-up (N = 1000, seeds 20260722/23/24, paired to the item-1 battery)
+
+Each cell pairs 1:1 with `bigc1v725s{k}` (cubic @ 0.1168) and `qccbigs{k}`
+(lq @ 0.0482) at matched seed + N, so **form** and **well** are each isolated
+across 3 paired seeds. (`eb1168` all landed; `eb154` at 0.154 tripped the
+detection handover guard on 2/3 seeds — see deep-well note.)
+
+**FORM at matched well 0.1168 — Δ(lq@0.1168 − cubic@0.1168), mean ± SD (n = 3):**
+
+| observable | Δ | read |
+|---|---|---|
+| midHot | **−0.070 ± 0.002** | ~35σ — lq fragments much colder |
+| n̄_det | **−0.568 ± 0.029** | ~20σ — lq clusters much smaller |
+| supp | **+0.034 ± 0.004** | ~8σ — **lq over-suppresses (FORM, at matched well)** |
+| trap | **+0.027 ± 0.003** | ~9σ — lq traps more |
+| n₁_solv | +0.020 ± 0.003 | more n = 1 |
+| W₁ | +0.009 ± 0.015 | **not significant — comparable** |
+| χ²_med | +3.9 ± 38.6 | **inconclusive** (seed-noise dominates even at N = 1000) |
+
+**WELL on lq — Δ(lq@0.1168 − lq@0.0482), mean ± SD (n = 3):** trap
+**+0.058 ± 0.004** (the clean well lever — deeper well retains more); n̄
+−0.503 ± 0.052; midHot −0.076 ± 0.003; supp +0.010 ± 0.002 (small); W₁
++0.023 ± 0.012 (marginal); χ²_med −9.7 ± 34.7 (ns).
+
+### Resolved conclusions
+
+1. **The over-suppression is a FORM effect, not the well** — at the *matched*
+   well 0.1168 lq still over-suppresses vs cubic by +0.034 (~8σ); the well
+   adds only +0.010 more (item-1's Δ+0.026 was ~⅓ well, ⅔ form). The item-1
+   confound caveat is **discharged: it is the quadratic form.**
+2. **Item-1's histogram form-blindness is a (form, well) CO-COMPENSATION.** At
+   matched well, lq produces **distinctly colder (midHot −0.070) and smaller
+   (n̄ −0.57) fragments** than cubic. The reason item-1 saw matching midHot
+   (~1.02) / n̄ / W₁ is that lq's intrinsic coldness was cancelled by its
+   shallower 0.0482 well. Match the wells → the form's coldness is exposed.
+   The forms are physically **distinguishable**, not interchangeable.
+3. **W₁ specifically is form-blind even at matched well** (Δ+0.009, ns): the
+   solvated-histogram Wasserstein does not see the form, though midHot / n̄ /
+   supp / trap do (8–35σ). So W₁ is a weak form discriminator; the KE / size /
+   fate observables are strong ones.
+4. **The single-seed W₁ reads were seed-noise.** The N = 500 seed-20260721
+   scan suggested "cubic lands W₁ much better at matched well" (Δ+0.114) and
+   "lq's W₁ degrades strongly with the well" — both **refuted** by the firm-up
+   (matched-well ΔW₁ +0.009; well effect +0.023). Recorded as a caution: at
+   N = 500 single seed W₁ swings ~0.1 on seed alone.
+5. **χ²_med stays inconclusive** for form-vs-well even at N = 1000 × 3 seeds
+   (SD ±38) — not chased further.
+6. **Deep-well over-retention (physical, not a bug).** At E_bind 0.154, 2/3
+   N = 1000 cells hit the P1–P3 detection handover guard: ~2/2000 ions never
+   decoupled from He in the 8000 ps window (ρ̂ ≈ 0.93, live drag exposure, not
+   energetically-bound so `retained_policy=exclude` does not catch them). The
+   one seed that landed (s3) shows trap 0.125 / n̄ 3.28 — the deep well
+   over-retains, to the point of numerical non-decoupling. eb154 is therefore
+   a 1-seed point; the deep arm is not pursued further.
+
+**Atlas stance.** Nothing here moves `finc1v725`; adoption stays outside the
+program; Tier-0 still rejects lq. The scan's role was diagnostic — it
+discharges the item-1 E_bind confound (→ form) and reframes the histogram
+form-blindness as co-compensation. **Status: EXECUTED 2026-07-24 (initial
+N = 500 single-seed + firm-up N = 1000 × 3 seeds).**

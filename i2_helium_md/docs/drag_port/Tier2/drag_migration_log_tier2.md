@@ -9818,3 +9818,114 @@ unvalidated-binding escape hatch — the pair-separation experiment,
 run first; (3) then leave D → Axis A grid → D2b → Axis B. Also fixed
 a second stray-keystroke typo (D0 title "P#"; plan title "I#" earlier
 — user's editor buffers occasionally receive stray characters).
+
+## §6.7 item 1 lq sanity battery EXECUTED (5 × N = 1000, paired-by-seed) — histogram form-blindness CONFIRMED at battery scale; the §6.6 KE "lands better" does NOT replicate (paired: lq χ²_med worse on 5/5 seeds); lq over-suppresses (Δsupp +0.026, ~6σ); pre-registration 3 MET / 2 MISSED (2026-07-24)
+
+`[PROCEED TO IMPLEMENTATION]` given for the pre-registered lq sanity
+battery (§6.7 item 1). Delivered, all committed-code reuse for scoring:
+
+1. **Pre-registration frozen before launch** (findings §6.7 item 1): 5
+   pass bands (pooled W₁ [0.46,0.57]; midHot [0.84,1.14]; deep slope
+   persists; per-member χ²_med < paired cubic; supp within scatter of
+   0.187), paired-by-seed design, E_bind confound caveat.
+2. **Generator** `scripts/gen_tier2atlas_lqbattery.py` (+ 17-test
+   `tests/test_gen_tier2atlas_lqbattery.py`): qcc cell only
+   (`capped_linear_quadratic`, shared_lq bundle, v_c 8.8 / τ 3.4 / E₀
+   0.27 / E_bind 0.0482 consistent pair), N = 1000, seeds 20260722–26,
+   atlas namespace `qccbigs{1..5}`, **cfg diff verified field-by-field
+   against each paired cubic member** (`bigc1v725s{k}`, matched N + seed
+   → diff exactly {drag_form, drag_coefficients, binding, τ}); thread-
+   pinned process pool; `--dry-run` (all 5 passed the diff guard before
+   any propagation). UTF-8 stdout reconfigure for the cp1252 console.
+3. **Execution / pacing (this box: 4 cores, 17 GB).** First launch pool
+   of 2 (~4 h ETA). User freed RAM and asked for max speed → relaunched
+   pool of 5; **the OS killed the whole tree** the instant all 5 hit the
+   8000 ps relaxation stage simultaneously (identical configs → peaks
+   align → RAM blew past the box; no traceback, external "killed",
+   RAM recovered on death). Diagnosis: synchronized-peak OOM. Relaunched
+   **pool of 3** (same 2-wave wall-clock as 4 for 5 members, safe on
+   RAM); a background guard confirmed survival past the relaxation-entry
+   peak (8.5 GB free, 4 procs). Completed in ~2 waves. Partial run dirs
+   from the two killed launches were removed before each relaunch (none
+   were complete).
+4. **Scoring** (`lqbattery_score.py`, scratchpad; score_row/deep_strip/
+   oracles byte-identical to `atlas_spotcheck_score.py`). Both oracles
+   PASS bit-exact. Results (full tables findings §6.7 item-1 RESULTS):
+   - **Histogram form-blindness CONFIRMED at N = 1000** — pooled lq
+     W₁ 0.548 (band ✓, mildly better than cubic 0.571), midHot 1.023
+     (✓), n̄/n₁_solv comparable, deep slope persists (✓). Bands 1–3 MET.
+   - **Band 4 MISSED, REVERSED** — predicted lq χ²_med < cubic; measured
+     lq **higher on all 5 seeds** (paired Δ+13.3±10.0; pooled 277 vs
+     242). The §6.6 "lq halves χ²_med" was a seed-20260721/N = 500
+     artifact; it does not generalize. KE advantage **refuted**.
+   - **Band 5 MISSED** — lq over-suppresses (supp 0.213 vs 0.187, paired
+     Δ+0.0255±0.0041 ~6σ) and under-traps (Δtrap −0.031±0.002): a new
+     resolved drag-form influence on the fate split (trapped → suppressed).
+   - NB-RQ11-12 mid-band read escalated to ~300 counts/bin: lq warmer at
+     n = 10–12, but overall KE chi² worse — mid-band warming does not
+     yield a better KE landing.
+
+Net: the paired design separated "lands the histogram" (confirmed,
+robust) from "lands the KE better" (refuted — favourable-seed artifact),
+*before* the E_bind confound is addressed. Atlas stance holds — nothing
+moves finc1v725; Tier-0 still rejects lq (held-out FAIL). New files
+(generator + test + frozen pre-reg + results) uncommitted pending user
+review (detached HEAD). Next per §6.7: item 2 E_bind pair-separation
+scan on qcc {0.1168, 0.154}, then leave D for Axis A. Nothing here
+discharges F5.
+
+Figures container (2026-07-24): the pooled lq run dir
+`9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigspooled`
+(detection.npz + cfg.json + README) was built from the five qccbigs
+cells for `plot_detection_summary.py`, mirroring the cubic
+`bigc1v725pooled` — the **pair-preserving** layout
+`[all fragment-1 blocks | all fragment-2 blocks]` so the
+(i, i + num_molecules) cov pairing holds (pairing oracle asserted;
+scoring reproduces the plain-concat lq_pooled row). Not an MD run,
+never scored as a run, never committed (gitignored).
+
+## §6.7 item 2 E_bind pair-separation scan EXECUTED (initial N = 500 single-seed + firm-up N = 1000 × 3 paired seeds) — the item-1 over-suppression is DISCHARGED to the FORM (not the well); item-1's histogram match is a (form, well) co-compensation; single-seed W₁ reads were seed-noise (2026-07-24)
+
+`[PROCEED TO IMPLEMENTATION]` given ("go ahead with the two other E_bind
+values"). The item-1 lq/cubic differences were confounded by lq's
+co-extracted shallower well (E_bind 0.0482 vs cubic 0.1168); this scan
+holds the lq drag law fixed (bundle stamp stays 0.0482, provenance) and
+overrides **only** the climbed well, honestly under
+`allow_unvalidated_binding_pairing` (§6.5.1). Delivered:
+
+1. **Generators + tests** (behind the trigger):
+   `scripts/gen_tier2atlas_ebindscan.py` (initial, N = 500, seed 20260721,
+   wells {0.1168, 0.154}; 9 tests) and `scripts/gen_tier2atlas_ebindseeds.py`
+   (firm-up, N = 1000, seeds 20260722/23/24, each cell diff-verified against
+   its paired `qccbigs{k}` — diff exactly {binding, hatch}; 18 tests). The
+   §6.5.1 guard fires as designed (RuntimeWarning under the hatch). Scored
+   with the committed row reproduced verbatim (`ebindscan_score.py` /
+   `ebindseeds_score.py`), oracle A (finc) bit-exact.
+2. **Initial N = 500** (directional): lq supp flat vs well (0.191/0.194/
+   0.196), trap rises (0.038/0.075/0.100). W₁ looked strongly form/well
+   -sensitive — but the firm-up showed those were seed-noise.
+3. **Firm-up N = 1000 × 3 seeds, paired to the battery** — `eb1168` all
+   landed; `eb154` (0.154) tripped the P1–P3 handover guard on 2/3 seeds
+   (2/2000 ions never decouple in 8000 ps — deep well over-retains; the 2
+   partials were removed). Reads (full tables findings §6.7 item-2):
+   - **FORM at matched well 0.1168 (Δ lq − cubic, n = 3):** supp
+     +0.034 ± 0.004 (~8σ), trap +0.027 ± 0.003, midHot −0.070 ± 0.002
+     (~35σ), n̄ −0.568 ± 0.029, W₁ +0.009 ± 0.015 (ns), χ²_med
+     +3.9 ± 38.6 (inconclusive).
+   - **WELL on lq (Δ 0.1168 − 0.048, n = 3):** trap +0.058 (the clean well
+     lever), n̄ −0.503, midHot −0.076, supp +0.010, W₁ +0.023.
+   - **Resolved:** (a) the over-suppression is the **FORM** (Δ+0.034 at
+     matched well; well adds only +0.010) — item-1 confound discharged;
+     (b) item-1's midHot/n̄/W₁ match was a **(form, well) co-compensation**
+     — at matched well lq is colder/smaller; its shallow 0.048 well masked
+     that; (c) **W₁ alone stays form-blind even at matched well** (the
+     KE/size/fate observables are the form discriminators); (d) the
+     single-seed W₁ reads were seed-noise (±0.1 on seed at N = 500);
+     (e) χ²_med does not resolve form vs well even at N = 1000.
+
+Net: the forms are physically **distinguishable** (lq over-suppresses,
+colder, smaller) — "form not limiting" holds only for the coarse W₁, not
+the KE/size/fate detail. Atlas stance unchanged; Tier-0 still rejects lq;
+nothing moves finc1v725. §6.7 items 1–2 complete; next per §6.7 item 3:
+leave D → Axis A geometry grid → D2b → Axis B. New files committed on a
+branch under this entry. Nothing here discharges F5.

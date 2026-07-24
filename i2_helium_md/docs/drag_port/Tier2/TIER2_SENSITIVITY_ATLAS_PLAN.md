@@ -542,7 +542,27 @@ artifact (the MD basin is wide). The variable-mass Method-B re-run
 remains the open follow-up. Full record:
 `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` §6.6 section.
 
-## 6.7 — §6.6 follow-on program (designed 2026-07-24, user-adjudicated; NOT yet triggered)
+## 6.7 — §6.6 follow-on program (designed 2026-07-24, user-adjudicated; **items 1–2 EXECUTED 2026-07-24**, item 3 pending)
+
+> **Item-1 (lq sanity battery): EXECUTED 2026-07-24.** 5 × N = 1000
+> paired-by-seed; pre-registration **3 MET / 2 MISSED**. Histogram
+> form-blindness confirmed at battery scale (W₁, midHot); the §6.6 KE
+> "lands better" **refuted** (paired lq χ²_med worse on 5/5 seeds); lq
+> over-suppresses.
+>
+> **Item-2 (E_bind pair-separation scan): EXECUTED 2026-07-24.** Initial
+> N = 500 single-seed + firm-up N = 1000 × 3 paired seeds. **Resolves the
+> confound: the over-suppression is the FORM, not the well** (matched-well
+> Δsupp +0.034, ~8σ); item-1's histogram match is a **(form, well)
+> co-compensation** — at a matched well lq is colder (midHot Δ−0.070) and
+> smaller (n̄ Δ−0.57); **W₁ alone stays form-blind even at matched well**.
+> The single-seed W₁ reads were seed-noise; χ²_med inconclusive even at
+> N = 1000; deep well 0.154 over-retains (handover-guard trips). Full
+> record: `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` §6.7 item-2 RESULTS +
+> `drag_migration_log_tier2.md`.
+>
+> **Item 3 (leave D → Axis A geometry grid → D2b → Axis B) stays behind
+> its trigger.**
 
 Agreed next steps after the §6.6 MD spot-check (all three lq cells
 landed; findings §6.6 MD subsection). Each item stays behind
