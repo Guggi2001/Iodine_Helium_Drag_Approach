@@ -9656,3 +9656,102 @@ choice rests on Tier-0 alone); conditional follow-up = Method-B re-run
 under Tier-1a variable m(t) (the ±7 % in-window mass drift biases n by
 ~0.2 per the scratch estimate — cannot move 3 → 2, but measurable).
 Parked, user-triggerable, zero MD, scratchpad-tier.
+
+
+## Atlas stage 2a EXECUTED — D4 Step 1 Method-B form table (artifact reuse, no new fits) + gamma(v) entry gates + trace-tail re-inspection; findings doc created; oracle Part A bit-exact (2026-07-23)
+
+Trigger given for stage 2a only (user decision: no parallel 2b; the §6.6
+quadratic counterfactual stays parked until these results are read).
+Delivered, all zero-MD:
+
+1. **Analysis scripts** (the stage's gated code):
+   `scripts/extraction/atlas_d4_step1_report.py` (three-mode form table
+   compiled from the committed Tier-0 artifacts; γ(v) diagnostic table
+   at v = 2 / 2.54 / 4.95 / 7.25 / 10.5 incl. the two parked forms at
+   implied parameters via the plan-§6.1 zero-cost entry gate; low-v
+   tail inspection of both smoothed references) and
+   `scripts/extraction/atlas_d4_step1_oracle.py` (machinery
+   verification). Both **read-only w.r.t. `data/reference/`** — reuse,
+   not rerun, per plan §6.2. Realised-form γ values go through
+   `physics.drag.drag_gamma` (no duplicate physics); only the two
+   unrealised parked forms have local formulas. Focused tests:
+   `tests/test_atlas_d4_step1.py` (9 passed).
+2. **Oracle**: Part A reproduces the committed shared_pure_cubic point
+   **bit-exact** (objective 0.1292649398514104; both per-case RMSEs).
+   Part B (full 161-eval joint refit under Method-A anchors) is
+   **bit-exact PASS** as well — b/E_bind/objective identical to the
+   committed artifact; machinery verified end-to-end. One historical subtlety surfaced: the presets
+   now wire the shared bundle (a = 0), so the §9.3 Method-A anchors
+   must be read from `18A/linear_and_cubic/fit_parameters.json`
+   directly — the oracle does exactly that (the verdict provenance
+   forbids letting the re-wired a0 = 0 condition a fit).
+3. **Findings**: `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` created (first
+   execution) with the full tables. Headlines: registered priors stand
+   (lq rejected, pl cubic-equivalent, a → 0); **Padé saturating cubic
+   excluded as a one-knob cap replacement by arithmetic** (in-band
+   cubicity forces v_s >~ 15 → saturation forfeited; stays parked, no
+   fit run); **subtractive gated cubic passes its entry gate** (its
+   suppression overlaps the 18 Å window at 2.54–3.02 Å/ps → traces can
+   constrain v_f; promotion to a re-fit = pending logged decision);
+   **no drag-dominated trace samples below v ≈ 2.5 Å/ps** (18 Å tail
+   exit-well-mixed; 9 Å flattening at ~2.85 attribution-ambiguous) →
+   shifted-cubic re-add condition NOT met, collaborator ask stands.
+4. **RQ11 second write-up**: NB-RQ11-10 appended to
+   `RESEARCH_QUESTIONS.md` (lever (1) executed in its trace-reuse
+   form; channel (iv) untouched).
+
+## §6.6 quadratic counterfactual EXECUTED (twin, zero MD) — outcome (a) MEASURED: 0/275 lq cells land the Tier-2 observables under full (cap, τ, E₀) freedom; the W₁ and midHot v_c pass-windows are disjoint; anti-circularity note CLOSED; conditional variable-mass follow-up NOT fired (2026-07-24)
+
+User-triggered after reading the Step-1 table ("Yes go ahead with
+that"). The lq form with its own Tier-0 artifacts (shared a ≈ 0,
+c = 12.792, co-extracted E_bind 0.0482 eV) ran through the
+reconstructed S6 twin — machinery reused from the surviving §4ee
+scratchpad driver (session e9776090), oracle reproducing the committed
+`h2b_s6_final` v7.25 row bit-for-bit before any lq cell — over
+11 v_c chords (constant-force tail; incl. gap chords 8.8/8.9 and the
+tail-force-matched 8.65) × 5 τ × 5 E₀ = 275 cells, pre-registered
+comparability criterion fixed in the driver header before scoring.
+Result: zero comparable cells; single three-of-four cell (v_c 8.65,
+standing τ/E₀) misses only midHot at 1.225; the five-point v_c
+continuation 8.65→9.0 shows W₁ and midHot bands demanding disjoint
+windows (monotone, no crossing) — for lq the I72 tension has an empty
+intersection where cubic has the 7.25 basin. lq deep bins run hot
+(d10 1.18–1.22): the form inverts, not closes, RQ11. Execution note:
+the monolithic run was killed by the 10-min shell ceiling after its
+oracle PASS; chords were re-run as parallel per-chord workers with npz
+caches + a separate scorer (same draw discipline, oracle re-asserted
+from cache). Verdict + tables in `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
+(§6.6 section); plan §6.6 status flipped to executed; NB-RQ11-11
+recorded. Scratchpad: `quad_counterfactual_twin.py`,
+`quad_chord_worker.py`, `quad_score_all.py`,
+`quad_counterfactual_results.csv`. Also fixed a stray "I" typo at the
+plan title (accidental keystroke, user-visible in git diff before this
+session's edits).
+
+## §6.6 verdict CORRECTED same-day (user-caught): fine (τ, E₀) rescan flips (a) → (b) — six four-way lq passes at v_c 8.8–9.0 / τ 3.3–3.5 / E₀ 0.27; the Tier-2 observables are MEASURED form-blind; form authority rests solely on Tier-0; pre-registered follow-ups (MD spot-check, variable-mass Method-B re-run) now open (2026-07-24)
+
+The user challenged the (a) verdict against the cubic precedent (the
+cubic arbitration's own midHot excess was resolved only by a dedicated
+finer sweep, I78/§4w) — and was right: the coarse τ grid (factor-1.5
+steps) straddled the pass window. τ/E₀ are post-chord knobs, so the
+refinement was free: rescoring the cached chords at τ 2.6–5.2 step 0.1
+× E₀ 0.20–0.36 step 0.01 (4,959 cells, oracle re-asserted) yields
+**six four-way passes** under the unchanged pre-registered criterion;
+best cell (v_c 9.0, τ 3.5, E₀ 0.27) betters the cubic base on W₁
+(0.641 vs 0.678) and midHot centering (0.990 vs 1.067), deep bins
+comparable, n₁KE ~10 % colder. The prior entry's "disjoint windows /
+inverted deep bins" reads were standing-(τ, E₀) slice artifacts.
+Outcome (b) applied as pre-registered: Tier-2 observables cannot
+discriminate the forms; the anti-circularity note is upheld and
+sharpened (the landing is never evidence for cubic — measured); lq
+stays rejected where the authority lives (Tier-0 held-out 0.699 FAIL).
+New structural read: the lq landing is a **needle** (τ window ~0.3 ps,
+single E₀ grid point) vs cubic's §4w **basin** — twin-geometry,
+MD-unconfirmed. All four §6.6 write-ups corrected in place (findings,
+plan status, D0 §1, NB-RQ11-11). Machinery: `quad_fine_scan.py`
+(scratchpad). Decisions handed to the user: (i) MD spot-check of an
+lq-passing cell (requires the lq production enum behind
+`[PROCEED TO IMPLEMENTATION]`, N = 500); (ii) the pre-registered
+variable-mass Method-B re-run (Tier-1a anchored m(t)) — the ±7 %
+in-window mass-drift exponent bias (~0.2 in n) becomes a measurement.
+Neither moves the standing point (atlas stance).

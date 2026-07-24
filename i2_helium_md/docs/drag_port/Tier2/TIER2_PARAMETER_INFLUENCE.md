@@ -80,6 +80,16 @@ P# Tier 2 — Parameter Influence Reference (compact)
   unconstrained — TDDFT is the only authority; the (v−v_L)³ law is
   near-threshold/negative-ion/mean-of-sawtooth and does not transfer
   (I97, I100, NB-RQ11-1..9).
+- Atlas D4 Step 1 (2026-07-23, artifact reuse, zero MD): the three-mode
+  form table stands as compiled — lq rejected (shared Δobj +0.0339,
+  held-out 9 Å FAIL) with its low-v limb ×2.54 the production drag at
+  v = 2 (wrong direction for RQ11); power law cubic-equivalent
+  (n̂ = 2.927). Tail re-inspection: **no drag-dominated trace samples
+  below v ≈ 2.5 Å/ps** — the sub-2.5 shape is TDDFT-blind pending the
+  collaborator ask. The subtractive gated form is trace-constrainable
+  in-band (×0.65–0.38 at 2.54 for v_f 1.5–2.0 vs the whole 18 Å window
+  at 2.54–3.02); its re-fit is a pending decision. Full tables:
+  `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (NB-RQ11-10).
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
@@ -87,7 +97,21 @@ re-opens the (v_c, τ, E₀) arbitration (I99).
 
 **Status:** locked in-band; the *form* question is RQ11's open axis
 (lever hierarchy: TDDFT re-inspection / Method-B form re-fit ≫ candidate
-(iv) ≫ Free phenomenological suppression).
+(iv) ≫ Free phenomenological suppression). After atlas D4 Step 1: priors
+unchanged; Padé parked (see §2), subtractive fit-decision pending,
+shifted cubic's re-add condition not met. After the §6.6 quadratic
+counterfactual (2026-07-24, corrected same day by the user-caught fine
+rescan): **outcome (b) — the Tier-2 observable vector is measured to be
+form-blind.** A re-arbitrated lq system (v_c 8.8–9.0, τ 3.3–3.5,
+E₀ 0.27) lands the histogram + KE observables comparably to production
+cubic in the twin (six four-way passes; best cell beats base W₁ and
+midHot centering; n₁KE ~10 % colder; needle-width basin vs cubic's §4w
+basin). Consequence: the form choice rests **solely on the Tier-0
+trace instruments** (lq stays rejected there: held-out 0.699 FAIL,
+n̂ = 2.927), and the Tier-2 landing must never be cited as evidence
+for cubic — the anti-circularity caveat is upheld as a measured fact.
+Pre-registered follow-ups open: MD spot-check of an lq-passing cell;
+variable-mass Method-B re-run.
 
 ## 2. Capped tail — v_c and p_tail
 
@@ -120,7 +144,13 @@ ladder family at every v_c, I79).
 
 **Status:** standing v_c 7.25 / p_tail −1; every sensitivity-ring
 perturbation at the blessed point degrades W₁ (+0.18..+0.33) — the
-standing cell sits at the basin optimum (I88).
+standing cell sits at the basin optimum (I88). The candidate smooth
+cap-replacement (Padé saturating cubic, one knob v_s) is **excluded by
+zero-cost arithmetic** (atlas D4 Step 1): in-band cubicity forces
+v_s ≳ ~15 Å/ps, which forfeits the p_tail = −1 saturation at the
+production peak — the principled cap-remover remains extending TDDFT
+authority to production kinematics (the collaborator ask), not a
+different closed form.
 
 ## 3. τ — Newton cooling clock
 

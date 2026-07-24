@@ -520,8 +520,22 @@ exponent bias from the ±7 % mass drift is ~0.2 in n — real, but an
 order of magnitude short of moving 3 → 2; the re-run turns that
 estimate into a measurement).
 
-**Status: parked, user-triggerable** — scratchpad-tier twin work
-(§4ee precedent), no repo code, zero MD; not on the §7 critical path.
+**Status: EXECUTED 2026-07-24 (user-triggered after the Step-1 table) —
+outcome (b) measured** (initial coarse-grid (a) read overturned the
+same day by the user-caught fine (τ, E₀) rescan — the pass window sat
+between the coarse τ points). Oracle bit-exact; 11 v_c chords; fine
+scan 4,959 cells → **six four-way passes** at v_c 8.8–9.0 / τ 3.3–3.5 /
+E₀ 0.27 (best cell beats the cubic base on W₁ and midHot centering).
+Per pre-registration: **the Tier-2 observables cannot discriminate the
+forms**; the form choice rests solely on the Tier-0 trace instruments
+(held-out above all), and the anti-circularity note is upheld and
+sharpened — the Tier-2 landing is measured to be form-blind, never
+evidence for cubic. The lq landing is a needle (τ window ~0.3 ps,
+single E₀ grid point) vs cubic's §4w basin — twin-geometry statement,
+MD-unconfirmed. Pre-registered consequences now open (user decisions):
+MD spot-check of an lq-passing cell (enum build + trigger) and the
+variable-mass Method-B re-run. Full record:
+`TIER2_SENSITIVITY_ATLAS_FINDINGS.md` §6.6 section.
 
 ## 7. Execution order and budget
 

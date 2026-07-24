@@ -1521,6 +1521,58 @@ suppression arbitrated only by the experimental deep bins (a fit to
 the observable it would explain; pre-registration discipline
 mandatory if ever pursued).
 
+- **NB-RQ11-10 (lever (1) executed in its trace-reuse form — atlas D4
+  Step 1, 2026-07-23, zero MD).** The Method-B three-mode form table
+  was compiled from the committed Tier-0 artifacts (no new fits; oracle
+  Part A bit-exact) and the low-v tail re-inspection ran; full tables in
+  `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` D4 §Step 1. RQ11-relevant
+  outcomes: (a) the **registered priors stand** — lq rejected (shared
+  Δobj +0.0339, held-out 9 Å 0.699 FAIL) and its low-v limb carries
+  ×2.54 the production drag at v = 2, the wrong direction for the
+  deficit; power law stays cubic-equivalent (n̂ = 2.927). (b) The
+  **Padé saturating cubic is excluded as a one-knob cap replacement by
+  zero-cost arithmetic** (in-band cubicity forces v_s ≳ ~15 Å/ps, which
+  forfeits the p_tail = −1 saturation) — no fit run, stays parked.
+  (c) The **subtractive gated cubic passes its entry gate**: its
+  suppression (×0.65–0.38 at 2.54 Å/ps for v_f 1.5–2.0) overlaps the
+  18 Å window (entirely at v = 2.54–3.02), so the existing traces can
+  constrain v_f; promotion to an actual re-fit is a pending logged
+  decision (in-window the form is `linear_cubic` with a = −b·v_f² < 0;
+  the zero-clamp only matters in production). (d) The **tail
+  re-inspection answers the collaborator-ask pre-question negatively**:
+  no drag-dominated samples exist below v ≈ 2.5 Å/ps (the 18 Å tail is
+  exit-well/surface-mixed; the 9 Å flattening at 2.83–2.87 Å/ps is
+  attribution-ambiguous incl. Finding-2 transverse contamination), so
+  the sub-2.5 Å/ps drag shape — the deficit's lower half — remains
+  TDDFT-blind and the collaborator ask (tails / extended /
+  production-kinematics traces) stays the only instrument. Channel (iv)
+  (RQ5-coupled) is untouched by this step.
+
+- **NB-RQ11-11 (quadratic counterfactual — outcome (b): the Tier-2
+  observables are form-blind, measured; 2026-07-24, twin, zero MD;
+  initial coarse-grid (a) read overturned same-day by the user-caught
+  fine rescan).** The plan-§6.6 arbitration ran: lq with its own Tier-0
+  artifacts (a ≈ 0, c = 12.792, E_bind 0.0482) under downstream
+  (cap, τ, E₀) freedom. Coarse grid (275 cells): 0 passes. Fine
+  post-chord (τ, E₀) rescan (4,959 cells, free — τ/E₀ never touch the
+  chord): **six four-way passes** at v_c 8.8–9.0 / τ 3.3–3.5 /
+  E₀ 0.27; the best (v_c 9.0, τ 3.5) beats the cubic base on W₁
+  (0.641 vs 0.678) and midHot centering (0.990 vs 1.067) with deep
+  bins comparable (1.00…0.67 vs 0.99…0.71) and n₁KE ~10 % colder.
+  Pre-registered consequence: **the Tier-2 landing cannot discriminate
+  drag forms** — cubic's authority rests solely on the Tier-0 trace
+  instruments (lq held-out 0.699 FAIL, unforced n̂ = 2.927), and the
+  Tier-2 landing is never evidence for cubic (anti-circularity,
+  now measured). The lq landing is a needle (τ window ~0.3 ps, one E₀
+  grid point) vs cubic's §4w basin — twin-geometry, MD-unconfirmed.
+  Follow-ups pre-registered as fired, pending user decision: MD
+  spot-check of an lq-passing cell (enum + trigger); Method-B re-run
+  under Tier-1a variable m(t). RQ11's surviving levers unchanged:
+  subtractive-form re-fit decision, collaborator traces, channel (iv)
+  — note the passing lq cells do NOT close the deep-bin slope either
+  (d17 ≈ 0.67–0.75), so RQ11's deficit is form-robust at the twin
+  level.
+
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);
 `TIER2_DETECTION_STAGE_DESIGN.md` (§4 scope caveats → RQ5);
