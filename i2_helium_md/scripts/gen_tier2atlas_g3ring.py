@@ -137,7 +137,10 @@ TWIN_SCAN_CSV = Path("data/runs/h2b_forward_model/h2b_g3scan_predictions.csv")
 
 DEFAULT_CONCURRENCY = 3
 SKIP_COMPLETED_RUNS = True
-OVERWRITE_EXISTING_RUN = False
+# Resume semantics (the G1-grid precedent): complete cells are skipped
+# untouched by SKIP_COMPLETED_RUNS, so overwriting only ever rebuilds a cell
+# that died mid-stage — a relaunch after a crash is safe and minimal.
+OVERWRITE_EXISTING_RUN = True
 
 
 class RingCell(NamedTuple):
