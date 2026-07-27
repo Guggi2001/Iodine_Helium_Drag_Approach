@@ -125,9 +125,12 @@ S6 oracle bit-exact, 11-cell twin↔MD authority box measured (supp/n₁_solv
 near-quantitative, n̄ residence-scale hot, trap a twin floor, center-pin
 trap channel twin-invisible), corrected-ensemble twin row confirms the
 D2b forecast cross-instrument (findings "G3 Step 1"; stage `g3landmarks`).
-**Next:** the G3 Route A/B scan itself ((v_c, τ, E₀)[+ E_bind] at the
-corrected geometry, authority box applied) — plan §3.5; then the D2b
-A/B remainder; E₀/τ curves defer-past-G3 question open. RQ3/RQ5 reads and
+**Next:** the G3 Step 2 twin scan
+(**designed + user-approved 2026-07-27, plan §3.5c** — nested Route A/B
+factorial: chord surface (v_c, E_bind) × free surface (τ, E₀),
+zero-integration pre-scan first, pre-registered gate + failure
+criterion; awaiting its trigger); then the D2b A/B remainder; E₀/τ
+curves defer-past-G3 question open. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the

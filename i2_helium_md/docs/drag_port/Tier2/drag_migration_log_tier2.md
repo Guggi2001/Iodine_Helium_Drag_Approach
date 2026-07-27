@@ -11069,3 +11069,43 @@ undischarged. **Next: the G3 Route A/B twin scan** ((v_c, τ, E₀)
 [+ E_bind] at the corrected geometry, scanned with the item-3 authority
 box applied), behind its own trigger; the retained-policy sub-decision
 and the Axis-B deferral question remain open at G3 as recorded at G2.
+
+## G3 Step 2 twin scan DESIGNED (user-approved) — nested Route A/B factorial frozen as plan §3.5c; marked NEXT STEP, awaiting its trigger (2026-07-27, doc work, zero MD, zero code)
+
+Discussion session on the Step-1 results ("did we not reproduce low-n
+fragments at all?" — answered: at the corrected geometry the twin's
+detected histogram is exactly zero below n = 8, matching the MD G1 deep
+cells and the D2b forecast; the standing low-n weight lived in the
+K ≲ 0.6 short-shallow-chord population that does not exist at the
+corrected geometry, K q05 = 1.26). Scan design adjudicated on the
+recommendations, all accepted:
+
+1. **Nested factorial on the twin's own surfaces** (Step-1 structural
+   fact): chord surface (v_c, E_bind) — Route B, owns trap + KE; free
+   surface (τ, E₀) — Route A, exact-rescale/fate-map post-processing.
+   ~30 chord integrations carry ~10⁴ scored cells.
+2. **E_bind in the first pass** ({0.048, 0.1168, 0.154}, the Tier-0
+   extracted spread; documented joint-pairing exception).
+3. **v_c floor = the TDDFT band top** (legitimate range 5.0–10.0);
+   v_c ∈ {3.5, 4.25} included as explicitly-labeled
+   outside-Tier-0-authority diagnostic arms.
+4. **τ to 12.8 ps** with the calibration-class flag on any landing that
+   requires τ ≫ 6.55.
+5. **Zero-integration pre-scan first**: the required-exposure-reduction
+   map from the stored standing chord, with the analytic Route-A kill
+   criterion (X → 0.25·X unable to produce n₁_solv ≈ 0.24 ⇒ Route A
+   dead at this surface).
+6. **Pre-registered gate** (twin level, authority box applied):
+   n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [4.4, 7.1]; W₁/KE/supp non-gating as
+   specified; trap a floor with detected-subset R-composition beside it
+   (Route B's selection diagnostic — the corrected law has no
+   shallow-birth minority, the selectable axis is droplet size).
+7. **Pre-registered failure criterion**: no gated cell anywhere incl.
+   the diagnostic arms ⇒ both routes fail at the (v_c, τ, E₀, E_bind)
+   surface — mechanism-localized atlas result.
+
+Full spec: plan §3.5c. Docs this entry: plan §3.5c (new) + header,
+CLAUDE.md compact state. Atlas stance intact: nothing adopted,
+`finc1v725` stands, F5 undischarged. The build (working name: stage
+`g3scan` beside `g3landmarks`) stays behind its own
+`[PROCEED TO IMPLEMENTATION]`.

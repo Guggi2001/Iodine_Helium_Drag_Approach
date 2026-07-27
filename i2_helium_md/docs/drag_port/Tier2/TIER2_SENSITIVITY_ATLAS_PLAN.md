@@ -36,8 +36,12 @@
 > center-pin trap channel twin-invisible, KE direction-only), and the
 > corrected-ensemble twin row confirming the D2b §4.3 forecast
 > cross-instrument (findings "G3 Step 1"; stage `g3landmarks` in the
-> committed twin script). **Next:** the G3 Route A/B scan itself, with
-> the authority box applied. Each execution step stays behind its own
+> committed twin script). **G3 Step 2 DESIGNED + user-approved
+> 2026-07-27 (§3.5c): the nested Route A/B twin scan** — chord surface
+> (v_c × E_bind, incl. two outside-Tier-0-authority diagnostic v_c
+> arms) × free surface (τ × E₀), zero-integration pre-scan first,
+> pre-registered gate n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [4.4, 7.1] and
+> failure criterion. **This is the next step**, awaiting its
 > `[PROCEED TO IMPLEMENTATION]`.
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
@@ -709,6 +713,77 @@ over-dissipates over 25–50 Å paths. That is the standing collaborator ask
 geometry grid readable while leaving the question open and flagged. The
 distinguishing test, if it is ever wanted cheaply: a geometric retained
 fraction is insensitive to (v_c, b), an over-dissipation artifact is not.
+
+### 3.5c G3 Step 2 — the Route A/B twin scan (DESIGNED 2026-07-27, user-approved; **next step**, awaiting its `[PROCEED TO IMPLEMENTATION]`)
+
+Design frozen from the Step-1 numbers (findings "G3 Step 1"); scan spec
+adjudicated by the user 2026-07-27.
+
+**Structural basis (measured, Step 1).** In the twin, trap and the KE
+curve depend only on the chord integration — the **(v_c, E_bind)
+surface**; τ (exact K rescale) and E₀ (fate map) are **free
+post-processing**. So Route B = the chord surface, Route A = the free
+surface at fixed chords, and one nested factorial covers both at the
+cost of the chord families alone. Twin caveat pre-registered: in MD, τ
+feeds back on trap through the mass mechanism — the clean decomposition
+is itself a twin approximation (authority box, D0 §14.4).
+
+**Fixed:** the committed corrected master draw (seed 20260727, m =
+20000), rq4graded ladder, p = 1, p_tail = −1, detection = the
+non-trapped chord read.
+
+**Grids.**
+
+- **Chord surface:** v_c ∈ {5.0, 5.5, 6.0, 6.5, 7.25, 8.0, 9.0, 10.0}
+  (legitimate range; the floor respects the TDDFT band top 4.95 Å/ps)
+  **plus v_c ∈ {3.5, 4.25} labeled "outside Tier-0 authority —
+  diagnostic only"** (they override the calibrated band; if only these
+  land, the finding points at the collaborator ask, not at a parameter
+  point). E_bind ∈ {0.048, 0.1168, 0.154} eV (the Tier-0 extracted
+  spread; the §6.5/§6.7 documented joint-pairing exception, stamped per
+  table). ≈ 30 integrations ≈ 40–55 min.
+- **Free surface:** τ ∈ {2.4, 3.2, 4.8, 6.4, 9.6, 12.8} ps (log-ish;
+  any landing that *requires* τ ≫ the sourced 6.55 is flagged against
+  its calibration class, never adopted silently); E₀ ∈ [0.17, 0.52]
+  step 0.01. ≈ 10⁴ scored cells total.
+
+**Block order.**
+
+0. **Oracles:** `h2b_g3_corrected_row.csv` re-derived bit-exact at the
+   standing cell (the Step-1 landmark convention) + the S6 machinery
+   oracle.
+1. **Zero-integration pre-scan:** from the *stored* standing chord, the
+   required-exposure-reduction map — for every (τ, E₀), the detected
+   fraction below the strip ceiling, and hence how much X-reduction the
+   chord axes must deliver. Analytic Route-A kill criterion before any
+   new integration: if X → 0.25·X cannot produce n₁_solv ≈ 0.24 at any
+   (τ, E₀), Route A is dead at this surface.
+2. Chord families, then the full nested scoring.
+
+**Per-cell outputs:** the committed observable vector + det_yield +
+**the detected-subset R quantiles vs the source** (the Route-B
+selection diagnostic — Step 1 showed the corrected birth law has no
+shallow-birth minority; the selectable axis is droplet size).
+
+**Pre-registered acceptance (twin level, authority box applied):**
+hard gate = n₁_solv ∈ [0.19, 0.30] AND n̄ ∈ [4.4, 7.1] (target 4.07 +
+the residence-conditional bias bracket [+0.3, +3]); W₁ reported, not
+gating (twin-bias-loaded); KE direction-only readout (deepKE response
+to Route A is not hand-predictable); supp soft (RQ3 mixture); trap
+reported as a **floor** with the composition beside it.
+
+**Pre-registered failure criterion:** no cell inside the gate anywhere
+on the grid *including the diagnostic arms* ⇒ Route A and Route B fail
+at the (v_c, τ, E₀, E_bind) surface — itself the atlas result: the
+corrected-geometry failure localizes to the mechanism (pickup
+re-filling, per-shed ε, ladder shape — the knobs the twin does not
+carry), and the standing point reads as an effective model of the
+detected subset.
+
+**After the scan:** basin (if any) → MD confirmation ring ~10–20 ×
+N = 500 behind its own trigger; the retained-policy sub-decision and
+the Axis-B deferral question are decided on the scan's evidence (G2
+record).
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 
