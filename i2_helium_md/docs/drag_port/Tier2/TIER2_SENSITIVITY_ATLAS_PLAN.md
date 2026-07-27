@@ -23,12 +23,14 @@
 > bracket caveat attached to the R ≥ 49 Å rows. Then the remaining D2b A/B →
 > Axis B E₀/τ curves (sequencing question open: G3 re-locates (v_c, τ, E₀),
 > so Axis B around the pre-G3 point may be deferred past G3/G4).
-> **Continuation agreed (2026-07-27 discussion):** G2 decision first, then
-> the **G3 twin-first scan** designed along the Route A (cascade) / Route B
-> (selection) split of §3.5 — mechanism basis in D0 §14.3 (birth-depth
-> lever = geometry-locked dressing + parameter-accessible transit; the §4p
-> receipts). Each execution step stays behind its own
-> `[PROCEED TO IMPLEMENTATION]`.
+> **G2 TAKEN 2026-07-27 (user): the corrected geometry is ADOPTED as the
+> target** (retained-policy sub-decision deferred to G3; `finc1v725`
+> stands until G4). **Next:** the **G3 twin-first scan** designed along
+> the Route A (cascade) / Route B (selection) split of §3.5 — mechanism
+> basis in D0 §14.3 (birth-depth lever = geometry-locked dressing +
+> parameter-accessible transit; the §4p receipts); first concrete step =
+> re-issuing the twin's K landmarks at the corrected geometry. Each
+> execution step stays behind its own `[PROCEED TO IMPLEMENTATION]`.
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
 > post-F5-reconciliation). **Entry docs:**
@@ -475,10 +477,23 @@ KE deficit closes ×2.5 with birth depth.
 corrected-geometry observables, and the influence map. This is the only
 MD this axis spends before a decision.
 
-**G2 — pre-registered adoption decision (geometry only).** Registered in
-advance: the landing is *expected* to break at the anchored geometry
-(§3.1 prediction), and **a broken landing is not a reason to keep the
-wrong geometry** — it is the reason G3 exists.
+**G2 — pre-registered adoption decision (geometry only). TAKEN 2026-07-27
+(user): ADOPTED.** Registered in advance: the landing is *expected* to
+break at the anchored geometry (§3.1 prediction), and **a broken landing
+is not a reason to keep the wrong geometry** — it is the reason G3
+exists. Decision record: the corrected geometry (the G0 spec — `legacy`
++ `raw` sizes at the preset's own 40 mbar / 14 K ⇒ ⟨N⟩ = 12794,
+Boltzmann 313.2 K births, E_bind 0.1168 eV) is the **target
+configuration**; G3 is authorized as the next stage (behind its own
+trigger); `finc1v725` stands until G4 delivers its successor. Dossier
+read: the external anchor (D0 §15), the confirmed G1 prediction, the
+§4.3 ensemble forecast, the §14.3 mechanism decomposition.
+**Sub-decision deferred (user):** the detection retained-ion policy is
+NOT fixed into the corrected-geometry definition at G2 — it stays a
+per-run choice (`exclude_all_coupled` for atlas/G3 scoping runs, with
+the bound/marginal decomposition and the item-6 caveat) and is decided
+at **G3**, when the re-arbitrated drag point shows how large the coupled
+class really is.
 
 **G3 — re-arbitration at the corrected geometry.** (v_c, τ, E₀) were
 fitted at the wrong exposure and must be re-located, not carried over.

@@ -10974,3 +10974,50 @@ outcomes:
 Docs this entry: D0 §14.3 (new), plan §3.5 G3 amendment + header
 continuation note, CLAUDE.md compact state. Atlas stance intact: nothing
 adopted, `finc1v725` stands, F5 undischarged, G2 not yet formally taken.
+
+## G2 TAKEN (user, 2026-07-27) — the corrected droplet geometry is ADOPTED as the target configuration; the retained-policy sub-decision DEFERRED to G3; `finc1v725` stands until G4
+
+The pre-registered adoption decision of plan §3.5, taken by the user on
+the dossier it was designed to read: the external anchor (D0 §15 — the
+standing ⟨N⟩ = 2000 geometry is wrong against the experiment's own
+source conditions), the G1 grid with the anchored-cell prediction
+confirmed on every clause, the D2b §4.3 ensemble forecast (the landing
+breaks at the corrected ensemble: trap 0.31–0.42, W₁ ≈ 9.0–9.8, deepKE
+1.80–1.90 as Arm A–B ranges), and the §14.3 mechanism decomposition.
+The pre-registered clause governs the broken landing: it was *expected*,
+and a broken landing is not a reason to keep the wrong geometry — it is
+the reason G3 exists.
+
+**Adopted (geometry only, the G0-frozen spec — no new numbers):**
+`droplet_size_prior="legacy"` + `droplet_size_sampler_mode="raw"`
+(nozzle correlation at the preset's own p = 40 mbar / T = 14 K ⇒
+⟨N⟩ = 12794), `birth_position_law="boltzmann"` at 313.2 K (per-run
+override; config default stays 573.3 K), E_bind held at 0.1168 eV
+(R-dependence analytically bounded ≤ 0.009 eV, D0 §9.1).
+
+**Consequences now in force:** the corrected geometry is the *target*;
+G3 (twin-first re-arbitration of (v_c, τ, E₀)[+ E_bind] at the corrected
+geometry, read along Route A / Route B per the §3.5 design) is the
+authorized next stage, still behind its own `[PROCEED TO
+IMPLEMENTATION]`; G4 re-baselines afterwards. **`finc1v725` remains the
+standing production point until G4 delivers its successor** — no
+production artifact, preset, or default changes at G2. The five
+scaffolding rows (⟨N⟩ pin, `uniform_volume` law, margin 3 Å, T5, T6)
+plus the analytic prior family are marked for retirement at the G4
+ledger re-issue; the I88 margin item becomes moot at the corrected law.
+Protected list unchanged (Tier-0 form + b, Tier-1a, committed scorer,
+checkpoint schema, RNG draw order, constants).
+
+**Sub-decision (user): retained-ion detection policy DEFERRED to G3.**
+`exclude_all_coupled` is *not* fixed into the corrected-geometry
+definition at G2; it remains a per-run choice (the atlas/G3 scoping runs
+use it, with the bound/marginal decomposition and the §3.5b item-6
+caveat). The policy question is decided at G3, when the re-arbitrated
+drag point shows how large the helium-coupled class really is — noting
+the coupled fraction is itself (v_c, b)-sensitive only if it is an
+over-dissipation artifact (the §3.5b distinguishing test), so G3's scan
+doubles as the evidence for this sub-decision.
+
+F5 remains undischarged. Next concrete step: the G3 twin landmark
+re-issue at the corrected geometry (today's landmarks are all
+center-pinned ⟨N⟩ = 2000 numbers), behind its trigger.

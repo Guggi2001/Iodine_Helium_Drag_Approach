@@ -116,10 +116,13 @@ corrected-ensemble forecast on record (findings "D2b §4.3", D0 §15.7 —
 the landing breaks at ensemble level). **Birth-depth lever decomposed
 (D0 §14.3, 2026-07-27):** geometry-locked dressing channel (§4p: the T5
 lever tripled supp — load-bearing, saturates at realistic depths) +
-parameter-accessible transit channel. **Next (agreed):** G2 decision →
-G3 twin-first scan along Route A (cascade) / Route B (selection) — plan
-§3.5; then the D2b A/B remainder; E₀/τ curves defer-past-G3 question
-open. RQ3/RQ5 reads and
+parameter-accessible transit channel. **G2 TAKEN 2026-07-27 (user):
+the corrected geometry (legacy+raw ⟨N⟩ 12794 / Boltzmann 313.2 K /
+E_bind 0.1168) is ADOPTED as the target; retained-policy sub-decision
+deferred to G3; `finc1v725` stands until G4.** **Next:** G3 twin-first
+scan along Route A (cascade) / Route B (selection) — plan §3.5, first
+step = twin landmark re-issue at the corrected geometry; then the D2b
+A/B remainder; E₀/τ curves defer-past-G3 question open. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the
