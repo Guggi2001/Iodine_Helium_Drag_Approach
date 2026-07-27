@@ -794,8 +794,102 @@ fire).** Fully-unflagged basin at the standing well: (v_c 5.5, τ 4.8,
 E₀ 0.36–0.37) + (v_c 6.0, τ 6.4, E₀ 0.32–0.33); the standing chord
 v_c 7.25 gates at 0/216. Landing is cascade-carried (det_yield
 0.87–0.99, no R-selection). Full record: findings "G3 Step 2", D0
-§14.5; the MD confirmation ring is the designed next step, behind its
-own trigger.
+§14.5; the MD confirmation ring is §3.5d.
+
+### 3.5d G3 Step 3 — the MD confirmation ring (DESIGN FROZEN + user-approved 2026-07-27; build + launch triggered same session)
+
+The twin basin (§3.5c) confirmed or refuted in real MD, with the ring
+placed by the **measured twin→MD transfer rules**, not centered naively
+on the twin-gated cells:
+
+1. n₁_solv/supp transfer near-quantitatively (§14.4 box ±0.02);
+2. n̄ is twin-hot by the residence-scaled bias **+0.2…+3.2 He** and
+   falls ≈ 0.3 He per 0.01 eV of E₀ ⇒ each sub-basin gets a downward
+   **E₀ ladder** covering the whole bias bracket;
+3. twin gates can be too narrow (§6.6 frozen-chord lesson) ⇒
+   twin-*fail* controls at the basin edges;
+4. trap is a twin floor and the deep-birth trap channel is
+   twin-invisible ⇒ trap predicted one-sided, bound/marginal
+   decomposition recorded per cell.
+
+**Fixed:** corrected geometry (G0/G2: `legacy`+`raw` sizes at the
+preset's own conditions, Boltzmann births at 313.2 K per-run override,
+margin 0), standing pins otherwise (rq4graded tabulated ladder,
+capped_cubic p_tail −1, co-moving shed, density_tied shell, p = 1
+partition, Landau-on 0.58, budget 2.70), **N = 500 per cell, one fresh
+shared seed 20260728** (CRN-paired), retained policy
+`exclude_all_coupled` (interim, decomposition recorded). Namespace
+`tier2atlas_conf270_g3r*`; generator `gen_tier2atlas_g3ring.py`; scorer
+`tier2atlas_g3ring_table.py` (pooled-battery drift oracle first, §1.4).
+
+**The 14 cells with their frozen twin rows** (from the committed
+`h2b_g3scan_predictions.csv`; the GR-P1 oracle re-reads these
+string-exact before any MD):
+
+| cell | v_c | well | τ | E₀ | twin trap | supp | n̄ | n₁_solv | W₁ | twin gate |
+|---|---|---|---|---|---|---|---|---|---|---|
+| a031 | 5.5 | eb1168 | 4.8 | 0.31 | 0.0535 | 0.0008 | 6.717 | 0.0371 | 1.8778 | 0 |
+| a033 | 5.5 | eb1168 | 4.8 | 0.33 | 0.0535 | 0.0124 | 5.930 | 0.1051 | 1.1757 | 0 |
+| a035 | 5.5 | eb1168 | 4.8 | 0.35 | 0.0535 | 0.0559 | 5.211 | 0.1700 | 0.7258 | 0 |
+| a037 | 5.5 | eb1168 | 4.8 | 0.37 | 0.0535 | 0.1339 | 4.564 | 0.2097 | 0.5026 | 1 |
+| b029 | 6.0 | eb1168 | 6.4 | 0.29 | 0.1294 | 0.0033 | 6.046 | 0.0857 | 1.4151 | 0 |
+| b031 | 6.0 | eb1168 | 6.4 | 0.31 | 0.1294 | 0.0392 | 5.224 | 0.1775 | 0.8761 | 0 |
+| b033 | 6.0 | eb1168 | 6.4 | 0.33 | 0.1294 | 0.1318 | 4.487 | 0.2255 | 0.6786 | 1 |
+| c50  | 5.0 | eb1168 | 4.8 | 0.34 | 0.0111 | 0.0479 | 4.586 | 0.1858 | 0.7477 | 0 |
+| c65  | 6.5 | eb1168 | 6.4 | 0.33 | 0.2132 | 0.0572 | 6.153 | 0.1298 | 1.8528 | 0 |
+| d030 | 5.5 | eb1168 | 6.4 | 0.30 | 0.0535 | 0.0284 | 4.374 | 0.2029 | 0.7529 | 0 |
+| d036 | 6.0 | eb1168 | 4.8 | 0.36 | 0.1294 | 0.0511 | 6.391 | 0.1365 | 1.8973 | 0 |
+| e0482 | 5.5 | eb0482 | 4.8 | 0.36 | 0.0111 | 0.0913 | 5.356 | 0.1870 | 1.0057 | 0 |
+| e154 | 5.5 | eb154 | 4.8 | 0.36 | 0.0761 | 0.0919 | 4.651 | 0.1959 | 0.6407 | 1 |
+| f725 | 7.25 | eb1168 | 3.2 | 0.27 | 0.3080 | 0.0000 | 16.994 | 0.0000 | 12.1053 | 0 |
+
+(arm A = a03x E₀ ladder through sub-basin 1; arm B = b0xx through
+sub-basin 2; arm C = c50/c65 twin-fail edge controls; arm D =
+d030/d036 τ-crosses, one per sub-basin; arm E = well bracket at the
+a-arm center, `eb0482`/`eb154` under the documented pairing hatch;
+arm F = f725 the standing point = the broken-landing continuity anchor. a037 is also arm A's twin-gated
+top; twin n̄ spans 6.7→4.6 (A) and 6.0→4.5 (B), so the MD 4.07 crossing
+sits inside each arm for any bias in the +0.2…+3.2 bracket.)
+
+**MD-level acceptance (bias-free, pre-registered):** a cell *lands* iff
+MD n₁_solv ∈ [0.19, 0.30] ∧ MD n̄_det ∈ [3.77, 4.37] (4.07 ± 0.3).
+W₁ reported, not gating (single-seed N = 500 scatter ≈ 0.1–0.15); KE
+(midHot/deepKE/χ²_med) reported, direction-only vs the twin; supp soft
+(RQ3 mixture).
+
+**Pre-registered predictions:**
+
+- **GR-P1 (oracle):** the 14 twin rows above reproduce string-exact
+  from the committed scan CSV; the scorer reproduces the pooled-battery
+  recorded row within 0.002. Fails ⇒ session invalid.
+- **GR-P2 (basin transfer — the headline test):** ≥ 1 cell in
+  arms A ∪ B lands the MD acceptance. This requires the
+  near-quantitative n₁ transfer AND a small-end n̄ bias (≈ +0.5…+1.1)
+  to co-occur at the same E₀ — genuinely falsifiable; a large-end bias
+  (+3) pushes the landing below every twin-n₁-viable E₀ and refutes
+  the basin at MD level (itself the atlas result).
+- **GR-P3 (bias direction):** MD n̄ < twin n̄ at every paired cell,
+  with Δn̄ ∈ [0.2, 3.2] at ≥ 70 % of cells.
+- **GR-P4 (n₁ transfer):** |MD n₁_solv − twin| ≤ 0.05 at every
+  non-control cell with ≥ 100 scored solvated ions.
+- **GR-P5 (controls fail as predicted):** c50 misses low (n̄ under the
+  MD floor), c65 misses on n₁ (< 0.19); f725 reproduces the broken
+  landing (n₁_solv < 0.05, n̄ > 10, trap ≥ 0.17 = twin 0.308 minus the
+  max floor bias).
+- **GR-P6 (policy evidence):** trap ordering eb0482 < eb1168 < e154 at
+  the arm-E triple; bound/marginal decomposition recorded per cell for
+  the G4 retained-policy call.
+
+**Adjudications taken with this design (user, 2026-07-27):**
+retained-policy — `exclude_all_coupled` stays the *interim* convention
+for the ring with the decomposition recorded; the **final policy call
+moves to G4** on the ring's measured class sizes (the scan's
+(v_c, well)-sensitivity already points at the over-dissipation-artifact
+branch). Axis B — **declared folded** into this ring (arms A/B/D are
+its MD E₀/τ content at the corrected geometry) + the committed §3.5c
+free-surface maps; any standalone Axis-B study is deferred past G4 and
+re-opens only if the ring's MD curves disagree with the twin maps
+beyond the §14.4 box.
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 

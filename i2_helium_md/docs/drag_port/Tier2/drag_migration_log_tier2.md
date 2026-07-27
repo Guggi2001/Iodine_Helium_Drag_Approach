@@ -11168,3 +11168,48 @@ and the Axis-B deferral question are now decidable on this scan's
 evidence (user adjudications). Docs this entry: findings "G3 Step 2"
 (new), D0 §14.5 (new) + §2/§3/§4/§9 status lines, plan §3.5c header +
 execution record, CLAUDE.md compact state.
+
+## G3 Step 3 MD ring DESIGN FROZEN as plan §3.5d + retained-policy/Axis-B ADJUDICATED + build DELIVERED and LAUNCHED (2026-07-27, user-approved; approval in-session treated as the trigger)
+
+Discussion on the Step-2 result produced the ring design from the
+**measured twin→MD transfer rules** (n₁/supp near-quantitative; n̄
+twin-hot +0.2…+3.2 residence-scaled ⇒ downward E₀ ladders; §6.6
+too-narrow-gate lesson ⇒ twin-fail edge controls; trap a floor with the
+twin-invisible deep-birth channel ⇒ one-sided prediction +
+decomposition). The user approved the design, the §3.5d freeze, and the
+build in one message ("I approve please freeze the design as plan
+§3.5d with the pre-registration block, and the build") — recorded here
+as the operative trigger.
+
+**Frozen (plan §3.5d):** 14 cells × N = 500, fresh shared seed
+20260728, corrected geometry (legacy+raw / Boltzmann 313.2 K),
+standing pins otherwise; arms A (v5.5 τ4.8 E₀ ladder 0.31–0.37),
+B (v6.0 τ6.4 ladder 0.29–0.33), C (c50/c65 twin-fail edge controls),
+D (d030/d036 τ-crosses per sub-basin), E (well bracket
+eb0482/eb154 under the documented hatch), F (f725 = the standing point:
+broken-landing continuity anchor). Frozen twin rows embedded per cell;
+MD-level acceptance n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [3.77, 4.37];
+predictions GR-P1..P6 (P2 is the falsifiable headline: near-quantitative
+n₁ transfer AND a small-end n̄ bias must co-occur for any A/B cell to
+land).
+
+**Adjudications (user):** retained-policy — `exclude_all_coupled`
+stays the *interim* ring convention with the bound/marginal
+decomposition recorded; **final call moves to G4** on the ring's
+measured class sizes. Axis B — **declared folded** into the ring
+(arms A/B/D are its corrected-geometry MD E₀/τ content) + the §3.5c
+free-surface maps; standalone study deferred past G4, reopening only on
+an out-of-authority-box disagreement.
+
+**Build delivered:** `scripts/gen_tier2atlas_g3ring.py` (G1-grid
+pattern: GR-P1 twin-row oracle string-exact against the committed scan
+CSV + per-cell cfg-diff guard against the battery reference with
+pre-registered key sets; the reference cfg predates
+`droplet_size_sampler_mode`, so the diff runs on a default-pinned copy
+and the real `"raw"` is asserted directly) +
+`scripts/post_processing/tier2atlas_g3ring_table.py` (reuses the G1
+`observable_row` + pooled-battery drift oracle; prints MD vs twin Δ per
+cell and the GR-P2..P6 verdicts). **Dry run clean:** oracle passed at
+14 rows; all 14 cfg diffs exactly as pre-registered (f725 = the
+base-geometry-only diff). The 14 MD cells were then launched
+(concurrency 3); execution results get their own entry.
