@@ -10920,3 +10920,57 @@ becomes load-bearing). Sequencing question recorded in the plan header for
 user adjudication: Axis B E₀/τ curves around the pre-G3 point may be
 deferred past G3/G4, since G3 re-locates (v_c, τ, E₀) anyway. Atlas stance
 intact: nothing adopted, `finc1v725` stands, F5 undischarged.
+
+## Size/position recap DISCUSSED — the birth-depth lever decomposed into a geometry-locked and a parameter-accessible channel (§4p receipts; a dressing-was-low-impact recollection CORRECTED); G3 re-designed along Route A (cascade) / Route B (selection); continuation agreed: G2 decision → G3 twin-first (2026-07-27, doc work, zero MD, zero code)
+
+Discussion session on "can the legacy sampling laws (realistic positions
+in realistically larger droplets) recreate the landed result". Recorded
+outcomes:
+
+1. **Recollection checked and corrected against the record.** The session
+   recollection that activating the T5 `density_tied` dressing during the
+   twin→MD transfer "didn't have that huge an impact" is contradicted by
+   probe findings **§4p** (T9 leg B, the controlled one-lever A/B at the
+   standing geometry, 2026-07-18): the dressing **tripled the
+   suppressed/bare class** (0.096 → 0.322 at c1, ordering twin-predicted),
+   moved n̄_det by −1.0 to −1.9 He, pulled n₁ KE ≈ 1.0 → ≈ 0.63 eV, with
+   the lever's own histogram move W₁ = 1.0–1.9 bins — one of the largest
+   single levers of the build and the best twin↔MD agreement of the
+   oracle chain. The dressing at shallow births is load-bearing.
+2. **Two-channel decomposition recorded as D0 §14.3** (synthesis of §4p +
+   G1, no new measurement): the birth-depth lever = (i) **partial
+   dressing** — geometry-locked, saturates by depth ≈ 25 Å, unreachable
+   by any downstream knob (one shared `rho_he_ratio` surface, §3.1c);
+   (ii) **short transit** — pickup re-filling ≈ 7 ions/100 at shallow
+   chords, cascade freeze, ≈ 1 He/Å depth slope — exactly the surface
+   (v_c, τ, E₀, E_bind) touch. Channel (i) is dead at realistic depths
+   regardless of parameters; channel (ii) is the open question.
+3. **G3 re-designed (plan §3.5 amendment)** around the user's working
+   hypothesis — *a parameter point exists at realistic geometry that
+   reproduces the landed observables* — with two pre-named routes:
+   **Route A (cascade)**: ~10 extra sheds/ion (≈ 0.05–0.15 eV extra
+   E_int, same order as E₀), aided by the deepKE sign flip whose
+   crossing (depth ≈ 11–15 Å) guarantees the arbitration passes through
+   the right deep-KE value; the small in-tier lever slopes were
+   short-transit numbers and do not bound long-transit behavior.
+   **Route B (selection)**: tune the trap boundary (E_bind 0.85/eV
+   measured; v_c) so predominantly shallow-born ions detect — the
+   emergent version of what the ⟨N⟩ = 2000 prior hand-did, supported by
+   the marginal class's at-or-below-support asymptotic KE (§3.5b item 9).
+4. **Acceptance framing softened for supp** (correcting the previous
+   session's "structural risk" overweight): the hard corrected-geometry
+   targets are n₁_solv / n̄ / W₁_solv + the KE curve; supp is RQ3-coupled
+   and softer (experimental n = 0 bin is a two-channel mixture; the
+   solvated histogram renormalizes to n ≥ 1).
+5. **Continuation agreed:** take the **G2 decision** (dossier = the
+   direct G1 rows + the §4.3 ensemble forecast + the §14.3 mechanism
+   statement), then the **G3 twin-first scan** ((v_c, τ, E₀)[+ E_bind]
+   at the corrected geometry; landmark re-issue first — today's twin
+   landmarks are all center-pinned ⟨N⟩ = 2000 numbers). Failure of both
+   routes is itself the atlas result (mechanism-localized: the standing
+   point would read as an effective model of the detected subset). Each
+   step stays behind its own `[PROCEED TO IMPLEMENTATION]`.
+
+Docs this entry: D0 §14.3 (new), plan §3.5 G3 amendment + header
+continuation note, CLAUDE.md compact state. Atlas stance intact: nothing
+adopted, `finc1v725` stands, F5 undischarged, G2 not yet formally taken.

@@ -113,8 +113,13 @@ bracket is **not tight**, so the R ≥ 49 Å deepKE/n̄ carry a stated range
 2026-07-27** (zero MD): pre-registered oracle INADMISSIBLE (support hole
 below R = 26.6 Å), post-hoc in-support oracle 7/7 (`nearest` adopted),
 corrected-ensemble forecast on record (findings "D2b §4.3", D0 §15.7 —
-the landing breaks at ensemble level). **Next:** G2 (input ready) → the
-D2b A/B remainder → E₀/τ curves (defer-past-G3 question open). RQ3/RQ5 reads and
+the landing breaks at ensemble level). **Birth-depth lever decomposed
+(D0 §14.3, 2026-07-27):** geometry-locked dressing channel (§4p: the T5
+lever tripled supp — load-bearing, saturates at realistic depths) +
+parameter-accessible transit channel. **Next (agreed):** G2 decision →
+G3 twin-first scan along Route A (cascade) / Route B (selection) — plan
+§3.5; then the D2b A/B remainder; E₀/τ curves defer-past-G3 question
+open. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the

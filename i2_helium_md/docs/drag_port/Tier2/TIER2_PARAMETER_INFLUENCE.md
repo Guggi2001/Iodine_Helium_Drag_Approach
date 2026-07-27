@@ -883,6 +883,49 @@ they differ essentially only in birth-depth *spread*. That contrast is
 the axis's handle on how much ensemble spread is geometry-inherited
 (§3.3 Q5); all three L1 cells were kept for a balanced factorial.
 
+### 14.3 Why birth depth is the lever — two-channel decomposition (synthesis, 2026-07-27 discussion; measured components §4p + G1)
+
+The birth-depth influence is two separable geometry-derived channels, both
+already measured, and the distinction decides which one downstream knobs
+can compensate:
+
+1. **Partial initial dressing** (T5 `density_tied`; probe findings **§4p**,
+   the one-lever A/B at the standing geometry): flipping n₀ = 21-for-all to
+   depth-dressed (mean n₀ ≈ 17.2 at 9 Å births) **triples the
+   suppressed/bare class** (0.096 → 0.322 at c1; ordering transfers from
+   the twin), drops n̄_det by 1.0–1.9 He, truncates the deep tail at the
+   dressed band, and pulls n₁ KE from ≈ 1.0 to ≈ 0.63 eV — W₁(lever) =
+   1.0–1.9 bins, one of the largest single levers of the whole build, and
+   the best twin↔MD agreement of the oracle chain (W₁ 0.41–0.51). *(A
+   session recollection that this activation was low-impact was checked
+   against §4p and corrected.)* **Geometry-locked:** the dressing
+   saturates by depth ≈ 25 Å (§G) and shares the one `rho_he_ratio`
+   surface with the cooling and drag gates (§3.1c rejection) — no
+   downstream knob can un-saturate it at realistic depths.
+2. **Short transit** (exposure): shallow births exit fast, so pickup
+   re-filling is small (measured ≈ 7 ions/100 at shallow chords, §4p) and
+   the cascade freezes early; deep births transit long at ρ̂ ≈ 1 and
+   re-fill toward n ≈ 20 — the origin of the ≈ 1 He/Å depth slope
+   (§14.1). **Parameter-accessible:** transit time, cascade duration,
+   budget and exit boundary are exactly what (v_c, τ, E₀, E_bind) touch.
+
+Consequence for the G3 question ("can the realistic geometry land with
+the right parameters"): channel 1 is dead at realistic depths regardless
+of parameters; channel 2 is open. Two candidate routes, both twin-scannable:
+**Route A (cascade)** — shed ~10 more He/ion (≈ 0.05–0.15 eV extra E_int,
+same order as E₀) and cool deep arrivals (the deepKE sign flip and its
+crossing at 11–15 Å mean the arbitration passes through the right value);
+the small in-tier lever slopes were all measured at *short* transits and do
+not bound long-transit behavior. **Route B (selection)** — make only
+shallow-born ions detectable: the trap/retention boundary (E_bind lever
+0.85/eV measured, §9; v_c) plus the marginal class sitting at/below the
+experimental KE support (§14.2) can carve the detected ensemble toward the
+shallow tail — the emergent version of what the ⟨N⟩ = 2000 prior was
+hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
+(the experimental n = 0 bin is an RQ3 two-channel mixture; the solvated
+histogram renormalizes to n ≥ 1), so losing the suppression channel at
+saturated dressing is not by itself disqualifying.
+
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 
 ### 15.1 The laws as implemented

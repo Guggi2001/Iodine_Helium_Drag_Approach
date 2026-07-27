@@ -23,6 +23,12 @@
 > bracket caveat attached to the R ≥ 49 Å rows. Then the remaining D2b A/B →
 > Axis B E₀/τ curves (sequencing question open: G3 re-locates (v_c, τ, E₀),
 > so Axis B around the pre-G3 point may be deferred past G3/G4).
+> **Continuation agreed (2026-07-27 discussion):** G2 decision first, then
+> the **G3 twin-first scan** designed along the Route A (cascade) / Route B
+> (selection) split of §3.5 — mechanism basis in D0 §14.3 (birth-depth
+> lever = geometry-locked dressing + parameter-accessible transit; the §4p
+> receipts). Each execution step stays behind its own
+> `[PROCEED TO IMPLEMENTATION]`.
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
 > post-F5-reconciliation). **Entry docs:**
@@ -480,6 +486,36 @@ Cost ladder as always: the twin's K landmarks are re-issued at the
 corrected geometry (they are all center-pinned ⟨N⟩ = 2000 numbers
 today), the basin located there, then a small MD confirmation ring —
 twin free, MD ~10–20 cells × 500.
+
+**G3 design sharpened (2026-07-27 discussion; mechanism basis D0 §14.3).**
+The working hypothesis G3 tests, held by the user: *a parameter point
+exists at the realistic geometry that reproduces the landed observables.*
+The birth-depth lever decomposes into a geometry-locked channel (partial
+dressing — saturated at realistic depths, no knob reaches it) and a
+parameter-accessible channel (transit/cascade — exactly the (v_c, τ, E₀,
+E_bind) surface), so the twin scan is read along two routes:
+
+- **Route A (cascade):** does any (v_c, τ, E₀) corner shed ~10 more
+  He/ion and cool deep arrivals? Energetically plausible (≈ 0.05–0.15 eV
+  extra E_int vs E₀ = 0.27); the deepKE sign flip (0.63 shallow →
+  1.8–1.9 deep, crossing at depth ≈ 11–15 Å) means the arbitration
+  passes through the right value. The small measured in-tier lever
+  slopes were all short-transit numbers and do not bound this.
+- **Route B (selection):** does a trap-boundary corner (E_bind, v_c —
+  the E_bind trap lever is measured at 0.85/eV) make predominantly the
+  shallow-born minority detectable, with the marginal class's
+  at-or-below-support KE (§3.5b item 9) as the physical detector-side
+  argument? This is the emergent version of what the ⟨N⟩ = 2000 prior
+  was hand-doing, and the physically-attractive outcome.
+
+Acceptance framing for the scan: n₁_solv / n̄ / W₁_solv and the KE curve
+are the hard targets; **supp is a softer, RQ3-coupled target** (the
+experimental n = 0 bin is a two-channel mixture; the solvated histogram
+renormalizes to n ≥ 1), so supp → 0 at saturated dressing is not by
+itself disqualifying. Failure of both routes is itself the atlas
+result: it localizes the corrected-geometry failure to the mechanism
+(dressing law, pickup, ladder) and reads the standing point as an
+effective model of the detected subset.
 
 **G4 — re-baseline.** New standing point, fresh 5 × N = 1000 battery,
 figure surface re-generated, D0 §17 re-issued with the retired **S**
