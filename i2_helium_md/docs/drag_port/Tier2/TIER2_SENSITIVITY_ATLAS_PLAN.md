@@ -12,9 +12,17 @@
 > **G0 spec freeze**, **stage 2b (built)**, **Axis A / G1** and the **§3.5b
 > retained-class arm + marginal bracket (2026-07-27)** — the geometry grid is
 > **complete at 11/11 cells**, the last five recovered detection-only at zero
-> MD. **Next:** G2 (the pre-registered adoption decision) can now be taken on
-> the evidence it was designed to read, with the §3.5b bracket caveat attached
-> to the R ≥ 49 Å rows. Then D2b re-weighting → Axis B E₀/τ curves.
+> MD — and the **D2b §4.3 grid re-weighting (2026-07-27, zero MD)**: the
+> pre-registered oracle is INADMISSIBLE (53.8 % of the standing density sits
+> below the grid support), the post-hoc in-support oracle passes 7/7 (method
+> valid where support covers; `nearest` adopted), and the corrected-ensemble
+> forecast is on record (findings "D2b §4.3"; D0 §15.7 — the landing breaks
+> at ensemble level, trap 0.31–0.42, W₁ ≈ 9.0–9.8, deepKE 1.80–1.90 as Arm
+> A–B ranges). **Next:** G2 (the pre-registered adoption decision) can now be
+> taken on the direct G1 rows plus the ensemble forecast, with the §3.5b
+> bracket caveat attached to the R ≥ 49 Å rows. Then the remaining D2b A/B →
+> Axis B E₀/τ curves (sequencing question open: G3 re-locates (v_c, τ, E₀),
+> so Axis B around the pre-G3 point may be deferred past G3/G4).
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
 > post-F5-reconciliation). **Entry docs:**
@@ -697,7 +705,7 @@ priority order (re-ordered 2026-07-26 by the §4.1 audit):
 Pure sampling plots; no propagation. Every N → R conversion uses the
 bulk form (§4.1 item 2).
 
-### 4.3 Observable-level sensitivity — via grid re-weighting (zero new MD), then ≤ 2 confirmations
+### 4.3 Observable-level sensitivity — via grid re-weighting (zero new MD), then ≤ 2 confirmations — **EXECUTED 2026-07-27** (oracle INADMISSIBLE on the full standing density — support hole below R = 26.6 Å; post-hoc in-support oracle 7/7, `nearest` adopted; corrected-ensemble forecast recorded in findings "D2b §4.3" / D0 §15.7; the below-support R ≈ 20 Å × L3 cell is the designed first confirmation candidate)
 
 The §3 grid is the transfer function {(R, r/R) → observable vector}.
 Any candidate sampling law is evaluated by **re-weighting the grid
@@ -1087,7 +1095,7 @@ program.
 | 1 | D0 compact reference doc | zero | none (doc work) |
 | 2a | D4 Step 1 Method-B form table (artifact reuse + oracle; no new fits) + trace-tail re-inspection | zero | trigger (analysis scripts) |
 | 2b | Axis A grid (§3) = geometry-correction stage **G1**; 3 × 3 + 2 **funded** R = 68.3 Å cells (controls rejected, §3.1c) | 11 × 500 | trigger (gen + report scripts + the `droplet_size_sampler_mode` selector) |
-| 3 | D2b audit (**§4.1 DONE 2026-07-26, zero MD**) + A/B + re-weighting (+ ≤ 2 confirmations) | ≤ 2 × 500 | trigger (sampling-variant runs) |
+| 3 | D2b audit (**§4.1 DONE 2026-07-26**) + A/B + re-weighting (**§4.3 DONE 2026-07-27, zero MD**) (+ ≤ 2 confirmations; first candidate = the below-support R ≈ 20 Å × L3 cell) | ≤ 2 × 500 | trigger (sampling-variant runs) |
 | 4 | Axis B E₀/τ curves | 8 × 500 | trigger |
 | 5 | D4 Step 2 twin sweeps | zero | none (scratchpad twin, §4ee precedent) |
 | 6 | D4 Step 3 spot-checks + E_bind zero-MD swaps/twin, then conditional MD confirms | ~0–7 × 500 | trigger (incl. enum build; swaps are scratchpad) |

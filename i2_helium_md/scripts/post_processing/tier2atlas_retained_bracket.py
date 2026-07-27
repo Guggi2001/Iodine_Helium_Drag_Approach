@@ -6,7 +6,11 @@ vector of the anchored-radius geometry cells? Per the pre-registered drop rule,
 if the bracket comes out **tight** the result is recorded in the findings doc
 and this file is deleted; if it comes out **wide** the offending observable is
 flagged and the follow-up is the kinetic forward model. Do not build anything
-on top of it.
+on top of it, with one sanctioned exception: since the bracket came out NOT
+TIGHT (2026-07-27), ``tier2atlas_geometry_reweight.py`` imports the Arm-B
+construction (:func:`marginal_dossier` / :func:`arm_b_detection`) to propagate
+the bracket into its mixture-forecast range rows. If this file is ever retired
+by the kinetic forward model, that consumer must be amended in the same change.
 
 Why a bracket is needed at all
 ------------------------------

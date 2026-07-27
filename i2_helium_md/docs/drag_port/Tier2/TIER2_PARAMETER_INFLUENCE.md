@@ -60,8 +60,8 @@
 | shed momentum convention | convention (two-valued) | cold-shed injects ×1.611 KE over a full strip; histogram convention-blind; bare-bin KE reads the fragmentation convention | co-moving basis for twin parity; RQ3-coupled |
 | birth margin | pinned convention (3 Å) | **the sensitive robustness lever**: 6 Å moves n₁_solv −0.171 (3.4σ) | standing 3 Å; in-tier open item (I88) |
 | E_bind (ion–droplet well) | Derived (joint Method-B) | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well | measured (§9) |
-| droplet geometry (R × r) | sampled, never controlled; **size externally anchored** (§15.5) | fate is droplet-size + birth-position ordered; prior decoupled from KE axis; **as-built production traverses ≈ 2.4–3× less He than the parent geometry** (chord 21.7 Å vs 33.8–64.5 Å) | **GAP** (Axis A) + **model risk** |
-| sampling laws (size + position) | theory-laden legacy ports, **partly bypassed in the drag branch** | provenance audited (§15): production uses the analytic ⟨N⟩ = 2000 prior + uniform_volume, *not* the legacy pickup MC + Boltzmann; E_solv 14 vs 30 meV discrepancy is inert here | influence **GAP** (D2b); provenance recorded |
+| droplet geometry (R × r) | controlled (Axis A G1 11-cell grid); **size externally anchored** (§15.5) | birth depth is the physics knob, R a selection knob; the landing needs the size *distribution* (pinning R̄ alone: W₁ 0.571 → 0.813); ≈ 95 % of detected-size variance geometry-inherited; deepKE crosses 1 at birth depth ≈ 11–15 Å; trap → 0.40–0.57 at the anchored radii | **GAP closed** (§14); model risk stands pending G2 |
+| sampling laws (size + position) | theory-laden legacy ports, **partly bypassed in the drag branch** | provenance audited (§15): production uses the analytic ⟨N⟩ = 2000 prior + uniform_volume, *not* the legacy pickup MC + Boltzmann; E_solv 14 vs 30 meV discrepancy is inert here; **⟨N⟩-pin influence measured at ensemble level by grid re-weighting (§15.7, zero MD): the corrected ensemble breaks the landing** (trap 0.31–0.42, W₁ ≈ 9.0–9.8, deepKE 1.80–1.90) | ⟨N⟩ pin **measured** (§15.7); distribution A/B remainder open (D2b) |
 
 ---
 
@@ -883,7 +883,7 @@ they differ essentially only in birth-depth *spread*. That contrast is
 the axis's handle on how much ensemble spread is geometry-inherited
 (§3.3 Q5); all three L1 cells were kept for a balanced factorial.
 
-## 15. Sampling laws — size distribution + radial positions **(influence GAP — D2b; provenance AUDITED 2026-07-26)**
+## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 
 ### 15.1 The laws as implemented
 
@@ -1027,9 +1027,14 @@ but (v_c, τ, E₀) were arbitrated at this exposure and trade against it
 through K (I47/I72) — an exposure change of that size is outside every
 knob in this atlas.
 
-**Atlas target (remaining):** distribution A/B + grid re-weighting +
-≤ 2 MD confirmations; salvageability = landed observables stay inside
-the seed-SD yardstick under all defensible variants.
+**Atlas target (remaining):** the grid re-weighting is **EXECUTED**
+(§15.7 — the ⟨N⟩-pin variant measured at ensemble level, zero MD); left
+open are the §4.2 distribution-level A/B plots, the ≤ 2 MD confirmations
+(the below-support R ≈ 20 Å × L3 cell is now the designed first
+candidate, §15.7 oracle read), and the salvageability verdict, which is
+G2-coupled: the standing ⟨N⟩ = 2000 pin is *known wrong* against the
+source conditions, so "landed under the standing pin" is no longer a
+defensible-variant statement.
 
 ### 15.6 Reachability of the corrected ensemble — the G0-1 decision (2026-07-26)
 
@@ -1059,6 +1064,78 @@ defaulting to `post_pickup`, so every existing run is bit-for-bit
 unchanged (no default-scope change). Not required for G1 (fixed-R cells);
 required for G3/G4 and the D2b confirmations. Built with the stage-2b
 generator under its trigger.
+
+### 15.7 Grid re-weighting — the ⟨N⟩-pin influence at ensemble level (D2b §4.3 EXECUTED 2026-07-27, zero MD)
+
+`scripts/post_processing/tier2atlas_geometry_reweight.py` re-weights the
+§14 grid with candidate size densities. Method conventions (frozen
+before the first run): **column-matched 1-D re-weighting** — the
+candidate position laws coincide with grid columns exactly (production
+`uniform_volume` m3 ≡ L3; corrected Boltzmann 313.2 K ≡ L2), so the
+conditional birth depth at each R is the cell's own and only the R
+marginal is interpolated (nearest-midpoint vs piecewise-linear, clamped
+outside support with the clamp reported); the mixture is scored by the
+**committed scorer** through an exact weighted sufficient-statistics
+read (test-locked against literal pooling); `χ²_med` is intentionally
+absent (its sim-SE convention has no weighted analogue).
+
+**Oracle verdicts.** The pre-registered §4.3 oracle — reconstruct the
+pooled N = 5000 row from the standing density — is **INADMISSIBLE, 3/7
+columns pass**: **53.8 % of the standing density lies below the grid's
+R = 26.6 Å support edge** (the support starts at the standing *mean*),
+and the clamp overshoots trap (+0.027, 9 SD), n̄ (+0.58) and W₁ (+0.34).
+A **post-hoc in-support oracle** (declared post-hoc; the battery's own
+R ≥ 26.6 Å sub-ensemble, 46.2 % of its ions, support-covered by
+construction) passes **7/7 on both conventions** (`nearest` adopted;
+worst error W₁ −0.18 ≈ 1.9 SD, all others ≤ ~1 SD). Reading: the
+*method* is valid where the support covers the density; the full-density
+failure is the support hole. The corrected density is covered to ~95 %
+(clamp 0.2 % below / 5.1 % above), so its forecast inherits the
+in-support error scale, not the full-density failure. The designed
+remedy for the hole — only needed if a standing-mixture reconstruction
+is ever load-bearing — is a below-support R ≈ 20 Å × L3 cell (the §4.3
+"≤ 2 confirmations" budget).
+
+**Forecast (nearest convention; Arm A = marginals excluded / Arm B =
+marginals injected at exact conservative asymptotic KE — the §14.2
+NOT-TIGHT bracket propagated to ensemble level; quote deepKE and n̄ as
+A–B ranges):**
+
+| mixture | trap (marg) | det_yield | supp | n̄ | n₁_solv | W₁_solv | midHot | deepKE |
+|---|---|---|---|---|---|---|---|---|
+| pooled recorded | 0.067 | — | 0.187 | 4.07 | 0.243 | 0.571 | 1.011 | 0.631 |
+| std × L3 (oracle recon) | 0.094 | 0.91 | 0.161 | 4.65 | 0.224 | 0.912 | 1.04 | 0.599 |
+| std × L2 | 0.005 | 1.00 | 0 | 9.29 | 0 | 4.67 | 1.252 (4 bins) | 1.47 |
+| corr × L3 | 0.35–0.38 (0.032) | 0.62–0.65 | 0.12–0.13 | 6.0–6.7 | 0.15–0.16 | 2.07–2.69 | 1.254 | 1.35–1.45 |
+| **corr × L2 (corrected geometry)** | **0.31–0.42 (0.110)** | **0.58–0.69** | **0** | **13.9–14.7** | **0** | **9.0–9.8** | **1.256 (4 bins)** | **1.80–1.90** |
+
+**Reads.**
+
+1. **The corrected geometry breaks the landing at ensemble level,
+   through the §3.1-predicted channel:** suppression → 0 and the low-n
+   half evacuates (n₁_solv 0, W₁ ≈ 9–10), with trap 0.31–0.42. What the
+   anchored *cells* showed (§14.1), the anchored *ensemble* confirms —
+   this is the quantitative form of the G2 clause "the landing is
+   expected to break".
+2. **Decomposition:** the **birth law owns the histogram breakage**
+   (std × L2 already gives W₁ 4.67, n̄ 9.3, supp 0 at unchanged sizes,
+   with trap ≈ 0.005) and the **size distribution owns trapping**
+   (corr × L3: trap 0.35–0.38 at supp 0.13); each alone pushes deepKE
+   past 1 (1.35–1.47), together 1.80–1.90 — the two axes are separately
+   fatal, not one compound effect.
+3. **RQ11 at ensemble level:** deepKE crosses 1.0 between the standing
+   and corrected geometry along *either* axis — the ensemble echo of
+   §14.1's depth-crossing at ≈ 11–15 Å. The corrected geometry
+   *overshoots* the deep-bin KE (too hot) by ×1.8–1.9.
+4. **Detected-subset bias:** det_yield 0.58–0.69 at the corrected
+   geometry — the detected ensemble is a small-R / shallow-birth biased
+   subset of the source ensemble, so every detection-conditional
+   observable there must be read jointly with the fate split.
+5. **Caveats:** grid cells are N = 500 single-seed; midHot at the L2
+   mixtures rests on 4 of 7 band bins; the marginal fraction (0.11 of
+   source ions at corr × L2 Arm A) is conditional on the cubic law
+   extrapolated ~3× past its calibration band (§14.2); the in-support
+   interpolation error travels with every row.
 
 ## 16. Quiet / structural surfaces (for completeness)
 

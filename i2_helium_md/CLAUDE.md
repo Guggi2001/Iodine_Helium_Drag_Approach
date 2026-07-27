@@ -109,7 +109,12 @@ EXECUTED + the §3.5b retained-class arm DELIVERED 2026-07-26/27** — the
 geometry grid is **complete at 11/11 cells** (the last five recovered
 detection-only, zero MD; six reproduce bit-for-bit). The marginal-exclusion
 bracket is **not tight**, so the R ≥ 49 Å deepKE/n̄ carry a stated range
-(D0 §14.2, findings §G1.4). **Next:** G2 → D2b → E₀/τ curves. RQ3/RQ5 reads and
+(D0 §14.2, findings §G1.4). **D2b §4.3 grid re-weighting EXECUTED
+2026-07-27** (zero MD): pre-registered oracle INADMISSIBLE (support hole
+below R = 26.6 Å), post-hoc in-support oracle 7/7 (`nearest` adopted),
+corrected-ensemble forecast on record (findings "D2b §4.3", D0 §15.7 —
+the landing breaks at ensemble level). **Next:** G2 (input ready) → the
+D2b A/B remainder → E₀/τ curves (defer-past-G3 question open). RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the

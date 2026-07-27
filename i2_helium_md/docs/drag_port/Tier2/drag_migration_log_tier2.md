@@ -10855,3 +10855,68 @@ is real, i.e. the long-path over-dissipation question.
 handover, so the pickup/mass-loading direction stays open); G2; the long-path
 drag question. Atlas stance intact: nothing adopted, `finc1v725` stands, F5
 undischarged.
+
+## D2b §4.3 grid re-weighting EXECUTED (zero MD, triggered) — pre-registered oracle INADMISSIBLE (the grid support starts at the standing MEAN: 53.8 % of the standing density clamps below R = 26.6 Å); post-hoc in-support oracle 7/7 (`nearest` adopted); corrected-ensemble forecast on record — the landing breaks at ensemble level (2026-07-27)
+
+`[PROCEED TO IMPLEMENTATION]` given for the session plan "commit, then the
+§4.3 re-weighting". The delivered atlas work of the previous entries
+(stage 2b + G1 + retained-class arm + docs) was committed first as
+`ecc07b1` (full suite 2696 passed before the commit).
+
+**Delivered (code).** `scripts/post_processing/tier2atlas_geometry_reweight.py`
++ `tests/test_tier2atlas_reweight.py` (12 focused tests). Method conventions
+frozen in the script docstring *before* the first run: column-matched 1-D
+re-weighting (production `uniform_volume` m3 ≡ L3 column, corrected Boltzmann
+≡ L2, so conditional depth|R is the cell's own and only the R marginal is
+interpolated; 2-D (R, depth) interpolation rejected — the L1/L2 near-degeneracy
+makes a cross-law depth coordinate ill-posed); two interpolation conventions
+(`nearest` midpoint binning / `linear` hats, clamp always reported); the
+mixture scored through the committed scorer via a duck-typed
+sufficient-statistics read, test-locked to equal literal pooling when weights
+∝ ion counts; `χ²_med` deliberately absent from mixture rows (the sim-SE
+widening is an ion-count convention with no exact weighted analogue);
+pre-registered admissibility gate |err| ≤ max(2 seed-SD, 10 %) on 7 columns,
+≥ 6/7 to adopt, seed-SDs measured from the 5 battery members in-session.
+`tier2atlas_retained_bracket.py`'s "do not build on top" contract was amended
+to name this script as its one sanctioned consumer (Arm-B construction
+reused for the ensemble-level bracket rows, rather than duplicated).
+
+**Session facts a fresh session needs.** (a) `NeutralCheckpoint.droplet_radii`
+is stored **per ion (2N)**, not per molecule — an initial per-molecule
+assumption tripped the layout guard and was corrected; the duplication is
+exact and leaves densities unchanged. (b) `format_table` takes its columns
+from the *first* row, so the recorded-reference row must carry the full
+column set (placeholders) or columns silently vanish — fixed in-session.
+(c) The corrected density draw reproduces the D0 §15 anchor: drawn ⟨N⟩ 12769
+vs nozzle-correlation 12794 (`legacy`+`raw` from the r3l2 cfg's own
+p = 40 mbar / T = 14 K; 200k samples, seed 20260727).
+
+**Results (full tables: findings "D2b §4.3"; influence statement: D0 §15.7).**
+
+1. **Pre-registered oracle: INADMISSIBLE, 3/7** (both conventions). The
+   standing density's median sits below the grid's smallest cell — 53.8 %
+   clamps into r1l3 — overshooting trap (+0.027 ≈ 9 SD), n̄ (+0.58) and W₁
+   (+0.34) and undershooting supp. The verdict stands as pre-registered.
+2. **In-support oracle (declared POST-HOC, designed after the failure to
+   separate method error from support error): 7/7 on both conventions.**
+   Target = the battery's own R ≥ 26.6 Å sub-ensemble (46.2 % of ions).
+   `nearest` adopted (pre-registered tie-break); worst error W₁ −0.18
+   (≈ 1.9 SD). Method valid where support covers; the corrected density is
+   ~95 % covered, so its forecast inherits the in-support error scale.
+3. **Corrected-geometry forecast (corr × L2, Arm A–B ranges):** trap
+   0.31–0.42 (marginal 0.110 under Arm A), det_yield 0.58–0.69, supp 0,
+   n̄ 13.9–14.7, n₁_solv 0, W₁ 9.0–9.8, midHot 1.256 (4 of 7 band bins),
+   deepKE 1.80–1.90. The landing breaks at ensemble level through the §3.1
+   pre-registered dressing/suppression channel.
+4. **Decomposition:** the birth law owns the histogram breakage (std × L2:
+   W₁ 4.67, n̄ 9.3, supp 0 at trap ≈ 0.005) and the size distribution owns
+   trapping (corr × L3: 0.35–0.38); each axis alone pushes deepKE past 1 —
+   separately fatal, not one compound effect.
+
+**Consequences.** G2 now has its quantitative input (direct G1 rows + this
+forecast). The below-support R ≈ 20 Å × L3 cell is the designed first §4.3
+confirmation candidate (needed only if a standing-mixture reconstruction
+becomes load-bearing). Sequencing question recorded in the plan header for
+user adjudication: Axis B E₀/τ curves around the pre-G3 point may be
+deferred past G3/G4, since G3 re-locates (v_c, τ, E₀) anyway. Atlas stance
+intact: nothing adopted, `finc1v725` stands, F5 undischarged.

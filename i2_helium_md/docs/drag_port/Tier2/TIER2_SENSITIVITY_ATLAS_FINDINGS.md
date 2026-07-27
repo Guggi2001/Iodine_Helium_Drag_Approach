@@ -838,3 +838,93 @@ is insensitive to (v_c, b) while an over-dissipation artifact is not).
 
 **Atlas stance intact:** nothing adopted, `finc1v725` stands, F5 undischarged,
 G2 not taken.
+
+## D2b §4.3 — grid re-weighting: oracle verdicts + the corrected-ensemble forecast (2026-07-27, zero MD)
+
+`scripts/post_processing/tier2atlas_geometry_reweight.py` (tests:
+`tests/test_tier2atlas_reweight.py`). The G1 grid used as the transfer
+function; candidate size densities re-weighted onto it. Scorer-drift oracle
+reproduced before anything was read.
+
+### Method conventions (fixed by this session; recorded per plan §4.3)
+
+- **Column-matched 1-D re-weighting.** Both candidate position laws coincide
+  with grid columns exactly (production `uniform_volume` m3 ≡ L3; corrected
+  Boltzmann 313.2 K ≡ L2), so conditional depth|R is the cell's own by
+  construction and only the R marginal is interpolated. 2-D (R, depth)
+  interpolation across columns was deliberately rejected: the L1/L2 columns
+  are near-degenerate in mean depth but differ in spread, which makes a
+  depth coordinate ill-posed across laws.
+- **Interpolation convention: `nearest` (midpoint binning in R), adopted by
+  the oracle** over `linear` (hat weights) — pre-registered tie-break: more
+  gate columns passed, then smaller Σ|err|/tol. Mass outside the support is
+  clamped to the end cells and the clamped fraction is always reported.
+- **Mixture scoring**: exact weighted sufficient statistics (fraction
+  vector, per-bin KE means, fate fractions at source-ion level with the
+  scored share folded in) fed through the committed scorer via a duck-typed
+  read; test-locked to equal literal pooling when weights ∝ ion counts.
+  `χ²_med` intentionally absent (its sim-SE widening is an ion-count
+  convention with no exact weighted analogue).
+- **Densities**: standing = the five battery members' realized per-ion
+  droplet radii; corrected = `legacy`+`raw` draw (200k samples, seed
+  20260727) from the r3l2 cfg's own source conditions — drawn ⟨N⟩ 12769 vs
+  nozzle-correlation 12794 (D0 §15 anchor reproduced).
+
+### Oracle 1 (pre-registered, plan §4.3): INADMISSIBLE — 3/7
+
+Gate (frozen before the run): per observable |recon − recorded| ≤
+max(2 seed-SD, 10 % of recorded), seed-SDs measured from the 5 members;
+adopted convention needs ≥ 6/7. Result: 3/7 (both conventions). Cause is
+visible in the weights: **53.8 % of the standing density lies below the
+R = 26.6 Å support edge** (the grid support starts at the standing *mean*),
+clamps into r1l3, and overshoots trap (+0.027 ≈ 9 SD), n̄ (+0.58) and W₁
+(+0.34 ≈ 3.6 SD) while undershooting supp (−0.026). midHot and deepKE pass.
+
+### Oracle 2 (in-support; **declared post-hoc** after oracle 1 failed): 7/7
+
+Target = the battery's own R ≥ 26.6 Å sub-ensemble (46.2 % of its ions;
+support-covered by construction; scored with the committed conventions).
+Both conventions pass 7/7; `nearest` errors: trap +0.002 (0.6 SD), supp
++0.002, n̄ −0.151 (1.3 SD), n₁_solv +0.008, W₁ −0.184 (1.9 SD), midHot
+−0.018, deepKE −0.021 (1.0 SD). The target and the grid cells are
+independent runs, so these errors contain interpolation bias *and* one
+N = 500 seed's scatter — they are the stated interpolation error carried by
+the forecast.
+
+**Verdict structure:** the *method* (column re-weighting) is validated where
+the support covers the density; the pre-registered failure is the support
+hole below R = 26.6 Å. The corrected density is covered to ~95 % (clamp
+0.2 % below / 5.1 % above R = 68.3 Å), so its forecast inherits the
+in-support error scale. The below-support R ≈ 20 Å × L3 cell is the designed
+§4.3 confirmation candidate, needed only if a standing-mixture
+reconstruction ever becomes load-bearing.
+
+### The forecast (nearest; Arm A/B = §G1.4 bracket at ensemble level)
+
+| mixture | trap (marg) | det_yield | supp | n̄ | n₁_solv | W₁_solv | midHot | deepKE |
+|---|---|---|---|---|---|---|---|---|
+| pooled recorded | 0.067 | — | 0.187 | 4.07 | 0.243 | 0.571 | 1.011 | 0.631 |
+| std × L3 (recon) | 0.094 | 0.91 | 0.161 | 4.65 | 0.224 | 0.912 | 1.04 | 0.599 |
+| std × L2 | 0.005 | 1.00 | 0 | 9.29 | 0 | 4.67 | 1.252 (4 bins) | 1.47 |
+| corr × L3 | 0.35–0.38 (0.032) | 0.62–0.65 | 0.12–0.13 | 6.0–6.7 | 0.15–0.16 | 2.07–2.69 | 1.254 | 1.35–1.45 |
+| **corr × L2** | **0.31–0.42 (0.110)** | **0.58–0.69** | **0** | **13.9–14.7** | **0** | **9.0–9.8** | **1.256 (4 bins)** | **1.80–1.90** |
+
+Reads (full statement in D0 §15.7): the corrected geometry **breaks the
+landing at ensemble level through the pre-registered dressing/suppression
+channel** (supp → 0, low-n evacuated, W₁ ≈ 9–10, trap 0.31–0.42); the
+**birth law owns the histogram breakage** (std × L2 alone: W₁ 4.67 at
+trap ≈ 0.005) while the **size distribution owns trapping** (corr × L3:
+0.35–0.38); each axis alone pushes deepKE past 1 (ensemble echo of the
+§G1.2/§G1.4 depth-crossing at ≈ 11–15 Å), together 1.80–1.90 — the
+corrected geometry *overshoots* RQ11's deficit direction. det_yield
+0.58–0.69 means the corrected detected ensemble is a small-R/shallow-birth
+biased subset — a G2/G3-relevant structural fact, and possibly a physical
+one (the experiment may itself only see the shallow subset).
+
+**Caveats travelling with every forecast row:** N = 500 single-seed cells;
+midHot at the L2 mixtures rests on 4 of 7 band bins; the marginal fraction
+is conditional on the ~3× extrapolated cubic law (§G1.4); in-support
+interpolation error as measured above.
+
+**Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
+undischarged. G2 can now be taken on this forecast + the direct G1 rows.
