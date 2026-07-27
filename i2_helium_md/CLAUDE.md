@@ -131,17 +131,21 @@ cells gate, all Tier-0-legitimate; fully-unflagged basin (v_c 5.5–6.0,
 τ 4.8–6.4, E₀ 0.32–0.37) at the standing well; the standing chord
 v_c 7.25 gates nowhere at the corrected geometry; landing
 cascade-carried, not selection-carried** (findings "G3 Step 2", D0
-§14.5). **G3 Step 3 MD ring frozen as plan §3.5d + LAUNCHED 2026-07-27**
-(14 cells × N = 500, seed 20260728, corrected geometry; E₀ ladders +
-edge controls + τ-crosses + well bracket + standing-point anchor;
-GR-P1 oracle + dry-run clean; predictions GR-P1..P6 pre-registered).
-**Adjudicated (user):** retained-policy `exclude_all_coupled` stays
-interim, final call at G4 on the ring's measured class sizes; Axis B
-folded into the ring + the §3.5c free-surface maps, standalone study
-deferred past G4. **Next:** read the ring (scorer
-`tier2atlas_g3ring_table.py`), then G4; the D2b A/B remainder,
-RQ3/RQ5 reads and the margin-3 Å pinned convention (I88) stay open
-in-tier. Tier-3 noise
+§14.5). **G3 Step 3 MD ring EXECUTED 2026-07-27/28** (plan §3.5d; 14 cells ×
+N = 500, seed 20260728): **GR-P1..P6 all land — the corrected-geometry
+basin is MD-CONFIRMED** (gated: a037 v5.5/τ4.8/E₀0.37 n̄ 4.097; b031
+v6.0/τ6.4/E₀0.31; d030 v5.5/τ6.4/E₀0.30; e154 deep-well; c50 shows
+the basin nearly reaches v_c 5.0); **finc1v725 MD-measured broken at
+realistic droplets** (f725: trap 0.437 incl. 0.159 marginal, n₁ 0);
+instrument MD-calibrated (n̄ bias 0.24–2.66 small-end, n₁ ≤ 0.036);
+marginal class ≈ 0 at the basin (retained-policy evidence). Adjudicated
+(user): `exclude_all_coupled` interim, final call at G4; Axis B folded
+into the ring. Findings "G3 Step 3" + D0 §14.5; scorer
+`tier2atlas_g3ring_table.py`. **Next: G4** (successor point among the
+gated cells ± interpolation battery, retained-policy final call, ledger
+re-issue — user adjudications; pooled battery at the winner as
+verification). The D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å
+pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the
 `[PROCEED TO IMPLEMENTATION]` trigger.

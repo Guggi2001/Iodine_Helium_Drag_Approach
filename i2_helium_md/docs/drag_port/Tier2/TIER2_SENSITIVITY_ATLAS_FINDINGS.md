@@ -1182,3 +1182,96 @@ clean sub-basins trade the KE axis against the histogram axis.
 - **Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
   undischarged; form authority remains Tier-0's (the scan arbitrates
   (v_c, τ, E₀, E_bind) *at fixed form* — capped cubic p_tail −1).
+
+## G3 Step 3 — the MD confirmation ring (2026-07-27/28, 14 × N = 500, plan §3.5d)
+
+Generator `gen_tier2atlas_g3ring.py`, scorer
+`tier2atlas_g3ring_table.py` (table CSV committed:
+`data/runs/h2b_forward_model/atlas_g3ring_table.csv`); corrected
+geometry (legacy+raw / Boltzmann 313.2 K; realized R_q50 49.5 Å, mean
+birth depth 34.6 Å), fresh shared seed 20260728, run dirs
+`…tier2atlas_conf270_g3r*`. Launch provenance: two harness-managed
+background launches were externally killed mid-E2 (no Python error;
+cells died pre-`relaxation.npz` and were rebuilt); the completed ring
+ran as a detached OS process. Both §1.4 oracles passed before any MD
+number was read (GR-P1 twin rows string-exact; pooled-battery scorer
+drift ≤ 0.002).
+
+### Verdicts (all six pre-registered predictions land)
+
+- **GR-P2 CONFIRMED — the twin basin is real in MD.** Cells landing
+  the bias-free MD acceptance (n₁ ∈ [0.19, 0.30] ∧ n̄ ∈ [3.77, 4.37]):
+  **a037** (v5.5, τ4.8, E₀0.37 — n̄ 4.097, within 0.03 of the 4.07
+  target), **b031** (v6.0, τ6.4, E₀0.31), and beyond the strict A/B
+  clause also **d030** (v5.5, τ6.4, E₀0.30) and **e154** (v5.5, deep
+  well 0.154, τ4.8, E₀0.36). The MD basin spans both τ values at
+  v5.5 and tolerates the full Tier-0 well spread.
+- **GR-P3 CONFIRMED:** n̄ twin-hot at 14/14 cells, Δ 0.24–2.66 He —
+  the small end of the +0.2…+3.2 bracket, residence-scaled (arm A
+  ≈ 0.5, arm B ≈ 0.9, f725 2.66).
+- **GR-P4 CONFIRMED:** n₁ transfer ≤ 0.036 at every cell (band 0.05) —
+  the twin's n₁ authority is MD-grade at the corrected geometry.
+- **GR-P5 SPLIT-CONFIRMED:** c65 fails on n₁ (0.165 < 0.19) as
+  predicted; f725 reproduces the broken landing (n₁ 0, n̄ 14.3, trap
+  0.437 ≥ 0.17); **c50 fails as predicted but on the *other* clause**
+  — its n̄ 4.35 is inside the band and it misses on n₁ by 0.005
+  (0.1849), so the basin nearly reaches v_c 5.0 (a §6.6-style
+  narrow-gate lesson, this time caught by the pre-registered control).
+- **GR-P6 CONFIRMED:** trap ordering 0.026 (eb0482) < 0.087 (eb1168)
+  < 0.115 (eb154) at the basin chord, ≈ 0.8/eV — consistent with the
+  §6.7 item-2 lever (0.85/eV).
+
+### The table (committed CSV holds full columns)
+
+| cell | (v_c, well, τ, E₀) | trap (bnd+marg) | supp | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | gate |
+|---|---|---|---|---|---|---|---|---|---|---|
+| a031 | 5.5, eb1168, 4.8, 0.31 | 0.086 (.084+.002) | 0.002 | 6.072 | 0.031 | 1.72 | 1.49 | 0.56 | 997 | 0 |
+| a033 | 5.5, eb1168, 4.8, 0.33 | 0.087 (.085+.002) | 0.009 | 5.361 | 0.102 | 1.23 | 1.28 | 0.50 | 818 | 0 |
+| a035 | 5.5, eb1168, 4.8, 0.35 | 0.087 (.085+.002) | 0.058 | 4.692 | 0.181 | 0.95 | 1.10 | 0.45 | 659 | 0 |
+| **a037** | 5.5, eb1168, 4.8, 0.37 | 0.085 (.084+.001) | 0.137 | **4.097** | **0.211** | 0.83 | 0.94 | 0.43 | 317 | **1** |
+| b029 | 6.0, eb1168, 6.4, 0.29 | 0.207 (.189+.018) | 0.005 | 5.061 | 0.082 | 1.39 | 0.62 | 0.61 | 78 | 0 |
+| **b031** | 6.0, eb1168, 6.4, 0.31 | 0.204 (.188+.016) | 0.039 | **4.314** | **0.203** | 1.06 | 0.50 | 0.72 | 73 | **1** |
+| b033 | 6.0, eb1168, 6.4, 0.33 | 0.197 (.185+.012) | 0.138 | 3.676 | 0.244 | 0.97 | 0.41 | 0.63 | 72 | 0 |
+| c50 | 5.0, eb1168, 4.8, 0.34 | 0.023 (.023+0) | 0.048 | 4.346 | 0.185 | 1.00 | 1.92 | 1.06 | 1322 | 0 |
+| c65 | 6.5, eb1168, 6.4, 0.33 | 0.322 (.256+.066) | 0.063 | 4.695 | 0.165 | 1.32 | 0.42 | 0.81 | 98 | 0 |
+| **d030** | 5.5, eb1168, 6.4, 0.30 | 0.089 (.089+0) | 0.030 | **3.943** | **0.212** | 1.17 | 0.81 | 0.27 | 400 | **1** |
+| d036 | 6.0, eb1168, 4.8, 0.36 | 0.194 (.179+.015) | 0.052 | 5.326 | 0.161 | 1.28 | 0.64 | 0.68 | 44 | 0 |
+| e0482 | 5.5, eb0482, 4.8, 0.36 | 0.026 (.026+0) | 0.086 | 4.920 | 0.197 | 0.67 | 1.13 | 0.68 | 308 | 0 |
+| **e154** | 5.5, eb154, 4.8, 0.36 | 0.115 (.115+0) | 0.092 | **4.140** | **0.208** | 0.99 | 0.96 | 0.43 | 279 | **1** |
+| f725 | 7.25, eb1168, 3.2, 0.27 | 0.437 (.278+.159) | 0.000 | 14.34 | 0.000 | 9.45 | 1.40 | 1.76 | 140 | 0 |
+
+### Readings
+
+1. **finc1v725 is MD-measured broken at realistic droplets** (f725:
+   44 % of ions helium-coupled at handover, zero suppressed, zero n₁,
+   n̄ 14.3) — the twin/D2b forecast chain confirmed end-to-end in real
+   MD (trap 0.437 vs the D2b Arm A–B 0.31–0.42 + the twin-floor bias).
+2. **Retained-policy evidence (G4 input):** the marginal
+   (modelling-exclusion) class is ≈ 0 at the basin (≤ 0.018, mostly
+   exactly 0) and 0.159 at the standing chord — the §3.5b
+   over-dissipation reading now MD-grade: the coupled-class question
+   largely evaporates at the re-arbitrated point.
+3. **KE trade-off persists (RQ11 successor):** no gated cell holds
+   both KE axes — a037/e154 hold midHot ≈ 0.94–0.96 with deepKE
+   ≈ 0.43; b031 holds deepKE 0.72 (better than the standing pooled
+   0.631) at midHot 0.50; d030 is coldest on both. The mid-vs-deep
+   tension moves with (v_c, τ) inside the basin, i.e. it remains a
+   *drag-shape* question (NB-RQ11-12) at the corrected geometry, now
+   posed at v_c 5.5–6.0.
+4. **W₁ at gated cells 0.83–1.17** vs the standing pooled 0.571 —
+   single-seed N = 500 numbers (±0.1–0.15 scatter), reported not
+   gated; a pooled battery at the G4 winner is the honest W₁ read.
+5. Suppressed fraction at gated cells 0.03–0.14 (vs standing pooled
+   0.187) — the RQ3 mixture read moves but stays plausible; f725's
+   supp 0 shows the corrected geometry kills the suppressed channel at
+   the standing chord entirely.
+
+### Consequences (reported, not adjudicated)
+
+**G4 is now live**: the successor-point choice among the gated cells
+(a037 / b031 / d030 / e154 — or a small interpolation battery), the
+retained-policy final call (evidence above), and the ledger re-issue
+(retire the five scaffolding rows) are the user's adjudications. A
+pooled battery (§4cc pattern) at the chosen point is the natural
+verification step before re-baselining. Atlas stance intact:
+`finc1v725` stands until G4 is taken.

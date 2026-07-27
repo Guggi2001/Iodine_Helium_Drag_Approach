@@ -73,7 +73,7 @@ NBAR_BIAS_BRACKET = (0.2, 3.2)
 N1_TRANSFER_TOL = 0.05
 N1_MIN_SOLVATED = 100
 
-SAVE_CSV_PATH = None  # e.g. RUNS_ROOT / "atlas_g3ring.csv"
+SAVE_CSV_PATH = RUNS_ROOT / "h2b_forward_model" / "atlas_g3ring_table.csv"
 
 # ---------------------------------------------------------------------------
 
@@ -83,6 +83,8 @@ def sampled_geometry_columns(run_dir: Path) -> dict[str, Any]:
     ckpt = load_neutral_checkpoint(run_dir / "neutral.npz")
     radii = np.asarray(ckpt.droplet_radii, dtype=float)
     r0 = np.asarray(ckpt.r0, dtype=float)
+    if radii.size == 2 * r0.size:        # per-fragment radii, per-molecule r0
+        r0 = np.concatenate([r0, r0])    # exact for the mean/quantile columns
     return {
         "R_q50": float(np.quantile(radii, 0.50)),
         "depth_mean_A": float((radii - r0).mean()),

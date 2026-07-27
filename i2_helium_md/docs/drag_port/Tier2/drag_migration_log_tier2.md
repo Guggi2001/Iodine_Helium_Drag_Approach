@@ -11213,3 +11213,52 @@ cell and the GR-P2..P6 verdicts). **Dry run clean:** oracle passed at
 14 rows; all 14 cfg diffs exactly as pre-registered (f725 = the
 base-geometry-only diff). The 14 MD cells were then launched
 (concurrency 3); execution results get their own entry.
+
+## G3 Step 3 MD ring EXECUTED — GR-P1..P6 all land: the corrected-geometry basin is MD-CONFIRMED (a037/b031/d030/e154 gate; a037 n̄ 4.097 vs target 4.07); finc1v725 MD-measured broken at realistic droplets (f725 trap 0.437, n₁ 0); marginal class ≈ 0 at the basin — G4 IS LIVE (2026-07-27/28)
+
+All 14 cells completed at N = 500, fresh shared seed 20260728,
+corrected geometry (realized R_q50 49.5 Å, mean birth depth 34.6 Å).
+Launch provenance: two harness-managed background launches were
+externally killed mid-E2 (no Python error; the affected cells had not
+reached `relaxation.npz` and were rebuilt under the safe-relaunch
+semantics); the completed ring ran as a detached OS process, watched by
+a monitor. Oracles (GR-P1 twin rows string-exact + pooled-battery
+scorer drift ≤ 0.002) passed on every launch before any MD number was
+read. One scorer fix mid-flight: per-fragment `droplet_radii` vs
+per-molecule `r0` broadcast in the sampled-geometry columns (tiling,
+exact for the mean/quantile columns). Full record + table: findings
+"G3 Step 3"; committed CSV `atlas_g3ring_table.csv`; D0 §14.5 + §14.4
+header + §2/§3/§4/§9 status lines updated first per the D0-priority
+rule. Findings:
+
+1. **GR-P2 CONFIRMED — the twin basin is real in MD.** Four cells land
+   the bias-free acceptance (n₁ ∈ [0.19, 0.30] ∧ n̄ ∈ [3.77, 4.37]):
+   a037 (v5.5 τ4.8 E₀0.37; n̄ 4.097), b031 (v6.0 τ6.4 E₀0.31), d030
+   (v5.5 τ6.4 E₀0.30), e154 (v5.5 deep-well τ4.8 E₀0.36). The basin
+   spans both τ values at v5.5 and the full Tier-0 well spread.
+2. **GR-P3/P4 CONFIRMED — the instrument is MD-calibrated:** n̄
+   twin-hot 14/14 (Δ 0.24–2.66 He, small-end, residence-scaled), n₁
+   transfer ≤ 0.036 (band 0.05).
+3. **GR-P5 SPLIT-CONFIRMED:** c65 and f725 fail exactly as predicted
+   (f725: trap 0.437 = 0.278 bound + 0.159 marginal, supp 0, n₁ 0,
+   n̄ 14.3 — finc1v725 broken end-to-end at realistic droplets,
+   confirming the D2b→twin forecast chain in MD); c50 fails as
+   predicted but on the n₁ clause (miss by 0.005) with n̄ *inside* the
+   band — the basin nearly reaches v_c 5.0.
+4. **GR-P6 CONFIRMED:** well-trap ordering 0.026/0.087/0.115 at the
+   basin chord (≈ 0.8/eV, consistent with §6.7 item-2).
+5. **Retained-policy evidence (G4 input, MD-grade):** the marginal
+   (modelling-exclusion) class is ≈ 0 at the basin (≤ 0.018) vs 0.159
+   at the standing chord — the §3.5b over-dissipation reading holds;
+   the coupled-class question largely evaporates at the re-arbitrated
+   point.
+6. **KE trade-off persists (RQ11 successor at v_c 5.5–6.0):** no gated
+   cell holds both KE axes — a037/e154 midHot ≈ 0.94–0.96 with deepKE
+   ≈ 0.43; b031 deepKE 0.72 (> standing pooled 0.631) at midHot 0.50;
+   W₁ at gated cells 0.83–1.17 (single-seed N = 500, reported only).
+
+Atlas stance: `finc1v725` STANDS until G4 — **G4 is now live** on this
+evidence (successor point among the gated cells or an interpolation
+battery; retained-policy final call; ledger re-issue retiring the five
+scaffolding rows). A pooled battery at the chosen point is the natural
+verification before re-baselining. All user adjudications.

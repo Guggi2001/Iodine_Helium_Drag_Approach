@@ -244,10 +244,12 @@ synthesis. **Confound pending (§6.5 E_bind scan):** the lq cells carry
 their co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well), so
 the residual supp/deep-direction attribution is provisional until the
 E_bind-only scan separates the jointly-extracted pair.
-**Corrected geometry (G3 Step 2, §14.5):** the twin gate basin sits at
-**v_c 5.5–6.0** — the standing 7.25 gates nowhere at the corrected
-geometry, and the shift is exactly the mid-band-softening direction
-NB-RQ11-12 identified. Twin-level; MD ring pending.
+**Corrected geometry (G3 Step 2 + Step 3 ring, §14.5):** the gate
+basin sits at **v_c 5.5–6.0, MD-CONFIRMED** (a037/b031/d030/e154 land;
+c50 shows the basin nearly reaches 5.0; c65 fails on n₁) — the
+standing 7.25 is MD-measured broken at the corrected geometry (f725:
+trap 0.437, n₁ 0). The shift is exactly the mid-band-softening
+direction NB-RQ11-12 identified.
 
 ## 3. τ — Newton cooling clock
 
@@ -271,10 +273,10 @@ NB-RQ11-12 identified. Twin-level; MD ring pending.
 cooling exposure K is the single integral through which KE and stripping
 trade off (I47).
 
-**Status:** standing 3.2 ps. **Corrected geometry (G3 Step 2, §14.5):**
-the unflagged twin basin wants τ 4.8–6.4 — *toward* the sourced GAH25
-6.55; the τ ≫ 6.55 arms (9.6/12.8) gate only with other caveat stamps
-and are not needed.
+**Status:** standing 3.2 ps. **Corrected geometry (G3 Step 2 + Step 3
+ring, §14.5):** the basin wants τ 4.8–6.4 — *toward* the sourced GAH25
+6.55 — and the ring MD-confirms **both** τ values land at v5.5
+(a037 @ 4.8, d030 @ 6.4); the τ ≫ 6.55 arms are not needed.
 
 ## 4. E₀ = E_int(0) — internal-energy budget
 
@@ -306,10 +308,11 @@ and are not needed.
 exposure: E*(K) = Σ(21)·e^K, I39), sampling width δ (bare-fraction
 trade-off, I35/I36).
 
-**Status:** standing 0.27 eV. **Corrected geometry (G3 Step 2, §14.5):**
-the unflagged twin basin wants E₀ 0.32–0.37 — still inside the RQ1
-band; the geometry-dependence chain gains its third point (pinned
-0.38–0.41 → standing mixture 0.22–0.27 → corrected ~0.35).
+**Status:** standing 0.27 eV. **Corrected geometry (G3 Step 2 + Step 3
+ring, §14.5):** MD lands at E₀ 0.30–0.37 (gated cells 0.30/0.31/
+0.36/0.37 depending on (v_c, τ)) — still inside the RQ1 band; the
+geometry-dependence chain gains its third point (pinned 0.38–0.41 →
+standing mixture 0.22–0.27 → corrected ~0.30–0.37).
 
 ## 5. κ — ladder steepness (Form U)
 
@@ -442,6 +445,11 @@ steepens dramatically with v_c at long chords (eb0482 holds trap
 17–18) — the (v_c, well) coupling is the §3.5b over-dissipation
 distinguishing evidence; the gate itself is only weakly well-sensitive
 (gated cells exist at all three wells, v_c window shifting ~0.5).
+**Ring MD (arm E, §14.5):** trap ordering CONFIRMED in MD at the basin
+chord — 0.026 / 0.087 / 0.115 for 0.0482 / 0.1168 / 0.154 eV (≈ 0.8/eV,
+matching the item-2 lq-system 0.85/eV — the lever transfers), and the
+deep well *gates* (e154), so the basin tolerates the full Tier-0 well
+spread.
 
 ### 9.1 Is E_bind R-dependent? — bounded analytically (2026-07-26, zero cost)
 
@@ -941,7 +949,7 @@ hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
 histogram renormalizes to n ≥ 1), so losing the suppression channel at
 saturated dressing is not by itself disqualifying.
 
-### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model)
+### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13)
 
 The S6 twin was re-issued at the corrected geometry and measured against
 all 11 G1 MD cells (stage `g3landmarks`; full record findings "G3
@@ -1018,6 +1026,30 @@ adds pickup mass-loading + the Landau freeze — the twin-invisible
 center-pin channel); KE direction-only; W₁ bias-loaded. Nothing is
 adopted: finc1v725 stands until G4; the designed next step is the MD
 confirmation ring (~10–20 × N = 500) behind its own trigger.
+
+**MD-CONFIRMED (G3 Step 3 ring, 2026-07-27/28 — 14 × N = 500, seed
+20260728, plan §3.5d; findings "G3 Step 3").** The basin is real in MD:
+**four cells land the bias-free MD acceptance** (n₁ ∈ [0.19, 0.30] ∧
+n̄ ∈ [3.77, 4.37]) — **a037 (v5.5, τ4.8, E₀0.37; n̄ 4.097), b031
+(v6.0, τ6.4, E₀0.31), d030 (v5.5, τ6.4, E₀0.30), e154 (v5.5 + 0.154
+well, τ4.8, E₀0.36)** — so the MD basin spans both τ values at v5.5
+and tolerates the deep well. GR-P2..P6 all confirmed (P5 c50 split:
+the control fails as predicted but on the n₁ clause, not n̄ — its n̄
+4.35 is *inside* the band, so the basin nearly reaches v_c 5.0). The
+instrument itself is now MD-calibrated at the corrected geometry: n̄
+twin-hot at 14/14 with Δ 0.24–2.66 He (small-end, residence-scaled),
+n₁ transfer ≤ 0.036 everywhere. **f725 (finc1v725 at the corrected
+geometry) measured broken: trap 0.437 (bound 0.278 + marginal 0.159),
+supp 0, n₁ 0, n̄ 14.3.** Policy evidence: the marginal (modelling-
+exclusion) class is ≈ 0 at the basin (≤ 0.018) and 0.159 at the
+standing chord — the coupled-class question largely *evaporates* at
+the re-arbitrated point (§3.5b over-dissipation reading, MD-grade).
+KE trade-off at the gated cells (reported): midHot 0.94/0.50/0.81/0.96,
+deepKE 0.43/0.72/0.27/0.43 (a037/b031/d030/e154; standing pooled
+reference 1.011/0.631) — no gated cell holds both axes at once; the
+mid-vs-deep KE tension persists at the corrected geometry (RQ11
+successor question, now at v_c 5.5–6.0). G4 (successor-point
+adjudication + re-baseline) decides among these on user authority.
 
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 

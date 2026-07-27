@@ -796,7 +796,7 @@ v_c 7.25 gates at 0/216. Landing is cascade-carried (det_yield
 0.87–0.99, no R-selection). Full record: findings "G3 Step 2", D0
 §14.5; the MD confirmation ring is §3.5d.
 
-### 3.5d G3 Step 3 — the MD confirmation ring (DESIGN FROZEN + user-approved 2026-07-27; build + launch triggered same session)
+### 3.5d G3 Step 3 — the MD confirmation ring (DESIGN FROZEN + user-approved 2026-07-27; **EXECUTED 2026-07-27/28** — GR-P1..P6 all land, 4 cells gate in MD, basin CONFIRMED; findings "G3 Step 3")
 
 The twin basin (§3.5c) confirmed or refuted in real MD, with the ring
 placed by the **measured twin→MD transfer rules**, not centered naively
@@ -890,6 +890,21 @@ its MD E₀/τ content at the corrected geometry) + the committed §3.5c
 free-surface maps; any standalone Axis-B study is deferred past G4 and
 re-opens only if the ring's MD curves disagree with the twin maps
 beyond the §14.4 box.
+
+**Execution record (2026-07-27/28):** all 14 cells complete (detached
+relaunch after two external kills; oracles passed on every launch).
+**GR-P1..P6 all land — the basin is MD-CONFIRMED**: gated cells
+**a037 (n̄ 4.097) / b031 / d030 / e154**; the MD basin spans both τ
+values at v5.5 and the deep well; c50 shows it nearly reaches v_c 5.0
+(fails on n₁ by 0.005, not on the predicted n̄ clause); f725 measures
+finc1v725 broken at the corrected geometry (trap 0.437 = 0.278 bound
++ 0.159 marginal, n₁ 0). n̄ bias 0.24–2.66 He small-end (14/14
+twin-hot), n₁ transfer ≤ 0.036, well-trap lever ≈ 0.8/eV. Marginal
+class ≈ 0 at the basin vs 0.159 at the standing chord (retained-policy
+evidence, MD-grade). KE: no gated cell holds midHot and deepKE at once
+(RQ11 successor question at v_c 5.5–6.0). Full record: findings
+"G3 Step 3", D0 §14.5; table CSV committed. **G4 is live** (successor
+point + retained policy + ledger re-issue; user adjudications).
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 
