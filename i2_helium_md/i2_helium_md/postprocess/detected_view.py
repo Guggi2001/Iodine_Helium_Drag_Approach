@@ -17,10 +17,11 @@ Forcing rules (the spec's detected-ensemble conventions):
   ions ride at their handover ``n``, but the frozen Tier-2 convention
   scores them at n = 0 (bare I⁺ at the detector, the RQ3 channel); their
   stored detected velocities are kept;
-* ``droplet_retained`` — mass forced to NaN: the rows hold the verbatim
-  in-droplet handover state and must match **no** gate. Exclusion is
-  thereby per-fragment, and pair diagnostics drop mixed pairs through
-  their existing pair-AND.
+* the retained classes (``RETAINED_REASONS``: ``droplet_retained`` and,
+  under ``exclude_all_coupled``, ``droplet_retained_marginal``) — mass
+  forced to NaN: the rows hold the verbatim in-droplet handover state and
+  must match **no** gate. Exclusion is thereby per-fragment, and pair
+  diagnostics drop mixed pairs through their existing pair-AND.
 
 ``b_ion_outside`` is all-True: on the detected ensemble the outside
 criterion is meaningless (everything that reaches the detector is
@@ -35,9 +36,12 @@ import numpy as np
 
 from ..physics.constants import U as U_KG
 from ..physics.shell_schedule import complex_mass_amu
-from ..simulation.detection_stage import DetectionResult
+from ..simulation.detection_stage import RETAINED_REASONS, DetectionResult
 
 __all__ = ["DetectedEnsembleView", "detected_ensemble_view"]
+
+# List form of the shared retained vocabulary, for ``np.isin``.
+_RETAINED_LIST: tuple[str, ...] = tuple(sorted(RETAINED_REASONS))
 
 
 @dataclass(frozen=True)
@@ -108,7 +112,7 @@ def detected_ensemble_view(det: DetectionResult) -> DetectedEnsembleView:
 
     mass_kg = arrays["mass_detected_kg"].copy()
     mass_kg[reason == "suppressed"] = complex_mass_amu(0) * U_KG
-    mass_kg[reason == "droplet_retained"] = np.nan
+    mass_kg[np.isin(reason, _RETAINED_LIST)] = np.nan
 
     return DetectedEnsembleView(
         num_molecules=int(det.num_molecules),

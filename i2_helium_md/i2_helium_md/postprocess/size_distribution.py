@@ -40,6 +40,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..simulation.detection_stage import RETAINED_REASONS
+
+# List form of the shared retained vocabulary, for ``np.isin``.
+_RETAINED_LIST: tuple[str, ...] = tuple(sorted(RETAINED_REASONS))
+
 # Langmuir occupancy cap / initial shell count n* (MASS doc Sec.11; the runs
 # start at n0 = n* = 21). n = n* is a legal simulated terminal outcome; n > n*
 # is forbidden by the cap, so its appearance signals upstream corruption.
@@ -147,17 +152,19 @@ def _terminal_n_and_source(source) -> tuple[np.ndarray, str]:
             )
         # A DetectionResult also exposes terminal_n; its state_reason array
         # is the attribute that separates the detector-arrival read from
-        # E2's matched-time relaxed read. droplet_retained rows (the V0-2
-        # exclude-policy class) carry the verbatim in-droplet handover
-        # state, not a detector arrival -- they are excluded from the IHe_n
-        # read here, the single histogram source (review fix 2026-07-18).
+        # E2's matched-time relaxed read. Retained rows (RETAINED_REASONS:
+        # the V0-2 exclude-policy class plus the exclude_all_coupled marginal
+        # class) carry the verbatim in-droplet handover state, not a detector
+        # arrival -- they are excluded from the IHe_n read here, the single
+        # histogram source (review fix 2026-07-18).
         reasons = getattr(source, "state_reason", None)
         if reasons is not None:
-            keep = np.asarray(reasons).ravel() != "droplet_retained"
+            keep = ~np.isin(np.asarray(reasons).ravel(), _RETAINED_LIST)
             if not np.any(keep):
                 raise ValueError(
-                    "empty detected ensemble: every ion is droplet_retained; "
-                    "nothing reaches the detector to histogram."
+                    "empty detected ensemble: every ion is retained "
+                    f"({', '.join(_RETAINED_LIST)}); nothing reaches the "
+                    "detector to histogram."
                 )
             return arr[keep], "detected"
         return arr, "relaxed"
@@ -183,9 +190,9 @@ def compute_terminal_shell_distribution(
         Either an ``IonCheckpoint`` (``n_shell (2N, T)`` -> sim-end upper bound)
         or an E2 ``RelaxationResult`` (``terminal_n (2N,)`` -> matched time).
         A ``DetectionResult`` is admitted through the same ``terminal_n``
-        duck-type; its ``droplet_retained`` ions (the V0-2 exclude-policy
-        class) are excluded from the histogram -- they never reach the
-        detector.
+        duck-type; its retained ions (``RETAINED_REASONS`` -- the V0-2
+        exclude-policy class and the ``exclude_all_coupled`` marginal class)
+        are excluded from the histogram -- they never reach the detector.
     n_max
         Upper edge of the integer support (default :data:`N_STAR` = 21). ``n =
         n_max`` is a legal outcome; ``n > n_max`` fails loud.

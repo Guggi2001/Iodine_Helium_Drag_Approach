@@ -127,7 +127,7 @@ import numpy as np  # noqa: E402
 
 from scripts.gen_tier2_md_confirmation import rq4graded_rungs_eV  # noqa: E402
 from scripts.tier0_common import run_dir_name  # noqa: E402
-from scripts.tier2_common import build_biphasic_cfg  # noqa: E402
+from scripts.tier2_common import build_biphasic_cfg, cfg_diff_vs_reference  # noqa: E402
 from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.simulation.detection_stage import run_detection_stage  # noqa: E402
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
@@ -228,18 +228,12 @@ def verify_against_qcc(cfg: SimConfig, spec: EbindSpec) -> None:
     ref_path = PROJECT_ROOT / "data" / "runs" / QCC_RUN_DIR_NAME / "cfg.json"
     ref = json.loads(ref_path.read_text(encoding="utf-8"))
     mine = json.loads(json.dumps(dataclasses.asdict(cfg)))
-    if set(ref) != set(mine):
-        raise AssertionError(
-            f"[{spec.label}] cfg field sets differ from the qcc reference: "
-            f"only-in-ref={sorted(set(ref) - set(mine))}, "
-            f"only-in-mine={sorted(set(mine) - set(ref))}"
-        )
     if ref["seed"] != SEED or ref["num_molecules"] != N:
         raise AssertionError(
             f"[{spec.label}] qcc reference seed/N ({ref['seed']}/"
             f"{ref['num_molecules']}) != expected ({SEED}/{N})."
         )
-    diff = sorted(k for k in ref if ref[k] != mine[k])
+    diff = cfg_diff_vs_reference(cfg, ref_path, context=spec.label)
     if set(diff) != ALLOWED_CFG_DIFF_KEYS:
         raise AssertionError(
             f"[{spec.label}] cfg diff vs qcc is {diff}; the pre-registered "

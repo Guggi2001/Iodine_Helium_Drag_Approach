@@ -125,6 +125,13 @@ PROBE_TABLE_COLUMNS = [
     "frac_det_suppressed",
     "frac_det_time_exhausted",
     "frac_det_droplet_retained",   # V0-2 exclude-policy class (T9 leg A'+)
+    # The `exclude_all_coupled` marginal class (atlas §3.5b, 2026-07-27):
+    # 0 for every probe run (they run "exclude"), but it MUST be a column --
+    # omitting it would silently drop the class from this CSV, which is the
+    # exact 2026-07-18 failure mode that STATE_REASONS memorializes. Kept
+    # separate from the bound class on purpose: one is physics, one is a
+    # modelling exclusion (see detection_stage.RETAINED_REASONS).
+    "frac_det_droplet_retained_marginal",
     # wiring diagnostic
     "ledger_max_resid_eV",
 ]
@@ -331,6 +338,7 @@ def score_probe_run(
         "n_detect_mean": None, "n_detect_spread": None, "n_detect_min": None,
         "frac_det_frozen": None, "frac_det_suppressed": None,
         "frac_det_time_exhausted": None, "frac_det_droplet_retained": None,
+        "frac_det_droplet_retained_marginal": None,
     }
     detection_path = run_dir / _DETECTION_FILENAME
     if detection_path.exists():
@@ -360,6 +368,9 @@ def score_probe_run(
             "frac_det_suppressed": fractions["suppressed"],
             "frac_det_time_exhausted": fractions["time_exhausted"],
             "frac_det_droplet_retained": fractions["droplet_retained"],
+            "frac_det_droplet_retained_marginal": (
+                fractions["droplet_retained_marginal"]
+            ),
         }
 
     closure = ion_ledger_closure(ion)

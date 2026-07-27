@@ -6,9 +6,14 @@ pure post-processing of finished run dirs — no physics, no config surface.
 
 Conventions (frozen as scored throughout the §I.11 oracle chain):
 
-- ``droplet_retained`` ions are **excluded from every read** (they carry the
-  verbatim in-droplet handover state, not a detector arrival — the
-  ``DetectionResult.detected_mask`` contract, review fix 2026-07-18);
+- retained ions are **excluded from every read** (they carry the verbatim
+  in-droplet handover state, not a detector arrival — the
+  ``DetectionResult.detected_mask`` contract, review fix 2026-07-18). The
+  class is read through the detection stage's own ``RETAINED_REASONS``, so
+  both members — ``droplet_retained`` (physics: provably cannot escape) and
+  ``droplet_retained_marginal`` (modelling exclusion under
+  ``exclude_all_coupled``) — are excluded by **one** shared constant, while
+  :class:`ConfirmationDetectionRead` reports their fractions separately;
 - ``suppressed`` ions score in **bin 0** (the RQ3 bare-candidate class —
   the never-opened side of the Δ× race, counted not evolved);
 - histograms live on the integer support ``0..n_max`` (default ``N_STAR``);
@@ -39,7 +44,13 @@ from typing import Any
 
 import numpy as np
 
-from ..simulation.detection_stage import DetectionResult, load_detection_result
+from ..simulation.detection_stage import (
+    RETAINED_BOUND_REASON,
+    RETAINED_MARGINAL_REASON,
+    RETAINED_REASONS,
+    DetectionResult,
+    load_detection_result,
+)
 from .abundance_loader import HeAbundanceReference
 from .distribution_compare import wasserstein_integer_support
 from .ihe_ked import IHeKedReference
@@ -52,6 +63,12 @@ __all__ = [
     "TwinKECurve",
     "HistogramScore",
     "KECurveScore",
+    "KEBandRatio",
+    "MIDHOT_BAND",
+    "DEEP_KE_BAND",
+    "ke_band_ratio",
+    "midhot_ratio",
+    "deep_bin_ke_ratio",
     "read_confirmation_detection",
     "load_confirmation_run",
     "knob_columns_from_cfg",
@@ -63,8 +80,9 @@ __all__ = [
     "score_ke_curve_vs_reference",
 ]
 
-# The retained class marker (detection-stage vocabulary).
-_RETAINED = "droplet_retained"
+# The retained class, read through the detection stage's shared vocabulary
+# (one constant, two reported columns -- atlas plan §3.5b item 2).
+_RETAINED_LIST: tuple[str, ...] = tuple(sorted(RETAINED_REASONS))
 _SUPPRESSED = "suppressed"
 
 # Twin prediction CSVs are written at 4-decimal rounding over 22 bins, so a
@@ -113,9 +131,20 @@ class ConfirmationDetectionRead:
     num_ions : int
         Total ions in the artifact (``2N``).
     num_scored : int
-        Ions entering every read (``droplet_retained`` excluded).
+        Ions entering every read (both retained classes excluded).
     trapped_frac : float
-        ``droplet_retained`` fraction of **all** ions.
+        Retained fraction of **all** ions — the combined class, i.e. the
+        committed scorer column, unchanged.
+    trap_bound_frac : float
+        ``droplet_retained`` fraction of all ions: **physics** (the exact
+        conservative verdict — cannot escape at any relaxation length).
+    trap_marginal_frac : float
+        ``droplet_retained_marginal`` fraction of all ions: a **modelling**
+        exclusion under ``exclude_all_coupled``, conditional on the drag law
+        and the window length. Exactly 0 under every other policy. Never
+        merge this with :attr:`trap_bound_frac` in a report — the whole point
+        of the decomposition is that one is a claim about nature and the
+        other is not.
     suppressed_frac : float
         ``suppressed`` fraction of the **scored** ions.
     n_scored : np.ndarray, shape (num_scored,)
@@ -136,6 +165,8 @@ class ConfirmationDetectionRead:
     num_ions: int
     num_scored: int
     trapped_frac: float
+    trap_bound_frac: float
+    trap_marginal_frac: float
     suppressed_frac: float
     n_scored: np.ndarray
     ke_scored_eV: np.ndarray
@@ -184,8 +215,9 @@ def read_confirmation_detection(
 ) -> ConfirmationDetectionRead:
     """Reduce one ``DetectionResult`` under the §4r scoring conventions.
 
-    ``droplet_retained`` ions are excluded from every read; ``suppressed``
-    ions score in bin 0; the histogram lives on ``0..n_max``.
+    Retained ions of **either** class are excluded from every read (the
+    shared ``RETAINED_REASONS`` vocabulary); ``suppressed`` ions score in
+    bin 0; the histogram lives on ``0..n_max``.
 
     Raises
     ------
@@ -198,11 +230,11 @@ def read_confirmation_detection(
     ke = np.asarray(detection.E_kin_detected_eV, dtype=float)
 
     num_ions = int(n_det.size)
-    keep = state != _RETAINED
+    keep = ~np.isin(state, _RETAINED_LIST)
     if not np.any(keep):
         raise ValueError(
-            f"run {label!r}: every ion is {_RETAINED} — the exclude policy "
-            f"leaves no scored ensemble."
+            f"run {label!r}: every ion is retained ({', '.join(_RETAINED_LIST)}) "
+            f"— the exclude policy leaves no scored ensemble."
         )
 
     n_scored = n_det[keep].copy()
@@ -234,6 +266,12 @@ def read_confirmation_detection(
         num_ions=num_ions,
         num_scored=int(n_scored.size),
         trapped_frac=float(np.count_nonzero(~keep) / num_ions),
+        trap_bound_frac=float(
+            np.count_nonzero(state == RETAINED_BOUND_REASON) / num_ions
+        ),
+        trap_marginal_frac=float(
+            np.count_nonzero(state == RETAINED_MARGINAL_REASON) / num_ions
+        ),
         suppressed_frac=float(np.count_nonzero(suppressed) / n_scored.size),
         n_scored=n_scored,
         ke_scored_eV=ke_scored,
@@ -438,6 +476,154 @@ def wasserstein_between(
     return wasserstein_integer_support(
         SimpleNamespace(n_values=np.asarray(n_a), fraction=np.asarray(f_a)),
         SimpleNamespace(n=np.asarray(n_b), ion_fraction=np.asarray(f_b)),
+    )
+
+
+@dataclass(frozen=True)
+class KEBandRatio:
+    """Aggregated sim/reference mean-KE ratio over a band of shell bins.
+
+    Attributes
+    ----------
+    n : np.ndarray, shape (Nb,), int
+        Bins actually aggregated (band ∩ occupied sim bins ∩ reference support).
+    ratio : np.ndarray, shape (Nb,)
+        Per-bin ``sim_mean_KE / ref.mean_KE_eV`` (dimensionless).
+    value : float
+        The aggregate (see ``aggregate``); NaN when no bin survives.
+    aggregate : str
+        ``"geometric"`` or ``"arithmetic"`` mean of ``ratio``.
+    n_bins : int
+        ``ratio.size`` — how many bins backed the aggregate (report it: a
+        thinned band silently narrows the read otherwise).
+    """
+
+    n: np.ndarray
+    ratio: np.ndarray
+    value: float
+    aggregate: str
+    n_bins: int
+
+
+# The two committed band conventions (probe findings §4-series; the atlas
+# reuses them verbatim so cell rows stay comparable with the recorded numbers).
+MIDHOT_BAND: tuple[int, int] = (2, 8)
+DEEP_KE_BAND: tuple[int, int] = (10, 17)
+
+
+def ke_band_ratio(
+    read: ConfirmationDetectionRead,
+    ref: IHeKedReference,
+    *,
+    n_lo: int,
+    n_hi: int,
+    aggregate: str = "geometric",
+    min_count: int = 1,
+) -> KEBandRatio:
+    """Aggregate the per-bin sim/reference mean-KE ratio over ``[n_lo, n_hi]``.
+
+    The scored quantity is the *raw* reference mean (``ref.mean_KE_eV``) — the
+    correlated calib/condition bands are **not** profiled here (that is
+    :func:`score_ke_curve_vs_reference`'s job) and the n = 1 median anchor does
+    not apply, both committed bands starting at n >= 2.
+
+    Parameters
+    ----------
+    read
+        Reduced detection read (:func:`load_confirmation_run`).
+    ref
+        Committed KE reference (:func:`..ihe_ked.load_ihe_ked_reference`).
+    n_lo, n_hi
+        Inclusive band edges in shell count. Bins outside the sim's occupied
+        set or the reference support are skipped (and counted in ``n_bins``).
+    aggregate
+        ``"geometric"`` (default) or ``"arithmetic"`` mean of the per-bin
+        ratios. The distinction is not cosmetic: the recorded ``midHot`` values
+        differ by it (geometric 1.0110 vs arithmetic 1.0139 on the pooled
+        N = 5000 battery — the "0.3 % definitional residue" flagged in the
+        atlas Axis A pre-read), so every table states which one it used.
+    min_count
+        Minimum ions per sim bin, passed to
+        :meth:`ConfirmationDetectionRead.ke_by_n`.
+
+    Returns
+    -------
+    KEBandRatio
+
+    Raises
+    ------
+    ValueError
+        On ``n_lo > n_hi`` or an unknown ``aggregate``.
+    """
+    if n_lo > n_hi:
+        raise ValueError(f"n_lo must be <= n_hi; got ({n_lo}, {n_hi})")
+    if aggregate not in ("geometric", "arithmetic"):
+        raise ValueError(
+            f"unknown aggregate {aggregate!r}; expected 'geometric' or "
+            f"'arithmetic'."
+        )
+    ke = read.ke_by_n(min_count=min_count)
+    ref_mean = {int(v): float(ref.mean_KE_eV[i]) for i, v in enumerate(ref.n)}
+    ns: list[int] = []
+    ratios: list[float] = []
+    for n, mean_eV in zip(ke.n, ke.mean_eV):
+        n_int = int(n)
+        if not (n_lo <= n_int <= n_hi):
+            continue
+        denom = ref_mean.get(n_int)
+        if denom is None or denom <= 0.0:
+            continue
+        ns.append(n_int)
+        ratios.append(float(mean_eV) / denom)
+    ratio_arr = np.asarray(ratios, dtype=float)
+    if ratio_arr.size == 0:
+        value = float("nan")
+    elif aggregate == "geometric":
+        value = float(np.exp(np.log(ratio_arr).mean()))
+    else:
+        value = float(ratio_arr.mean())
+    return KEBandRatio(
+        n=np.asarray(ns, dtype=int),
+        ratio=ratio_arr,
+        value=value,
+        aggregate=aggregate,
+        n_bins=int(ratio_arr.size),
+    )
+
+
+def midhot_ratio(
+    read: ConfirmationDetectionRead,
+    ref: IHeKedReference,
+    *,
+    aggregate: str = "geometric",
+    min_count: int = 1,
+) -> KEBandRatio:
+    """``midHot`` — the mid-band KE ratio over :data:`MIDHOT_BAND` (n = 2–8).
+
+    Committed convention: *geometric* mean of the per-bin sim/ref-mean ratios
+    (probe findings §4-series, "geo-mean(sim/ref-mean) over n2–n8"; want ≈ 1).
+    """
+    lo, hi = MIDHOT_BAND
+    return ke_band_ratio(
+        read, ref, n_lo=lo, n_hi=hi, aggregate=aggregate, min_count=min_count
+    )
+
+
+def deep_bin_ke_ratio(
+    read: ConfirmationDetectionRead,
+    ref: IHeKedReference,
+    *,
+    aggregate: str = "arithmetic",
+    min_count: int = 1,
+) -> KEBandRatio:
+    """Deep-bin KE ratio over :data:`DEEP_KE_BAND` (n = 10–17) — the RQ11 axis.
+
+    Committed convention: *arithmetic* mean of the per-bin sim/ref-mean ratios
+    (the §4cc / Axis A pre-read reads; pooled N = 5000 value 0.631).
+    """
+    lo, hi = DEEP_KE_BAND
+    return ke_band_ratio(
+        read, ref, n_lo=lo, n_hi=hi, aggregate=aggregate, min_count=min_count
     )
 
 

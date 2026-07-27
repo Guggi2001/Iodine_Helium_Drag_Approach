@@ -6,7 +6,15 @@
 > descriptions are *interface contracts*; grids are *specifications*.
 >
 > **Status: DESIGNED 2026-07-23** (brainstorming session, user-approved
-> section by section). No stage has been triggered.
+> section by section). **Executed since:** stage 1 (D0), stage 2a
+> (D4 Step 1), §6.6 counterfactual (twin + MD spot-check), §6.7 items
+> 1–2, the **D2b §4.1 provenance audit**, the **Axis A pre-read**, the
+> **G0 spec freeze**, **stage 2b (built)**, **Axis A / G1** and the **§3.5b
+> retained-class arm + marginal bracket (2026-07-27)** — the geometry grid is
+> **complete at 11/11 cells**, the last five recovered detection-only at zero
+> MD. **Next:** G2 (the pre-registered adoption decision) can now be taken on
+> the evidence it was designed to read, with the §3.5b bracket caveat attached
+> to the R ≥ 49 Å rows. Then D2b re-weighting → Axis B E₀/τ curves.
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
 > post-F5-reconciliation). **Entry docs:**
@@ -28,6 +36,20 @@ what each model knob actually does to the observables — a **sensitivity
 atlas**, with the accumulated but scattered knowledge of the findings doc
 distilled first (D0) and its gaps filled by controlled studies (D2–D4).
 
+**Purpose restated (user, 2026-07-26).** The goal is **model
+understanding and physical soundness in general** — not RQ11. RQ11 is
+one symptom among several. Two consequences, binding on the rest of the
+program: (i) a study is worth running if it tells us what the model is
+doing or whether an element is physically justified, *independently* of
+whether it moves the deep-bin deficit; (ii) the program carries a second
+deliverable beside the influence map — the **physical-sensibility
+ledger** (`TIER2_PARAMETER_INFLUENCE.md` §17), which classes every
+element as physics-constrained / convention / effective / scaffolding /
+missing, records what would retire it, and is maintained as results
+land. The atlas still adopts nothing (see the stance below), but it now
+explicitly produces the **dossier** any later adoption decision would
+read.
+
 **Stance (fixed for the whole program):**
 
 - **Sensitivity atlas — reported, not adjudicated.** No parameter is
@@ -35,6 +57,14 @@ distilled first (D0) and its gaps filled by controlled studies (D2–D4).
   point; nothing here discharges F5 or moves production. If an atlas
   result motivates moving the standing point, that is a *separate,
   pre-registered* decision outside this plan.
+- **Amended 2026-07-26 — geometry is the one declared exception.** The
+  droplet geometry is *known* wrong from the experiment's own source
+  conditions (D0 §15), so **Axis A is re-scoped as the geometry
+  correction** (§3, staged G0–G4 in §3.5; user-adopted in principle).
+  It is read for both purposes at once: what the corrected geometry
+  does, and what the variables do to the model. Adoption still waits for
+  the pre-registered G2 decision; every other knob remains under the
+  stance above.
 - **One-knob-at-a-time (OAT)** around the standing point everywhere,
   except *inside* Axis A, where the droplet-size × position factorial is
   itself the object of study.
@@ -63,9 +93,14 @@ no new metrics without pre-registration:
 
 - fate split: suppressed weight, trapped fraction, bare weight,
 - n̄ (detected mean size), n₁_solv (n = 1 solvated share),
-- midHot (n = 2–3 KE ratio), W₁_solv (solvated-histogram Wasserstein),
+- midHot (**geometric** mean of sim/ref-mean KE over **n = 2–8** — corrected
+  2026-07-26: this doc previously said "n = 2–3", which is not the recorded
+  convention; both the band and the geometric aggregate are now committed
+  code, `postprocess/tier2_confirmation.midhot_ratio`), W₁_solv
+  (solvated-histogram Wasserstein),
 - n₁ KE ratio (median-anchored, I77 convention),
-- deep-bin KE ratios sim/ref over n = 10–17 (the RQ11 axis),
+- deep-bin KE ratio sim/ref over n = 10–17 (the RQ11 axis; **arithmetic** mean
+  of the per-bin ratios — `deep_bin_ke_ratio`),
 - χ²_med (median-anchored KE chi-square).
 
 Per-axis figures are additive (Axis A: full detected histogram + the
@@ -152,91 +187,515 @@ tables + the per-axis figures, seed-SD-unit reporting, twin-authority
 boxes where applicable. Delivery/decision records go to
 `drag_migration_log_tier2.md` as usual.
 
-## 3. Axis A — droplet size × initial position (D2; MD, most novel)
+## 3. Axis A — droplet geometry: influence map **and** the correction program (G0–G4)
 
 Everything so far sits at the production-sampled geometry; size and
 position have never been controlled independently. The size–position
 pair sets the He path length and hence the total drag/cooling exposure —
-plausibly the largest unmapped influence on the histogram and on the
-n = 1 velocity distribution.
+the largest unmapped influence on the histogram and on the n = 1
+velocity distribution.
 
-### 3.1 Grid
+**Re-scoped 2026-07-26 (user).** The provenance audit (§4.1) and the
+parent-document anchor established that the geometry is not merely
+unmapped, it is **known wrong**: the standing point runs at ⟨N⟩ = 2000
+(R̄ 26.6 Å, mean solvation depth 9.0 Å) against the experiment's own
+source conditions of ⟨N⟩ ≈ 12794 (R̄ ≈ 49.7 Å, depths 29–40 Å). Axis A
+therefore carries **two jobs at once**, both declared:
 
-**3 × 3 factorial, N = 500/cell, one fixed seed, full pipeline:**
+1. **influence** — what droplet size and birth position do to the model
+   (the atlas job), and
+2. **correction** — the scoping stage of fixing the geometry, staged
+   G0–G4 in §3.5.
 
-- **R (droplet radius):** the production post-pickup size distribution's
-  **q10, mean, q90**, converted N → R by the existing 0.8·ρ_bulk
-  convention. The three concrete Å values are computed from the
-  production sampler at execution (one scripted draw, recorded with the
-  sampler's seed in the findings doc) — pinned by procedure here so the
-  grid tracks the actual production distribution, not a guess.
-- **r/R (fractional initial radial offset of the I₂ center):**
-  {0 (center), 0.5, 0.8 (sub-surface)}, overriding the Boltzmann
-  positional sampler with fixed offsets for grid cells (direction of the
-  offset randomized per molecule as in production; only the radius is
-  pinned).
-- All other knobs at the standing point; droplet-size *sampling* is
-  disabled per cell (fixed R), which is exactly the controlled variable.
+The stance amendment in §0 applies to this axis only: geometry is
+corrected under G0–G4; every other knob stays reported-not-adjudicated.
 
-### 3.2 Machinery
+### 3.0 Why the correction simplifies the model
 
-Sampling machinery exists (`sampling/droplet_sizes.py`,
+Five rows of the D0 §17 ledger classed **S** (scaffolding) retire
+together at the corrected geometry, with no new knob introduced:
+
+| element | why it exists today | fate after correction |
+|---|---|---|
+| ⟨N⟩ = 2000 pin | Tier-0 TDDFT droplet → S2-D4 freeze → twin D4 family; its only source-consistency check was evaluated at 23 K instead of the preset's 14 K | replaced by the source correlation |
+| `uniform_volume` birth law | T7 twin parity, because the parent's thermal law center-pins at R ≈ 28 Å | replaced by the parent's own law |
+| margin 3 Å | free convention, load-bearing (I88: 3.4σ on n₁_solv at 6 Å) | disappears with the birth law |
+| T5 `density_tied` | dressing for under-dressed shallow births | structurally inert (ρ̂ saturates) |
+| T6 `sigma_proportional` | onset scaled by Σ(n₀)/Σ(n*) | structurally inert |
+
+### 3.1 Grid — **option (B), adopted 2026-07-26 (user decision)**
+
+Axis A is the **standing-vs-anchored-geometry test**, not a local
+sensitivity ring: the R axis spans from the inherited geometry to the
+parent document's own droplet ensemble, and the position axis is run as
+competing *laws* rather than fixed offsets.
+
+**3 × 3 factorial + 2 large-R cells = 11 cells, N = 500/cell, one fixed
+seed shared by every cell, full pipeline:**
+
+- **R (droplet radius), fixed per cell:**
+
+  | cell | R [Å] | N [He] | provenance |
+  |---|---|---|---|
+  | R1 | **26.6** | 1727 | the standing point's realized mean (⟨N⟩ = 2000 prior) |
+  | R2 | **34.0** | 3605 | the parent document's *smallest* droplet — externally anchored (its quoted mean solvation depth 29 Å) |
+  | R3 | **49.4** | 11059 | the parent ensemble's mean radius (raw ln-normal at ⟨N⟩ = 12794; realized ⟨R⟩ = 49.7, median 48.6 Å) |
+
+  Conversion is the bulk form 2.2173·N^(1/3) throughout (D0 §15.3).
+  **4th/5th cells FUNDED 2026-07-26 (user): R = 68.3 Å (N = 29227, the
+  parent's largest) on L2/L3** — they are the only cells that close the
+  D2b re-weighting extrapolation (the parent's q95 otherwise sits outside
+  the grid support, §4.3) and the trapped-explosion question (§3.6) lives
+  at large R.
+
+- **Birth law, per cell** (replaces the r/R offsets):
+
+  | cell | law | configuration |
+  |---|---|---|
+  | L1 | **center-pin** | `single_initial_position=True` (r₀ ≡ 0) — the Tier-0 convention and the small-R limit of the parent law |
+  | L2 | **Boltzmann, parent-consistent** | `birth_position_law="boltzmann"` with `binding_energy_molecule_K=313.2` (β₂ = 26.99 meV, the DFT fit the parent used) |
+  | L3 | **`uniform_volume`, m = 3 Å** | the standing production law |
+
+  L2 at R2 reproduces the parent's quoted 29 Å depth (29.33 Å) — the
+  cell that makes the grid externally checkable. The as-built well
+  573.3 K = 49.4 meV is a **robustness check, not a cell** (+1.3 Å in
+  depth, D0 §15.4); **G0 decision: 313.2 K is a per-run override, the
+  config default stays 573.3 K** (legacy port fidelity; the arm is unused
+  in production, so a default change buys nothing).
+
+  **L1/L2 near-degeneracy, kept deliberately (2026-07-26).** Their mean
+  depths and chords nearly coincide at every R (26.6/26.6, 34.0/33.8,
+  49.4/47.9 Å) and both saturate the dressing, so the pair differs
+  essentially only in birth-depth **spread** — which is precisely §3.3's
+  "how much spread is geometry-inherited" contrast. User decision: keep
+  all three L1 cells for a balanced factorial rather than reallocating
+  L1/R2.
+
+- **Pre-registered exposure table** (mean isotropic chord from birth
+  point to surface — the quantity drag integrates; computed at design
+  time, so the MD reads can be checked against it):
+
+  | | L1 center | L2 Boltzmann | L3 uniform m3 |
+  |---|---|---|---|
+  | **R1 = 26.6 Å** | 26.6 | 26.6 (depth 24.8) | **21.4** (depth 8.9) ← standing geometry |
+  | **R2 = 34.0 Å** | 34.0 | 33.8 (depth 29.3) | 26.9 (depth 10.7) |
+  | **R3 = 49.4 Å** | 49.4 | 47.9 (depth 35.1) | 38.3 (depth 14.5) |
+
+- **Pre-registered structural expectation** (from the §3.4 pre-read,
+  findings §C): the birth-law column is the strong axis — the escaping
+  fragment's path *is* its birth depth — while the R row acts mainly
+  through trapped/suppressed selection, with a residual n̄ slope at deep
+  births.
+- **Pre-registered numeric prediction for the anchored cells** (frozen
+  before launch): at L2/R1 the dressing saturates (ρ̂ = 0.994,
+  n₀ = 20.9 of 21) ⇒ supp ≈ 0, n̄ > 6.3, n₁_solv ≲ 0.1, W₁ ≳ 1.6 — i.e.
+  **the landing breaks at the anchored geometry, through the
+  dressing/suppression channel, not through drag exposure**. A miss that
+  matches this prediction is a confirmation, not a surprise.
+- **Scoring rule (mandatory, from pre-read §D).** Pooled W₁ 0.571 is
+  better than *every* geometry bin (best 0.639). The landing is a
+  mixture property, so fixed-geometry cells are compared **to each other
+  and to a re-weighted mixture reconstruction**, never directly against
+  the committed acceptance. Scoring nine fixed cells against the
+  acceptance would manufacture nine spurious failures.
+- **Pre-registered observable resolution (added 2026-07-26).** §6.7
+  item 2's finding 4 measured that at N = 500 with a single seed **W₁
+  swings ≈ 0.1 on seed alone** — the refuted single-seed reads in that
+  scan were W₁ reads. Therefore: every cell uses **the same seed**
+  (common random numbers, so cross-cell differences are partly paired);
+  per-cell W₁ is **reported but not read as a discriminator** below
+  |Δ| ≈ 0.15; the axis's discriminating observables are **supp, trap, n̄,
+  n₁_solv, midHot and deep-bin KE**, which resolved at 8–35σ in that same
+  scan. This is consistent with §3.1's mixture rule — per-cell W₁ was
+  never the target.
+- All other knobs at the standing point. Droplet-size *sampling* is
+  disabled per cell (fixed R) — that is the controlled variable.
+- **E_bind held at 0.1168 eV in every cell** (G0 decision, §3.6): its
+  R-dependence is bounded analytically at ≤ 0.009 eV over the whole span
+  (D0 §9.1), with an MD bracket cell **armed as a rider** on the G1 read.
+
+### 3.1b Grid-centering decision
+
+**(B), 2026-07-26 (user):** span the anchor rather than ring the
+standing point; the superseded option-(A) grid and the full option
+comparison are in the migration log.
+
+### 3.1c Dressing / onset / cooling control cells — rejected
+
+**Rejected 2026-07-26 (user):** each requires the *less* physical arm of
+its pair, and the three legs all read one shared surface
+(`rho_he_ratio(depth, steepness=drag_gate_steepness(cfg))` —
+`ion_initial_state.py:204`, `detection_stage.py:454`, `ion.py:211`), so
+they are one physical fact and not independently variable; the
+correction (§3.5) makes them saturate instead.
+
+### 3.2 Machinery — **BUILT 2026-07-26** (stage 2b, triggered)
+
+Sampling machinery already existed (`sampling/droplet_sizes.py`,
 `sampling/radial_positions.py`, `single_pulse_droplet_distribution`
-preset). New pieces (behind the trigger): a generator mirroring
-`gen_tier2_runs.py` (atlas namespace, overwrite/resume guards, budget
-guard) and a pure-scorer report script (F3 idiom: knobs from `cfg.json`,
-text table + CSV, figures behind `SHOW_FIGURE` only). Whether fixed-R /
-fixed-offset cells need small additive config surface (e.g. a
-fixed-offset override knob) is settled at implementation planning; any
-such field follows the rule-2 carry convention if staged.
+preset). Delivered under the trigger:
+
+- **`scripts/gen_tier2atlas_geometry.py`** — the 11-cell generator (atlas
+  namespace, skip-complete/overwrite guards, `--dry-run`, process pool),
+  seed **20260727** shared by every cell, each cfg diffed field-by-field
+  against the standing battery member.
+- **`scripts/post_processing/tier2atlas_geometry_table.py`** — pure-scorer
+  report: the pooled-battery drift oracle first, then the grid table
+  (geometry columns + committed observable vector), CSV behind a setting.
+- **`droplet_size_sampler_mode`** config field + plumb (see below).
+- **`postprocess/tier2_confirmation.ke_band_ratio` / `midhot_ratio` /
+  `deep_bin_ke_ratio`** — midHot and deep-bin KE were scratchpad-only
+  conventions until now; committing them (with the pooled oracle reproducing
+  midHot 1.0110 and deep-KE 0.6313) removes the drift risk the atlas tables
+  would otherwise carry.
+- **`scripts/tier2_common.cfg_diff_vs_reference`** — the previously
+  duplicated "only these knobs may differ from the reference run" guard,
+  now one implementation shared by all five atlas generators, with the
+  forward-compatibility rule a new `SimConfig` field requires.
+
+**Every G1 cell is expressible with existing fields**
+(`single_droplet_size` + `use_single_droplet_size`,
+`droplet_size_prior="legacy"`, `birth_position_law`,
+`single_initial_position`, `initial_position_margin_angstrom`,
+`binding_energy_molecule_K`); the fixed-offset override knob that option
+(A) would have required is **not** built. Note
+`binding_energy_molecule_K` is currently read only by the Boltzmann arm —
+L2 is its first non-default use in the drag branch.
+
+**Three guards are exercised deliberately** and must be verified at
+generator-test time, not discovered at runtime (config line numbers as
+read 2026-07-26):
+
+1. T8 analytic-vs-fixed-size: the analytic prior arms require
+   `use_single_droplet_size=False` (`config.py:1142`) ⇒ every fixed-R
+   cell must run `droplet_size_prior="legacy"`.
+2. `uniform_volume` requires `single_initial_position=False`
+   (`config.py:738`) — L3.
+3. **`birth_position_law="boltzmann"` requires
+   `initial_position_margin_angstrom == 0.0`** (`config.py:731`) — so L1
+   and L2 cells cannot carry the 3 Å margin. Newly noted.
+
+**One new config field (G0-1 decision, 2026-07-26 — amends the earlier
+"no new config surface" claim).** The corrected *ensemble* arm needs
+`mode="raw"`, which is unreachable from config today:
+`simulation/initial_state.py:83` hardcodes `mode="post_pickup"` for the
+`legacy` arm. Adopted: a `droplet_size_sampler_mode ∈ {raw,
+post_pickup}` selector defaulting to `post_pickup`, so no existing run
+changes (no default-scope change) — built with the stage-2b generator
+under its trigger, though G1's fixed-R cells do not use it. Rationale in
+D0 §15.6: under `legacy` the mean is not a knob, the nozzle correlation
+supplies ⟨N⟩ = 12794 from the preset's own 40 mbar / 14 K, so the
+corrected ensemble needs **no new number** — and the analytic prior
+family retires with the pin rather than needing its truncation window
+widened.
 
 ### 3.3 Questions the axis answers
 
+- **Does the landing survive at the anchored geometry?** (the option-(B)
+  headline: R3/L2 is the parent document's own droplet ensemble and
+  birth law, at ≈ 2.2× the standing point's He chord. Reported, never
+  re-tuned.)
 - Does exposure alone (bigger droplet, deeper start) reorganize the
   detected histogram, and along which observables first?
 - Is the n = 1 velocity distribution's shape a **geometry fingerprint**
-  (distinguishable signatures of R vs r/R), or degenerate along an
+  (distinguishable signatures of R vs birth law), or degenerate along an
   exposure-equivalent diagonal?
+- Is the margin-3 Å pin (I88) still a live lever once the birth law is
+  the parent's own — i.e. does L2 make the margin convention moot?
 - Does geometry move the deep-bin cold tail (RQ11-relevant; reported
   under atlas stance, not adjudicated)?
 - How much of the production ensemble's spread is geometry-inherited vs
   mechanism-stochastic?
 
-### 3.4 Optional follow-up (not in the grid)
+### 3.4 Battery pre-read — EXECUTED 2026-07-26 (zero MD)
 
-A binned read of the existing pooled N = 5000 battery by its sampled
-(R, r) draws — free but statistically entangled; only meaningful as a
-cross-check after the grid fixes the interpretation.
+Formerly "optional follow-up", run first because it is free: the pooled
+N = 5000 battery binned by its own sampled (R, depth). Committed scorer
+reused, oracle reproduced. Results in findings "Axis A pre-read" §A–§G;
+the three that changed this plan: R is a *selection* knob and birth
+depth the physics knob (§3.1 pre-registration rewritten); the histogram
+landing is a **mixture** property (§3.1 scoring rule); and the deep-bin
+KE deficit closes ×2.5 with birth depth.
+
+### 3.5 The correction, staged (G0–G4)
+
+**G0 — freeze the corrected-geometry spec (doc, zero MD). FROZEN
+2026-07-26.** All four decisions taken:
+
+1. **Size prior → `legacy` + `raw`.** The parent's quoted quantiles match
+   **raw** (q05 34.9 / q95 68.7 Å vs its 34 / 68.3); post-pickup gives
+   37.7 / 74.1. The analytic arm is now *rejected*, not merely blocked: at
+   ⟨N⟩ = 12794 with δ = 0.625 roughly a quarter of the ln-normal mass sits
+   above its [250, 16000] He window, so it would need the window widened
+   **and** the twin's D4 family re-pinned. Under `legacy` the mean is not
+   a knob at all — the nozzle correlation supplies ⟨N⟩ = 12794 from the
+   preset's own 40 mbar / 14 K, so the corrected ensemble needs **no new
+   number**, and the analytic prior family retires together with the ⟨N⟩
+   pin (a sixth **S** row; D0 §15.6 + ledger §17). Cost: the one
+   `droplet_size_sampler_mode` selector of §3.2, since `mode="raw"` is
+   unreachable from config today (`initial_state.py:83`).
+2. **Birth law + well depth → `boltzmann` at 313.2 K as a per-run
+   override**; the config default stays 573.3 K (legacy MATLAB value —
+   changing it is a default-scope change with no benefit while the arm is
+   unused in production). The ~1.3 Å systematic stays a provenance-defect
+   row in the ledger; 573.3 K is a robustness check, not a cell.
+3. **E_bind → defer, bounded analytically.** All cells run at 0.1168 eV.
+   The R-dependence is bounded at **≤ 0.009 eV (7.6 %) across the whole
+   grid span including R = 68.3 Å**, by splitting the well into an
+   R-independent local (snowball / electrostriction) term and a Born
+   far-field term `c/R`, `c = (q²/8πε₀)(1 − 1/ε) = 0.390 eV·Å` at
+   liquid-He ε = 1.0572 — the local term cancels in the *difference*,
+   which is the only quantity claimed. Against the measured lever
+   (trap ≈ 0.85 per eV) that is Δtrap ≈ 0.006, versus the 0.0003 → 0.158
+   R-selection effect the grid measures, and the sign is one-sided
+   (deeper at large R). Free by-product: the same formula gives 0.096 eV
+   at a = 3.5 Å against the extracted 0.1168 eV — the first independent
+   number on E_bind, ~20 %. **Rider armed, not funded:** an MD bracket
+   cell at R3 fires only if G1 shows the trapped channel near a boundary
+   (trapped > ~0.4, or a detection-handover-guard trip like the one
+   0.154 eV produced in §6.7 item 2). Derivation: D0 §9.1.
+4. Source conditions p = 40 mbar / T = 14 K stay (they are the preset's
+   own values and reproduce the parent ensemble).
+
+**G1 — scoping study = the §3.1 grid (MD).** Read twice per cell: the
+corrected-geometry observables, and the influence map. This is the only
+MD this axis spends before a decision.
+
+**G2 — pre-registered adoption decision (geometry only).** Registered in
+advance: the landing is *expected* to break at the anchored geometry
+(§3.1 prediction), and **a broken landing is not a reason to keep the
+wrong geometry** — it is the reason G3 exists.
+
+**G3 — re-arbitration at the corrected geometry.** (v_c, τ, E₀) were
+fitted at the wrong exposure and must be re-located, not carried over.
+Cost ladder as always: the twin's K landmarks are re-issued at the
+corrected geometry (they are all center-pinned ⟨N⟩ = 2000 numbers
+today), the basin located there, then a small MD confirmation ring —
+twin free, MD ~10–20 cells × 500.
+
+**G4 — re-baseline.** New standing point, fresh 5 × N = 1000 battery,
+figure surface re-generated, D0 §17 re-issued with the retired **S**
+rows struck.
+
+**Protected — not re-fit by the correction:** Tier-0 drag form and b
+(calibrated per unit density behind the ρ̂ gate; the interior is bulk at
+any R, so the extraction transfers unchanged), Tier-1a, the committed
+scorer, checkpoint schema, RNG draw order, the constants table.
+
+**Discipline:** nothing adopts before G2; `finc1v725` stands until then;
+each stage behind its own `[PROCEED TO IMPLEMENTATION]`.
+
+### 3.5b The handover-staging decision — SPEC FROZEN + AMENDED + **DELIVERED 2026-07-27** (arm + bracket; grid complete at 11/11, zero MD)
+
+> **Outcome:** arm built, all 11 cells scored, six reproduced bit-for-bit
+> (item-10 oracle). The item-8 bracket came out **NOT TIGHT** at r3l1 / r4l2 /
+> r4l3, so item 6's caveat **stays** and the bracket columns stay; the
+> `deepKE`/`n̄` values at R ≥ 49 Å are conditional on the exclusion. The
+> retained class is confirmed slow and high-n, and measured to be **not** a
+> null direction — it is the RQ11 direction. Results: findings §G1.4, D0
+> §14.1–§14.2.
+
+G1 is complete for R ≤ 34 Å and **blocked** above it: all five anchored-radius
+cells trip the detection P1–P3 handover guard (mechanism and numbers in D0
+§14.2 / findings §G1.3). This sub-section records the adjudication and the
+frozen spec so the build can proceed without re-deriving either.
+
+**User's interpretation (2026-07-27), which the numbers are to be read under.**
+Big droplets combined with an **over-strong drag law** produce a large retained
+population; those ions' trajectories are *not interesting* and should not be
+computed; this is a **long-standing design error, not a discovery**. The only
+quantity that matters about them is **the percentage that gets stuck**.
+
+**Frozen spec.**
+
+1. **New arm on the existing enum surface:**
+   `detection_droplet_retained_policy = "exclude_all_coupled"`. Every ion still
+   helium-coupled at handover is excluded from the free-flight loop and
+   counted; none is integrated further; no error. Default stays `refuse`;
+   the atlas geometry cells opt in, so **no existing run changes**.
+2. **The retained class stays decomposed** — two different claims must not be
+   merged:
+   - **bound** — provably cannot escape (exact conservative test: total energy
+     vs the effective potential incl. angular momentum). Physics; the existing
+     V0-2 class, `state_reason = "droplet_retained"`.
+   - **marginal** — energetically able to escape but still inside helium at
+     handover. A *modelling* exclusion, conditional on the drag law and the
+     window length; its own `state_reason` value.
+   The scorer counts both as retained through **one shared constant** (not two
+   code paths), and the report prints `trap_bound` / `trap_marginal`
+   separately. Rationale: collapsing them makes the retained fraction
+   unreadable later — no one could tell physics from convention.
+3. **No checkpoint schema change** — a new *value* in the existing
+   `state_reason` string field; no new fields, no dtype change. It does extend
+   the reason vocabulary, so `postprocess/tier2_confirmation` must be updated
+   in the same change or it would silently mis-handle the new value.
+4. **Zero new MD.** The five blocked cells failed at the *detection* step and
+   their `relaxation.npz` (a v7 ion checkpoint) is on disk, so recovery is a
+   detection-only re-run — minutes, not hours.
+5. **Cannot retroactively alter the six scored cells.** At R ≤ 34 Å every
+   violator was provably bound — that is why those cells passed — so the
+   marginal class is empty there and the R1/R2 numbers are untouched.
+6. **Caveat travelling with every table:** the marginal fraction is
+   conditional on a cubic law extrapolated ~3× beyond its 9/18 Å calibration
+   band. It is a diagnostic of the model at this geometry, **not** a
+   prediction of nature. Item 8's drop rule is what can retire this caveat.
+
+**Amendment 2026-07-27 — items 7–10.**
+
+7. **The arm buys no compute** (correction to the recorded interpretation).
+   "Should not be computed" is the right *intent*, but the arm cannot deliver
+   it: it touches only the **detection** step, and the retained ions' cost was
+   already paid in the neutral + 30 ps ion MD, which ran before the guard
+   fired. Two candidate savings were checked and both fail:
+   - the relaxation-stage early exit is **not** blocked by the retained class —
+     "frozen" there means the *evaporation cascade* froze (`n == 0` or
+     `E_int < D₀(n)`), not spatial decoupling. (**Corrected at build time
+     2026-07-27:** an earlier draft of this item cited the config *default*
+     `cooling_spatial_gate = "none"`; these cells actually run
+     `"density_scaled"`. The conclusion is unchanged and in fact firmer — under
+     `density_scaled` it is the *ejected* fragments whose cooling stops as
+     ρ̂ → 0, so they are the ones that can fail to freeze, while retained ions
+     sit at ρ̂ ≈ 1 and freeze **fastest**.)
+   - an MD-stage early abort on provably-bound ions is not free either: the
+     class is not identifiable until late in the window, and the stage is
+     vectorized, so a real saving would need array compaction.
+
+   Consequence for sequencing: **do not re-run any cell to test the arm.** The
+   five blocked cells hold `relaxation.npz` (v7), so the arm is a
+   **detection-only re-run — minutes, zero MD** (§3.5b item 4). A fresh N = 500
+   would cost ~44 min/cell and measure nothing the stored states do not
+   already contain.
+
+8. **One-off bracket diagnostic — the exclusion's own bias check.** Scoring the
+   arm proves nothing on its own: the excluded ions are absent from every
+   observable *by construction*, so the scored vector cannot report whether the
+   exclusion biased it. The check is nearly free because the arm already
+   computes the split — `_conservatively_bound` (`detection_stage.py:640`)
+   evaluates each ion's `E_tot` against `V_eff(r') = U(r'−R) + L²/2mr'²`, and
+   because the E2 relaxation is **zero-gamma** (`relaxation_stage.py:43`) that
+   same `E_tot` **is** a marginal ion's exact conservative asymptotic KE. No
+   integration, no new physics.
+
+   - **Arm A (headline):** marginals excluded — the committed observable vector.
+   - **Arm B (diagnostic):** marginals injected into the *scored* ensemble at
+     `(n = n_handover, KE = E_tot_handover)`. Bound ions never enter Arm B.
+     Scoring-side only — it writes no checkpoint and fabricates no detection
+     rows. `(n, KE)` is the complete input to every observable in §1.1, so the
+     injection is exact rather than approximate.
+
+   **Pre-registered before the run** (otherwise "tight" is post-hoc):
+   - *Direction:* Arm B adds low-KE, mid-to-high-n fragments ⇒ deep-bin KE
+     **down**, n̄ slightly up, midHot ≈ flat, supp unchanged.
+   - *Excluded from the test:* the **fate split**. Arm B reclassifies
+     marginal → detected by construction, so that Δ is definitional, not bias.
+     The test runs on the detection-conditional shape observables: n̄,
+     n₁_solv, midHot, deep-bin KE, W₁_solv, χ²_med.
+   - *Tight ⇔* bracket width < 1 seed-SD on each of those, using the pooled
+     N = 5000 SDs scaled by √(N_pool / N_cell_detected), **and**
+     |ΔW₁| < 0.15 (§3.1's single-seed W₁ resolution floor).
+   - *Drop rule:* **tight** ⇒ record in the findings doc, delete the
+     diagnostic, and retire item 6's travelling caveat. **Not tight** ⇒ the
+     diagnostic stays, the offending observable is flagged, and the follow-up
+     is the kinetic forward model (conservative orbit from the stored state
+     with live Poisson pickup at λ₀ρ(depth(t)) and RRK evaporation) — which
+     also tests whether pickup **mass-loads marginals into the bound class**,
+     i.e. whether the conservative split *understates* trapping.
+   - *As built (2026-07-27):* the diagnostic is its own script,
+     `scripts/post_processing/tier2atlas_retained_bracket.py`, so the drop
+     rule deletes a file rather than a column — the grid report never carries
+     bracket columns. The `trap_bound` / `trap_marg` columns it *does* carry
+     are item 2's permanent decomposition and are **not** covered by the drop
+     rule. Outcome: **NOT TIGHT**, so the script stays.
+
+   Expected split of the outcome, stated so it is not read as a surprise: the
+   claim "the retained class does not shift the result" and the claim "it is
+   just slow, high-n ions" pull against each other — slow and high-n places
+   them in exactly the deep-n / low-KE bins where RQ11 lives and where r3/r4
+   currently read deepKE 1.38–1.49 (too hot). A near-zero Δ on W₁/n̄/supp with
+   a resolved Δ on deep-bin KE is therefore the *likeliest* result, and the
+   bracket must be read per observable, never aggregated.
+
+9. **Third output, free from the same array — the experimental-acceptance
+   check.** Compare the marginals' `KE_asym` distribution against the
+   experimental reference's KE support. If it sits below that support, these
+   fragments are undetected **in the experiment** too, and exclusion stops
+   being a modelling convention: it becomes the correct model of the
+   measurement. This is the one result that could retire item 6's caveat on
+   physical rather than statistical grounds.
+
+10. **Arm oracle.** Re-running detection on the six already-scored R ≤ 34 Å
+    cells under the new arm must reproduce them **bit-for-bit** — every
+    violator there was provably bound, so the marginal class is empty at those
+    radii (item 5). This is the arm's own regression test, in the scorer-oracle
+    idiom of §1.4.
+
+**What the spec deliberately does not resolve.** Whether the drag law
+over-dissipates over 25–50 Å paths. That is the standing collaborator ask
+(extended-range TDDFT), not something this axis can settle; the arm makes the
+geometry grid readable while leaving the question open and flagged. The
+distinguishing test, if it is ever wanted cheaply: a geometric retained
+fraction is insensitive to (v_c, b), an over-dissipation artifact is not.
+
+### 3.6 Open questions this axis must answer or explicitly defer
+
+- **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but
+  negligibly.** The well splits into an R-independent local
+  (snowball/electrostriction) term and a Born far-field term; only the
+  latter carries R, and helium's ε = 1.0572 makes it small — **≤ 0.009 eV
+  (7.6 %) over the whole span**, i.e. ≈ ⅛ of the smallest step §6.7
+  item 2 measured as a live lever (trap +0.058 per the 0.0482 → 0.1168
+  step ⇒ ≈ 0.85/eV, hence Δtrap ≈ 0.006 here). All cells run at
+  0.1168 eV; an MD bracket cell is **armed as a rider** on the trapped
+  read below. Full derivation D0 §9.1; G0 item 3.
+- **Does the trapped channel explode at large R?** Trapped rises
+  0.000 → 0.184 across the battery's R quintiles (R̄ 19.6 → 35.0 Å); at
+  R ≈ 50–68 Å it may dominate, in which case the *detected* ensemble is a
+  small-R-biased subset of the source ensemble. A G1 read, not a separate
+  study — and now also the **trigger for the E_bind rider** (trapped
+  > ~0.4 or a handover-guard trip). Secondary consequence to watch: a
+  large trapped fraction shrinks the *detected* count a cell delivers, so
+  the §3.1 resolution pre-registration must be re-checked against the
+  realized detected N at R3 and R = 68.3 Å before those rows are read.
+- **Do T5/T6 stay in the codebase once inert? — yes.** Keep the enums
+  (delivered, tested, needed if the geometry question reopens) and mark
+  them inert-at-production in the ledger — guard-live arms with recorded
+  provenance, not dead code under rule 2. Reinforced by the control
+  rejection: no physically realizable control can decompose them anyway
+  (one shared `rho_he_ratio` surface, §3.1c).
 
 ## 4. Axis A addendum — D2b: provenance audit + salvageability of the legacy sampling laws
 
 The production sampling laws are theory-laden legacy ports. This
 sub-axis audits them and measures what they change.
 
-### 4.1 Provenance audit (zero MD, doc work)
+### 4.1 Provenance audit — **EXECUTED 2026-07-26**
 
-Enumerate every theoretical ingredient with source + calibration class,
-as the "sampling laws" chapter of `TIER2_PARAMETER_INFLUENCE.md`:
-
-- **Size law** (`droplet_sizes.py`): nozzle correlation
-  ⟨N⟩ = k₁·p^0.97·T^−3.88·d² (Lackner, empirical); log-normal width
-  δ = 0.625 (Kornilov 2009); the pickup + evaporation chain (mean free
-  path 4 Å, ε = 0.04 relative loss per collision, **E_solv = 14 meV
-  with the documented thesis-text-vs-figure discrepancy against
-  30 meV**); droplet density 0.8·ρ_bulk; the analytic D4 prior family
-  (truncated Kornilov ln-normal, pickup-weighted ×N^(2/3),
-  `cfg.droplet_size_prior`).
-- **Position law** (`radial_positions.py`): thermal-equilibrium
-  assumption p(r) ∝ r²·exp(−U_drop(r−R)/k_B T) at `T_particles_K` in
-  the mean-field molecule–droplet well (`binding_energy_molecule_meV`,
-  steepness) — an equilibrium ansatz, not a measured dopant location.
+Delivered as D0 §15 (the authoritative chapter: which sampler ran in
+which production, the bulk N → R convention, the parent-document anchor,
+and the inherited ⟨N⟩ = 2000 pin) — it re-ordered this sub-axis, putting
+the ⟨N⟩ pin ahead of δ and E_solv.
 
 ### 4.2 Distribution-level A/B (zero MD)
 
-Compare the *sampled distributions themselves* under variants: raw vs
-post_pickup vs analytic prior; E_solv 14 vs 30 meV; δ perturbations;
-position law vs simple alternatives (center-pinned, uniform-in-volume).
-Pure sampling plots; no propagation.
+Compare the *sampled distributions themselves* under variants, in this
+priority order (re-ordered 2026-07-26 by the §4.1 audit):
+
+1. **the ⟨N⟩ pin: 2000 (standing) vs 12794 (source correlation) vs
+   16.3k (pickup-weighted)** — the dominant, previously unlisted axis;
+2. raw vs post_pickup vs analytic prior at a *matched* ⟨N⟩ (so the
+   shape difference is not confounded with the pin) — **partly
+   pre-answered 2026-07-26**: the parent document's quoted R range
+   (34–68.3 Å) matches the **raw** ln-normal's q05/q95 (34.9 / 68.7 Å),
+   not post-pickup's (37.7 / 74.1 Å), so the parent ensemble is raw;
+3. position law vs alternatives (center-pinned, uniform-in-volume at
+   margins 0/3/6 Å, Boltzmann) — noting that Boltzmann's own output is
+   R-dependent (§4.1 item 3), so it must be compared at each R;
+4. δ perturbations (0.40 / 0.625 / 0.80);
+5. E_solv 14 vs 30 meV — **demoted**: it only enters the legacy pickup
+   chain, which production does not run.
+
+Pure sampling plots; no propagation. Every N → R conversion uses the
+bulk form (§4.1 item 2).
 
 ### 4.3 Observable-level sensitivity — via grid re-weighting (zero new MD), then ≤ 2 confirmations
 
@@ -246,8 +705,25 @@ cells with its (R, r) density** — predicting the ensemble effect of
 each theory variant without new MD (the coarse 3 × 3 support is a
 stated limitation; interpolation convention recorded in the findings
 doc). Only variants that matter after re-weighting get a full-sampler
-MD confirmation (N = 500 each; expected: E_solv 14→30, and legacy
-post_pickup vs analytic prior — ≤ 2 runs).
+MD confirmation (N = 500 each; **expected after the §4.1 audit: the
+⟨N⟩ 12794 source-condition pin first, then legacy post_pickup vs
+analytic prior — ≤ 2 runs**; E_solv is no longer a candidate).
+
+**Support note.** The grid spans R = 26.6 → 49.4 Å, so the
+source-condition pin is inside the support and re-weightable; the
+parent's q95 tail (to 68.3 Å) extrapolated under the 9-cell design and is
+**closed by the two funded R = 68.3 Å cells** (§3.1).
+
+**Mandatory re-weighting oracle (added 2026-07-26).** Before any candidate
+law is re-weighted, the method must reproduce a *known* ensemble:
+re-weight the grid with the standing point's own sampled (R, depth)
+density and check it recovers the pooled N = 5000 battery row (n₁_solv
+0.243, W₁ 0.571, supp 0.187, n̄ 4.07, trapped 0.067) within the stated
+interpolation error. If the reconstruction of a known ensemble fails, no
+reconstruction of an unknown one is admissible — same discipline as the
+scorer oracle (§1.4), zero MD. The interpolation convention (cell
+weights, nearest-neighbour vs bilinear in (R, depth)) is fixed by this
+oracle and then recorded in the findings doc.
 
 ### 4.4 Salvageability verdict (defined, not vibes)
 
@@ -610,8 +1086,8 @@ program.
 |---|---|---|---|
 | 1 | D0 compact reference doc | zero | none (doc work) |
 | 2a | D4 Step 1 Method-B form table (artifact reuse + oracle; no new fits) + trace-tail re-inspection | zero | trigger (analysis scripts) |
-| 2b | Axis A grid (§3) — runs parallel to 2a | 9 × 500 | trigger (gen + report scripts) |
-| 3 | D2b audit + A/B + re-weighting (+ ≤ 2 confirmations) | ≤ 2 × 500 | trigger (sampling-variant runs) |
+| 2b | Axis A grid (§3) = geometry-correction stage **G1**; 3 × 3 + 2 **funded** R = 68.3 Å cells (controls rejected, §3.1c) | 11 × 500 | trigger (gen + report scripts + the `droplet_size_sampler_mode` selector) |
+| 3 | D2b audit (**§4.1 DONE 2026-07-26, zero MD**) + A/B + re-weighting (+ ≤ 2 confirmations) | ≤ 2 × 500 | trigger (sampling-variant runs) |
 | 4 | Axis B E₀/τ curves | 8 × 500 | trigger |
 | 5 | D4 Step 2 twin sweeps | zero | none (scratchpad twin, §4ee precedent) |
 | 6 | D4 Step 3 spot-checks + E_bind zero-MD swaps/twin, then conditional MD confirms | ~0–7 × 500 | trigger (incl. enum build; swaps are scratchpad) |

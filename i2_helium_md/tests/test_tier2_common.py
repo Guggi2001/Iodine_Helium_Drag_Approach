@@ -21,6 +21,7 @@ from scripts.tier2_common import (
     TIER2_BRIDGE_TAG,
     VALIDATION_BUDGET_EV,
     build_biphasic_cfg,
+    cfg_diff_vs_reference,
     tier2_bridge_run_dir_name,
     tier2_confirmation_run_dir_name,
     tier2_confirmation_run_tag,
@@ -481,3 +482,66 @@ def test_grid_points_get_distinct_run_dirs():
         for b in (0.80, 2.70)
     }
     assert len(names) == 3 * 5 * 2  # every grid point is uniquely named
+
+
+# ---------------------------------------------------------------------------
+# cfg_diff_vs_reference -- the shared generator-side "only these knobs differ"
+# guard. One implementation for every atlas/probe generator (rule 1); the
+# forward-compat rule matters because a stored cfg.json predates any SimConfig
+# field added later, and RunDirectory.load_cfg defaults such a field for that
+# run.
+# ---------------------------------------------------------------------------
+
+class TestCfgDiffVsReference:
+    @staticmethod
+    def _write_ref(tmp_path, cfg, *, drop=(), edits=None):
+        import dataclasses
+        import json
+        payload = json.loads(json.dumps(dataclasses.asdict(cfg)))
+        for key in drop:
+            payload.pop(key)
+        payload.update(edits or {})
+        path = tmp_path / "cfg.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def test_identical_cfg_has_empty_diff(self, tmp_path):
+        cfg = SimConfig(seed=3)
+        assert cfg_diff_vs_reference(cfg, self._write_ref(tmp_path, cfg)) == []
+
+    def test_changed_values_are_reported_sorted(self, tmp_path):
+        cfg = SimConfig(seed=3)
+        ref = self._write_ref(tmp_path, cfg, edits={"seed": 4, "dt_ion": 0.02})
+        assert cfg_diff_vs_reference(cfg, ref) == ["dt_ion", "seed"]
+
+    def test_field_absent_from_an_older_reference_is_ok_at_default(self, tmp_path):
+        # The atlas G0-1 case: droplet_size_sampler_mode postdates every
+        # committed run dir, and its default is what those runs load as.
+        cfg = SimConfig(seed=3)
+        ref = self._write_ref(tmp_path, cfg, drop=("droplet_size_sampler_mode",))
+        assert cfg_diff_vs_reference(cfg, ref) == []
+
+    def test_non_default_value_in_a_post_reference_field_is_refused(self, tmp_path):
+        cfg = SimConfig(seed=3, use_single_droplet_size=False,
+                        droplet_size_sampler_mode="raw")
+        ref = self._write_ref(tmp_path, cfg, drop=("droplet_size_sampler_mode",))
+        with pytest.raises(AssertionError, match="unverifiable"):
+            cfg_diff_vs_reference(cfg, ref)
+
+    def test_field_only_in_the_reference_is_refused(self, tmp_path):
+        cfg = SimConfig(seed=3)
+        import json
+        payload = json.loads(self._write_ref(tmp_path, cfg).read_text(encoding="utf-8"))
+        payload["a_retired_field"] = 1
+        (tmp_path / "cfg.json").write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(AssertionError, match="lost a field"):
+            cfg_diff_vs_reference(cfg, tmp_path / "cfg.json")
+
+    def test_context_prefixes_the_message(self, tmp_path):
+        cfg = SimConfig(seed=3)
+        import json
+        payload = json.loads(self._write_ref(tmp_path, cfg).read_text(encoding="utf-8"))
+        payload["a_retired_field"] = 1
+        (tmp_path / "cfg.json").write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(AssertionError, match=r"\[r1l3\]"):
+            cfg_diff_vs_reference(cfg, tmp_path / "cfg.json", context="r1l3")

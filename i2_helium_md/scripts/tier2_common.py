@@ -34,7 +34,10 @@ so the 9/18 A density-contrast route to ``f_ret`` (plan F2/F4) is unavailable an
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import replace
+import json
+from pathlib import Path
 import re
 import typing
 from typing import Mapping, Optional, Sequence
@@ -119,6 +122,10 @@ def build_biphasic_cfg(
     initial_shell_model: Optional[str] = None,
     internal_energy_partition_law: Optional[str] = None,
     droplet_size_prior: Optional[str] = None,
+    use_single_droplet_size: Optional[bool] = None,
+    single_droplet_size: Optional[int] = None,
+    droplet_size_sampler_mode: Optional[str] = None,
+    binding_energy_molecule_K: Optional[float] = None,
 ) -> SimConfig:
     """Build a Tier-2 ``biphasic`` config from a Tier-0 drag config.
 
@@ -250,6 +257,25 @@ def build_biphasic_cfg(
         T8 guard refuses the analytic arm without it). ``None`` -> the
         config default (``legacy``: the delivered boolean-driven dispatch,
         byte-inert).
+    use_single_droplet_size, single_droplet_size : bool / int or None
+        Atlas Axis A: the fixed-droplet-size branch. A geometry cell pins one
+        droplet size per cell (``use_single_droplet_size=True`` +
+        ``single_droplet_size=N_He``) with ``droplet_size_prior="legacy"`` —
+        the T8 guard refuses an analytic prior under the fixed-size branch, so
+        the two must be set consistently by the caller. ``None`` -> the case
+        preset value.
+    droplet_size_sampler_mode : str or None
+        Atlas G0-1 (``"raw"`` / ``"post_pickup"``): which distribution the
+        legacy *sampled* branch returns. Read only under
+        ``droplet_size_prior="legacy"`` with ``use_single_droplet_size=False``
+        (guard-refused off-default elsewhere). ``None`` -> the config default
+        (``post_pickup``, byte-inert).
+    binding_energy_molecule_K : float or None
+        Molecule–droplet solvation well depth [K] behind the Boltzmann birth
+        law. ``None`` -> the config default 573.3 K (the legacy MATLAB value);
+        the atlas L2 cells pass **313.2 K** = the parent document's own DFT-fit
+        β₂ = 26.99 meV (D0 §15.4, atlas G0-2 — a per-run override, the default
+        deliberately unchanged). Inert unless the Boltzmann arm runs.
 
     Returns
     -------
@@ -378,10 +404,89 @@ def build_biphasic_cfg(
             # arms sample per-molecule sizes, guard-refused under the
             # fixed-size branch (T8-D1).
             overrides["use_single_droplet_size"] = False
+    # Atlas Axis A: the explicit fixed-size pins come last so they win over the
+    # analytic arm's implied False (a caller asking for both is a bug the T8
+    # config guard then reports loudly, instead of one silently overriding).
+    if use_single_droplet_size is not None:
+        overrides["use_single_droplet_size"] = bool(use_single_droplet_size)
+    if single_droplet_size is not None:
+        overrides["single_droplet_size"] = int(single_droplet_size)
+    if droplet_size_sampler_mode is not None:
+        overrides["droplet_size_sampler_mode"] = droplet_size_sampler_mode
+    if binding_energy_molecule_K is not None:
+        overrides["binding_energy_molecule_K"] = float(binding_energy_molecule_K)
 
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
     return cfg
+
+
+def cfg_diff_vs_reference(
+    cfg: SimConfig,
+    reference_cfg_path: "Path",
+    *,
+    context: str = "",
+) -> list[str]:
+    """Diff a built config against a stored ``cfg.json``; return the diff keys.
+
+    The single implementation of the generator-side "only these knobs may
+    differ from the reference run" guard (rule 1 — every atlas/probe generator
+    calls this instead of re-deriving the comparison).
+
+    Field-set handling is asymmetric on purpose:
+
+    * a key present in the reference but missing from ``cfg`` is an error (the
+      config surface would have *lost* a field);
+    * a key present in ``cfg`` but missing from an older reference — a
+      ``SimConfig`` field added after that run was written — is tolerated
+      **only at its dataclass default**, which is exactly the value
+      ``RunDirectory.load_cfg`` reconstructs for that stored run
+      (``SimConfig(**payload)``). A non-default value in such a field is an
+      error, because the reference cannot witness it.
+
+    Parameters
+    ----------
+    cfg
+        The freshly built config.
+    reference_cfg_path
+        Path to the reference run's ``cfg.json``.
+    context
+        Optional label prefix for error messages (e.g. the cell label).
+
+    Returns
+    -------
+    list of str
+        Sorted keys whose values differ. The caller compares this against its
+        own pre-registered diff set.
+
+    Raises
+    ------
+    AssertionError
+        On a field only in the reference, or a post-reference field set to a
+        non-default value.
+    """
+    tag = f"[{context}] " if context else ""
+    ref = json.loads(Path(reference_cfg_path).read_text(encoding="utf-8"))
+    mine = json.loads(json.dumps(dataclasses.asdict(cfg)))
+
+    only_in_ref = sorted(set(ref) - set(mine))
+    if only_in_ref:
+        raise AssertionError(
+            f"{tag}reference cfg has fields this build lacks: {only_in_ref} "
+            f"(the config surface lost a field?)"
+        )
+    fields = SimConfig.__dataclass_fields__
+    for key in sorted(set(mine) - set(ref)):
+        default = fields[key].default
+        if mine[key] != default:
+            raise AssertionError(
+                f"{tag}field {key!r} is absent from the reference cfg.json "
+                f"(which predates it) and this build sets it to {mine[key]!r} "
+                f"!= default {default!r} — the diff would be unverifiable "
+                f"against that reference."
+            )
+        ref[key] = default
+    return sorted(k for k in ref if ref[k] != mine[k])
 
 
 def tier2_bridge_run_dir_name(case: str, variant: str, n: int) -> str:

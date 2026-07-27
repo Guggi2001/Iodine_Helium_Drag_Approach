@@ -80,7 +80,12 @@ def build_initial_state(
     elif cfg.use_single_droplet_size:
         droplet_counts = np.full(N, cfg.single_droplet_size, dtype=float)
     else:
-        droplet_counts = sample_droplet_sizes(cfg, mode="post_pickup", rng=rng)
+        # Atlas G0-1: the mode was hardcoded "post_pickup" here, which is also
+        # the field default -- so every pre-field run stays bit-identical while
+        # "raw" (the parent document's ensemble, D0 §15.6) becomes reachable.
+        droplet_counts = sample_droplet_sizes(
+            cfg, mode=cfg.droplet_size_sampler_mode, rng=rng
+        )
 
     # 2. Convert N -> droplet radius (Angstrom). Bulk-density formula.
     droplet_radii_per_molecule = droplet_radius_bulk_angstrom(droplet_counts)

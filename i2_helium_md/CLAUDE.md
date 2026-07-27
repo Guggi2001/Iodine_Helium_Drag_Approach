@@ -50,7 +50,9 @@ Repo root:
 - `TIER2_SENSITIVITY_ATLAS_PLAN.md` — **current goal document** (designed
   2026-07-23): the sensitivity-atlas study program
 - `TIER2_PARAMETER_INFLUENCE.md` — compact per-knob influence reference
-  (atlas D0; living doc — its GAP markers are the atlas targets)
+  (atlas D0; living doc — its GAP markers are the atlas targets; §17 is
+  the physical-sensibility ledger: physics / convention / effective /
+  scaffolding / missing, with what would retire each)
 
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline
@@ -95,9 +97,19 @@ pair-separation scan; full record in `drag_migration_log_tier2.md` +
 findings §6.7): cubic and quadratic are physically distinguishable — the
 histogram (W₁) is form-blind but the KE/size/fate observables are not, and
 the item-1 lq over-suppression is the FORM (the E_bind confound is
-discharged). Nothing moves finc1v725; Tier-0 still rejects lq. **Next
-(plan §6.7 item 3, untriggered):** leave D → Axis A geometry grid → D2b
-→ E₀/τ curves. RQ3/RQ5 reads and
+discharged). Nothing moves finc1v725; Tier-0 still rejects lq. **D2b
+§4.1 provenance audit EXECUTED 2026-07-26** (read-only; as-built
+geometry + which sampler ran in which production — D0 §15, plan §3.1
+grid spec amended; parent-document geometry anchor recorded). **GEOMETRY
+CORRECTION adopted in principle 2026-07-26** — the droplet geometry is
+known wrong vs the experiment's source conditions; Axis A re-scoped as
+the correction (atlas plan §3, staged G0–G4 in §3.5); D0 §17
+physical-sensibility ledger added. **G0 FROZEN + stage 2b BUILT + Axis A G1
+EXECUTED + the §3.5b retained-class arm DELIVERED 2026-07-26/27** — the
+geometry grid is **complete at 11/11 cells** (the last five recovered
+detection-only, zero MD; six reproduce bit-for-bit). The marginal-exclusion
+bracket is **not tight**, so the R ≥ 49 Å deepKE/n̄ carry a stated range
+(D0 §14.2, findings §G1.4). **Next:** G2 → D2b → E₀/τ curves. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the

@@ -106,7 +106,23 @@ LadderElectronicPicture = Literal["statistical_mixture", "x2_only", "cooling_rel
 # droplet-retained class). ``refuse`` keeps the delivered loud guard;
 # ``exclude`` classifies bound ions as ``droplet_retained`` and excludes
 # them from the free-flight event loop (they can never decouple).
-DetectionDropletRetainedPolicy = Literal["refuse", "exclude"]
+#
+# ``exclude_all_coupled`` (atlas plan §3.5b, 2026-07-27) additionally counts —
+# rather than integrates — the *marginal* class: ions that are energetically
+# able to escape but are still helium-coupled at handover. They are classified
+# ``droplet_retained_marginal`` and excluded, instead of raising. The two
+# classes stay decomposed on purpose: ``droplet_retained`` is **physics** (an
+# exact conservative verdict — the ion cannot escape at any relaxation length),
+# while ``droplet_retained_marginal`` is a **modelling** exclusion conditional
+# on the drag law and the window length. Merging them would make the retained
+# fraction unreadable. Needed by the Axis A geometry cells at R >= 49 A, where
+# cubic drag over a 25-50 A path leaves a third to a half of the ions
+# undecided inside the droplet; see the plan section for the standing caveat
+# that the marginal fraction is conditional on a law extrapolated ~3x beyond
+# its 9/18 A calibration band.
+DetectionDropletRetainedPolicy = Literal[
+    "refuse", "exclude", "exclude_all_coupled"
+]
 
 # Slice T7 (Tier-2 plan §I.11): birth-position law for the molecule centre.
 # ``boltzmann`` is the delivered thermal sampler (byte-inert default);
@@ -176,6 +192,27 @@ InternalEnergyPartitionLaw = Literal["constant", "sigma_proportional"]
 DropletSizePrior = Literal[
     "legacy", "kornilov_lognormal", "pickup_weighted_lognormal"
 ]
+
+# Atlas stage 2b / G0-1 (TIER2_SENSITIVITY_ATLAS_PLAN §3.2, §3.5): which
+# distribution the ``legacy`` sampled-size branch returns. Before this field the
+# mode was hardcoded ``"post_pickup"`` at the one call site
+# (``simulation.initial_state``), so ``"raw"`` was unreachable from config even
+# though ``sampling.droplet_sizes.sample_droplet_sizes`` has always supported it.
+#
+# * ``post_pickup`` (default — byte-inert): the pickup + evaporation chain, i.e.
+#   the raw ln-normal biased by the geometric pickup cross-section N^(2/3). This
+#   is what legacy MATLAB production and the ``main``-branch port ran
+#   (realized N̄ ≈ 16.4k, R̄ ≈ 54 Å at 40 mbar / 14 K).
+# * ``raw``: the raw source-correlation ln-normal, no pickup weighting
+#   (N̄ ≈ 12.6k, R̄ ≈ 49.4 Å at the same source conditions). Identified as the
+#   parent document's own droplet ensemble: its quoted R range 34–68.3 Å matches
+#   the raw q05/q95 (34.9 / 68.7 Å), not post-pickup's (37.7 / 74.1 Å)
+#   — D0 §15.5/§15.6.
+#
+# Read only by the ``legacy`` sampled branch (``droplet_size_prior="legacy"``
+# with ``use_single_droplet_size=False``); guard-refused off-default elsewhere,
+# so it cannot ride silently inert (the T7 margin-under-boltzmann precedent).
+DropletSizeSamplerMode = Literal["raw", "post_pickup"]
 
 # The analytic-prior truncation window [He atoms] — the twin's uniform-in-lnN
 # proposal support (``tier2_h2b_forward_model.N_LO/N_HI``; rule-1 pinned by
@@ -283,6 +320,10 @@ class SimConfig:
     droplet_size_prior: DropletSizePrior = "legacy"
     droplet_prior_mean_N: float = 2000.0
     droplet_prior_delta: float = 0.625
+    # Atlas G0-1: which distribution the legacy sampled-size branch returns.
+    # Default "post_pickup" reproduces every pre-field run bit-for-bit; "raw"
+    # is the parent document's ensemble. Read only by that branch (guarded).
+    droplet_size_sampler_mode: DropletSizeSamplerMode = "post_pickup"
 
     # droplet solvation potential
     potential_steepness: float = 14.2                # atoms
@@ -518,7 +559,9 @@ class SimConfig:
     # "refuse" (default) = the delivered loud P1–P3 guard; "exclude" = classify
     # energetically bound violators `droplet_retained` per the V0-2 scoring
     # convention (excluded from the event loop and the IHe_n read; unbound
-    # violators still refuse loudly).
+    # violators still refuse loudly); "exclude_all_coupled" (atlas §3.5b,
+    # 2026-07-27) = also classify the still-coupled *unbound* violators
+    # `droplet_retained_marginal` and exclude them, so nothing refuses.
     detection_droplet_retained_policy: DetectionDropletRetainedPolicy = "refuse"
 
     # ------------------------------------------------------------------
@@ -1106,6 +1149,7 @@ def check_internal_energy_partition_config(cfg: "SimConfig") -> None:
 _KNOWN_DROPLET_SIZE_PRIORS = (
     "legacy", "kornilov_lognormal", "pickup_weighted_lognormal"
 )
+_KNOWN_DROPLET_SIZE_SAMPLER_MODES = ("raw", "post_pickup")
 
 
 def check_droplet_prior_config(cfg: "SimConfig") -> None:
@@ -1126,17 +1170,38 @@ def check_droplet_prior_config(cfg: "SimConfig") -> None:
        and the mean inside the truncation window ``[DROPLET_PRIOR_N_LO,
        DROPLET_PRIOR_N_HI]`` — a mean outside it would silently discard
        most of the prior mass (no-silent-caps).
+    5. ``droplet_size_sampler_mode`` must be a known selector (typo guard),
+       and its non-default ``"raw"`` value is refused wherever the legacy
+       sampled branch does not run — under an analytic prior arm or under
+       ``use_single_droplet_size=True`` neither branch reads it, so it would
+       be silently inert (atlas G0-1; the rule-3 precedent).
 
     Raises
     ------
     ValueError
-        On any of the four rules above.
+        On any of the five rules above.
     """
     _reject_unknown_enum(
         cfg.droplet_size_prior,
         _KNOWN_DROPLET_SIZE_PRIORS,
         field="droplet_size_prior",
     )
+    _reject_unknown_enum(
+        cfg.droplet_size_sampler_mode,
+        _KNOWN_DROPLET_SIZE_SAMPLER_MODES,
+        field="droplet_size_sampler_mode",
+    )
+    if cfg.droplet_size_sampler_mode != "post_pickup" and (
+        cfg.droplet_size_prior != "legacy" or cfg.use_single_droplet_size
+    ):
+        raise ValueError(
+            f"droplet_size_sampler_mode={cfg.droplet_size_sampler_mode!r} is "
+            f"read only by the legacy sampled-size branch "
+            f"(droplet_size_prior='legacy' with use_single_droplet_size=False); "
+            f"got droplet_size_prior={cfg.droplet_size_prior!r}, "
+            f"use_single_droplet_size={cfg.use_single_droplet_size!r}, where it "
+            f"would be silently ignored. Keep the 'post_pickup' default there."
+        )
     for arm in ("kornilov_lognormal", "pickup_weighted_lognormal"):
         _require_pairing(
             field="droplet_size_prior", value=cfg.droplet_size_prior,
@@ -1488,7 +1553,7 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
     )
 
 
-_KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude")
+_KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude", "exclude_all_coupled")
 
 
 def check_detection_config(cfg: "SimConfig") -> None:

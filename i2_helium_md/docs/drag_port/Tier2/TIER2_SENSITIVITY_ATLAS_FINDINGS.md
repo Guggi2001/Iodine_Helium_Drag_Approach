@@ -550,3 +550,291 @@ program; Tier-0 still rejects lq. The scan's role was diagnostic — it
 discharges the item-1 E_bind confound (→ form) and reframes the histogram
 form-blindness as co-compensation. **Status: EXECUTED 2026-07-24 (initial
 N = 500 single-seed + firm-up N = 1000 × 3 seeds).**
+
+## Axis A pre-read — the pooled N = 5000 battery binned by its own sampled geometry (2026-07-26, zero MD)
+
+Plan §3.4's "optional follow-up", executed **before** the Axis A grid because
+it is free: the pooled battery already samples R ∈ [14, 54] Å and birth depth
+∈ [3, 38] Å, so binning it gives the geometry response of the standing system
+at zero cost. Scratchpad read; committed §4cc scorer reused verbatim
+(`postprocess/tier2_confirmation`), no repo code added.
+
+**Oracle (pooled row vs the recorded §4cc values):** n₁_solv **0.2433**
+(recorded 0.243), W₁ **0.5713** (0.571), supp **0.1872** (0.187), n̄ 4.068,
+trapped 0.067, deep-KE 0.631. midHot **1.0110** vs recorded 1.014 — a 0.3 %
+definitional residue, not a convention choice (min_count 1 and 2 give the
+identical 1.0110); flagged, everything else reproduces at recorded precision.
+
+**Entanglement caveat, stated once and applying to every number below.** These
+bins are *sampled*, not controlled: R and birth depth co-vary, and the T5
+`density_tied` dressing ties the birth shell directly to depth
+(n₀ = round(n*·ρ̂(depth)) — measured **n₀ = 14.0 / 16.4 / 19.3** across the
+depth terciles). This read orders and bounds; it does not separate exposure
+from dressing. That is the controlled grid's job.
+
+### A. Binned by droplet radius (terciles)
+
+| | R̄ 21.0 | R̄ 26.2 | R̄ 32.9 |
+|---|---|---|---|
+| trapped | 0.0003 | 0.042 | **0.158** |
+| supp | 0.232 | 0.182 | 0.141 |
+| n̄ | 2.90 | 4.23 | 5.26 |
+| n₁_solv | 0.302 | 0.229 | 0.196 |
+| W₁ | 1.127 | 0.750 | 1.360 |
+| midHot | 0.941 | 0.990 | 1.106 |
+| deep-KE | 0.526 | 0.529 | 0.757 |
+
+### B. Binned by birth depth (terciles) — the stronger ordering
+
+| | depth 4.4 Å | depth 7.7 Å | depth 14.6 Å |
+|---|---|---|---|
+| supp | **0.381** | 0.182 | **0.003** |
+| n̄ | 2.36 | 3.52 | 6.29 |
+| n₁_solv | 0.358 | 0.322 | 0.109 |
+| W₁ | 1.083 | 0.588 | 1.593 |
+| midHot | 0.703 | 0.892 | 1.209 |
+| deep-KE | **0.316** | 0.417 | **0.792** |
+| ⟨n₀⟩ (dressing) | 14.0 | 16.4 | 19.3 |
+
+### C. 2-D (R × depth) — **the registered "R dominates" expectation is REFUTED**
+
+At **fixed birth depth, droplet radius is nearly inert** on the scored
+ensemble (supp 0.392/0.377/0.366 across R at depth 1; 0.201/0.175/0.161 at
+depth 2; 0.005/0.001/0.004 at depth 3 — deep-KE likewise flat at
+0.34/0.33/0.31, 0.51/0.40/0.41, 0.84/0.69/0.87). Only n̄ retains an R slope at
+the deepest births (4.11 → 6.07 → 7.76).
+
+**Mechanism.** The escaping fragment's He path is its *birth depth*, not the
+isotropic chord: at fixed depth the radial path to the surface is depth,
+independent of R. R acts on the *inward*-going Coulomb partner, whose path is
+≈ 2R − depth — and those fragments leave the scored ensemble instead of
+changing it (trapped 0.0003 → 0.158 across the R terciles). So **R is a
+selection knob, depth is the physics knob.** The §3.1 pre-registration
+("R moves the chord ×2.3, the law only ×1.24, so expect an R-dominated
+response") used the isotropic chord as the exposure coordinate and is
+withdrawn; birth depth is the right coordinate.
+
+### D. The histogram landing is a MIXTURE property
+
+Pooled W₁ = 0.571 is **better than every single geometry bin** (best tercile
+0.750; best quintile 0.639; edges 1.13–1.64). No single (R, depth) lands the
+solvated histogram — the ensemble average does. **Consequence for Axis A
+scoring:** fixed-R/fixed-law cells must be compared to each other and to a
+re-weighted mixture reconstruction, *never* judged directly against the
+committed acceptance. Scoring nine fixed cells against the acceptance would
+report nine spurious failures.
+
+### E. RQ11 signal — the deep-bin deficit largely closes with birth depth
+
+deep-KE ratio 0.316 → 0.792 across the depth terciles (0.63 pooled). Geometry
+— or the dressing that rides on it — is the first candidate this program has
+found that moves the RQ11 cold tail by a factor of 2.5. Confounded per the
+caveat above; disentangling requires the `initial_shell_model="full"` control
+(see the plan §3.1 amendment proposal).
+
+### F. Pre-registered prediction for the anchored cells
+
+At the parent birth law (mean depth ≈ 25 Å at R1 = 26.6 Å) the dressing
+saturates: ρ̂ = 0.994 → **n₀ = 20.9 of 21**. Extrapolating trend B: suppression
+→ ≈ 0, n̄ well above 6.3, n₁_solv ≈ 0.1 or below, W₁ ≳ 1.6. **The prediction is
+that the landing breaks at the anchored geometry, and that it breaks through
+the dressing/suppression channel rather than through drag exposure.** Frozen
+here before the grid runs.
+
+### G. Initial shell *energy* — the dressing is self-similar, and it saturates (2026-07-26, zero MD)
+
+Follow-on analysis of §B/§C, prompted by the question of what the birth
+dressing does to the *energy* budget rather than the shell count. Numbers at
+the standing ladder (`rq4graded`, Σ(21) = 0.20629 eV, E₀ = 0.27 eV):
+
+| birth depth | ρ̂ | n₀ | Σ(n₀) [eV] | Σ(n₀)/Σ(21) | E_int(0) [eV] | G = E_int − Σ |
+|---|---|---|---|---|---|---|
+| 4.4 | 0.669 | 14 | 0.1476 | 0.715 | 0.1932 | +0.0456 |
+| 7.7 | 0.778 | 16 | 0.1660 | 0.805 | 0.2173 | +0.0513 |
+| **8.9** (standing) | 0.812 | **17** | 0.1751 | 0.849 | **0.2292** | +0.0541 |
+| 14.6 | 0.927 | 19 | 0.1927 | 0.934 | 0.2522 | +0.0595 |
+| **25.0** (parent law) | 0.994 | **21** | 0.2063 | **1.000** | **0.2700** | +0.0637 |
+
+1. **The as-built dressing is energetically self-similar.** Under T6
+   `sigma_proportional` (p = 1) the onset is tied to the same n₀ that T5 sets,
+   so **E_int(0)/Σ(n₀) = E₀/Σ(n*) = 1.309 at every depth**. The self-unbound
+   margin G = 0.3088·Σ(n₀) is positive everywhere and **never changes sign
+   with dressing** — only its absolute scale moves (0.046 → 0.064 eV). The
+   depth ordering measured in §B is therefore *not* static energetics: it is
+   the dynamic race (RRK reads absolute E_int; and Newton cooling is itself
+   ρ̂-gated under `cooling_spatial_gate="density_scaled"`).
+2. **Birth depth is a 4-leg bundle**, three of them keyed to the same
+   ρ̂(depth): shell count (T5), onset energy (T6, via n₀), cooling rate (the
+   cooling gate), plus the geometric drag exposure. No single-cell contrast
+   can attribute the §B ordering; hence the C1/C2 controls (plan §3.1c).
+3. **The dressing saturates by depth ≈ 25 Å** (ρ̂ 0.994 → n₀ = 21, ratio 1).
+   At the grid's L1 (center-pin, depth 26.6 Å) and L2 (parent law, 24.8 Å)
+   the T5 and T6 arms are **structurally inert**. Controls placed there would
+   have measured nothing — they belong on L3, the shallow standing law, the
+   only row where the dressing is live. (The original control proposal was
+   corrected on this finding before launch.)
+4. **Corollary — T5 and T6 are artifacts of the shallow birth law.** The birth
+   heterogeneity those two delivered arms encode exists only because
+   production births molecules ~9 Å below the surface; at the parent model's
+   ~25 Å they do nothing. Recorded as a structural observation, not a defect
+   claim: the arms were built for twin parity, and this is what they turn out
+   to describe.
+
+## Axis A / G1 — the controlled geometry grid (2026-07-26/27, MD: 11 cells launched, 6 scored)
+
+Stage 2b executed under its trigger. `gen_tier2atlas_geometry.py`, N = 500 per
+cell, **one shared seed 20260727** (common random numbers, so cross-cell
+differences are partly paired), fixed droplet size per cell (size *sampling*
+off — the radius is the controlled variable), every other knob at the standing
+production point `finc1v725`, E_bind held at 0.1168 eV (G0-3). Scored with
+`tier2atlas_geometry_table.py`; the pooled N = 5000 battery oracle reproduced
+all seven recorded columns within 0.002 before any cell was read.
+
+**Outcome: the R1/R2 rows (6 cells) are measured; the five anchored-radius
+cells (R 49.4 / 68.3 Å) are blocked by a staging limit — see §G1.3.** The
+influence tables and the width decomposition live in
+`TIER2_PARAMETER_INFLUENCE.md` §14.1 (D0 is the influence reference; not
+duplicated here). This section records what the axis *decided*.
+
+### G1.1 The pre-registered prediction was confirmed on every clause
+
+Frozen before launch (plan §3.1, from the pre-read §F): at the anchored birth
+law the dressing saturates ⇒ supp ≈ 0, n̄ > 6.3, n₁_solv ≲ 0.1, W₁ ≳ 1.6, and
+the landing breaks through the **dressing/suppression** channel rather than
+through drag exposure. Measured at R1: supp **exactly 0**, n̄ **8.39**,
+n₁_solv **exactly 0**, W₁ **4.98**. The anchored geometry does not shift the
+histogram — it evacuates its low-n half. A confirmation, not a surprise; and
+per the pre-registered G2 decision a broken landing at the anchored geometry
+is not a reason to keep the wrong geometry.
+
+### G1.2 Three results the grid establishes that the pre-read could not
+
+1. **Size-distribution width is ~95 % geometry-inherited.** SD(n_det) tracks
+   SD(birth depth) at ≈ 1 He per Å, on top of a mechanism-only floor of
+   0.6–1.0 He exposed by the zero-spread center-pin cells. This is §3.3 Q5
+   answered with controlled cells, and it is what the L1 column was for: its
+   near-degeneracy with L2 in the *means* is exactly what makes it a clean
+   zero-spread reference. (The design note that L1 and L2 "differ essentially
+   only in birth-depth spread" is now a measurement, not a prediction.)
+2. **The landing needs the size *distribution*, not the right mean size.**
+   `r1l3` removes only the droplet-size spread from the standing configuration
+   (R pinned at its own realized mean 26.6 Å) and W₁ degrades 0.571 → 0.813
+   while supp / n₁_solv / trap / n̄ stay close — a controlled sharpening of the
+   pre-read's mixture finding.
+3. **RQ11 is on a geometry-traversable axis, and geometry overshoots it.**
+   deepKE 0.51 → 0.75 → 1.38/1.49 across depth 9 → 11 → 29–34 Å, the
+   deep-birth values resting on 6–8 occupied bins (the R1 row's 1–2 bins were
+   not readable). The deficit does not merely close with depth: it crosses 1.0
+   and overshoots to ≈ +40 % too hot, so some intermediate birth depth
+   reproduces the deep-bin KE exactly. Reported under atlas stance — these
+   cells' histograms are destroyed (W₁ 7.5–8.0), so this is a statement about
+   *which axis the deficit lives on*, not a candidate point.
+
+### G1.3 The anchored radii are blocked by a staging limit, not a bug
+
+All five R ≥ 49.4 Å cells failed the detection-stage P1–P3 handover guard.
+Diagnosed from the stored relaxation trajectories (read-only):
+
+- **⅓–½ of all ions never leave the droplet** (324–470 of 1000 reclassified
+  `droplet_retained` at R = 49.4 Å). Plan §3.6's "does the trapped channel
+  explode at large R?" is answered **yes, emphatically**.
+- The blocking ions sit **20–30 Å inside** the surface with |v_rad| ≈
+  0.01–0.04 Å/ps. Cubic drag over a 25–50 Å path takes them below the Landau
+  threshold (0.58 Å/ps), where `landau_gated_drag` switches dissipation off;
+  they then oscillate conservatively in the droplet well. Median net radial
+  progress over the window's last 4 ns is **−0.5 Å** (r3l1) / **−0.9 Å**
+  (r4l2); ~35 % still move outward, ~18 % have flatly asymptoted.
+- The escaping subset needs **~80–690 ns** more at its observed late drift
+  rate: **10–90× the 8 ns E2 window**, and it needs that time *with drag and
+  pickup live*, which E2 switches off below v_L. A modestly longer conservative
+  window is therefore the wrong instrument.
+- **The staging's timescale separation does not exist at the corrected
+  geometry.** 30 ps MD → 8 ns E2 → 8.53 µs free flight is calibrated to
+  R ≈ 27 Å, where ejected ions leave at several Å/ps and cover ~48 000 Å
+  (≈ 5 µm) inside the E2 window. At R ≥ 49 Å escape time and flight time
+  become comparable. Recorded as D0 §17's first ledger row that the geometry
+  correction **creates** rather than retires.
+- **The E_bind rider was NOT fired.** Its trigger clause included "a
+  detection-handover-guard trip", written as a proxy for the trapped channel
+  pressing against a boundary (the eb154 precedent, where a *deeper well*
+  over-retained). Here the trip comes from undecided-fate ions in an
+  undersized drag-active window, so an E_bind bracket cell would not address
+  it. Treated as not met **in substance**, with the reason recorded, rather
+  than executed mechanically.
+
+**Consequence for the G-plan.** G1 is complete for R ≤ 34 Å and *blocked*
+above it. G2 (the adoption decision) cannot be taken on the R3/R4 evidence it
+was designed to read, because the model cannot currently produce that
+evidence. The open question this hands forward is whether the ~µs in-droplet
+residence at large R is a real prediction of the drag model or a sign that the
+law over-dissipates at these path lengths — the Tier-0 calibration never saw a
+25–50 Å path. Nothing adopted; `finc1v725` stands; F5 undischarged.
+
+> **SUPERSEDED for the blocking claim only (2026-07-27, §G1.4):** the block is
+> lifted by the retained-class arm and all 11 cells are scored. The physics
+> diagnosis above stands unchanged; "the model cannot produce that evidence"
+> is now false.
+
+### G1.4 The grid completed — retained-class arm + the marginal bracket (2026-07-27, zero MD)
+
+`detection_droplet_retained_policy="exclude_all_coupled"` (plan §3.5b) built
+and run. The five blocked cells were completed **from their stored
+`relaxation.npz` by re-running only the detection stage — zero new MD**, since
+they had failed *after* the MD. Influence tables live in
+`TIER2_PARAMETER_INFLUENCE.md` §14.1–§14.2 (D0 is the influence reference, not
+duplicated here); this section records what the step *decided*.
+
+**Arm oracle passed (§3.5b item 10).** Re-running detection on the six
+already-scored R ≤ 34 Å cells under the new policy reproduced every field of
+every `detection.npz` **bit-for-bit** — as it must, since every violator there
+was provably bound, so the marginal class is empty at those radii. The
+generator refuses to overwrite a differing result unless explicitly told to, so
+this is enforced rather than asserted.
+
+**The decomposition was load-bearing, not bookkeeping.** The coupled class's
+*composition* inverts across the grid: at R = 49.4 Å it is 98–99 % **bound**
+(physics — provably cannot escape), while at R = 68.3 Å on the parent law it is
+75 % **marginal** (600 of 800 — a modelling convention). A single `trap` column
+would have presented 0.476 and 0.800 as the same kind of quantity. Both
+fractions are now printed separately, read through one shared constant.
+
+**The pre-registered bracket came out NOT TIGHT — with the direction predicted
+correctly.** Arm A (marginals excluded) vs Arm B (marginals injected at
+handover `n` and their exact conservative asymptotic KE): tight at r3l2/r3l3
+(marginal fractions 0.006 / 0.002), **wide at r3l1, r4l2, r4l3** — deepKE moves
+−0.41 to −1.61 (10–38 seed-SD), n̄ up to +3.38, W₁ up to +3.35, while midHot is
+flat to 0.000 and supp is unchanged, exactly as frozen. So the R ≥ 49 Å deepKE
+and n̄ values are **conditional on the exclusion**; the R ≤ 34 Å rows — and
+therefore all of §G1.2 — are not.
+
+**Adjudication of the interpretation the arm was built under.** The recorded
+read was that the retained class is slow, high-n, and does not move the result.
+Measured: the first two clauses are **confirmed** (median handover n = 16–19,
+median asymptotic KE clipping to **0.000 eV**, full-credit ceiling
+0.031–0.094 eV against an experimental mean of 0.066 eV at the same n); the
+third is **refuted**, because slow-and-high-n is not a null direction — it is
+the RQ11 direction, so it lands squarely on the deep-bin observables and
+nowhere else. Both halves come from the same table.
+
+**A convention-level result worth its own line.** `KE_asym` uses the physical
+half-credit pair-Coulomb split, whereas `_conservatively_bound` credits the
+**full** pair energy to both fragments — a deliberate, documented over-estimate
+that keeps a `bound` verdict certain. The median marginal ion clears its
+barrier *only* under that over-crediting. So "marginal" means **"not provably
+bound"**, and the marginal fraction is an **upper bound** on genuine slow
+escapers rather than an estimate of them. This is why excluding the class stays
+defensible even with a wide bracket: the population is physically dubious, and
+the honest statement is that the anchored-radius KE observables carry a stated
+range instead of a value.
+
+**Still open, deliberately.** Arm B is the conservative corner — it holds `n`
+fixed and lets the ion coast. Over the ~80–690 ns these ions need, live pickup
+would raise `n` and mass-load them, plausibly into the bound class, which would
+mean the conservative split *understates* trapping. That is the kinetic forward
+model (conservative orbit + Poisson pickup + RRK), unfunded. The arm also does
+not touch whether cubic drag over-dissipates on 25–50 Å paths (the collaborator
+ask; the cheap distinguishing test remains that a *geometric* retained fraction
+is insensitive to (v_c, b) while an over-dissipation artifact is not).
+
+**Atlas stance intact:** nothing adopted, `finc1v725` stands, F5 undischarged,
+G2 not taken.

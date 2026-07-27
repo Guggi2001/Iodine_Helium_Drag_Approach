@@ -29,6 +29,11 @@ import pytest
 from i2_helium_md.postprocess.abundance_loader import HeAbundanceReference
 from i2_helium_md.postprocess.ihe_ked import IHeKedReference
 from i2_helium_md.postprocess.tier2_confirmation import (
+    DEEP_KE_BAND,
+    MIDHOT_BAND,
+    deep_bin_ke_ratio,
+    ke_band_ratio,
+    midhot_ratio,
     read_confirmation_detection,
     load_twin_prediction,
     load_twin_ke_curve,
@@ -780,3 +785,109 @@ class TestLegTableNanConvention:
         assert mod._nan_if_none(0.0) == 0.0
         assert mod._nan_if_none(1.25) == 1.25
         assert np.isnan(mod._nan_if_none(None))
+
+
+# ---------------------------------------------------------------------------
+# Band-ratio observables: midHot (n 2-8, geometric) / deep-bin KE (n 10-17,
+# arithmetic). The two committed conventions the atlas tables report; the
+# aggregate choice is load-bearing (recorded midHot 1.0110 geometric vs
+# 1.0139 arithmetic on the same pooled battery).
+# ---------------------------------------------------------------------------
+
+class TestKEBandRatio:
+    @staticmethod
+    def _read_with_bins(bin_to_ke):
+        """One ion per requested bin, at exactly the requested KE."""
+        ns = sorted(bin_to_ke)
+        det = make_detection(
+            n_detected=ns,
+            state_reason=["ejected"] * len(ns),
+            ke_eV=[bin_to_ke[n] for n in ns],
+        )
+        return read_confirmation_detection(det, label="band")
+
+    def test_committed_bands(self):
+        assert MIDHOT_BAND == (2, 8)
+        assert DEEP_KE_BAND == (10, 17)
+
+    def test_per_bin_ratio_against_the_raw_reference_mean(self):
+        read = self._read_with_bins({2: 0.4, 3: 0.3})
+        ref = make_ked_reference([2, 3], [0.2, 0.2])
+        out = ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="arithmetic")
+        np.testing.assert_allclose(out.ratio, [2.0, 1.5])
+        assert out.value == pytest.approx(1.75)
+        assert out.n_bins == 2
+        np.testing.assert_array_equal(out.n, [2, 3])
+
+    def test_geometric_and_arithmetic_differ_and_are_both_available(self):
+        read = self._read_with_bins({2: 0.4, 3: 0.3})
+        ref = make_ked_reference([2, 3], [0.2, 0.2])
+        geo = ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="geometric")
+        ari = ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="arithmetic")
+        assert geo.value == pytest.approx(np.sqrt(2.0 * 1.5))
+        assert ari.value == pytest.approx(1.75)
+        assert geo.value < ari.value          # AM-GM, always
+        assert (geo.aggregate, ari.aggregate) == ("geometric", "arithmetic")
+
+    def test_band_edges_are_inclusive_and_outside_bins_ignored(self):
+        read = self._read_with_bins({1: 9.0, 2: 0.4, 3: 0.4, 4: 9.0})
+        ref = make_ked_reference([1, 2, 3, 4], [0.2, 0.2, 0.2, 0.2])
+        out = ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="arithmetic")
+        np.testing.assert_array_equal(out.n, [2, 3])
+        assert out.value == pytest.approx(2.0)
+
+    def test_bins_missing_from_the_reference_are_skipped_and_counted(self):
+        read = self._read_with_bins({2: 0.4, 3: 0.4})
+        ref = make_ked_reference([2], [0.2])       # no n = 3 row
+        out = ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="arithmetic")
+        assert out.n_bins == 1
+        np.testing.assert_array_equal(out.n, [2])
+
+    def test_empty_band_is_nan_not_an_error(self):
+        read = self._read_with_bins({2: 0.4})
+        ref = make_ked_reference([2], [0.2])
+        out = ke_band_ratio(read, ref, n_lo=10, n_hi=17)
+        assert np.isnan(out.value) and out.n_bins == 0
+
+    def test_min_count_thins_bins(self):
+        det = make_detection(
+            n_detected=[2, 2, 3],
+            state_reason=["ejected"] * 3,
+            ke_eV=[0.4, 0.4, 0.4],
+        )
+        read = read_confirmation_detection(det, label="thin")
+        ref = make_ked_reference([2, 3], [0.2, 0.2])
+        keep_all = ke_band_ratio(read, ref, n_lo=2, n_hi=3, min_count=1)
+        drop_thin = ke_band_ratio(read, ref, n_lo=2, n_hi=3, min_count=2)
+        assert keep_all.n_bins == 2 and drop_thin.n_bins == 1
+        np.testing.assert_array_equal(drop_thin.n, [2])
+
+    def test_named_wrappers_carry_the_committed_defaults(self):
+        bins = {n: 0.4 for n in range(2, 18)}
+        read = self._read_with_bins(bins)
+        ref = make_ked_reference(list(range(2, 18)), [0.2] * 16)
+        mid = midhot_ratio(read, ref)
+        deep = deep_bin_ke_ratio(read, ref)
+        assert mid.aggregate == "geometric" and mid.n_bins == 7   # n = 2..8
+        assert deep.aggregate == "arithmetic" and deep.n_bins == 8  # n = 10..17
+        assert mid.value == pytest.approx(2.0)
+        assert deep.value == pytest.approx(2.0)
+
+    def test_suppressed_bin_zero_never_enters_either_band(self):
+        det = make_detection(
+            n_detected=[0, 2],
+            state_reason=["suppressed", "ejected"],
+            ke_eV=[5.0, 0.4],
+        )
+        read = read_confirmation_detection(det, label="supp")
+        ref = make_ked_reference([0, 2], [0.2, 0.2])
+        out = midhot_ratio(read, ref)
+        np.testing.assert_array_equal(out.n, [2])
+
+    def test_invalid_inputs_raise(self):
+        read = self._read_with_bins({2: 0.4})
+        ref = make_ked_reference([2], [0.2])
+        with pytest.raises(ValueError, match="n_lo must be <= n_hi"):
+            ke_band_ratio(read, ref, n_lo=5, n_hi=2)
+        with pytest.raises(ValueError, match="unknown aggregate"):
+            ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="harmonic")

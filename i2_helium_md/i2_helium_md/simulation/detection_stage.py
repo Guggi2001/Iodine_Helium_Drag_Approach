@@ -138,10 +138,39 @@ EPS_DRAIN: float = 1e-6
 #: member is the T9 leg-A' V0-2 exclude-policy class -- review fix 2026-07-18:
 #: it was emitted by the event loop but missing here, so the stage's own
 #: ``detection.npz`` failed its load-time reason check and
-#: ``reason_fractions`` silently dropped the retained class).
+#: ``reason_fractions`` silently dropped the retained class; the fifth is the
+#: ``exclude_all_coupled`` marginal class, atlas plan §3.5b 2026-07-27).
 STATE_REASONS: tuple[str, ...] = (
-    "frozen", "suppressed", "time_exhausted", "droplet_retained",
+    "frozen", "suppressed", "time_exhausted",
+    "droplet_retained", "droplet_retained_marginal",
 )
+
+#: The retained (non-arrival) classes, kept **decomposed** but read through
+#: **one** shared constant so no consumer can drift on the vocabulary (atlas
+#: plan §3.5b item 2). Semantics differ and the decomposition is the point:
+#:
+#: * ``droplet_retained`` -- **physics.** The exact conservative verdict of
+#:   :func:`_conservatively_bound`: total energy below the effective-potential
+#:   barrier including angular momentum, so the ion cannot escape at *any*
+#:   relaxation length.
+#: * ``droplet_retained_marginal`` -- **modelling exclusion.** Energetically
+#:   able to escape, but still helium-coupled at handover, so the three-stage
+#:   staging cannot carry it to the detector. Conditional on the drag law and
+#:   the window length, NOT a statement about nature.
+#:
+#: Every numeric aggregate over the detected ensemble masks out both; reports
+#: print the two fractions separately.
+RETAINED_REASONS: frozenset[str] = frozenset(
+    {"droplet_retained", "droplet_retained_marginal"}
+)
+
+#: The physics half of :data:`RETAINED_REASONS` (provably cannot escape).
+RETAINED_BOUND_REASON: str = "droplet_retained"
+#: The modelling half (can escape, still coupled at handover).
+RETAINED_MARGINAL_REASON: str = "droplet_retained_marginal"
+
+# Deterministic list form for ``np.isin`` (sets are not array-like).
+_RETAINED_REASON_LIST: tuple[str, ...] = tuple(sorted(RETAINED_REASONS))
 
 # detection.npz schema (this artifact's own version counter; it is NOT an
 # IonCheckpoint and does not participate in the v5->v6->v7 cascade).
@@ -194,11 +223,14 @@ class DetectionResult:
         terminal), ``"suppressed"`` (ejected net-self-unbound complex, rides
         to the detector at its handover ``n``; OQ-B untouched),
         ``"time_exhausted"`` (cascade live at the detector -- the physical
-        in-flight snapshot), or ``"droplet_retained"`` (well-trapped ion
-        under ``detection_droplet_retained_policy="exclude"``; its per-ion
-        rows hold the **verbatim in-droplet handover state**, never a
-        detector arrival -- every numeric read over the detected ensemble
-        must mask with :attr:`detected_mask`).
+        in-flight snapshot), ``"droplet_retained"`` (well-trapped ion
+        under ``detection_droplet_retained_policy="exclude"``), or
+        ``"droplet_retained_marginal"`` (still helium-coupled but not
+        energetically bound, under ``"exclude_all_coupled"``). The rows of
+        both retained classes hold the **verbatim in-droplet handover
+        state**, never a detector arrival -- every numeric read over the
+        detected ensemble must mask with :attr:`detected_mask`. See
+        :data:`RETAINED_REASONS` for why the two stay decomposed.
     event_offsets : np.ndarray, shape (2N+1,), int
         Ragged-record offsets into the flat event arrays; ``event_offsets[0]
         == 0`` and ``event_offsets[-1] == num_events``.
@@ -254,16 +286,17 @@ class DetectionResult:
     def detected_mask(self) -> np.ndarray:
         """Boolean (2N,) mask of ions that actually reached the detector.
 
-        ``droplet_retained`` rows carry the verbatim in-droplet handover
-        state (large ``n_shell``, in-droplet velocity/``E_int``) -- they are
-        NOT detector arrivals. Every numeric aggregate over the detected
-        ensemble (``n_detected`` histograms/means, ``E_kin_detected_eV``,
-        ``mass_detected_kg``) must select through this mask (review fix
-        2026-07-18: the exclude policy previously excluded retained ions
-        from the event loop only, and unmasked consumers silently folded
-        their handover state into the terminal IHe_n read).
+        Rows in either :data:`RETAINED_REASONS` class carry the verbatim
+        in-droplet handover state (large ``n_shell``, in-droplet
+        velocity/``E_int``) -- they are NOT detector arrivals. Every numeric
+        aggregate over the detected ensemble (``n_detected``
+        histograms/means, ``E_kin_detected_eV``, ``mass_detected_kg``) must
+        select through this mask (review fix 2026-07-18: the exclude policy
+        previously excluded retained ions from the event loop only, and
+        unmasked consumers silently folded their handover state into the
+        terminal IHe_n read).
         """
-        return np.asarray(self.state_reason) != "droplet_retained"
+        return ~np.isin(np.asarray(self.state_reason), _RETAINED_REASON_LIST)
 
     def events_for_ion(self, ion_id: int) -> slice:
         """The flat-array slice holding ion ``ion_id``'s event records."""
@@ -473,10 +506,18 @@ def run_detection_stage(
     # policy -- the trapped class is physics, an undecoupled escaper is a
     # configuration error.
     droplet_retained = np.zeros(two_n, dtype=bool)
-    if np.any(violators) and cfg.detection_droplet_retained_policy == "exclude":
+    droplet_retained_marginal = np.zeros(two_n, dtype=bool)
+    policy = cfg.detection_droplet_retained_policy
+    if np.any(violators) and policy in ("exclude", "exclude_all_coupled"):
         bound = _conservatively_bound(seed, seed_ckpt, cfg)
         droplet_retained = violators & bound
         violators = violators & ~bound
+        if policy == "exclude_all_coupled":
+            # Atlas §3.5b: the still-coupled *unbound* remainder is counted,
+            # not integrated, and never raises. It keeps its own reason so the
+            # modelling exclusion is never read as the physics verdict.
+            droplet_retained_marginal = violators.copy()
+            violators = np.zeros(two_n, dtype=bool)
     if np.any(violators):
         idx = np.flatnonzero(violators)
         badness = np.maximum(
@@ -500,7 +541,12 @@ def run_detection_stage(
             "must freeze in E2 -- its non-frozen ions can never hand over. "
             "A genuinely well-trapped (energetically bound) ion never "
             "decouples: select detection_droplet_retained_policy='exclude' "
-            "to classify it droplet_retained per the V0-2 convention."
+            "to classify it droplet_retained per the V0-2 convention. If the "
+            "remaining violators are unbound but still helium-coupled (the "
+            "large-droplet case, where drag over a long path leaves their "
+            "fate undecided inside the window), 'exclude_all_coupled' counts "
+            "them as droplet_retained_marginal instead of integrating them -- "
+            "a MODELLING exclusion conditional on the drag law, not physics."
         )
 
     # ---- RNG (stage-private stream; shared derivation helper) -----------
@@ -527,11 +573,14 @@ def run_detection_stage(
     ev_dE_mt: list[float] = []
 
     for i in range(two_n):
-        if droplet_retained[i]:
-            # V0-2 convention: droplet-retained ions carry their handover
-            # state verbatim (no events) and are excluded from the IHe_n
-            # read by their state reason.
-            reasons.append("droplet_retained")
+        if droplet_retained[i] or droplet_retained_marginal[i]:
+            # V0-2 convention: retained ions of either class carry their
+            # handover state verbatim (no events) and are excluded from the
+            # IHe_n read by their state reason.
+            reasons.append(
+                RETAINED_BOUND_REASON if droplet_retained[i]
+                else RETAINED_MARGINAL_REASON
+            )
             ev_offsets[i + 1] = len(ev_time)
             continue
         t = t_h
@@ -637,8 +686,55 @@ def run_detection_stage(
     return result
 
 
+@dataclass(frozen=True)
+class EscapeEnergetics:
+    """Per-ion escape bookkeeping at handover (all arrays shape ``(2N,)``).
+
+    The single evaluation of the conservative escape criterion. Both the
+    ``exclude`` policies (through :func:`_conservatively_bound`) and the atlas
+    §3.5b bracket diagnostic read it, so the physics exists once.
+
+    Attributes
+    ----------
+    bound : np.ndarray of bool
+        ``E_tot_eV < barrier_eV`` -- cannot reach infinity at any relaxation
+        length. The ``droplet_retained`` (physics) class.
+    E_tot_eV : np.ndarray
+        ``E_kin + U(depth) + E_coul_pair`` [eV], with the **full** pair
+        Coulomb credited to both fragments (the delivered conservative
+        over-estimate; see :func:`_conservatively_bound`).
+    E_coul_pair_eV : np.ndarray
+        The pair Coulomb term alone [eV], tiled over both fragments.
+    barrier_eV : np.ndarray
+        ``max_{r' >= r} V_eff(r')`` [eV], floored at the ``r' -> inf``
+        asymptote ``binding_energy_I_ion_eV``.
+    asymptotic_ke_eV : np.ndarray
+        Kinetic energy an escaping ion reaches at infinity [eV], on the
+        **half-credit** pair split (each fragment carries half the shared
+        Coulomb reservoir -- the physical asymptotic partition for the
+        equal-mass pair): ``E_tot - 0.5*E_coul_pair - U(inf)``, clipped at 0.
+        Exact under the E2 dynamics, which are zero-gamma (no drag), so no
+        integration is involved. Meaningless for ``bound`` ions.
+    asymptotic_ke_ceiling_eV : np.ndarray
+        The same quantity on the full-credit split, i.e. an upper bound:
+        ``E_tot - U(inf)``, clipped at 0. Reported alongside so a bracket
+        that uses these energies states both ends of the pair-splitting
+        convention rather than hiding it.
+    """
+
+    bound: np.ndarray
+    E_tot_eV: np.ndarray
+    E_coul_pair_eV: np.ndarray
+    barrier_eV: np.ndarray
+    asymptotic_ke_eV: np.ndarray
+    asymptotic_ke_ceiling_eV: np.ndarray
+
+
 def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
     """Per-ion mask: cannot reach infinity under the E2 conservative dynamics.
+
+    Thin wrapper over :func:`escape_energetics` (``.bound``), kept as the
+    guard's call site and its published name.
 
     The droplet-retained criterion for the ``exclude`` policy (V0-2
     convention, barrier-corrected 2026-07-16). The E2 relaxation "coulomb"
@@ -670,6 +766,36 @@ def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
 
     Returns a boolean (2N,) mask. Units: masses kg -> amu; energies eV via
     the amu*A^2/ps^2 conversion (strict dimensional bookkeeping).
+    """
+    return escape_energetics(seed, seed_ckpt, cfg).bound
+
+
+def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
+    """Evaluate the conservative escape criterion once, keeping its pieces.
+
+    The physics is :func:`_conservatively_bound`'s (read that docstring for
+    the criterion, the angular-momentum barrier and the pair-Coulomb
+    convention); this entry point additionally returns the intermediate
+    energies, because the escaping ion's asymptotic kinetic energy is already
+    one of them -- E2 is zero-gamma, so an unbound ion arrives at infinity
+    with exactly ``E_tot - U(inf)`` and nothing has to be integrated.
+
+    Parameters
+    ----------
+    seed
+        Ion state at the handover column (the object
+        ``ion_state_from_checkpoint_column`` returns).
+    seed_ckpt
+        The seed :class:`IonCheckpoint` (read for
+        ``droplet_radii_angstrom``).
+    cfg
+        Config supplying ``potential_steepness``,
+        ``binding_energy_I_ion_eV`` and the pair-interaction settings.
+
+    Returns
+    -------
+    EscapeEnergetics
+        Per-ion arrays of shape ``(2N,)``.
     """
     x = np.asarray(seed.x, dtype=float)
     y = np.asarray(seed.y, dtype=float)
@@ -729,11 +855,17 @@ def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
     E_cf_grid = _amu_ang2_ps2_to_eV(
         0.5 * m_amu[:, None] * h2[:, None] / r_grid**2
     )
-    barrier = np.maximum(
-        (U_grid + E_cf_grid).max(axis=1),
-        cfg.binding_energy_I_ion_eV,      # the r' -> inf asymptote
+    U_inf = float(cfg.binding_energy_I_ion_eV)            # the r' -> inf asymptote
+    barrier = np.maximum((U_grid + E_cf_grid).max(axis=1), U_inf)
+    E_coul_tiled = np.tile(E_coul_pair, 2)
+    return EscapeEnergetics(
+        bound=E_tot < barrier,
+        E_tot_eV=E_tot,
+        E_coul_pair_eV=E_coul_tiled,
+        barrier_eV=barrier,
+        asymptotic_ke_eV=np.maximum(E_tot - 0.5 * E_coul_tiled - U_inf, 0.0),
+        asymptotic_ke_ceiling_eV=np.maximum(E_tot - U_inf, 0.0),
     )
-    return E_tot < barrier
 
 
 # ===========================================================================

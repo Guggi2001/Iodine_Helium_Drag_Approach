@@ -96,6 +96,57 @@ def test_nonpositive_delta_refused_under_analytic_arm():
         check_droplet_prior_config(cfg)
 
 
+class TestSamplerMode:
+    """Atlas G0-1: ``droplet_size_sampler_mode`` (``raw`` / ``post_pickup``).
+
+    Before the field the mode was hardcoded ``"post_pickup"`` at the single
+    call site, so the default is the byte-inert value and ``raw`` — the parent
+    document's own ensemble (D0 §15.6) — becomes reachable. Guarded in the
+    rule-3 direction: refused wherever the legacy *sampled* branch does not
+    run, since nothing would read it there.
+    """
+
+    def test_default_is_post_pickup_the_byte_inert_value(self):
+        assert SimConfig().droplet_size_sampler_mode == "post_pickup"
+        fields = SimConfig.__dataclass_fields__
+        assert fields["droplet_size_sampler_mode"].default == "post_pickup"
+
+    def test_unknown_mode_rejected(self):
+        cfg = SimConfig(droplet_size_sampler_mode="bogus",
+                        use_single_droplet_size=False)
+        with pytest.raises(ValueError, match="droplet_size_sampler_mode"):
+            check_droplet_prior_config(cfg)
+
+    def test_raw_accepted_on_the_legacy_sampled_branch(self):
+        cfg = SimConfig(droplet_size_sampler_mode="raw",
+                        use_single_droplet_size=False)
+        check_droplet_prior_config(cfg)  # no raise
+
+    def test_raw_refused_under_fixed_size(self):
+        # The fixed-size branch never samples, so the mode would be inert.
+        cfg = SimConfig(droplet_size_sampler_mode="raw",
+                        use_single_droplet_size=True)
+        with pytest.raises(ValueError, match="droplet_size_sampler_mode"):
+            check_droplet_prior_config(cfg)
+
+    def test_raw_refused_under_an_analytic_prior_arm(self):
+        # The analytic arms bypass sample_droplet_sizes entirely.
+        cfg = SimConfig(droplet_size_sampler_mode="raw",
+                        droplet_size_prior="kornilov_lognormal",
+                        use_single_droplet_size=False)
+        with pytest.raises(ValueError, match="droplet_size_sampler_mode"):
+            check_droplet_prior_config(cfg)
+
+    def test_default_mode_stays_legal_everywhere(self):
+        # The default must never trip the guard, or every existing cfg breaks.
+        for prior, single in (("legacy", True), ("legacy", False),
+                              ("kornilov_lognormal", False)):
+            check_droplet_prior_config(
+                SimConfig(droplet_size_prior=prior,
+                          use_single_droplet_size=single)
+            )
+
+
 def test_mean_outside_truncation_window_refused():
     # The truncation window [250, 16000] is the twin's proposal support
     # (T8-D2); a mean outside it would silently discard most of the prior

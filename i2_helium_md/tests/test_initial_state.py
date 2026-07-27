@@ -327,3 +327,59 @@ class TestSingleInitialPosition:
                                    rng=np.random.default_rng(0))
         # Without the flag, molecules keep their Boltzmann-sampled radii.
         assert np.any(ckpt.r0 != 0.0)
+
+
+class TestDropletSizeSamplerMode:
+    """Atlas G0-1: the legacy sampled-size branch honours the config mode.
+
+    Before the field, ``build_initial_state`` hardcoded ``mode="post_pickup"``
+    at this call site. The field default is that same value, so the default
+    path must stay bit-identical, while ``"raw"`` must actually change the
+    sampled droplet ensemble (D0 §15.6: ``raw`` is the parent document's own
+    ensemble, ~30 % smaller in the mean than the pickup-weighted one).
+    """
+
+    @staticmethod
+    def _sampled_cfg(**overrides):
+        from dataclasses import replace
+        cfg = single_pulse_N2000(num_molecules=400, seed=7)
+        return replace(
+            cfg,
+            use_single_droplet_size=False,
+            single_initial_position=False,
+            **overrides,
+        )
+
+    def test_default_matches_explicit_post_pickup_bit_for_bit(self):
+        default = self._sampled_cfg()
+        explicit = self._sampled_cfg(droplet_size_sampler_mode="post_pickup")
+        assert default.droplet_size_sampler_mode == "post_pickup"
+        a = build_initial_state(default, num_steps=2,
+                                rng=np.random.default_rng(11))
+        b = build_initial_state(explicit, num_steps=2,
+                                rng=np.random.default_rng(11))
+        np.testing.assert_array_equal(a.droplet_radii, b.droplet_radii)
+
+    def test_raw_mode_changes_the_sampled_ensemble(self):
+        raw = self._sampled_cfg(droplet_size_sampler_mode="raw")
+        post = self._sampled_cfg(droplet_size_sampler_mode="post_pickup")
+        r_raw = build_initial_state(raw, num_steps=2,
+                                    rng=np.random.default_rng(11)).droplet_radii
+        r_post = build_initial_state(post, num_steps=2,
+                                     rng=np.random.default_rng(11)).droplet_radii
+        # Pickup weights by the geometric cross-section N^(2/3), so the
+        # post-pickup mean radius is the larger one. Statistical assertion at
+        # N = 400 molecules: the recorded gap is R 49.4 vs 53.8 A (~9 %).
+        assert r_raw.mean() < r_post.mean()
+        assert r_post.mean() / r_raw.mean() > 1.02
+
+    def test_fixed_size_branch_ignores_the_mode_by_guard(self):
+        # The guard refuses 'raw' where nothing would read it, so a fixed-size
+        # cfg cannot silently carry it (config-load, not runtime).
+        import pytest as _pytest
+        from dataclasses import replace
+        cfg = replace(single_pulse_N2000(num_molecules=5, seed=0),
+                      droplet_size_sampler_mode="raw")
+        assert cfg.use_single_droplet_size is True
+        with _pytest.raises(ValueError, match="droplet_size_sampler_mode"):
+            cfg.validate()

@@ -26,14 +26,22 @@ from i2_helium_md.config import check_detection_config
 from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 from i2_helium_md.physics.dissociation_ladder import d0_of_n, ladder_cumsum
 from i2_helium_md.physics.evaporation import rrk_rate
+from i2_helium_md.postprocess.detected_view import detected_ensemble_view
 from i2_helium_md.postprocess.size_distribution import (
     compute_terminal_shell_distribution,
+)
+from i2_helium_md.postprocess.tier2_confirmation import (
+    read_confirmation_detection,
 )
 from i2_helium_md.simulation.checkpoint import IonCheckpoint, load_ion_checkpoint
 from i2_helium_md.simulation.detection_stage import (
     DETECTION_STREAM_KEY,
     EPS_DRAIN,
+    RETAINED_REASONS,
+    STATE_REASONS,
     DetectionResult,
+    _conservatively_bound,
+    escape_energetics,
     load_detection_result,
     run_detection_stage,
     save_detection_result,
@@ -477,6 +485,201 @@ class TestDropletRetainedPolicy:
         with pytest.raises(ValueError, match="detection_droplet_retained_policy"):
             cfg = _detect_cfg(detection_droplet_retained_policy="nope")
             cfg.validate()
+
+
+# ---------------------------------------------------------------------------
+# Atlas plan §3.5b -- the `exclude_all_coupled` arm (marginal class)
+# ---------------------------------------------------------------------------
+class TestExcludeAllCoupledPolicy:
+    """``exclude_all_coupled`` counts, rather than integrates, EVERY ion still
+    helium-coupled at handover. The class stays decomposed: an energetically
+    bound violator remains ``droplet_retained`` (physics -- it can never
+    escape), while an unbound-but-coupled violator becomes
+    ``droplet_retained_marginal`` (a modelling exclusion conditional on the
+    drag law and the window length). Nothing refuses under this arm."""
+
+    def _frozen_E(self, cfg):
+        picture, kappa = _ladder(cfg)
+        return 0.5 * float(d0_of_n(21, picture=picture, kappa=kappa))
+
+    def _cfg(self, **kw):
+        return _detect_cfg(
+            seed=3, detection_droplet_retained_policy="exclude_all_coupled",
+            **kw,
+        )
+
+    def test_unbound_coupled_ion_becomes_marginal_instead_of_refusing(self):
+        # The exact fixture that refuses under "exclude" (speed 5 A/ps -> KE
+        # 0.27 eV > the 0.117 eV well, so NOT bound, but still inside helium).
+        cfg = self._cfg()
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True, speed=5.0)
+        res = run_detection_stage(seed, cfg)
+        assert set(res.state_reason) == {"droplet_retained_marginal"}
+        # verbatim handover state, no events, excluded from the detected read
+        assert res.n_detected[0] == 21.0
+        assert res.event_offsets[-1] == 0
+        assert not res.detected_mask.any()
+
+    def test_bound_and_marginal_stay_decomposed_in_one_run(self):
+        cfg = self._cfg()
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True, num_molecules=2)
+        seed.positions_z[2:, 0] = 1.0e5      # ions 2,3 properly ejected
+        # ion 0 stays slow (bound); ion 1 gets 5 A/ps (unbound but coupled)
+        fast = 5.0
+        seed.velocities_x[1, 0] = fast
+        seed.E_kin_eV[1, 0] = _E_kin_eV(
+            seed.mass_kg[1:2], np.array([fast]), np.array([0.0]),
+            np.array([0.0]),
+        )[0]
+        res = run_detection_stage(seed, cfg)
+        assert res.state_reason[0] == "droplet_retained"
+        assert res.state_reason[1] == "droplet_retained_marginal"
+        assert set(res.state_reason[2:]) == {"frozen"}
+        # One shared constant excludes both; the two remain distinguishable.
+        assert res.detected_mask.tolist() == [False, False, True, True]
+
+    def test_agrees_bit_for_bit_with_exclude_when_no_ion_is_marginal(self):
+        """The arm oracle in miniature (plan §3.5b item 10): where every
+        violator is provably bound, the new policy must be a no-op. This is
+        the property the six R <= 34 A geometry cells were re-verified on."""
+        common = dict(n_shell=21, inside=True)
+        cfg_old = _detect_cfg(seed=3,
+                              detection_droplet_retained_policy="exclude")
+        cfg_new = self._cfg()
+        seed_old = _far_seed(cfg_old, E_int_eV=self._frozen_E(cfg_old), **common)
+        seed_new = _far_seed(cfg_new, E_int_eV=self._frozen_E(cfg_new), **common)
+        seed_old.positions_z[1:, 0] = 1.0e5
+        seed_new.positions_z[1:, 0] = 1.0e5
+        res_old = run_detection_stage(seed_old, cfg_old)
+        res_new = run_detection_stage(seed_new, cfg_new)
+        assert res_new.state_reason.tolist() == res_old.state_reason.tolist()
+        assert "droplet_retained_marginal" not in set(res_new.state_reason)
+        for field in ("n_detected", "E_kin_detected_eV", "E_int_detected_eV",
+                      "vx_detected", "event_offsets"):
+            np.testing.assert_array_equal(
+                getattr(res_new, field), getattr(res_old, field)
+            )
+
+    def test_default_and_exclude_arms_are_untouched_by_the_new_member(self):
+        # The new enum member must not change either delivered arm.
+        cfg_refuse = _detect_cfg(seed=3)
+        seed = _far_seed(cfg_refuse, n_shell=21,
+                         E_int_eV=self._frozen_E(cfg_refuse), inside=True)
+        with pytest.raises(ValueError, match="P1-P3"):
+            run_detection_stage(seed, cfg_refuse)
+        cfg_excl = _detect_cfg(seed=3,
+                               detection_droplet_retained_policy="exclude")
+        seed2 = _far_seed(cfg_excl, n_shell=21,
+                          E_int_eV=self._frozen_E(cfg_excl), inside=True,
+                          speed=5.0)
+        with pytest.raises(ValueError, match="P1-P3"):
+            run_detection_stage(seed2, cfg_excl)
+
+    def test_marginal_reason_round_trips_and_is_excluded_everywhere(
+        self, tmp_path
+    ):
+        cfg = self._cfg()
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True, speed=5.0)
+        seed.positions_z[1:, 0] = 1.0e5
+        res = run_detection_stage(seed, cfg)
+        loaded = load_detection_result(
+            save_detection_result(res, tmp_path / "detection.npz")
+        )
+        assert loaded.state_reason[0] == "droplet_retained_marginal"
+        fr = loaded.reason_fractions()
+        assert fr["droplet_retained_marginal"] == pytest.approx(0.25)
+        assert sum(fr.values()) == pytest.approx(1.0)
+        # the three shared readers all drop it through RETAINED_REASONS
+        assert loaded.detected_mask.tolist() == [False, True, True, True]
+        assert int(compute_terminal_shell_distribution(loaded).counts.sum()) == 3
+        view = detected_ensemble_view(loaded)
+        assert np.isnan(view.mass_final_kg[0])
+        assert np.all(np.isfinite(view.mass_final_kg[1:]))
+
+    def test_scorer_reports_the_two_fractions_separately(self):
+        cfg = self._cfg()
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
+                         inside=True, num_molecules=2)
+        seed.positions_z[2:, 0] = 1.0e5
+        fast = 5.0
+        seed.velocities_x[1, 0] = fast
+        seed.E_kin_eV[1, 0] = _E_kin_eV(
+            seed.mass_kg[1:2], np.array([fast]), np.array([0.0]),
+            np.array([0.0]),
+        )[0]
+        read = read_confirmation_detection(run_detection_stage(seed, cfg))
+        assert read.num_scored == 2
+        assert read.trap_bound_frac == pytest.approx(0.25)
+        assert read.trap_marginal_frac == pytest.approx(0.25)
+        # `trapped_frac` stays the committed combined column
+        assert read.trapped_frac == pytest.approx(0.5)
+
+    def test_retained_reasons_covers_exactly_the_two_classes(self):
+        assert RETAINED_REASONS == {
+            "droplet_retained", "droplet_retained_marginal"
+        }
+        assert RETAINED_REASONS <= set(STATE_REASONS)
+
+
+class TestEscapeEnergetics:
+    """``escape_energetics`` is the single evaluation the guard and the atlas
+    bracket diagnostic share; ``_conservatively_bound`` is its ``.bound``."""
+
+    def _seed_cfg(self, speed):
+        """Ion 0 inside the droplet at ``speed``; ions 1..3 pushed to 1e5 A.
+
+        The separation matters: ``_far_seed(inside=True)`` puts an ion and
+        its [:N]/[N:] partner at the same point, so the (real, delivered)
+        pair-Coulomb term blows up and swamps the 0.117 eV well. Ejecting the
+        partners keeps the pair term at ~0.14 meV, which is what makes ion 0's
+        verdict a clean statement about the droplet well.
+        """
+        cfg = _detect_cfg(seed=3,
+                          detection_droplet_retained_policy="exclude_all_coupled")
+        picture, kappa = _ladder(cfg)
+        e_int = 0.5 * float(d0_of_n(21, picture=picture, kappa=kappa))
+        seed = _far_seed(cfg, n_shell=21, E_int_eV=e_int, inside=True,
+                         speed=speed)
+        seed.positions_z[1:, 0] = 1.0e5
+        return seed, cfg
+
+    def _state(self, seed):
+        from i2_helium_md.simulation.ion_propagation_step import (
+            ion_state_from_checkpoint_column,
+        )
+        return ion_state_from_checkpoint_column(seed, 0)
+
+    def test_bound_matches_the_wrapper(self):
+        seed, cfg = self._seed_cfg(0.2)
+        state = self._state(seed)
+        np.testing.assert_array_equal(
+            escape_energetics(state, seed, cfg).bound,
+            _conservatively_bound(state, seed, cfg),
+        )
+
+    def test_bound_ion_sits_below_its_barrier_with_zero_asymptotic_ke(self):
+        seed, cfg = self._seed_cfg(0.2)          # ion 0 deeply bound
+        e = escape_energetics(self._state(seed), seed, cfg)
+        assert bool(e.bound[0])
+        assert e.E_tot_eV[0] < e.barrier_eV[0]
+        assert e.asymptotic_ke_eV[0] == 0.0        # clipped: cannot escape
+
+    def test_unbound_ion_has_positive_asymptotic_ke_below_its_ceiling(self):
+        seed, cfg = self._seed_cfg(5.0)          # KE 0.27 eV > the 0.117 well
+        e = escape_energetics(self._state(seed), seed, cfg)
+        assert not bool(e.bound[0])
+        assert e.asymptotic_ke_eV[0] > 0.0
+        # half-credit central value <= full-credit ceiling, always
+        assert np.all(e.asymptotic_ke_eV <= e.asymptotic_ke_ceiling_eV)
+        # and the ceiling is exactly E_tot - U(inf), the conserved statement
+        np.testing.assert_allclose(
+            e.asymptotic_ke_ceiling_eV,
+            np.maximum(e.E_tot_eV - cfg.binding_energy_I_ion_eV, 0.0),
+            rtol=0, atol=1e-12,
+        )
 
 
 # ---------------------------------------------------------------------------
