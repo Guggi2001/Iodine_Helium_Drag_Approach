@@ -1064,3 +1064,121 @@ decomposition; nothing here is an MD result.
 **Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
 undischarged; the G3 scan itself (Route A/B (v_c, τ, E₀)[+ E_bind] grid)
 stays behind its own trigger.
+
+## G3 Step 2 — the Route A/B twin scan at the corrected geometry (2026-07-27, zero MD, triggered)
+
+Stage `g3scan` (plan §3.5c executed as frozen): 30 chord families
+(v_c ∈ {5.0…10.0} ∪ {3.5, 4.25 diagnostic} × E_bind
+∈ {0.0482, bundle 0.1168, 0.154} — exact extracted values, §6.7 item-2
+tags; one integration of the committed corrected master each,
+npz-cached) × 216 free cells (τ ∈ {2.4…12.8} × E₀ ∈ [0.17, 0.52]) =
+**6480 scored cells** against the pre-registered hard gate
+(n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [4.4, 7.1]). `integrate_pairs` gained a
+byte-inert `e_bind_ev` override (array-equal-tested). Outputs:
+`h2b_g3scan_{prescan,chords,predictions,gated_predictions,gated_ke}.csv`.
+
+### Oracles (all PASSED before any new number was read)
+
+- G3-P1: the three committed `h2b_s6_final` rows re-derived bit-exact
+  (predictions + KE).
+- Landmark continuity: `h2b_g3_corrected_row.csv` + `_ke.csv` re-derived
+  string-identically at the standing cell (through the value-identical
+  `_g3_corrected_ensemble` factoring — the refactor is oracle-covered).
+
+### Block 1 — zero-integration pre-scan (Route-A kill criterion)
+
+Uniform exposure scalings X → f·X of the *stored standing chord*
+(f ∈ 0.05…1.0): the n₁_solv gate band is reachable at some f ≥ 0.25 in
+**141/216** (τ, E₀) cells ⇒ **the analytic Route-A kill criterion did
+NOT fire.** But the **full joint gate fires at 0** of all (τ, E₀, f)
+combinations — under pure rescaling the standing chord's K-shape and its
+frozen trap 0.308 block n̄. Registered reading: a scale factor cannot
+land the corrected geometry; the landing must come from chord
+*reshaping* (trap composition + K tail) — measured next.
+
+### Block 2 — the verdict: **24/6480 cells gate; the basin exists and is Tier-0-legitimate**
+
+The pre-registered failure criterion did **not** fire. Class breakdown:
+all 24 in the tier0 v_c range (diagnostic arms: 0); 17 at τ ≤ the
+sourced 6.55, 7 τ-flagged; by well: eb0482 16 / eb1168 5 / eb154 3.
+The full gated set (twin numbers; trap is a floor, KE
+direction-only, W₁ bias-loaded — §14.4 authority box applied):
+
+| v_c | well | τ | E₀ | n₁_solv | n̄ | W₁ | trap | supp | midHotG | deepKE | flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 5.5 | eb0482 | 4.8 | 0.37 | 0.202 | 5.05 | 0.935 | 0.011 | 0.133 | 1.18 | 1.10 | E |
+| 5.5 | eb0482 | 4.8 | 0.38 | 0.215 | 4.77 | 0.899 | 0.011 | 0.176 | 1.11 | 1.06 | E |
+| 5.5 | eb0482 | 4.8 | 0.39 | 0.224 | 4.51 | 0.893 | 0.011 | 0.221 | 1.03 | 1.02 | E |
+| 5.5 | eb0482 | 6.4 | 0.30 | 0.199 | 4.82 | 0.383 | 0.011 | 0.029 | 1.09 | 0.79 | E |
+| 5.5 | eb0482 | 6.4 | 0.31 | 0.241 | 4.43 | 0.323 | 0.011 | 0.074 | 0.97 | 0.75 | E |
+| **5.5** | **eb1168** | **4.8** | **0.36** | 0.193 | 4.88 | 0.592 | 0.053 | 0.092 | 1.15 | 0.80 | — |
+| **5.5** | **eb1168** | **4.8** | **0.37** | 0.210 | 4.56 | 0.503 | 0.053 | 0.134 | 1.07 | 0.76 | — |
+| 5.5 | eb154 | 4.8 | 0.36 | 0.196 | 4.65 | 0.641 | 0.076 | 0.092 | 1.09 | 0.66 | E |
+| 6.0 | eb0482 | 6.4 | 0.33–0.37 (5 cells) | 0.20–0.21 | 4.49–5.59 | 1.48–1.71 | 0.025 | 0.12–0.32 | 0.39–0.52 | 0.61–0.70 | E |
+| 6.0 | eb0482 | 9.6 | 0.27 | 0.253 | 4.65 | **0.259** | 0.025 | 0.034 | 0.42 | 0.42 | T E |
+| **6.0** | **eb1168** | **6.4** | **0.32** | 0.208 | 4.84 | 0.744 | 0.129 | 0.081 | 0.49 | 0.47 | — |
+| **6.0** | **eb1168** | **6.4** | **0.33** | 0.226 | 4.49 | 0.679 | 0.129 | 0.132 | 0.45 | 0.46 | — |
+| 6.0 | eb154 | 4.8 | 0.40–0.41 (2 cells) | 0.19–0.19 | 4.41–4.66 | 1.13–1.15 | 0.186 | 0.19–0.23 | 0.47–0.49 | 0.57 | E |
+| 6.5 | eb0482 | 9.6 | 0.30–0.32 (3 cells) | 0.19–0.20 | 4.51–5.17 | 1.16–1.18 | 0.035 | 0.14–0.25 | 0.27–0.31 | 0.42–0.45 | T E |
+| 6.5 | eb0482 | 12.8 | 0.26 | 0.226 | 4.71 | 0.515 | 0.035 | 0.046 | 0.28 | 0.33 | T E |
+| 6.5 | eb1168 | 9.6 | 0.28 | 0.194 | 4.46 | 0.991 | 0.213 | 0.047 | 0.30 | 0.53 | T |
+| 7.25 | eb0482 | 12.8 | 0.31 | 0.200 | 4.49 | 0.877 | 0.040 | 0.193 | 0.22 | 0.33 | T E |
+
+(flags: T = τ > 6.55 calibration-class flag; E = off-bundle-well
+joint-pairing stamp. Bold = the four cells clean of both.)
+
+**The fully-unflagged basin: (v_c 5.5, τ 4.8, E₀ 0.36–0.37) and
+(v_c 6.0, τ 6.4, E₀ 0.32–0.33) at the standing well.** Versus finc1v725
+all three knobs re-arbitrate in physically comfortable directions:
+v_c 7.25 → 5.5–6.0 (softer mid-band γ — the NB-RQ11-12 lever
+direction), τ 3.2 → 4.8–6.4 (*toward* the sourced GAH25 6.55), E₀
+0.27 → 0.32–0.37 (inside the RQ1 band). The vc5.5/τ4.8 pair holds the
+better midHot (1.07–1.15); the vc6.0/τ6.4 pair the better W₁ — the two
+clean sub-basins trade the KE axis against the histogram axis.
+
+### Mechanism reads
+
+- **Cascade-carried, not selection-carried.** Gated families run
+  det_yield 0.87–0.99 and the detected-subset R quantiles sit within
+  1–2 Å of the source (e.g. vc5.5/eb1168: R_det_q50 47.8 vs src 48.5) —
+  the Route-B droplet-size selection axis is barely exercised. The work
+  is done by the chord law: K655_q50 1.334 → 0.60–0.73 plus the trap
+  drop 0.308 → 0.05–0.13. **The Step-1 "Route B carries more of the
+  load" expectation is hereby corrected** — n̄ closes through exposure
+  + fate energetics at near-full yield, not through detected-subset
+  R-selection.
+- **The standing chord (v_c 7.25, bundle well) gates at 0/216** — no
+  (τ, E₀) rescues finc1v725's drag point at the corrected geometry; it
+  passes from under-strip (n̄ 17) to over-strip without entering the
+  joint gate.
+- **The sub-band diagnostic arms land nothing** (as-designed check):
+  at v_c 3.5/4.25 the n₁ band is reachable only at n̄ 3.0–3.6, below
+  the 4.4 floor — over-stripped. The corrected geometry does **not**
+  point below the TDDFT band top; the collaborator-ask escape branch
+  stays un-fired.
+- **E_bind × v_c over-dissipation regime:** the trap ladder steepens
+  with v_c — eb0482 keeps trap ≤ 0.043 at every v_c, while eb154 at
+  v_c ≥ 8 reaches trap 0.55–0.61 with K655_q50 17–18 (the
+  helium-coupled class explodes). The coupled fraction being strongly
+  (v_c, well)-sensitive is the §3.5b distinguishing evidence pointing
+  at the over-dissipation-artifact branch — direct input to the
+  retained-policy sub-decision deferred at G2.
+- KE (direction-only): the clean basin runs deepKE 0.46–0.80 and the
+  eb0482/τ4.8 corner reaches ≈ 1.0; with the twin's +15–30 % hot bias
+  the MD values will sit lower — the RQ11 deep-bin question transfers
+  to the corrected geometry and must be read at the MD ring, not here.
+
+### Consequences (reported, not adjudicated)
+
+- Designed next step per §3.5c: the **MD confirmation ring**
+  (~10–20 × N = 500 around the clean basin) behind its own
+  `[PROCEED TO IMPLEMENTATION]`; the natural ring covers the two clean
+  sub-basins ± one step in each knob at the standing well, plus one
+  well-bracket cell.
+- The **retained-policy sub-decision** (G2) and the **Axis-B deferral
+  question** now have their scan evidence (over-dissipation coupling
+  above; E₀/τ influence curves partially covered by the free-surface
+  maps in `h2b_g3scan_predictions.csv`).
+- **Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
+  undischarged; form authority remains Tier-0's (the scan arbitrates
+  (v_c, τ, E₀, E_bind) *at fixed form* — capped cubic p_tail −1).

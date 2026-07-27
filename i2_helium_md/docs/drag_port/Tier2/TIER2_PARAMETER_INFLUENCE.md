@@ -244,6 +244,10 @@ synthesis. **Confound pending (§6.5 E_bind scan):** the lq cells carry
 their co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well), so
 the residual supp/deep-direction attribution is provisional until the
 E_bind-only scan separates the jointly-extracted pair.
+**Corrected geometry (G3 Step 2, §14.5):** the twin gate basin sits at
+**v_c 5.5–6.0** — the standing 7.25 gates nowhere at the corrected
+geometry, and the shift is exactly the mid-band-softening direction
+NB-RQ11-12 identified. Twin-level; MD ring pending.
 
 ## 3. τ — Newton cooling clock
 
@@ -267,7 +271,10 @@ E_bind-only scan separates the jointly-extracted pair.
 cooling exposure K is the single integral through which KE and stripping
 trade off (I47).
 
-**Status:** standing 3.2 ps.
+**Status:** standing 3.2 ps. **Corrected geometry (G3 Step 2, §14.5):**
+the unflagged twin basin wants τ 4.8–6.4 — *toward* the sourced GAH25
+6.55; the τ ≫ 6.55 arms (9.6/12.8) gate only with other caveat stamps
+and are not needed.
 
 ## 4. E₀ = E_int(0) — internal-energy budget
 
@@ -299,7 +306,10 @@ trade off (I47).
 exposure: E*(K) = Σ(21)·e^K, I39), sampling width δ (bare-fraction
 trade-off, I35/I36).
 
-**Status:** standing 0.27 eV.
+**Status:** standing 0.27 eV. **Corrected geometry (G3 Step 2, §14.5):**
+the unflagged twin basin wants E₀ 0.32–0.37 — still inside the RQ1
+band; the geometry-dependence chain gains its third point (pinned
+0.38–0.41 → standing mixture 0.22–0.27 → corrected ~0.35).
 
 ## 5. κ — ladder steepness (Form U)
 
@@ -426,7 +436,12 @@ Prior indirect reads (retained):
 **Couplings:** drag law (jointly calibrated pair — "correct drag traps
 the ions", TIER0_FINDINGS); *not* connected to the ladder D₀(n)/Σ
 (different bookkeeping surfaces: droplet exit well vs per-atom shell
-energetics).
+energetics). **Corrected geometry (G3 Step 2, §14.5):** the trap lever
+steepens dramatically with v_c at long chords (eb0482 holds trap
+0.01–0.04 everywhere; eb154 reaches 0.55–0.61 at v_c ≥ 8 with K_q50
+17–18) — the (v_c, well) coupling is the §3.5b over-dissipation
+distinguishing evidence; the gate itself is only weakly well-sensitive
+(gated cells exist at all three wells, v_c window shifting ~0.5).
 
 ### 9.1 Is E_bind R-dependent? — bounded analytically (2026-07-26, zero cost)
 
@@ -944,6 +959,65 @@ cross-instrument (trap 0.308, supp 0, n̄ 17.0, W₁ 12.1, deepKE 2.12 —
 each discrepancy = the measured bias). Landmark table re-issued and
 law-tagged (the recorded center-pin K 0.74460 is pure-cubic; under the
 capped tail the anchored radii are traversable at K_capped 1.7–20.2).
+
+### 14.5 The corrected-geometry landing surface — (v_c, τ, E₀, E_bind) re-arbitrated by the G3 Step 2 twin scan (2026-07-27, zero MD)
+
+The §3.5c nested Route A/B factorial: 30 chord families (v_c × E_bind,
+one integration of the committed corrected master each) × 216 free cells
+(τ × E₀) = 6480 scored cells against the pre-registered hard gate
+(n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [4.4, 7.1]; W₁/KE/supp non-gating; trap a
+floor). Oracles bit-exact (S6 rows + the Step-1 corrected landmark). Full
+record: findings "G3 Step 2"; stage `g3scan`.
+
+**Result — the basin exists and is Tier-0-legitimate: 24/6480 cells
+gate, every one inside the calibrated v_c range** (the pre-registered
+failure criterion did NOT fire; the sub-band diagnostic arms land
+nothing). Four cells are clean of *both* caveat stamps (standing well
+eb1168, τ ≤ the sourced 6.55): **(v_c 5.5, τ 4.8, E₀ 0.36–0.37) and
+(v_c 6.0, τ 6.4, E₀ 0.32–0.33)** — twin W₁ 0.50–0.74, trap floor
+0.053–0.129, supp 0.08–0.13, deepKE 0.46–0.80 (direction-only). Versus
+finc1v725 the corrected geometry re-arbitrates **all three knobs in
+physically comfortable directions**: v_c 7.25 → 5.5–6.0 (softer mid-band
+γ — the NB-RQ11-12 deep-KE lever direction), τ 3.2 → 4.8–6.4 (*toward*
+the sourced GAH25 6.55 — the calibration-class tension relaxes), E₀
+0.27 → 0.32–0.37 (inside the RQ1 band; extends the §4 "scale is
+geometry-dependent" chain: pinned 0.38–0.41 → standing-mixture
+0.22–0.27 → corrected ~0.35).
+
+**Mechanism reads:**
+
+- **Cascade-carried, not selection-carried.** At the gated families
+  det_yield is 0.87–0.99 and the detected-subset R quantiles sit within
+  1–2 Å of the source — the Route-B droplet-size selection axis is
+  barely exercised. The landing comes from the chord law itself:
+  K655_q50 1.334 → 0.60–0.73 (≈ ×2 exposure reduction) *plus* the trap
+  composition change (0.308 → 0.05–0.13).
+- **Pure exposure rescaling cannot land it** (pre-scan): uniform
+  X → f·X of the *standing* chord reaches the n₁ band at 141/216 free
+  cells (Route-A kill NOT fired) but the **full joint gate at 0/216·20
+  scalings** — the standing chord's K-shape + frozen trap 0.308 block
+  n̄. The gate opens only when the chord *reshapes* (trap + K tail),
+  i.e. the landing genuinely needs the chord surface, not a scale
+  factor.
+- **The standing drag point does not survive the corrected geometry:**
+  the (v_c 7.25, eb1168) family gates at 0/216 — no (τ, E₀) rescue.
+- **E_bind × v_c coupling (over-dissipation regime):** the trap ladder
+  steepens with v_c — eb0482 keeps trap 0.01–0.04 everywhere, while at
+  v_c ≥ 8 the deep well 0.154 sends K_q50 to 17–18 and trap to
+  0.55–0.61. The helium-coupled class is strongly (v_c, well)-sensitive
+  — evidence for the §3.5b "over-dissipation artifact" branch of the
+  retained-policy sub-decision (G2 record).
+- **Why the sub-band diagnostic arms fail:** at v_c 3.5/4.25 the n₁
+  band is reachable only at n̄ 3.0–3.6 (< the 4.4 gate floor) —
+  over-stripped. The corrected-geometry landing does *not* point below
+  the TDDFT band top; the collaborator-ask branch did not fire.
+
+**Authority caveats (§14.4 applied):** twin-level statements only — n̄
+gate already carries the residence bias bracket; trap is a floor (MD
+adds pickup mass-loading + the Landau freeze — the twin-invisible
+center-pin channel); KE direction-only; W₁ bias-loaded. Nothing is
+adopted: finc1v725 stands until G4; the designed next step is the MD
+confirmation ring (~10–20 × N = 500) behind its own trigger.
 
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 

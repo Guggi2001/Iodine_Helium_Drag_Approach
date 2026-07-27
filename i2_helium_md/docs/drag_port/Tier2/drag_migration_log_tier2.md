@@ -11109,3 +11109,62 @@ CLAUDE.md compact state. Atlas stance intact: nothing adopted,
 `finc1v725` stands, F5 undischarged. The build (working name: stage
 `g3scan` beside `g3landmarks`) stays behind its own
 `[PROCEED TO IMPLEMENTATION]`.
+
+## G3 Step 2 twin scan EXECUTED — 24/6480 cells gate, all Tier-0-legitimate (failure criterion NOT fired); fully-unflagged basin (v_c 5.5–6.0, τ 4.8–6.4, E₀ 0.32–0.37) at the standing well; the standing chord v_c 7.25 gates nowhere; landing cascade-carried, not selection-carried (2026-07-27, zero MD, triggered)
+
+Executed under its `[PROCEED TO IMPLEMENTATION]` (user, this session),
+exactly the frozen §3.5c spec. Build: stage `g3scan` in
+`scripts/tier2_h2b_forward_model.py` — `integrate_pairs` gained a
+byte-inert `e_bind_ev` override (the E_bind chord axis;
+`array_equal`-tested), the Step-1 corrected-ensemble computation was
+factored value-identically into `_g3_corrected_ensemble` (oracle-covered),
+and the §3.5c E_bind display values resolved to their provenance-exact
+numbers (0.0482 lq co-extracted / bundle stamp 0.11675778 / 0.154, the
+§6.7 item-2 tags). Seven helper tests appended
+(`tests/test_tier2_h2b_forward_model.py`, 33/33 pass): e_bind
+byte-inertness + lever direction, frozen grid spec, gate boundaries +
+NaN behavior, pre-scan consistency, light-score conventions, chord-cache
+staleness guard. Chord families npz-cached (29 files, gitignored);
+committed outputs `h2b_g3scan_{prescan,chords,predictions,
+gated_predictions,gated_ke}.csv`. Runtime ≈ 1 h 40 m (33 integrations at
+m = 20000, ≈ 2.9 min each). Findings (full record: findings doc
+"G3 Step 2"; D0 §14.5 + §2/§3/§4/§9 status lines):
+
+1. **Block 0 oracles PASSED bit-exact** before any new number: the three
+   committed `h2b_s6_final` rows AND the Step-1 landmark
+   `h2b_g3_corrected_row{,_ke}.csv` re-derived string-identically.
+2. **Block 1 pre-scan:** Route-A kill criterion NOT fired (141/216 free
+   cells reach the n₁ band at f ≥ 0.25) — but the full joint gate fires
+   at 0 of all (τ, E₀, f) pure rescalings of the standing chord: a scale
+   factor cannot land the corrected geometry; chord *reshaping* (trap
+   composition + K tail) is required.
+3. **Block 2 verdict: 24/6480 cells inside the hard gate; the
+   pre-registered failure criterion did NOT fire.** All 24 in the
+   Tier-0 v_c range; the sub-band diagnostic arms land nothing (n₁
+   reachable only at n̄ 3.0–3.6 < the 4.4 floor — over-stripped), so
+   the finding stays inside TDDFT authority and the collaborator-ask
+   escape branch is un-fired. 17/24 at τ ≤ the sourced 6.55.
+4. **The fully-unflagged basin (standing well, no τ flag):**
+   (v_c 5.5, τ 4.8, E₀ 0.36–0.37) + (v_c 6.0, τ 6.4, E₀ 0.32–0.33) —
+   twin W₁ 0.50–0.74, trap floor 0.053–0.129. All three knobs
+   re-arbitrate in physically comfortable directions vs finc1v725:
+   v_c ↓ (the NB-RQ11-12 mid-band-softening direction), τ ↑ toward the
+   sourced 6.55, E₀ ↑ inside the RQ1 band.
+5. **The standing drag point does not survive the corrected geometry:**
+   (v_c 7.25, bundle well) gates at 0/216 free cells.
+6. **Mechanism: cascade-carried, not selection-carried** — gated
+   families run det_yield 0.87–0.99 with detected-subset R quantiles
+   within 1–2 Å of the source; the Step-1 "Route B carries more of the
+   load" expectation is corrected in the findings.
+7. **E_bind × v_c over-dissipation coupling measured** (eb154 at
+   v_c ≥ 8: trap 0.55–0.61, K_q50 17–18; eb0482 flat ≤ 0.043) — the
+   §3.5b distinguishing evidence for the retained-policy sub-decision.
+
+Atlas stance intact: nothing adopted, `finc1v725` stands until G4, F5
+undischarged, form authority stays Tier-0's. **Next: the MD
+confirmation ring (~10–20 × N = 500 around the clean basin), behind its
+own `[PROCEED TO IMPLEMENTATION]`**; the retained-policy sub-decision
+and the Axis-B deferral question are now decidable on this scan's
+evidence (user adjudications). Docs this entry: findings "G3 Step 2"
+(new), D0 §14.5 (new) + §2/§3/§4/§9 status lines, plan §3.5c header +
+execution record, CLAUDE.md compact state.

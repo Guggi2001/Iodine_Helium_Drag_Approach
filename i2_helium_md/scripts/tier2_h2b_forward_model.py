@@ -35,7 +35,7 @@ center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
         w12pred | birthlaw | legaprime | legb | legc | legd | repilots1 |
-        repilots2 | g3landmarks
+        repilots2 | g3landmarks | g3scan
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 
 ``g3landmarks`` (atlas §3.5 G3 Step 1, 2026-07-27): the twin landmark
@@ -43,6 +43,12 @@ re-issue at the G2-adopted corrected geometry -- S6 wiring oracle, the 11
 Axis-A G1 cells vs their MD rows (the long-chord twin-authority
 measurement), center-pin landmarks per grid radius, and the
 corrected-ensemble row vs the D2b §4.3 forecast.
+
+``g3scan`` (atlas §3.5c G3 Step 2, 2026-07-27): the nested Route A/B twin
+scan at the corrected geometry -- landmark + S6 oracles, the
+zero-integration pre-scan (analytic Route-A kill criterion), then the chord
+surface (v_c x E_bind, one integration each, npz-cached) scored over the
+free surface (tau x E0) against the §3.5c pre-registered gate.
 """
 
 from __future__ import annotations
@@ -201,6 +207,7 @@ def integrate_pairs(
     track_profile=False,
     v_c=None,
     p_tail=None,
+    e_bind_ev=None,
 ):
     """Integrate fragment pairs born at radius r0 (cos(pos,axis) = mu).
 
@@ -213,12 +220,19 @@ def integrate_pairs(
     above the cap. ``v_c=None`` (default) is the pure-cubic law with its
     original arithmetic — byte-inert.
 
+    ``e_bind_ev`` (g3scan extension, 2026-07-27) overrides the solvation-well
+    depth [eV] for the E_bind chord axis (plan §3.5c; the §6.5/§6.7
+    joint-pairing exception — off-bundle wells against the bundle-b drag
+    law). ``None`` (default) keeps the bundle stamp ``E_BIND_ION_EV`` with
+    identical arithmetic — byte-inert.
+
     Returns dict with per-fragment (2, M) arrays: K (cooling exposure),
     v_inf (asymptotic speed, A/ps, residual-Coulomb-corrected), t_exit (ps),
     v_peak; optional center-pin profile samples.
     """
     if v_c is not None and p_tail is None:
         raise ValueError("v_c requires p_tail (the capped-cubic tail exponent)")
+    e_bind = E_BIND_ION_EV if e_bind_ev is None else float(e_bind_ev)
     r0 = np.atleast_1d(np.asarray(r0, dtype=float))
     mu = np.atleast_1d(np.asarray(mu, dtype=float))
     R_drop = np.atleast_1d(np.asarray(R_drop, dtype=float))
@@ -247,7 +261,7 @@ def integrate_pairs(
         r_sep = r0_sep + s_arr[0] + s_arr[1]
         F_c = KE_COUL_EVA / r_sep**2  # eV/A, outward along axis, both
         dUdr = (
-            E_BIND_ION_EV / (STEEP_A * np.sqrt(np.pi)) * np.exp(-((depth / STEEP_A) ** 2))
+            e_bind / (STEEP_A * np.sqrt(np.pi)) * np.exp(-((depth / STEEP_A) ** 2))
         )  # eV/A
         F_solv = -dUdr * dr_ds  # eV/A along motion direction
         F_ev = F_c + F_solv
@@ -2291,6 +2305,79 @@ def _g3_corrected_master(m, force_rebuild=False):
     return out
 
 
+def _g3_corrected_ensemble(m, ref_ke, solv_exp):
+    """The corrected-ensemble computation at the standing point (Step-1
+    Part C (ii), factored value-identically for reuse): committed master
+    -> standing chord -> fate map -> S6 scoring.
+
+    Returns a dict with ``row`` (the exact ``h2b_g3_corrected_row.csv``
+    schema), ``ke_bins``, ``obs``, and the raw per-fragment arrays
+    (``res``/``K655``/``ne``/``trapped`` etc.) so stage_g3scan's oracle and
+    zero-integration pre-scan read the same standing chord (§1.4).
+    """
+    lad, v_c, p_tail, tau, e0 = G3_STANDING
+    sig = _g3_md_rung_tables()[lad]
+    ms = _g3_corrected_master(m)
+    N, R, r0, mu = ms["N"], ms["R"], ms["r0"], ms["mu"]
+    depth = R - r0
+    rho = rho_he_ratio(r0 - R, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    res = integrate_pairs(
+        r0, mu, R, complex_mass_amu(ne_mol).astype(float),
+        r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+    )
+    K = res["K"].reshape(-1) * (TAU_PS / tau)
+    ne = np.concatenate([ne_mol, ne_mol])
+    n_det, sup = fate_map(ne, K, e0, 1, sig)
+    obs, ke_bins = g3_score(
+        n_det, sup, res["trapped"].reshape(-1).astype(bool),
+        res["v_inf"].reshape(-1), ref_ke, solv_exp,
+    )
+    t_exit = res["t_exit"].reshape(-1)
+    row = {
+        "geometry": "corrected", "ladder": lad, "v_c": v_c, "tau_ps": tau,
+        "E0_eV": e0, "p_tail": p_tail, "m": m,
+        "N_q05": round(float(np.quantile(N, 0.05)), 1),
+        "N_q50": round(float(np.quantile(N, 0.50)), 1),
+        "N_q95": round(float(np.quantile(N, 0.95)), 1),
+        "N_mean": round(float(N.mean()), 1),
+        "R_q05": round(float(np.quantile(R, 0.05)), 2),
+        "R_q50": round(float(np.quantile(R, 0.50)), 2),
+        "R_q95": round(float(np.quantile(R, 0.95)), 2),
+        "depth_q05": round(float(np.quantile(depth, 0.05)), 2),
+        "depth_q50": round(float(np.quantile(depth, 0.50)), 2),
+        "depth_q95": round(float(np.quantile(depth, 0.95)), 2),
+        "n_eject_mean": round(float(ne.mean()), 3),
+        "K_q05": round(float(np.quantile(K, 0.05)), 4),
+        "K_q50": round(float(np.quantile(K, 0.50)), 4),
+        "K_q95": round(float(np.quantile(K, 0.95)), 4),
+        "t_exit_q50": round(float(np.nanquantile(t_exit, 0.50)), 2),
+        "t_exit_q95": round(float(np.nanquantile(t_exit, 0.95)), 2),
+        "trapped_frac": round(obs["trapped_frac"], 4),
+        "suppressed_frac": round(obs["sup_frac"], 4),
+        "nbar_det": round(obs["nbar"], 3),
+        "n1_solv": round(obs["n1_solv"], 4),
+        "ratio_n1_n2": round(obs["ratio"], 3),
+        "w1_solv": round(obs["w1"], 4),
+        "midhot_n2_8": round(obs["midhot_arith"], 4),
+        "midhot_geo": round(obs["midhot_geo"], 4),
+        "midhot_bins": obs["midhot_bins"],
+        "deepke": round(obs["deepke"], 4),
+        "deepke_bins": obs["deepke_bins"],
+        "n1_ke_eV": round(obs["n1_ke"], 4),
+    }
+    row.update({f"h{k}": round(float(obs["hist"][k]), 4)
+                for k in range(N_STAR + 1)})
+    return {
+        "row": row, "ke_bins": ke_bins, "obs": obs, "sig": sig,
+        "N": N, "R": R, "r0": r0, "mu": mu, "depth": depth,
+        "ne_mol": ne_mol, "ne": ne, "res": res,
+        "K655": res["K"].reshape(-1),
+        "trapped": res["trapped"].reshape(-1).astype(bool),
+        "v_inf": res["v_inf"].reshape(-1),
+    }
+
+
 def _g3_corrected(m, ref_ke, solv_exp, standing_obs):
     """Part C: landmark re-issue at the corrected geometry.
 
@@ -2351,57 +2438,8 @@ def _g3_corrected(m, ref_ke, solv_exp, standing_obs):
           "center-pin landmark K = 0.74460 is reproduced.")
 
     # ---- (ii) the corrected-ensemble row at the standing point
-    ms = _g3_corrected_master(m)
-    N, R, r0, mu = ms["N"], ms["R"], ms["r0"], ms["mu"]
-    depth = R - r0
-    rho = rho_he_ratio(r0 - R, steepness=STEEP_A)
-    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
-    res = integrate_pairs(
-        r0, mu, R, complex_mass_amu(ne_mol).astype(float),
-        r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
-    )
-    K = res["K"].reshape(-1) * (TAU_PS / tau)
-    ne = np.concatenate([ne_mol, ne_mol])
-    n_det, sup = fate_map(ne, K, e0, 1, sig)
-    obs, ke_bins = g3_score(
-        n_det, sup, res["trapped"].reshape(-1).astype(bool),
-        res["v_inf"].reshape(-1), ref_ke, solv_exp,
-    )
-    t_exit = res["t_exit"].reshape(-1)
-    row = {
-        "geometry": "corrected", "ladder": lad, "v_c": v_c, "tau_ps": tau,
-        "E0_eV": e0, "p_tail": p_tail, "m": m,
-        "N_q05": round(float(np.quantile(N, 0.05)), 1),
-        "N_q50": round(float(np.quantile(N, 0.50)), 1),
-        "N_q95": round(float(np.quantile(N, 0.95)), 1),
-        "N_mean": round(float(N.mean()), 1),
-        "R_q05": round(float(np.quantile(R, 0.05)), 2),
-        "R_q50": round(float(np.quantile(R, 0.50)), 2),
-        "R_q95": round(float(np.quantile(R, 0.95)), 2),
-        "depth_q05": round(float(np.quantile(depth, 0.05)), 2),
-        "depth_q50": round(float(np.quantile(depth, 0.50)), 2),
-        "depth_q95": round(float(np.quantile(depth, 0.95)), 2),
-        "n_eject_mean": round(float(ne.mean()), 3),
-        "K_q05": round(float(np.quantile(K, 0.05)), 4),
-        "K_q50": round(float(np.quantile(K, 0.50)), 4),
-        "K_q95": round(float(np.quantile(K, 0.95)), 4),
-        "t_exit_q50": round(float(np.nanquantile(t_exit, 0.50)), 2),
-        "t_exit_q95": round(float(np.nanquantile(t_exit, 0.95)), 2),
-        "trapped_frac": round(obs["trapped_frac"], 4),
-        "suppressed_frac": round(obs["sup_frac"], 4),
-        "nbar_det": round(obs["nbar"], 3),
-        "n1_solv": round(obs["n1_solv"], 4),
-        "ratio_n1_n2": round(obs["ratio"], 3),
-        "w1_solv": round(obs["w1"], 4),
-        "midhot_n2_8": round(obs["midhot_arith"], 4),
-        "midhot_geo": round(obs["midhot_geo"], 4),
-        "midhot_bins": obs["midhot_bins"],
-        "deepke": round(obs["deepke"], 4),
-        "deepke_bins": obs["deepke_bins"],
-        "n1_ke_eV": round(obs["n1_ke"], 4),
-    }
-    row.update({f"h{k}": round(float(obs["hist"][k]), 4)
-                for k in range(N_STAR + 1)})
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    row, ke_bins, obs, N = ens["row"], ens["ke_bins"], ens["obs"], ens["N"]
 
     with open(OUT / "h2b_g3_corrected_landmarks.csv", "w", newline="") as fh:
         wtr = csv.DictWriter(fh, fieldnames=list(pin_rows[0]))
@@ -2467,6 +2505,427 @@ def stage_g3landmarks(m=20000):
     _g3_corrected(m, ref_ke, solv_exp, standing_obs)
 
 
+# --------------------------------------------------------------------------
+# G3 Step 2 — the Route A/B twin scan at the corrected geometry
+# (plan §3.5c, designed + user-approved 2026-07-27; executed under its own
+# `[PROCEED TO IMPLEMENTATION]`)
+# --------------------------------------------------------------------------
+# Chord surface (Route B): every (v_c, E_bind) pair is one integration of the
+# committed corrected master (G3_SEED, m = 20000). The 5.0 floor respects the
+# TDDFT band top (4.95 A/ps); 3.5/4.25 are outside-Tier-0-authority
+# DIAGNOSTIC arms (they override the calibrated band — if only these land,
+# the finding points at the collaborator ask, not at a parameter point).
+G3SCAN_VC_TIER0 = (5.0, 5.5, 6.0, 6.5, 7.25, 8.0, 9.0, 10.0)
+G3SCAN_VC_DIAG = (3.5, 4.25)
+# E_bind: the Tier-0 extracted spread (findings stage-2a form table; the
+# §6.5/§6.7 joint-pairing exception — off-bundle wells run against the
+# bundle-b chord law, stamped per row). Exact extracted values, tagged with
+# the §6.7 item-2 labels: 0.0482 = lq co-extracted, bundle stamp = standing,
+# 0.154 = 9 A per-case cubic.
+G3SCAN_EBIND = (
+    ("eb0482", 0.0482),
+    ("eb1168", E_BIND_ION_EV),
+    ("eb154", 0.154),
+)
+# Free surface (Route A): exact tau rescale + fate-map re-run — pure
+# post-processing of a stored chord (the Step-1 structural fact).
+G3SCAN_TAU_PS = (2.4, 3.2, 4.8, 6.4, 9.6, 12.8)
+G3SCAN_TAU_SOURCED = 6.55  # a landing needing tau >> this is flagged
+G3SCAN_E0_GRID = np.round(np.arange(0.17, 0.5201, 0.01), 3)  # 36 values
+# Pre-registered hard gate (twin level, item-3 authority box applied):
+# n1_solv in [0.19, 0.30] AND nbar in [4.4, 7.1] (target 4.07 + the
+# residence-conditional bias bracket [+0.3, +3]). W1/KE/supp non-gating.
+G3SCAN_GATE_N1SOLV = (0.19, 0.30)
+G3SCAN_GATE_NBAR = (4.4, 7.1)
+# Pre-scan (§3.5c block 1): exposure scalings X -> f*X of the stored
+# standing chord; the analytic Route-A kill criterion reads f = 0.25 (the
+# maximal reduction the chord axes could plausibly deliver).
+G3SCAN_PRESCAN_F = np.round(np.arange(0.05, 1.0001, 0.05), 2)
+G3SCAN_PRESCAN_FMIN = 0.25
+
+
+def g3scan_gate(n1_solv, nbar):
+    """The §3.5c pre-registered hard gate; NaN observables never gate."""
+    return bool(
+        G3SCAN_GATE_N1SOLV[0] <= n1_solv <= G3SCAN_GATE_N1SOLV[1]
+        and G3SCAN_GATE_NBAR[0] <= nbar <= G3SCAN_GATE_NBAR[1]
+    )
+
+
+def _g3scan_light(n_det, trapped):
+    """Light score for the pre-scan: (n1_solv, nbar, frac_le8) over the
+    non-trapped read (no KE, no W1). n1_solv is NaN if nothing solvates."""
+    w = np.where(trapped, 0.0, 1.0)
+    hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w.sum()
+    nbar = float((np.arange(N_STAR + 1) * hist).sum())
+    solv_tot = hist[1:].sum()
+    n1 = float(hist[1] / solv_tot) if solv_tot > 0 else np.nan
+    frac_le8 = float(hist[: 9].sum())
+    return n1, nbar, frac_le8
+
+
+def _g3scan_prescan(K655, trapped, ne, sig):
+    """§3.5c block 1 — the required-exposure-reduction map (zero
+    integration). For every (tau, E0) on the free surface, scale the stored
+    standing chord's exposure X -> f*X and record where the hard gate holds;
+    the analytic Route-A kill criterion fires iff no f >= 0.25 produces
+    n1_solv inside the gate band at any (tau, E0).
+
+    Returns (rows, verdict) — verdict holds the kill flag + counts.
+    """
+    rows = []
+    n1_ok_any = 0
+    gate_ok_any = 0
+    for tau in G3SCAN_TAU_PS:
+        for e0 in G3SCAN_E0_GRID:
+            n1_by_f, nbar_by_f, gate_by_f = {}, {}, {}
+            for f in G3SCAN_PRESCAN_F:
+                K = K655 * (f * (TAU_PS / tau))
+                n_det, _ = fate_map(ne, K, e0, 1, sig)
+                n1, nbar, frac_le8 = _g3scan_light(n_det, trapped)
+                n1_by_f[f] = n1
+                nbar_by_f[f] = nbar
+                gate_by_f[f] = g3scan_gate(n1, nbar)
+                if f == 1.0:
+                    strip_le8_f100 = frac_le8
+            f_gate = [f for f, ok in gate_by_f.items() if ok]
+            f_admiss = [f for f in G3SCAN_PRESCAN_F
+                        if f >= G3SCAN_PRESCAN_FMIN - 1e-9]
+            n1_ok = any(
+                G3SCAN_GATE_N1SOLV[0] <= n1_by_f[f] <= G3SCAN_GATE_N1SOLV[1]
+                for f in f_admiss
+            )
+            gate_ok = any(gate_by_f[f] for f in f_admiss)
+            n1_ok_any += int(n1_ok)
+            gate_ok_any += int(gate_ok)
+            rows.append({
+                "tau_ps": tau,
+                "tau_flag": int(tau > G3SCAN_TAU_SOURCED),
+                "E0_eV": e0,
+                "n1_solv_f100": round(n1_by_f[1.0], 4),
+                "nbar_f100": round(nbar_by_f[1.0], 3),
+                "strip_le8_f100": round(strip_le8_f100, 4),
+                "gate_f100": int(gate_by_f[1.0]),
+                "f_gate_lo": min(f_gate) if f_gate else np.nan,
+                "f_gate_hi": max(f_gate) if f_gate else np.nan,
+                "n1_solv_f025": round(n1_by_f[0.25], 4),
+                "nbar_f025": round(nbar_by_f[0.25], 3),
+                "gate_f025": int(gate_by_f[0.25]),
+                "n1_ok_fge025": int(n1_ok),
+                "gate_ok_fge025": int(gate_ok),
+            })
+    verdict = {
+        "route_a_killed": n1_ok_any == 0,
+        "cells_n1_ok_fge025": n1_ok_any,
+        "cells_gate_ok_fge025": gate_ok_any,
+        "cells_total": len(rows),
+    }
+    return rows, verdict
+
+
+def _g3scan_chord_tag(v_c, eb_tag):
+    return f"vc{str(v_c).replace('.', 'p')}_{eb_tag}"
+
+
+def _g3scan_chord_family(v_c, eb_tag, e_bind_ev, m, ens, force_rebuild=False):
+    """One chord-surface integration of the corrected master, npz-cached.
+
+    The standing family (v_c 7.25, bundle well) is served from the oracle's
+    in-memory chord (``ens``) — never re-integrated, never cached separately.
+    Cache staleness is guarded by the stamped (v_c, e_bind, m, seed).
+    """
+    lad, vc_std, p_tail, _, _ = G3_STANDING
+    if v_c == vc_std and eb_tag == "eb1168":
+        return {"K": ens["res"]["K"], "v_inf": ens["res"]["v_inf"],
+                "t_exit": ens["res"]["t_exit"],
+                "trapped": ens["res"]["trapped"]}
+    cache = OUT / f"h2b_g3scan_chord_{_g3scan_chord_tag(v_c, eb_tag)}.npz"
+    if cache.exists() and not force_rebuild:
+        dat = dict(np.load(cache))
+        stamps = (float(dat["v_c"]), float(dat["e_bind_ev"]),
+                  int(dat["m"]), int(dat["seed"]))
+        if stamps != (float(v_c), float(e_bind_ev), int(m), G3_SEED):
+            raise AssertionError(
+                f"stale g3scan chord cache {cache.name}: stamps {stamps}"
+            )
+        return dat
+    ms = _g3_corrected_master(m)
+    rho = rho_he_ratio(ms["r0"] - ms["R"], steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    res = integrate_pairs(
+        ms["r0"], ms["mu"], ms["R"], complex_mass_amu(ne_mol).astype(float),
+        r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+        e_bind_ev=e_bind_ev,
+    )
+    out = {"K": res["K"], "v_inf": res["v_inf"], "t_exit": res["t_exit"],
+           "trapped": res["trapped"],
+           "v_c": float(v_c), "e_bind_ev": float(e_bind_ev),
+           "m": float(m), "seed": float(G3_SEED)}
+    np.savez_compressed(cache, **out)
+    return out
+
+
+def stage_g3scan(m=20000, force_rebuild=False):
+    """G3 Step 2: the nested Route A/B twin scan at the corrected geometry
+    (plan §3.5c; zero MD).
+
+    Block order (frozen): 0. oracles — the S6 machinery oracle (G3-P1) and
+    the committed ``h2b_g3_corrected_row{,_ke}.csv`` re-derived bit-exact at
+    the standing cell (the Step-1 landmark-continuity convention); 1. the
+    zero-integration pre-scan with the analytic Route-A kill criterion;
+    2. the chord families (v_c x E_bind, npz-cached), each scored over the
+    full free surface (tau x E0) as it lands.
+
+    Fixed: the committed corrected master (G3_SEED, m = 20000), rq4graded
+    ladder, p = 1, p_tail = -1, detection = the non-trapped chord read.
+    Gate/failure criterion: pre-registered in §3.5c (hard gate n1_solv AND
+    nbar; W1/KE/supp non-gating; trap reported as a floor).
+    """
+    import time as _time
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    lad, _, p_tail, _, _ = G3_STANDING
+
+    # ---- Block 0a: the S6 machinery oracle (standing geometry, bit-exact).
+    print("=== G3 Step 2: Block 0 (oracles) ===")
+    _g3_s6_oracle(m, ref_ke, solv_exp)
+
+    # ---- Block 0b: the corrected-row landmark oracle (bit-exact).
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    with open(OUT / "h2b_g3_corrected_row.csv", newline="") as fh:
+        ref_rows = list(csv.DictReader(fh))
+    if len(ref_rows) != 1:
+        raise AssertionError("h2b_g3_corrected_row.csv must hold one row")
+    ref_row = ref_rows[0]
+    if set(ref_row) != set(map(str, ens["row"])):
+        raise AssertionError(
+            "g3scan corrected-row oracle FAILED: column set differs"
+        )
+    for col, val in ens["row"].items():
+        if str(val) != ref_row[col]:
+            raise AssertionError(
+                f"g3scan corrected-row oracle FAILED at {col}: "
+                f"{val!r} != {ref_row[col]!r}"
+            )
+    with open(OUT / "h2b_g3_corrected_ke.csv", newline="") as fh:
+        ref_ke_rows = [(int(r["n"]), r["weight"], r["mean_KE_eV"])
+                       for r in csv.DictReader(fh)]
+    mine_ke = [(n, str(round(w, 4)), str(round(k, 4)))
+               for n, w, k in ens["ke_bins"]]
+    if mine_ke != ref_ke_rows:
+        raise AssertionError(
+            "g3scan corrected-row oracle FAILED: KE rows differ from the "
+            "committed h2b_g3_corrected_ke.csv"
+        )
+    print("g3scan landmark oracle PASSED: h2b_g3_corrected_row.csv + _ke.csv "
+          "re-derived string-identically at the standing cell.")
+
+    sig = ens["sig"]
+    ne = ens["ne"]
+    R_frag = np.concatenate([ens["R"], ens["R"]])
+
+    # ---- Block 1: the zero-integration pre-scan (Route-A kill criterion).
+    print("\n=== G3 Step 2: Block 1 (zero-integration pre-scan) ===")
+    pre_rows, pre_verdict = _g3scan_prescan(
+        ens["K655"], ens["trapped"], ne, sig
+    )
+    with open(OUT / "h2b_g3scan_prescan.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(pre_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(pre_rows)
+    print(f"pre-scan   -> {OUT / 'h2b_g3scan_prescan.csv'}")
+    print(f"[pre-scan] (tau, E0) cells with n1_solv in gate band at some "
+          f"f >= {G3SCAN_PRESCAN_FMIN}: {pre_verdict['cells_n1_ok_fge025']}"
+          f"/{pre_verdict['cells_total']}"
+          f" (full hard gate: {pre_verdict['cells_gate_ok_fge025']})")
+    if pre_verdict["route_a_killed"]:
+        print("[pre-scan] ANALYTIC ROUTE-A KILL CRITERION FIRED: X -> 0.25*X "
+              "cannot produce n1_solv in the gate band at any (tau, E0). "
+              "Route A is dead at this surface (§3.5c block 1); the chord "
+              "scan proceeds — Route B carries the remaining freedom.")
+    else:
+        print("[pre-scan] Route-A kill criterion NOT fired: exposure "
+              "reduction inside the credible chord-axis range can reach the "
+              "n1_solv band.")
+
+    # ---- Block 2: chord families + the full nested scoring.
+    print("\n=== G3 Step 2: Block 2 (chord families + nested scoring) ===")
+    eb_by_tag = dict(G3SCAN_EBIND)
+    chord_rows, scan_rows = [], []
+    gated_hist_rows, gated_ke_rows = [], []
+    n_gated = 0
+    t0 = _time.time()
+    for v_c in G3SCAN_VC_TIER0 + G3SCAN_VC_DIAG:
+        authority = "tier0" if v_c in G3SCAN_VC_TIER0 else "diagnostic"
+        for eb_tag, e_bind in G3SCAN_EBIND:
+            fam = _g3scan_chord_family(
+                v_c, eb_tag, e_bind, m, ens, force_rebuild=force_rebuild
+            )
+            K655 = np.asarray(fam["K"]).reshape(-1)
+            trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+            v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+            t_exit = np.asarray(fam["t_exit"]).reshape(-1)
+            det = ~trapped
+            det_yield = float(det.mean())
+            if det.sum() == 0:
+                raise AssertionError(
+                    f"chord family {_g3scan_chord_tag(v_c, eb_tag)}: every "
+                    "fragment trapped — the non-trapped read is empty"
+                )
+            chord_rows.append({
+                "v_c": v_c, "p_tail": p_tail, "E_bind_tag": eb_tag,
+                "E_bind_eV": e_bind, "authority": authority,
+                "ebind_exception": int(eb_tag != "eb1168"), "m": m,
+                "trapped_frac": round(float(trapped.mean()), 4),
+                "det_yield": round(det_yield, 4),
+                "K655_q05": round(float(np.quantile(K655, 0.05)), 4),
+                "K655_q50": round(float(np.quantile(K655, 0.50)), 4),
+                "K655_q95": round(float(np.quantile(K655, 0.95)), 4),
+                "v_inf_det_q50": round(float(np.quantile(v_inf[det], 0.50)), 3),
+                "t_exit_q50": round(float(np.nanquantile(t_exit, 0.50)), 2),
+                "R_det_q05": round(float(np.quantile(R_frag[det], 0.05)), 2),
+                "R_det_q50": round(float(np.quantile(R_frag[det], 0.50)), 2),
+                "R_det_q95": round(float(np.quantile(R_frag[det], 0.95)), 2),
+                "R_src_q05": round(float(np.quantile(R_frag, 0.05)), 2),
+                "R_src_q50": round(float(np.quantile(R_frag, 0.50)), 2),
+                "R_src_q95": round(float(np.quantile(R_frag, 0.95)), 2),
+            })
+            fam_gated = 0
+            for tau in G3SCAN_TAU_PS:
+                K = K655 * (TAU_PS / tau)
+                for e0 in G3SCAN_E0_GRID:
+                    n_det, sup = fate_map(ne, K, e0, 1, sig)
+                    row = {
+                        "leg": "g3scan", "ladder": lad, "v_c": v_c,
+                        "p_tail": p_tail, "E_bind_tag": eb_tag,
+                        "E_bind_eV": e_bind, "authority": authority,
+                        "ebind_exception": int(eb_tag != "eb1168"),
+                        "tau_ps": tau,
+                        "tau_flag": int(tau > G3SCAN_TAU_SOURCED),
+                        "E0_eV": e0, "m": m,
+                        "det_yield": round(det_yield, 4),
+                    }
+                    try:
+                        obs, ke_bins = g3_score(
+                            n_det, sup, trapped, v_inf, ref_ke, solv_exp
+                        )
+                    except ValueError:
+                        # a legitimate scan outcome (e.g. nothing solvates):
+                        # record the cell as un-scoreable, never gated
+                        row.update({k: np.nan for k in (
+                            "trapped_frac", "suppressed_frac", "nbar_det",
+                            "n1_solv", "ratio_n1_n2", "w1_solv",
+                            "midhot_arith", "midhot_geo", "deepke",
+                            "n1_ke_eV")})
+                        row.update({"midhot_bins": 0, "deepke_bins": 0,
+                                    "gate_n1": 0, "gate_nbar": 0, "gate": 0})
+                        scan_rows.append(row)
+                        continue
+                    g_n1 = (G3SCAN_GATE_N1SOLV[0] <= obs["n1_solv"]
+                            <= G3SCAN_GATE_N1SOLV[1])
+                    g_nb = (G3SCAN_GATE_NBAR[0] <= obs["nbar"]
+                            <= G3SCAN_GATE_NBAR[1])
+                    gate = bool(g_n1 and g_nb)
+                    row.update({
+                        "trapped_frac": round(obs["trapped_frac"], 4),
+                        "suppressed_frac": round(obs["sup_frac"], 4),
+                        "nbar_det": round(obs["nbar"], 3),
+                        "n1_solv": round(obs["n1_solv"], 4),
+                        "ratio_n1_n2": round(obs["ratio"], 3),
+                        "w1_solv": round(obs["w1"], 4),
+                        "midhot_arith": round(obs["midhot_arith"], 4),
+                        "midhot_geo": round(obs["midhot_geo"], 4),
+                        "midhot_bins": obs["midhot_bins"],
+                        "deepke": round(obs["deepke"], 4),
+                        "deepke_bins": obs["deepke_bins"],
+                        "n1_ke_eV": round(obs["n1_ke"], 4),
+                        "gate_n1": int(g_n1), "gate_nbar": int(g_nb),
+                        "gate": int(gate),
+                    })
+                    scan_rows.append(row)
+                    if gate:
+                        fam_gated += 1
+                        n_gated += 1
+                        hrow = {k: row[k] for k in (
+                            "v_c", "E_bind_tag", "tau_ps", "E0_eV")}
+                        hrow.update({f"h{k}": round(float(obs["hist"][k]), 4)
+                                     for k in range(N_STAR + 1)})
+                        gated_hist_rows.append(hrow)
+                        gated_ke_rows.extend(
+                            {"v_c": v_c, "E_bind_tag": eb_tag, "tau_ps": tau,
+                             "E0_eV": e0, "n": n, "weight": round(w, 4),
+                             "mean_KE_eV": round(k_, 4)}
+                            for n, w, k_ in ke_bins
+                        )
+            print(f"[g3scan {_g3scan_chord_tag(v_c, eb_tag):14s}] "
+                  f"({authority:10s}) trap={trapped.mean():.3f} "
+                  f"K655_q50={np.quantile(K655, 0.50):.3f} "
+                  f"gated={fam_gated}/216  "
+                  f"[{_time.time() - t0:6.0f} s]")
+
+    with open(OUT / "h2b_g3scan_chords.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(chord_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(chord_rows)
+    with open(OUT / "h2b_g3scan_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(scan_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(scan_rows)
+    gated_hist_fields = (["v_c", "E_bind_tag", "tau_ps", "E0_eV"]
+                         + [f"h{k}" for k in range(N_STAR + 1)])
+    with open(OUT / "h2b_g3scan_gated_predictions.csv", "w",
+              newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=gated_hist_fields)
+        wtr.writeheader()
+        wtr.writerows(gated_hist_rows)
+    with open(OUT / "h2b_g3scan_gated_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(
+            fh, fieldnames=["v_c", "E_bind_tag", "tau_ps", "E0_eV", "n",
+                            "weight", "mean_KE_eV"]
+        )
+        wtr.writeheader()
+        wtr.writerows(gated_ke_rows)
+    print(f"\nchords     -> {OUT / 'h2b_g3scan_chords.csv'}")
+    print(f"scan       -> {OUT / 'h2b_g3scan_predictions.csv'}")
+    print(f"gated hist -> {OUT / 'h2b_g3scan_gated_predictions.csv'}")
+    print(f"gated KE   -> {OUT / 'h2b_g3scan_gated_ke.csv'}")
+
+    # ---- Verdict block (pre-registered gate / failure criterion).
+    gated = [r for r in scan_rows if r["gate"] == 1]
+    print(f"\n=== G3 Step 2 verdict: {len(gated)}/{len(scan_rows)} cells "
+          "inside the hard gate ===")
+    if gated:
+        by_class = {}
+        for r in gated:
+            key = (r["authority"], "tau_flagged" if r["tau_flag"]
+                   else "tau_sourced")
+            by_class[key] = by_class.get(key, 0) + 1
+        for key, cnt in sorted(by_class.items()):
+            print(f"  {key[0]:10s} / {key[1]:11s}: {cnt}")
+        best = sorted(gated, key=lambda r: r["w1_solv"])[:12]
+        print("  gated cells by W1 (reported, NOT gating):")
+        for r in best:
+            print(f"    vc={r['v_c']:<5} {r['E_bind_tag']:6s} "
+                  f"tau={r['tau_ps']:<4} E0={r['E0_eV']:<5} "
+                  f"n1={r['n1_solv']:.3f} nbar={r['nbar_det']:.2f} "
+                  f"W1={r['w1_solv']:.3f} trap={r['trapped_frac']:.3f} "
+                  f"supp={r['suppressed_frac']:.3f} "
+                  f"deepKE={r['deepke']:.2f} [{r['authority']}"
+                  f"{', TAU-FLAG' if r['tau_flag'] else ''}"
+                  f"{', EBIND-EXC' if r['ebind_exception'] else ''}]")
+    else:
+        print("  PRE-REGISTERED FAILURE CRITERION FIRED: no cell inside the "
+              "gate anywhere on the grid INCLUDING the diagnostic arms.")
+        print("  => Route A and Route B fail at the (v_c, tau, E0, E_bind) "
+              "surface — the corrected-geometry failure localizes to the")
+        print("     mechanism (pickup re-filling, per-shed eps, ladder "
+              "shape — the knobs the twin does not carry), and the standing")
+        print("     point reads as an effective model of the detected "
+              "subset (§3.5c).")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -2490,6 +2949,8 @@ def main():
         stage_repilot2()
     elif mode == "g3landmarks":
         stage_g3landmarks()
+    elif mode == "g3scan":
+        stage_g3scan()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -2504,7 +2965,7 @@ def main():
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
             "legaprime | legb | legc | legd | repilots1 | repilots2 | "
-            "g3landmarks)"
+            "g3landmarks | g3scan)"
         )
 
 

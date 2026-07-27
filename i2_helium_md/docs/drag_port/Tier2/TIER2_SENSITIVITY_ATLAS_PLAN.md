@@ -714,7 +714,7 @@ geometry grid readable while leaving the question open and flagged. The
 distinguishing test, if it is ever wanted cheaply: a geometric retained
 fraction is insensitive to (v_c, b), an over-dissipation artifact is not.
 
-### 3.5c G3 Step 2 — the Route A/B twin scan (DESIGNED 2026-07-27, user-approved; **next step**, awaiting its `[PROCEED TO IMPLEMENTATION]`)
+### 3.5c G3 Step 2 — the Route A/B twin scan (DESIGNED 2026-07-27, user-approved; **EXECUTED 2026-07-27** — 24/6480 cells gate, basin Tier-0-legitimate; findings "G3 Step 2")
 
 Design frozen from the Step-1 numbers (findings "G3 Step 1"); scan spec
 adjudicated by the user 2026-07-27.
@@ -784,6 +784,18 @@ detected subset.
 N = 500 behind its own trigger; the retained-policy sub-decision and
 the Axis-B deferral question are decided on the scan's evidence (G2
 record).
+
+**Execution record (2026-07-27, stage `g3scan`, zero MD):** oracles
+bit-exact; Route-A kill NOT fired (141/216 free cells reach the n₁ band
+at f ≥ 0.25) but pure rescaling never lands the joint gate — the
+landing needs chord reshaping. **24/6480 cells gate, all inside the
+Tier-0 v_c range (diagnostic arms: 0 — the failure criterion did not
+fire).** Fully-unflagged basin at the standing well: (v_c 5.5, τ 4.8,
+E₀ 0.36–0.37) + (v_c 6.0, τ 6.4, E₀ 0.32–0.33); the standing chord
+v_c 7.25 gates at 0/216. Landing is cascade-carried (det_yield
+0.87–0.99, no R-selection). Full record: findings "G3 Step 2", D0
+§14.5; the MD confirmation ring is the designed next step, behind its
+own trigger.
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 

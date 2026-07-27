@@ -537,3 +537,160 @@ def test_g3_grid_cell_draw_laws(twin):
 
     with pytest.raises(ValueError, match="unknown grid law"):
         twin._g3_grid_cell_draw("l9", R, 10, rng)
+
+
+# ---------------------------------------------------------------------------
+# G3 Step 2 -- the Route A/B twin scan (atlas plan §3.5c)
+# ---------------------------------------------------------------------------
+def _center_pin_args(twin):
+    from i2_helium_md.physics.constants import droplet_radius_bulk_angstrom
+
+    R2000 = float(droplet_radius_bulk_angstrom(2000.0))
+    m21 = float(twin.complex_mass_amu(twin.N_STAR))
+    return (
+        np.array([0.0]), np.array([1.0]), np.array([R2000]), np.array([m21]),
+    )
+
+
+def test_e_bind_default_is_byte_inert(twin):
+    """e_bind_ev=None and the explicit bundle stamp are the identical
+    arithmetic path -- array_equal, not allclose (the g3scan extension must
+    not perturb any recorded landmark)."""
+    args = _center_pin_args(twin)
+    ref = twin.integrate_pairs(*args, drag_on=True, v_c=7.25, p_tail=-1.0)
+    explicit = twin.integrate_pairs(
+        *args, drag_on=True, v_c=7.25, p_tail=-1.0,
+        e_bind_ev=twin.E_BIND_ION_EV,
+    )
+    for key in ("K", "v_inf", "t_exit", "v_peak"):
+        assert np.array_equal(ref[key], explicit[key]), key
+
+
+def test_e_bind_lever_direction(twin):
+    """A shallower well decelerates the exit less: smaller K, larger v_inf
+    (the §6.7 item-2 lever direction); deeper well the other way."""
+    args = _center_pin_args(twin)
+    mid = twin.integrate_pairs(*args, drag_on=True, v_c=7.25, p_tail=-1.0)
+    shallow = twin.integrate_pairs(
+        *args, drag_on=True, v_c=7.25, p_tail=-1.0, e_bind_ev=0.0482
+    )
+    deep = twin.integrate_pairs(
+        *args, drag_on=True, v_c=7.25, p_tail=-1.0, e_bind_ev=0.154
+    )
+    assert shallow["K"][0, 0] < mid["K"][0, 0] < deep["K"][0, 0]
+    assert shallow["v_inf"][0, 0] > mid["v_inf"][0, 0] > deep["v_inf"][0, 0]
+
+
+def test_g3scan_grid_matches_frozen_spec(twin):
+    """The §3.5c frozen grids: chord surface 10 x 3 (30 integrations), free
+    surface 6 x 36, nested total 6480; the v_c floor is the TDDFT band top;
+    the diagnostic arms and the standing cell are present; gate bounds."""
+    assert twin.G3SCAN_VC_TIER0 == (5.0, 5.5, 6.0, 6.5, 7.25, 8.0, 9.0, 10.0)
+    assert min(twin.G3SCAN_VC_TIER0) == 5.0   # TDDFT band top 4.95 respected
+    assert twin.G3SCAN_VC_DIAG == (3.5, 4.25)
+    tags = [t for t, _ in twin.G3SCAN_EBIND]
+    vals = dict(twin.G3SCAN_EBIND)
+    assert tags == ["eb0482", "eb1168", "eb154"]  # §6.7 item-2 continuity
+    assert vals["eb1168"] == twin.E_BIND_ION_EV   # standing = bundle stamp
+    assert vals["eb0482"] == 0.0482 and vals["eb154"] == 0.154
+    assert twin.G3SCAN_TAU_PS == (2.4, 3.2, 4.8, 6.4, 9.6, 12.8)
+    assert twin.G3SCAN_TAU_SOURCED == 6.55
+    e0 = twin.G3SCAN_E0_GRID
+    assert e0[0] == 0.17 and e0[-1] == 0.52 and e0.size == 36
+    assert np.allclose(np.diff(e0), 0.01)
+    n_chord = len(twin.G3SCAN_VC_TIER0 + twin.G3SCAN_VC_DIAG) * len(
+        twin.G3SCAN_EBIND
+    )
+    assert n_chord == 30
+    assert n_chord * len(twin.G3SCAN_TAU_PS) * e0.size == 6480
+    assert twin.G3SCAN_GATE_N1SOLV == (0.19, 0.30)
+    assert twin.G3SCAN_GATE_NBAR == (4.4, 7.1)
+    # the standing cell is on the grid (landmark continuity)
+    assert twin.G3_STANDING[1] in twin.G3SCAN_VC_TIER0
+    # pre-scan: f grid carries the 0.25 kill point and full exposure
+    assert 0.25 in twin.G3SCAN_PRESCAN_F and 1.0 in twin.G3SCAN_PRESCAN_F
+    assert twin.G3SCAN_PRESCAN_FMIN == 0.25
+
+
+def test_g3scan_gate_boundaries(twin):
+    """Hard gate = n1_solv AND nbar clauses, closed intervals; NaN never
+    gates (an un-scoreable cell must not pass)."""
+    assert twin.g3scan_gate(0.24, 5.0)
+    assert twin.g3scan_gate(0.19, 4.4) and twin.g3scan_gate(0.30, 7.1)
+    assert not twin.g3scan_gate(0.18, 5.0)
+    assert not twin.g3scan_gate(0.31, 5.0)
+    assert not twin.g3scan_gate(0.24, 4.3)
+    assert not twin.g3scan_gate(0.24, 7.2)
+    assert not twin.g3scan_gate(np.nan, 5.0)
+    assert not twin.g3scan_gate(0.24, np.nan)
+
+
+def test_g3scan_prescan_synthetic(twin):
+    """Hand-built ensemble on the flat ladder: exposure scalings f sweep the
+    fate map from no-strip to deep-strip, the recorded gate interval brackets
+    exactly the f values whose light score lands both clauses, and the
+    f = 1 / f = 0.25 columns match direct fate-map evaluations."""
+    sig = twin.sigma_cum(twin.ladder_rungs("flat"))
+    rng = np.random.default_rng(7)
+    M = 4000
+    ne = np.full(M, twin.N_STAR)
+    K655 = rng.uniform(1.0, 3.0, M)
+    trapped = np.zeros(M, dtype=bool)
+    trapped[:200] = True  # 5 % trapped -- excluded from the light score
+    rows, verdict = twin._g3scan_prescan(K655, trapped, ne, sig)
+    assert len(rows) == len(twin.G3SCAN_TAU_PS) * twin.G3SCAN_E0_GRID.size
+    assert verdict["cells_total"] == len(rows)
+    # verdict counts are consistent with the per-row flags
+    assert verdict["cells_n1_ok_fge025"] == sum(r["n1_ok_fge025"]
+                                                for r in rows)
+    assert verdict["cells_gate_ok_fge025"] == sum(r["gate_ok_fge025"]
+                                                  for r in rows)
+    assert verdict["route_a_killed"] == (verdict["cells_n1_ok_fge025"] == 0)
+    # spot-check one row's f = 1.0 column against a direct evaluation
+    r = next(row for row in rows
+             if row["tau_ps"] == 3.2 and row["E0_eV"] == 0.27)
+    K = K655 * (twin.TAU_PS / 3.2)
+    n_det, _ = twin.fate_map(ne, K, 0.27, 1, sig)
+    n1, nbar, _ = twin._g3scan_light(n_det, trapped)
+    assert r["n1_solv_f100"] == round(n1, 4)
+    assert r["nbar_f100"] == round(nbar, 3)
+    assert r["gate_f100"] == int(twin.g3scan_gate(n1, nbar))
+    # and the f = 0.25 column
+    n_det, _ = twin.fate_map(ne, 0.25 * K, 0.27, 1, sig)
+    n1_q, nbar_q, _ = twin._g3scan_light(n_det, trapped)
+    assert r["n1_solv_f025"] == round(n1_q, 4)
+    assert r["gate_f025"] == int(twin.g3scan_gate(n1_q, nbar_q))
+    # gate interval, when present, is inside the f grid and ordered
+    for row in rows:
+        lo, hi = row["f_gate_lo"], row["f_gate_hi"]
+        if not (np.isnan(lo) or np.isnan(hi)):
+            assert 0.05 <= lo <= hi <= 1.0
+
+
+def test_g3scan_light_score_conventions(twin):
+    """Trapped exclusion + solvated normalisation + the strip diagnostic."""
+    n_det = np.array([0, 1, 1, 3, 9, 21])
+    trapped = np.array([False, False, False, False, False, True])
+    n1, nbar, frac_le8 = twin._g3scan_light(n_det, trapped)
+    assert abs(nbar - (0 + 1 + 1 + 3 + 9) / 5.0) < 1e-12
+    assert abs(n1 - 2.0 / 4.0) < 1e-12         # 4 solvated, 2 at n=1
+    assert abs(frac_le8 - 4.0 / 5.0) < 1e-12   # n<=8 of the detected read
+    # nothing solvates -> NaN n1 (never gated), nbar still defined
+    n1b, nbarb, _ = twin._g3scan_light(np.zeros(4, dtype=int),
+                                       np.zeros(4, dtype=bool))
+    assert np.isnan(n1b) and nbarb == 0.0
+
+
+def test_g3scan_chord_tag_and_cache_guard(twin, tmp_path, monkeypatch):
+    """Cache filenames are unambiguous per (v_c, E_bind); a stale stamp
+    fails loud instead of silently serving another family's chord."""
+    assert twin._g3scan_chord_tag(7.25, "eb1168") == "vc7p25_eb1168"
+    assert twin._g3scan_chord_tag(5.0, "eb0482") == "vc5p0_eb0482"
+    monkeypatch.setattr(twin, "OUT", tmp_path)
+    bad = {"K": np.zeros((2, 1)), "v_inf": np.zeros((2, 1)),
+           "t_exit": np.zeros((2, 1)), "trapped": np.zeros((2, 1)),
+           "v_c": 9.0, "e_bind_ev": 0.154, "m": 20000.0,
+           "seed": float(twin.G3_SEED)}
+    np.savez_compressed(tmp_path / "h2b_g3scan_chord_vc9p0_eb154.npz", **bad)
+    with pytest.raises(AssertionError, match="stale g3scan chord cache"):
+        twin._g3scan_chord_family(9.0, "eb154", 0.154, 999, ens=None)

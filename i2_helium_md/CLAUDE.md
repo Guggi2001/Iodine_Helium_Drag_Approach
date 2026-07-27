@@ -125,12 +125,16 @@ S6 oracle bit-exact, 11-cell twin↔MD authority box measured (supp/n₁_solv
 near-quantitative, n̄ residence-scale hot, trap a twin floor, center-pin
 trap channel twin-invisible), corrected-ensemble twin row confirms the
 D2b forecast cross-instrument (findings "G3 Step 1"; stage `g3landmarks`).
-**Next:** the G3 Step 2 twin scan
-(**designed + user-approved 2026-07-27, plan §3.5c** — nested Route A/B
-factorial: chord surface (v_c, E_bind) × free surface (τ, E₀),
-zero-integration pre-scan first, pre-registered gate + failure
-criterion; awaiting its trigger); then the D2b A/B remainder; E₀/τ
-curves defer-past-G3 question open. RQ3/RQ5 reads and
+**G3 Step 2 twin scan EXECUTED 2026-07-27** (stage `g3scan`, zero MD,
+6480 cells): oracles bit-exact, failure criterion NOT fired — **24
+cells gate, all Tier-0-legitimate; fully-unflagged basin (v_c 5.5–6.0,
+τ 4.8–6.4, E₀ 0.32–0.37) at the standing well; the standing chord
+v_c 7.25 gates nowhere at the corrected geometry; landing
+cascade-carried, not selection-carried** (findings "G3 Step 2", D0
+§14.5). **Next:** the G3 MD confirmation ring (~10–20 × N = 500 around
+the clean basin) behind its own trigger; the retained-policy
+sub-decision + Axis-B deferral question now decidable on the scan's
+evidence; then the D2b A/B remainder. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the
