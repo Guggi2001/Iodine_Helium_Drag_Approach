@@ -928,3 +928,139 @@ interpolation error as measured above.
 
 **Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
 undischarged. G2 can now be taken on this forecast + the direct G1 rows.
+
+## G3 Step 1 — twin landmark re-issue at the corrected geometry (2026-07-27, zero MD)
+
+`scripts/tier2_h2b_forward_model.py g3landmarks` (new committed stage;
+helper tests in `tests/test_tier2_h2b_forward_model.py`), executed under
+its own `[PROCEED TO IMPLEMENTATION]` after G2. Three parts, oracle first;
+outputs `h2b_g3_grid_twin{,_ke}.csv`, `h2b_g3_corrected_landmarks.csv`,
+`h2b_g3_corrected_{row,ke}.csv` next to the committed twin CSVs.
+
+### Oracles (all PASSED before any new number was read)
+
+- **G3-P1 (S6 wiring):** all three committed `h2b_s6_final` rows
+  (predictions **and** KE tables) re-derived **string-identically** from
+  the leg-D draw discipline + the S6 scorer block — the reconstruction is
+  certified against the frozen record.
+- **G3-P2 (continuity anchor):** the recorded production center-pin
+  landmark K = 0.74460 is reproduced — under the **pure-cubic** law, which
+  is what it was recorded under (an earlier draft asserted it against the
+  capped tail and failed at K = 0.48875; the landmark family is
+  law-tagged from now on).
+- **Test-level:** the twin's L2 arm (repo Boltzmann sampler at 313.2 K)
+  reproduces the plan §3.1 pre-registered exposure-table mean depth
+  29.3 Å at R = 34 Å.
+
+### The re-issued center-pin landmarks (production kinematics, n₀ = 21)
+
+| pin | N [He] | R [Å] | K_cubic (τ6.55) | K_capped (τ6.55) | t_exit [ps] | v_inf [Å/ps] | n_det |
+|---|---|---|---|---|---|---|---|
+| R2000 anchor | 2000 | 27.94 | **0.74460** | 0.48875 | 2.95 | 5.22 | 10 |
+| r1 | 1727 | 26.60 | 0.68520 | 0.44618 | 2.69 | 5.56 | 9 |
+| r2 | 3605 | 34.00 | 1.05191 | 0.72305 | 4.41 | 4.08 | 14 |
+| r3 | 11059 | 49.40 | 14.93149 | 1.70360 | 10.04 | 2.33 | 20 |
+| corr ⟨N⟩ | 12794 | 51.86 | 17.01518 | 2.04271 | 11.20 | 2.10 | 21 |
+| r4 | 29227 | 68.30 | 20.43799 | 20.23274 | 21.85 | 2.35 | 21 |
+
+Reads: (i) **the capped tail is what makes the anchored radii traversable
+at all** — under pure cubic the R ≥ 49 Å center pin saturates the 150 ps
+window (K 14.9–20.4 against the ≈ 22.9 window ceiling), under the cap the
+fragment exits in 10–22 ps; (ii) even under the cap, R = 68.3 Å is in the
+crawl regime (K_capped 20.2 — the fragment escapes but arrives at
+n_det = 21, fully cold); (iii) the old center-pin landmarks
+(K_prod 0.74460, K_9Å 0.89767) are ⟨N⟩ = 2000 numbers and are hereby
+**superseded as ensemble anchors** — at the corrected mean size the
+capped-law center-pin K is 2.04.
+
+### Twin ↔ MD transfer at the G1 grid — the re-issued authority box
+
+All 11 G1 cells run through the twin at the standing point (m = 20000 per
+cell, CRN seed 20260727, density-tied dressing, MD rung tables); compared
+against the MD rows of D0 §14.1 (committed conventions; twin trapped vs
+the MD **t_b + t_m total**). Full table `h2b_g3_grid_twin.csv`; the
+authority statements, which **supersede the standing-geometry
+channel-(d) numbers for all G3 use**:
+
+1. **Suppression/selection transfers near-quantitatively.** supp within
+   0.02 of MD on every L3 cell (0.186/0.167, 0.147/0.140, 0.115/0.123,
+   0.103/0.126) and exactly 0 on every L1/L2 cell, matching MD; n₁_solv
+   within 0.016 on L3 and exactly 0 on L1/L2. Route B's selection
+   observables are the twin's best-transferred ones.
+2. **n̄ carries a residence-scaled hot bias.** Twin − MD: +0.2…+0.6 He at
+   R1 → +1.4…+1.6 at R2 → +1.9/+2.8 at R3 → +2.5/+3.2 at R4 — the
+   channel-(d) frozen-chord bias re-measured at long chords, same sign as
+   the standing-geometry −0.32 (MD − twin) and growing ≈ linearly with
+   in-droplet residence, as I73 predicted. W₁ inherits it
+   (+0.26 → +3.2). **Any G3 twin scan must aim n̄ at target + bias, and
+   twin-landing cells are conservative candidates (MD lands lower).**
+3. **trap is a lower bound, and the center-pin trap channel is invisible.**
+   Twin under-traps every off-center cell by 0.03–0.14 (e.g. r3l3
+   0.305/0.404, r4l2 0.704/0.800) — consistent with no pickup
+   mass-loading and no Landau freeze. At **r3l1 the twin traps 0.000
+   against MD 0.538**: at an exact center pin the 1D chord has no
+   inward-partner asymmetry, so the MD trap channel there is
+   **mechanism-made** (pickup mass-loading during the long transit +
+   relaxation-stage Landau off-switch), structurally outside the twin.
+   Route B trap reads are therefore twin **floors**, not estimates.
+4. **KE observables are direction-only, twin ≈ 15–30 % hot** (midhot_geo
+   +0.06…+0.28 where both defined; deepKE +0.09…+0.44 except the
+   band-edge r3l3/r4l3 at ±0.1). Orderings are preserved everywhere,
+   including the deepKE = 1 crossing bracketed between r2l3 and r3l3 by
+   both instruments.
+5. The window-saturated K tail (K_q95 ≈ 44–46 at R ≥ 34 Å off-center
+   cells) is the twin image of the MD retained class; the twin cannot
+   decompose bound vs marginal.
+
+### The corrected-ensemble twin row (finc1v725 parameters, corrected geometry)
+
+Master draw m = 20000, seed 20260727, draw order N → births → cosines:
+`legacy`+`raw` sizes at the preset's own 40 mbar / 14 K (drawn ⟨N⟩ 12750
+vs nozzle correlation 12794; R q05/q50/q95 = 34.6/48.5/68.4 Å — the
+parent's own quantiles 34/68.3 reproduced) × Boltzmann 313.2 K births
+(depth q05/q50/q95 = 27.6/33.8/45.9 Å). Dressing saturates (n₀ ≡ 21).
+K(τ3.2) q05/q50/q95 = 1.26/2.73/44.0; t_exit q50/q95 = 7.7/18.7 ps.
+
+| | standing (twin) | corrected (twin) | D2b §4.3 corr × L2 forecast |
+|---|---|---|---|
+| trap | 0.0416 | 0.3080 | 0.31–0.42 |
+| supp | 0.2019 | **0** | 0 |
+| n̄_det | 4.387 | 16.99 | 13.9–14.7 |
+| n₁_solv | 0.2429 | **0** | 0 |
+| W₁_solv | 0.678 | 12.11 | 9.0–9.8 |
+| midHot (geo) | 1.067 | 1.588 (1 bin) | 1.256 (4 bins) |
+| deepKE | 0.898 | 2.119 (8 bins) | 1.80–1.90 |
+
+**Cross-instrument agreement — the headline.** Two independent zero-MD
+instruments (grid re-weighting over MD cells vs the twin forward model)
+now give the same corrected-geometry picture, and **every twin−forecast
+discrepancy carries exactly the sign and magnitude of the measured twin
+bias above**: trap at the forecast's low edge (twin under-traps), n̄ high
+by ≈ +2.5 (the residence bias), W₁ high by the same channel, KE hot by
+the KE bias. The G2 dossier's ensemble forecast is thereby independently
+confirmed: at the corrected geometry the standing parameters break the
+landing through the dressing/suppression channel (supp → 0, low-n
+evacuated), trap ≈ ⅓, and the KE observables overshoot hot.
+
+**Caveats:** twin numbers, frozen-chord authority as boxed above; the
+corrected midHot rests on 1 occupied band bin; no bound/marginal
+decomposition; nothing here is an MD result.
+
+### Consequences for the G3 scan (design inputs, not adjudication)
+
+- The twin is **certified as the G3 scan instrument** with the
+  per-observable authority box above; the scan reads Route B's selection
+  observables at near-quantitative authority and Route A's cascade
+  observables with the stated hot bias applied.
+- The n̄ gap the scan must close is enormous at the standing parameters
+  (twin 17.0 vs target ≈ 4.1) and n̄ moves toward the target as trap
+  rises (detected-subset selection) — consistent with Route B carrying
+  more of the load than Route A energetics alone.
+- Landmark continuity: any future twin session at the corrected geometry
+  oracles against `h2b_g3_corrected_row.csv` (bit-exact re-derivation,
+  same seed/draw order) the way S6 sessions oracle against
+  `h2b_s6_final`.
+
+**Atlas stance intact:** nothing adopted, `finc1v725` stands, F5
+undischarged; the G3 scan itself (Route A/B (v_c, τ, E₀)[+ E_bind] grid)
+stays behind its own trigger.

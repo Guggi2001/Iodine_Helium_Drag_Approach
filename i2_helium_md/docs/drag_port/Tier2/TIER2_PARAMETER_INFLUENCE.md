@@ -926,6 +926,25 @@ hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
 histogram renormalizes to n ≥ 1), so losing the suppression channel at
 saturated dressing is not by itself disqualifying.
 
+### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model)
+
+The S6 twin was re-issued at the corrected geometry and measured against
+all 11 G1 MD cells (stage `g3landmarks`; full record findings "G3
+Step 1"). The per-observable authority box, superseding the
+standing-geometry channel-(d) numbers for G3 use: **supp / n₁_solv
+near-quantitative** (within 0.02 / 0.016 on L3, exact 0 on L1/L2);
+**n̄ hot with a residence-scaled bias** (+0.2…+3.2 He across R1→R4, W₁
+inheriting it) — twin scans aim at target + bias; **trap a twin floor**
+(−0.03…−0.14; the r3l1 center-pin trap channel, MD 0.538, is
+structurally twin-invisible — mechanism-made by pickup mass-loading +
+Landau freeze); **KE direction-only** (+15–30 % hot); all orderings
+preserved incl. the deepKE = 1 crossing bracket. The corrected-ensemble
+twin row at finc1v725 parameters confirms the §15.7 forecast
+cross-instrument (trap 0.308, supp 0, n̄ 17.0, W₁ 12.1, deepKE 2.12 —
+each discrepancy = the measured bias). Landmark table re-issued and
+law-tagged (the recorded center-pin K 0.74460 is pure-cubic; under the
+capped tail the anchored radii are traversable at K_capped 1.7–20.2).
+
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 
 ### 15.1 The laws as implemented

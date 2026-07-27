@@ -11021,3 +11021,51 @@ doubles as the evidence for this sub-decision.
 F5 remains undischarged. Next concrete step: the G3 twin landmark
 re-issue at the corrected geometry (today's landmarks are all
 center-pinned ⟨N⟩ = 2000 numbers), behind its trigger.
+
+## G3 Step 1 EXECUTED — twin landmark re-issue at the corrected geometry (S6 oracle bit-exact; the 11-cell twin↔MD transfer measured — n̄ bias residence-scaled, trap a twin floor, center-pin trap channel twin-invisible; corrected-ensemble twin row confirms the D2b forecast cross-instrument) (2026-07-27, zero MD, triggered)
+
+Executed under its `[PROCEED TO IMPLEMENTATION]` (user, this session),
+scoped exactly as agreed: landmark re-issue + G1 deep-cell oracle check,
+scan deferred. Delivered as a new committed stage
+`g3landmarks` in `scripts/tier2_h2b_forward_model.py` (the S6 driver
+machinery reconstructed in-repo: leg-D draw discipline + the frozen S6
+scorer block + the committed-reference KE bands), four helper tests
+appended to `tests/test_tier2_h2b_forward_model.py` (26/26 pass, incl.
+the L2-arm 29.3 Å exposure-table check). Outputs committed next to the
+S6 record: `h2b_g3_grid_twin{,_ke}.csv`, `h2b_g3_corrected_landmarks.csv`,
+`h2b_g3_corrected_{row,ke}.csv`. Full parameter→influence record:
+findings doc "G3 Step 1" section. Decisions and findings:
+
+1. **G3-P1 oracle PASSED bit-exact** — all three committed `h2b_s6_final`
+   rows (predictions + KE) re-derived string-identically before any new
+   number was read (§1.4 discipline).
+2. **G3-P2 continuity anchor PASSED with a law-tag correction:** the
+   recorded K = 0.74460 production center-pin landmark is a **pure-cubic**
+   number (stage_oracles runs `v_c=None`); the first anchor draft asserted
+   it against the capped tail and failed (K = 0.48875). The re-issued
+   landmark table now carries both laws per pin; landmark rows are
+   law-tagged from now on.
+3. **The twin↔MD authority box is re-measured at long chords and
+   supersedes the standing-geometry channel-(d) numbers for G3 use:**
+   supp/n₁_solv near-quantitative (Route B's observables); n̄ hot with a
+   residence-scaled bias (+0.2…+3.2 He, W₁ inheriting it); **trap a twin
+   floor** (−0.03…−0.14, no pickup mass-loading / Landau freeze), with
+   the r3l1 center-pin trap channel (MD 0.538) **structurally invisible**
+   to the twin (0.000); KE observables direction-only (+15–30 % hot);
+   all orderings preserved incl. the deepKE = 1 crossing bracket.
+4. **Cross-instrument confirmation of the G2 dossier:** the corrected-
+   ensemble twin row (drawn ⟨N⟩ 12750; parent R quantiles reproduced)
+   lands inside/adjacent to the D2b §4.3 corr × L2 forecast on every
+   observable, with each twin−forecast discrepancy carrying exactly the
+   sign and magnitude of the item-3 measured bias — trap 0.308 (forecast
+   0.31–0.42), supp 0, n̄ 17.0 (13.9–14.7 + bias), W₁ 12.1 (9.0–9.8 +
+   bias), deepKE 2.12 (1.80–1.90 + bias).
+5. **Landmark continuity convention:** future corrected-geometry twin
+   sessions oracle against `h2b_g3_corrected_row.csv` bit-exactly, the
+   way S6 sessions oracle against `h2b_s6_final`.
+
+Atlas stance intact: nothing adopted, `finc1v725` stands, F5
+undischarged. **Next: the G3 Route A/B twin scan** ((v_c, τ, E₀)
+[+ E_bind] at the corrected geometry, scanned with the item-3 authority
+box applied), behind its own trigger; the retained-policy sub-decision
+and the Axis-B deferral question remain open at G3 as recorded at G2.

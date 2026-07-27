@@ -34,8 +34,15 @@ Recorded wiring oracles (``oracles`` stage; plan SI.11 V0-3): production
 center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
-        w12pred | birthlaw | legaprime | legb | legc
+        w12pred | birthlaw | legaprime | legb | legc | legd | repilots1 |
+        repilots2 | g3landmarks
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
+
+``g3landmarks`` (atlas §3.5 G3 Step 1, 2026-07-27): the twin landmark
+re-issue at the G2-adopted corrected geometry -- S6 wiring oracle, the 11
+Axis-A G1 cells vs their MD rows (the long-chord twin-authority
+measurement), center-pin landmarks per grid radius, and the
+corrected-ensemble row vs the D2b §4.3 forecast.
 """
 
 from __future__ import annotations
@@ -1902,6 +1909,564 @@ def stage_repilot2(m=20000):
     print(f"KE table    -> {OUT / 'h2b_repilot_s2_ke.csv'}")
 
 
+# --------------------------------------------------------------------------
+# G3 Step 1 — twin landmark re-issue at the corrected geometry
+# (TIER2_SENSITIVITY_ATLAS_PLAN.md §3.5 G3, first concrete step; executed
+# under its own `[PROCEED TO IMPLEMENTATION]`, 2026-07-27)
+# --------------------------------------------------------------------------
+# The standing production point finc1v725 (drag_migration_log_tier2.md):
+# rq4graded ladder, capped-cubic v_c 7.25 / p_tail -1, tau 3.2 ps, E0 0.27 eV.
+G3_STANDING = ("rq4graded", 7.25, -1.0, 3.2, 0.27)
+
+# Parent-consistent Boltzmann well depth (G0 decision 2: per-run override,
+# the config default stays 573.3 K).
+G3_CORRECTED_WELL_K = 313.2
+
+# One seed for every G3 draw — the Axis-A grid seed family (CRN across cells:
+# each Part-B cell re-seeds the SAME value, so cross-cell differences are
+# partly paired, mirroring the MD grid's shared-seed discipline).
+G3_SEED = 20260727
+
+# Part-A oracle cells: the three committed S6 finalist rows
+# (h2b_s6_final_{predictions,ke}.csv; probe plan I.11.5.5).
+G3_S6_CELLS = (
+    ("rq4graded", 7.25, -1.0, 3.2, 0.27),
+    ("rq4graded", 7.5, -1.0, 3.2, 0.27),
+    ("floor1", 7.0, -1.0, 3.8, 0.25),
+)
+
+# Part-B cells: the Axis-A G1 grid (gen_tier2atlas_geometry.py; R via the
+# bulk convention from the cell's fixed N_he). Laws: l1 center-pin (r0 = 0),
+# l2 parent Boltzmann at 313.2 K, l3 uniform_volume margin 3 A.
+G3_GRID_CELLS = (
+    ("r1l1", 1727, "l1"), ("r1l2", 1727, "l2"), ("r1l3", 1727, "l3"),
+    ("r2l1", 3605, "l1"), ("r2l2", 3605, "l2"), ("r2l3", 3605, "l3"),
+    ("r3l1", 11059, "l1"), ("r3l2", 11059, "l2"), ("r3l3", 11059, "l3"),
+    ("r4l2", 29227, "l2"), ("r4l3", 29227, "l3"),
+)
+
+# The MD-scored G1 rows this stage measures the twin against
+# (TIER2_PARAMETER_INFLUENCE.md §14.1; committed scorer: midHot geometric
+# n2-8, deepKE arithmetic n10-17; trap = t_b + t_m, i.e. the twin's single
+# trapped class is compared against the MD bound+marginal TOTAL; NaN = the
+# MD band was empty). Columns: trap, supp, nbar_det, n1_solv, W1_solv,
+# midhot_geo, deepke.
+G3_MD_G1_ROWS = {
+    "r1l1": (0.0, 0.0, 8.39, 0.0, 4.98, 1.04, 1.83),
+    "r1l2": (0.0, 0.0, 8.35, 0.0, 4.76, 1.25, 1.58),
+    "r1l3": (0.059, 0.167, 4.46, 0.235, 0.81, 1.02, 0.51),
+    "r2l1": (0.0, 0.0, 12.58, 0.0, 7.96, np.nan, 1.49),
+    "r2l2": (0.0, 0.0, 12.30, 0.0, 7.53, 1.42, 1.38),
+    "r2l3": (0.196, 0.140, 5.33, 0.184, 1.40, 1.11, 0.75),
+    "r3l1": (0.538, 0.0, 18.35, 0.0, 13.46, np.nan, 1.94),
+    "r3l2": (0.476, 0.0, 15.12, 0.0, 10.24, np.nan, 2.19),
+    "r3l3": (0.404, 0.123, 6.30, 0.151, 2.31, 1.31, 1.59),
+    "r4l2": (0.800, 0.0, 15.28, 0.0, 10.39, np.nan, 1.93),
+    "r4l3": (0.570, 0.126, 6.71, 0.128, 2.83, 1.33, 1.97),
+}
+
+G3_MD_OBS_KEYS = ("trap", "supp", "nbar", "n1_solv", "w1", "midhot_geo",
+                  "deepke")
+
+
+def g3_ref_mean_ke():
+    """Committed per-n reference mean KE (IHe_KED_reference.csv, n = 0..17)."""
+    from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference
+
+    ref = load_ihe_ked_reference(
+        REPO / "data/reference/ihe_ked/IHe_KED_reference.csv"
+    )
+    return {int(n): float(k) for n, k in zip(ref.n, ref.mean_KE_eV)}
+
+
+def g3_score(n_det, sup, trapped, v, ref_ke, solv_exp, min_bin_count=20):
+    """Score one twin cell with the S6 columns + the committed KE bands.
+
+    Returns ``(obs, ke_bins)``. ``obs`` holds unrounded values:
+    ``trapped_frac`` / ``sup_frac`` / ``hist`` (bare+solvated, non-trapped
+    normalised) / ``nbar`` / ``n1_solv`` / ``ratio`` / ``w1`` /
+    ``midhot_arith`` (the S6-frozen arithmetic n2-8 convention) /
+    ``midhot_geo`` + ``deepke`` (+ their bin counts; the committed
+    ``tier2_confirmation`` conventions: geometric n2-8 / arithmetic n10-17
+    of the per-bin sim/ref-mean ratios) / ``n1_ke``. ``ke_bins`` lists
+    ``(n, weight, mean_KE_eV)`` for non-trapped bins with at least
+    ``min_bin_count`` fragments (the S6 KE-row convention). Bands read only
+    bins present in ``ke_bins``; empty band -> NaN with count 0.
+    """
+    w = np.where(trapped, 0.0, 1.0)
+    w_tot = w.sum()
+    if w_tot == 0.0:
+        raise ValueError("every fragment is trapped -- no scoreable ensemble")
+    trapped_frac = float(trapped.mean())
+    sup_frac = float(w[sup].sum() / w_tot)
+    hist = np.bincount(n_det, weights=w, minlength=N_STAR + 1) / w_tot
+    nbar = float((np.arange(N_STAR + 1) * hist).sum())
+    solv_tot = hist[1:].sum()
+    if solv_tot <= 0.0:
+        raise ValueError("no solvated mass -- the solvated columns are 0/0")
+    solv = hist[1:] / solv_tot
+    n1_solv = float(solv[0])
+    ratio = float(hist[1] / hist[2]) if hist[2] > 0 else np.nan
+    w1 = wasserstein_bins(solv, solv_exp)
+    ke = kinetic_energy_eV(complex_mass_amu(n_det), v)
+    ke_mean, ke_bins = {}, []
+    for k in range(0, N_STAR + 1):
+        mask = (n_det == k) & ~trapped
+        if mask.sum() >= min_bin_count:
+            mk = float((w[mask] * ke[mask]).sum() / w[mask].sum())
+            ke_mean[k] = mk
+            ke_bins.append((k, float(w[mask].sum() / w_tot), mk))
+
+    def band(lo, hi, aggregate):
+        ratios = [ke_mean[n] / ref_ke[n] for n in range(lo, hi + 1)
+                  if n in ke_mean and n in ref_ke]
+        if not ratios:
+            return np.nan, 0
+        if aggregate == "geometric":
+            return float(np.exp(np.mean(np.log(ratios)))), len(ratios)
+        return float(np.mean(ratios)), len(ratios)
+
+    midhot_arith, _ = band(2, 8, "arithmetic")
+    midhot_geo, midhot_bins = band(2, 8, "geometric")
+    deepke, deepke_bins = band(10, 17, "arithmetic")
+    return {
+        "trapped_frac": trapped_frac, "sup_frac": sup_frac, "hist": hist,
+        "nbar": nbar, "n1_solv": n1_solv, "ratio": ratio, "w1": w1,
+        "midhot_arith": midhot_arith, "midhot_geo": midhot_geo,
+        "midhot_bins": midhot_bins, "deepke": deepke,
+        "deepke_bins": deepke_bins, "n1_ke": ke_mean.get(1, np.nan),
+    }, ke_bins
+
+
+def _g3_md_rung_tables():
+    """The MD generator's exact rung tables (the leg-A'/S6 convention)."""
+    from scripts.gen_tier2_md_confirmation import (
+        floor1_rungs_eV,
+        rq4graded_rungs_eV,
+    )
+
+    return {
+        "rq4graded": sigma_cum(
+            np.asarray(rq4graded_rungs_eV()[:N_STAR], dtype=float)
+        ),
+        "floor1": sigma_cum(
+            np.asarray(floor1_rungs_eV()[:N_STAR], dtype=float)
+        ),
+    }
+
+
+def _g3_s6_oracle(m, ref_ke, solv_exp):
+    """Part A: re-derive the three committed h2b_s6_final rows bit-for-bit.
+
+    Draw discipline is stage_legd's `d` leg verbatim (SEED 20260711; u/mu
+    first, the analytic kornilov prior after), density_tied dressing,
+    p = 1 onset coupling, exact tau rescale from TAU_PS.
+    """
+    from dataclasses import replace as _replace
+
+    from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes_analytic
+
+    sig_tables = _g3_md_rung_tables()
+
+    rng = np.random.default_rng(SEED)
+    u_ap = rng.uniform(0.0, 1.0, m)
+    mu_ap = rng.uniform(-1.0, 1.0, m)
+    cfg_d = _replace(
+        _CFG,
+        droplet_size_prior="kornilov_lognormal",
+        use_single_droplet_size=False,
+        num_molecules=m,
+    )
+    N_d = np.asarray(sample_droplet_sizes_analytic(cfg_d, rng=rng), dtype=float)
+    R_d = np.asarray(droplet_radius_bulk_angstrom(N_d), dtype=float)
+    r0 = (R_d - LEG_APRIME_MARGIN_A) * np.cbrt(u_ap)
+    rho = rho_he_ratio(r0 - R_d, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    mass_mol = complex_mass_amu(ne_mol).astype(float)
+    ne = np.concatenate([ne_mol, ne_mol])
+
+    with open(OUT / "h2b_s6_final_predictions.csv", newline="") as fh:
+        ref_rows = {
+            (r["ladder"], r["v_c"], r["tau_ps"], r["E0_eV"]): r
+            for r in csv.DictReader(fh)
+        }
+    with open(OUT / "h2b_s6_final_ke.csv", newline="") as fh:
+        ref_ke_rows = list(csv.DictReader(fh))
+
+    chord_cache = {}
+    for ladder, v_c, p_tail, tau, e0 in G3_S6_CELLS:
+        key = (v_c, p_tail)
+        if key not in chord_cache:
+            chord_cache[key] = integrate_pairs(
+                r0, mu_ap, R_d, mass_mol,
+                r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+            )
+        res = chord_cache[key]
+        K = res["K"].reshape(-1) * (TAU_PS / tau)
+        n_det, sup = fate_map(ne, K, e0, 1, sig_tables[ladder])
+        obs, ke_bins = g3_score(
+            n_det, sup, res["trapped"].reshape(-1).astype(bool),
+            res["v_inf"].reshape(-1), ref_ke, solv_exp,
+        )
+        row = {
+            "ladder": ladder, "v_c": v_c, "tau_ps": tau, "E0_eV": e0,
+            "p_tail": p_tail, "m": m,
+            "trapped_frac": round(obs["trapped_frac"], 4),
+            "suppressed_frac": round(obs["sup_frac"], 4),
+            "nbar_det": round(obs["nbar"], 3),
+            "n1_solv": round(obs["n1_solv"], 4),
+            "ratio_n1_n2": round(obs["ratio"], 3),
+            "w1_solv": round(obs["w1"], 4),
+            "midhot_n2_8": round(obs["midhot_arith"], 4),
+            "n1_ke_eV": round(obs["n1_ke"], 4),
+        }
+        row.update({f"h{k}": round(float(obs["hist"][k]), 4)
+                    for k in range(N_STAR + 1)})
+        cell_id = (ladder, str(v_c), str(tau), str(e0))
+        ref = ref_rows[cell_id]
+        for col, val in row.items():
+            if str(val) != ref[col]:
+                raise AssertionError(
+                    f"G3-P1 oracle FAILED: s6 cell {cell_id} differs at "
+                    f"{col}: {val!r} != {ref[col]!r}"
+                )
+        mine_ke = [(n, str(round(wgt, 4)), str(round(mke, 4)))
+                   for n, wgt, mke in ke_bins]
+        want_ke = [(int(r["n"]), r["weight"], r["mean_KE_eV"])
+                   for r in ref_ke_rows
+                   if (r["ladder"], r["v_c"], r["tau_ps"], r["E0_eV"])
+                   == cell_id]
+        if mine_ke != want_ke:
+            raise AssertionError(
+                f"G3-P1 oracle FAILED: KE rows of s6 cell {cell_id} differ "
+                "from the committed record."
+            )
+        print(f"[g3 oracle] s6 {ladder} v{v_c} t{tau} e{e0}: bit-exact")
+    print("G3-P1 wiring oracle PASSED: all three committed h2b_s6_final "
+          "rows reproduced string-identically (predictions + KE).")
+    # The standing twin row (v7.25) is Part C's baseline for the
+    # corrected-vs-standing delta.
+    lad, v_c, p_tail, tau, e0 = G3_STANDING
+    res = chord_cache[(v_c, p_tail)]
+    K = res["K"].reshape(-1) * (TAU_PS / tau)
+    n_det, sup = fate_map(ne, K, e0, 1, sig_tables[lad])
+    obs, _ = g3_score(
+        n_det, sup, res["trapped"].reshape(-1).astype(bool),
+        res["v_inf"].reshape(-1), ref_ke, solv_exp,
+    )
+    return obs
+
+
+def _g3_grid_cell_draw(law, R, m, rng):
+    """Per-cell birth draw for Part B. Draw order (documented, per cell,
+    fresh rng at G3_SEED): positions first, axis cosines after.
+
+    l1: the exact center-pin -- ONE chord (r0 = 0; the twin is deterministic
+    there, so m collapses to 1 and the row has zero mechanism spread).
+    l2: the repo Boltzmann sampler at the parent well 313.2 K.
+    l3: uniform_volume, hard margin 3 A (exact inverse-CDF, the L3 law).
+    """
+    from dataclasses import replace as _replace
+
+    if law == "l1":
+        r0 = np.zeros(1)
+    elif law == "l2":
+        cfg_l2 = _replace(_CFG, binding_energy_molecule_K=G3_CORRECTED_WELL_K)
+        r0 = sample_radial_positions(cfg_l2, np.full(m, R), rng=rng)
+    elif law == "l3":
+        r0 = (R - 3.0) * np.cbrt(rng.uniform(0.0, 1.0, m))
+    else:
+        raise ValueError(f"unknown grid law {law!r}")
+    mu = rng.uniform(-1.0, 1.0, r0.size)
+    return r0, mu
+
+
+def _g3_grid_twin(m, ref_ke, solv_exp):
+    """Part B: the 11 G1 geometry cells through the twin at the standing
+    point; every twin observable is printed next to its MD value and the
+    delta -- the re-issued twin-authority measurement at long chords."""
+    lad, v_c, p_tail, tau, e0 = G3_STANDING
+    sig = _g3_md_rung_tables()[lad]
+
+    hist_rows, ke_rows = [], []
+    for label, n_he, law in G3_GRID_CELLS:
+        R = float(droplet_radius_bulk_angstrom(float(n_he)))
+        rng = np.random.default_rng(G3_SEED)  # CRN: same seed every cell
+        r0, mu = _g3_grid_cell_draw(law, R, m, rng)
+        M = r0.size
+        depth = R - r0
+        rho = rho_he_ratio(r0 - R, steepness=STEEP_A)
+        ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+        res = integrate_pairs(
+            r0, mu, np.full(M, R), complex_mass_amu(ne_mol).astype(float),
+            r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+        )
+        K = res["K"].reshape(-1) * (TAU_PS / tau)
+        ne = np.concatenate([ne_mol, ne_mol])
+        n_det, sup = fate_map(ne, K, e0, 1, sig)
+        obs, ke_bins = g3_score(
+            n_det, sup, res["trapped"].reshape(-1).astype(bool),
+            res["v_inf"].reshape(-1), ref_ke, solv_exp,
+            min_bin_count=(1 if law == "l1" else 20),
+        )
+        md = dict(zip(G3_MD_OBS_KEYS, G3_MD_G1_ROWS[label]))
+        twin = {
+            "trap": obs["trapped_frac"], "supp": obs["sup_frac"],
+            "nbar": obs["nbar"], "n1_solv": obs["n1_solv"], "w1": obs["w1"],
+            "midhot_geo": obs["midhot_geo"], "deepke": obs["deepke"],
+        }
+        row = {
+            "cell": label, "law": law, "N_he": n_he, "R_A": round(R, 2),
+            "m_chords": M,
+            "depth_mean_A": round(float(depth.mean()), 2),
+            "depth_sd_A": round(float(depth.std()), 2),
+            "n_eject_mean": round(float(ne.mean()), 2),
+            "K_q05": round(float(np.quantile(K, 0.05)), 4),
+            "K_q50": round(float(np.quantile(K, 0.50)), 4),
+            "K_q95": round(float(np.quantile(K, 0.95)), 4),
+            "midhot_bins": obs["midhot_bins"],
+            "deepke_bins": obs["deepke_bins"],
+        }
+        for key in G3_MD_OBS_KEYS:
+            row[f"twin_{key}"] = round(twin[key], 4)
+            row[f"md_{key}"] = md[key]
+            row[f"d_{key}"] = round(twin[key] - md[key], 4)
+        row.update({f"h{k}": round(float(obs["hist"][k]), 4)
+                    for k in range(N_STAR + 1)})
+        hist_rows.append(row)
+        ke_rows.extend(
+            {"cell": label, "n": n, "weight": round(wgt, 4),
+             "mean_KE_eV": round(mke, 4)}
+            for n, wgt, mke in ke_bins
+        )
+        print(f"[g3 grid {label}] twin trap={twin['trap']:.3f}"
+              f" (MD {md['trap']:.3f})  nbar={twin['nbar']:.2f}"
+              f" (MD {md['nbar']:.2f})  W1={twin['w1']:.2f}"
+              f" (MD {md['w1']:.2f})  deepKE={twin['deepke']:.2f}"
+              f" (MD {md['deepke']:.2f})")
+
+    with open(OUT / "h2b_g3_grid_twin.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(hist_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(hist_rows)
+    with open(OUT / "h2b_g3_grid_twin_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(ke_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(ke_rows)
+    print(f"grid twin  -> {OUT / 'h2b_g3_grid_twin.csv'}")
+    print(f"grid KE    -> {OUT / 'h2b_g3_grid_twin_ke.csv'}")
+    return hist_rows
+
+
+def _g3_corrected_master(m, force_rebuild=False):
+    """Part C master draw: the G2-adopted corrected geometry.
+
+    ``legacy`` + ``raw`` sizes (nozzle correlation at the preset's own
+    p = 40 mbar / T = 14 K => <N> = 12794), Boltzmann births at the
+    313.2 K parent well. Draw order (documented, seed G3_SEED): N raw
+    ln-normal -> Boltzmann birth radii -> axis cosines. Cached to npz
+    (the Boltzmann sampler loops per unique radius -- minutes at m = 20000).
+    """
+    from dataclasses import replace as _replace
+
+    from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes
+
+    cache = OUT / "h2b_g3_corrected_master.npz"
+    if cache.exists() and not force_rebuild:
+        return dict(np.load(cache))
+    cfg_c = _replace(
+        _CFG,
+        num_molecules=m,
+        use_single_droplet_size=False,
+        binding_energy_molecule_K=G3_CORRECTED_WELL_K,
+    )
+    rng = np.random.default_rng(G3_SEED)
+    N = np.asarray(sample_droplet_sizes(cfg_c, mode="raw", rng=rng),
+                   dtype=float)
+    R = np.asarray(droplet_radius_bulk_angstrom(N), dtype=float)
+    r0 = np.asarray(sample_radial_positions(cfg_c, R, rng=rng), dtype=float)
+    mu = rng.uniform(-1.0, 1.0, m)
+    out = {"N": N, "R": R, "r0": r0, "mu": mu}
+    np.savez_compressed(cache, **out)
+    return out
+
+
+def _g3_corrected(m, ref_ke, solv_exp, standing_obs):
+    """Part C: landmark re-issue at the corrected geometry.
+
+    (i) center-pin landmark rows per grid radius + the R(2000) continuity
+    anchor (must reproduce the recorded K = 0.74460); (ii) the corrected-
+    ensemble row at the standing point, printed against the standing twin
+    row (Part A) and the D2b §4.3 corr x L2 re-weighting forecast.
+    """
+    lad, v_c, p_tail, tau, e0 = G3_STANDING
+    sig = _g3_md_rung_tables()[lad]
+
+    # ---- (i) center-pin landmarks (single chord, n_eject = 21 dressing).
+    # Two laws per pin: the PURE-CUBIC column is the continuity family (the
+    # recorded K = 0.74460 landmark was measured under it -- stage_oracles
+    # O2 runs v_c=None), the capped-tail columns are the operative standing
+    # law (finc1v725) being re-issued.
+    pin_rows = []
+    for tag, n_he in (("R2000_anchor", 2000.0), ("r1", 1727.0),
+                      ("r2", 3605.0), ("r3", 11059.0),
+                      ("corr_meanN", 12794.0), ("r4", 29227.0)):
+        R = float(droplet_radius_bulk_angstrom(n_he))
+        args = (
+            np.array([0.0]), np.array([1.0]), np.array([R]),
+            np.array([float(complex_mass_amu(N_STAR))]),
+        )
+        res = integrate_pairs(
+            *args, r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+        )
+        res_pc = integrate_pairs(*args, r0_sep=R0_SEP_PROD_A, drag_on=True)
+        K655 = float(res["K"][0, 0])
+        K655_pc = float(res_pc["K"][0, 0])
+        n_det, _ = fate_map(
+            np.array([N_STAR]), np.array([K655 * (TAU_PS / tau)]), e0, 1, sig
+        )
+        pin_rows.append({
+            "tag": tag, "N_he": int(n_he), "R_A": round(R, 2),
+            "K_tau655_cubic": round(K655_pc, 5),
+            "exposure_ps": round(K655 * TAU_PS, 4),
+            "K_tau655": round(K655, 5),
+            "K_tau32": round(K655 * (TAU_PS / tau), 5),
+            "t_exit_ps": round(float(res["t_exit"][0, 0]), 2),
+            "v_peak_Aps": round(float(res["v_peak"][0, 0]), 2),
+            "v_inf_Aps": round(float(res["v_inf"][0, 0]), 2),
+            "n_det": int(n_det[0]),
+            "KE_det_eV": round(float(kinetic_energy_eV(
+                complex_mass_amu(n_det[0]), res["v_inf"][0, 0])), 4),
+        })
+        print(f"[g3 pin {tag:12s}] R={R:6.2f}  K_cubic={K655_pc:.5f}  "
+              f"K_capped={K655:.5f}  t_exit={res['t_exit'][0, 0]:.2f}  "
+              f"v_inf={res['v_inf'][0, 0]:.2f}  n_det={n_det[0]}")
+    anchor = next(r for r in pin_rows if r["tag"] == "R2000_anchor")
+    if abs(anchor["K_tau655_cubic"] - 0.74460) > 1.5e-5:
+        raise AssertionError(
+            f"G3-P2 continuity anchor FAILED: pure-cubic K(R2000, tau 6.55) "
+            f"= {anchor['K_tau655_cubic']} != recorded 0.74460"
+        )
+    print("G3-P2 continuity anchor PASSED: the recorded pure-cubic "
+          "center-pin landmark K = 0.74460 is reproduced.")
+
+    # ---- (ii) the corrected-ensemble row at the standing point
+    ms = _g3_corrected_master(m)
+    N, R, r0, mu = ms["N"], ms["R"], ms["r0"], ms["mu"]
+    depth = R - r0
+    rho = rho_he_ratio(r0 - R, steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    res = integrate_pairs(
+        r0, mu, R, complex_mass_amu(ne_mol).astype(float),
+        r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+    )
+    K = res["K"].reshape(-1) * (TAU_PS / tau)
+    ne = np.concatenate([ne_mol, ne_mol])
+    n_det, sup = fate_map(ne, K, e0, 1, sig)
+    obs, ke_bins = g3_score(
+        n_det, sup, res["trapped"].reshape(-1).astype(bool),
+        res["v_inf"].reshape(-1), ref_ke, solv_exp,
+    )
+    t_exit = res["t_exit"].reshape(-1)
+    row = {
+        "geometry": "corrected", "ladder": lad, "v_c": v_c, "tau_ps": tau,
+        "E0_eV": e0, "p_tail": p_tail, "m": m,
+        "N_q05": round(float(np.quantile(N, 0.05)), 1),
+        "N_q50": round(float(np.quantile(N, 0.50)), 1),
+        "N_q95": round(float(np.quantile(N, 0.95)), 1),
+        "N_mean": round(float(N.mean()), 1),
+        "R_q05": round(float(np.quantile(R, 0.05)), 2),
+        "R_q50": round(float(np.quantile(R, 0.50)), 2),
+        "R_q95": round(float(np.quantile(R, 0.95)), 2),
+        "depth_q05": round(float(np.quantile(depth, 0.05)), 2),
+        "depth_q50": round(float(np.quantile(depth, 0.50)), 2),
+        "depth_q95": round(float(np.quantile(depth, 0.95)), 2),
+        "n_eject_mean": round(float(ne.mean()), 3),
+        "K_q05": round(float(np.quantile(K, 0.05)), 4),
+        "K_q50": round(float(np.quantile(K, 0.50)), 4),
+        "K_q95": round(float(np.quantile(K, 0.95)), 4),
+        "t_exit_q50": round(float(np.nanquantile(t_exit, 0.50)), 2),
+        "t_exit_q95": round(float(np.nanquantile(t_exit, 0.95)), 2),
+        "trapped_frac": round(obs["trapped_frac"], 4),
+        "suppressed_frac": round(obs["sup_frac"], 4),
+        "nbar_det": round(obs["nbar"], 3),
+        "n1_solv": round(obs["n1_solv"], 4),
+        "ratio_n1_n2": round(obs["ratio"], 3),
+        "w1_solv": round(obs["w1"], 4),
+        "midhot_n2_8": round(obs["midhot_arith"], 4),
+        "midhot_geo": round(obs["midhot_geo"], 4),
+        "midhot_bins": obs["midhot_bins"],
+        "deepke": round(obs["deepke"], 4),
+        "deepke_bins": obs["deepke_bins"],
+        "n1_ke_eV": round(obs["n1_ke"], 4),
+    }
+    row.update({f"h{k}": round(float(obs["hist"][k]), 4)
+                for k in range(N_STAR + 1)})
+
+    with open(OUT / "h2b_g3_corrected_landmarks.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(pin_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(pin_rows)
+    with open(OUT / "h2b_g3_corrected_row.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(row))
+        wtr.writeheader()
+        wtr.writerows([row])
+    with open(OUT / "h2b_g3_corrected_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=["n", "weight", "mean_KE_eV"])
+        wtr.writeheader()
+        wtr.writerows(
+            {"n": n, "weight": round(wgt, 4), "mean_KE_eV": round(mke, 4)}
+            for n, wgt, mke in ke_bins
+        )
+
+    print(f"\n[g3 corrected ensemble] drawn <N> = {N.mean():.0f} "
+          "(nozzle correlation 12794)")
+    print("               standing(twin)  corrected(twin)   D2b corr x L2 "
+          "forecast")
+    fc = {"trap": "0.31-0.42", "supp": "0", "nbar": "13.9-14.7",
+          "n1_solv": "0", "w1": "9.0-9.8", "midhot_geo": "1.256",
+          "deepke": "1.80-1.90"}
+    twin_now = {
+        "trap": obs["trapped_frac"], "supp": obs["sup_frac"],
+        "nbar": obs["nbar"], "n1_solv": obs["n1_solv"], "w1": obs["w1"],
+        "midhot_geo": obs["midhot_geo"], "deepke": obs["deepke"],
+    }
+    std = {
+        "trap": standing_obs["trapped_frac"], "supp": standing_obs["sup_frac"],
+        "nbar": standing_obs["nbar"], "n1_solv": standing_obs["n1_solv"],
+        "w1": standing_obs["w1"], "midhot_geo": standing_obs["midhot_geo"],
+        "deepke": standing_obs["deepke"],
+    }
+    for key in G3_MD_OBS_KEYS:
+        print(f"  {key:11s} {std[key]:14.4f}  {twin_now[key]:15.4f}   "
+              f"{fc[key]}")
+    print(f"landmarks  -> {OUT / 'h2b_g3_corrected_landmarks.csv'}")
+    print(f"ensemble   -> {OUT / 'h2b_g3_corrected_row.csv'}")
+
+
+def stage_g3landmarks(m=20000):
+    """G3 Step 1: twin landmark re-issue at the corrected geometry.
+
+    Part A -- G3-P1 wiring oracle: the three committed ``h2b_s6_final``
+    rows re-derived string-identically before any new number is read
+    (atlas §1.4 oracle discipline). Part B -- the 11 Axis-A G1 cells
+    through the twin at the standing point, each printed against its MD
+    row: the re-issued twin<->MD transfer measurement at long chords
+    (channel-(d) authority box). Part C -- center-pin landmark rows per
+    grid radius (with the K = 0.74460 continuity anchor) and the
+    corrected-ensemble twin row vs the D2b §4.3 forecast. Zero MD.
+    """
+    OUT.mkdir(parents=True, exist_ok=True)
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    print("=== G3 Step 1: Part A (S6 wiring oracle) ===")
+    standing_obs = _g3_s6_oracle(m, ref_ke, solv_exp)
+    print("\n=== G3 Step 1: Part B (G1 grid twin re-issue) ===")
+    _g3_grid_twin(m, ref_ke, solv_exp)
+    print("\n=== G3 Step 1: Part C (corrected-geometry landmarks) ===")
+    _g3_corrected(m, ref_ke, solv_exp, standing_obs)
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -1923,6 +2488,8 @@ def main():
         stage_repilot1()
     elif mode == "repilots2":
         stage_repilot2()
+    elif mode == "g3landmarks":
+        stage_g3landmarks()
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -1936,7 +2503,8 @@ def main():
         raise SystemExit(
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
-            "legaprime | legb | legc | legd | repilots1 | repilots2)"
+            "legaprime | legb | legc | legd | repilots1 | repilots2 | "
+            "g3landmarks)"
         )
 
 

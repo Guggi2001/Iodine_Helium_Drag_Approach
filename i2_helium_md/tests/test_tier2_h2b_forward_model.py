@@ -431,3 +431,109 @@ def test_stage_repilot2_requires_stage1_record(twin, monkeypatch, tmp_path):
     monkeypatch.setattr(twin, "OUT", tmp_path)
     with pytest.raises(FileNotFoundError, match="Stage-1"):
         twin.stage_repilot2(m=50)
+
+
+# ---------------------------------------------------------------------------
+# G3 Step 1 -- twin landmark re-issue (atlas plan §3.5 G3)
+# ---------------------------------------------------------------------------
+def test_g3_md_reference_table_matches_grid(twin):
+    """The embedded MD table covers exactly the 11 G1 cells, with the D0
+    §14.1 spot values (r1l3 = the standing-geometry reference cell; r4l2 =
+    the widest-marginal cell)."""
+    labels = [c[0] for c in twin.G3_GRID_CELLS]
+    assert len(labels) == 11 and len(set(labels)) == 11
+    assert set(labels) == set(twin.G3_MD_G1_ROWS)
+    r1l3 = dict(zip(twin.G3_MD_OBS_KEYS, twin.G3_MD_G1_ROWS["r1l3"]))
+    assert r1l3["trap"] == 0.059 and r1l3["w1"] == 0.81
+    assert r1l3["deepke"] == 0.51
+    r4l2 = dict(zip(twin.G3_MD_OBS_KEYS, twin.G3_MD_G1_ROWS["r4l2"]))
+    assert r4l2["trap"] == 0.800 and np.isnan(r4l2["midhot_geo"])
+    # every anchored-law cell (l1/l2) has supp exactly 0 -- the confirmed
+    # G1.1 prediction the twin rows are read against
+    for label, _, law in twin.G3_GRID_CELLS:
+        if law in ("l1", "l2"):
+            assert twin.G3_MD_G1_ROWS[label][1] == 0.0
+
+
+def test_g3_standing_cell_is_committed_s6_row(twin):
+    """G3_STANDING must be one of the committed h2b_s6_final oracle rows."""
+    import csv as _csv
+
+    lad, v_c, p_tail, tau, e0 = twin.G3_STANDING
+    with open(twin.OUT / "h2b_s6_final_predictions.csv", newline="") as fh:
+        keys = {
+            (r["ladder"], r["v_c"], r["tau_ps"], r["E0_eV"], r["p_tail"])
+            for r in _csv.DictReader(fh)
+        }
+    assert (lad, str(v_c), str(tau), str(e0), str(p_tail)) in keys
+    assert (lad, v_c, p_tail, tau, e0) in twin.G3_S6_CELLS
+
+
+def test_g3_score_synthetic_conventions(twin):
+    """Hand-checkable synthetic ensemble: trapped exclusion, solvated
+    normalisation, both midHot conventions, deep-band membership, and the
+    min_bin_count skip."""
+    ref_ke = {1: 1.0, 2: 0.5, 8: 0.2, 10: 0.1, 17: 0.05}
+    solv_exp = np.array([0.5, 0.5])
+    m1 = float(twin.complex_mass_amu(1))
+    m2 = float(twin.complex_mass_amu(2))
+    m8 = float(twin.complex_mass_amu(8))
+    m10 = float(twin.complex_mass_amu(10))
+
+    def v_for(mass, ke_eV):
+        return float(np.sqrt(2.0 * ke_eV * twin.EV_TO_AMU_A2_PS2 / mass))
+
+    n_det = np.array([1, 1, 2, 8, 10, 5])
+    trapped = np.array([False, False, False, False, False, True])
+    sup = np.array([False, False, False, False, False, False])
+    v = np.array([
+        v_for(m1, 1.2), v_for(m1, 0.8),      # n=1 mean KE 1.0 eV
+        v_for(m2, 0.75),                     # n=2 ratio 1.5
+        v_for(m8, 0.4),                      # n=8 ratio 2.0
+        v_for(m10, 0.05),                    # n=10 ratio 0.5
+        99.0,                                # trapped -- must be ignored
+    ])
+    obs, ke_bins = twin.g3_score(
+        n_det, sup, trapped, v, ref_ke, solv_exp, min_bin_count=1
+    )
+    assert abs(obs["trapped_frac"] - 1.0 / 6.0) < 1e-12  # over ALL fragments
+    assert abs(obs["nbar"] - (1 + 1 + 2 + 8 + 10) / 5.0) < 1e-12
+    assert abs(obs["n1_solv"] - 0.4) < 1e-12   # 2 of 5 detected, all solvated
+    assert abs(obs["ratio"] - 2.0) < 1e-12
+    # band n2-8: ratios {1.5, 2.0} -- arithmetic vs geometric must differ
+    assert abs(obs["midhot_arith"] - (1.5 + 2.0) / 2.0) < 1e-9
+    assert abs(obs["midhot_geo"] - np.sqrt(1.5 * 2.0)) < 1e-9
+    assert obs["midhot_bins"] == 2
+    assert abs(obs["deepke"] - 0.5) < 1e-9 and obs["deepke_bins"] == 1
+    assert abs(obs["n1_ke"] - 1.0) < 1e-9
+    assert [b[0] for b in ke_bins] == [1, 2, 8, 10]
+    # min_bin_count=2 drops the singleton bins -> deep band empties to NaN
+    obs2, ke_bins2 = twin.g3_score(
+        n_det, sup, trapped, v, ref_ke, solv_exp, min_bin_count=2
+    )
+    assert [b[0] for b in ke_bins2] == [1]
+    assert np.isnan(obs2["deepke"]) and obs2["deepke_bins"] == 0
+
+
+def test_g3_grid_cell_draw_laws(twin):
+    """l1 collapses to one center chord; l3 is r^2 on [0, R-3]; l2 (parent
+    Boltzmann 313.2 K) reproduces the pre-registered exposure-table depth
+    (mean depth 29.3 A at R = 34)."""
+    R = 34.0
+    rng = np.random.default_rng(twin.G3_SEED)
+    r0, mu = twin._g3_grid_cell_draw("l1", R, 5000, rng)
+    assert r0.shape == (1,) and r0[0] == 0.0 and abs(mu[0]) <= 1.0
+
+    rng = np.random.default_rng(twin.G3_SEED)
+    r0, _ = twin._g3_grid_cell_draw("l3", R, 20000, rng)
+    x3 = (r0 / (R - 3.0)) ** 3
+    for f in (0.25, 0.5, 0.75):
+        assert abs(np.quantile(x3, f) - f) < 0.02
+
+    rng = np.random.default_rng(twin.G3_SEED)
+    r0, _ = twin._g3_grid_cell_draw("l2", R, 4000, rng)
+    depth = R - r0
+    assert abs(depth.mean() - 29.3) < 0.5     # plan §3.1 exposure table
+
+    with pytest.raises(ValueError, match="unknown grid law"):
+        twin._g3_grid_cell_draw("l9", R, 10, rng)

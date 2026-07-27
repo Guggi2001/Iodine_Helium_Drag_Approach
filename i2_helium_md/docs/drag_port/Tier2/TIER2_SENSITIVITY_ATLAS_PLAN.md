@@ -25,12 +25,20 @@
 > so Axis B around the pre-G3 point may be deferred past G3/G4).
 > **G2 TAKEN 2026-07-27 (user): the corrected geometry is ADOPTED as the
 > target** (retained-policy sub-decision deferred to G3; `finc1v725`
-> stands until G4). **Next:** the **G3 twin-first scan** designed along
+> stands until G4). The **G3 twin-first scan** is designed along
 > the Route A (cascade) / Route B (selection) split of §3.5 — mechanism
 > basis in D0 §14.3 (birth-depth lever = geometry-locked dressing +
-> parameter-accessible transit; the §4p receipts); first concrete step =
-> re-issuing the twin's K landmarks at the corrected geometry. Each
-> execution step stays behind its own `[PROCEED TO IMPLEMENTATION]`.
+> parameter-accessible transit; the §4p receipts). **G3 Step 1 EXECUTED
+> 2026-07-27 (zero MD, triggered):** the twin landmark re-issue at the
+> corrected geometry — S6 oracle bit-exact, the 11 G1 cells re-run
+> through the twin (the long-chord twin↔MD authority box: supp/n₁_solv
+> near-quantitative, n̄ residence-scale hot, trap a twin floor with the
+> center-pin trap channel twin-invisible, KE direction-only), and the
+> corrected-ensemble twin row confirming the D2b §4.3 forecast
+> cross-instrument (findings "G3 Step 1"; stage `g3landmarks` in the
+> committed twin script). **Next:** the G3 Route A/B scan itself, with
+> the authority box applied. Each execution step stays behind its own
+> `[PROCEED TO IMPLEMENTATION]`.
 >
 > **Parent:** `TIER2_IMPLEMENTATION_PLAN.md` (Tier-2 optimization stage,
 > post-F5-reconciliation). **Entry docs:**
@@ -500,7 +508,14 @@ fitted at the wrong exposure and must be re-located, not carried over.
 Cost ladder as always: the twin's K landmarks are re-issued at the
 corrected geometry (they are all center-pinned ⟨N⟩ = 2000 numbers
 today), the basin located there, then a small MD confirmation ring —
-twin free, MD ~10–20 cells × 500.
+twin free, MD ~10–20 cells × 500. **Step 1 (landmark re-issue + G1
+deep-cell oracle check) EXECUTED 2026-07-27** — stage `g3landmarks`,
+findings "G3 Step 1": the re-issued center-pin landmark table is
+law-tagged (the recorded K 0.74460 is pure-cubic; the capped tail is
+what makes the anchored radii traversable), the twin↔MD authority box
+is re-measured on all 11 G1 cells, and the corrected-ensemble twin row
+confirms the D2b §4.3 forecast cross-instrument. Future corrected-
+geometry twin sessions oracle against `h2b_g3_corrected_row.csv`.
 
 **G3 design sharpened (2026-07-27 discussion; mechanism basis D0 §14.3).**
 The working hypothesis G3 tests, held by the user: *a parameter point

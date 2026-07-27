@@ -119,9 +119,14 @@ lever tripled supp — load-bearing, saturates at realistic depths) +
 parameter-accessible transit channel. **G2 TAKEN 2026-07-27 (user):
 the corrected geometry (legacy+raw ⟨N⟩ 12794 / Boltzmann 313.2 K /
 E_bind 0.1168) is ADOPTED as the target; retained-policy sub-decision
-deferred to G3; `finc1v725` stands until G4.** **Next:** G3 twin-first
-scan along Route A (cascade) / Route B (selection) — plan §3.5, first
-step = twin landmark re-issue at the corrected geometry; then the D2b
+deferred to G3; `finc1v725` stands until G4.** **G3 Step 1 EXECUTED 2026-07-27**
+(zero MD, triggered): twin landmark re-issue at the corrected geometry —
+S6 oracle bit-exact, 11-cell twin↔MD authority box measured (supp/n₁_solv
+near-quantitative, n̄ residence-scale hot, trap a twin floor, center-pin
+trap channel twin-invisible), corrected-ensemble twin row confirms the
+D2b forecast cross-instrument (findings "G3 Step 1"; stage `g3landmarks`).
+**Next:** the G3 Route A/B scan itself ((v_c, τ, E₀)[+ E_bind] at the
+corrected geometry, authority box applied) — plan §3.5; then the D2b
 A/B remainder; E₀/τ curves defer-past-G3 question open. RQ3/RQ5 reads and
 the margin-3 Å pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
