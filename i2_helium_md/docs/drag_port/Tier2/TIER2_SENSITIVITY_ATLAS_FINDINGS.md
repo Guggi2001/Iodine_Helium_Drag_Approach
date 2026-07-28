@@ -1275,3 +1275,110 @@ retained-policy final call (evidence above), and the ledger re-issue
 pooled battery (§4cc pattern) at the chosen point is the natural
 verification step before re-baselining. Atlas stance intact:
 `finc1v725` stands until G4 is taken.
+
+## G4 Step 1 — Block 0 (twin ranking authority) + Block 1 (the fine ridge scan) (2026-07-28, zero MD, plan §3.5e)
+
+Report `tier2atlas_g4_transfer.py` (Block 0, pure scorer) and stage
+`g4scan` in `tier2_h2b_forward_model.py` (Block 1). Committed artifacts:
+`h2b_g4_transfer.csv`, `h2b_g4scan_{predictions,gated_ke,ridge}.csv`.
+All oracles passed before any number was read: the frozen twin
+pre-registration, the pooled-battery scorer-drift oracle, the S6
+machinery oracle, the corrected-row landmark oracle, and **G4-P1 — 408
+shared sub-lattice cells reproduce the committed Step-2 values
+string-exactly**.
+
+### Block 0 — the twin's ranking authority, measured for the first time
+
+The 14 paired (twin, MD) ring cells read as a transfer measurement.
+Pre-registered permission gate ρ ≥ 0.7:
+
+| observable | ρ (n = 14) | 95 % CI | verdict |
+|---|---|---|---|
+| W₁_solv | +0.824 | [+0.44, +0.98] | LICENSED |
+| midHot | +0.996 | [+0.93, +1.00] | LICENSED |
+| deepKE | +0.327 | [−0.28, +0.82] | **NOT LICENSED** |
+
+**The deep-KE axis is not twin-scannable.** Every RQ11 statement must be
+MD-measured; no twin scan, at any resolution, can rank it.
+
+Level transfer is a **regression**, not an offset (13 cells, f725
+dropped): `MD_W₁ = 0.671 + 0.412·twin_W₁` (R² 0.60, resid SD 0.18) and
+`MD_midHot = 0.001 + 0.897·twin_midHot` (R² 0.994, resid SD 0.035). The
+mean W₁ shift is +0.03 over all cells but **+0.32 ± 0.10 over the four
+MD-gated ones** and negative at the bad ones. Two consequences carried
+into the ranking: the W₁ intercept 0.671 is a predicted MD floor *above*
+the standing pooled 0.571; and because |ln x| is V-shaped about 1, a
+multiplicative midHot bias does not preserve the ordering of raw twin
+values even at ρ = +0.996 — cells must be ranked on the corrected value.
+
+n̄ bias model `Δn̄ = a + b·n̄_twin`, **residual SD 0.28 He**, robust to
+dropping f725. In-sample: a037 predicted 4.06 vs MD 4.097, d030 3.91 vs
+3.943, e154 4.13 vs 4.140, b031 4.56 vs 4.314.
+
+Seed-SD normalizers (five N = 1000 battery members): W₁ 0.5791 ± 0.0954,
+midHot 1.0108 ± 0.0222, deepKE 0.6327 ± 0.0209, χ²_med 131.5 ± 15.4.
+Two **plan §1.2 provenance corrections**: its "W₁ SD ≈ 0.04" is the SEM
+of the pooled mean (0.0954/√5 = 0.043), not the per-seed SD — so an
+N = 500 single-seed W₁ carries ≈ 0.13 and the G3 ring never distinguished
+its cells on W₁ at all; and its deep-bin read "0.0603 ± 0.0033" does not
+reconcile with the deepKE ratio (0.633 ± 0.021), most likely being the
+deep-bin population weight. Flagged, not overwritten.
+
+Score pre-registration reproduces exactly: pooled battery
+S_provisional = **4.366** vs the design's 4.37.
+
+### Block 1 — the fine ridge (5544 cells: v_c step 0.25, τ step 0.4, E₀ step 0.005)
+
+- **574/5544 gate (172 clean of both stamps)** against 24/6480 at Step 2.
+  The cause is **the gate, not the grid**: Step 2 carried the crude
+  [+0.3, +3] bias bracket (twin n̄ ∈ [4.4, 7.1]); the Block-0 model gates
+  on predicted MD n̄, i.e. twin n̄ ∈ [3.8, 5.4] — *narrower*, but placed
+  where the n₁ band actually lives. n₁ and n̄ are anti-correlated under
+  stripping, so the old n̄ floor of 4.4 was fighting the n₁ band. **The
+  binding constraint at Step 2 was the instrument's error model.**
+- **G4-P2 CONFIRMED — connected ridge.** The clean gated set is one
+  4-neighbour-connected diagonal band from (5.5, 4.8) to (6.0, 6.4):
+
+  | v_c \ τ | 4.0 | 4.4 | 4.8 | 5.2 | 5.6 | 6.0 | 6.4 |
+  |---|---|---|---|---|---|---|---|
+  | 5.0 | 5 | 6 | 4 | 3 | 2 | 2 | 1 |
+  | 5.25 | 2 | 7 | 6 | 5 | 4 | 3 | 2 |
+  | 5.5 | 0 | 7 | 8 | 6 | 5 | 4 | 3 |
+  | 5.75 | 0 | 2 | 10 | 9 | 8 | 6 | 5 |
+  | 6.0 | 0 | 0 | 0 | 10 | 10 | 9 | 8 |
+  | 6.25 | 0 | 0 | 0 | 0 | 0 | 3 | 7 |
+
+  (clean gated cells per lattice point). The two Step-2 "sub-basins" were
+  opposite corners of one ridge — the registered hypothesis holds.
+- **Clean optimum v_c 5.5, τ 4.8–5.2, E₀ 0.34–0.37.** a037's corner is
+  near-optimal but slightly off: the best clean cells are
+  (5.5, 4.8, **0.365**) S_pred 1.59 and (5.5, 5.2, **0.34**) 1.60.
+- **G4-P4 NOT MET on the licensed axes.** Best clean S_pred 1.59
+  (per-cell uncertainty ≈ 0.57) vs the incumbent's measured **1.091**;
+  best including the off-bundle-well stamp is (5.5, eb0482, 5.6, 0.33) at
+  1.47. In-sample predicted/measured S at the four ring cells:
+  1.82/1.90, 6.89/6.83, 2.66/3.52, 1.79/2.05.
+  *(The stage's own printed "G4-P4 MET, best S 1.506" is the raw-twin,
+  three-axis provisional score — superseded here by the bias-corrected
+  two-axis reading, which is the defensible one.)*
+- **G4-P3 NOT EVALUABLE.** 75 gated cells hold midHot ∈ [0.85, 1.15] ∧
+  twin deepKE ≥ 0.6, but deepKE is the axis Block 0 measured as
+  rank-untransferable (a037: twin 0.755 → MD 0.43). The pre-registered
+  Block-2 (p_tail) trigger cannot be decided by this scan and **moves to
+  the MD finalists**. A pre-registration defect found by G4's own Block 0;
+  recorded, not reinterpreted.
+
+### Open confound (Block 3 settles it)
+
+The ring cells are N = 500 (≈ 900 scored ions), the incumbent reference is
+pooled N = 5000. Sampling noise inflates W₁, so part of the 0.83–1.17 vs
+0.571 gap may be statistical rather than physical. The five N = 1000
+battery members (W₁ 0.48–0.73, mean 0.579) bracket the pooled 0.571, so
+the N = 1000 → 5000 step is small; the N = 500 → 1000 step is untested.
+The mandatory a037/b031 N = 1000 replicates are the control.
+
+### Consequences (reported, not adjudicated)
+
+Block 2 (p_tail) neither fires nor is dismissed — it is deferred to the MD
+evidence. Block 3 (6 × N = 1000) is the designed next step and carries its
+own trigger. Atlas stance intact: nothing adopted, `finc1v725` stands.
