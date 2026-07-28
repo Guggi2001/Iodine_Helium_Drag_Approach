@@ -16,6 +16,7 @@ import pytest
 from i2_helium_md import single_pulse_N2000
 from i2_helium_md.postprocess.abundance_loader import load_he_abundance_reference
 from i2_helium_md.postprocess.distribution_compare import (
+    cdf_gap_profile,
     compare_size_distributions,
     wasserstein_integer_support,
 )
@@ -227,3 +228,40 @@ class TestScipyCrossCheck:
             mine = wasserstein_integer_support(sim, ref)
             theirs = stats.wasserstein_distance(support, support, fs, fr)
             assert mine == pytest.approx(theirs)
+
+
+# ---------------------------------------------------------------------------
+# Signed CDF-gap profile (atlas G4 Step 2 Block D primitive)
+# ---------------------------------------------------------------------------
+class TestCdfGapProfile:
+    def test_gap_sum_equals_w1_bit_exact(self):
+        sim = _sim([0, 1, 2, 3], [0.1, 0.4, 0.3, 0.2])
+        ref = _ref([1, 2, 4], [0.5, 0.3, 0.2])
+        prof = cdf_gap_profile(sim, ref)
+        # Bit-exact, not approx: the committed W1 delegates to this profile.
+        assert float(np.sum(np.abs(prof.gaps))) == \
+            wasserstein_integer_support(sim, ref)
+        assert prof.w1 == wasserstein_integer_support(sim, ref)
+
+    def test_signed_gaps_hand_case(self):
+        # sim all at 1, ref all at 2: F_sim - F_ref = +1 at n = 1, 0 at n = 2.
+        prof = cdf_gap_profile(_sim([1], [1.0]), _ref([1, 2], [0.0, 1.0]))
+        assert list(prof.support) == [1, 2]
+        assert prof.gaps[0] == pytest.approx(1.0)
+        assert prof.gaps[1] == pytest.approx(0.0)
+
+    def test_union_support_is_contiguous(self):
+        prof = cdf_gap_profile(_sim([0, 1], [0.5, 0.5]),
+                               _ref([1, 4], [0.5, 0.5]))
+        assert list(prof.support) == [0, 1, 2, 3, 4]
+        # zero-filled where a side is absent
+        assert prof.f_sim[2] == 0.0 and prof.f_ref[0] == 0.0
+
+    def test_validation_still_fires_through_profile(self):
+        with pytest.raises(ValueError):
+            cdf_gap_profile(_sim([0, 1], [0.6, 0.6]), _ref([1], [1.0]))
+
+    def test_disjoint_support_raises(self):
+        with pytest.raises(ValueError, match="disjoint"):
+            cdf_gap_profile(_sim([0, 1], [0.5, 0.5]),
+                            _ref([3, 4], [0.5, 0.5]))

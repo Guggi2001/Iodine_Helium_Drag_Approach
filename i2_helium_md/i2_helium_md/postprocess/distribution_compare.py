@@ -26,6 +26,8 @@ unbuilt-enum-arm convention).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 from .abundance_loader import HeAbundanceReference
@@ -82,11 +84,46 @@ def _validated_distribution(n, fraction, *, side: str) -> tuple[np.ndarray, np.n
     return n_arr, f_arr
 
 
-def wasserstein_integer_support(
+@dataclass(frozen=True)
+class CdfGapProfile:
+    """Signed per-bin CDF-gap profile of sim vs ref on the union support.
+
+    The exact decomposition of the committed W1 (atlas G4 Step 2 Block D):
+    on unit rung spacing ``W1 = sum_n |gaps[n]|`` bit-exactly, so every
+    per-bin |gap| is that bin's additive contribution to W1 and its sign
+    says which side leads (``> 0``: sim CDF ahead — sim mass sits at
+    smaller n than ref up to this bin).
+
+    Attributes
+    ----------
+    support : np.ndarray, shape (K,), int
+        Contiguous union support (unit rung spacing).
+    f_sim, f_ref : np.ndarray, shape (K,)
+        Zero-filled fraction vectors on ``support``.
+    gaps : np.ndarray, shape (K,)
+        ``F_sim(n) - F_ref(n)`` per support point (signed).
+    """
+
+    support: np.ndarray
+    f_sim: np.ndarray
+    f_ref: np.ndarray
+    gaps: np.ndarray
+
+    @property
+    def w1(self) -> float:
+        """``sum |gaps|`` — exactly the committed W1 (unit spacing)."""
+        return float(np.sum(np.abs(self.gaps)))
+
+
+def cdf_gap_profile(
     sim: ShellDistribution,
     ref: HeAbundanceReference,
-) -> float:
-    """1-D Wasserstein-1 distance between two integer-support distributions.
+) -> CdfGapProfile:
+    """Signed CDF-gap decomposition of the committed W1.
+
+    Same validation and union-support alignment as
+    :func:`wasserstein_integer_support` (which delegates here — rule 1:
+    one CDF-alignment implementation); ``profile.w1`` is bit-exact W1.
 
     Parameters
     ----------
@@ -96,12 +133,6 @@ def wasserstein_integer_support(
     ref
         Experimental reference -- read via ``ref.n`` (int support) and
         ``ref.ion_fraction`` (sums to 1).
-
-    Returns
-    -------
-    float
-        ``W1 = sum_n |F_sim(n) - F_ref(n)|`` over the contiguous union support,
-        in He atoms (unit rung spacing).
 
     Raises
     ------
@@ -132,9 +163,44 @@ def wasserstein_integer_support(
     f_sim[sim_n - n_lo] = sim_f
     f_ref[ref_n - n_lo] = ref_f
 
-    cdf_sim = np.cumsum(f_sim)
-    cdf_ref = np.cumsum(f_ref)
-    return float(np.sum(np.abs(cdf_sim - cdf_ref)))
+    return CdfGapProfile(
+        support=support,
+        f_sim=f_sim,
+        f_ref=f_ref,
+        gaps=np.cumsum(f_sim) - np.cumsum(f_ref),
+    )
+
+
+def wasserstein_integer_support(
+    sim: ShellDistribution,
+    ref: HeAbundanceReference,
+) -> float:
+    """1-D Wasserstein-1 distance between two integer-support distributions.
+
+    Parameters
+    ----------
+    sim
+        Simulated distribution -- read via ``sim.n_values`` (int support) and
+        ``sim.fraction`` (sums to 1).
+    ref
+        Experimental reference -- read via ``ref.n`` (int support) and
+        ``ref.ion_fraction`` (sums to 1).
+
+    Returns
+    -------
+    float
+        ``W1 = sum_n |F_sim(n) - F_ref(n)|`` over the contiguous union support,
+        in He atoms (unit rung spacing).
+
+    Raises
+    ------
+    ValueError
+        If either support is empty or carries duplicates; either fraction
+        vector is non-finite, negative, or does not sum to 1 (e.g. ``.counts``
+        passed by mistake); or the two supports are disjoint (no shared ``n``
+        -- a units/labelling bug, since both are indexed by shell count).
+    """
+    return cdf_gap_profile(sim, ref).w1
 
 
 def compare_size_distributions(
