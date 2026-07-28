@@ -1382,3 +1382,68 @@ The mandatory a037/b031 N = 1000 replicates are the control.
 Block 2 (p_tail) neither fires nor is dismissed — it is deferred to the MD
 evidence. Block 3 (6 × N = 1000) is the designed next step and carries its
 own trigger. Atlas stance intact: nothing adopted, `finc1v725` stands.
+
+### Block 3 — the MD finalists (2026-07-28, 6 × N = 1000, seed 20260729)
+
+Generator `gen_tier2atlas_g4finals.py`, scorer
+`tier2atlas_g4finals_table.py`, table `atlas_g4finals_table.csv`. Both
+oracles passed before any number was read (frozen twin rows string-exact
+from the committed fine scan; pooled-battery scorer drift). Wall clock
+~90 min at concurrency 3 (two batches of three).
+
+| cell | (v_c, τ, E₀) | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | trap (marg) | gate | S |
+|---|---|---|---|---|---|---|---|---|---|---|
+| f1 | 5.5, 4.8, 0.365 | 4.169 | 0.1878 | 0.821 | 0.990 | 0.523 | 411 | 0.091 (.003) | 0 | 1.511 |
+| f2 | 5.5, 5.2, 0.34 | 4.194 | 0.1876 | 0.916 | 0.980 | 0.438 | 440 | 0.093 (.003) | 0 | 1.746 |
+| **f3** | 5.5, 4.4, 0.395 | 4.205 | 0.1867 | **0.769** | **1.023** | **0.614** | 426 | 0.089 (.002) | 0 | 1.512 |
+| **a037** | 5.5, 4.8, 0.37 | 4.024 | 0.1984 | 0.792 | 0.960 | 0.526 | 360 | 0.091 (.003) | **1** | 1.683 |
+| b031 | 6.0, 6.4, 0.31 | 4.263 | 0.1771 | 1.113 | 0.520 | 0.732 | 68 | 0.203 (.026) | 0 | 6.631 |
+| x345 | 5.5, 4.8, 0.345 | 4.782 | 0.1491 | 0.966 | 1.155 | 0.499 | 603 | 0.093 (.003) | 0 | 2.723 |
+
+(S = the §3.5e joint score on the Block-0-licensed axes W₁ + midHot,
+provisional norms; the incumbent `finc1v725` scores **1.091**.)
+
+**Verdicts.**
+
+- **G4F-P2 REFUTED — but by 0.001–0.003.** None of f1/f2/f3 gates: all
+  three land n₁ 0.1867–0.1878 against the 0.19 floor. The cause is a
+  design gap, not a physics failure: Block 1 bias-corrected n̄ but treated
+  n₁ as unbiased on its ≤ 0.036 tolerance. That tolerance is **scatter
+  with inconsistent sign** — MD ran 0.011–0.015 *below* twin here and
+  +0.001…+0.026 *above* twin at the G3 ring. A twin n₁ gate needs a
+  ±0.02 band, and a ridge optimum picked on twin n₁ sits ≈ half an E₀
+  step too low.
+- **G4F-P3 — the W₁ deficit is REAL.** a037 N = 500 → 1000: W₁
+  0.826 → 0.792 (Δ −0.034 against a per-seed SD of 0.095); b031 moved the
+  other way (+0.052). The corrected geometry sits at W₁ ≈ 0.77–0.92
+  against the incumbent's 0.579, consistent with the transfer
+  regression's 0.671 intercept. **The "lands worse" reading is confirmed
+  and localized to the histogram axis alone.**
+- **G4F-P4 — the mid-vs-deep KE tension is BROKEN.** Twin deepKE
+  0.691/0.776/0.887 → MD 0.438/0.523/0.614 (f2/f1/f3), ordering
+  preserved, span 0.176 at near-identical n̄/n₁. **f3 holds midHot 1.023
+  and deepKE 0.614 at once** — the incumbent's own KE profile
+  (1.011/0.633). The deep-KE axis is parameter-accessible on the
+  (v_c, τ, E₀) surface at fixed drag form, so the G3-ring reading "no
+  gated cell holds both axes" was a resolution artifact of its coarse E₀
+  ladder, and **Block 2 (p_tail) is not required by this evidence**. The
+  twin ranked f3 *worst* of the three and MD ranks it best — the
+  unlicensed-deepKE result in operation.
+- **G4F-P5 CONFIRMED:** x345 missed on n₁ (0.149 < 0.19) as
+  pre-registered, with n̄ 4.78 above the ceiling.
+- **a037 replicates** its ring landing on a fresh seed at double N
+  (n̄ 4.024, n₁ 0.1984) — the basin is seed- and N-robust.
+- **b031's corner is out:** trap 0.203, midHot 0.520, S 6.63 at N = 1000.
+- **Retained policy (G4 input):** at the ridge the marginal
+  (modelling-exclusion) class is **0.002–0.003**, i.e. empirically empty;
+  only b031 shows 0.026. The G3-ring reading holds at N = 1000.
+
+**Net.** At the corrected geometry the residual deficit is **one axis —
+W₁ — not a KE trade-off**. No gated cell beats the incumbent's 1.091
+(best: f1 1.511 ≈ f3 1.512, a037 1.683). The measured n₁ bias plus f3's
+KE profile point the successor at **E₀ ≈ 0.38–0.41 on the (v_c 5.5,
+τ 4.4–4.8) chord**, which is untested — 2–3 cells, ~45 min.
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; the G4
+successor-point choice, the retained-policy final call and the ledger
+re-issue remain user adjudications.

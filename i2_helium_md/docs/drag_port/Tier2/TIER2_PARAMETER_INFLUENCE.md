@@ -1160,6 +1160,60 @@ reproduce the committed Step-2 values string-exactly**.
   0.579) bracket the pooled 0.571, suggesting the N = 1000 → 5000 step is
   small; the N = 500 → 1000 step is untested. The mandatory a037/b031
   N = 1000 replicates in Block 3 are the control that settles it.
+  **SETTLED — it is not sample size (below).**
+
+**MD-CONFIRMED at N = 1000 (G4 Block 3, 2026-07-28; 6 cells, fresh shared
+seed 20260729, table `atlas_g4finals_table.csv`).** Oracles passed
+(frozen twin rows string-exact, pooled-battery drift).
+
+| cell | (v_c, τ, E₀) | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | gate |
+|---|---|---|---|---|---|---|---|---|
+| f1 | 5.5, 4.8, 0.365 | 4.169 | 0.1878 | 0.821 | 0.990 | 0.523 | 411 | 0 |
+| f2 | 5.5, 5.2, 0.34 | 4.194 | 0.1876 | 0.916 | 0.980 | 0.438 | 440 | 0 |
+| **f3** | 5.5, 4.4, 0.395 | 4.205 | 0.1867 | **0.769** | **1.023** | **0.614** | 426 | 0 |
+| **a037** | 5.5, 4.8, 0.37 | 4.024 | 0.1984 | 0.792 | 0.960 | 0.526 | 360 | **1** |
+| b031 | 6.0, 6.4, 0.31 | 4.263 | 0.1771 | 1.113 | 0.520 | 0.732 | 68 | 0 |
+| x345 | 5.5, 4.8, 0.345 | 4.782 | 0.1491 | 0.966 | 1.155 | 0.499 | 603 | 0 |
+
+1. **The n̄ bias model is quantitative.** Predicted − measured MD n̄ =
+   −0.005 / +0.000 / +0.004 at f1/f2/f3 (fitted residual SD 0.28 He).
+   Bias-corrected, the twin is an n̄ instrument, not just a ranker.
+2. **n₁ carries transfer scatter of ±0.02 with inconsistent sign, and it
+   decides the gate.** f1/f2/f3 land n₁ 0.1867–0.1878 — missing the 0.19
+   floor by 0.001–0.003 — because MD came in 0.011–0.015 *below* twin,
+   whereas at the G3 ring MD ran *above* twin (+0.001…+0.026). Block 1
+   bias-corrected n̄ but treated n₁ as unbiased on the strength of its
+   ≤ 0.036 tolerance; that tolerance is scatter, not zero bias. **Any
+   future twin gate on n₁ must carry a ±0.02 band, and a ridge optimum
+   selected on twin n₁ sits ≈ half an E₀ step too low.**
+3. **The W₁ deficit is REAL, not sampling noise (G4F-P3).** a037
+   N = 500 → 1000: W₁ 0.826 → 0.792 (Δ −0.034, against a per-seed SD of
+   0.095); b031 moved the other way (1.061 → 1.113). The corrected
+   geometry sits at **W₁ ≈ 0.77–0.92 against the incumbent's 0.579**, and
+   the measured floor agrees with the regression intercept 0.671.
+4. **The mid-vs-deep KE tension is BROKEN (G4F-P4).** Twin deepKE
+   0.691/0.776/0.887 → MD 0.438/0.523/0.614 at f2/f1/f3, ordering
+   preserved, span 0.176 across cells that are near-identical in n̄/n₁.
+   **f3 holds midHot 1.023 *and* deepKE 0.614 simultaneously** — the
+   incumbent's own KE profile (1.011 / 0.633). So the deep-KE axis *is*
+   parameter-accessible on the (v_c, τ, E₀) surface at fixed drag form;
+   the G3-ring reading "no cell holds both axes" was a resolution artifact
+   of its coarse E₀ ladder. **Block 2 (p_tail) is not required by this
+   evidence.** Note the twin ranked f3 *worst* of the three; MD ranks it
+   best — the unlicensed-deepKE finding in operation.
+5. **a037 replicates its landing** on a fresh seed at double N (n̄ 4.024,
+   n₁ 0.1984) — the corrected-geometry basin is seed- and N-robust.
+6. **b031's corner is out:** trap 0.203, midHot 0.520, S 6.63. The
+   v_c 6.0 / τ 6.4 sub-basin does not survive N = 1000.
+7. **Fate/trap at the ridge:** trap 0.088–0.093 with the marginal
+   (modelling-exclusion) class at **0.002–0.003** — the retained-policy
+   question is empirically empty at the successor point (G4 input).
+
+**Net:** at the corrected geometry the residual deficit is **one axis —
+W₁ — not a KE trade-off**. Best S on the licensed axes: f1 1.511 ≈ f3
+1.512 < a037 1.683, all above the incumbent's 1.091, and only a037 gates.
+The measured n₁ bias plus f3's KE profile point the successor at
+**E₀ ≈ 0.38–0.41 on the (v_c 5.5, τ 4.4–4.8) chord** — untested.
 
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 
