@@ -11323,3 +11323,102 @@ plainly: some ridge cell must reach **S < 4.37**.
 Atlas stance unchanged: nothing adopted, `finc1v725` stands, Tier-0 form
 authority / b / committed scorer / checkpoint schema / RNG draw order /
 constants table untouched. No code until `[PROCEED TO IMPLEMENTATION]`.
+
+## G4 Step 1 EXECUTED (Blocks 0/1/3 + a user-requested ladder arm) — successor candidate h405; the W₁ floor ≈ 0.67 measured twice; the corrected-geometry deficit localized to the size-distribution SHAPE, not the drag surface (2026-07-28, 15 × N = 1000)
+
+Built and executed in one session behind the user's
+`[PROCEED TO IMPLEMENTATION]`. Build plan:
+`TIER2_G4_STEP1_IMPLEMENTATION_PLAN.md`. New code:
+`scripts/post_processing/tier2atlas_g4_transfer.py` (Block 0),
+`stage_g4scan` + the `G4SCAN_*` constants in
+`scripts/tier2_h2b_forward_model.py` (Block 1),
+`scripts/gen_tier2atlas_g4finals.py` +
+`scripts/post_processing/tier2atlas_g4finals_table.py` (Block 3).
+Tests: 11 new (`tests/test_tier2atlas_g4_transfer.py`) + 8 new G4 cases
+appended to `tests/test_tier2_h2b_forward_model.py`; full twin suite
+41 passed. Committed artifacts: `h2b_g4_transfer.csv`,
+`h2b_g4scan_{predictions,gated_ke,ridge}.csv`,
+`atlas_g4finals_table.csv`. Every oracle passed before any number was
+read, on every launch.
+
+**Block 0 (zero MD) — the twin's ranking authority, measured.** The 14
+paired (twin, MD) G3-ring cells read as a transfer measurement for the
+first time: W₁ ρ +0.824 [+0.44, +0.98] and midHot ρ +0.996
+[+0.93, +1.00] **licensed**; deepKE ρ +0.327 [−0.28, +0.82] **not**.
+The n̄ bias model (resid SD 0.28 He) replaced the crude [+0.3, +3]
+bracket. Level transfer proved to be a *regression*, not an offset
+(MD_W₁ = 0.671 + 0.412·twin, R² 0.60; MD_midHot = 0.897·twin, R² 0.994)
+— the mean W₁ shift is +0.03 over all cells but +0.32 ± 0.10 over the
+four MD-gated ones. Two plan §1.2 provenance corrections recorded
+rather than overwritten: its "W₁ SD ≈ 0.04" is the SEM of the pooled
+mean (0.0954/√5), and its deep-bin "0.0603 ± 0.0033" does not reconcile
+with the deepKE ratio.
+
+**Block 1 (zero MD) — the fine ridge.** 5544 cells at v_c step 0.25,
+τ step 0.4, E₀ step 0.005; the Step-2 grids are exact sub-lattices and
+**G4-P1 reproduced all 408 shared cells string-exactly**. 574 gate (172
+clean) against Step 2's 24/6480 — the cause is the **gate**, not the
+grid: Step 2's crude bias bracket sat where the n₁ band does not live.
+**G4-P2 CONFIRMED** — the clean gated set is one 4-neighbour-connected
+diagonal ridge from (5.5, 4.8) to (6.0, 6.4), i.e. the two Step-2
+"sub-basins" were opposite corners of a single ridge. **G4-P3 turned
+out NOT EVALUABLE at twin level** — its deciding observable is the one
+Block 0 had just refused to license; a pre-registration defect found by
+G4's own machinery, recorded as such and deferred to MD.
+
+**Block 3 (6 × N = 1000, seed 20260729).** Only a037 gated; f1/f2/f3
+missed by 0.001–0.003 on n₁ because Block 1 bias-corrected n̄ but gated
+n₁ uncorrected — its ≤ 0.036 "tolerance" is scatter with inconsistent
+sign (−0.015 here, +0.001…+0.026 at the ring), and at a hard band edge
+±0.02 decides the verdict. **G4F-P3: the W₁ deficit is real, not sample
+size** (a037 N = 500 → 1000: 0.826 → 0.792, Δ −0.034 vs a per-seed SD
+of 0.095; b031 moved the other way). **G4F-P4: the mid-vs-deep KE
+tension is BROKEN** — deepKE 0.438 / 0.523 / 0.614 across f2/f1/f3 at
+near-identical n̄/n₁, ordering preserved, and f3 holds midHot 1.023
+*and* deepKE 0.614 (the incumbent's own profile). **Block 2 (p_tail)
+therefore never fired**: the G3-ring "no gated cell holds both axes"
+was a coarse-E₀ resolution artifact, not a structural limit.
+
+**Ladder arm (9 × N = 1000, same seed, CRN-paired; user-requested after
+seeing the six).** Placed on the *measured* transfer, and registered
+honestly as post-hoc in `FINAL_MATRIX`. Three τ arms at v_c 5.5 plus a
+v_c 5.25 deep-KE ceiling probe; five gate.
+
+1. **E₀ slope measured** — per +0.005 eV inside the ridge: W₁
+   −0.02…−0.04, n₁ +0.004…+0.007, n̄ −0.11…−0.13 He, midHot −0.02…−0.03,
+   monotone in all three arms; each arm's gate window is only ~0.01 eV.
+2. **W₁ floor ≈ 0.67, measured twice independently** — the τ 4.4 arm
+   flattens 0.769 → 0.709 → 0.674 → 0.669, and Block 0's regression had
+   predicted the floor as its intercept 0.671 from unrelated data.
+3. **Root cause found: n₁ and n̄ are not simultaneously matchable.** W₁
+   improves because n₁ climbs toward the experimental 0.243, but n̄
+   falls with it; on the measured slopes n₁ = 0.243 needs E₀ ≈ 0.435
+   where n̄ ≈ 3.3 — 0.77 He below the experimental 4.07. The standing
+   point achieved both together only at the wrong geometry. **The
+   corrected-geometry residual is a SHAPE mismatch in the detected size
+   distribution, not a scale error**, which localizes it to the
+   mechanism (ladder shape, pickup, per-shed ε) — the branch §3.5c's
+   failure criterion named in advance — and explicitly *not* to the
+   drag surface.
+4. **τ ordering is the twin's reverse** (MD W₁: 4.4 < 4.8 < 5.2; the
+   twin ranked 5.2 best). Second inversion after f1/f3 ⇒ **twin W₁
+   cannot discriminate cells separated by ≲ 0.05** despite its ρ 0.824
+   licence, which was earned on cells spanning W₁ 0.5–12. Recorded as a
+   limit on the twin-first cost ladder — the ladder had to be MD.
+5. **Deep-KE ceiling** — v525 (v_c 5.25) reached deepKE 0.656 in a
+   *gated* cell, above the standing 0.633, at midHot 1.394 / χ²_med 912.
+   RQ11 ceiling: ≈ 0.66 at midHot ≈ 1.4 or ≈ 0.60 at midHot ≈ 0.96.
+6. **Successor candidate h405** (v_c 5.5, τ 4.4, E₀ 0.405): gated, best
+   gated S 1.559, better than a037 on every axis (W₁ 0.709 vs 0.792,
+   deepKE 0.603 vs 0.526, midHot 0.957 vs 0.960, n₁ 0.208 vs 0.198),
+   supp 0.183 against the standing 0.187, trap 0.087, marginal 0.002.
+
+**Retained-policy evidence (G4 input):** the marginal
+(modelling-exclusion) class is 0.001–0.003 across the entire ridge at
+N = 1000 — the question is empirically empty at the successor point.
+
+Atlas stance: nothing adopted, `finc1v725` STANDS. The G4 adjudications
+(successor point, retained policy, ledger re-issue, and whether the W₁
+floor is recorded as the honest residual or chased into a new mechanism
+axis) are the user's; the verification step is a pooled 5 × N = 1000
+battery at the chosen point.

@@ -906,7 +906,7 @@ evidence, MD-grade). KE: no gated cell holds midHot and deepKE at once
 "G3 Step 3", D0 §14.5; table CSV committed. **G4 is live** (successor
 point + retained policy + ledger re-issue; user adjudications).
 
-### 3.5e G4 Step 1 — the fine ridge sweep (DESIGNED + user-approved 2026-07-28; **NEXT STEP**, awaiting `[PROCEED TO IMPLEMENTATION]`)
+### 3.5e G4 Step 1 — the fine ridge sweep (DESIGNED + user-approved 2026-07-28; **EXECUTED 2026-07-28** — Blocks 0/1/3 + a user-requested ladder arm; successor candidate **h405**, W₁ floor ≈ 0.67, deficit localized to the size-distribution *shape*; findings "G4 Step 1")
 
 The G3 ring confirmed the basin but left the successor point
 underdetermined: **no gated cell holds both KE axes**, and the two clean
@@ -1079,6 +1079,55 @@ at b031. The sweep therefore has one explicit target: **beat 4.37.**
 4. Nothing adopts before the G4 adjudication; **`finc1v725` stands**
   throughout. Tier-0 form authority, b, the committed scorer, checkpoint
   schema, RNG draw order and the constants table are untouched.
+
+#### Execution record (2026-07-28)
+
+Blocks 0, 1 and 3 all executed the same day; Block 2 did **not** fire.
+Total spend: zero-MD for Blocks 0–1, **15 cells × N = 1000** for Block 3
+(6 finalists + a 9-cell ladder arm the user requested after seeing the
+first six). All oracles passed on every launch. Full record: findings
+"G4 Step 1" (three sections) and D0 §14.4/§14.5 + the §2/§3/§4 knob
+entries.
+
+- **Block 0** — W₁ ρ +0.824 and midHot ρ +0.996 **licensed**, deepKE
+  ρ +0.327 **not** ⇒ the deep-KE axis is not twin-scannable at any
+  resolution. n̄ bias model resid SD 0.28 He. Two plan §1.2 provenance
+  corrections recorded (the "W₁ SD 0.04" is the SEM of the pooled mean;
+  the deep-bin "0.0603 ± 0.0033" is not the deepKE ratio).
+- **Block 1** — G4-P1 oracle bit-exact on 408 shared cells; 574/5544
+  gate (172 clean); **G4-P2 CONFIRMED**, the ridge is one connected
+  diagonal band; G4-P4 not met on the licensed axes once the transfer is
+  applied as a regression; **G4-P3 proved NOT EVALUABLE at twin level**
+  — a pre-registration defect found by G4's own Block 0, since its
+  deciding observable is the unlicensed one.
+- **Block 3** — G4F-P3: the W₁ deficit is **not** sample size (a037
+  N = 500 → 1000 moved −0.034 against a per-seed SD of 0.095).
+  **G4F-P4: the mid-vs-deep KE tension is BROKEN** (deepKE 0.438 →
+  0.614 across f2/f1/f3 at near-identical n̄/n₁; f3 holds midHot 1.023
+  *and* deepKE 0.614) — so **Block 2 (p_tail) was never triggered** and
+  the G3-ring "no cell holds both axes" reading was a coarse-E₀
+  artifact. G4F-P2 refuted by 0.001–0.003 on n₁ (design gap: n₁ was
+  gated uncorrected; its ±0.02 transfer scatter decides the band edge).
+- **Ladder arm** — E₀ slope measured (per +0.005 eV: W₁ −0.02…−0.04,
+  n₁ +0.004…+0.007, n̄ −0.11…−0.13, midHot −0.02…−0.03, monotone in all
+  three τ arms, gate window ~0.01 eV). **W₁ floor ≈ 0.67**, measured
+  twice independently (arm asymptote 0.669; Block-0 regression intercept
+  0.671). **Root cause: n₁ and n̄ are not simultaneously matchable** —
+  n₁ = 0.243 needs E₀ ≈ 0.435 where n̄ ≈ 3.3, i.e. 0.77 He below
+  experiment. The residual is a *shape* mismatch in the detected size
+  distribution, localizing it to the mechanism (ladder / pickup / ε),
+  not the drag surface. τ ordering is the twin's reverse
+  (4.4 < 4.8 < 5.2 on W₁). Deep-KE ceiling ≈ 0.656 at v_c 5.25, paid in
+  midHot.
+- **Successor candidate: h405** (v_c 5.5, τ 4.4, E₀ 0.405) — gated,
+  best gated S 1.559, better than a037 on every axis, supp 0.183 vs the
+  standing 0.187, marginal class 0.002.
+
+**Still open (the G4 adjudications, user):** successor point, retained
+policy, ledger re-issue, and whether the W₁ floor is recorded as the
+corrected geometry's honest residual or chased into a new mechanism
+axis. Verification before re-baselining: a pooled 5 × N = 1000 battery
+at the chosen point.
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 
@@ -1536,6 +1585,8 @@ program.
 | 5 | D4 Step 2 twin sweeps | zero | none (scratchpad twin, §4ee precedent) |
 | 6 | D4 Step 3 spot-checks + E_bind zero-MD swaps/twin, then conditional MD confirms | ~0–7 × 500 | trigger (incl. enum build; swaps are scratchpad) |
 | 7 | synthesis: merge all results into `TIER2_PARAMETER_INFLUENCE.md`, close GAP markers | zero | none |
+| G3 | geometry re-arbitration: Step 1 landmarks + Step 2 twin scan (zero MD) + Step 3 MD ring (**DONE** 2026-07-27/28) | 14 × 500 | trigger (per step) |
+| G4-1 | fine ridge sweep (§3.5e): Blocks 0/1 zero-MD + Block 3 finalists **and** the ladder arm (**DONE** 2026-07-28) | 15 × 1000 | trigger (per block) |
 
 Total new MD ≈ 19–26 cells × N = 500 ≈ 9.5–13k fragments ≈ 1.9–2.6×
 the pooled battery — the explicit spend of the program (E_bind MD

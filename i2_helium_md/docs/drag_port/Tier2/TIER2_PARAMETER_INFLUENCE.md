@@ -250,6 +250,16 @@ c50 shows the basin nearly reaches 5.0; c65 fails on n₁) — the
 standing 7.25 is MD-measured broken at the corrected geometry (f725:
 trap 0.437, n₁ 0). The shift is exactly the mid-band-softening
 direction NB-RQ11-12 identified.
+**Deep-KE ceiling MEASURED (G4 ladder v525 probe, N = 1000):** dropping
+to **v_c 5.25** reaches **deepKE 0.656 in a GATED cell** — above the
+standing pooled 0.633 — but at midHot 1.394 / χ²_med 912. So the
+mid-band lever has genuine deep-KE headroom and it is paid for in
+midHot: ≈ 0.66 at midHot ≈ 1.4, or ≈ 0.60 at midHot ≈ 0.96 (v_c 5.5).
+v_c 5.25 also traps least (0.048 vs 0.087 at 5.5). **`p_tail` was not
+needed:** the pre-registered Block-2 trigger did not fire — the deep-KE
+axis proved parameter-accessible on (v_c, τ, E₀) at fixed form
+(§14.5 G4F-P4), so the "p_tail is not a second lever" verdict stands
+un-retested at v_c 5.5–6.0 rather than being overturned.
 
 ## 3. τ — Newton cooling clock
 
@@ -277,6 +287,15 @@ trade off (I47).
 ring, §14.5):** the basin wants τ 4.8–6.4 — *toward* the sourced GAH25
 6.55 — and the ring MD-confirms **both** τ values land at v5.5
 (a037 @ 4.8, d030 @ 6.4); the τ ≫ 6.55 arms are not needed.
+**Ordering MEASURED at N = 1000 (G4 ladder, three CRN-paired τ arms at
+v_c 5.5, each swept in E₀):** on W₁ at matched gate status,
+**τ 4.4 (0.669–0.709) < τ 4.8 (0.733–0.792) < τ 5.2 (0.872–0.892)** —
+shorter τ is better at the corrected geometry, i.e. back *toward* the
+standing 3.2, not toward 6.55. deepKE follows the same ordering
+(0.55–0.61 / 0.53–0.59 / 0.43–0.50). **The twin ranked τ 5.2 best**
+(twin W₁ 0.42–0.49) — the second twin-W₁ inversion (§14.4). Successor
+candidate τ = 4.4; τ 4.0 is untested at v_c 5.5 (the twin gates nothing
+there, but its n₁ gate is the mis-calibrated one — §14.4).
 
 ## 4. E₀ = E_int(0) — internal-energy budget
 
@@ -313,6 +332,30 @@ ring, §14.5):** MD lands at E₀ 0.30–0.37 (gated cells 0.30/0.31/
 0.36/0.37 depending on (v_c, τ)) — still inside the RQ1 band; the
 geometry-dependence chain gains its third point (pinned 0.38–0.41 →
 standing mixture 0.22–0.27 → corrected ~0.30–0.37).
+
+**Slope MEASURED — the cleanest one-knob response in the atlas (G4
+Block 3 ladder, 2026-07-28; 15 × N = 1000 CRN-paired, §14.5).** Inside
+the corrected-geometry ridge, per **+0.005 eV** of E₀, monotone in all
+three τ arms (4.4 / 4.8 / 5.2):
+
+| observable | Δ per +0.005 eV | direction |
+|---|---|---|
+| W₁_solv | **−0.02 … −0.04** | improves |
+| n₁_solv | **+0.004 … +0.007** | improves (toward exp. 0.243) |
+| n̄_det | **−0.11 … −0.13 He** | degrades (away from exp. 4.07) |
+| midHot | **−0.02 … −0.03** | degrades |
+| supp | +0.02 … +0.03 | — |
+
+Each τ arm therefore gates over a window of only **~0.01 eV in E₀** —
+E₀ is a sharp knob at the corrected geometry, not a soft one, and it is
+the knob that trades histogram quality against n̄ and midHot.
+**Consequence (the G4 headline, §14.5 item 3):** because n₁ and n̄ move
+in opposite directions under E₀, they cannot be matched simultaneously —
+n₁ = 0.243 needs E₀ ≈ 0.435 where n̄ ≈ 3.3, 0.77 He below experiment.
+This is what sets the W₁ floor ≈ 0.67 and localizes the corrected-
+geometry residual to the *mechanism*, not the drag surface. Corrected-
+geometry successor candidate: **E₀ 0.405** at (v_c 5.5, τ 4.4) — the
+E₀-band chain's fourth point, back up near the pinned-droplet scale.
 
 ## 5. κ — ladder steepness (Form U)
 

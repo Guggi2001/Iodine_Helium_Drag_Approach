@@ -141,9 +141,13 @@ instrument MD-calibrated (n̄ bias 0.24–2.66 small-end, n₁ ≤ 0.036);
 marginal class ≈ 0 at the basin (retained-policy evidence). Adjudicated
 (user): `exclude_all_coupled` interim, final call at G4; Axis B folded
 into the ring. Findings "G3 Step 3" + D0 §14.5; scorer
-`tier2atlas_g3ring_table.py`. **Next: G4** (successor point among the
-gated cells ± interpolation battery, retained-policy final call, ledger
-re-issue — user adjudications; pooled battery at the winner as
+`tier2atlas_g3ring_table.py`. **G4 Step 1 EXECUTED 2026-07-28** (plan
+§3.5e; 15 × N = 1000): successor candidate `h405` (v_c 5.5 / τ 4.4 /
+E₀ 0.405), the KE tension broken, and a measured W₁ floor ≈ 0.67 whose
+cause — n₁ and n̄ not simultaneously matchable — localizes the residual
+to the mechanism, not the drag surface. **Next: the G4 adjudications**
+(successor point, retained policy, ledger re-issue, and the W₁-floor
+call — all user decisions; pooled battery at the winner as
 verification). The D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å
 pinned convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
