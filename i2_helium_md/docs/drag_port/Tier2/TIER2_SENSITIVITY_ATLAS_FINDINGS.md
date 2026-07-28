@@ -1447,3 +1447,72 @@ KE profile point the successor at **E₀ ≈ 0.38–0.41 on the (v_c 5.5,
 **Atlas stance:** nothing adopted; `finc1v725` stands; the G4
 successor-point choice, the retained-policy final call and the ledger
 re-issue remain user adjudications.
+
+### Block 3 ladder arm — the E₀ direction (2026-07-28, 9 further cells × N = 1000, seed 20260729, CRN-paired)
+
+User-requested extension of Block 3 along the E₀ direction the six
+finalists pointed at. Placed on the **measured** transfer (predicted MD n̄
+inside [3.80, 4.06]; twin n₁ ≥ 0.208 to clear 0.19 after the measured
+−0.012 offset), not on twin values. Registered post-hoc — the cells were
+chosen after the first six were scored, and the generator says so.
+
+| cell | v_c | τ | E₀ | trap (marg) | supp | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | gate | S |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **h405** | 5.5 | 4.4 | 0.405 | 0.087 (.002) | 0.183 | 3.955 | 0.2078 | **0.709** | 0.957 | 0.603 | 350 | **1** | **1.559** |
+| h410 | 5.5 | 4.4 | 0.41 | 0.086 (.002) | 0.200 | 3.862 | 0.2119 | 0.674 | 0.931 | 0.570 | 248 | 1 | 1.696 |
+| h415 | 5.5 | 4.4 | 0.415 | 0.086 (.002) | 0.221 | 3.753 | 0.2147 | 0.669 | 0.906 | 0.548 | 261 | 0 | 1.878 |
+| h375 | 5.5 | 4.8 | 0.375 | 0.089 (.002) | 0.146 | 3.889 | 0.2141 | 0.747 | 0.926 | 0.585 | 331 | 1 | 1.861 |
+| h380 | 5.5 | 4.8 | 0.38 | 0.089 (.002) | 0.170 | 3.769 | 0.2202 | 0.733 | 0.895 | 0.577 | 283 | 0 | 2.075 |
+| h345 | 5.5 | 5.2 | 0.345 | 0.092 (.003) | 0.093 | 4.043 | 0.1942 | 0.892 | 0.945 | 0.432 | 373 | 1 | 1.965 |
+| h350 | 5.5 | 5.2 | 0.35 | 0.091 (.003) | 0.110 | 3.877 | 0.2095 | 0.884 | 0.897 | 0.441 | 320 | 1 | 2.328 |
+| h355 | 5.5 | 5.2 | 0.355 | 0.090 (.001) | 0.133 | 3.732 | 0.2224 | 0.872 | 0.859 | 0.500 | 299 | 0 | 2.619 |
+| v525 | 5.25 | 4.4 | 0.39 | 0.048 (.000) | 0.148 | 3.994 | 0.2084 | 0.727 | **1.394** | **0.656** | 912 | 1 | 3.648 |
+
+**1. The E₀ lift works exactly as designed.** Five of the nine cells gate,
+converting the three 0.001–0.003 near-misses into real landings. Per
++0.005 eV of E₀, inside the ridge: **W₁ −0.02…−0.04, n₁ +0.004…+0.007,
+n̄ −0.11…−0.13 He, midHot −0.02…−0.03**, monotone in all three arms. Each
+τ arm gates over a window of only ~0.01 eV in E₀.
+
+**2. The W₁ floor is ≈ 0.67 and is now measured twice, independently.**
+The τ 4.4 arm flattens: 0.769 → 0.709 → 0.674 → **0.669**. Block 0's
+twin→MD regression predicted the floor as its intercept **0.671**, from
+completely different data. The incumbent's 0.579 is unreachable on the
+(v_c, τ, E₀) surface at the corrected geometry.
+
+**3. Why the floor exists — n₁ and n̄ are not simultaneously matchable.**
+W₁ falls because n₁ climbs toward the experimental 0.243, and n̄ falls
+with it. On the measured τ 4.4 slopes, n₁ = 0.243 needs E₀ ≈ 0.435, where
+n̄ ≈ 3.3 — **0.77 He below the experimental 4.07**. The standing point hit
+n₁ 0.243 *and* n̄ 4.068 together only at the wrong geometry. So the
+corrected-geometry deficit is a **shape** mismatch in the detected size
+distribution, not a scale error, and it localizes to the mechanism
+(ladder shape, pickup, per-shed ε) rather than the drag surface — the
+branch §3.5c's failure criterion named in advance.
+
+**4. τ ordering is the reverse of the twin's.** On W₁: τ 4.4 (0.669–0.709)
+< τ 4.8 (0.733–0.792) < τ 5.2 (0.872–0.892), while twin W₁ ranked τ 5.2
+best (0.42–0.49). Second inversion after f1/f3. **Twin W₁ cannot
+discriminate cells separated by ≲ 0.05**; its ρ = 0.824 licence was
+earned on cells spanning W₁ 0.5–12. Recorded as a limit on the
+twin-first cost ladder, not a scoring fix.
+
+**5. Deep-KE ceiling (v525).** deepKE **0.656**, above the incumbent's
+0.633, in a cell that *gates* (n₁ 0.208, n̄ 3.994, W₁ 0.727) — but midHot
+1.394, χ²_med 912. Lowering v_c to 5.25 buys deep-bin KE and pays in
+midHot. RQ11 now has a measured ceiling: ≈ 0.66 at midHot ≈ 1.4, or
+≈ 0.60 at midHot ≈ 0.96.
+
+**6. Successor candidate: h405** (v_c 5.5, τ 4.4, E₀ 0.405). Gated, best
+gated S (1.559), and better than a037 on **every** axis: W₁ 0.709 vs
+0.792, deepKE 0.603 vs 0.526, midHot 0.957 vs 0.960, n₁ 0.208 vs 0.198.
+Its supp 0.183 lands on the standing 0.187 (RQ3 mixture read intact),
+trap 0.087, marginal class 0.002.
+
+**7. n̄ model validity:** |pred − MD| ≤ 0.08 He inside the ridge
+(systematically −0.04…−0.08 at each arm's high-E₀ end), but −0.30 at b031
+and +0.11 at v525/x345 — an in-ridge instrument, not a global one.
+
+**Atlas stance:** nothing adopted; `finc1v725` stands. The G4
+adjudications (successor point, retained policy, ledger re-issue) are the
+user's; the natural verification at h405 is a pooled 5 × N = 1000 battery.

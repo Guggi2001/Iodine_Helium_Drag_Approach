@@ -1215,6 +1215,65 @@ W₁ — not a KE trade-off**. Best S on the licensed axes: f1 1.511 ≈ f3
 The measured n₁ bias plus f3's KE profile point the successor at
 **E₀ ≈ 0.38–0.41 on the (v_c 5.5, τ 4.4–4.8) chord** — untested.
 
+**E₀ LADDER — the successor located and the W₁ floor measured (G4 Block 3
+ladder arm, 2026-07-28; 9 further cells × N = 1000, same seed 20260729,
+CRN-paired with the six above).** Three τ arms at v_c 5.5 plus one v_c
+probe. The E₀ direction is the atlas's cleanest one-knob response:
+
+| τ | E₀ | n̄ | n₁ | W₁ | midHot | deepKE | gate |
+|---|---|---|---|---|---|---|---|
+| 4.4 | 0.395 (f3) | 4.205 | 0.1867 | 0.769 | 1.023 | 0.614 | 0 |
+| 4.4 | **0.405 (h405)** | 3.955 | 0.2078 | **0.709** | 0.957 | 0.603 | **1** |
+| 4.4 | 0.410 (h410) | 3.862 | 0.2119 | 0.674 | 0.931 | 0.570 | 1 |
+| 4.4 | 0.415 (h415) | 3.753 | 0.2147 | 0.669 | 0.906 | 0.548 | 0 |
+| 4.8 | 0.370 (a037) | 4.024 | 0.1984 | 0.792 | 0.960 | 0.526 | 1 |
+| 4.8 | 0.375 (h375) | 3.889 | 0.2141 | 0.747 | 0.926 | 0.585 | 1 |
+| 4.8 | 0.380 (h380) | 3.769 | 0.2202 | 0.733 | 0.895 | 0.577 | 0 |
+| 5.2 | 0.345–0.355 | 4.04→3.73 | 0.194→0.222 | 0.892→0.872 | 0.945→0.859 | 0.43→0.50 | 1/1/0 |
+
+1. **E₀ influence (the knob's own entry, §4):** inside the ridge, raising
+   E₀ by 0.005 eV moves **W₁ −0.02…−0.04, n₁ +0.004…+0.007, n̄
+   −0.11…−0.13 He, midHot −0.02…−0.03**, monotonically in every arm. It
+   is a single-parameter trade of histogram quality against n̄ and midHot,
+   and each τ arm gates over a window of only ~2 E₀ steps (0.01 eV).
+2. **The W₁ floor is real and ≈ 0.67.** The τ 4.4 arm flattens:
+   0.769 → 0.709 → 0.674 → **0.669**, against the incumbent's 0.579.
+   Block 0's transfer regression predicted the MD floor as its intercept
+   **0.671** — an independent estimate agreeing to 0.002. The corrected
+   geometry cannot reach the standing point's histogram quality by any
+   (v_c, τ, E₀) setting.
+3. **Why — n₁ and n̄ cannot be matched simultaneously.** W₁ improves
+   because n₁ climbs toward the experimental 0.243, but n̄ falls as it
+   does. Extrapolating the measured τ 4.4 slopes, n₁ = 0.243 needs
+   E₀ ≈ 0.435, where n̄ ≈ 3.3 — **0.77 He below the experimental 4.07**.
+   The standing point achieved n₁ 0.243 *and* n̄ 4.068 together only at
+   the wrong geometry. **This is the precise, quantified form of the
+   corrected-geometry deficit: the detected size distribution has the
+   wrong shape, not the wrong scale** — which localizes the residual to
+   the mechanism (ladder shape, pickup, per-shed ε), exactly the branch
+   §3.5c's failure criterion pointed at, and not to the drag surface.
+4. **τ ordering is the twin's reverse.** On W₁ at matched gate status:
+   τ 4.4 (0.669–0.709) < τ 4.8 (0.733–0.792) < τ 5.2 (0.872–0.892). The
+   twin ranked τ 5.2 *best* (twin W₁ 0.42–0.49). **Twin W₁ is not usable
+   for fine discrimination** — a second inversion after f1/f3, despite
+   ρ = 0.824. Read: the licensing was measured over cells spanning W₁
+   0.5–12 and does not survive down to separations of ~0.05.
+5. **Deep-KE ceiling (v525 probe, v_c 5.25/τ4.4/E₀0.39):** deepKE
+   **0.656 > the incumbent's 0.633**, and the cell *gates* (n₁ 0.208,
+   n̄ 3.994, W₁ 0.727) — but midHot 1.394 and χ²_med 912. So the deep-KE
+   axis does have headroom above the standing point, reachable by
+   lowering v_c, and it is paid for in midHot. RQ11 has a ceiling answer:
+   ~0.66 with midHot ≈ 1.4, or ~0.60 with midHot ≈ 0.96.
+6. **n̄ model validity range:** |pred − MD| ≤ 0.08 He everywhere inside
+   the ridge (systematically −0.04…−0.08 at the high-E₀ end of each arm),
+   but −0.30 at b031 and +0.11 at v525/x345 — the model is an
+   in-ridge instrument, not a global one.
+7. **Successor candidate: h405** (v_c 5.5, τ 4.4, E₀ 0.405) — gated,
+   best gated S 1.559, and better than a037 on **every** axis (W₁ 0.709
+   vs 0.792, deepKE 0.603 vs 0.526, midHot 0.957 vs 0.960, n₁ 0.208 vs
+   0.198). Its supp 0.183 also lands on the standing 0.187 (RQ3), its
+   trap is 0.087 and its marginal class 0.002.
+
 ## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
 
 ### 15.1 The laws as implemented
