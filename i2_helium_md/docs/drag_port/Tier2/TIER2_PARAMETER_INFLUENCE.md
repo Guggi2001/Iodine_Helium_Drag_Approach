@@ -949,7 +949,7 @@ hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
 histogram renormalizes to n ≥ 1), so losing the suppression channel at
 saturated dressing is not by itself disqualifying.
 
-### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13)
+### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13; **ranking authority MEASURED at G4 Block 0, 2026-07-28: W₁ ρ +0.82 and midHot ρ +1.00 LICENSED, deepKE ρ +0.33 NOT — the deep-KE axis is not twin-scannable**)
 
 The S6 twin was re-issued at the corrected geometry and measured against
 all 11 G1 MD cells (stage `g3landmarks`; full record findings "G3
@@ -967,6 +967,49 @@ cross-instrument (trap 0.308, supp 0, n̄ 17.0, W₁ 12.1, deepKE 2.12 —
 each discrepancy = the measured bias). Landmark table re-issued and
 law-tagged (the recorded center-pin K 0.74460 is pure-cubic; under the
 capped tail the anchored radii are traversable at K_capped 1.7–20.2).
+
+**Ranking authority — MEASURED (G4 Block 0, 2026-07-28, zero MD).** The
+14 paired (twin, MD) ring cells were read as a transfer measurement for
+the first time (report `tier2atlas_g4_transfer.py`, CSV
+`h2b_g4_transfer.csv`; both §1.4 oracles passed first). Spearman ρ,
+twin vs MD, with 95 % bootstrap CI, against the pre-registered
+permission gate ρ ≥ 0.7:
+
+| observable | ρ (n = 14) | 95 % CI | verdict |
+|---|---|---|---|
+| W₁_solv | **+0.824** | [+0.44, +0.98] | **LICENSED** — the twin may *rank* on W₁ |
+| midHot | **+0.996** | [+0.93, +1.00] | **LICENSED** — near-perfect rank transfer |
+| deepKE | +0.327 | [−0.28, +0.82] | **NOT LICENSED** — gate-only; MD must rank it |
+
+Consequences, both first-order for the atlas:
+
+- The §14.4 header caveats "W₁ bias-loaded" and "KE direction-only" are
+  now **split**: W₁ and midHot are *rank*-faithful (the bias is a level
+  shift, not a reordering), while **deepKE is not** — the twin's deep-bin
+  ratio does not order MD cells. **The deep-KE axis is not twin-scannable
+  at all**; any RQ11 statement must come from MD. This is measured, not
+  assumed, and it is the reason the G4 MD finalists must span the ridge
+  rather than sit at the twin's top-scoring cell.
+- **n̄ bias model** (replacing the crude [+0.3, +3] bracket):
+  `Δn̄ = a + b·n̄_twin`, Δn̄ = MD − twin, `a = +0.58, b = −0.238`
+  (13 cells, f725 excluded as leverage) or `a = +0.23, b = −0.173`
+  (all 14). **Residual SD 0.28 He either way** — the fit's R² is carried
+  by f725 but the *band* is robust, so predicted-MD n̄ is good to ±0.3 He
+  and the twin gate can be run at the MD band itself.
+
+**Seed-SD normalizers (same session, five N = 1000 battery members).**
+W₁ 0.5791 ± 0.0954, midHot 1.0108 ± 0.0222, deepKE 0.6327 ± 0.0209,
+χ²_med 131.5 ± 15.4. Two **provenance corrections to plan §1.2**
+(recorded, not silently overwritten):
+
+1. §1.2's "W₁_solv SD ≈ 0.04" is the **SEM of the pooled mean**
+   (0.0954/√5 = 0.043), not the per-seed SD. The per-seed N = 1000
+   scatter is 0.095, so an N = 500 single-seed W₁ carries ≈ 0.13 — the
+   G3-ring W₁ column is even softer than it was read as.
+2. §1.2's "deep-bin KE read 0.0603 ± 0.0033" does **not** reconcile with
+   the deepKE ratio (0.633 ± 0.021). It is not the ratio's mean/SD; the
+   most likely reading is the deep-bin *population weight*. Flagged, not
+   resolved; the G4 score normalizes by the measured 0.0209.
 
 ### 14.5 The corrected-geometry landing surface — (v_c, τ, E₀, E_bind) re-arbitrated by the G3 Step 2 twin scan (2026-07-27, zero MD)
 

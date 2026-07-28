@@ -2543,6 +2543,44 @@ G3SCAN_GATE_NBAR = (4.4, 7.1)
 G3SCAN_PRESCAN_F = np.round(np.arange(0.05, 1.0001, 0.05), 2)
 G3SCAN_PRESCAN_FMIN = 0.25
 
+# --- G4 Step 1 / Block 1: the fine ridge scan (atlas plan §3.5e) ----------
+# The Step-2 basin left the successor point underdetermined because the two
+# clean sub-basins — (v_c 5.5, tau 4.8) and (v_c 6.0, tau 6.4) — are adjacent
+# DIAGONAL corners of a grid that was never scanned between them. These grids
+# contain the Step-2 grids as exact sub-lattices, which is what makes the
+# G4-P1 bit-exact reproduction oracle possible.
+G4SCAN_VC = (5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5)      # step 0.25 (was 0.5)
+G4SCAN_TAU_PS = (4.0, 4.4, 4.8, 5.2, 5.6, 6.0, 6.4, 6.8)  # step 0.4
+G4SCAN_E0_GRID = np.round(np.arange(0.26, 0.4201, 0.005), 3)  # 33, step 0.005
+G4SCAN_EBIND = G3SCAN_EBIND                             # unchanged: no new
+#                                                       # value, no new pairing
+#                                                       # exception
+# Gate. n1 transfer is MD-grade (|MD - twin| <= 0.036 at the ring), so the n1
+# band is the MD band unchanged. nbar is gated on the Block-0 bias-model
+# PREDICTION of MD nbar (resid SD 0.28 He), which retires the crude
+# [4.4, 7.1] bracket Step 2 had to carry.
+G4SCAN_GATE_N1SOLV = (0.19, 0.30)
+G4SCAN_GATE_NBAR = (3.77, 4.37)
+# Ranking axes: Block 0 (2026-07-28) measured the twin's rank transfer over
+# the 14 paired ring cells — W1 rho +0.824, midHot rho +0.996 (both licensed
+# at the pre-registered rho >= 0.7), deepKE rho +0.327 (NOT licensed). The
+# twin therefore may not rank the deep-KE axis; it is reported only and the
+# MD finalists must measure it.
+G4SCAN_RANK_AXES = ("w1", "midhot")
+# Block-2 (p_tail) trigger: the KE tension counts as broken only if one gated
+# cell holds both axes at once.
+G4SCAN_KE_MIDHOT_BAND = (0.85, 1.15)
+G4SCAN_KE_DEEP_MIN = 0.60
+# Score normalizers (plan §3.5e). The provisional set is the pre-registration
+# the S < 4.37 target was stated under; the measured set comes from Block 0's
+# committed CSV and is reported beside it.
+G4SCAN_NORM_PROVISIONAL = {"w1_ref": 0.571,
+                           "midhot_ln": float(np.log(1.15)),
+                           "deepke_ln": float(np.log(1.15))}
+G4SCAN_TRANSFER_CSV = "h2b_g4_transfer.csv"          # Block 0 output
+# The two Step-2 clean sub-basins the G4-P2 connectivity test runs between.
+G4SCAN_RIDGE_ENDS = ((5.5, 4.8), (6.0, 6.4))
+
 
 def g3scan_gate(n1_solv, nbar):
     """The §3.5c pre-registered hard gate; NaN observables never gate."""
@@ -2926,6 +2964,376 @@ def stage_g3scan(m=20000, force_rebuild=False):
               "subset (§3.5c).")
 
 
+def _g4_pareto_front(cells):
+    """Non-dominated flags over (w1_solv, |ln midhot_geo|) — lower is better.
+
+    Both axes are distances from the experiment, so a cell is dominated when
+    another is at least as good on both and strictly better on one. NaN on
+    either axis is never on the front. Returns a list of bools aligned with
+    ``cells``.
+    """
+    pts = []
+    for c in cells:
+        w1 = float(c["w1_solv"])
+        mh = float(c["midhot_geo"])
+        pts.append((w1, abs(np.log(mh)) if mh > 0 else np.nan))
+    front = []
+    for i, (w1, mh) in enumerate(pts):
+        if not (np.isfinite(w1) and np.isfinite(mh)):
+            front.append(False)
+            continue
+        dominated = any(
+            j != i and np.isfinite(w2) and np.isfinite(m2)
+            and w2 <= w1 and m2 <= mh and (w2 < w1 or m2 < mh)
+            for j, (w2, m2) in enumerate(pts)
+        )
+        front.append(not dominated)
+    return front
+
+
+def _g4_ridge_connected(cells, start, end, vc_grid, tau_grid):
+    """G4-P2: is there a 4-neighbour path on the (v_c, tau) lattice?
+
+    ``cells`` is an iterable of (v_c, tau) pairs that gated; ``start``/``end``
+    are the two Step-2 clean sub-basins. Neighbours are one grid step in v_c
+    OR one in tau — a diagonal step does not connect, because the question is
+    exactly whether the unscanned intermediate cells fill in.
+    """
+    vc_idx = {round(float(v), 4): i for i, v in enumerate(vc_grid)}
+    tau_idx = {round(float(t), 4): i for i, t in enumerate(tau_grid)}
+
+    def node(cell):
+        return (vc_idx.get(round(float(cell[0]), 4)),
+                tau_idx.get(round(float(cell[1]), 4)))
+
+    nodes = {node(c) for c in cells}
+    nodes.discard((None, None))
+    s, e = node(start), node(end)
+    if s not in nodes or e not in nodes:
+        return False
+    seen, stack = {s}, [s]
+    while stack:
+        i, j = stack.pop()
+        if (i, j) == e:
+            return True
+        for nb in ((i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)):
+            if nb in nodes and nb not in seen:
+                seen.add(nb)
+                stack.append(nb)
+    return False
+
+
+def _g4_load_transfer():
+    """Block-0 outputs the fine scan depends on (bias model + normalizers).
+
+    Block 0 is a hard prerequisite: without its measured bias model the nbar
+    gate would have to fall back to the crude bracket this stage exists to
+    retire, so a missing file fails loudly rather than degrading silently.
+    """
+    path = OUT / G4SCAN_TRANSFER_CSV
+    if not path.exists():
+        raise SystemExit(
+            f"G4 Block 1 requires Block 0's {G4SCAN_TRANSFER_CSV}: run\n"
+            f"    python scripts/post_processing/tier2atlas_g4_transfer.py\n"
+            f"first (it is zero-MD and writes {path})."
+        )
+    with open(path, newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    if not rows:
+        raise AssertionError(f"{path} is empty")
+    r = rows[0]
+    model = {"a": float(r["nbar_bias_a"]), "b": float(r["nbar_bias_b"]),
+             "resid_sd": float(r["nbar_bias_resid_sd"])}
+    norm = {"w1_ref": float(r["norm_w1_ref"]),
+            "midhot_ln": float(r["norm_midhot_ln"]),
+            "deepke_ln": float(r["norm_deepke_ln"])}
+    licensed = {k: bool(int(r[f"licensed_{k}"]))
+                for k in ("w1_solv", "midHot", "deepKE")}
+    return model, norm, licensed
+
+
+def _g4_pred_md_nbar(nbar_twin, model):
+    """Predicted MD nbar under the Block-0 bias model (units: He atoms)."""
+    return float(nbar_twin + model["a"] + model["b"] * nbar_twin)
+
+
+def _g4_score(w1, midhot, deepke, norm, axes):
+    """The §3.5e joint score restricted to the licensed axes (lower better)."""
+    total = 0.0
+    if "w1" in axes:
+        if not np.isfinite(w1):
+            return float("nan")
+        total += w1 / norm["w1_ref"]
+    if "midhot" in axes:
+        if not (np.isfinite(midhot) and midhot > 0):
+            return float("nan")
+        total += abs(np.log(midhot)) / norm["midhot_ln"]
+    if "deepke" in axes:
+        if not (np.isfinite(deepke) and deepke > 0):
+            return float("nan")
+        total += abs(np.log(deepke)) / norm["deepke_ln"]
+    return float(total)
+
+
+def stage_g4scan(m=20000, force_rebuild=False):
+    """G4 Step 1 Block 1: the fine ridge scan at the corrected geometry
+    (plan §3.5e; zero MD).
+
+    Refines the two axes that carried the KE tension — v_c to step 0.25 and
+    tau to step 0.4 — across the region between the Step-2 clean sub-basins,
+    at E0 step 0.005. The Step-2 grids are exact sub-lattices, so block 1 of
+    this stage re-scores the shared points and demands bit-exact reproduction
+    of the committed scan (G4-P1) before any new cell is read.
+
+    Gate: n1_solv in G4SCAN_GATE_N1SOLV AND the Block-0 bias-model prediction
+    of MD nbar in G4SCAN_GATE_NBAR, widened by the fit's residual SD. Ranking
+    uses only the axes Block 0 licensed (G4SCAN_RANK_AXES); deepKE is reported
+    but NOT ranked — its twin rank transfer was measured at rho = +0.33.
+    """
+    import time as _time
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    lad, _, p_tail, _, _ = G3_STANDING
+    model, norm_meas, licensed = _g4_load_transfer()
+    axes = tuple(G4SCAN_RANK_AXES)
+    nbar_lo = G4SCAN_GATE_NBAR[0] - model["resid_sd"]
+    nbar_hi = G4SCAN_GATE_NBAR[1] + model["resid_sd"]
+
+    # ---- Block 0a/0b: the committed oracles (identical to stage_g3scan).
+    print("=== G4 Step 1 / Block 1: oracles ===")
+    _g3_s6_oracle(m, ref_ke, solv_exp)
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    with open(OUT / "h2b_g3_corrected_row.csv", newline="") as fh:
+        ref_rows = list(csv.DictReader(fh))
+    if len(ref_rows) != 1:
+        raise AssertionError("h2b_g3_corrected_row.csv must hold one row")
+    for col, val in ens["row"].items():
+        if str(val) != ref_rows[0][col]:
+            raise AssertionError(
+                f"g4scan corrected-row oracle FAILED at {col}: "
+                f"{val!r} != {ref_rows[0][col]!r}"
+            )
+    print("g4scan landmark oracle PASSED: h2b_g3_corrected_row.csv re-derived "
+          "string-identically at the standing cell.")
+    print(f"Block-0 inputs: nbar bias a={model['a']:+.4f} b={model['b']:+.4f} "
+          f"resid SD={model['resid_sd']:.3f} He; gate nbar in "
+          f"[{nbar_lo:.3f}, {nbar_hi:.3f}]; licensed axes {axes} "
+          f"(deepKE licensed={licensed['deepKE']}).")
+
+    sig, ne = ens["sig"], ens["ne"]
+
+    # ---- Block 1 pass 1: G4-P1, the shared sub-lattice reproduces bit-exact.
+    print("\n=== G4-P1 oracle: the Step-2 sub-lattice reproduces bit-exact ===")
+    with open(OUT / "h2b_g3scan_predictions.csv", newline="") as fh:
+        committed = [
+            r for r in csv.DictReader(fh)
+            if float(r["v_c"]) in G4SCAN_VC
+            and float(r["tau_ps"]) in G4SCAN_TAU_PS
+            and any(abs(float(r["E0_eV"]) - e) < 1e-9 for e in G4SCAN_E0_GRID)
+        ]
+    if not committed:
+        raise AssertionError("G4-P1: no shared sub-lattice rows found — the "
+                             "grids do not overlap, the oracle is vacuous")
+    checked = 0
+    for want in committed:
+        fam = _g3scan_chord_family(
+            float(want["v_c"]), want["E_bind_tag"], float(want["E_bind_eV"]),
+            m, ens, force_rebuild=False,
+        )
+        K = np.asarray(fam["K"]).reshape(-1) * (TAU_PS / float(want["tau_ps"]))
+        trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+        v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+        n_det, sup = fate_map(ne, K, float(want["E0_eV"]), 1, sig)
+        obs, _ = g3_score(n_det, sup, trapped, v_inf, ref_ke, solv_exp)
+        for col, val, nd in (("n1_solv", obs["n1_solv"], 4),
+                             ("nbar_det", obs["nbar"], 3),
+                             ("w1_solv", obs["w1"], 4),
+                             ("midhot_geo", obs["midhot_geo"], 4),
+                             ("deepke", obs["deepke"], 4)):
+            if str(round(float(val), nd)) != want[col]:
+                raise AssertionError(
+                    f"G4-P1 FAILED at v_c={want['v_c']} {want['E_bind_tag']} "
+                    f"tau={want['tau_ps']} E0={want['E0_eV']}, column {col}: "
+                    f"{round(float(val), nd)} != {want[col]}"
+                )
+        checked += 1
+    print(f"G4-P1 PASSED: {checked} shared cells reproduce the committed "
+          f"Step-2 values string-exactly.")
+
+    # ---- Block 1 pass 2: chord families + the fine nested scoring.
+    print("\n=== G4 Block 1: chord families + fine nested scoring ===")
+    scan_rows, gated_ke_rows = [], []
+    n_gated = 0
+    t0 = _time.time()
+    for v_c in G4SCAN_VC:
+        for eb_tag, e_bind in G4SCAN_EBIND:
+            cached = (OUT / f"h2b_g3scan_chord_"
+                            f"{_g3scan_chord_tag(v_c, eb_tag)}.npz").exists()
+            fam = _g3scan_chord_family(
+                v_c, eb_tag, e_bind, m, ens, force_rebuild=force_rebuild
+            )
+            K655 = np.asarray(fam["K"]).reshape(-1)
+            trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+            v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+            det_yield = float((~trapped).mean())
+            fam_gated = 0
+            for tau in G4SCAN_TAU_PS:
+                K = K655 * (TAU_PS / tau)
+                for e0 in G4SCAN_E0_GRID:
+                    n_det, sup = fate_map(ne, K, e0, 1, sig)
+                    row = {
+                        "leg": "g4scan", "ladder": lad, "v_c": v_c,
+                        "p_tail": p_tail, "E_bind_tag": eb_tag,
+                        "E_bind_eV": e_bind,
+                        "ebind_exception": int(eb_tag != "eb1168"),
+                        "tau_ps": tau,
+                        "tau_flag": int(tau > G3SCAN_TAU_SOURCED),
+                        "E0_eV": float(e0), "m": m,
+                        "det_yield": round(det_yield, 4),
+                    }
+                    try:
+                        obs, ke_bins = g3_score(
+                            n_det, sup, trapped, v_inf, ref_ke, solv_exp
+                        )
+                    except ValueError:
+                        row.update({k: np.nan for k in (
+                            "trapped_frac", "suppressed_frac", "nbar_det",
+                            "pred_md_nbar", "n1_solv", "w1_solv",
+                            "midhot_geo", "deepke", "n1_ke_eV", "S_measured",
+                            "S_provisional")})
+                        row.update({"gate_n1": 0, "gate_nbar": 0, "gate": 0})
+                        scan_rows.append(row)
+                        continue
+                    pred_nbar = _g4_pred_md_nbar(obs["nbar"], model)
+                    g_n1 = (G4SCAN_GATE_N1SOLV[0] <= obs["n1_solv"]
+                            <= G4SCAN_GATE_N1SOLV[1])
+                    g_nb = nbar_lo <= pred_nbar <= nbar_hi
+                    gate = bool(g_n1 and g_nb)
+                    row.update({
+                        "trapped_frac": round(obs["trapped_frac"], 4),
+                        "suppressed_frac": round(obs["sup_frac"], 4),
+                        "nbar_det": round(obs["nbar"], 3),
+                        "pred_md_nbar": round(pred_nbar, 3),
+                        "n1_solv": round(obs["n1_solv"], 4),
+                        "w1_solv": round(obs["w1"], 4),
+                        "midhot_geo": round(obs["midhot_geo"], 4),
+                        "deepke": round(obs["deepke"], 4),
+                        "n1_ke_eV": round(obs["n1_ke"], 4),
+                        "S_measured": round(_g4_score(
+                            obs["w1"], obs["midhot_geo"], obs["deepke"],
+                            norm_meas, axes), 4),
+                        "S_provisional": round(_g4_score(
+                            obs["w1"], obs["midhot_geo"], obs["deepke"],
+                            G4SCAN_NORM_PROVISIONAL,
+                            ("w1", "midhot", "deepke")), 4),
+                        "gate_n1": int(g_n1), "gate_nbar": int(g_nb),
+                        "gate": int(gate),
+                    })
+                    scan_rows.append(row)
+                    if gate:
+                        fam_gated += 1
+                        n_gated += 1
+                        gated_ke_rows.extend(
+                            {"v_c": v_c, "E_bind_tag": eb_tag, "tau_ps": tau,
+                             "E0_eV": float(e0), "n": n, "weight": round(w, 4),
+                             "mean_KE_eV": round(k_, 4)}
+                            for n, w, k_ in ke_bins
+                        )
+            print(f"[g4scan {_g3scan_chord_tag(v_c, eb_tag):14s}] "
+                  f"{'cache' if cached else 'INTEGRATED':10s} "
+                  f"trap={trapped.mean():.3f} "
+                  f"K655_q50={np.quantile(K655, 0.50):.3f} "
+                  f"gated={fam_gated}/{len(G4SCAN_TAU_PS) * len(G4SCAN_E0_GRID)}"
+                  f"  [{_time.time() - t0:6.0f} s]")
+
+    with open(OUT / "h2b_g4scan_predictions.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(scan_rows[0]))
+        wtr.writeheader()
+        wtr.writerows(scan_rows)
+    with open(OUT / "h2b_g4scan_gated_ke.csv", "w", newline="") as fh:
+        wtr = csv.DictWriter(
+            fh, fieldnames=["v_c", "E_bind_tag", "tau_ps", "E0_eV", "n",
+                            "weight", "mean_KE_eV"]
+        )
+        wtr.writeheader()
+        wtr.writerows(gated_ke_rows)
+
+    # ---- Ridge summary + the pre-registered verdicts.
+    gated = [r for r in scan_rows if r["gate"] == 1]
+    front = _g4_pareto_front(gated) if gated else []
+    for r, f in zip(gated, front):
+        r["pareto"] = int(f)
+    if gated:
+        with open(OUT / "h2b_g4scan_ridge.csv", "w", newline="") as fh:
+            wtr = csv.DictWriter(fh, fieldnames=list(gated[0]))
+            wtr.writeheader()
+            wtr.writerows(sorted(gated, key=lambda r: r["S_measured"]))
+    print(f"\nscan       -> {OUT / 'h2b_g4scan_predictions.csv'}")
+    print(f"gated KE   -> {OUT / 'h2b_g4scan_gated_ke.csv'}")
+    print(f"ridge      -> {OUT / 'h2b_g4scan_ridge.csv'}")
+
+    print(f"\n=== G4 Block 1 verdict: {len(gated)}/{len(scan_rows)} cells "
+          f"inside the hard gate ===")
+    if not gated:
+        print("  NO CELL GATES on the fine grid — the refinement did not open "
+              "the surface; the Step-2 basin cells remain the only landing "
+              "points and Block 2 (p_tail) is authorized by default.")
+        return
+
+    clean = [r for r in gated
+             if r["tau_flag"] == 0 and r["ebind_exception"] == 0]
+    print(f"  clean of both caveat stamps (eb1168, tau <= "
+          f"{G3SCAN_TAU_SOURCED}): {len(clean)}")
+
+    # G4-P2: ridge connectivity between the two Step-2 sub-basins.
+    connected = _g4_ridge_connected(
+        [(r["v_c"], r["tau_ps"]) for r in clean],
+        G4SCAN_RIDGE_ENDS[0], G4SCAN_RIDGE_ENDS[1], G4SCAN_VC, G4SCAN_TAU_PS,
+    )
+    print(f"  G4-P2 (ridge connectivity {G4SCAN_RIDGE_ENDS[0]} -> "
+          f"{G4SCAN_RIDGE_ENDS[1]} over the clean cells): "
+          f"{'CONNECTED RIDGE' if connected else 'TWO ISLANDS'}")
+
+    # G4-P3: does any gated cell hold both KE axes? (Block-2 trigger)
+    both = [r for r in gated
+            if G4SCAN_KE_MIDHOT_BAND[0] <= r["midhot_geo"]
+            <= G4SCAN_KE_MIDHOT_BAND[1]
+            and r["deepke"] >= G4SCAN_KE_DEEP_MIN]
+    print(f"  G4-P3 (KE tension broken): {len(both)} cell(s) hold midHot in "
+          f"{G4SCAN_KE_MIDHOT_BAND} AND deepKE >= {G4SCAN_KE_DEEP_MIN}")
+    if not both:
+        print("  *** BLOCK 2 TRIGGER FIRED (the p_tail scan is authorized) ***")
+    else:
+        for r in sorted(both, key=lambda r: r["S_measured"])[:6]:
+            print(f"      vc={r['v_c']:<5} {r['E_bind_tag']:6s} "
+                  f"tau={r['tau_ps']:<4} E0={r['E0_eV']:<6} "
+                  f"midHot={r['midhot_geo']:.3f} deepKE={r['deepke']:.3f}")
+    print("  (deepKE is twin-UNLICENSED — this clause is a lead for the MD "
+          "finalists, not a twin verdict.)")
+
+    # G4-P4: does any gated cell beat the incumbent's score?
+    best_prov = min(r["S_provisional"] for r in gated
+                    if np.isfinite(r["S_provisional"]))
+    print(f"  G4-P4 (S < 4.37 under the provisional norms): best gated "
+          f"S_provisional = {best_prov:.3f} -> "
+          f"{'MET' if best_prov < 4.37 else 'NOT MET'}")
+
+    print("\n  top gated cells by S_measured (licensed axes "
+          f"{axes}; deepKE reported only):")
+    for r in sorted(gated, key=lambda r: r["S_measured"])[:15]:
+        print(f"    vc={r['v_c']:<5} {r['E_bind_tag']:6s} "
+              f"tau={r['tau_ps']:<4} E0={r['E0_eV']:<6} "
+              f"n1={r['n1_solv']:.3f} nbar={r['nbar_det']:.2f}"
+              f"->{r['pred_md_nbar']:.2f} W1={r['w1_solv']:.3f} "
+              f"midHot={r['midhot_geo']:.3f} deepKE={r['deepke']:.3f} "
+              f"S={r['S_measured']:.2f}/{r['S_provisional']:.2f} "
+              f"{'PARETO' if r['pareto'] else '      '}"
+              f"{' TAU-FLAG' if r['tau_flag'] else ''}"
+              f"{' EBIND-EXC' if r['ebind_exception'] else ''}")
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -2951,6 +3359,8 @@ def main():
         stage_g3landmarks()
     elif mode == "g3scan":
         stage_g3scan()
+    elif mode == "g4scan":
+        stage_g4scan(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -2965,7 +3375,7 @@ def main():
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
             "legaprime | legb | legc | legd | repilots1 | repilots2 | "
-            "g3landmarks | g3scan)"
+            "g3landmarks | g3scan | g4scan)"
         )
 
 

@@ -694,3 +694,77 @@ def test_g3scan_chord_tag_and_cache_guard(twin, tmp_path, monkeypatch):
     np.savez_compressed(tmp_path / "h2b_g3scan_chord_vc9p0_eb154.npz", **bad)
     with pytest.raises(AssertionError, match="stale g3scan chord cache"):
         twin._g3scan_chord_family(9.0, "eb154", 0.154, 999, ens=None)
+
+
+# ---------------------------------------------------------------------------
+# G4 Step 1 / Block 1 — the fine ridge scan (atlas plan §3.5e)
+# ---------------------------------------------------------------------------
+
+
+def test_g4_grids_contain_the_g3_grids_as_exact_sublattices(twin):
+    """G4-P1 rests on this: every Step-2 grid point survives in the fine grid.
+
+    If a coarse point were lost the bit-exact reproduction oracle could not be
+    evaluated there, and the fine scan would silently stop being a refinement.
+    """
+    assert set(twin.G4SCAN_VC) >= {5.0, 5.5, 6.0, 6.5}
+    assert set(twin.G4SCAN_TAU_PS) >= {4.8, 6.4}
+    fine = {round(float(x), 3) for x in twin.G4SCAN_E0_GRID}
+    coarse = {round(float(x), 3) for x in twin.G3SCAN_E0_GRID
+              if twin.G4SCAN_E0_GRID[0] <= float(x) <= twin.G4SCAN_E0_GRID[-1]}
+    assert coarse <= fine
+    assert twin.G4SCAN_EBIND == twin.G3SCAN_EBIND
+
+
+def test_g4_vc_grid_is_quarter_stepped_across_the_basin(twin):
+    assert sorted(float(v) for v in twin.G4SCAN_VC) == [
+        5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5
+    ]
+
+
+def test_g4_tau_grid_is_0p4_stepped_and_reaches_past_the_sourced_value(twin):
+    tau = sorted(float(t) for t in twin.G4SCAN_TAU_PS)
+    assert tau == [4.0, 4.4, 4.8, 5.2, 5.6, 6.0, 6.4, 6.8]
+    assert max(tau) > twin.G3SCAN_TAU_SOURCED   # the flagged cell exists
+
+
+def test_g4_e0_grid_is_half_stepped(twin):
+    e0 = [float(x) for x in twin.G4SCAN_E0_GRID]
+    assert e0[0] == 0.26 and e0[-1] == 0.42
+    assert all(abs((b - a) - 0.005) < 1e-9 for a, b in zip(e0, e0[1:]))
+
+
+def test_g4_gate_retires_the_crude_nbar_bracket(twin):
+    """n1 stays the MD band (transfer is MD-grade); nbar moves to the MD band
+    itself, because Block 0's bias model predicts MD nbar to +/- 0.3 He."""
+    assert twin.G4SCAN_GATE_N1SOLV == (0.19, 0.30)
+    assert twin.G4SCAN_GATE_NBAR == (3.77, 4.37)
+    assert twin.G4SCAN_GATE_NBAR != twin.G3SCAN_GATE_NBAR
+
+
+def test_g4_ranking_axes_exclude_the_unlicensed_deep_ke(twin):
+    """Block 0 measured deepKE rho = +0.33 (< 0.7): the twin may not rank it."""
+    assert "deepke" not in twin.G4SCAN_RANK_AXES
+    assert set(twin.G4SCAN_RANK_AXES) == {"w1", "midhot"}
+
+
+def test_g4_pareto_front_keeps_only_nondominated_cells(twin):
+    """(W1, |ln midHot|) front: a cell dominated on both axes is dropped."""
+    cells = [
+        {"w1_solv": 1.0, "midhot_geo": 1.0},    # best midHot
+        {"w1_solv": 0.5, "midhot_geo": 1.5},    # best W1
+        {"w1_solv": 1.2, "midhot_geo": 1.6},    # dominated by both
+    ]
+    front = twin._g4_pareto_front(cells)
+    assert front == [True, True, False]
+
+
+def test_g4_ridge_connectivity_detects_a_gap(twin):
+    """G4-P2 is a 4-neighbour path test on the (v_c, tau) lattice."""
+    vc, tau = twin.G4SCAN_VC, twin.G4SCAN_TAU_PS
+    connected = [(5.5, 4.8), (5.75, 4.8), (5.75, 5.2), (5.75, 5.6),
+                 (5.75, 6.0), (5.75, 6.4), (6.0, 6.4)]
+    assert twin._g4_ridge_connected(connected, (5.5, 4.8), (6.0, 6.4), vc, tau)
+    assert not twin._g4_ridge_connected(
+        [(5.5, 4.8), (6.0, 6.4)], (5.5, 4.8), (6.0, 6.4), vc, tau
+    )
