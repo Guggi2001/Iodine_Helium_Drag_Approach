@@ -150,10 +150,13 @@ def geometry_columns(run_dir: Path) -> dict[str, Any]:
     }
 
 
-def observable_row(label: str, run_dir: Path, abundance_ref, ked_ref,
-                   *, with_geometry: bool = True) -> dict[str, Any]:
-    """One row of the committed observable vector for a finished run."""
-    read = load_confirmation_run(run_dir, label=label)
+def observable_columns(read, abundance_ref, ked_ref) -> dict[str, Any]:
+    """The committed observable vector for one reduced read (pure).
+
+    Extracted from :func:`observable_row` (G4 Step 2 Task 2) so pooled
+    in-memory reads (``pool_confirmation_reads``) score through the same
+    code path as run-dir reads — key set and numerics unchanged.
+    """
     hist = score_histogram_vs_reference(read, abundance_ref)
     ke = score_ke_curve_vs_reference(
         read, ked_ref, n_min=KE_N_MIN, min_count=MIN_KE_BIN_COUNT,
@@ -161,10 +164,7 @@ def observable_row(label: str, run_dir: Path, abundance_ref, ked_ref,
     )
     mid = midhot_ratio(read, ked_ref)
     deep = deep_bin_ke_ratio(read, ked_ref)
-    row: dict[str, Any] = {"label": label}
-    if with_geometry:
-        row.update(geometry_columns(run_dir))
-    row.update({
+    return {
         "num_scored": read.num_scored,
         "trap": read.trapped_frac,
         # Decomposed on purpose (plan §3.5b item 2): trap_bound is the exact
@@ -187,7 +187,17 @@ def observable_row(label: str, run_dir: Path, abundance_ref, ked_ref,
         # low-n bins, so their chi2 is a sum over far fewer terms and a smaller
         # value there is NOT a better KE landing.
         "ke_npts": ke.n_points,
-    })
+    }
+
+
+def observable_row(label: str, run_dir: Path, abundance_ref, ked_ref,
+                   *, with_geometry: bool = True) -> dict[str, Any]:
+    """One row of the committed observable vector for a finished run."""
+    read = load_confirmation_run(run_dir, label=label)
+    row: dict[str, Any] = {"label": label}
+    if with_geometry:
+        row.update(geometry_columns(run_dir))
+    row.update(observable_columns(read, abundance_ref, ked_ref))
     return row
 
 

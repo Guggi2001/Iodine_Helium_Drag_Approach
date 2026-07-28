@@ -40,7 +40,7 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -71,6 +71,7 @@ __all__ = [
     "deep_bin_ke_ratio",
     "read_confirmation_detection",
     "load_confirmation_run",
+    "pool_confirmation_reads",
     "knob_columns_from_cfg",
     "load_twin_prediction",
     "load_twin_ke_curve",
@@ -307,6 +308,65 @@ def load_confirmation_run(
     detection = load_detection_result(detection_path)
     return read_confirmation_detection(
         detection, label=p.name if label is None else label, n_max=n_max
+    )
+
+
+def pool_confirmation_reads(
+    reads: Sequence[ConfirmationDetectionRead], *, label: str
+) -> ConfirmationDetectionRead:
+    """Pool member reads into one read (the §4cc battery convention).
+
+    Equivalent to reducing the concatenated detection arrays: scored ions
+    concatenate; the retained/suppressed classes recount exactly via
+    ``int(round(frac * denominator))`` (each fraction was ``count / denom``,
+    so the round-trip is exact in integers). No pooled container dir is
+    involved — this is the in-memory §4cc pooling (atlas G4 Step 2 Block V).
+
+    Parameters
+    ----------
+    reads
+        Member reads (e.g. one per battery seed), all reduced on the same
+        histogram support ``0..n_max``.
+    label
+        Label of the pooled read.
+
+    Raises
+    ------
+    ValueError
+        On an empty member list or mismatched histogram supports.
+    """
+    if not reads:
+        raise ValueError("pool_confirmation_reads: no member reads.")
+    base = reads[0].n_values
+    for r in reads[1:]:
+        if r.n_values.shape != base.shape or not np.array_equal(r.n_values, base):
+            raise ValueError(
+                f"pool {label!r}: mismatched histogram support "
+                f"({r.label!r} vs {reads[0].label!r})."
+            )
+    num_ions = sum(r.num_ions for r in reads)
+    n_scored = np.concatenate([r.n_scored for r in reads])
+    ke = np.concatenate([r.ke_scored_eV for r in reads])
+    trapped = sum(int(round(r.trapped_frac * r.num_ions)) for r in reads)
+    bound = sum(int(round(r.trap_bound_frac * r.num_ions)) for r in reads)
+    marginal = sum(int(round(r.trap_marginal_frac * r.num_ions)) for r in reads)
+    suppressed = sum(int(round(r.suppressed_frac * r.num_scored)) for r in reads)
+    counts = np.bincount(n_scored, minlength=base.size).astype(float)
+    fraction = counts / counts.sum()
+    return ConfirmationDetectionRead(
+        label=label,
+        num_ions=num_ions,
+        num_scored=int(n_scored.size),
+        trapped_frac=trapped / num_ions,
+        trap_bound_frac=bound / num_ions,
+        trap_marginal_frac=marginal / num_ions,
+        suppressed_frac=suppressed / n_scored.size,
+        n_scored=n_scored,
+        ke_scored_eV=ke,
+        n_values=base.copy(),
+        fraction=fraction,
+        n_mean=float(n_scored.mean()),
+        n1_frac=float(fraction[1]),
     )
 
 

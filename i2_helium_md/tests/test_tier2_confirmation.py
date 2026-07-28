@@ -31,9 +31,11 @@ from i2_helium_md.postprocess.ihe_ked import IHeKedReference
 from i2_helium_md.postprocess.tier2_confirmation import (
     DEEP_KE_BAND,
     MIDHOT_BAND,
+    ConfirmationDetectionRead,
     deep_bin_ke_ratio,
     ke_band_ratio,
     midhot_ratio,
+    pool_confirmation_reads,
     read_confirmation_detection,
     load_twin_prediction,
     load_twin_ke_curve,
@@ -891,3 +893,60 @@ class TestKEBandRatio:
             ke_band_ratio(read, ref, n_lo=5, n_hi=2)
         with pytest.raises(ValueError, match="unknown aggregate"):
             ke_band_ratio(read, ref, n_lo=2, n_hi=3, aggregate="harmonic")
+
+
+# ---------------------------------------------------------------------------
+# battery pooling (atlas G4 Step 2 Block V — the §4cc convention, in memory)
+# ---------------------------------------------------------------------------
+class TestPoolConfirmationReads:
+    def _read(self, n_scored, ke, *, num_ions, trapped, bound, marginal,
+              suppressed, n_max=25):
+        counts = np.bincount(n_scored, minlength=n_max + 1).astype(float)
+        return ConfirmationDetectionRead(
+            label="m", num_ions=num_ions, num_scored=len(n_scored),
+            trapped_frac=trapped / num_ions,
+            trap_bound_frac=bound / num_ions,
+            trap_marginal_frac=marginal / num_ions,
+            suppressed_frac=suppressed / len(n_scored),
+            n_scored=np.asarray(n_scored), ke_scored_eV=np.asarray(ke),
+            n_values=np.arange(n_max + 1), fraction=counts / counts.sum(),
+            n_mean=float(np.mean(n_scored)),
+            n1_frac=float(counts[1] / counts.sum()),
+        )
+
+    def test_pool_two_members_equals_concatenation(self):
+        a = self._read([1, 2, 2], [0.1, 0.2, 0.3], num_ions=4,
+                       trapped=1, bound=1, marginal=0, suppressed=0)
+        b = self._read([0, 4], [0.4, 0.5], num_ions=3,
+                       trapped=1, bound=0, marginal=1, suppressed=1)
+        pooled = pool_confirmation_reads([a, b], label="pool")
+        assert pooled.label == "pool"
+        assert pooled.num_ions == 7 and pooled.num_scored == 5
+        assert pooled.trapped_frac == pytest.approx(2 / 7)
+        assert pooled.trap_bound_frac == pytest.approx(1 / 7)
+        assert pooled.trap_marginal_frac == pytest.approx(1 / 7)
+        assert pooled.suppressed_frac == pytest.approx(1 / 5)
+        assert pooled.fraction[2] == pytest.approx(2 / 5)
+        assert pooled.n1_frac == pytest.approx(1 / 5)
+        assert pooled.n_mean == pytest.approx(np.mean([1, 2, 2, 0, 4]))
+        assert list(pooled.n_scored) == [1, 2, 2, 0, 4]
+        assert pooled.ke_scored_eV == pytest.approx([0.1, 0.2, 0.3, 0.4, 0.5])
+
+    def test_pool_self_preserves_fractions(self):
+        a = self._read([1, 1, 3], [0.1, 0.1, 0.2], num_ions=3,
+                       trapped=0, bound=0, marginal=0, suppressed=0)
+        pooled = pool_confirmation_reads([a, a], label="pool")
+        assert np.allclose(pooled.fraction, a.fraction)
+        assert pooled.n_mean == pytest.approx(a.n_mean)
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="no member"):
+            pool_confirmation_reads([], label="pool")
+
+    def test_mismatched_support_raises(self):
+        a = self._read([1], [0.1], num_ions=1, trapped=0, bound=0,
+                       marginal=0, suppressed=0, n_max=25)
+        b = self._read([1], [0.1], num_ions=1, trapped=0, bound=0,
+                       marginal=0, suppressed=0, n_max=30)
+        with pytest.raises(ValueError, match="support"):
+            pool_confirmation_reads([a, b], label="pool")
