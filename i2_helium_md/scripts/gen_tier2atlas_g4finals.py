@@ -163,6 +163,28 @@ FINAL_MATRIX: tuple[FinalCell, ...] = (
               "G3-ring bridge control, deepKE-favourable corner"),
     FinalCell("x345", 5.5, "eb1168", 4.8, 0.345,
               "off-ridge fail control (pre-registered to miss on n1)"),
+    # ---- LADDER ARM, added 2026-07-28 AFTER the six cells above were scored.
+    # Not a pre-launch registration: it is placed ON their measured transfer
+    # (n1 ran 0.011-0.015 below twin; the nbar model was accurate to 0.005 He),
+    # to convert the three 0.001-0.003 near-misses into gated cells and to
+    # follow the f1->f3 trend that improved W1, midHot and deepKE together.
+    # Same seed as the six above, so every comparison is CRN-paired.
+    # Three tau arms x an E0 ladder, each placed at predicted MD nbar inside
+    # [3.80, 4.06] with twin n1 >= 0.208 (>= 0.195 after the measured offset):
+    FinalCell("h345", 5.5, "eb1168", 5.2, 0.345, "ladder: tau 5.2 arm, low"),
+    FinalCell("h350", 5.5, "eb1168", 5.2, 0.35, "ladder: tau 5.2 arm, mid"),
+    FinalCell("h355", 5.5, "eb1168", 5.2, 0.355, "ladder: tau 5.2 arm, high"),
+    FinalCell("h375", 5.5, "eb1168", 4.8, 0.375, "ladder: tau 4.8 arm, low"),
+    FinalCell("h380", 5.5, "eb1168", 4.8, 0.38, "ladder: tau 4.8 arm, high"),
+    FinalCell("h405", 5.5, "eb1168", 4.4, 0.405, "ladder: tau 4.4 arm, low"),
+    FinalCell("h410", 5.5, "eb1168", 4.4, 0.41, "ladder: tau 4.4 arm, mid"),
+    FinalCell("h415", 5.5, "eb1168", 4.4, 0.415, "ladder: tau 4.4 arm, high"),
+    # deep-KE ceiling probe: the highest twin deepKE (1.19) reachable inside
+    # the gate anywhere on the ridge. Its twin midHot is 1.52 (-> ~1.37 in MD),
+    # so it is expected to FAIL on midHot -- it asks whether deepKE has any
+    # headroom above the incumbent's 0.633 at all, not whether it is a
+    # successor. Only cell off v_c 5.5.
+    FinalCell("v525", 5.25, "eb1168", 4.4, 0.39, "ladder: deep-KE ceiling probe"),
 )
 _SPEC_BY_LABEL = {c.label: c for c in FINAL_MATRIX}
 
@@ -182,6 +204,25 @@ TWIN_ROWS: dict[str, tuple[str, ...]] = {
              "0.5469", "0.4958", "0"),
     "x345": ("0.0535", "0.0413", "5.387", "4.685", "0.1555", "0.8157",
              "1.2889", "0.8762", "0"),
+    # ---- ladder arm (see the FINAL_MATRIX note on its post-hoc placement)
+    "h345": ("0.0535", "0.0924", "4.567", "4.06", "0.2101", "0.4881",
+             "1.0616", "0.6677", "1"),
+    "h350": ("0.0535", "0.1153", "4.4", "3.933", "0.2206", "0.4504",
+             "1.0176", "0.6475", "1"),
+    "h355": ("0.0535", "0.1403", "4.238", "3.81", "0.2286", "0.4199",
+             "0.9761", "0.6285", "1"),
+    "h375": ("0.0535", "0.1562", "4.413", "3.943", "0.2165", "0.4685",
+             "1.0314", "0.7341", "1"),
+    "h380": ("0.0535", "0.1789", "4.269", "3.833", "0.223", "0.4402",
+             "0.994", "0.7149", "1"),
+    "h405": ("0.0535", "0.1916", "4.484", "3.997", "0.2083", "0.7025",
+             "1.0574", "0.844", "1"),
+    "h410": ("0.0535", "0.2116", "4.359", "3.902", "0.2138", "0.6851",
+             "1.0253", "0.8254", "1"),
+    "h415": ("0.0535", "0.2318", "4.238", "3.809", "0.2168", "0.6751",
+             "0.9941", "0.8083", "1"),
+    "v525": ("0.0268", "0.1602", "4.33", "3.88", "0.2124", "0.4871",
+             "1.5246", "1.1895", "1"),
 }
 
 # Pre-registered MD acceptance (unchanged from §3.5d — bias-free).
