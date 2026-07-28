@@ -1226,6 +1226,39 @@ committed CSV), focused tests. Block F is doc work in the findings/plan
 before the scorer's output is read. MD spend: 5 × N = 1000 (~45–90 min
 wall); everything else zero-MD.
 
+#### The low-n KE axis — PRE-REGISTERED as a hard axis (user adjudication 2026-07-28)
+
+Found mid-stage (user observation, verified on the committed artifacts
+before the Block-V battery was read): the corrected-geometry ridge
+**halves the n = 1 mean KE** (h405 0.637 / f3 0.668 eV vs the incumbent's
+1.034 against ref mean/median/mode 1.302/1.128/0.891) and takes ~20 % off
+n = 2 (0.551/0.580 vs ref 0.706), while n ≥ 3 lands (h405 n = 3: 0.471 vs
+0.496). The scored surface was blind to it: n = 1 KE enters only the
+median-anchored, *reported-not-scored* χ²_med (which did register:
+242 → 350/426), and midHot's n = 2–8 geo-mean dilutes the bad n = 2
+behind six good bins. Mechanism: the corrected geometry's ~9 → ~35 Å
+birth depth makes the fastest, most-stripped fragments pay the full
+transit-drag toll — the incumbent's n = 1 KE match was partly a
+shallow-birth artifact (the same wrong-geometry compensation as its
+W₁ 0.571). Note: p_tail (Block 2) was dismissed on the *deep*-KE axis;
+the n = 1 KE axis is where the high-v tail exponent actually acts, so
+that dismissal does not carry over.
+
+**Pre-registration (governs every future ridge/successor ranking):**
+
+- Observables: **KE₁** = sim mean detected KE in bin n = 1 vs the
+  reference **median** 1.128 eV (the I77 n = 1 anchor convention);
+  **KE₂** = sim mean in bin n = 2 vs the reference **mean** 0.706 eV.
+- Score terms, same form as the §3.5e S convention:
+  `|ln(KE₁/1.128)|/ln(1.15) + |ln(KE₂/0.706)|/ln(1.15)` — **added to S**
+  in any future ranking.
+- **Hard gate:** band half-widths set at 2× the per-seed SD measured by
+  the Block-V battery (the deepKE-normalizer precedent: axis frozen now,
+  norm frozen from the first measured scatter, recorded in the findings
+  before any ranking uses it).
+- The Block-V scorer reports KE₁/KE₂ (mean/median/mode, per member +
+  pooled) from this stage on.
+
 #### Risks and boundaries
 
 1. **Fingerprint degeneracy** — the three knobs may produce

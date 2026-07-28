@@ -110,6 +110,12 @@ GV_P2_W1 = (0.64, 0.78)
 # Committed-row oracle columns (4-decimal comparison).
 ORACLE_ROW_COLS = ("nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE")
 
+# The pre-registered low-n KE axis (plan §3.5f, user adjudication
+# 2026-07-28): KE1 vs the reference n = 1 MEDIAN (I77 anchor), KE2 vs the
+# reference n = 2 MEAN. Reported here per member + pooled; the hard-gate
+# band is frozen from this battery's measured per-seed SD.
+LOWKE_REF = {1: ("median", 1.128), 2: ("mean", 0.706)}
+
 # ---------------------------------------------------------------------------
 
 
@@ -118,6 +124,28 @@ def _s(row: dict[str, Any]) -> float:
     return joint_score(float(row["w1_solv"]), float(row["midHot"]),
                        float(row["deepKE"]), PROVISIONAL_NORM,
                        axes=LICENSED_AXES)
+
+
+def lowke_columns(read) -> dict[str, Any]:
+    """The pre-registered low-n KE observables (mean/median/mode per bin).
+
+    Mode = midpoint of the tallest 40-bin histogram cell on [0, 3.5] eV
+    (display diagnostic; the scored quantities are KE1_mean / KE2_mean).
+    """
+    out: dict[str, Any] = {}
+    for n in (1, 2):
+        sel = read.ke_scored_eV[read.n_scored == n]
+        if sel.size < 5:
+            out[f"KE{n}_mean"] = float("nan")
+            out[f"KE{n}_med"] = float("nan")
+            out[f"KE{n}_mode"] = float("nan")
+            continue
+        hist, edges = np.histogram(sel, bins=40, range=(0.0, 3.5))
+        i = int(np.argmax(hist))
+        out[f"KE{n}_mean"] = float(sel.mean())
+        out[f"KE{n}_med"] = float(np.median(sel))
+        out[f"KE{n}_mode"] = float(0.5 * (edges[i] + edges[i + 1]))
+    return out
 
 
 def committed_h405_row() -> dict[str, str]:
@@ -179,6 +207,7 @@ def main() -> None:
         reads.append(read)
         row: dict[str, Any] = {"label": member, "seed": MEMBER_SEEDS[member]}
         row.update(observable_columns(read, abundance_ref, ked_ref))
+        row.update(lowke_columns(read))
         row["md_gate"] = int(
             GATE_N1[0] <= float(row["n1_solv"]) <= GATE_N1[1]
             and GATE_NBAR[0] <= float(row["nbar_det"]) <= GATE_NBAR[1]
@@ -193,6 +222,7 @@ def main() -> None:
     pooled_read = pool_confirmation_reads(reads, label="h405pooled")
     pooled: dict[str, Any] = {"label": "pooled", "seed": "-"}
     pooled.update(observable_columns(pooled_read, abundance_ref, ked_ref))
+    pooled.update(lowke_columns(pooled_read))
     pooled["md_gate"] = int(
         GATE_N1[0] <= float(pooled["n1_solv"]) <= GATE_N1[1]
         and GATE_NBAR[0] <= float(pooled["nbar_det"]) <= GATE_NBAR[1]
@@ -227,6 +257,27 @@ def main() -> None:
           f"(Block-3 single-seed h405 S {H405_BLOCK3_S}; "
           f"incumbent finc1v725 S "
           f"{joint_score(INCUMBENT['w1_solv'], INCUMBENT['midHot'], INCUMBENT['deepKE'], PROVISIONAL_NORM, axes=LICENSED_AXES):.3f})")
+
+    print("\n=== Pre-registered low-n KE axis (plan §3.5f; reported, "
+          "norms frozen from this scatter) ===")
+    for n in (1, 2):
+        kind, ref_val = LOWKE_REF[n]
+        vals = np.asarray([float(r[f"KE{n}_mean"]) for r in rows
+                           if r["label"] != "pooled"])
+        pv = float(pooled[f"KE{n}_mean"])
+        print(f"KE{n}: pooled mean {pv:.3f} eV vs ref {kind} {ref_val:.3f} "
+              f"(ratio {pv / ref_val:.3f}); per-seed mean "
+              f"{vals.mean():.3f} ± SD {vals.std(ddof=1):.3f} "
+              f"-> frozen gate band ratio 1 ± {2 * vals.std(ddof=1) / ref_val:.3f} "
+              f"(2×SD/ref)")
+        print(f"     pooled median {float(pooled[f'KE{n}_med']):.3f} / mode "
+              f"{float(pooled[f'KE{n}_mode']):.3f} eV "
+              f"(incumbent pooled n={n} mean: {1.034 if n == 1 else 0.754})")
+    s_lowke = (abs(np.log(float(pooled["KE1_mean"]) / LOWKE_REF[1][1]))
+               + abs(np.log(float(pooled["KE2_mean"]) / LOWKE_REF[2][1]))) \
+        / np.log(1.15)
+    print(f"low-n KE score terms (|ln ratio|/ln 1.15, additive to S in "
+          f"future rankings): {s_lowke:.3f}")
 
     if gv1 and gv2 and gv3:
         print("\nAll GV verdicts pass: the G4 adjudications are FIREABLE "
