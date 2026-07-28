@@ -306,6 +306,13 @@ there, but its n₁ gate is the mis-calibrated one — §14.4).
 
 **Influence (measured):**
 
+- **Bin-level signature (G4 Step 2 Block D, CRN-paired τ 4.4 arm, per
+  +0.005 eV):** the E₀ lever closes the solvated CDF gaps **only at
+  n = 1–4** (Δgap +0.002…+0.012 there; |Δgap| < 0.003 and sign-unstable
+  for n ≥ 5). **Bins 7–20 are E₀-inaccessible** — they carry ≈ 45 % of
+  the pooled-h405 W₁ residual (five of its nine top-70 % bins), which is
+  the measured identity of the W₁ floor's carriers (findings "G4 Step 2
+  — Block D").
 - Sets the **fate cliff**: closed-form bare ⇔ K < K* = ln(E₀/Σ(21));
   the (E₀, K) two-parameter fate map reproduces measured columns to
   0.84 He (I34). At a congruent single-point ensemble the suppressed
@@ -991,6 +998,21 @@ hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
 (the experimental n = 0 bin is an RQ3 two-channel mixture; the solvated
 histogram renormalizes to n ≥ 1), so losing the suppression channel at
 saturated dressing is not by itself disqualifying.
+
+**Low-n KE is the same transit channel, measured (G4 Step 2, user-found
+2026-07-28):** the corrected geometry **halves the n = 1 mean KE**
+(pooled h405 battery 0.641 ± 0.003 eV vs the incumbent's 1.034 against
+ref mean/median/mode 1.302/1.128/0.891) and takes ~20 % off n = 2
+(0.549 ± 0.002 vs ref 0.706), while n ≥ 3 lands (h405 n = 3: 0.471 vs
+0.496). The fastest, most-stripped fragments pay the full ~35 Å
+transit-drag toll — the incumbent's n = 1 KE match was partly a
+shallow-birth artifact, the KE-side twin of its W₁ 0.571. The scored
+surface was blind (n = 1 KE only inside reported-not-scored χ²_med,
+which did register 242 → 350+; midHot's n = 2–8 geo-mean dilutes n = 2);
+now **pre-registered as a hard axis** for every future ranking (plan
+§3.5f: KE₁ vs ref median 1.128, KE₂ vs ref mean 0.706,
+|ln ratio|/ln(1.15) score terms). p_tail's "not a second lever" verdict
+was earned on deep-KE and does **not** carry over to this axis.
 
 ### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13; **ranking authority MEASURED at G4 Block 0, 2026-07-28: W₁ ρ +0.82 and midHot ρ +1.00 LICENSED, deepKE ρ +0.33 NOT — the deep-KE axis is not twin-scannable**)
 

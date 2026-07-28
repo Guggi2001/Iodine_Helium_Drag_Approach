@@ -1129,7 +1129,7 @@ corrected geometry's honest residual or chased into a new mechanism
 axis. Verification before re-baselining: a pooled 5 × N = 1000 battery
 at the chosen point.
 
-### 3.5f G4 Step 2 — h405 pooled battery + W₁ residual anatomy (DESIGNED + user-approved 2026-07-28; awaiting `[PROCEED TO IMPLEMENTATION]`)
+### 3.5f G4 Step 2 — h405 pooled battery + W₁ residual anatomy (DESIGNED + user-approved 2026-07-28; **EXECUTED 2026-07-28** — GV-P1/P2 CONFIRMED, GV-P3 REFUTED (pooled S 1.734 > 1.683); anatomy vs the frozen fingerprints: **no knob matches → honest-residual branch**, F1-partial + trapped-tail caveats recorded; low-n KE axis found mid-stage and pre-registered hard; findings "G4 Step 2" ×3)
 
 G4 Step 1 left one residual axis — the W₁ floor ≈ 0.67, measured twice
 independently and root-caused: **n₁ and n̄ are not simultaneously
@@ -1269,6 +1269,44 @@ that dismissal does not carry over.
 3. Nothing adopts mid-stage; Tier-0 form authority, b, the committed
    scorer, checkpoint schema, RNG draw order and the constants table
    are untouched.
+
+#### Execution record (2026-07-28)
+
+Built and executed same-day behind the user's trigger; build plan
+`TIER2_G4_STEP2_IMPLEMENTATION_PLAN.md` (7 tasks, 8 commits). Every
+oracle passed on every launch/read. Mid-stage events: (a) first battery
+launch lost 4/5 members to disk-full — recovered by the user-approved
+trajectory strip (194 scored dirs, committed scorers re-verified
+bit-exact) and a same-seed relaunch; (b) the **low-n KE finding**
+(user-observed, verified on committed artifacts, pre-registered above
+before the battery was read).
+
+- **Block V:** GV-P1 CONFIRMED (pooled n₁ 0.2094 / n̄ 3.877; 5/5 members
+  gate), GV-P2 CONFIRMED (pooled W₁ 0.7653 — the floor's third
+  independent measurement; per-seed SD 0.0337, 2.8× tighter than the
+  standing 0.0954), **GV-P3 REFUTED** (pooled S 1.734 > a037's 1.683;
+  the Block-3 1.559 was a favorable draw) ⇒ no adjudication fires
+  automatically. Low-n KE measured at 5× stats: KE₁ ratio 0.568 ± 0.003,
+  KE₂ 0.778 ± 0.002 — physics, not noise.
+- **Block D:** residual = **both-ends deficit** (n = 1 −0.101; tail
+  n ≥ 14 −0.055) vs core n = 2–12 excess +0.156 — under-dispersion.
+  E₀-lever measured n = 1–4-only ⇒ bins 7–20 (≈ 45 % of residual)
+  E₀-inaccessible. **Provenance correction:** "experimental 0.243/4.07"
+  in the Step-1 narrative are the incumbent's sim values; the true
+  solvated reference is n₁ 0.3103 / n̄ 4.889 (gates are
+  incumbent-anchored conventions; W₁/floor unaffected; the
+  not-simultaneously-matchable conclusion strengthens).
+- **Match rule:** F2/F3 refuted as pre-registered; F1 partial (low side
+  addressable, tail Σ-locked) ⇒ **no match → honest-residual branch**,
+  with the trapped-tail shadow (missing tail mass ≈ the excluded
+  trap_bound 0.0768, measured slow-and-high-n) recorded as the
+  quantitative stake on the open retained-policy adjudication.
+
+**Open after this stage (all user):** successor point (GV-P3 refuted —
+h405 unverified at battery level), retained policy (now carrying the
+trapped-tail stake), ledger re-issue, and the W₁-floor + low-n-KE
+residual pair (recorded honest; candidate levers noted: retained
+policy, p_tail on the *low-n KE* axis, p occupancy exponent).
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 

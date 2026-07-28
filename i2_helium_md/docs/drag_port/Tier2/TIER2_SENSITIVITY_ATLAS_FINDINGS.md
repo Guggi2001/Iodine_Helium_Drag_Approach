@@ -1635,3 +1635,123 @@ exhausts that direction at its measured floor) and the honest-residual
 branch fires.
 
 Frozen before any Block-D number was read.
+
+## G4 Step 2 — Block V: the h405 pooled battery (2026-07-28, 5 × N = 1000, seeds 20260730–34)
+
+Generator `gen_tier2atlas_g4step2_battery.py` (each member =
+`build_cell(h405)` with only the seed swapped; cfg-vs-committed-`g4fh405`
+oracle: exactly `{"seed"}`), scorer
+`tier2atlas_g4step2_battery_table.py`, artifact
+`atlas_g4step2_battery.csv`. All oracles passed before any number was
+read (h405 twin row string-exact; scorer-drift; committed Block-3 row to
+4 decimals), on every launch.
+
+**Execution event:** the first launch lost 4 of 5 members to disk-full
+(T: at 100 %, `OSError 28`); recovered by the **user-approved trajectory
+strip** — `ion.npz`/`relaxation.npz` deleted from the oldest 194 scored
+tier-2 run dirs (detection-stage runs only; Tier-0/1a trajectory runs,
+the standing battery members and the new members untouched; manifest
+retained in the session scratchpad; 20 GB freed). Every committed scorer
+re-verified after the strip (finals table + twin oracles bit-exact).
+Relaunch on the same seeds — deterministic, no physics impact.
+
+| member | seed | trap (marg) | supp | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | gate | S |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| s1 | 20260730 | 0.087 (.001) | 0.203 | 3.826 | 0.214 | 0.801 | 0.934 | 0.576 | 237 | 1 | 1.889 |
+| s2 | 20260731 | 0.068 (.000) | 0.192 | 3.819 | 0.221 | 0.729 | 0.943 | 0.539 | 305 | 1 | 1.695 |
+| s3 | 20260732 | 0.073 (.003) | 0.191 | 3.892 | 0.199 | 0.798 | 0.948 | 0.524 | 271 | 1 | 1.782 |
+| s4 | 20260733 | 0.076 (.001) | 0.200 | 3.906 | 0.195 | 0.763 | 0.957 | 0.506 | 328 | 1 | 1.651 |
+| s5 | 20260734 | 0.087 (.001) | 0.185 | 3.940 | 0.218 | 0.736 | 0.949 | 0.498 | 438 | 1 | 1.663 |
+| **pooled** | — | 0.078 (.001) | 0.194 | **3.877** | **0.209** | **0.765** | **0.946** | 0.504 | 461 | **1** | **1.734** |
+
+**Verdicts.**
+
+- **GV-P1 CONFIRMED** — pooled gates (n₁ 0.2094 ∈ [0.19, 0.30], n̄ 3.877
+  ∈ [3.77, 4.37]); every member gates individually. h405 is
+  seed-robust on the gate.
+- **GV-P2 CONFIRMED** — pooled W₁ 0.7653 ∈ [0.64, 0.78]: **the floor,
+  measured a third time independently** (arm asymptote 0.669; Block-0
+  intercept 0.671; now the pooled 0.765 at the gated point). Per-seed SD
+  0.0337 — 2.8× tighter than the standing battery's 0.0954: the
+  corrected geometry is markedly more seed-stable, so N = 1000 W₁
+  differences ≥ ~0.07 are now 2σ-significant.
+- **GV-P3 REFUTED** — pooled S 1.734 > a037's 1.683. The Block-3
+  single-seed 1.559 was a favorable draw (seed 20260729: W₁ 0.709 vs
+  the battery's 0.729–0.801). Caveat recorded: 1.683 is itself a
+  single-seed number, so this comparison carries ± the same scatter —
+  but the pre-registered clause was pooled < 1.683 and it did not hold.
+  **No adjudication fires automatically; the successor question returns
+  to the user with this evidence.**
+- **Low-n KE axis (pre-registered mid-stage, plan §3.5f):** pooled KE₁
+  0.641 ± 0.003 eV (ratio 0.568 vs ref median 1.128), KE₂ 0.549 ± 0.002
+  (ratio 0.778 vs ref mean 0.706); mode 0.656/0.569. The deficit is
+  physics, not noise (per-seed SD ≈ 0.003 eV). Score terms would add
+  **5.84** to S — the largest single defect on the surface. **Provenance
+  note on the frozen gate band:** the registered 2×seed-SD half-width
+  (ratio ± 0.005/0.007) is far narrower than the reference's own
+  systematic bands (calib 4 %, condition 6 %); recorded as the
+  *instrument resolution*, while any operational gate should carry the
+  reference systematics (≈ ±10 %) — flagged, not overwritten (the plan
+  §1.2 correction precedent).
+
+## G4 Step 2 — Block D: the W₁ residual anatomy (2026-07-28, zero MD)
+
+Scorer `tier2atlas_g4step2_w1_anatomy.py`, artifact
+`atlas_g4step2_w1_anatomy.csv`. Oracles: scorer-drift; committed arm W₁
+to 4 decimals; **identity Σ|gap| == w1_solvated to 1e-12 on all five
+distributions**. Block F was committed (8580a8f) before any number here
+was read.
+
+**Provenance correction (flagged, not overwritten).** The Step-1
+narrative's "experimental n₁ 0.243 / n̄ 4.07" are the **incumbent's sim
+values** (the scorer-drift oracle numbers), not the reference: the
+committed abundance reference gives **solvated n₁ 0.3103 and solvated
+n̄ 4.889** (raw n = 1 fraction 0.1753 with bare 0.4352 — the 0.243-like
+number arises only on the full support incl. the RQ3 bare mixture bin).
+The §3.5d/e gate bands are therefore *incumbent-anchored conventions*,
+not experimental readings. W₁ and the floor are unaffected (always
+computed against the true reference); the "n₁ and n̄ not simultaneously
+matchable" conclusion **strengthens** (the true targets are further out
+on both ends).
+
+**The residual shape (pooled h405, gap = F_sim − F_ref).** Deficit at
+**both ends**, excess in the core: PMF n = 1 −0.101; core n = 2–12
+**+0.156** (peak CDF gap +0.056 at n = 12); tail n ≥ 14 −0.055 (ref
+0.0757 vs sim 0.0203). Top-70 % bins {1–4, 10–14}. The detected solvated
+distribution is **under-dispersed** — mass must leave the n = 2–12 core
+for both n = 1 and n ≥ 14 at once. The wrong-geometry incumbent shows
+the same signature smaller (n = 1 −0.067; its shallow geometry was
+partly *supplying* the dispersion).
+
+**The E₀-lever signature (CRN-paired arm, per +0.005 eV):** closes gaps
+only at n = 1–4 (+0.002…+0.012); n ≥ 5 sign-unstable < 0.003; **bins
+7–20 are E₀-inaccessible** and carry ≈ 45 % of the residual — the
+measured identity of the floor's carriers (D0 §4 updated).
+
+**The frozen match rule, applied.**
+
+- **F2 pickup: NO MATCH** (as pre-registered) — wrong sign at n = 1
+  (drains the bin the residual needs filled).
+- **F3 per-shed ε: NO MATCH** (as pre-registered) — uniform shift,
+  wrong-signed at one end whichever direction it runs; E₀-degenerate.
+- **F1 ladder shape: PARTIAL, not a match under the rule.** The taper /
+  mid-rung sub-knobs can close the n = 1–4 side (correct-signed,
+  ≈ 40 % of the residual, KE-neutral per I79) — but the n ≥ 14 tail is
+  **Σ-locked** (I93: deep-rung edits pay in supp/midHot), so F1 cannot
+  source the tail, and its achievable move is wrong-signed on n̄ unless
+  paired with an independent tail source. Under the frozen ≥ 70 % rule:
+  **no knob matches.**
+- **Decision-table branch: NONE → the W₁ floor is recorded as the
+  corrected geometry's honest residual**, with the partial-F1 caveat on
+  record (the low side is mechanism-addressable; the tail side is not,
+  by any of the three fingerprinted knobs).
+
+**Data observation (reported, not adjudicated):** the missing tail mass
+(0.055–0.076 over n ≥ 14) numerically shadows the **excluded trapped
+class** (pooled trap_bound 0.0768), which §3.5b measured as
+slow-and-high-n. If part of the physically-retained class is in fact
+detected experimentally (or the retained boundary sits differently at
+realistic droplets), the tail deficit is partly **policy, not
+mechanism** — this puts a quantitative stake on the open retained-policy
+adjudication (user), and is the natural first probe of the honest
+residual's decomposition.

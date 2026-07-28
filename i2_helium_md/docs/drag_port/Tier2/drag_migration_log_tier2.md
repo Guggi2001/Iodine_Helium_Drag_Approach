@@ -11462,3 +11462,88 @@ re-issue + figure regeneration).
 Atlas stance: nothing adopted, `finc1v725` STANDS. New code (battery
 generator + decomposition scorer + tests) stays behind
 `[PROCEED TO IMPLEMENTATION]`.
+
+## G4 Step 2 EXECUTED (Blocks V/D/F) — GV-P1/P2 CONFIRMED, GV-P3 REFUTED; residual anatomy: both-ends deficit, no fingerprint matches → honest-residual branch; low-n KE finding pre-registered HARD mid-stage; reference-n₁ provenance corrected (2026-07-28, 5 × N = 1000 + zero MD)
+
+Built and executed in one session behind the user's
+`[PROCEED TO IMPLEMENTATION]` (build plan
+`TIER2_G4_STEP2_IMPLEMENTATION_PLAN.md`, inline execution). New code:
+`cdf_gap_profile` + bit-exact W₁ delegation
+(`postprocess/distribution_compare.py`), `pool_confirmation_reads` +
+the `observable_columns` extraction (`postprocess/tier2_confirmation.py`
+/ `tier2atlas_geometry_table.py`, oracle-guarded),
+`scripts/gen_tier2atlas_g4step2_battery.py`,
+`scripts/post_processing/tier2atlas_g4step2_battery_table.py`,
+`scripts/post_processing/tier2atlas_g4step2_w1_anatomy.py`. Tests: 16
+new across `test_distribution_compare.py` / `test_tier2_confirmation.py`
+/ `test_tier2atlas_g4step2_anatomy.py`; full suite **2754 passed**.
+Committed artifacts: `atlas_g4step2_battery.csv`,
+`atlas_g4step2_w1_anatomy.csv`. Every oracle passed before any number
+was read, on every launch (h405 twin row string-exact; member cfgs diff
+vs the committed `g4fh405` in exactly `{"seed"}`; scorer-drift;
+committed rows to 4 decimals; gap-sum identity to 1e-12).
+
+**Chronology of the mid-stage events:**
+
+1. **Disk-full:** the first battery launch lost 4/5 members (`OSError
+   28`, T: at 100 %). Recovery (user-approved): `ion.npz`/
+   `relaxation.npz` stripped from the oldest 194 *scored*
+   detection-stage run dirs (Tier-0/1a trajectory runs, standing
+   battery members and new members untouched; manifest retained; 20 GB
+   freed); committed scorers re-verified bit-exact; same-seed relaunch
+   (deterministic, no physics impact).
+2. **Low-n KE finding (user-observed):** the corrected-geometry ridge
+   halves n = 1 KE (h405/f3 0.637/0.668 eV vs the incumbent's 1.034
+   against ref median 1.128) and takes ~20 % off n = 2 — verified on
+   committed artifacts, then **pre-registered as a hard axis** (plan
+   §3.5f: KE₁/KE₂ score terms + gate) BEFORE the battery was read.
+   The scored surface had been blind (χ²_med-only, which did register
+   242 → 350+); p_tail's deep-KE dismissal noted as not carrying over.
+3. **Block F** was committed before any Block-D number existed (freeze
+   discipline held throughout).
+
+**Block V (5 × N = 1000, seeds 20260730–34):** GV-P1 CONFIRMED (pooled
+n₁ 0.2094, n̄ 3.877; 5/5 members gate — h405 is seed-robust on the
+gate). GV-P2 CONFIRMED (pooled W₁ 0.7653 ∈ [0.64, 0.78] — the floor's
+**third** independent measurement; per-seed SD 0.0337 vs the standing
+0.0954: the corrected geometry is 2.8× more seed-stable). **GV-P3
+REFUTED** (pooled S 1.734 > a037's 1.683; the Block-3 single-seed 1.559
+was a favorable draw) ⇒ **no adjudication fires automatically**. Low-n
+KE at 5× stats: KE₁ 0.641 ± 0.003 eV (ratio 0.568), KE₂ 0.549 ± 0.002
+(0.778) — the registered 2×SD gate band recorded as instrument
+resolution with the reference-systematics caveat flagged.
+
+**Block D (zero MD):** the pooled-h405 residual is a **both-ends
+deficit** — PMF n = 1 −0.101, tail n ≥ 14 −0.055 (ref 0.0757 vs sim
+0.0203), against a n = 2–12 core excess +0.156 (top-70 % bins {1–4,
+10–14}): the detected solvated distribution is **under-dispersed**. The
+E₀ lever measured bin-resolved: it closes n = 1–4 only; **bins 7–20
+(≈ 45 % of the residual) are E₀-inaccessible** — the floor's carriers
+identified (D0 §4 updated first, per the standing rule). **Provenance
+correction (flagged, not overwritten):** the Step-1 narrative's
+"experimental n₁ 0.243 / n̄ 4.07" are the incumbent's sim values; the
+committed reference gives solvated n₁ 0.3103 / n̄ 4.889 (raw n = 1
+0.1753, bare 0.4352) — the gate bands are incumbent-anchored
+conventions; W₁/floor unaffected; the shape-mismatch conclusion
+strengthens.
+
+**Match rule (vs the frozen Block F):** F2 pickup and F3 per-shed ε
+refuted exactly as pre-registered (wrong sign at n = 1 / E₀-degenerate
+uniform shift). F1 ladder shape **partial**: the taper/mid-rung
+sub-knobs can close the n = 1–4 side (correct-signed, ≈ 40 %,
+KE-neutral per I79) but the n ≥ 14 tail is Σ-locked and unreachable ⇒
+under the frozen ≥ 70 % rule **no knob matches → the decision table's
+NONE branch: the W₁ floor is recorded as the corrected geometry's
+honest residual** (D0 §17 re-issue pending the ledger adjudication).
+Data observation on record: the missing tail mass (0.055–0.076,
+n ≥ 14) numerically shadows the excluded trapped class (trap_bound
+0.0768, measured slow-and-high-n) — a quantitative stake on the open
+retained-policy adjudication; the residual may be partly policy, not
+mechanism.
+
+**Atlas stance:** nothing adopted, `finc1v725` STANDS. Open (all user,
+discussion deferred by the user to after this stage): successor point
+(h405 unverified — GV-P3), retained policy (now carrying the
+trapped-tail stake), ledger re-issue, and the honest-residual pair
+(W₁ floor + low-n KE) with candidate levers noted (retained policy;
+p_tail on the low-n KE axis; p occupancy exponent).
