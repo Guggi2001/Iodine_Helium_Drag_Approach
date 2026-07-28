@@ -11422,3 +11422,43 @@ Atlas stance: nothing adopted, `finc1v725` STANDS. The G4 adjudications
 floor is recorded as the honest residual or chased into a new mechanism
 axis) are the user's; the verification step is a pooled 5 × N = 1000
 battery at the chosen point.
+
+## G4 Step 2 DESIGNED (user-approved) — h405 pooled battery + W₁ residual anatomy + pre-registered mechanism fingerprints; frozen as plan §3.5f, marked NEXT STEP, awaiting its trigger (2026-07-28, doc work, zero MD, zero code)
+
+Continuation discussion after G4 Step 1. Three user decisions taken in
+session:
+
+1. **The W₁-floor call is deferred behind a diagnosis** — neither
+   "record as honest residual" nor "open the mechanism axis" is taken
+   blind. Depth option B chosen: per-bin decomposition **plus
+   pre-registered mechanism fingerprints**, no MD probes until a
+   fingerprint matches.
+2. **The pooled 5 × N = 1000 battery at h405 launches with the stage**
+   (dual use: the designed verification step, and 5× the statistics for
+   the bin-level read — single-seed W₁ SD is 0.095).
+3. **Design approved and frozen as plan §3.5f.**
+
+Stage shape: **Block V** (MD, 5 × N = 1000 fresh seeds at h405;
+GV-P1 gate / GV-P2 W₁ ∈ [0.64, 0.78] floor-consistency / GV-P3 S beats
+a037's 1.683; scorer-drift + string-exact Block-3-row oracles),
+**Block D** (zero MD: signed per-bin CDF-gap decomposition of W₁ —
+exact, since W₁ = ∫|F_mod − F_exp| — for pooled h405, the standing
+pooled finc1v725, and the τ 4.4 E₀ arm as the measured E₀-lever
+template; identifies the E₀-inaccessible bins that carry the floor),
+**Block F** (doc work, frozen before any Block-D number is read:
+derived bin-signature fingerprints for ladder shape (c1/RQ4), pickup,
+per-shed ε (RQ2); match rule = correct-signed movement of the bins
+carrying ≥ 70 % of residual W₁ with no wrong-signed n₁/n̄ prediction).
+
+Pre-registered decision table: one match → that knob is the next
+designed axis (MD-budgeted from the start; twin W₁ cannot discriminate
+≲ 0.05); multiple → cheapest-first discrimination; none → the floor is
+recorded as the corrected geometry's honest residual and the G4
+adjudications complete. If GV-P1..P3 pass, the three near-mechanical
+adjudications become fireable (successor = h405; retained policy
+finalized `exclude_all_coupled`, ridge marginal class ≈ empty; ledger
+re-issue + figure regeneration).
+
+Atlas stance: nothing adopted, `finc1v725` STANDS. New code (battery
+generator + decomposition scorer + tests) stays behind
+`[PROCEED TO IMPLEMENTATION]`.

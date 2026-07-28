@@ -1129,6 +1129,114 @@ corrected geometry's honest residual or chased into a new mechanism
 axis. Verification before re-baselining: a pooled 5 × N = 1000 battery
 at the chosen point.
 
+### 3.5f G4 Step 2 — h405 pooled battery + W₁ residual anatomy (DESIGNED + user-approved 2026-07-28; awaiting `[PROCEED TO IMPLEMENTATION]`)
+
+G4 Step 1 left one residual axis — the W₁ floor ≈ 0.67, measured twice
+independently and root-caused: **n₁ and n̄ are not simultaneously
+matchable on the (v_c, τ, E₀) surface**, a *shape* mismatch in the
+detected size distribution that localizes to the mechanism (ladder
+shape, pickup, per-shed ε), not the drag surface. This stage does two
+things in parallel: **verify h405** (the designed pooled battery), and
+**diagnose the floor** before deciding whether it is chased into a new
+mechanism axis or recorded as the corrected geometry's honest residual
+(user decision 2026-07-28: *diagnose first, then decide* — depth
+option B, decomposition + pre-registered fingerprints, no MD probes).
+
+The stage's product is a **decision input**, not an adoption: either a
+named mechanism knob with a matched fingerprint (→ that knob is the
+next designed axis), or an evidence-backed "record 0.67 as the honest
+residual" verdict. Atlas stance holds throughout: nothing adopts
+mid-stage, `finc1v725` stands until the G4 adjudications fire.
+
+#### Block V — the pooled battery at h405 (MD: 5 × N = 1000, fresh seeds)
+
+§4cc pattern at h405 (v_c 5.5, τ 4.4, E₀ 0.405; all other knobs at the
+§3.5d pins, corrected geometry). Oracles before any number is read:
+the pooled-battery scorer-drift oracle, and the committed h405 Block-3
+row rescored **string-exact**.
+
+Pre-registered:
+
+- **GV-P1 (gate):** h405 gates on the pooled read
+  (n₁ ∈ [0.19, 0.30] ∧ n̄ ∈ [3.77, 4.37]).
+- **GV-P2 (floor consistency):** pooled W₁ ∈ [0.64, 0.78]; per-seed SD
+  comparable to the standing battery's 0.095.
+- **GV-P3 (score):** pooled S beats a037's re-measured 1.683 and lands
+  near the Block-3 single-seed 1.559.
+
+GV-P1/P2 failure ⇒ h405 is not seed-robust ⇒ back to the ridge with
+the battery evidence; no adjudication fires. All three pass ⇒ the three
+near-mechanical adjudications become fireable (user calls, recorded at
+G4 proper): **successor = h405**; **retained policy finalized as
+`exclude_all_coupled`** (ridge marginal class 0.001–0.003 ≈ empty);
+**ledger re-issue** (D0 §17, retired S rows struck) + figure-surface
+regeneration at the successor.
+
+#### Block D — W₁ residual anatomy (zero MD, scorer-only)
+
+W₁ on a 1-D histogram is exactly ∫|F_mod − F_exp|, so it decomposes
+into **signed per-bin CDF-gap contributions**. Compute the
+decomposition (per-bin sign + magnitude + cumulative share) for:
+
+1. **pooled h405** (Block V output — the object of interest),
+2. **pooled `finc1v725`** (standing N = 5000, wrong geometry): what the
+   0.579 landing looked like bin-wise — the shape the corrected
+   geometry lost,
+3. **the τ 4.4 E₀ arm** (h405 → h410 → h415, committed CRN-paired
+   N = 1000 rows): the finite-difference **bin signature of the E₀
+   lever** — the measured template of what a knob signature looks
+   like, and the direct read of which bins are **E₀-inaccessible**
+   (those carry the floor).
+
+#### Block F — pre-registered mechanism fingerprints (doc work; FROZEN before any Block-D number is read)
+
+For each candidate knob — **ladder shape (c1 / rq4graded grading; RQ4),
+pickup (Poisson rate), per-shed ε (RQ2)** — derive from the mechanism
+(analytically / from the cascade structure, not by eyeball) its
+expected signature: sign on n₁, sign on n̄, and the bin-pattern of the
+CDF-gap change. The measured deficit constrains the derivation target
+in advance: at matched n₁ (0.243 at E₀ ≈ 0.435), n̄ runs ≈ 0.77 He
+light — the model is missing solvated/high-n weight *relative to*
+n = 1, so each fingerprint must state whether the knob can add
+solvated-shoulder mass **without paying it back out of n₁**.
+
+**Match rule (pre-registered):** a knob is a live candidate iff its
+signature moves, with the correct sign, the bins carrying ≥ 70 % of the
+residual W₁, without a wrong-signed prediction on n₁ or n̄.
+
+**Decision table (pre-registered):**
+
+- exactly one knob matches → it becomes the next designed axis (own
+  plan section, twin-authority caveat carried: twin W₁ cannot
+  discriminate ≲ 0.05, so that axis budgets MD from the start);
+- multiple match → cheapest-first discrimination (analytic/twin
+  fingerprint sharpening) before any MD;
+- none match → the W₁ floor is recorded as the corrected geometry's
+  **honest residual** (D0 §17 + findings), the G4 adjudications
+  complete, and the tier proceeds to the open items (RQ3/RQ5 reads,
+  margin-3 Å pin I88, D2b A/B remainder, then Tier-3).
+
+#### Machinery and cost
+
+Behind `[PROCEED TO IMPLEMENTATION]`: a battery generator for h405
+(adapting the §4cc / `gen_tier2atlas_g4finals.py` pattern), one new
+decomposition scorer under `scripts/post_processing/` (scorer-only;
+reads committed run dirs + the experimental reference; emits a
+committed CSV), focused tests. Block F is doc work in the findings/plan
+before the scorer's output is read. MD spend: 5 × N = 1000 (~45–90 min
+wall); everything else zero-MD.
+
+#### Risks and boundaries
+
+1. **Fingerprint degeneracy** — the three knobs may produce
+   sign-identical bin patterns at this resolution; the decision table's
+   "multiple match" branch absorbs this without extra MD.
+2. **Battery non-robustness** — GV-P2's [0.64, 0.78] band is wide
+   enough that a failure is informative, not noise.
+3. Nothing adopts mid-stage; Tier-0 form authority, b, the committed
+   scorer, checkpoint schema, RNG draw order and the constants table
+   are untouched.
+
 ### 3.6 Open questions this axis must answer or explicitly defer
 
 - **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but
