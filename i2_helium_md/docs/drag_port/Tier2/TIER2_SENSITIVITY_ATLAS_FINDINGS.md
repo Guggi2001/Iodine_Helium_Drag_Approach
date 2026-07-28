@@ -1516,3 +1516,122 @@ and +0.11 at v525/x345 — an in-ridge instrument, not a global one.
 **Atlas stance:** nothing adopted; `finc1v725` stands. The G4
 adjudications (successor point, retained policy, ledger re-issue) are the
 user's; the natural verification at h405 is a pooled 5 × N = 1000 battery.
+
+## G4 Step 2 — Block F: mechanism fingerprints (FROZEN before any Block-D read) (2026-07-28)
+
+Plan §3.5f Block F. Derived from the built mechanism (`physics/evaporation.py`,
+`physics/pickup.py`, `internal_energy_budget`) and the committed influence
+records (D0 §7/§8/§11, I42/I63/I65/I79/I93/I94, NB-RQ23-1/2) — **no Block-D
+number had been computed when this section was committed** (the commit
+timestamp is the freeze evidence; the anatomy scorer had not yet run).
+
+Common derivation target (from the committed G4 Step 1 record, plan §3.5f):
+at matched n₁ (0.243, reached near E₀ ≈ 0.435 on the τ 4.4 arm) the model
+runs n̄ ≈ 3.3 vs the experimental 4.07 — and at h405 (n₁ 0.208, n̄ 3.955)
+**both** ends are light while the E₀ lever moves them in opposite
+directions. The missing weight must therefore enter as *dispersion* (heavier
+n = 1 **and** heavier n ≥ 5–6 shoulder relative to the n = 2–4 core), not as
+a slide of the cascade-depth coordinate. Each fingerprint below answers
+whether its knob can do that.
+
+### F1 — Ladder shape (c1 grading; RQ4)
+
+1. **Mechanism route.** Terminal n is where the RRK band
+   `D₀(n) < E_int < Σ(n)` closes against Newton cooling: the rung table
+   `D₀(n)` (rq4graded = Form-U with rungs 1–3 × (2.2, 1.5, 1.3)) is the
+   *per-bin* gate. n = 1 is a one-rung-wide E_ej window — the taper owns
+   n₁ (I42); raising a mid rung (n ≈ 4–8) closes the gate earlier there
+   and stalls part of the flux at that n. The deep tail (n ≳ 10) is
+   Σ-locked (I93: ±5 % deep rungs ↔ ∓3.5 pts suppressed weight) and is
+   NOT part of this knob's playground.
+2. **Sign on n₁_solv:** − for a bare mid-rung raise (it starves the flux
+   reaching n ≤ 3); ~0 for a *compensated* move (mid rungs up, taper
+   retuned) — the two sub-knobs are separable by I42's measured n₁
+   ownership.
+3. **Sign on n̄_det:** + (stalled flux accumulates at the raised rungs).
+4. **Bin-pattern:** lowers F_sim over n ≈ 2–5 (mass moved upward into the
+   raised-rung bins), leaves F_sim at n = 1 controlled independently by
+   the taper, leaves the n ≥ 10 tail pinned (Σ-lock). Distinctive
+   signature: a *localized* CDF-gap change whose edges sit at the edited
+   rungs — the only knob with per-bin-resolved leverage.
+5. **§3.5f constraint (add shoulder mass without paying n₁)?**
+   **CONDITIONAL YES** — uniquely among the three. A compensated two-part
+   move (raise mid rungs, retune the taper) adds n ≥ 5 weight while
+   holding the n = 1 window, i.e. it *creates dispersion*. Measured
+   support: the ladder is KE-neutral (midHot flat across the family,
+   I79), so it would not disturb the h405 KE landing — the axes that are
+   already right stay right. Caveat: the compensation is exactly the
+   RQ4-external-arbitration territory (I42) — physics authority for the
+   taper remains open.
+
+### F2 — Pickup (λ₀)
+
+1. **Mechanism route.** `λ_attach = λ₀ · (ρ_He/ρ_bulk) · (1 − n/n*)₊^p`
+   (p = 1 standing): the occupancy cap makes pickup *anti-select* high n
+   — it refills the stripped low-n end while the ion is still in dense
+   helium, and each fire deposits only `+f_ret·D₀(n+1)` (f_ret 0.1) of
+   S1 heat. Measured: live refilling shifts suppression by ≈ 1–3
+   ions/100 at p = 1 (I63/I65).
+2. **Sign on n₁_solv:** − (the refill flux feeds precisely on the n = 1–2
+   population; the occupancy factor is largest there).
+3. **Sign on n̄_det:** + (refilled ions land at n ≈ 2–5); supp − (the
+   measured de-suppression side effect).
+4. **Bin-pattern:** lowers F_sim at n = 1–3 by *draining those very bins*
+   into n ≈ 3–6; no n ≥ 8 leverage (late-flight ρ_He ≈ 0 gates pickup
+   off; the occupancy cap suppresses it at high n even in-droplet).
+5. **§3.5f constraint?** **NO.** Pickup adds shoulder mass by consuming
+   the n = 1–2 bins directly — it pays n₁ one-for-one and is therefore
+   another slide along the measured n₁↔n̄ anti-correlation, with a supp
+   side effect that would break the landed supp 0.183 ≈ 0.187 (the RQ3
+   mixture read h405 preserves).
+
+### F3 — Per-shed ε (RQ2)
+
+1. **Mechanism route.** The K1 drain per shed becomes −(D₀(n) + ε)
+   (currently ε = 0, adjudicated 2026-07-10; the Klots–Hansen
+   prescription is ε ≈ c·D/G ≈ 0.5–0.6 meV, finite-heat-bath corrected
+   *smaller*, NB-RQ23-1/2). ε > 0 shortens every cascade by the same
+   relative amount — a uniform re-scaling of the cascade-depth
+   coordinate, mechanically degenerate with (−E₀, +τ) on the histogram.
+2. **Sign on n₁_solv:** − (shorter cascades reach n = 1 less often).
+3. **Sign on n̄_det:** + (every terminal shifts up together).
+4. **Bin-pattern:** a near-uniform rightward translation of the whole
+   solvated distribution — the same signed-gap pattern as the measured
+   E₀ lever run backwards (per −0.005 eV: n̄ +0.11…+0.13, n₁
+   −0.004…−0.007), with **no dispersion change**. No bin-localized
+   structure: ε carries no n-dependence the ladder doesn't already own.
+5. **§3.5f constraint?** **NO** — twice over. (a) Shape: ε is
+   E₀/τ-degenerate on the histogram, and the E₀ direction is exactly the
+   lever the ladder arm measured to a floor — a degenerate knob cannot
+   break a floor. (b) Magnitude: the physically allowed ε (≈ 0.5–2 meV,
+   D0 §11: 6–8 meV already breaks midHot) moves n̄ by ≪ the 0.77 He the
+   deficit requires.
+
+### The frozen match rule and decision table (verbatim from plan §3.5f)
+
+**Match rule:** a knob is a live candidate iff its signature moves, with
+the correct sign, the bins carrying ≥ 70 % of the residual W₁, without a
+wrong-signed prediction on n₁ or n̄.
+
+**Decision table:**
+
+- exactly one knob matches → it becomes the next designed axis (own plan
+  section, twin-authority caveat carried: twin W₁ cannot discriminate
+  ≲ 0.05, so that axis budgets MD from the start);
+- multiple match → cheapest-first discrimination (analytic/twin
+  fingerprint sharpening) before any MD;
+- none match → the W₁ floor is recorded as the corrected geometry's
+  **honest residual** (D0 §17 + findings), the G4 adjudications
+  complete, and the tier proceeds to the open items (RQ3/RQ5 reads,
+  margin-3 Å pin I88, D2b A/B remainder, then Tier-3).
+
+**Pre-registered reading aid (falsifiable):** if the Block-D residual at
+the n₁-matched end is a *dispersion* pattern (F_sim too high over the
+n = 2–4 core, too low at n = 1 and over the n ≥ 5–6 shoulder, tail
+pinned), F1 (ladder shape) matches and F2/F3 do not — their patterns
+cannot lower the core without paying an end. If instead the residual is
+a *uniform-shift* pattern, **no knob matches** (the E₀ lever already
+exhausts that direction at its measured floor) and the honest-residual
+branch fires.
+
+Frozen before any Block-D number was read.
