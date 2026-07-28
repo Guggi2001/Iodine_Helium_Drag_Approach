@@ -906,6 +906,180 @@ evidence, MD-grade). KE: no gated cell holds midHot and deepKE at once
 "G3 Step 3", D0 §14.5; table CSV committed. **G4 is live** (successor
 point + retained policy + ledger re-issue; user adjudications).
 
+### 3.5e G4 Step 1 — the fine ridge sweep (DESIGNED + user-approved 2026-07-28; **NEXT STEP**, awaiting `[PROCEED TO IMPLEMENTATION]`)
+
+The G3 ring confirmed the basin but left the successor point
+underdetermined: **no gated cell holds both KE axes**, and the two clean
+sub-basins were *adjacent corners of a grid that was never scanned
+between them*. This stage refines the cheap axes before any structural
+conclusion is drawn (the standing anti-refutation rule: never declare a
+surface exhausted while a post-hoc-rescorable axis is coarser than the
+incumbent's known basin width).
+
+**The resolution gap, stated.** Step 2 scanned v_c at step 0.5
+({5.0, 5.5, 6.0, 6.5, …}) and τ at ratio ≈ 1.33 ({3.2, 4.8, 6.4, 9.6}).
+The fully-unflagged basin is (v_c 5.5, τ 4.8) and (v_c 6.0, τ 6.4) — a
+**diagonal pair with no scanned cell between them**; c50 missing the MD
+gate by 0.005 on n₁ says the same from the low-v_c side. E₀ (step 0.01)
+was already fine and is not the gap.
+
+**Objective (user, 2026-07-28):** joint score with the **KE tension as
+the thing to break** — the n₁/n̄ hard gate stays, surviving cells are
+ranked on W₁ + midHot + deepKE.
+
+#### Block 0 — the twin's ranking authority (zero cost, **gating**)
+
+§14.4 licenses the twin for n₁ (quantitative), n̄ (biased), trap (floor)
+— **not** for W₁ ("bias-loaded") or KE ("direction-only"), which are
+exactly the ranking observables. The G3 ring bought the fix for free:
+**14 paired (twin, MD) cells** never read as a transfer measurement.
+
+- Per observable (W₁, midHot, deepKE, χ²_med): Spearman ρ between twin
+  and MD across the 14 cells, **with CI**.
+- **Permission gate (pre-registered): ρ ≥ 0.7 ⇒ the twin may *rank* on
+  that observable in Block 1; ρ < 0.7 ⇒ gate-only/reported and MD must
+  rank that axis.** Used as permission only — never as a correction to
+  a twin W₁/KE value.
+- **n̄ bias model** Δn̄ = f(residence / trap) fitted from the same 14
+  cells, replacing the crude [+0.3, +3] bracket that forced the Step-2
+  gate to n̄ ∈ [4.4, 7.1]. This tightens the twin gate toward the MD
+  band itself and sharpens the scan more than the grid refinement does.
+- Verify the **deep-bin KE seed-SD** from the pooled battery: §1.2
+  records "0.0603 ± 0.0033", which does not reconcile with the pooled
+  deepKE 0.631. The score's deepKE normalizer is provisional until this
+  is resolved.
+- Output: `h2b_g4_transfer.csv`; D0 §14.4 extended.
+- Risk: n = 14 over a narrow span ⇒ weak ρ estimates. If Block 0
+  licenses nothing, Block 1 degrades to a gate-only scan and the MD
+  budget shifts toward the two-stage pattern.
+
+#### Block 1 — the fine ridge scan (twin, zero MD)
+
+Hypothesis under test: **the two clean sub-basins are opposite corners
+of one connected diagonal ridge in (v_c, τ), and the KE tension is
+minimized between them** — where nothing was ever evaluated.
+
+| axis | Step 2 | fine | cost |
+|---|---|---|---|
+| v_c | {5.0, 5.5, 6.0, 6.5} step 0.5 | {5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5} step 0.25 | 9 new chord integrations (3 v_c × 3 E_bind) ≈ 15 min |
+| τ | {3.2, 4.8, 6.4, 9.6} ratio 1.33 | {4.0, 4.4, 4.8, 5.2, 5.6, 6.0, 6.4, 6.8} step 0.4 | free (post-processing) |
+| E₀ | [0.17, 0.52] step 0.01 | [0.26, 0.42] step **0.005** | free |
+| E_bind | {0.048, 0.1168, 0.154} | **unchanged** | — (no new value ⇒ no new pairing exception) |
+
+≈ 5540 cells, same order as the 6480 of Step 2. τ = 6.8 carries the
+existing > 6.55 calibration-class flag. Everything else stays at the
+§3.5d pins (corrected geometry, rq4graded, p = 1, p_tail −1, co-moving
+shed, Landau 0.58, budget 2.70).
+
+Gate: n₁_solv ∈ [0.19, 0.30] ∧ **bias-corrected** n̄ ∈ [3.77, 4.37].
+Rank: the joint score below, on the Block-0-licensed observables only.
+
+**The old grid is an exact sub-lattice of the new one** — which is what
+makes G4-P1 a strong oracle.
+
+#### Block 2 — p_tail, conditional (twin, zero MD)
+
+Fires **only** if no Block-1 cell holds midHot ∈ [0.85, 1.15] ∧ deepKE
+≥ 0.6 simultaneously. Then p_tail ∈ {−0.5, −1, −1.5, −2} on the top two
+chords (6–8 integrations).
+
+Rationale: the D0 verdict "p_tail is not a second lever" was measured at
+**v_c 7.25**. The cap has moved to 5.5–6.0 — *into* the 5–9 Å/ps
+mid-band that NB-RQ11-12 identified as the deep-KE lever — so the tail
+exponent now shapes γ exactly where the deep-KE sensitivity lives and
+the old verdict does not automatically transfer.
+
+Either outcome is a result: it breaks the tension ⇒ the deep-KE lever is
+the tail *exponent*, not v_c (a direct NB-RQ11-12 answer); it does not
+⇒ the tension is **structural across the whole drag surface**, which
+localizes it to the mechanism (ladder / pickup / ε) — a far stronger
+statement than "no better cell was found".
+
+#### Block 3 — MD finalists (6 × N = 1000, one fresh shared seed, CRN-paired)
+
+MD's role has changed from breadth ("does the basin exist", N = 500 was
+right) to **discrimination** among finalists on W₁/KE differences of
+0.1–0.3 against N = 500 single-seed scatter of ±0.1–0.15. Budget is
+therefore spent on precision, not coverage (user decision 2026-07-28).
+
+- 3 new ridge cells (or 2 + one p_tail cell if Block 2 fired),
+- **a037 and b031 replicated at N = 1000** — mandatory: without them the
+  new N = 1000 numbers are not comparable to the ring's N = 500 numbers,
+  and they measure the N = 500 scatter the current ranking sits inside,
+- 1 pre-registered off-ridge fail control.
+
+Acceptance: the same bias-free MD gate; ranking by the joint score.
+
+#### Block 4 — G4 proper
+
+5 × N = 1000 pooled battery (§4cc pattern) at the winner, then the user
+adjudications: successor point, retained-policy final call
+(`exclude_all_coupled` interim; ring evidence = marginal class ≈ 0 at
+the basin vs 0.159 at the standing chord), D0 §17 ledger re-issue with
+the retired **S** rows struck, figure surface regenerated.
+
+#### The joint score (pre-registered)
+
+Hard gate `n₁ ∈ [0.19, 0.30] ∧ n̄ ∈ [3.77, 4.37]`, then the **Pareto
+front** over (W₁, |ln midHot|, |ln deepKE|), with one scalar for
+reporting and tie-break:
+
+```
+S = W₁/0.571  +  |ln midHot|/ln(1.15)  +  |ln deepKE|/ln(1.15)
+```
+
+Equal weights, declared **convention, not truth**; the deepKE
+normalizer is provisional pending the Block-0 seed-SD check. χ²_med is
+reported, not scored (scale varies 44–1322 across the ring and it is
+largely redundant with midHot + deepKE). Evaluated on the existing
+numbers:
+
+| point | W₁ term | midHot term | deepKE term | **S** |
+|---|---|---|---|---|
+| standing `finc1v725` (old geometry, pooled N = 5000) | 1.00 | 0.08 | 3.29 | **4.37** |
+| a037 (N = 500) | 1.45 | 0.44 | 6.04 | **7.94** |
+| e154 | 1.73 | 0.29 | 6.04 | **8.06** |
+| b031 | 1.86 | 4.96 | 2.35 | **9.17** |
+| d030 | 2.05 | 1.51 | 9.36 | **12.9** |
+
+Reading: the incumbent still wins, **and its own score is dominated by
+the deepKE deficit** — RQ11 was the largest single defect before the
+geometry correction; the correction worsened it at a037 and improved it
+at b031. The sweep therefore has one explicit target: **beat 4.37.**
+
+#### Pre-registered predictions
+
+- **G4-P1 (oracle):** the fine scan reproduces all 24 Step-2 gated cells
+  **bit-exact** on the shared sub-lattice, and the transfer table
+  re-reads the 14 committed ring rows string-exact. Fails ⇒ session
+  invalid, no number read.
+- **G4-P2 (ridge connectivity):** the gated set at the standing well
+  forms a *connected* path from (5.5, 4.8) to (6.0, 6.4). Falsifiable —
+  they may be two islands.
+- **G4-P3 (tension):** ≥ 1 ridge cell holds midHot ∈ [0.85, 1.15] **and**
+  deepKE ≥ 0.6 at once. Its negation is the Block-2 trigger.
+- **G4-P4 (score):** ≥ 1 ridge cell reaches S < 4.37 — the corrected
+  geometry gets at least as close to experiment as the wrong geometry
+  did. Legitimate comparison: W₁ and both KE ratios are distances to the
+  *same* experimental reference.
+- **G4-P5 (MD):** the Block-3 winner's MD S beats a037's re-measured
+  N = 1000 S.
+
+#### Risks and boundaries
+
+1. **Thin transfer sample** (14 cells, narrow span) — Block 0 may
+  license nothing; fallback above.
+2. **Twin τ-feedback:** in MD, τ feeds back on trap through the mass
+  mechanism, so the free-surface decomposition is itself a twin
+  approximation (§3.5c caveat). A 0.4-ps τ step may be finer than the
+  twin's fidelity in τ; the d030/d036 τ-crosses partially measure this,
+  and if it fails τ reverts to a 0.8-ps step.
+3. **Refinement may buy only noise-level gains** — the N = 1000
+  finalists are the guard.
+4. Nothing adopts before the G4 adjudication; **`finc1v725` stands**
+  throughout. Tier-0 form authority, b, the committed scorer, checkpoint
+  schema, RNG draw order and the constants table are untouched.
+
 ### 3.6 Open questions this axis must answer or explicitly defer
 
 - **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but

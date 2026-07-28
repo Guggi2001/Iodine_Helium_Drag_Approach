@@ -11262,3 +11262,64 @@ evidence (successor point among the gated cells or an interpolation
 battery; retained-policy final call; ledger re-issue retiring the five
 scaffolding rows). A pooled battery at the chosen point is the natural
 verification before re-baselining. All user adjudications.
+
+## G4 Step 1 fine ridge sweep DESIGNED (user-approved) — the coarse-axis gap named, the twin's ranking authority made a hard gate, and the KE tension turned into a falsifiable target; frozen as plan §3.5e, marked NEXT STEP, awaiting its trigger (2026-07-28, doc work, zero MD, zero code)
+
+Discussion opened by the user on the reading that the corrected-geometry
+ring "lands not as well as previously". Decomposed before designing
+anything:
+
+1. **The degradation is not uniform.** b031 beats the old standing point
+   on deepKE (0.72 vs 0.631) and runs χ²_med 73 vs a037's 317; a037
+   beats it nowhere but holds midHot 0.94 and the best W₁ (0.83). What
+   reads as "worse" is **one unresolved trade-off**, not a global loss.
+2. **The ring never scanned where a compromise would live.** Step 2 ran
+   v_c at step 0.5 and τ at ratio ≈ 1.33; the two clean sub-basins,
+   (5.5, 4.8) and (6.0, 6.4), are *adjacent diagonal corners with
+   nothing between them*, and c50 missed the MD gate by 0.005 on n₁.
+   E₀ (0.01) was already fine. So the cheap axes are coarser than the
+   basin — the standing anti-refutation rule applies and no structural
+   conclusion may be drawn yet.
+3. **The twin has no authority to rank on the failing axes.** §14.4
+   licenses n₁/n̄/trap only; W₁ is bias-loaded and KE direction-only —
+   exactly the observables a joint score needs. The G3 ring bought the
+   fix for free (14 paired twin/MD cells, never read as a transfer
+   measurement).
+
+Three user adjudications taken in the discussion:
+
+- **Objective:** joint score, with the midHot/deepKE tension as the
+  thing to break (n₁/n̄ stay a hard gate).
+- **Knob scope:** *staged* — the four re-arbitrated knobs first, with
+  **p_tail armed as a conditional Block 2** and firing only if the fine
+  ridge fails to break the tension. Rationale: the D0 verdict "p_tail is
+  not a second lever" was measured at v_c 7.25, and the cap has since
+  moved into the 5–9 Å/ps mid-band that NB-RQ11-12 identified as the
+  deep-KE lever, so that verdict does not automatically transfer. Staging
+  keeps "the tension is structural" falsifiable before new knobs open.
+- **MD budget:** *few cells at N = 1000*, not many at N = 500 — MD's role
+  has changed from breadth ("does the basin exist") to discrimination on
+  W₁/KE differences of 0.1–0.3, which sit inside the N = 500 single-seed
+  scatter of ±0.1–0.15. 6 cells × N = 1000 incl. **mandatory a037/b031
+  replicates** as the bridge control to the ring, then the pooled
+  battery at the winner.
+
+Design frozen as plan **§3.5e** (Blocks 0–4, grids, joint score,
+G4-P1..P5, risks). Two items recorded there that are not yet settled:
+the **deep-bin KE seed-SD** (§1.2 records "0.0603 ± 0.0033", which does
+not reconcile with the pooled deepKE 0.631 — the score's deepKE
+normalizer is provisional until Block 0 checks it against the battery),
+and the **twin τ-feedback** caveat (a 0.4-ps τ step may be finer than
+the twin's own fidelity in τ; the d030/d036 crosses partially measure
+it, fallback 0.8 ps).
+
+Score evaluated on existing numbers as part of the design (equal-weight
+convention, not truth): standing `finc1v725` **4.37**, a037 7.94, e154
+8.06, b031 9.17, d030 12.9. The incumbent still wins **and its own score
+is dominated by the deepKE deficit** — RQ11 was the largest single
+defect before the geometry correction. G4-P4 therefore states the target
+plainly: some ridge cell must reach **S < 4.37**.
+
+Atlas stance unchanged: nothing adopted, `finc1v725` stands, Tier-0 form
+authority / b / committed scorer / checkpoint schema / RNG draw order /
+constants table untouched. No code until `[PROCEED TO IMPLEMENTATION]`.
