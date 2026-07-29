@@ -10,12 +10,16 @@ EXECUTED 2026-07-29 (zero MD; findings "(C) pre-steps P1 + P2"):
 the strip prior box is PINNED (a = 2 [1.5, 2.5], j₀ ∈ [1.5, 2],
 w_j ∈ [0.5, 1]; a = 1 disfavored) and the width priors are
 MEASURED (σ_Q2 0.31 / σ_Q3 0.55 eV upper bounds; E_single ≈ 0.53) —
-the §3.5 table below carries the updated values. The OQ-C weight
-*values* freeze at probe registration (after P3); the m/q-127-row
-ask is postponed (user) until the method proves successful. Next:
-the zero-MD P3 composition forecast, then the probe registration
-freeze. Nothing here is adopted; `finc1v725` stands; h405 candidacy
-and the G4 adjudications stay open.**
+the §3.5 table below carries the updated values. The m/q-127-row
+ask is postponed (user) until the method proves successful. **P3
+EXECUTED 2026-07-29** (weight vector entering registration
+(0.30, 0.50, 0.20); C-full placement forecast + two registered
+tensions — mode two-lump, n₁ 0.18–0.23; findings "(C) pre-step
+P3"). P1–P3 are complete. Next: the probe REGISTRATION FREEZE
+(the CP band proposal in the findings + the weight vector — user
+gate), then the probe build behind `[PROCEED TO IMPLEMENTATION]`.
+Nothing here is adopted; `finc1v725` stands; h405 candidacy and
+the G4 adjudications stay open.**
 
 Precedent and template: `TIER2_DRAG_STATE_COUPLING_DESIGN.md` (the
 s(n) axis — designed, probed, refuted, stopped). This document designs
@@ -379,9 +383,18 @@ Zero-MD pre-steps (before any launch):
   than the Hatherly priors), E_single ≈ 0.53 (σ 0.42). The n = 1 KED
   width must therefore come mostly from channel separation + strip
   selection, not intrinsic channel width.
-- **P3 — weight-composition forecast table**: the §recap mixture
-  arithmetic, frozen as the registered placement expectation.
-  (Un-gated 2026-07-29: OQ-K confirmed; weights freeze here.)
+- **P3 — weight-composition forecast table — EXECUTED 2026-07-29**
+  (committed instrument `tier2atlas_ce_p3_forecast.py`, artifact
+  `atlas_ce_p3_forecast.csv`; findings "(C) pre-step P3"): weight
+  vector entering registration **(0.30, 0.50, 0.20)**; C-full
+  forecast KE₁ mean 0.92–1.04 / SD 0.51–0.55 / above-1.15 43–50 %
+  (ref 48.7 %) / Q3 carries 53–61 % of the n = 1 bin; **two
+  registered tensions**: the blend is two-lump (mode parks at the
+  Q2 toll lump 0.46 vs single-mode reference 0.891 — CP-3 frozen at
+  blend-MEAN level, bimodality a named probe discriminator) and n₁
+  forecasts 0.18–0.23, short of the 0.31 reference (CP-4 frozen at
+  the forecast band). Registration-band proposal in the findings —
+  the freeze is the next user gate.
 
 **Standing exclusion (user-confirmed 2026-07-29): every (C) cell runs
 `drag_state_coupling = "off"`** — the §3.5i s(n) axis is STOPPED

@@ -2545,3 +2545,79 @@ Jacobian-correct KED P(E) ∝ I(v)/v from the committed
 **Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy +
 G4 adjudications open. Next per the design: **P3 composition forecast
 + the probe registration freeze** (weights now un-gated by OQ-K).
+
+## (C) pre-step P3 EXECUTED (2026-07-29, zero MD) — composition forecast on record: C-full lands KE1 mean 0.92–1.04 / SD 0.51–0.55 / above-1.15 43–50 % (reference 48.7 %) with Q3 at 53–61 % of the n = 1 bin; TWO REGISTERED TENSIONS — the blend is two-lump (mode parks at the Q2 toll lump 0.46 vs reference single-mode 0.891) and n1 forecasts 0.18–0.23, short of the 0.31 reference
+
+**Instrument** `tier2atlas_ce_p3_forecast.py` (committed; artifact
+`atlas_ce_p3_forecast.csv`). Pure arithmetic over committed inputs:
+the §3.5k budget rows as channel proxies (Q2 ← bud226k, Q3 ← bud411k;
+KE₁ S_k-corrected to the channel means 2.16/4.32; occupancies
+uncorrected — stated proxy bias 4–5 %), the P1 analytic
+Poisson-binomial head at the pinned box corners as the
+suppressed-conversion kernel (a-independent above v_strip), the P2
+measured widths (σ_KE₁|c = √((S_k·σ_c)² + needle²)), converted-KE
+ratio 0.774/0.637 (h405-measured, budget-independence assumed),
+single channel as a registered assumption (n₁ ∈ [0, 0.05], no row
+exists — its §3.5k extrapolated KE₁ < 0). **Oracles passed:** O1
+(§3.5k committed rows reproduced to 3 decimals), O2 (the P1 CSV
+kernel head equals the analytic recomputation to 1e-9). Weight
+vector entering registration (OQ-C, OQ-K closed): **(w_single, w_Q2,
+w_Q3) = (0.30, 0.50, 0.20)**.
+
+**Forecast table (band ends over kernel corners × single-channel
+assumption; full CSV committed):**
+
+| variant | n₁ | KE₁ mean | KE₁ SD | mode | >1.15 eV | supp | bare | slow-bare | Q3@n=1 |
+|---|---|---|---|---|---|---|---|---|---|
+| B-only (strip off) | 0.13–0.14 | 0.79–0.87 | 0.45–0.49 | 0.447 | 0.33–0.37 | 0.146 | 0 | 0 | 0.46–0.51 |
+| C-full (box) | 0.18–0.23 | 0.92–1.04 | 0.51–0.55 | 0.46 | 0.43–0.50 | 0 | 0.007–0.027 | 0.002–0.007 | 0.53–0.61 |
+
+(reference n = 1 KED: mean 1.302 / mode 0.891 / σ 0.697 / above-1.15
+48.7 %; reference n₁_solv 0.31; experimental bare < 1 eV: 1.9 %.)
+
+**Readings:**
+
+1. **The (C) division of labor is confirmed in-arithmetic.** B-only
+   reproduces the §3.5k complementarity (n₁ 0.13, residual supp
+   0.146); C-full breaks the needle (SD 0.51–0.55 vs 0.034–0.047),
+   moves the blend mean into the 1.0 eV anchor band, and lands the
+   upper-half weight 0.43–0.50 against the reference 0.487 — the
+   selection amplification is now computed, not asserted: the 20 %
+   Q3 source share carries 53–61 % of the n = 1 bin.
+2. **CP-1/CP-5/CP-6-directions are safe at forecast level:** supp → 0
+   by construction of the conversion; ensemble bare 0.7–2.7 % with
+   slow-bare ≤ 0.7 % (the Q2-conversion lump at ≈ 0.53 eV is the
+   only slow-bare feeder and the pinned kernel keeps it small).
+3. **REGISTERED TENSION 1 — the mode.** The forecast n = 1 KED is
+   **two-lump** (Q2 toll lump 0.45–0.55 carrying the density mode
+   0.46; Q3 lump ≈ 1.28–1.56) while the experimental KED is
+   single-mode at 0.891 between the lumps. CP-3 is therefore frozen
+   at **blend-mean level** ([0.85, 1.20]); the mode/bimodality is a
+   named probe discriminator: a resolved two-lump MD KED against the
+   single-mode reference is a (C) shape failure — unless the strip
+   toll + in-MD spread (both absent from this forecast) merge the
+   lumps, which the probe measures.
+4. **REGISTERED TENSION 2 — n₁ magnitude.** The graded kernel
+   converts only P(1) ≈ 0.35 of the suppressed class to n = 1, so
+   n₁ forecasts 0.18–0.23 — barely above the h405 baseline 0.208 and
+   short of the reference 0.31 (the §3.5j all-to-n=1 bracket 0.353
+   was the ceiling, not the expectation). CP-4 is frozen at the
+   forecast band, not at the reference.
+5. Caveats carried: toll not applied (KE forecast toll-high by up to
+   ~0.2 eV at full strip); proxy-budget occupancy bias; KE_conv
+   budget-independence; the single-channel row is an assumption.
+
+**Registration-band PROPOSAL (to freeze at probe registration — user
+adjudication):** CP-1 supp ≤ 0.05; CP-2 KE₁ SD ∈ [0.30, 0.70];
+CP-3 KE₁ mean ∈ [0.85, 1.20] AND above-1.15 ∈ [0.35, 0.55];
+CP-4 n₁_solv ∈ [0.18, 0.26] (forecast band + one seed-SD);
+CP-5 (kill) ensemble slow-bare ≤ 0.01 (bare-row share below 1 eV
+≤ 5 %); CP-6 (kill) midHot ∈ [0.85, 1.15]; CP-7 (kill) W₁ ≤ 0.80
+(baseline 0.709 + one seed-SD); CP-8 bare KED two-lump qualitative.
+MD cells per the design §9: C-full / A-only / B-only / coupling arm
+(f_int,Q3 0.0985 vs 0.15), N = 1000, CRN, `drag_state_coupling off`.
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy +
+G4 adjudications open. P1–P3 are complete — the probe registration
+freeze (bands above + the weight vector) is the next user gate; the
+probe build stays behind `[PROCEED TO IMPLEMENTATION]`.

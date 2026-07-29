@@ -12254,3 +12254,47 @@ with the probe, per the standing rule.
 registration — next session step), the probe build (behind
 `[PROCEED TO IMPLEMENTATION]`), G4 adjudications. Atlas stance intact:
 nothing adopted, `finc1v725` stands, F5 undischarged.
+
+## (C) pre-step P3 EXECUTED (zero MD) — composition forecast on record (C-full: KE1 mean 0.92-1.04, SD 0.51-0.55, above-1.15 43-50 % vs ref 48.7 %, Q3 carries 53-61 % of the n = 1 bin); weights (0.30, 0.50, 0.20) entering registration; TWO tensions registered (two-lump mode vs single-mode reference; n1 0.18-0.23 short of 0.31); registration-band proposal posted — P1-P3 COMPLETE (2026-07-29)
+
+User trigger "Continue with P3". Delivered
+`scripts/post_processing/tier2atlas_ce_p3_forecast.py` (committed;
+artifact `atlas_ce_p3_forecast.csv`) — pure arithmetic over committed
+inputs only: §3.5k budget rows as channel proxies (KE₁ S_k-corrected
+2.26→2.16 / 4.11→4.32; occupancies uncorrected, bias stated), the P1
+analytic kernel at the pinned box corners (suppressed conversion:
+P(0) bare / P(1) n=1 / P(2) n=2), P2 widths via σ_KE₁|c =
+√((S_k·σ_c)² + needle²), KE_conv ratio 0.774/0.637 (h405-measured),
+single channel as registered assumption (n₁ ∈ [0, 0.05]; its §3.5k
+extrapolated KE₁ < 0). Oracles O1 (§3.5k rows to 3 decimals) + O2
+(P1 kernel head = analytic to 1e-9) passed before any new number.
+
+**Results (findings "(C) pre-step P3" holds the full table).** B-only
+reproduces the §3.5k complementarity (n₁ 0.13, supp 0.146). C-full at
+the box: n₁ 0.18–0.23, KE₁ mean 0.92–1.04, SD 0.51–0.55 (needle
+destroyed), above-1.15 0.43–0.50 (ref 0.487), supp → 0, bare
+0.007–0.027 with slow-bare ≤ 0.007, Q3 share of the n = 1 bin
+0.53–0.61 (selection amplification computed: 20 % source → ~half the
+bin). **Tension 1:** the forecast blend is two-lump (Q2 toll lump
+0.45–0.55 carries the density mode 0.46; Q3 lump 1.28–1.56) vs the
+single-mode reference 0.891 — CP-3 frozen at blend-MEAN level
+[0.85, 1.20], bimodality a named probe discriminator (toll + in-MD
+spread, both absent here, may merge the lumps — the probe measures).
+**Tension 2:** the graded kernel converts only P(1) ≈ 0.35 of
+suppressed → n₁ 0.18–0.23, short of the 0.31 reference (the §3.5j
+bracket 0.353 was a ceiling) — CP-4 frozen at the forecast band.
+
+**Registration-band PROPOSAL posted (user gate):** CP-1 supp ≤ 0.05;
+CP-2 KE₁ SD ∈ [0.30, 0.70]; CP-3 KE₁ mean ∈ [0.85, 1.20] and
+above-1.15 ∈ [0.35, 0.55]; CP-4 n₁ ∈ [0.18, 0.26]; CP-5 kill
+slow-bare ≤ 0.01; CP-6 kill midHot ∈ [0.85, 1.15]; CP-7 kill W₁
+≤ 0.80; CP-8 bare two-lump qualitative. Cells: C-full / A-only /
+B-only / coupling arm, N = 1000, CRN, `drag_state_coupling off`.
+
+**Docs updated:** design §9 P3 + status header (P1–P3 complete;
+weight vector (0.30, 0.50, 0.20) entering registration); findings
+new section; plan §3.5l; CLAUDE.md bridged. **Not done,
+deliberately:** the registration freeze itself (user adjudication on
+the band proposal), the probe build (`[PROCEED TO IMPLEMENTATION]`),
+G4 adjudications. Atlas stance intact: nothing adopted, `finc1v725`
+stands, F5 undischarged.

@@ -1663,8 +1663,13 @@ zero-MD** (committed instruments `tier2atlas_ce_strip_prior.py` /
 pinned a = 2 [1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1], a = 1
 disfavored; measured widths σ_Q2 0.31 / σ_Q3 0.55 eV supersede the
 Hatherly priors; E_single ≈ 0.53). Record: findings "(C) pre-steps
-P1 + P2"; design doc §3.5/§9/§10 updated. Next: P3 composition
-forecast + weight freeze + probe registration.
+P1 + P2"; design doc §3.5/§9/§10 updated. **P3 EXECUTED same day**
+(committed `tier2atlas_ce_p3_forecast.py`; weights (0.30, 0.50,
+0.20) entering registration; C-full forecast KE₁ mean 0.92–1.04 /
+SD 0.51–0.55 / above-1.15 43–50 %; two registered tensions —
+two-lump mode vs single-mode reference, n₁ 0.18–0.23 short of
+0.31; findings "(C) pre-step P3"). P1–P3 complete. Next: the
+probe registration freeze (user gate), then the probe build.
 
 **Measured inputs on record (do not re-derive):**
 

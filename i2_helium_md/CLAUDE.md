@@ -212,9 +212,16 @@ oracles green incl. exact §3.5j crossing-band + variant reproduction:
 strip prior box PINNED a = 2 [1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1],
 a = 1 disfavored on W₁-parking + slow-bare; measured channel widths
 σ_Q2 0.31 / σ_Q3 0.55 eV supersede the Hatherly priors, E_single
-≈ 0.53 — findings "(C) pre-steps P1 + P2"). **Next: zero-MD P3**
-(composition forecast + OQ-C weight freeze), then the probe
-registration freeze. The
+≈ 0.53 — findings "(C) pre-steps P1 + P2"). **P3 EXECUTED
+2026-07-29 zero-MD** (`tier2atlas_ce_p3_forecast.py`; weights
+(0.30, 0.50, 0.20) entering registration; C-full forecast KE₁ mean
+0.92–1.04 / SD 0.51–0.55 / above-1.15 43–50 % vs ref 48.7 % / Q3
+carries 53–61 % of the n = 1 bin; two registered tensions —
+two-lump mode vs single-mode reference 0.891, and n₁ 0.18–0.23
+short of the 0.31 reference; findings "(C) pre-step P3"). **P1–P3
+COMPLETE. Next: the probe registration freeze** (CP-1..8 band
+proposal in the findings — user gate), then the probe build behind
+`[PROCEED TO IMPLEMENTATION]`. The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise
