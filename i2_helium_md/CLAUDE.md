@@ -199,15 +199,22 @@ entry point** (design DRAFTED + ADJUDICATED 2026-07-29: channel
 mixture {single, Q2 2.16, Q3 4.32} × shared f 0.8 via per-pair scale
 emulation + Q3 partner mask, per-channel f_int, depth-graded exit
 strip P₀(v)·G(j) retention-twin-anchored, ledger strip term;
-OQ-A..J closed per recommendations incl. **checkpoint v8
-granted-scoped** to three per-ion fields; **OQ-K open** — the
-300/600 mW ↔ 1.47/2.94×10¹⁴ mapping is an unconfirmed fact gating
-the weight freeze; still open: the bare-I⁺ m/q-127-row covariance
-decomposition; weights never fitted on the n = 1 KED — the
-circularity guard; dof accounting §6: 8 anchor-frozen / 3 P1-pinned /
-1 probe-scanned). **Next: zero-MD P1–P3** (strip-form prior
-calibration on committed g4fh405 checkpoints; Abel width read;
-composition forecast), then the probe registration freeze. The
+OQ-A..K ALL closed — **OQ-K closed 2026-07-29 by user confirmation**
+of the 300/600 mW ↔ 1.47/2.94×10¹⁴ mapping (w_Q3 ≈ 0.20
+un-provisional); the bare-I⁺ m/q-127-row covariance decomposition is
+**postponed (user) until the method proves successful**; checkpoint
+v8 granted-scoped to three per-ion fields; weights never fitted on
+the n = 1 KED — the circularity guard; dof accounting §6:
+8 anchor-frozen / 3 P1-pinned / 1 probe-scanned). **P1 + P2 EXECUTED
+2026-07-29 zero-MD** (committed instruments
+`tier2atlas_ce_strip_prior.py` / `tier2atlas_ce_gas_widths.py`, all
+oracles green incl. exact §3.5j crossing-band + variant reproduction:
+strip prior box PINNED a = 2 [1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1],
+a = 1 disfavored on W₁-parking + slow-bare; measured channel widths
+σ_Q2 0.31 / σ_Q3 0.55 eV supersede the Hatherly priors, E_single
+≈ 0.53 — findings "(C) pre-steps P1 + P2"). **Next: zero-MD P3**
+(composition forecast + OQ-C weight freeze), then the probe
+registration freeze. The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

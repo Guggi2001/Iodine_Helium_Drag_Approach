@@ -2429,3 +2429,119 @@ with width*, not fixed at the channel mean (feeds the n = 1 KED
 **Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy +
 G4 adjudications open. The (C) design discussion now has all three
 §3.5l pre-design reads on record ((ii) was answered 2026-07-29).
+
+## (C) pre-steps P1 + P2 EXECUTED (2026-07-29, zero MD) — P1: the strip prior box PINNED (a in [1.5, 2.5], j0 in [1.5, 2], w_j in [0.5, 1]; a = 1 disfavored on W1-parking + slow-bare); P2: measured channel widths are NARROWER than the Hatherly priors (sigma_Q2 0.31, sigma_Q3 0.55 eV upper bounds; E_single ~ 0.53); OQ-K CLOSED by user confirmation
+
+**Context.** Design `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md` §9; user
+trigger "continue with P1+P2" (2026-07-29). Same session, the OQ-K
+condition mapping was **user-confirmed: 300 mW ↔ 1.47×10¹⁴ / 600 mW ↔
+2.94×10¹⁴ W/cm²** — the 600 mW `ihe_ked` reference pairs with the
+~20 % Q3 covariance share; w_Q3 ≈ 0.20 is no longer provisional. The
+m/q-127-row covariance ask (the clean w_single/w_Q2 closer) is
+**postponed by the user until the (C) method proves successful**; the
+split rests on the gas slow band + Q2 partner structure at
+registration.
+
+### P1 — strip-form prior calibration (committed instrument `tier2atlas_ce_strip_prior.py`, artifact `atlas_ce_strip_p1.csv`)
+
+Detection-only rescore of the committed `g4fh405` checkpoints with the
+actual design form P_knock(j) = min(1, (v_x/9.9)^a)·G(j),
+G = 1/(1+exp(−(j−j₀)/w_j)); §3.5j CF-1/CF-2 conventions unchanged
+(first outbound crossing; velocity history unchanged; toll NOT
+applied); 48 Bernoulli replicas, seed 20260729; grid 5×5×4 = 100
+cells (a ∈ {1…3}, j₀ ∈ {1…3}, w_j ∈ {0.5…2}).
+
+**Oracles (all passed before any new number):** O1 scorer drift; O2
+committed finals h405 row to 4 decimals; O3 kinematics (stored KE =
+½·m(n)·v² bit-tight; suppressed carry the full n = 21 mechanical
+mass 210.955 amu); **O4 crossing extraction reproduces the committed
+§3.5j suppressed band p10–p90 10.66–11.69 Å/ps and the n = 1-ender
+mean v_x 10.16 exactly**; **O5 the CF-3 sharp variant AND the
+supp→n=1 bracket reproduce the committed §3.5j variants table**
+(n̄/n₁/KE₁/bare/W₁ within 0.005). 1951/2000 fragments cross
+(every scored fragment crosses; the 49 non-crossers are retained).
+
+**Measured map (w_j = 1 slice; full 100-cell CSV committed):**
+
+| (a, j₀) | P(0)/P(1)@10.2 | n₁ | KE₁ | KE₁ SD | bin0 | n̄ | W₁ | midHot |
+|---|---|---|---|---|---|---|---|---|
+| 1, 1 | 0.63 | 0.304 | 0.650 | 0.115 | 0.127 | 3.47 | 0.932 | 0.829 |
+| 1, 2 | 0.23 | 0.261 | 0.654 | 0.096 | 0.033 | 3.82 | 1.041 | 0.895 |
+| 2, 1.5 | 0.38 | 0.263 | 0.673 | 0.091 | 0.064 | 4.09 | 0.643 | 0.981 |
+| 2, 2 | 0.23 | 0.242 | 0.667 | 0.083 | 0.030 | 4.19 | 0.733 | 1.002 |
+| 2, 3 | 0.09 | 0.193 | 0.649 | 0.061 | 0.003 | 4.40 | 0.850 | 1.059 |
+| 3, 2 | 0.23 | 0.234 | 0.671 | 0.080 | 0.029 | 4.23 | 0.722 | 1.008 |
+
+(baseline gate row: n₁ 0.208, KE₁ 0.637, SD 0.038, W₁ 0.709.)
+
+**Readings (the prior-box pin — values moved inside the OQ-D box,
+family untouched):**
+
+1. **The retention-twin anchor selects (j₀, w_j), independent of a**
+   (at the twin speed 10.2 > v_strip 9.9, P₀ = 1 for every a):
+   P(0)/P(1) ≈ ⅓ lands at **(j₀ 1.5, w_j 0.5–1)** [0.32–0.38] or
+   **(j₀ 2, w_j 1)** [0.23]; j₀ = 3 kills the bare twin (0.09),
+   j₀ = 1 over-produces it (0.63–0.86).
+2. **a = 1 is disfavored** — the soft velocity gate strips slow
+   exiters too: W₁ degrades above baseline (0.93–1.08, the CP-7
+   mid-tail-parking direction) and bin0 doubles (slow-bare, the CP-5
+   kill direction). a ∈ [1.5, 2.5] behaves ram-like: W₁ *improves*
+   (0.58–0.73) and bin0 stays ≤ 0.07. a beyond 2 is nearly
+   degenerate with 2 (P₀ saturates over the fast exiters).
+3. **Pinned prior box for registration: a = 2 (range [1.5, 2.5]),
+   j₀ ∈ [1.5, 2], w_j ∈ [0.5, 1].** Inside it: n₁ 0.24–0.31 (CP-4
+   direction, reference 0.31), KE₁ 0.66–0.69 with SD 0.08–0.10
+   (needle broken, CP-2 threshold met at the box edge), bin0
+   0.03–0.07, midHot 0.96–1.01 (CP-6 flat), W₁ 0.58–0.73 (CP-7
+   safe).
+4. **KE₁ stays at the (A) ceiling** (0.65–0.69 ≈ the §3.5j bracket
+   0.708; converted-suppressed n = 1 members mean 0.774 = the
+   committed rebinned-only value — instrument-consistency check).
+   Position remains (B)'s job, exactly per the design's division of
+   labor.
+5. Stated limitations: single-budget counterfactual (no mixture — the
+   fast Q3 population that CP-5 needs for the bare row does not exist
+   here, so bin0 here is pure slow-bare risk); CF-1 survivor counts at
+   high n are ceiling reads (post-strip cascade not re-run); toll not
+   applied (§3.5j limitation carried; MD probe measures it).
+
+### P2 — Abel gas channel-width read (committed instrument `tier2atlas_ce_gas_widths.py`)
+
+Jacobian-correct KED P(E) ∝ I(v)/v from the committed
+`vmi_summary/vmi_iplus_gas.csv` (43632, pyabel rIbeta 3-D I(v));
+**peak oracle passed** (I(v) maxima reproduce the committed
+2.26/4.11 eV within one grid step); bounded three-Gaussian fit
+(single/Q2/Q3), RMS residual 4.4 % of peak, window-stable
+(σ moves ≤ 0.02 eV across four fit windows):
+
+| component | µ [eV] | σ [eV] | area share | design prior |
+|---|---|---|---|---|
+| single | 0.534 ± 0.011 | 0.416 ± 0.013 | 0.655 | E_single band [0.3, 0.8] |
+| Q2 | 2.258 ± 0.022 | **0.311 ± 0.023** | 0.221 | Hatherly σ 0.55 |
+| Q3 | 3.913 ± 0.103 | **0.553 ± 0.113** | 0.123 | Hatherly σ 1.23 |
+
+**Readings:**
+
+1. **The experiment's own channels are markedly narrower than the
+   Hatherly 200 fs priors** (σ_Q2 0.31 vs 0.55; σ_Q3 0.55 vs 1.23) —
+   and the measured values are *upper bounds* on the intrinsic widths
+   (instrument response + Abel movmean smoothing + 4 % calibSyst
+   folded in). Design consequence: the §3.5 table priors are replaced
+   by **σ_Q2 = 0.31, σ_Q3 = 0.55 eV** at registration. The n = 1 KED
+   σ 0.697 eV must then come mostly from the **channel separation +
+   strip selection**, not from intrinsic per-channel width — a
+   sharper, more falsifiable mixture forecast for P3.
+2. **E_single sharpens to ≈ 0.53 eV (σ ≈ 0.42)** inside the design
+   band — one effective Gaussian; the 0.27/0.49/0.70 sub-structure is
+   below this 72-point export's resolving power (recorded, not fit).
+3. µ readings are KED-frame (Jacobian-shifted below the I(v) peaks:
+   Q3 3.91 vs 4.11) — **not a re-anchor**; the channel means stay
+   paper-anchored at f·E_C (2.16/4.32), per OQ-B.
+4. Area shares (0.66/0.22/0.12) are detection-filtered and are NOT
+   channel weights — OQ-C stays anchored on the covariance + power
+   series (Q3/(Q2+Q3) here = 0.36, above the 23 % band read;
+   projection-free but acceptance-weighted).
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy +
+G4 adjudications open. Next per the design: **P3 composition forecast
++ the probe registration freeze** (weights now un-gated by OQ-K).

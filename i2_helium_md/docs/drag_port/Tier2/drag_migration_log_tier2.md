@@ -12187,3 +12187,70 @@ per the architecture rule, excluded not deleted; the cfg-diff
 oracles catch stray activation. Next: zero-MD P1 (strip-form prior
 calibration on committed g4fh405 checkpoints), P2 (Abel widths),
 P3 (composition forecast), then the probe registration freeze.
+
+## OQ-K CLOSED (user confirmation) + (C) pre-steps P1 + P2 EXECUTED (zero MD) — strip prior box PINNED (a 2 [1.5, 2.5], j0 [1.5, 2], w_j [0.5, 1]); measured channel widths NARROWER than the Hatherly priors (sigma_Q2 0.31 / sigma_Q3 0.55 eV); m/q-127 ask postponed (user) (2026-07-29)
+
+**Adjudications recorded (user).** (1) **OQ-K closed**: "I confirm the
+peak intensities are 300 mW and 600 mW equivalently" — the mapping
+300 mW ↔ 1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴ W/cm² is a confirmed fact; the
+600 mW `ihe_ked` reference pairs with the ~20 % Q3 covariance share;
+w_Q3 ≈ 0.20 un-provisional; the OQ-C weight freeze is un-gated (values
+freeze at registration after P3). (2) The **m/q-127-row covariance
+ask is postponed until the (C) method proves successful** — the
+w_single/w_Q2 split rests on the gas slow band + Q2 partner structure.
+(3) "Continue with P1+P2" treated as the trigger for the two zero-MD
+analysis instruments (G3-ring precedent: in-session approval).
+
+**Delivered (code, committed instruments — the §3.5l scratchpad lesson
+applied: both are repo scripts, oracle-gated on committed artifacts).**
+
+1. `scripts/post_processing/tier2atlas_ce_strip_prior.py` — P1. The
+   §3.5j exit-strip counterfactual rebuilt with the actual design form
+   P₀(v_x)·G(j) (CF-1/CF-2 unchanged, only CF-3 replaced); crossing
+   kinematics (v_x, n_x) extracted from the committed `g4fh405`
+   ion + relaxation trajectories (first outbound crossing); 48
+   Bernoulli replicas, seed 20260729; 100-cell (a, j₀, w_j) grid;
+   analytic Poisson-binomial retention-twin read at 10.2 Å/ps.
+   **Five oracles, all passed:** O1 scorer drift; O2 committed finals
+   h405 row (4 decimals); O3 kinematics (stored KE = ½·m(n)·v²
+   bit-tight; suppressed carry full mechanical mass 210.955 amu);
+   O4 crossing extraction reproduces the committed §3.5j suppressed
+   band 10.66–11.69 Å/ps and n = 1-ender v_x 10.16 exactly; O5 the
+   CF-3 sharp variant + supp→n=1 bracket reproduce the committed
+   §3.5j variants table (within 0.005). Artifact
+   `data/runs/h2b_forward_model/atlas_ce_strip_p1.csv`.
+2. `scripts/post_processing/tier2atlas_ce_gas_widths.py` — P2.
+   Jacobian-correct KED P(E) ∝ I(v)/v from the committed
+   `vmi_summary/vmi_iplus_gas.csv`; peak oracle (I(v) maxima reproduce
+   the committed 2.26/4.11 eV) passed; bounded three-Gaussian fit,
+   RMS 4.4 %, window-stable (σ shift ≤ 0.02 eV over four windows).
+
+**Results (compact; full record in findings "(C) pre-steps P1 + P2").**
+P1: the retention-twin ratio is a-independent at the twin speed
+(P₀ = 1 above v_strip) and selects (j₀, w_j) alone — the ~⅓ anchor
+lands at (j₀ 1.5–2, w_j 0.5–1); a = 1 is disfavored (soft velocity
+gate strips slow exiters: W₁ 0.93–1.08 = CP-7 parking direction, bin0
+doubles = CP-5 slow-bare direction); pinned box a = 2 [1.5, 2.5],
+j₀ ∈ [1.5, 2], w_j ∈ [0.5, 1] with n₁ 0.24–0.31, KE₁ 0.66–0.69
+(SD 0.08–0.10 — needle broken at the box edge), midHot flat, W₁
+improves to 0.58–0.73. KE₁ stays at the (A) ceiling — position remains
+(B)'s job. P2: σ_Q2 0.311 ± 0.023 / σ_Q3 0.553 ± 0.113 eV — measured
+UPPER bounds, markedly narrower than the Hatherly 200 fs priors
+(0.55/1.23 superseded in the design §3.5 table); E_single 0.534
+(σ 0.416) inside the design band; µ readings are KED-frame, channel
+means stay paper-anchored 2.16/4.32 (no re-anchor); area shares are
+detection-filtered, NOT weights. Design consequence: the n = 1 KED
+σ 0.697 must come mostly from channel separation + strip selection —
+a sharper P3 forecast.
+
+**Docs updated:** design doc status header + §3.3 OQ-K label
+disambiguation (§3.5j-round vs §10) + §3.5 table (P1/P2 values) +
+§9 P1/P2 EXECUTED + §10 OQ-K closed; findings new section; plan §3.5l
+status line; CLAUDE.md compact state bridged. D0 untouched — the strip
+knobs are pre-build (no D0 rows exist yet); their influence enters D0
+with the probe, per the standing rule.
+
+**Not done, deliberately:** P3 (composition forecast + weight freeze +
+registration — next session step), the probe build (behind
+`[PROCEED TO IMPLEMENTATION]`), G4 adjudications. Atlas stance intact:
+nothing adopted, `finc1v725` stands, F5 undischarged.

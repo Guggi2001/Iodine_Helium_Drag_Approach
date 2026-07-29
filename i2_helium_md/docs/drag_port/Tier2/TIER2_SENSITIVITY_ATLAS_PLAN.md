@@ -1655,6 +1655,16 @@ per-ion fields; emulation route, no scope flags un-refused);
 before the OQ-C weight values freeze); dof accounting added (§6:
 raw ~11 → 8 anchor-frozen / 3 P1-pinned / 1 probe-scanned). Next:
 zero-MD P1–P3, then probe registration.)
+**Update 2026-07-29: OQ-K CLOSED (user confirmation of the 300/600 mW
+↔ 1.47/2.94×10¹⁴ mapping; w_Q3 ≈ 0.20 un-provisional; m/q-127 ask
+postponed until the method proves successful) and P1 + P2 EXECUTED
+zero-MD** (committed instruments `tier2atlas_ce_strip_prior.py` /
+`tier2atlas_ce_gas_widths.py`, all oracles passed; strip prior box
+pinned a = 2 [1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1], a = 1
+disfavored; measured widths σ_Q2 0.31 / σ_Q3 0.55 eV supersede the
+Hatherly priors; E_single ≈ 0.53). Record: findings "(C) pre-steps
+P1 + P2"; design doc §3.5/§9/§10 updated. Next: P3 composition
+forecast + weight freeze + probe registration.
 
 **Measured inputs on record (do not re-derive):**
 

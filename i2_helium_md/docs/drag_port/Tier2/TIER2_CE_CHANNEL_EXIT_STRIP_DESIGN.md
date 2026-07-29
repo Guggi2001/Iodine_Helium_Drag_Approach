@@ -2,14 +2,20 @@
 
 **Status: DESIGN ADJUDICATED (2026-07-29, user: "I follow your
 recommendations") — physics definition only. No code until
-`[PROCEED TO IMPLEMENTATION]`. OQ-A..J closed per §10; two riders
-stay open inside their closures: the OQ-C weight *values* freeze at
-probe registration (after P2/P3), and the OQ-K power↔intensity
-mapping remains user-recalled/unconfirmed (a fact, not a
-recommendation — confirm before the weights freeze). Next: the
-zero-MD pre-steps P1–P3, then the probe registration. Nothing here
-is adopted; `finc1v725` stands; h405 candidacy and the G4
-adjudications stay open.**
+`[PROCEED TO IMPLEMENTATION]`. OQ-A..K ALL CLOSED: OQ-K was closed
+2026-07-29 by user confirmation of the power↔intensity mapping
+(300 mW ↔ 1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴ W/cm² — the 600 mW KED
+reference pairs with the ~20 % Q3 covariance share). P1 + P2
+EXECUTED 2026-07-29 (zero MD; findings "(C) pre-steps P1 + P2"):
+the strip prior box is PINNED (a = 2 [1.5, 2.5], j₀ ∈ [1.5, 2],
+w_j ∈ [0.5, 1]; a = 1 disfavored) and the width priors are
+MEASURED (σ_Q2 0.31 / σ_Q3 0.55 eV upper bounds; E_single ≈ 0.53) —
+the §3.5 table below carries the updated values. The OQ-C weight
+*values* freeze at probe registration (after P3); the m/q-127-row
+ask is postponed (user) until the method proves successful. Next:
+the zero-MD P3 composition forecast, then the probe registration
+freeze. Nothing here is adopted; `finc1v725` stands; h405 candidacy
+and the G4 adjudications stay open.**
 
 Precedent and template: `TIER2_DRAG_STATE_COUPLING_DESIGN.md` (the
 s(n) axis — designed, probed, refuted, stopped). This document designs
@@ -176,7 +182,8 @@ independently knocked out with probability
   the n = 1 KED* (§7).
 - **n = 0 outcomes allowed** (OQ-L adjudicated, §3.5j) — feeds RQ3.
 
-**Energetics and ledger (OQ-K adjudicated):** stripping is re-labeled
+**Energetics and ledger (the §3.5j-round OQ-K — NOT this document's
+§10 OQ-K condition mapping — adjudicated):** stripping is re-labeled
 surface-crossing drag work with an explicit term — no new energy
 source or sink. Per knocked rung j the ion loses
 
@@ -205,18 +212,18 @@ handled) — the *prediction* is that its occupancy → ~0 under (C)-on
 
 ### 3.5 Dimensional table (every new parameter)
 
-| parameter | units | class | prior / range | anchor |
+| parameter | units | class | prior / range (P1/P2-updated 2026-07-29) | anchor |
 |---|---|---|---|---|
-| w_single, w_Q2, w_Q3 | — (Σ=1) | Bounded | w_Q3 ≈ 0.20 @ 2.94×10¹⁴; w_single open | I²⁺ covariance, power series, gas slow band (§7) |
+| w_single, w_Q2, w_Q3 | — (Σ=1) | Bounded | w_Q3 ≈ 0.20 @ 600 mW (OQ-K confirmed); w_single open | I²⁺ covariance, power series, gas slow band (§7) |
 | f | — | Bounded | 0.80 [0.65, 0.90] | own gas fit + Hatherly + Abel peaks |
-| E_single | eV | Bounded | [0.3, 0.8] | Abel gas slow structure |
-| σ_Q2, σ_Q3 | eV | Bounded | 0.55 / 1.23 | Hatherly widths; §9 P2 read |
+| E_single | eV | Bounded | 0.53 (σ ≈ 0.42) in [0.3, 0.8] | P2 measured (Abel gas slow component) |
+| σ_Q2, σ_Q3 | eV | Bounded | **0.31 / 0.55** (measured upper bounds; Hatherly 0.55/1.23 superseded) | P2 measured (§9); window-stable ± 0.02 |
 | f_int,Q3 | — | Bounded | [0.0985, 0.15] | bud411k/bud411 bracket |
 | f_int,single | — | Free (weak) | 0.15 | — |
 | v_strip | Å/ps | Sourced | 9.9 | equal-mass max transfer vs rq4graded |
-| a | — | Bounded | ≈ 2 | ram scaling; retention-twin |
-| j₀ | rungs | Bounded | [1, 3] | §3.5j mechanism reads; retention-twin |
-| w_j | rungs | Bounded | ≈ 1 | retention-twin |
+| a | — | Bounded | **2 [1.5, 2.5]** (a = 1 disfavored: W₁ parking + slow-bare) | P1 measured (§9); ram scaling |
+| j₀ | rungs | Bounded | **[1.5, 2]** (was [1, 3]; ends killed by twin ratio) | P1 measured; retention-twin |
+| w_j | rungs | Bounded | **[0.5, 1]** | P1 measured; retention-twin |
 | ε_carry | eV/He | Bounded | [0, 0.05] | 0.2 eV total-scale constraint |
 
 Honest count: ~11 new degrees of freedom, the largest single freedom
@@ -358,15 +365,23 @@ arbitration observable). Anchors, in priority order:
 
 Zero-MD pre-steps (before any launch):
 
-- **P1 — strip-form prior calibration, detection-only**: re-run the
-  §3.5j counterfactual instrument on the committed g4fh405 checkpoints
-  with the actual P₀·G form (instead of CF-3 sharp/η variants) —
-  maps (a, j₀, w_j) → (n₁ gain, KE₁, bare weight) at zero MD and pins
-  the prior box before registration.
-- **P2 — Abel gas width read**: σ_c and E_single from
-  `vmi_iplus_gas.csv` peak shapes (sharpens §3.5 table priors).
+- **P1 — strip-form prior calibration, detection-only — EXECUTED
+  2026-07-29** (committed instrument `tier2atlas_ce_strip_prior.py`,
+  artifact `atlas_ce_strip_p1.csv`; findings "(C) pre-steps P1 + P2"):
+  the §3.5j counterfactual re-run with the actual P₀·G form, all five
+  oracles passed (incl. exact reproduction of the §3.5j crossing band
+  and the sharp/bracket variant rows). Prior box pinned — see the
+  §3.5 table; the retention-twin ratio is a-independent at the twin
+  speed and selects (j₀, w_j) alone.
+- **P2 — Abel gas width read — EXECUTED 2026-07-29** (committed
+  instrument `tier2atlas_ce_gas_widths.py`; peak oracle 2.26/4.11
+  passed): σ_Q2 0.31 / σ_Q3 0.55 eV (measured upper bounds — narrower
+  than the Hatherly priors), E_single ≈ 0.53 (σ 0.42). The n = 1 KED
+  width must therefore come mostly from channel separation + strip
+  selection, not intrinsic channel width.
 - **P3 — weight-composition forecast table**: the §recap mixture
   arithmetic, frozen as the registered placement expectation.
+  (Un-gated 2026-07-29: OQ-K confirmed; weights freeze here.)
 
 **Standing exclusion (user-confirmed 2026-07-29): every (C) cell runs
 `drag_state_coupling = "off"`** — the §3.5i s(n) axis is STOPPED
@@ -439,12 +454,16 @@ mixture changes the game but is not presumed to preserve the pins).
 - **OQ-J (multiple crossings) — CLOSED: every outbound crossing.**
   Bulk-refill re-dresses on re-entry, so each outbound pass strips
   again; the probe reports the trapped-class sensitivity.
-- **OQ-K (condition mapping) — REMAINS OPEN (fact, not
-  recommendation).** 300/600 mW ↔ 1.47/2.94×10¹⁴ W/cm² is
-  user-recalled and unconfirmed; it selects which covariance share
-  (~7 % vs ~20 %) pairs with the 600 mW ihe_ked reference. To be
-  confirmed or corrected **before the OQ-C weights freeze**; until
-  then w_Q3 = 0.20 is provisional.
+- **OQ-K (condition mapping) — CLOSED (user confirmation,
+  2026-07-29).** "I confirm the peak intensities are 300 mW and
+  600 mW equivalently" — the mapping 300 mW ↔ 1.47×10¹⁴ /
+  600 mW ↔ 2.94×10¹⁴ W/cm² stands as a confirmed fact. The 600 mW
+  `ihe_ked` reference pairs with the ~20 % Q3 covariance share;
+  **w_Q3 ≈ 0.20 is no longer provisional** and the OQ-C weight
+  freeze is un-gated (values still freeze at registration, after
+  P3). Rider recorded: the m/q-127-row covariance decomposition
+  (the clean w_single/w_Q2 closer) is **postponed by the user until
+  the (C) method proves successful**.
 
 ## 11. Cross-links
 
