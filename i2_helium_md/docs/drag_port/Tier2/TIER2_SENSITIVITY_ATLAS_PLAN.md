@@ -1400,7 +1400,7 @@ schema, RNG draw order and the constants table untouched. N = 500 KE₁
 carries ≈ 0.02–0.03 eV single-seed scatter — ring/grid rows are read at
 that resolution, never over it.
 
-### 3.5h The p_tail ring — the low-n KE axis opened on the drag tail (DESIGNED + user-approved 2026-07-29)
+### 3.5h The p_tail ring — the low-n KE axis opened on the drag tail (DESIGNED + user-approved 2026-07-29; **EXECUTED 2026-07-29** — placement CONFIRMED in-bracket (pt15 0.917 / pt20 1.151), but **PT-P3 KILL FIRED** (midHot 1.9–4.4 at every KE₁ ≥ 0.95 cell; deepKE to 12.5×; PT-P4 sign-inverted — residence/relaxation channel dominates; PT-P5 refuted) → **single-knob p_tail CLOSED**; measured shape suggestion: band-limited tail v_c2 ≈ 9.5; findings "§3.5h")
 
 **Adjudications recorded (user, 2026-07-29, post-§3.5g discussion):**
 
