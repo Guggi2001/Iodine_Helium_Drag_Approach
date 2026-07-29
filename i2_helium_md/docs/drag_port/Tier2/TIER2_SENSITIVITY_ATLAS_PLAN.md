@@ -1308,6 +1308,98 @@ trapped-tail stake), ledger re-issue, and the W₁-floor + low-n-KE
 residual pair (recorded honest; candidate levers noted: retained
 policy, p_tail on the *low-n KE* axis, p occupancy exponent).
 
+### 3.5g The low-n KE retro-scan (DESIGNED 2026-07-29; zero MD — the in-surface freedom must be measured before any new axis)
+
+**Motivation (user direction, 2026-07-29).** Before p_tail (or any new
+knob) is opened on the low-n KE axis, the freedom the *existing*
+(v_c, τ, E₀) surface has on KE₁/KE₂ must be measured at the resolution
+already on disk — the refine-before-refute rule (the §6.6 lesson, now a
+standing working principle). Every committed corrected-geometry run
+retains its `detection.npz` (the trajectory strip removed only
+`ion.npz`/`relaxation.npz`), so KE₁/KE₂ are retro-scorable over the full
+committed surface with zero MD. KE₁ is a high-SNR observable (Block-V
+per-seed SD ≈ 0.003 eV at N = 1000, expected ≈ 0.02–0.03 eV per N = 500
+cell from the n = 1 occupancy) — single-seed cells rank cleanly, unlike
+W₁.
+
+**Convention amendment (user adjudication 2026-07-29, supersedes the
+§3.5f anchor for scoring; the old anchor stays flagged-not-overwritten
+per the §1.2 precedent).** The experimental n = 1 KED shows a wide
+*upper* tail read as a second process (not the drag-cascade channel this
+model owns); the n = 1 target is therefore the **peak, ≈ 1.00 eV** —
+between the reference mode 0.891 and median 1.128, deliberately not
+chasing the tail-inflated mean 1.302. From this section on: **KE₁ is
+scored against 1.00 eV** (score term `|ln(KE₁/1.00)|/ln 1.15`); ratios
+vs the old median anchor stay reported for continuity. **KE₂ keeps the
+reference mean 0.706 eV** (no second-process signature adjudicated on
+n = 2). Current distance at h405 (pooled): KE₁ 0.641 → deficit
+−0.36 eV against 1.00.
+
+**Scope (52 rows, all committed runs, no new MD):**
+
+1. the **h405 battery** (5 × N = 1000 + pooled) — the anchor;
+2. the **G4 finals + ladder arm** (15 × N = 1000, CRN-paired seed
+   20260729) — the τ arms 4.4/4.8/5.2 at v_c 5.5, the E₀ ladders, v525
+   (v_c 5.25) and b031 (v_c 6.0);
+3. the **G3 ring** (14 × N = 500, seed 20260728) — wider (v_c, τ)
+   coverage incl. c50/c65 edge cells, the e-well bracket, and **f725**
+   (standing chord at the corrected ensemble);
+4. the **geometry grid** (11 × N = 500, fixed geometry, standing chord)
+   plus the **incumbent battery** (5 × N = 1000 + pooled, standing
+   geometry) — KE₁/KE₂ vs (R, depth) at *fixed* drag parameters: the
+   depth-provenance read (does any shallow/small-droplet cell produce
+   reference-scale-fast n = 1?).
+
+Excluded: the lq runs (form authority is Tier-0's; the E_bind confound
+family) and the pre-correction N = 500 `finc*` probes (superseded by the
+incumbent battery at 10× the statistics).
+
+**Oracles (§1.4 — all before any new number is read):**
+
+- **O1 scorer-drift:** the standing pooled battery reproduces its
+  recorded observable row (the standard `check_oracle`).
+- **O2 committed-KE:** the five h405 battery members + pooled, rescored
+  through this scorer's own code path, reproduce the committed
+  `atlas_g4step2_battery.csv` KE₁/KE₂ columns (mean/med/mode) to
+  1e-9 relative — the KE extraction is bit-compatible with Block V.
+- **O3 incumbent-KE:** the incumbent pooled battery lands on the
+  recorded KE₁ 1.034 / KE₂ 0.754 (3-decimal comparison; the Block-V
+  scorer's recorded constants).
+
+**Pre-registered readings (computed only after O1–O3 pass):**
+
+- **R1 (τ):** ∂KE₁/∂τ and ∂KE₂/∂τ at v_c 5.5 — across the three
+  CRN-paired arms, both raw and at matched n̄ (the gated chord
+  h405/h375/h345). This is the axis the user named; it has never been
+  read.
+- **R2 (v_c):** KE₁/KE₂ at v_c 5.0/5.25/5.5/6.0/6.5/7.25 from
+  c50/v525/(5.5-cells)/b031/c65/f725 — the cap sets where the
+  uncalibrated tail begins, so this is the strongest in-surface
+  candidate.
+- **R3 (E₀):** within-arm slopes per +0.005 eV (CRN-paired ladders);
+  the h405↔f3 pair already suggests ≈ −0.03 eV KE₁ per +0.01 eV E₀
+  (composition effect — to be confirmed on the full arms).
+- **R4 (geometry at fixed chord):** KE₁/KE₂ vs (R, depth_mean) over the
+  11 grid cells + the incumbent battery + f725 — decomposes the deficit
+  into transit-toll vs mixture-weights and settles the n = 1 birth-depth
+  provenance question (2026-07-29 discussion).
+- **R5 (reachability verdict, the section's deliverable):** linearize
+  the measured slopes about h405 and ask whether **any** in-gate move
+  (n₁ ∈ [0.19, 0.30], n̄ ∈ [3.77, 4.37], midHot ∈ [0.85, 1.15] soft)
+  reaches KE₁ ≥ 0.95 (1.00 − 1σ of the linearization). **If yes** —
+  the identified chord becomes the next MD arm (own registration,
+  before any p_tail talk). **If no** — the in-surface freedom is
+  recorded exhausted on the low-n KE axis, and the p_tail axis is
+  motivated *with this record as its evidence* (the same structure by
+  which the E₀ arm established the W₁ floor).
+
+**Boundaries.** Pure scorer, runs nothing, mutates nothing; nothing
+adopts from this section (successor/retained/ledger stay the open G4
+adjudications); Tier-0 form authority, the committed scorers, checkpoint
+schema, RNG draw order and the constants table untouched. N = 500 KE₁
+carries ≈ 0.02–0.03 eV single-seed scatter — ring/grid rows are read at
+that resolution, never over it.
+
 ### 3.6 Open questions this axis must answer or explicitly defer
 
 - **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but
