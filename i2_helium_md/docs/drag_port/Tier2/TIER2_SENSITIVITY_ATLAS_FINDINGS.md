@@ -1755,3 +1755,100 @@ realistic droplets), the tail deficit is partly **policy, not
 mechanism** — this puts a quantitative stake on the open retained-policy
 adjudication (user), and is the natural first probe of the honest
 residual's decomposition.
+
+## §3.5g — the low-n KE retro-scan (2026-07-29, zero MD, 52 committed rows)
+
+Scorer `tier2atlas_ke_lown_scan.py`, artifact `atlas_ke_lown_scan.csv`.
+Pre-registration committed before the scorer ran (plan §3.5g, incl. the
+**KE₁ anchor amendment to the experimental peak 1.00 eV** — user
+adjudication; the median 1.128 stays reported). All three oracles passed
+before any new number was read: **O1** scorer-drift (standing pooled
+battery), **O2** committed-KE (all five h405 members + pooled reproduce
+the committed `atlas_g4step2_battery.csv` KE columns to 1e-9), **O3**
+incumbent-KE (pooled 1.034 / 0.754 string-exact at 3 decimals).
+
+### R1 (τ) — the first τ read on the KE axis
+
+Along the gated ridge chord h405→h375→h345 (E₀ co-moving to hold the
+gate): **∂KE₁/∂τ = +0.083 eV/ps**, ∂KE₂/∂τ +0.054. In-gate headroom
+Δτ ≈ +1.14 ps (the n₁ floor binds at τ ≈ 5.5) → **ΔKE₁ ≤ +0.094 eV**.
+Real but ≈ 3× too small on its own. Within each fixed-τ arm KE₁ falls
+monotonically with E₀ (τ 4.4: 0.668→0.612 over E₀ 0.395→0.415).
+
+### R2 (v_c) — the strongest in-surface lever, and its price
+
+| v_c | cell | KE₁ | KE₂ | midHot | gate |
+|---|---|---|---|---|---|
+| 5.00 | c50 | 0.956 | 0.881 | **1.923** | 0 |
+| 5.25 | v525 | 0.774 | 0.696 | **1.394** | 1 |
+| 5.50 | h405 | 0.637 | 0.551 | 0.957 | 1 |
+| 6.00 | b031 | 0.523 | 0.364 | 0.520 | 0 |
+| 6.50 | c65 | 0.279 | 0.222 | 0.415 | 0 |
+| 7.25 | f725 | — (n₁ = 0) | — | 1.398 | 0 |
+
+∂KE₁/∂v_c = −0.43 eV per Å/ps (v525↔f3 pair) at **∂midHot/∂v_c =
+−1.48**: lowering the cap buys low-n KE and pays mid-n heat across the
+*whole* measured range — c50 nearly lands both KE₁ and KE₂ (0.956/0.881
+vs 1.00/0.706) at a disqualifying midHot 1.92. The KE₁↔midHot trade is
+structural, not a linearization artifact. In-gate bound **+0.054 eV**
+(midHot ceiling binds at v_c ≈ 5.37). Note v525 *gates* and lands KE₂
+0.696 ≈ ref 0.706.
+
+### R3 (E₀)
+
+Arm-resolved, CRN-paired: ∂KE₁/∂E₀ −2.79/−3.59/−3.86 eV/eV (τ
+4.4/4.8/5.2), ∂KE₂/∂E₀ −2.59…−3.50; gate slopes ∂n₁/∂E₀ +1.4…+2.4,
+∂n̄/∂E₀ −22.5…−31.0. In-gate headroom ΔE₀ ≈ −0.014 (n₁ floor) →
+**ΔKE₁ ≤ +0.038 eV**.
+
+### R4 (geometry at the fixed standing chord) — the n = 1 channel is bifurcated
+
+The 11-cell grid + incumbent battery + f725, all at (7.25, 3.2, 0.27):
+
+- **Every deep-born cell produces zero n = 1 fragments.** Boltzmann and
+  center cells (depth 24.9–49.4 Å): n₁_solv = 0.000, KE₁ undefined, at
+  every R (6/6). f725 (standing chord at the corrected *ensemble*):
+  likewise n₁ = 0, with n̄ 14.3 and trap 0.437 — at deep birth the
+  standing chord **under**-strips and traps; it does not produce slow
+  n = 1, it produces none.
+- **Every standing-chord n = 1 is shallow-born and reference-fast.** The
+  shallow cells (depth 9.0/10.9/14.8/19.5 Å at R 26.6/34.0/49.4/68.3):
+  KE₁ **1.042 / 1.062 / 1.064 / 1.091 eV** (n = 184/127/79/48), KE₂
+  0.782–0.827, with shallow n₁_solv falling with R
+  (0.235/0.184/0.151/0.128). The incumbent pooled (sampled ⟨R⟩ 26.6,
+  depth ≈ 9): KE₁ 1.034 ± 0.010 (members 1.020–1.045), KE₂ 0.754.
+- Reading: the model holds **two disjoint n = 1 channels** — a
+  shallow-birth channel whose KE sits exactly at the experimental peak
+  (≈ 1.0–1.09 eV, mildly rising with R), and the corrected-basin
+  deep-cascade channel at 0.64. The 2026-07-29 discussion's provenance
+  question is settled *measured*: at the standing chord the user's
+  "low shells from further out" is exactly right; at the corrected
+  basin n = 1 is deep-born because the ensemble has no shallow births
+  to offer. The experimental peak coinciding with the shallow channel
+  makes the **birth-law/mixture lever** (shallow-birth or small-droplet
+  weight absent from the pure center-weighted Boltzmann law) a second
+  live candidate beside p_tail — and the only one of the two that also
+  feeds the Block-D n = 1 *weight* deficit (−0.101) and the wide
+  experimental n = 1 upper tail (a fast second channel is literally
+  what the model's shallow branch is).
+
+### R5 — the reachability verdict
+
+From pooled h405 (KE₁ 0.641, required ΔKE₁ ≥ +0.309 eV to reach
+0.95 = 1.00 − 1σ): E₀ ≤ +0.038, τ ≤ +0.094, v_c ≤ +0.054; **additive
+single-knob bound +0.186 eV — the (v_c, τ, E₀) surface CANNOT reach the
+KE₁ anchor. The in-surface freedom is exhausted on the low-n KE axis.**
+The far-field cells confirm the bound is conservative in form but right
+in structure: every distant cell that lifts KE₁ (c50, v525) exits
+through the midHot ceiling first. Per the pre-registration, the p_tail
+axis is now motivated **with this record as its evidence** (the same
+structure by which the E₀ arm established the W₁ floor); the R4
+mixture lever stands beside it as the second candidate, with the two
+being distinguishable by design — p_tail acts on the *deep-born*
+channel's toll (KE-first, weight-second), the birth-law lever *adds*
+the fast shallow channel (weight-first, KE-free).
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; the G4
+adjudications (successor, retained policy, ledger re-issue) remain
+open; the next-axis choice (p_tail study vs birth-law/mixture probe vs
+both) is a user adjudication.

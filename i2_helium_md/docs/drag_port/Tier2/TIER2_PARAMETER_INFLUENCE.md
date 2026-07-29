@@ -1013,6 +1013,42 @@ now **pre-registered as a hard axis** for every future ranking (plan
 §3.5f: KE₁ vs ref median 1.128, KE₂ vs ref mean 0.706,
 |ln ratio|/ln(1.15) score terms). p_tail's "not a second lever" verdict
 was earned on deep-KE and does **not** carry over to this axis.
+*(Anchor amendment 2026-07-29, plan §3.5g: KE₁ is scored against the
+experimental n = 1 **peak 1.00 eV** — the wide upper tail is read as a
+second process; the median anchor stays reported.)*
+
+**The low-n KE in-surface freedom, MEASURED (§3.5g retro-scan,
+2026-07-29, zero MD, 52 committed rows — the per-knob KE₁ influence
+GAP closes):**
+
+- **∂KE₁/∂E₀ = −2.8…−3.9 eV/eV** (arm-resolved, CRN-paired), gate-bounded
+  at **+0.038 eV** (the n₁ floor binds after ΔE₀ ≈ −0.014).
+- **∂KE₁/∂τ = +0.083 eV/ps** along the gated ridge chord (the first τ
+  read on this axis), gate-bounded at **+0.094 eV** (n₁ floor at
+  τ ≈ 5.5).
+- **∂KE₁/∂v_c = −0.43 eV per Å/ps**, paying **∂midHot/∂v_c = −1.48**:
+  c50 (v_c 5.0) reaches KE₁ 0.956 / KE₂ 0.881 at midHot **1.923**, v525
+  KE₁ 0.774 at midHot 1.394 — the KE₁↔midHot trade is measured across
+  the whole v_c range, not a linearization artifact. In-gate bound
+  **+0.054 eV**.
+- **R5 verdict: the additive in-gate bound is +0.19 eV against the
+  required +0.31 eV (target 0.95 = 1.00 − 1σ) — the (v_c, τ, E₀)
+  surface CANNOT reach the KE₁ anchor.** The p_tail axis is motivated
+  with this record as its evidence (the E₀-arm/W₁-floor structure).
+- **The n = 1 channel is bifurcated (the R4 geometry read, standing
+  chord):** the deep-born cells (Boltzmann/center, depth ≥ 25 Å) produce
+  **zero** n = 1 fragments at every R (n₁ = 0.000, 6/6 cells; f725 at
+  the corrected ensemble likewise n₁ = 0, n̄ 14.3, trap 0.437 —
+  under-stripped, not over-stripped); **every** standing-chord n = 1 is
+  shallow-born (depth 9–19.5 Å) with **KE₁ 1.042–1.091 eV** — the
+  reference peak scale — and shallow n₁_solv falling with R
+  (0.235/0.184/0.151/0.128 at R 26.6/34.0/49.4/68.3). The corrected
+  basin instead makes its n = 1 deep-born and slow (0.64). The
+  experimental peak ≈ 1.0 numerically coincides with the model's
+  shallow-birth channel — the mixture/birth-law lever (a shallow-birth
+  or small-droplet weight the pure center-weighted Boltzmann law lacks)
+  is a *second* live candidate beside p_tail, and it is the only one of
+  the two that also feeds the Block-D n = 1 *weight* deficit (−0.101).
 
 ### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13; **ranking authority MEASURED at G4 Block 0, 2026-07-28: W₁ ρ +0.82 and midHot ρ +1.00 LICENSED, deepKE ρ +0.33 NOT — the deep-KE axis is not twin-scannable**)
 

@@ -1308,7 +1308,7 @@ trapped-tail stake), ledger re-issue, and the W₁-floor + low-n-KE
 residual pair (recorded honest; candidate levers noted: retained
 policy, p_tail on the *low-n KE* axis, p occupancy exponent).
 
-### 3.5g The low-n KE retro-scan (DESIGNED 2026-07-29; zero MD — the in-surface freedom must be measured before any new axis)
+### 3.5g The low-n KE retro-scan (DESIGNED 2026-07-29; zero MD — the in-surface freedom must be measured before any new axis; **EXECUTED 2026-07-29** — O1–O3 passed; R5: in-gate bound +0.19 vs required +0.31 eV → **in-surface freedom EXHAUSTED, p_tail motivated**; R4: the n = 1 channel is **bifurcated** — deep-born cells produce zero n = 1, every standing-chord n = 1 is shallow-born at 1.04–1.09 eV = the reference peak scale → the birth-law/mixture lever is the second live candidate; findings "§3.5g")
 
 **Motivation (user direction, 2026-07-29).** Before p_tail (or any new
 knob) is opened on the low-n KE axis, the freedom the *existing*

@@ -11547,3 +11547,65 @@ discussion deferred by the user to after this stage): successor point
 trapped-tail stake), ledger re-issue, and the honest-residual pair
 (W₁ floor + low-n KE) with candidate levers noted (retained policy;
 p_tail on the low-n KE axis; p occupancy exponent).
+
+## §3.5g low-n KE retro-scan PRE-REGISTERED + EXECUTED (zero MD, 52 committed rows) — in-surface freedom EXHAUSTED on the KE₁ axis (additive in-gate bound +0.19 vs required +0.31 eV); the n = 1 channel measured BIFURCATED (deep-born cells produce zero n = 1; every standing-chord n = 1 is shallow-born at 1.04–1.09 eV = the reference peak scale); KE₁ anchor re-adjudicated to 1.00 eV (2026-07-29)
+
+Context: the 2026-07-29 continuation discussion (post-G4-Step-2) turned
+on the low-n KE hard axis (pooled h405 KE₁ 0.641 vs peak ≈ 1.0). The
+user directed a retro-scan of the existing (v_c, τ, E₀) surface **before**
+any new axis (p_tail) — the refine-before-refute rule — and adjudicated
+the **KE₁ anchor to the experimental n = 1 peak 1.00 eV** (the wide
+upper tail is read as a second process and deliberately not chased; the
+§3.5f median anchor 1.128 stays flagged-not-overwritten). KE₂ keeps the
+reference mean 0.706.
+
+Built and executed behind the user's `[PROCEED TO IMPLEMENTATION]`:
+plan §3.5g pre-registration committed first (07255f3 — scope, oracles
+O1–O3, readings R1–R5 incl. the reachability rule), then the scorer
+`scripts/post_processing/tier2atlas_ke_lown_scan.py` (pure scorer;
+KE columns via the committed Block-V `lowke_columns`, observables via
+`observable_columns`, reads via `load_confirmation_run` /
+`pool_confirmation_reads` — rule 1 throughout) + 16 focused tests
+(`tests/test_tier2atlas_ke_lown_scan.py`, synthetic inputs only), then
+the run. Committed artifact: `atlas_ke_lown_scan.csv` (52 rows:
+incumbent battery 5+pooled, geometry grid 11, G3 ring 14, G4 finals +
+arm 15, h405 battery 5+pooled). **All three oracles passed before any
+new number was read** (O2 reproduces the committed battery KE columns
+to 1e-9; O3 the incumbent pooled 1.034/0.754 at 3 decimals).
+
+Findings (full record in `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` §3.5g;
+D0 §14.3 updated FIRST per the standing rule):
+
+1. **R1 (τ, first read on this axis):** ∂KE₁/∂τ +0.083 eV/ps along the
+   gated chord; in-gate ≤ +0.094 eV (n₁ floor at τ ≈ 5.5).
+2. **R2 (v_c):** ∂KE₁/∂v_c −0.43 eV per Å/ps at ∂midHot/∂v_c −1.48;
+   c50 (v_c 5.0) reaches KE₁ 0.956/KE₂ 0.881 at midHot 1.923 — the
+   KE₁↔midHot trade is measured across the whole range; in-gate
+   ≤ +0.054 eV. v525 gates and lands KE₂ 0.696 ≈ ref.
+3. **R3 (E₀):** ∂KE₁/∂E₀ −2.8…−3.9 eV/eV arm-resolved; in-gate
+   ≤ +0.038 eV (n₁ floor).
+4. **R5 VERDICT: additive in-gate bound +0.186 eV vs required
+   +0.309 eV → the (v_c, τ, E₀) surface cannot reach the KE₁ anchor;
+   the in-surface freedom is EXHAUSTED on the low-n KE axis.** The
+   p_tail axis is motivated with this record as its evidence.
+5. **R4 (geometry, the discussion's provenance question settled
+   measured):** at the standing chord every deep-born cell (Boltzmann/
+   center, depth ≥ 25 Å) produces **zero** n = 1 at every R (6/6;
+   f725 at the corrected ensemble likewise n₁ = 0, n̄ 14.3, trap 0.437
+   — under-stripped, not over-stripped), while **every** standing-chord
+   n = 1 is shallow-born (9–19.5 Å) at **KE₁ 1.042–1.091 eV** — the
+   reference peak scale — with shallow n₁_solv falling with R
+   (0.235→0.128). The corrected basin's n = 1 is instead deep-born at
+   0.64. The model therefore holds **two disjoint n = 1 channels**, and
+   the experimental peak coincides numerically with the shallow one:
+   the **birth-law/mixture lever** (shallow-birth or small-droplet
+   weight absent from the pure center-weighted Boltzmann law) is a
+   second live candidate beside p_tail — the only one that also feeds
+   the Block-D n = 1 weight deficit (−0.101) and the experimental
+   upper-tail second process.
+
+**Atlas stance:** nothing adopted, `finc1v725` STANDS; the G4
+adjudications stay open. **Next (user):** the next-axis choice —
+p_tail study (deep-channel toll, KE-first) vs birth-law/mixture probe
+(fast shallow channel, weight-first) vs both, each requiring its own
+pre-registered design.
