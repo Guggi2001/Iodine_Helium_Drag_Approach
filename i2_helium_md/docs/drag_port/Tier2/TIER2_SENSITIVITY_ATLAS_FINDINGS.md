@@ -1852,3 +1852,63 @@ the fast shallow channel (weight-first, KE-free).
 adjudications (successor, retained policy, ledger re-issue) remain
 open; the next-axis choice (p_tail study vs birth-law/mixture probe vs
 both) is a user adjudication.
+
+## §3.5h — the p_tail ring (2026-07-29, 3 × N = 1000, seed 20260729, CRN-paired)
+
+Generator `gen_tier2atlas_ptail_ring.py` (dry-run oracle-verified before
+launch; one exterior kill mid-first-launch, same-seed relaunch —
+deterministic, no physics impact), scorer `tier2atlas_ptail_table.py`,
+artifact `atlas_ptail_ring.csv`. O1 (scorer drift) and O2 (committed
+finals h405 row to 4 decimals) passed before any new number was read.
+
+| cell | p_tail | n̄ | n₁ | supp | trap | W₁ | midHot | deepKE | KE₁ | KE₂ | χ²_med | gate |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| h405 | −1.0 | 3.955 | 0.208 | 0.183 | 0.087 | 0.709 | 0.957 | 0.603 | 0.637 | 0.551 | 350 | 1 |
+| pt15 | −1.5 | 3.080 | 0.259 | 0.261 | 0.011 | 0.862 | 1.917 | 0.881 | 0.917 | 0.849 | 2093 | 0 |
+| pt20 | −2.0 | 2.386 | 0.295 | 0.335 | 0 | 1.331 | 3.021 | 4.317 | 1.151 | 1.122 | 8676 | 0 |
+| pt30 | −3.0 | 1.841 | 0.346 | 0.410 | 0 | 1.769 | 4.414 | 12.47 | 1.428 | 1.447 | 4.6e4 | 0 |
+
+**Verdicts (pre-registered, plan §3.5h):**
+
+- **PT-P1 partially refuted:** KE₁ monotone and the placement bands hold
+  at pt15 (0.917 ∈ [0.79, 0.99]) and pt20 (1.151 ∈ [0.96, 1.16]); pt30
+  1.428 over-band — the anchored 1-D model under-predicts at far
+  softening (the cascade/mass history it freezes changes).
+- **PT-P2 confirmed:** KE₂ rises monotonically — but past the reference
+  (0.849 at pt15 vs ref 0.706): **KE₂ overshoots before KE₁ reaches its
+  target.** The measured n = 1 : n = 2 relief differential of uniform
+  tail softening is ≈ 1.3 : 1; the deficit profile needs ≳ 2.3 : 1.
+- **PT-P3 — THE KILL CRITERION FIRED.** Both cells with KE₁ ≥ 0.95
+  (pt20, pt30) carry midHot 3.0 / 4.4 ≫ 1.15. Per the frozen decision
+  rule: **no further single-knob tail cells**; the axis moves to a
+  joint re-tune or the honest-residual branch (user).
+- **PT-P4 refuted with a sign inversion worth the price of the ring:**
+  n̄ *falls* (3.96 → 1.84), n₁/supp *rise* (0.21 → 0.35 / 0.18 → 0.41),
+  trap → 0. The pre-registered picture (less drag work → less heating →
+  shallower cascades) is wrong at this knob: the dominant channel is
+  residence/relaxation-timing — ions that stay fast through the 5.5–9.5
+  band and into the Landau-gated E2 stage keep stripping instead of
+  thermalizing. The tail does not just set the exit toll; it sets *how
+  long every ion stays in the dissipative regime*.
+- **PT-P5 refuted, maximally:** deep bins are the MOST affected axis
+  (deepKE 0.88 / 4.3 / 12.5 vs the h405 battery's 0.50 ± 0.02) — the
+  exit-speed orthogonality picture is invalid; the §3.5g slope
+  arithmetic cannot be reused under a live p_tail.
+
+**Reading.** The p_tail band as implemented (all v > 5.5) overlaps the
+late-deceleration band of every ion class; softening it converts the
+model into a globally under-damped system long before KE₁ lands. The
+axis is not dead on selectivity grounds *per se* — the measurement
+localizes what a KE₁-selective drag change must look like: relief
+confined to **v ≳ 9.5 Å/ps** (above the n = 2 exit speed 9.1, below the
+n = 1 exit 9.9; the band the n = 1 exiters hover in at late times and
+every other class only crosses once, early and briefly). A band-limited
+tail — a second cap v_c2 ≈ 9.5 with softening only above it, saturated
+(p = −1) between v_c and v_c2 — is the shape this ring points at. That
+is a new form-surface member (new enum value, new physics branch) and
+therefore a fresh design + adjudication, not a parameter cell.
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; the §3.5h
+registered options after the kill — joint (p_tail × v_c/τ/E₀) re-tune,
+honest-residual branch, or the (unregistered) band-limited tail form —
+are the user's call. The G4 adjudications stay open.

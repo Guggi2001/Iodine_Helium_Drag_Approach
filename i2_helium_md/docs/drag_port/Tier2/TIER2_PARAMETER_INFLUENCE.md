@@ -1049,6 +1049,42 @@ GAP closes):**
   or small-droplet weight the pure center-weighted Boltzmann law lacks)
   is a *second* live candidate beside p_tail, and it is the only one of
   the two that also feeds the Block-D n = 1 *weight* deficit (−0.101).
+  *(REJECTED on physics by the user 2026-07-29 — solvated I₂ sits
+  centrally; the R4 bifurcation re-reads as evidence the p_tail = −1
+  tail over-drags real deep-born fragments.)*
+
+**p_tail single-knob, MEASURED AND KILLED (§3.5h ring, 2026-07-29,
+3 × N = 1000 CRN-paired at the h405 pins):**
+
+- **The KE₁ placement works:** pt15 (−1.5) 0.917 ∈ [0.79, 0.99], pt20
+  (−2.0) 1.151 ∈ [0.96, 1.16]; pt30 (−3.0) 1.428 over-band (the 1-D
+  model breaks at far softening). ∂KE₁/∂p_tail ≈ −0.26 eV per unit
+  near −1.5.
+- **But the tail is NOT an exit-toll-only knob — it re-times the whole
+  cascade.** At pt15/pt20/pt30: midHot 1.92 / 3.02 / 4.41, deepKE
+  0.88 / 4.32 / 12.5, n̄_det 3.08 / 2.39 / 1.84, supp 0.26 / 0.34 /
+  0.41, n₁ 0.259 / 0.295 / 0.346, trap 0.011 / 0 / 0, χ²_med up to
+  4.6e4. The 5.5–9.5 Å/ps band is where mid/deep ions do their late
+  deceleration (and where the E2 Landau-gated relaxation thermalizes
+  them): relief there keeps the *entire* ensemble fast and extends
+  stripping. **PT-P4 sign prediction refuted** (n̄ falls, n₁/supp rise
+  — the residence/relaxation channel dominates the heating channel),
+  **PT-P5 orthogonality refuted** (deep bins are the most affected,
+  not the least).
+- **PT-P3 kill criterion FIRED** (every cell with KE₁ ≥ 0.95 has
+  midHot ≫ 1.15) → per the frozen registration, **no further
+  single-knob tail cells**; the axis moves to a joint re-tune or the
+  honest-residual branch (user).
+- **The selectivity numbers any successor shape must beat:** required
+  relief n = 1 +0.36 eV vs n = 2 ≤ +0.16 vs mid ≲ +0.10 — a ≳ 2.3:1
+  differential between exit speeds 9.9 and 9.1 Å/ps. Uniform tail
+  softening measured a ≈ 1.3:1 differential (pt15: KE₁ +0.28, KE₂
+  +0.30 — KE₂ overshoots ref before KE₁ reaches target). A
+  KE₁-selective lever must confine relief to **v ≳ 9.5 Å/ps** (the
+  band only the n = 1 exiters occupy at late times, once-through for
+  everyone else) — a band-limited tail (second cap v_c2 with softening
+  only above it) is the shape this measurement points at; **not
+  registered, user adjudication pending**.
 
 ### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13; **ranking authority MEASURED at G4 Block 0, 2026-07-28: W₁ ρ +0.82 and midHot ρ +1.00 LICENSED, deepKE ρ +0.33 NOT — the deep-KE axis is not twin-scannable**)
 

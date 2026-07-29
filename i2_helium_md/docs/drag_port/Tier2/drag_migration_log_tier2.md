@@ -11653,3 +11653,37 @@ PT-P1..P5 incl. the midHot kill criterion and the conditional
 E₀-recenter cell; Tier-0 legitimacy by construction — the in-band
 branch is byte-identical and no trace reaches the tail). Nothing
 adopts; `finc1v725` stands.
+
+## §3.5h p_tail ring EXECUTED — placement CONFIRMED in-bracket (pt15 0.917, pt20 1.151) but the PT-P3 KILL CRITERION FIRED: uniform tail softening un-damps the whole cascade (midHot 1.9–4.4, deepKE up to 12.5×, n̄ 3.96 → 1.84, supp 0.41); PT-P4 SIGN-INVERTED (residence/relaxation channel dominates heating); single-knob p_tail CLOSED; a band-limited tail (v_c2 ≈ 9.5) is the measured shape suggestion (2026-07-29, 3 × N = 1000)
+
+Executed behind the standing trigger; first launch killed externally
+mid-relaxation (no scorable artifacts), same-seed relaunch completed —
+deterministic, no physics impact. Oracles O1/O2 passed before any new
+number was read. Full record: findings "§3.5h"; D0 §14.3 updated FIRST.
+Artifact `atlas_ptail_ring.csv`; full suite 2806 passed after the guard
+widening.
+
+Key numbers (baseline h405, CRN-paired seed 20260729): KE₁ 0.637 →
+0.917 / 1.151 / 1.428 at p_tail −1.5 / −2 / −3 (placement bands hold at
+pt15/pt20; the 1-D model breaks at −3). Price: midHot 1.92 / 3.02 /
+4.41, deepKE 0.88 / 4.32 / 12.5, n̄ 3.08 / 2.39 / 1.84, supp 0.26 /
+0.34 / 0.41, trap → 0, χ²_med up to 4.6e4, W₁ up to 1.77 — every cell
+off-gate. KE₂ overshoots ref before KE₁ lands (differential ≈ 1.3:1
+measured vs ≳ 2.3:1 required).
+
+Mechanism finding (the ring's real yield): the tail is not an exit-toll
+knob — it sets residence time in the dissipative regime. Softening all
+v > 5.5 keeps every ion class fast through its late-deceleration band
+and into the Landau-gated E2 stage, where stripping continues instead
+of thermalization (hence the PT-P4 sign inversion: n̄ falls, n₁/supp
+rise). A KE₁-selective drag change must confine relief to v ≳ 9.5 Å/ps
+(above the n = 2 exit 9.1, below n = 1's 9.9 — hover band vs
+once-through). That is a band-limited tail: second cap v_c2, saturated
+p = −1 in [v_c, v_c2], softening only above — a NEW form-surface member
+(enum + physics branch) requiring its own design + adjudication.
+
+**Per the frozen PT-P3 rule: no further single-knob tail cells.**
+Options now (all user): (a) the joint (p_tail × v_c/τ/E₀) re-tune
+(registered), (b) the honest-residual branch extended to KE₁
+(registered), (c) the band-limited tail form (unregistered — fresh
+design). Nothing adopted; `finc1v725` stands; G4 adjudications open.
