@@ -145,11 +145,20 @@ into the ring. Findings "G3 Step 3" + D0 §14.5; scorer
 §3.5e; 15 × N = 1000): successor candidate `h405` (v_c 5.5 / τ 4.4 /
 E₀ 0.405), the KE tension broken, and a measured W₁ floor ≈ 0.67 whose
 cause — n₁ and n̄ not simultaneously matchable — localizes the residual
-to the mechanism, not the drag surface. **Next: the G4 adjudications**
-(successor point, retained policy, ledger re-issue, and the W₁-floor
-call — all user decisions; pooled battery at the winner as
-verification). The D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å
-pinned convention (I88) stay open in-tier. Tier-3 noise
+to the mechanism, not the drag surface. **2026-07-29 (low-n KE axis;
+full records in the log + findings):** KE₁ re-anchored to the 1.00 eV
+peak (user); §3.5g retro-scan — in-surface (v_c, τ, E₀) freedom
+EXHAUSTED on KE₁, shallow-birth/mixture lever REJECTED unphysical
+(user); §3.5h p_tail ring — placement confirmed but the kill fired
+(velocity-only tail softening un-damps the cascade; single-knob p_tail
+CLOSED; capped_cubic p_tail guard now [−4, 0]); band-limited tail
+rejected as overfitting (user). **Current goal: the drag state
+coupling s(n)** — design ADJUDICATED (all OQ-A..I closed) + 3-cell
+probe REGISTERED in `docs/drag_port/Tier2/TIER2_DRAG_STATE_COUPLING_DESIGN.md`;
+next session builds S1–S4 and runs the probe behind the trigger. The
+G4 adjudications (successor point, retained policy, ledger re-issue)
+stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
+convention (I88) stay open in-tier. Tier-3 noise
 stays next (second-moment under-dispersion; stubbed behind its enum,
 NOT retired). New drag-program code stays behind the
 `[PROCEED TO IMPLEMENTATION]` trigger.

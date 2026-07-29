@@ -1,9 +1,9 @@
 # Tier-2 Drag State Coupling — Design Draft (s(n): the drag learns the ion has stripped)
 
-**Status: DRAFT FOR DISCUSSION (2026-07-29). Physics definition only — no
-code exists, none is written until the open questions below are adjudicated
-and the user gives `[PROCEED TO IMPLEMENTATION]`. Nothing here moves
-`finc1v725` or any G4 adjudication.**
+**Status: DESIGN ADJUDICATED (user, 2026-07-29) — all nine open questions
+closed (§9, decisions inline) and the probe REGISTERED (§8). No code
+exists yet; the build waits for `[PROCEED TO IMPLEMENTATION]` in a fresh
+session. Nothing here moves `finc1v725` or any G4 adjudication.**
 
 ---
 
@@ -171,42 +171,95 @@ full-path-bare idealization; progressive stripping needs somewhat less).
   PT-P4 inversion, these are declared **exploratory reads**, not
   predictions.
 
-## 8. Probe sketch (registered in detail only after the OQs are adjudicated)
+## 8. THE PROBE — REGISTERED (2026-07-29; superseding the earlier sketch)
 
-2–3 cells × N = 1000 at the h405 pins, seed 20260729 (CRN-paired):
-`shell_area` at the geometric priors; one weaker-coupling arm (e.g.
-ρ_shell at the bulk bound, or the q = 1 radius-scaling diagnostic); the
-committed h405 row as the s = 1 baseline. Oracles: cfg-diff vs committed
-h405 in exactly the new enum + coefficients; scorer O1/O2 as in §3.5h.
-MD-first (KE axes are not twin-scannable; Block 0). Kill criterion:
-midHot, PT-P3 form.
+**Cells: 3 × N = 1000 at the h405 pins, seed 20260729 (CRN-paired to
+the committed h405 finals row, the s ≡ 1 baseline).** All three run
+`drag_state_coupling = shell_area` at R_core = 3.2 Å; the swept knob is
+ρ_shell across its **Bounded physical range** — the probe scans the
+parameter's uncertainty interval, not a fit axis:
 
-## 9. Open questions for adjudication (blocking; discuss before any code)
+| cell | ρ_shell [Å⁻³] | reading | s(19) ref R_eff [Å] | s(1) | s(0) |
+|---|---|---|---|---|---|
+| sa22 | 0.0218 (bulk) | strong-coupling end | 6.22 | 0.320 | 0.266 |
+| sa30 | 0.030 (prior) | the geometric prior | 5.68 | 0.367 | 0.317 |
+| sa44 | 0.0436 (2× bulk) | weak-coupling end | 5.16 | 0.427 | 0.385 |
 
-- **OQ-A — E2 stage:** does s apply inside the relaxation stage's
-  `landau_gated_drag` too? *Recommendation: yes — one force law
-  everywhere; a stage-split coupling would be a new convention to defend.*
-- **OQ-B — form behind the enum:** geometric two-parameter R(n) closure
-  (recommended: physical priors, exponent fixed) vs a one-parameter
-  power law s = (n_eff/n_ref)^q (fewer symbols, but q is a free fit
-  knob — the overfitting shape again).
-- **OQ-C — normalization:** n_ref = 19 from the bundle's extraction-mass
-  stamp (recommended: s is then a correction *relative to the calibrated
-  state*) vs n₀ = 21 (the initial dressing).
-- **OQ-D — pickup:** leave λ_attach's cross-section untied (recommended)
-  — accept the documented asymmetry?
-- **OQ-E — noise:** confirm s enters the FDT amplitude via γ (automatic;
-  Tier-3 consequence only).
-- **OQ-F — cooling contact:** keep τ un-scaled in v1 (recommended), with
-  the physical caveat on record?
-- **OQ-G — the design un-freeze:** the drag surface gains a per-ion
-  state input (the v-only freeze dates from Tier-0 fixed-mass). Formal
-  user adjudication required to un-freeze.
-- **OQ-H — §6.5 guard:** the mass↔coefficient pairing guard reads the
-  bundle's extraction stamps; s is a separate surface and should not
-  touch it — confirm no new guard coupling is wanted beyond the
-  n_ref-consistency check.
-- **OQ-I — basin re-finding:** if the probe lands KE₁ but shifts the
-  gate observables, is the follow-up a local (v_c, τ, E₀) re-tune around
-  h405 (the §3.5g slopes are pre-s and must be re-measured), or a fresh
-  G3-style twin+MD pass? (Cost question; can wait for the probe.)
+(Note the direction: *lower* shell density → fluffier dressed object →
+larger dressed/bare contrast → stronger coupling.)
+
+**Oracles (§1.4, before any MD and by --dry-run):** each cell's cfg
+diffs against the committed `g4fh405` cfg.json in exactly the new
+coupling fields (enum + R_core + ρ_shell; the post-reference-field
+handling follows the finals-generator precedent); a **unit oracle**
+asserts s(n_ref) = 1 exactly and reproduces the s-table above to 3
+decimals; scorer O1 (drift) / O2 (committed h405 row to 4 decimals) as
+in §3.5h.
+
+**Pre-registered predictions (magnitudes; PT-P4 lesson — signs we
+cannot defend are exploratory, not predicted):**
+
+- **SC-P1 (target + ordering):** KE₁ strictly ordered
+  sa44 < sa30 < sa22, every cell above the baseline 0.637 by ≥ 3× the
+  seed scatter; the prior cell sa30 lands KE₁ ∈ **[0.80, 1.10]**
+  (path-averaged relief s_eff ≈ 0.55–0.70 of the 0.71 eV toll, plus the
+  fast-wing widening; deliberately wide — this is a state-coupled
+  transit, not the anchored 1-D tail integral).
+- **SC-P2 (the signature — the needle breaks):** per-bin n = 1 KE SD
+  ≥ **0.08 eV** at every coupling cell (baseline needle 0.033). This is
+  the prediction no γ(v) form can imitate; failure kills the design's
+  central claim regardless of the means.
+- **SC-P3 (grading):** ΔKE₁ > ΔKE₂ > ΔKE₃ (each vs the CRN baseline);
+  deepKE within **±0.10** of the baseline 0.603 (deep enders hold
+  s ≳ 0.7 throughout).
+- **SC-P4 (kill criterion, PT-P3 form):** if every cell with
+  KE₁ ≥ 0.95 shows midHot > 1.15, the state coupling fails the same
+  trade as the tail; the axis stops (no parameter chase) and the
+  options revert to the honest-residual branch or the OQ-F
+  cooling-contact discussion — user adjudication either way.
+- **SC-P5 (exploratory reads, no registered signs):** n̄, n₁, supp,
+  trap, W₁ and χ²_med are recorded and read; the residence/pickup/
+  heating channels couple with opposite signs (the PT-P4 inversion
+  precedent) and are measured, not predicted.
+- **Success shape:** a cell with KE₁ ∈ [0.90, 1.15], midHot ≤ 1.15 and
+  the n₁/n̄ gate intact (or recenter-able) becomes the candidate for a
+  pooled 5-seed battery (GV precedent) — nothing adopts at probe level.
+
+**Build slices (next session, behind `[PROCEED TO IMPLEMENTATION]`):**
+S1 config surface (`drag_state_coupling` enum, coefficients, guards
+incl. the n_ref-vs-stamp check; rule-2 carries logged), S2 the driver
+seam (per-ion s(n(t)) multiplying the `gamma_fn` closure in
+`simulation/ion.py` + the E2 stage per OQ-A), S3 generator + scorer on
+the §3.5h pattern, S4 tests (s-table units; `off` ⇒ bit-identical
+regression vs a committed row; one-step deterministic with s live;
+guard rejections). MD spend: 3 × N = 1000 (~1 h at concurrency 3),
+disk ≈ 2.5 GB.
+
+## 9. Open questions — ALL ADJUDICATED (user, 2026-07-29)
+
+- **OQ-A — E2 stage: YES.** s applies inside the relaxation stage's
+  `landau_gated_drag` — one force law everywhere.
+- **OQ-B — form: the geometric two-parameter R(n) closure.** No free
+  exponent; the physical priors carry the scale.
+- **OQ-C — normalization: n_ref = 19**, derived from the bundle's
+  extraction-mass stamp (202.953908 → exactly I + 19 He). Rationale
+  recorded in-discussion: n_ref is *where the measurement lives*, not
+  where the ion starts — any other choice is a stealth rescale of the
+  calibrated b (a 21-normalization would run the mid-window drag ~6 %
+  below the TDDFT-measured value), and 19 is guard-checkable against
+  the stamp while n₀ is not even ensemble-constant under
+  `density_tied` dressing.
+- **OQ-D — pickup: untied.** λ_attach keeps its own capture physics;
+  asymmetry documented (§6.2).
+- **OQ-E — noise: confirmed.** s enters the FDT amplitude via γ
+  automatically (Tier-3 consequence only).
+- **OQ-F — cooling contact: un-scaled in v1**, physical caveat on
+  record (§6.3); revisit if the probe under-delivers or over-strips.
+- **OQ-G — un-freeze GRANTED.** The drag surface formally gains a
+  per-ion state input; the v-only freeze (a Tier-0 fixed-mass
+  convention) is lifted for this surface only. The module itself stays
+  mass-agnostic and state-blind (§5).
+- **OQ-H — §6.5 guard: no new coupling.** Only the n_ref-vs-stamp
+  consistency check.
+- **OQ-I — basin re-finding: deferred to the probe's outcome.** The
+  §3.5g slopes are pre-s and are NOT reusable once s is live.

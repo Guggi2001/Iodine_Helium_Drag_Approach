@@ -11725,3 +11725,30 @@ form, normalization, pickup asymmetry, noise, cooling contact, the
 formal v-only un-freeze, §6.5 guard scope, basin re-finding) — all
 blocking; no code until adjudicated + `[PROCEED TO IMPLEMENTATION]`.
 Nothing adopted; `finc1v725` stands; G4 adjudications open.
+
+## s(n) design ADJUDICATED (all OQ-A..I closed, user) + probe REGISTERED as design §8; plan §3.5i stub added; CLAUDE.md compact state bridged for the fresh session (2026-07-29)
+
+User adjudications (blanket agreement + the OQ-C discussion): OQ-A yes
+(s in E2), OQ-B geometric closure, **OQ-C n_ref = 19** (the
+extraction-stamp state — any other normalization is a stealth rescale
+of the calibrated b; ~6 % mid-window under-drag at a 21-normalization;
+19 is guard-checkable against the stamp while n₀ is not
+ensemble-constant under density_tied), OQ-D pickup untied, OQ-E noise
+via FDT, OQ-F cooling un-scaled in v1 (caveat on record), **OQ-G
+un-freeze GRANTED** (the drag surface gains a per-ion state input;
+module stays state-blind), OQ-H no new §6.5 coupling, OQ-I basin
+re-finding deferred (§3.5g slopes are pre-s, not reusable).
+
+Probe registered (design §8): sa22/sa30/sa44 = ρ_shell at
+bulk/prior/2×bulk (the Bounded range — scanning the parameter's
+physical uncertainty, not a fit axis) × N = 1000 at the h405 pins,
+seed 20260729 CRN-paired; unit oracle s(19) = 1 + s-table; cfg-diff
+oracle exactly the new coupling fields; SC-P1 ordering + sa30 KE₁ ∈
+[0.80, 1.10]; **SC-P2 the needle-break signature (n = 1 KE SD ≥ 0.08
+vs baseline 0.033) — the prediction no γ(v) can imitate**; SC-P3
+grading + deepKE ±0.10; SC-P4 midHot kill (PT-P3 form); SC-P5
+exploratory (no registered signs — the PT-P4 lesson). Build slices
+S1–S4 named; **next session: `[PROCEED TO IMPLEMENTATION]` → build →
+dry-run oracles → 3 × N = 1000 (~1 h) → score → D0-first records.**
+
+Nothing adopted; `finc1v725` stands; G4 adjudications open.

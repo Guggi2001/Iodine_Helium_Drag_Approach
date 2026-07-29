@@ -1511,6 +1511,20 @@ before any successor talk. **Nothing adopts from this section;
 **MD spend:** 3 × N = 1000 (~45–60 min at concurrency 3) + at most one
 conditional cell. Disk checked: ≈ 0.8 GB/cell against 17 GB free.
 
+### 3.5i The drag state coupling s(n) — design ADJUDICATED + probe REGISTERED (2026-07-29; own document)
+
+The low-n KE axis continues off the γ(v) surface: after the §3.5h kill
+(velocity-only softening un-damps the cascade) and the user's rejection
+of the band-limited tail as overfitting, the adjudicated route is the
+**drag–shell state coupling** `γ(v,d,n) = g(d)·s(n)·γ_form(v)` — the
+drag learns the ion has stripped. Full design, dimensional analysis,
+nine closed adjudications (OQ-A..I) and the registered 3-cell probe
+(sa22/sa30/sa44: ρ_shell across its Bounded range at the h405 pins,
+seed 20260729; needle-break signature SC-P2; midHot kill SC-P4) live in
+**`TIER2_DRAG_STATE_COUPLING_DESIGN.md`** — the axis's own document.
+Build slices S1–S4 wait for `[PROCEED TO IMPLEMENTATION]` (fresh
+session). Nothing adopts; `finc1v725` stands; G4 adjudications open.
+
 ### 3.6 Open questions this axis must answer or explicitly defer
 
 - **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but
