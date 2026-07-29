@@ -11687,3 +11687,41 @@ Options now (all user): (a) the joint (p_tail × v_c/τ/E₀) re-tune
 (registered), (b) the honest-residual branch extended to KE₁
 (registered), (c) the band-limited tail form (unregistered — fresh
 design). Nothing adopted; `finc1v725` stands; G4 adjudications open.
+
+## Drag state coupling s(n) DESIGN DRAFTED (physics definition only, zero code) — the v_c2 band-limited tail REJECTED as overfitting (user); the needle-degeneracy argument recorded; open questions OQ-A..OQ-I posted for adjudication (2026-07-29)
+
+Post-§3.5h discussion. **User adjudications:** (1) the band-limited tail
+(v_c2 ≈ 9.5) is **rejected as overfitting** — no physical velocity
+scale supports the break, and the ring's verdict extends to the whole
+uniform-γ(v)-softening class; (2) the data-trust axiom is affirmed
+(the experimental n = 1 peak ≈ 1.0 eV is a modeling target; the
+"smaller bubbles" precedent is dissected in the draft — the incumbent's
+landing used shallow births, not small droplets); (3) the **drag–shell
+state coupling s(n) design is commissioned** ("draft the doc and
+discuss open questions").
+
+Delivered: `TIER2_DRAG_STATE_COUPLING_DESIGN.md` — γ(v,d,n) =
+g(d)·s(n)·γ_form(v) with the geometric closure s(n) =
+(R_eff(n)/R_eff(19))², R_eff(n) = (R_core³ + 3n/(4πρ_shell))^(1/3);
+strict dimensional analysis; parameter classes (R_core/ρ_shell Bounded,
+n_ref Derived from the bundle's extraction stamp, exponent
+geometry-fixed); prior s(bare) ≈ 0.32–0.37 vs the required toll ratio
+≈ 0.45 — the magnitude is the size of the discrepancy without fitting.
+Tier-0 byte-identity by construction (fixed-mass runs carry s ≡ 1);
+in-window Tier-2 modulation ±15 % flagged (basin may shift; probe at
+the h405 pins measures). Architecture: driver-side multiplicative
+state factor beside the spatial gate (module stays mass-agnostic and
+state-blind); enum `drag_state_coupling {off, shell_area}`, off =
+bit-identical. Key evidence argument recorded: the **needle degeneracy**
+— under any γ(v)-only law terminal n and final KE are one path
+integral (measured needle 0.64 ± 0.03 across R 30–70 Å); the
+experiment's fast+wide n = 1 requires a second per-ion state variable
+in the force law. Signature falsifiable prediction: the needle breaks
+(per-bin SD 0.03 → ≳ 0.1). PT-P4 lesson applied: n̄/n₁/supp signs
+declared exploratory, not predicted; midHot kill criterion carried.
+
+**Open questions OQ-A..OQ-I posted** (E2-stage application, closure
+form, normalization, pickup asymmetry, noise, cooling contact, the
+formal v-only un-freeze, §6.5 guard scope, basin re-finding) — all
+blocking; no code until adjudicated + `[PROCEED TO IMPLEMENTATION]`.
+Nothing adopted; `finc1v725` stands; G4 adjudications open.
