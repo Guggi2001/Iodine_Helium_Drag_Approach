@@ -11752,3 +11752,438 @@ S1–S4 named; **next session: `[PROCEED TO IMPLEMENTATION]` → build →
 dry-run oracles → 3 × N = 1000 (~1 h) → score → D0-first records.**
 
 Nothing adopted; `finc1v725` stands; G4 adjudications open.
+
+## s(n) build conventions BC-1..BC-4 fixed (design doc §10 amendment; pre-trigger, zero code) (2026-07-29)
+
+Pre-build clarification round. Design doc gains §10 with four build
+conventions, none moving any §9 adjudication: **BC-1** step-timing —
+s(n) reads the same start-of-step shell state the step's m(t) uses (SQ2
+post-jump m⁺ convention; a shed at step k acts from step k+1's O-step);
+**BC-2** seam — per-ion multiplier refreshed each step by the driver
+from n_shell at the integrator's gamma evaluation, `physics/drag.py`
+untouched, `off` ⇒ multiplier exactly 1.0 (bit-identity structural,
+defended by S4); **BC-3** E2 — the same s threaded through
+`landau_gated_drag` with the live n under BC-1 timing; **BC-4** (user
+clarification) — swappability is **pure config**: flipping
+`drag_state_coupling` off/shell_area in the cfg is the entire switch,
+every existing cfg defaults to `off` and reproduces bit-identically.
+Nothing adopted; `finc1v725` stands; build still waits for
+`[PROCEED TO IMPLEMENTATION]`.
+
+## s(n) drag state coupling BUILT (S1-S4 delivered behind [PROCEED TO IMPLEMENTATION]) + dry-run oracles PASS + probe MD launched (2026-07-29)
+
+Trigger given; design §8/§10 executed. **S1** `physics/state_coupling.py`
+(geometric closure s(n) = (R_eff(n)/R_eff(n_ref))^2, R_eff = (R_core^3 +
+3n/(4*pi*rho))^(1/3); `derive_n_ref_amu` single-sources the stamp
+derivation for guard AND seam -- 202.953908 amu -> 19.0011 -> 19 under the
+constants.py m(n) convention, tol 0.01; `apply_state_factor` the BC-2
+wrapper) + config surface (`drag_state_coupling {off, shell_area}` default
+off, `state_coupling_R_core_angstrom` 3.2, `state_coupling_rho_shell_per_A3`
+0.030, `check_drag_state_coupling_config`: typo guard, biphasic-only
+pairing, bundle requirement, n_ref-vs-stamp, 0 < s(0) < 1). NO rule-2
+carry: S2 landed same-session, every field is physics-live. **S2** ion
+driver: per-step wrapper on post-event n_shell at the closure rebuild
+(jump-then-O -- BC-1 realized as m/s synchronization at the rebuild, the
+SQ2 m+ convention); E2: same wrapper on the landau_gated_drag arm (OQ-A,
+BC-3), zero_gamma arm exempt (s*0=0; preserves its verbatim-closure
+convention); `physics/drag.py` untouched (BC-2); under off the base
+closure passes verbatim (structural bit-identity). **S3** generator
+`gen_tier2atlas_sn_probe.py` (sa22/sa30/sa44, cfg-diff oracle = exactly
+the 3 coupling fields via the finals pinned-copy post-reference precedent,
+unit oracle s(19)=1 exact + registered table 3dp, corrected-geometry
+stamps re-checked) + scorer `tier2atlas_sn_table.py` (O1/O2 then
+SC-P1..P5; local per-bin KE1 SD + KE3 columns on the lowke convention;
+SC-P1 scatter floor = 3x the CRN baseline per-bin SEM). **S4** 42 new
+tests (s-table, n_ref derivation + tolerance bounds, wrapper elementwise,
+guard rejections incl. bad-stamp-at-load, one-step deterministic with s
+live vs analytic O-step decay exp(-s*gamma*dt/m) at rtol 1e-12
+(half-drift depth correction), off-never-wraps spy, ion + E2
+shell_area-changes-dynamics with the n=5 s<1 faster-exit sign check).
+**Design-doc erratum (pre-build):** §3/§8 s-tables carried last-digit
+rounding slips; corrected to exact closure arithmetic BEFORE the oracle
+was coded (sa30 s(1) 0.367->0.366 etc.; rho/R_core/prediction bands
+untouched). **Verification:** full suite 2848 passed 0 failed (off-path
+regression across the entire battery); dry-run oracles all pass. **MD
+launched:** 3 x N = 1000 at the h405 pins, seed 20260729 CRN-paired,
+concurrency 3. Nothing adopted; `finc1v725` stands; G4 adjudications open.
+
+## s(n) probe EXECUTED — ALL SC PREDICTIONS REFUTED; the coupling is GATE-CLIPPED (measured); axis STOPPED per SC-P2; options revert to honest-residual / OQ-F (user adjudication pending) (2026-07-29)
+
+Probe run per registration (3 x N = 1000, h405 pins, seed 20260729
+CRN-paired; first launch externally killed mid-E2 -- NOT the user; E2 +
+detection resumed from the completed ion.npz per cell, bit-equivalent by
+the stage-stream RNG design, stored-cfg equality asserted -- the G1
+recovery precedent). All oracles pass (O1, O2 to 4 decimals, cfg-diff,
+unit oracle).
+
+Verdicts (full table + diagnostics in findings "§3.5i", compact record
+D0 §18): **SC-P1 REFUTED** (KE1 0.637 -> 0.596/0.599/0.601 -- sign- AND
+ordering-inverted, predicted +0.2..+0.5); **SC-P2 REFUTED -- the
+signature: needle SD 0.038 in every cell vs the 0.08 floor, the n-KE
+lock survives**; SC-P3 REFUTED; SC-P4 not evaluable (no cell reaches
+0.95); SC-P5: n-bar +0.3, W1 +0.05..+0.06 -- every cell strictly worse
+on the landing surface. Success-shape cells: NONE.
+
+Mechanism finding (zero-MD read on sa30's ion checkpoint): the coupling
+is **gate-clipped** -- no ion reaches n <= 8 while inside the droplet
+(0.0000; n <= 14 inside 7.4 %), mean shell at first surface crossing
+19.0 He (median 20), 93 % exited by sim-end. Stripping is slow relative
+to transit; low n and in-gate are mutually exclusive states, so the
+design's large-|effect| regime (s 0.32-0.43 at n <= 2) is structurally
+unreachable and in-window s stays [0.85, 1.06] ~ rho-independent (hence
+the near-identical cells across the factor-2 Bounded range). The -0.04
+KE1 is the s(21) = 1.06 early-transit over-drag + the residence
+back-reaction. **No state-factor x gated-gamma coupling of this family
+can move KE1: the exit toll is paid dressed.** A successor lever must
+act outside the gate or move the strip timing (OQ-F / upstream E_int).
+
+Disposition per the registration: the axis STOPS on SC-P2 (no parameter
+chase). Options on the table (both registered, user adjudication):
+(a) the honest-residual branch extended to KE1, (b) the OQ-F
+cooling-contact discussion. Code stays delivered behind `off`
+(bit-identical default, full suite 2848 passed). Nothing adopted;
+`finc1v725` stands; h405 candidacy + G4 adjudications untouched.
+
+## Post-probe kinematic decomposition RECORDED + next-axis discussion agenda POSTED (findings §3.5i.2, plan §3.5j); OQ-F cooling route REJECTED (user); CLAUDE.md compact state bridged (2026-07-29)
+
+User adjudication: cooling contact (OQ-F) will not solve KE1 -- "find
+another explanation how n = 1 becomes 1 eV". Zero-MD reads on the
+committed h405 checkpoints delivered the decomposition (full record
+findings §3.5i.2): (1) the deficit is dominantly kinematic -- n = 1
+enders exit at 1.086 eV dressed (v 10.16), detection reads 0.637 via the
+co_moving mass ratio + 5 % post-exit slowdown; in-bin 1.0 eV needs
+v = 12.14 (+25 %), beyond every in-gate lever; (2) the v_exit ->
+terminal-n map is non-monotone (3.60 / 1.85 / 9.16 / 21.00 across
+8-9/9-10/10-11/11-13 A/ps) -- the FASTEST ions freeze fully dressed
+(E0 0.405 below the full-shell gate; terminal n is pickup-driven) and
+**17.6 % of detected fragments spike at n = 20-21**, absent from the
+experimental abundance shape; their as-if-n = 1 KE is 0.69-1.15 eV =
+the experimental band. Candidates posted for the next session
+(discussion first, no design/code): (A) exit stripping at the surface
+crossing (front-runner; fixes KE1 AND the spike), (B) source-KER
+spread via the existing E0 = f_int x budget wiring (transfer slope ~ 1
+in the constant-force tail), (C) combination; discriminator = budget
+dependence of KE1. Pre-design verification reads named (abundance
+n >= 15 weight, vmi_iplus_gas channels, 2.70 eV provenance). Dead ends
+closed by measurement listed (gamma/s surface, cooling, shed
+convention, recoil). Nothing adopted; `finc1v725` stands; h405
+candidacy + G4 adjudications open.
+
+## §3.5i.2 verification reads EXECUTED (all three, zero MD, read-only) — spike falsification CONFIRMED (ref n = 19–20 = 0.59 % vs model 17.6 %, ~30×); gas KER measured MULTI-CHANNEL (main 0.70 eV, CE 2.26 / 4.11 eV; model 2.70 sits in the inter-channel valley); 2.70 eV = point-Coulomb at R₀ 2.666 Å (geometric idealization, MATLAB D_e 2.7 a coincidence); cold-shed reintroduction DECLINED (2026-07-29)
+
+Pre-discussion round. **Cold shed declined** (user question, assistant
+recommendation accepted-by-continuation): isotropic-evaporation
+argument (collimated retro-exhaust unphysical), fixed (m_exit/m_frag)²
+overshoot (KE₁ → ≈ 1.53, KE₂ → ≈ 1.25 eV, untunable), and the spike
+population never sheds — §3.5i.2 dead-end list unchanged.
+
+The three registered reads executed read-only (full record findings
+**§3.5i.3**): **(i)** abundance n ≥ 15 = 3.21 % of detected (not
+~zero), but n = 19–20 = **0.59 %** vs the model's 17.6 % at n = 20–21 —
+the dressed-freeze spike is independently falsified (~30×, no upturn,
+table ends n = 20); **(ii)** `vmi_iplus_gas.csv` resolves ≥ 5 KER
+channels (0.21/0.27/0.49/**0.70 main**/2.26/4.11 eV per fragment; main
+FWHM 0.31–1.10 eV); model 2.70 sits between the fast channels, ~20 %
+above the measured CE channel; the **droplet** main peak = 12.30 Å/ps
+= 0.996 eV at bare-I mass ⇒ the KE₁ anchor is this peak (within 1.3 %
+of the required in-bin v 12.14); (B) caveat: only the fast channels can
+feed KE₁ through any positive toll; **(iii)** 2.70 eV = 14.4/2.666 =
+5.401 eV pair, symmetric split, realized dynamically via birth at
+R0_GS 2.666 (`presets.py`); `coulomb_available_eV` is a provenance
+stamp; the legacy `D_e = 2.7` (I₂⁺ X state, 10.1063/1.475194) is a
+numerical coincidence. Scratchpad script only; no package/test/data
+changes. Next: the §3.5j (A)/(B) physics-definition discussion.
+Nothing adopted; `finc1v725` stands; h405 candidacy + G4
+adjudications open.
+
+## §3.5j discussion round HELD — CE-instantaneous-stripping variant DECLINED (bulk-refill argument); OQ-J..N adjudicated (user follows recommendations); the two zero-MD placement reads EXECUTED: n = 1 KED holds 48.7 % above the (A)-cap 1.15 eV, and the h405 counterfactual measures the (A) bracket ceiling KE₁ ≈ 0.708 → **(A) necessary-not-sufficient, (C) required**; the n = 20–21 spike IDENTIFIED as the `suppressed` fate class (2026-07-29)
+
+User raised the CE-instantaneous variant of (A) ("stripping at the
+Coulomb explosion, not the crossing") — the committed record's (A) is
+the surface-crossing version; the CE variant analyzed and **declined on
+the bulk-refill argument** (net stripping exists only where the bath
+cannot refill = the outbound crossing; at t = 0 the ion is at maximum
+bath depth; a bare transiter detects at n = 0; born-bare is a global
+m(t) rewiring). The statement also unifies dressed-in-bulk, the TDDFT
+dressed calibration, the §3.5i gate-clipping and exit stripping.
+Recorded in findings §3.5i.3 per user request; the T5/T6 birth-dressing
+question stays a separate ledger item.
+
+Adjudications (user: "I follow your recommendations"): **OQ-J**
+stochastic per-He knockout closure; **OQ-K** strip cost = re-labeled
+crossing drag work (explicit term, no new source); **OQ-L** n = 0
+outcomes allowed (no n = 1 floor; feeds RQ3); **OQ-M** zero-MD reads
+first, budget probe stays the registered discriminator; **OQ-N** "(B)
+parked" — superseded same-session by the reads.
+
+Reads executed (zero MD; scratchpad instruments; full record findings
+§3.5j): **(1)** `IHe_KED_curves_n1.csv` 3-D P(E): **48.7 % of the
+experimental n = 1 KED lies above 1.15 eV** (mean 1.302 / mode 0.891 /
+σ 0.697) — half the distribution is above the (A) cap. **(2)** the
+exit-stripping counterfactual on the committed `g4fh405` checkpoints
+(CF-1..3 assumptions; **convention gate reproduced the committed row
+exactly** — n̄ 3.955 / supp 0.183 / n₁ 0.208 / KE₁ 0.637 / W₁ 0.709 —
+before any counterfactual number): sharp knockout sends every fast
+exiter (and the current n = 1 enders) to bare (KE₁ 0.484); Poisson-
+limited stripping (~14 collisions vs 21 He) parks the spike mid-tail
+(W₁ 1.5–1.6) → the closure requires a **depth-graded survival
+element** (OQ-J amendment); the maximal-conversion **bracket
+(supp → n = 1 at existing KE): KE₁ 0.708 ± 0.087, n₁ 0.353, supp → 0,
+needle SD 0.038 → 0.087** — the (A) ceiling is ~0.3 eV below the peak
+anchor. Structural finding en route: the §3.5i.2 spike **is** the
+`suppressed` fate class (all 334 at mechanical n = 21, v_cross
+10.66–11.69 Å/ps, scored as bare-equivalents: supp 334/1826 = 0.183,
+n̄ = Σn/1826 = 3.955) — (A) would retire scoring scaffolding (D0 §17
+class) with physics.
+
+**Verdict: (A) necessary-not-sufficient; (B) required for the KE₁
+position and upper half; the (C) combination is the design target** —
+(B) supplies the source spread (fast CE channels), (A) converts
+fast + dressed to small-at-existing-KE at the boundary; the n = 1 KED
+becomes the drag-tolled image of the fast KER channels. **Next (user):
+the (C) physics-definition design doc + registration of the 2–3-cell
+budget-slope MD probe** (existing `coulomb_available_eV`/R₀ knob).
+Nothing adopted; `finc1v725` stands; h405 candidacy + G4 adjudications
+open.
+
+## §3.5k budget-slope probe REGISTERED (user "option 2": one cheap measurement before honest-residual vs (C) design; kill consequence pre-registered) + instruments BUILT + dry-run oracles PASS + MD LAUNCHED (2026-07-29)
+
+Post-§3.5j meta-discussion (user: "is this circular — we distributed
+E₀ early and called it implausible?"): the staircase record (I26/I28)
+confirms an E_int(0) spread was listed as injectable heterogeneity and
+set aside as a *free, unsourced* width — the droplet-radius route was
+taken because ITS spread was measured. The distinction now: the KER
+spread is measured (gas VMI channels) and 2.70 eV is a documented
+point-Coulomb idealization — the geometry-correction precedent
+(truth-in-inputs above landing), not a fit. The honest-residual
+endpoint was presented as fully legitimate; **user adjudicated option
+2**: measure the in-model KER → KE₁ transfer slope on an existing knob
+before choosing; the honest-residual branch is the **pre-registered
+consequence of the kill** (S_k < 0.2).
+
+Registration frozen as plan **§3.5k** before launch. Knob:
+`E_coulomb_scale` (multiplies the pair Coulomb; budget moves at fixed
+birth geometry R₀ 2.666) + the `coulomb_available_eV` stamp; provenance
+find en route: the legacy droplet preset ships `E_coulomb_scale = 0.8`
+→ 2.16 eV/frag ≈ the measured 2.26 CE channel (`presets.py`) — legacy
+had already down-scaled toward the measurement. Cells (N = 1000 each,
+seed 20260729 CRN-paired at the g4fh405 pins): **bud226k** (2.26,
+E₀ pinned 0.405 via f_int 0.17920), **bud411k** (4.11, E₀ pinned via
+f_int 0.09854), **bud411** (4.11, f_int 0.15 kept → E₀ 0.6165, the (B)
+wiring contrast). Predictions BP-P1 (placement slope 0.587 eV/eV;
+bands bud226k [0.29, 0.48] / bud411k [1.13, 1.70]), BP-P2 (fitted
+kinematic slope S_k ∈ [0.35, 0.75]), BP-P3 (supp(bud411) <
+supp(bud411k), direction only), BP-P4 (needle persists at k-cells,
+SD < 0.08 — width requires the mixture), **BP-KILL: S_k < 0.2 ⇒
+honest-residual branch TAKEN**; midHot/deepKE at uniform budget
+recorded exploratory only (channel-weighted (C) forecast differs —
+category error guarded by registration).
+
+Instruments (scripts-only; no package physics touched):
+`gen_tier2atlas_budget_probe.py` (sn-probe pattern; cfg-diff oracle =
+exactly {E_coulomb_scale, coulomb_available_eV} (+ f_int at k-cells);
+kinematic unit oracle scale·14.39964548/(2·R₀) = budget and
+f_int·stamp = E₀ to 1e-9; R₀-unmoved guard) + scorer
+`tier2atlas_budget_table.py` (O1/O2 chain reused; slope fit over the
+valid-KE₁ E₀-pinned cells + baseline on the kinematic budget axis
+2.26/2.7006/4.11; needle columns reused from the sn scorer) + tests
+`test_gen_tier2atlas_budget_probe.py` (18 passed: registered
+arithmetic to 1e-12, verbatim-h405 field diff, geometry-moved-budget
+rejection, namespace lock). Dry-run oracles all pass; scorer O1/O2
+verified green pre-launch; disk 13 GB free vs ≈ 2.5 GB. **MD launched**
+(3 × N = 1000, concurrency 3). Nothing adopted; `finc1v725` stands;
+h405 candidacy + G4 adjudications open.
+
+## USER PAPER INPUT (mid-probe): gas phase reproduced by 0.8·E_C at Q = 2 / Q = 3 from 2.666 Å — the fast peak IS I⁺–I²⁺; channel numbers re-anchored (Q2 2.16 / Q3 4.32 eV per I⁺); the standing 2.70 budget is ~25 % high vs the experiment's own calibration; channel→bin hypothesis POSTED (2026-07-29)
+
+While the §3.5k MD ran, the channel-provenance discussion (user
+question: where do 2.26/4.11 come from?) was answered — this session's
+peak readings of `vmi_iplus_gas.csv` (measurement 43632, Abel 3-D I(v),
+grid ±2–5 % in E) plus a power-series validation on the paper-era
+radial exports (43555/43562/43568: the fast groups persist at all
+three powers and grow with power, 0.13 → 0.49 → ~0.6 — higher
+photon-order behavior, not artifact). The user then supplied the
+paper's own attribution: **the gas spectrum is reproduced by ions in a
+reduced Coulomb potential 0.8·E_C, total charge Q = 2 and Q = 3, from
+R₀ = 2.666 Å; the fast peak is I⁺–I²⁺.** Consequences recorded in
+**RQ8 NB + RQ7 NB (2026-07-29)**: (1) channel positions are now
+theory-anchored — Q2 2.16 / Q3 4.32 eV per I⁺ (session readings agree
+to ~5 %); (2) the legacy droplet preset's `E_coulomb_scale = 0.8` is
+recognized as this calibration, so the standing production budget
+(scale 1.0 → 2.70) is **known-high against the experiment's own fit**
+— a geometry-correction-class input fact; re-anchor = user
+adjudication downstream of the probe; (3) RQ8 candidate (b) is the
+paper's assignment; toll arithmetic makes the bare peak 3.706 eV
+consistent with an **under-dressed Q = 3 transit** (dressed transit
+gives only ~1.5–1.7 — the bare position becomes a transit-dressing
+discriminator; no conflict with the bulk-refill argument, which was
+measured at 10–16 Å/ps, not 25.6); the bare σ 1.356 reads as
+multi-component bare. (4) **Channel → bin hypothesis posted** (full
+statement in the RQ8 NB): n = 0 ← Q3 (+ Q2 full-strip); n = 1/2 upper
+half ← Q3-dressed leg + Q2-stripped mode; n = 1 low side ← Q2 deep
+cascade; trapped/deep possibly ← the slow I₂⁺ single-ionization
+channel (a candidate owner of the G4 W₁ shape floor). Port machinery
+note: `highly_charged_iodine` (Q = 3) and
+`single_charge_ionization_allowed` (I₂⁺ PECs) exist as **refused**
+scope guards — activating either is a declared scope change requiring
+explicit user approval. First-priority verification: the **I²⁺
+discriminator** (m/z ≈ 63.5 in the raw TOF — measures Q3 branching
+directly; domain question to the user), bare-KED bimodality
+(`IHe_KED_curves_n0.csv`), power-matched weights. §3.5k mapping:
+bud226k ≈ the calibrated Q2 cell, bud411k ≈ the Q3-dressed emulation.
+Nothing adopted; `finc1v725` stands.
+
+## §3.5k budget-slope probe EXECUTED — **BP-KILL NOT FIRED: S_k = 0.389 eV/eV (band [0.35, 0.75] CONFIRMED), the source-side lever is ALIVE; the (C) design proceeds per registration**; BP-P3 sign-inverted (suppression measured E_int-driven: ∂supp/∂E₀ ≈ +1.7/eV; full (B) wiring parks fast ions in suppressed-bare with KE₁ at baseline); needle persists (2026-07-29, 3 × N = 1000)
+
+Executed per plan §3.5k (CRN seed 20260729; O1/O2 + cfg-diff +
+kinematic oracles all green before any number). Artifact
+`atlas_budget_probe.csv`; **D0 §19 updated FIRST**; full table +
+verdicts findings "§3.5k". Key rows (budget / E₀ → KE₁, supp, n̄):
+2.26/0.405 → 0.486, 0.073, 5.33; 2.7006/0.405 (baseline) → 0.637,
+0.183, 3.96; 4.11/0.405 → 1.200, 0.546, 1.63; 4.11/0.6165 → 0.623,
+0.909, 0.34. Verdicts: BP-P1 up-cell in-band, down-cell +0.006 over
+(diagnosis = the measured back-reaction factor 0.66 on the 1-D
+placement); **BP-P2 CONFIRMED S_k 0.389**; **BP-KILL NOT fired** — the
+honest-residual branch is not forced; BP-P3 refuted with sign
+inversion (suppression is E_int/self-unbound-driven, not
+freeze-driven — the probe's mechanism yield; the Q3 → n = 1-upper-half
+leg requires (A) stripping or partial E₀ decoupling: the (A)/(B)
+complementarity is measured from both sides); BP-P4 confirmed (needle
+0.034/0.047 — width requires the mixture). Exploratory: a uniform
+re-anchor to the calibrated 2.16–2.26 breaks the standing basin
+(basin re-tune owed at any budget re-anchor, RQ7 NB); uniform 4.11
+overheats globally — both the expected uniform-knob price, registered
+as non-kill inputs. **Next (user adjudication): the (C)
+physics-definition design doc** (paper-anchored channels {single, Q2
+2.16, Q3 4.32}, per-channel E₀ coupling axis, (A) depth-graded
+stripping closure, weights anchored on bare/I²⁺/power series) + the
+three named zero-MD reads (bare-KED bimodality, I²⁺ presence,
+power-matched weights). Nothing adopted; `finc1v725` stands; h405
+candidacy + G4 adjudications open.
+
+## USER FIGURE INPUT: the I²⁺ discriminator ANSWERED at event level — thesis Fig. 6.2 ion–ion covariance shows I²⁺Heₙ correlated with I⁺He at ~7 % (1.47×10¹⁴) / ~20 % (2.94×10¹⁴ W/cm²); the Q3 weight moves from fitted to MEASURED; 48.7 %-vs-7–20 % tension flagged; bare-I⁺-row covariance + power↔intensity mapping posted as open user questions (2026-07-29)
+
+Full record: RQ8 NB (2026-07-29, figure input) + plan §3.5l item (ii)
+updated; CLAUDE.md compact state bridged. The design-axis-4 weight
+anchor exists; the low-intensity condition is preferred for weight
+calibration (He⁺ₘ covariance grows ~6 % → ~28 % with intensity —
+droplet multi-ionization). Q2 partner structure at low intensity:
+I⁺ ~33 %, I⁺Heₙ(n>1) ~30 %, I⁺He ~14 %; I₂⁺ ~2–4 % (multi-molecule /
+false-coincidence gauge, small). Nothing adopted; `finc1v725` stands.
+
+**Follow-up round (same date):** the I⁺He-row I⁺ bar clarified as NOT
+the bare decomposition (the (I⁺, I⁺) and (I⁺, I²⁺Heₙ) pairs carrying
+the bare bin's parentage contain no I⁺He — the m/q 127 row is the
+ask), but recorded as the **retention-twin anchor**: (I⁺He, I⁺) pairs
+= same-KER twins with different dressing outcomes (a third of n = 1
+fragments at 1.47×10¹⁴ have a fully-stripped twin) — event-level
+evidence that per-ion retention is stochastic at fixed kinematics,
+the (A) knockout closure's target distribution. **Power ↔ intensity
+mapping adopted provisionally (user-recalled, unconfirmed): 300 mW ↔
+1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴** → the 600 mW ihe_ked KED reference
+pairs with the ~20 % Q3 share; the 48.7 %-above-cap tension softens.
+Full record RQ8 NB (follow-up round); plan §3.5l item (ii) updated.
+
+## §3.5l EXECUTED: reads (i)+(iii) + 0.8-provenance CLOSED (Hatherly 1994 on file) + the (C) design doc DRAFTED — OQ-A..K posted (2026-07-29)
+
+**Reads (i)+(iii) EXECUTED zero-MD** (findings "§3.5l reads
+(i)+(iii)"; convention gate moved to the committed
+`IHe_KED_reference.csv` row — reproduced exactly at the diagnosed
+mask edge 3.5 eV; the §3.5j scratchpad weights bracketed ≤ 1.4 pp):
+bare KED **weakly two-lump** (≈ 2.0–2.7 / 3.5–5.1 eV, dip
+≈ 3.1–3.3) and **fast-fed** (< 1 eV holds 1.9 %, bgOffShift 0.000)
+→ **slow-bare overpopulation is a new (C) kill axis**; the model's
+suppressed class exits at 0.75–0.90 eV into that near-empty region.
+Gas power series: Q3 fast-share 10.2/16.8/23.1 % at 160/300/600 mW —
+monotonic, 600 mW matches the ~20 % covariance anchor. A
+"calibration-frame split" rider (repo frame at full E_C) was posted
+and **WITHDRAWN same-session** — the committed Abel export
+`vmi_iplus_gas.csv` peaks 2.26/4.11 confirm the 0.8·E_C channels in
+the repo's own frame; the 2-D radial rims are position-biased
+(centers/projection), power-ordering-valid only.
+
+**0.8 provenance CLOSED (user supplied the source paper for the
+read; consulted, then removed by the user — not repo-kept):**
+Hatherly et al, J. Phys. B 27 (1994) 2993–3003
+(doi:10.1088/0953-4075/27/14/032) — **gas-phase** finite-pulse CE
+physics (sequential ionization during separation; fraction
+channel-independent, 0.75/0.65·E_C at 90/200 fs; intrinsic channel
+widths FWHM 2.6/5.8 eV at 200 fs). NOT droplet screening (a
+droplet-reduction recall was checked against the paper and
+corrected). Legacy's `E_coulomb_scale = 0.8` in gas AND droplet
+presets = this calibration, correctly universal; channels 2.16/4.32
+stand as in-droplet source energies; RQ7 NB updated (provenance
+paragraph). Design consequences: ONE shared Bounded fraction f
+across channels; per-channel KER sampled WITH width.
+
+**Recap verdict (user question "does it look good to re-express
+experimental?"):** yes — zero-MD mixture arithmetic on the measured
+rows (bud226k/bud411k n₁ & KE₁ per channel + (A) bracket) reaches
+KE₁ mode ~1.0–1.2 / n₁ ~0.31 / needle broken via selection-amplified
+Q3 (~20 % source → ~half the n = 1 bin), with four named risks:
+basin re-tune debt (bud226k), selection amplification unproven,
+survival grading = the shape-carrying element (retention-twin
+anchored, never n = 1-KED-fitted), slow-bare kill.
+
+**The (C) design doc DRAFTED:**
+`TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md` — channel mixture
+{single, Q2 2.16, Q3 4.32} × shared f (per-pair Coulomb-scale
+emulation, kinematically exact for the scored I⁺; Q3 partner mask),
+per-channel f_int (bud411/bud411k bracket), depth-graded exit strip
+P₀(v_x)·G(j) (v_strip 9.9 Sourced, logistic protection j₀ ∈ [1, 3],
+retention-twin anchoring), ledger strip term (re-labeled crossing
+drag work, OQ-K §3.5j), suppressed scaffolding predicted → 0 (CP-1),
+~11 new dof honestly counted (7 externally anchored), CP-1..8
+sign-level predictions incl. three kills (slow-bare, midHot
+cascade, W₁ parking), probe sketch = zero-MD P1 (strip-form prior
+calibration on committed g4fh405 checkpoints) / P2 (Abel widths) /
+P3 (composition forecast) + 4 MD cells (C-full / A-only / B-only /
+coupling arm). **OQ-A..K posted** (route, channel energies, weights,
+strip form, checkpoint v8 = forbidden-list schema change, Q3
+coupling, Q4 refusal, E_int-on-strip, partner mask, multiple
+crossings, condition mapping). Probe registration freezes after
+adjudication. Nothing adopted; `finc1v725` stands; h405 candidacy +
+G4 adjudications open.
+
+**Same-session adjudication (user: "I follow your
+recommendations"): OQ-A..J CLOSED** — emulation route (flags stay
+refused), channel means 2.16/4.32 adopted (scalar budget retires
+with the mixture; basin re-tune downstream), weight *procedure*
+approved (values freeze at registration after P2/P3; provisional
+(0.30, 0.50, 0.20)), strip family approved (P1 moves values inside
+the prior box only), **checkpoint v8 GRANTED scoped to exactly
+three per-ion fields** (channel label, E_m, strip count — explicit
+forbidden-list exception, revocable), f_int,Q3 = probe arm at the
+bracket ends, Q4 refused v1, E_int-on-full-strip =
+discard-with-ledger-label, partner mask non-optional, strip at
+every outbound crossing. **OQ-K remains open** (300/600 mW ↔
+1.47/2.94×10¹⁴ is a fact to confirm, not a recommendation — gates
+the OQ-C weight freeze). **Dof challenge answered in-doc (§6
+accounting):** raw ~11 dof = the price of replacing two
+idealizations (delta source → 3-channel source: 8; scoring rule →
+boundary physics: 4, with the retired suppressed rule itself a
+hidden dof-equivalent); at probe launch 8 are anchor-frozen, 3
+P1-pinned, **1 scanned** (the coupling arm) vs ~12 pre-registered
+observables + 3 kills — dof ≪ observables, Bounded-with-anchor ≠
+Free. **Run-directory purge EXECUTED (2026-07-29, user-approved
+scope "Tier 1 + 2 dead G4 cells"):** 291 run dirs / 30.3 GB deleted
+from `data/runs` (374 → 83 dirs; disk 11 → 40 GB free). Families
+purged (raw checkpoints gone; all scorer CSVs + findings remain the
+committed record): all lq runs (15 — §6.6/6.7 closed), the N = 50
+staircase-era mini-waves (235), the b080-era N = 500 runs (33), the
+s(n) probe sa22/30/44, the p_tail ring pt15/20/30, and the two G4
+dead-end scan cells g4fv525 + g4fx345. **Kept intact:** g4fh405
+(the P1 instrument input), the h405 pooled battery g4s2h405s1–5,
+the production reference battery bigc1v725s1–5, the budget trio
+bud226k/411k/411, the G3 ring, the geometry grid, the finc N = 500
+trio, all Tier-0/HeDFT baselines, and `data/reference` (untouched).
+Consequence: raw re-reads of the purged families are no longer
+possible — their committed tables are authoritative.
+**Standing exclusion confirmed (user):** the §3.5i s(n)
+drag-state-coupling arm stays `off` in all further runs (STOPPED
+axis, gate-clipped; (C) does not resurrect it — stripping acts where
+the spatial drag gate ends); module stays stubbed behind its enum
+per the architecture rule, excluded not deleted; the cfg-diff
+oracles catch stray activation. Next: zero-MD P1 (strip-form prior
+calibration on committed g4fh405 checkpoints), P2 (Abel widths),
+P3 (composition forecast), then the probe registration freeze.

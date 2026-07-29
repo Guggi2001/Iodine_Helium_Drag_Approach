@@ -51,6 +51,11 @@ from ..physics.constants import U
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.shell_schedule import build_onset_strip_schedule, build_shell_schedule
+from ..physics.state_coupling import (
+    apply_state_factor,
+    derive_n_ref_amu,
+    shell_area_state_factor,
+)
 from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.solvation_cooling import e_bind_pair_eV
 from .checkpoint import IonCheckpoint, NeutralCheckpoint
@@ -214,6 +219,18 @@ def run_ion_propagation(
         gamma_fn = partial(
             drag_gamma, coeffs=cfg.drag_coefficients, steepness=gate_steepness,
         )
+        # Tier-2 atlas §3.5i s(n) state coupling (design S2, BC-1/BC-2): under
+        # "shell_area" (biphasic-only, config-load-guarded) each step's closure
+        # rebuild wraps gamma_fn with the per-ion factor s(n_shell) evaluated
+        # on the post-event shell state -- jump-then-O, the same state the
+        # rebuild reads for m(t). Under "off" the base gamma_fn is passed
+        # verbatim below (no wrapper object; structurally bit-identical).
+        state_coupling_live = cfg.drag_state_coupling == "shell_area"
+        n_ref_coupling = None
+        if state_coupling_live:
+            n_ref_coupling = derive_n_ref_amu(
+                cfg.drag_coefficients.extraction_mass_amu
+            )
         # Tier-1a: the anchored He-shell schedule drives the variable mass m(t).
         # Built once; queried per step (shed_step). Absent under `fixed`, so the
         # fixed-mass path below is byte-for-byte the Tier-0 path (regression guard).
@@ -257,8 +274,20 @@ def run_ion_propagation(
             # shed schedule, under `biphasic` the generative channels. Noise dormant
             # (T_eff=0).
             acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
+            step_gamma_fn = gamma_fn
+            if state_coupling_live:
+                step_gamma_fn = apply_state_factor(
+                    gamma_fn,
+                    shell_area_state_factor(
+                        state.n_shell,
+                        R_core_angstrom=cfg.state_coupling_R_core_angstrom,
+                        rho_shell_per_A3=cfg.state_coupling_rho_shell_per_A3,
+                        n_ref=n_ref_coupling,
+                    ),
+                )
             step = make_ion_baoab_step(
-                state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,
+                state.mass_kg / U, droplet_radii, acc_fn, step_gamma_fn,
+                T_eff=0.0,
             )
             new_state = baoab_propagation_step(
                 state, step=step, cfg=cfg, droplet_radii=droplet_radii,

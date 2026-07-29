@@ -62,6 +62,7 @@
 | E_bind (ion–droplet well) | Derived (joint Method-B) | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well | measured (§9) |
 | droplet geometry (R × r) | controlled (Axis A G1 11-cell grid); **size externally anchored** (§15.5) | birth depth is the physics knob, R a selection knob; the landing needs the size *distribution* (pinning R̄ alone: W₁ 0.571 → 0.813); ≈ 95 % of detected-size variance geometry-inherited; deepKE crosses 1 at birth depth ≈ 11–15 Å; trap → 0.40–0.57 at the anchored radii | **GAP closed** (§14); **G2 ADOPTED 2026-07-27** — the corrected geometry is the target, re-arbitration pending (G3) |
 | sampling laws (size + position) | theory-laden legacy ports, **partly bypassed in the drag branch** | provenance audited (§15): production uses the analytic ⟨N⟩ = 2000 prior + uniform_volume, *not* the legacy pickup MC + Boltzmann; E_solv 14 vs 30 meV discrepancy is inert here; **⟨N⟩-pin influence measured at ensemble level by grid re-weighting (§15.7, zero MD): the corrected ensemble breaks the landing** (trap 0.31–0.42, W₁ ≈ 9.0–9.8, deepKE 1.80–1.90) | ⟨N⟩ pin **measured** (§15.7); distribution A/B remainder open (D2b) |
+| drag state coupling s(n) (R_core, ρ_shell) | Bounded geometric closure (design doc) | **MEASURED DEAD in-window (§18): gate-clipped** — no ion reaches n ≤ 8 while inside the droplet (min-n-inside ≥ 9 for 100 %, mean exit n = 19.0), so the low-n regime of s(n) is structurally unreachable; in-window s ∈ [0.85, 1.06] ≈ ρ-independent; net effect KE₁ **−0.04 (sign-inverted)**, needle SD unmoved (0.038), all SC predictions refuted | probe EXECUTED 2026-07-29; axis stopped (SC-P2 signature failure); code stays behind `off` default |
 
 ---
 
@@ -1751,6 +1752,133 @@ quality — an **E** entry is not wrong, it is unconstrained. Nothing in
 this chapter adopts anything; adoption stays a separate pre-registered
 decision (plan §0). The ledger's job is to be the dossier that decision
 would read.
+
+---
+
+## 18. Drag state coupling s(n) — MEASURED DEAD in-window: gate-clipped (probe 2026-07-29)
+
+| | |
+|---|---|
+| knob | `drag_state_coupling` ∈ {off, shell_area} + (R_core [Å], ρ_shell [Å⁻³]) |
+| class | Bounded geometric closure (design `TIER2_DRAG_STATE_COUPLING_DESIGN.md`) |
+| instrument | 3-cell probe sa22/sa30/sa44 (ρ_shell bulk/prior/2×bulk, R_core 3.2) × N = 1000 at the h405 pins, seed 20260729 CRN-paired; oracles O1/O2 + cfg-diff + unit oracle all pass |
+| status | **probe EXECUTED; every registered prediction REFUTED; axis STOPPED** (SC-P2 signature failure kills the central claim per the registration). Code delivered and regression-clean; production default stays `off`. |
+
+**Measured influence (vs the CRN h405 baseline KE₁ 0.637, needle SD 0.038):**
+
+- KE₁ 0.596 / 0.599 / 0.601 at sa22/sa30/sa44 — **sign-inverted** (−0.04,
+  the design predicted +0.2..+0.5) and **ordering-inverted** (strongest
+  coupling = lowest KE₁).
+- **Needle SD unmoved**: 0.038 in every cell (SC-P2 floor was 0.08) — the
+  n–KE lock survives the state coupling entirely.
+- Cells nearly indistinguishable across the full ρ Bounded range
+  (factor 2): the swept parameter has almost no in-window authority.
+- Exploratory (SC-P5): n̄ +0.26..+0.30, n₁ −0.012..−0.017, supp −0.014,
+  trap +0.005, W₁ +0.046..+0.062 — all cells strictly worse than baseline
+  on the landing surface; deepKE −0.08..−0.11.
+
+**Why (the mechanism finding — measured on sa30's ion checkpoint, zero MD):**
+the coupling is **gate-clipped**. Stripping is slow relative to transit:
+**no ion reaches n ≤ 8 while still inside the droplet** (fraction 0.0000;
+n ≤ 14 inside: 7.4 %), the mean shell at first surface crossing is
+**19.0 He (median 20)** — ions exit essentially fully dressed — and 93 %
+have exited by sim-end. All stripping to the design's large-|effect|
+regime (n ≤ 2, s ≈ 0.32–0.43) happens outside, where the spatial gate
+g(d) = 0 has already switched the drag off. In-window the shell stays in
+[14, 21] → s ∈ [0.85, 1.06], and there s is nearly ρ-independent by
+construction (ρ differentiates s only where R_core³ competes with n/ρ,
+i.e. at low n). The small negative net KE₁ comes from the early-transit
+s(21) ≈ 1.06 over-drag at the highest speeds plus back-reaction (less
+mid-window drag → n̄ rises, the §14.5 residence channel sign). The
+needle cannot break because per-ion in-window s variance is minute —
+the strip-timing decorrelation the design §2 posited does not exist
+inside the gate.
+
+**Consequence:** being at low n and being inside the drag gate are
+mutually exclusive states of the delivered mechanism — *no* γ(v,n)
+coupling of this family (state factor × gated γ) can move KE₁, because
+the exit toll is paid dressed. Any successor low-n KE lever must either
+act outside the gate (a different force surface entirely) or change the
+strip-timing itself (the OQ-F cooling-contact discussion, or upstream
+E_int dynamics). Options on the table per the registration: the
+honest-residual branch extended to KE₁, or OQ-F — user adjudication
+either way. Nothing adopted; `finc1v725` and the h405 successor
+candidacy stand as before the probe.
+
+Records: findings "§3.5i s(n) probe" (scorer table + verdicts), scorer
+CSV `atlas_sn_probe.csv`, design doc §8 (registration), log entries
+2026-07-29.
+
+---
+
+## 19. Coulomb budget (E_coulomb_scale / per-fragment KER) — MEASURED ALIVE: S_k = 0.389 eV/eV; suppression is E_int-driven (probe 2026-07-29)
+
+| | |
+|---|---|
+| knob | `E_coulomb_scale` (pair Coulomb ×scale at fixed R₀ 2.666) + `coulomb_available_eV` stamp; `internal_energy_partition_fraction` used as the E₀ pin |
+| class | **Sourced** (user paper input 2026-07-29: gas phase reproduced at 0.8·E_C with Q = 2/Q = 3 → channels 2.16 / 4.32 eV per I⁺; RQ7/RQ8 NBs). The standing production 2.70 (scale 1.0) is ~25 % high vs this calibration. |
+| instrument | §3.5k probe bud226k/bud411k/bud411 × N = 1000 at the h405 pins, seed 20260729 CRN-paired; oracles O1/O2 + cfg-diff + kinematic unit oracle all pass |
+| status | **probe EXECUTED; BP-KILL NOT fired (S_k = 0.389 ≥ 0.2) — the source-side lever is ALIVE; the (C) design discussion proceeds per the registration** |
+
+**Measured influence (vs the CRN h405 baseline, budget 2.7006):**
+
+- **Kinematic transfer slope S_k = dKE₁/dbudget = 0.389 eV/eV**
+  (E₀-pinned line 2.26 → 2.7006 → 4.11: KE₁ 0.486 → 0.637 → 1.200;
+  BP-P2 band [0.35, 0.75] CONFIRMED). The 1-D placement slope 0.587
+  over-predicts by the back-reaction factor ≈ 0.66 — this also puts
+  bud226k 0.006 eV above its BP-P1 band edge (0.486 vs [0.29, 0.48]);
+  the registered diagnose-obligation is discharged by the S_k reading
+  itself (the placement's constant-toll picture is ~⅓ too steep).
+  bud411k lands in-band (1.200 ∈ [1.13, 1.70]). KE₂ tracks (0.404 →
+  0.551 → 1.081).
+- **The suppression mechanism, measured (BP-P3 sign-INVERTED — the
+  probe's mechanism yield):** supp(bud411) 0.909 > supp(bud411k) 0.546
+  at identical kinematics — raising E₀ 0.405 → 0.6165 adds +36 pp
+  suppressed (∂supp/∂E₀ ≈ +1.7 /eV). Suppression is **E_int-driven
+  (self-unbound at detection)**, not freeze-driven: more deposited or
+  onset energy → hotter E_int → more of the ensemble relabeled bare.
+  Under the full (B) proportional wiring the fast ions go to
+  suppressed-bare and **KE₁ stays at baseline** (bud411: KE₁ 0.623,
+  n = 1 count 44) — the Q3 → n = 1-upper-half leg therefore requires
+  (A) exit stripping (rebin at existing KE) or partial E₀ decoupling.
+  The (A)/(B) complementarity is now measured from both sides.
+- **Needle persists** (BP-P4 ✓): KE₁ SD 0.034 / 0.047 at the k-cells —
+  a single-valued budget cannot widen the n = 1 KE; width requires the
+  channel mixture.
+- **Uniform-budget landing damage (exploratory — NOT the (C)
+  channel-weighted forecast):** bud226k n̄ 5.33 / n₁ 0.126 / trap 0.179
+  (2×) / W₁ 1.365 — a naive re-anchor to the calibrated 2.16–2.26
+  **breaks the standing basin** (re-tune required, RQ7 NB); bud411k
+  n̄ 1.63 / supp 0.546 / midHot 2.301 / deepKE 1.093 / W₁ 1.294;
+  bud411 n̄ 0.34 / supp 0.909 / trap → 0.001.
+
+**Consequence:** the KER → KE₁ transfer is physically real in-model at
+≈ 0.39 eV/eV, the honest-residual branch is NOT forced, and the (C)
+design (paper-anchored channel mixture {single, Q2, Q3} + exit
+stripping) proceeds with this section as its slope authority. Per-channel
+E₀ coupling (f_int channel-dependence) is a live design axis with
+measured leverage. Nothing adopted; `finc1v725` and the h405 candidacy
+stand.
+
+**Addendum (2026-07-29, post-§3.5l):** the 0.8 calibration's
+provenance is **CLOSED** — Hatherly et al, J. Phys. B 27 (1994)
+2993–3003 (doi:10.1088/0953-4075/27/14/032; consulted, not
+repo-kept): gas-phase finite-pulse CE, fraction
+channel-independent (0.75/0.65·E_C at 90/200 fs), intrinsic channel
+widths (FWHM 2.6/5.8 eV at 200 fs); NOT droplet screening; the Abel
+gas export confirms 2.26/4.11 in the repo's own frame (a 2-D-rim
+"frame split" rider was posted and withdrawn same-session). Under the
+adjudicated (C) design (`TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`
+OQ-B) **this knob's scalar form retires**: the per-molecule sampled
+channel budget E_m (means 2.16/4.32 × shared Bounded f, widths
+sampled) replaces the single `coulomb_available_eV` stamp; the
+uniform-re-anchor damage row above stays the measured warning against
+any single-budget re-anchor.
+
+Records: findings "§3.5k budget probe" (table + verdicts), scorer CSV
+`atlas_budget_probe.csv`, plan §3.5k (registration), RQ7/RQ8 NBs
+2026-07-29, log entries 2026-07-29; provenance + (C)-design records:
+findings "§3.5l reads (i)+(iii)", `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`.
 
 ---
 

@@ -92,10 +92,10 @@ _TIER3_NOTE = (
 # =============================================================================
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
 # =============================================================================
-# Run directory holding cfg.json + ion.npz + relaxation.npz + detection.npz.
+# Run directory holding cfg.json + ion.npz + relaxation.npz + detection.npz.Ag
 RUN_DIR: Path = (
     PROJECT_ROOT / "data" / "runs"
-    / "9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigspooled"
+    / "9A_drag_shared_pure_cubic_N5000_tier2atlas_conf270_g4s2h405pooled"
 )
 
 # Reference paths (same meanings as in plot_run_summary.py). ``None``

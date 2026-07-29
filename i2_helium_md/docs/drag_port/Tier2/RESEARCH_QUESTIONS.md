@@ -1132,6 +1132,34 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   drag-recalibration item has **fired** (adjudicated 2026-07-11) and is
   carried by Addendum H, not by a TDDFT request (TDDFT breaks at 2.666 Å
   kinematics — the program's premise).
+- **NB (2026-07-29, USER PAPER INPUT — the budget value itself moves):**
+  the paper reproduces the gas-phase spectrum with **0.8·E_C** from
+  2.666 Å (RQ8 NB same date), so the experiment's own calibration puts
+  the Q = 2 production channel at **2.16 eV/fragment, not 2.70** — the
+  standing scale-1.0 budget is ~25 % high against the source's own fit
+  (the legacy droplet preset's `E_coulomb_scale = 0.8` is that
+  calibration; the tier-2 production pipeline runs 1.0). This is a
+  geometry-correction-class input fact (known-wrong input, independent
+  of what it does to any landing). First MD read: the §3.5k budget
+  probe's bud226k (2.26 ≈ the calibrated channel, E₀ pinned). Any
+  re-anchor of the production budget (and the basin re-tune it forces)
+  is a **user adjudication** downstream of the probe + the (C)
+  discussion — nothing moves now.
+- **NB (2026-07-29, provenance closed — source paper consulted, not
+  repo-kept):** the factor traces to **Hatherly et al, J. Phys. B: At.
+  Mol. Opt. Phys. 27 (1994) 2993–3003
+  (doi:10.1088/0953-4075/27/14/032)**, a **gas-phase** I₂
+  intense-field study: peak channel
+  KERs are a channel-independent fraction of the point-charge E_C
+  (2.666 Å) — 0.75·E_C at 90 fs, 0.65·E_C at 200 fs — from sequential
+  ionization during separation (laser-induced stretched states). NOT
+  helium screening (a droplet-reduction recall was checked against the
+  paper and corrected). Legacy's `E_coulomb_scale = 0.8` in both gas
+  and droplet presets is this calibration, correctly applied
+  universally; channels Q2 2.16 / Q3 4.32 stand as in-droplet source
+  energies; the channel-independent fraction and the measured
+  intrinsic channel widths (FWHM 2.6/5.8 eV at 200 fs) are (C) design
+  inputs (atlas findings "§3.5l reads (i)+(iii)").
 
 ### RQ8 — Bare-I⁺ channel provenance & branching (opened 2026-07-11, two-channel adjudication)
 
@@ -1191,6 +1219,89 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   droplets; vertical vs sequential double ionization; KER distributions)
   + experimental cross-checks above + the (n, mean-KE) reference export
   (data-contract prerequisite, Addendum H §H.2).
+- **NB (2026-07-29, USER PAPER INPUT — the channel question is
+  ANSWERED at assignment level):** the paper reproduces the gas-phase
+  I⁺ spectrum with ions moving in a **reduced Coulomb potential
+  0.8·E_C** from the ground-state separation 2.666 Å, with **total
+  charge Q = 2 and Q = 3** — the fast gas peak is **attributed to
+  I⁺–I²⁺** (= candidate (b), now the paper's own assignment).
+  Per-fragment I⁺ energies at that calibration: **Q = 2 → 2.16 eV,
+  Q = 3 → 4.32 eV** (this session's independent peak readings 2.26 /
+  4.11 from `vmi_iplus_gas.csv` agree to ~5 %; the legacy
+  `E_coulomb_scale = 0.8` in the droplet preset is recognized as this
+  same calibration; the port's Q = 3 flag `highly_charged_iodine` and
+  the I₂⁺-PEC single-ionization flag exist as *refused* branches).
+  **In-model toll arithmetic (measured dressed toll ≈ 1.6 eV):** a
+  Q = 3-derived I⁺ transiting *dressed* exits ≈ 2.7 eV → bare-equiv
+  ≈ 1.5–1.7; transiting **under-dressed** (plausible at the 25.6 Å/ps
+  bare birth speed, outside the 10–16 Å/ps regime where bulk-refill
+  was measured) the toll shrinks with cross-section → exits
+  **≈ 3.7–3.8 eV ≈ the measured bare mean 3.706** — the bare-peak
+  position becomes a *transit-dressing discriminator*. The anomalous
+  bare width (σ 1.356) reads naturally as a multi-component bare
+  (Q = 2-stripped ~1–1.5 + Q = 3 ~3.7). **Standing hypothesis
+  (channel → bin, posted at the §3.5j/(C) discussion):** n = 0 ←
+  Q = 3 (+ Q = 2 full-strip); n = 1/2 upper half ← Q = 3-dressed leg
+  (1.5–2 eV — the (A)-unreachable KED half) + Q = 2-stripped mode
+  (~0.9); n = 1 low side ← Q = 2 deep cascade; trapped/deep possibly
+  ← the slow I₂⁺ single-ionization channel (source < toll — never
+  exits; a candidate owner of the G4 W₁ shape floor). Verification
+  before any design: bare-KED bimodality (`IHe_KED_curves_n0.csv`),
+  power-matched branching weights, and the **I²⁺ discriminator is
+  now first-priority** (a Q = 3 event makes an I²⁺ at 4.32 eV —
+  m/z ≈ 63.5 presence/absence measures the branching directly).
+  §3.5k budget-probe mapping: bud226k ≈ the paper-calibrated Q = 2
+  cell; bud411k ≈ the Q = 3-dressed emulation.
+- **NB (2026-07-29, USER FIGURE INPUT — the I²⁺ discriminator is
+  ANSWERED, event-level):** thesis Fig. 6.2 (ion–ion m/q covariance
+  maps + the I⁺He-row analysis, laser peak intensities 2.94×10¹⁴ /
+  1.47×10¹⁴ W/cm²) shows **I²⁺Heₙ (n ≥ 0) in event covariance with
+  I⁺He**: relative contribution **~7 % at 1.47×10¹⁴ and ~20 % at
+  2.94×10¹⁴** — the Q = 3 channel is directly detected, feeds the
+  n = 1 fragment at measured weight, and scales with intensity like a
+  higher photon-order process (matching the gas power series). The
+  I²⁺ partner can itself be solvated (I²⁺Heₙ). Q = 2 partner
+  structure at the cleaner low intensity: I⁺ ~33 %, I⁺Heₙ(n>1) ~30 %,
+  I⁺He ~14 %; I₂⁺ ~2–4 % (a multi-molecule / false-coincidence gauge,
+  usefully small); He⁺ₘ covariance grows ~6 % → ~28 % with intensity
+  (droplet multi-ionization — prefer the low-intensity condition for
+  weight calibration). **Consequence: the Q = 3 weight moves from
+  fitted to MEASURED** — the design-axis-4 anchor exists. **Flagged
+  tension for the (C) design:** the measured Q = 3 share of I⁺He
+  (7–20 %) sits below the 48.7 % n = 1 KED weight above the (A) cap
+  (1.15 eV); candidate resolutions to check: condition matching (the
+  ihe_ked reference is a 600 mW series; the power ↔ intensity mapping
+  160/300/600 mW ↔ 1.47/2.94×10¹⁴ is an OPEN user question), the
+  n = 1 `bgOffShift` tail sensitivity, and Q = 2-strip reach at the
+  calibrated 2.16 eV budget. **Open follow-ups (user):** the
+  equivalent covariance analysis for the bare-I⁺ row (would decompose
+  the 43.5 % bare peak the same way), and the power ↔ intensity
+  mapping.
+- **NB (2026-07-29, follow-up round):** (1) *Why the I⁺He-row I⁺ bar
+  is not the bare decomposition:* panel III normalizes within the
+  I⁺He row, and the two pair types dominating the bare bin's
+  parentage — **(I⁺, I⁺)** symmetric full-strip Q2 pairs and
+  **(I⁺, I²⁺Heₙ)** Q3 pairs — contain no I⁺He, so they are invisible
+  there; the needed quantity is the **m/q 127 row** normalized to all
+  bare-I⁺ coincidences (panel I visibly contains its structure at
+  63.5 / He⁺ₘ / the 131+ ladder — a panel-II-style trace over the 127
+  row is the ask, or extraction from the committed matrices).
+  (2) *What the I⁺ bar DOES measure (recorded as its own anchor):*
+  (I⁺He, I⁺) pairs are same-event same-KER **twins with different
+  retention outcomes** — at 1.47×10¹⁴ a third of n = 1 fragments
+  have a fully-stripped twin; retention spread at fixed KER {partner
+  bare ~33 %, n = 1 ~14 %, n > 1 ~30 %} = **event-level evidence
+  that final dressing at fixed kinematics is stochastic per ion**,
+  the distribution the (A) knockout closure must reproduce (and
+  independent support for the needle-break requirement).
+  (3) *Power ↔ intensity mapping ADOPTED PROVISIONALLY* (user-recalled,
+  ratio-consistent, unconfirmed): **300 mW ↔ 1.47×10¹⁴, 600 mW ↔
+  2.94×10¹⁴ W/cm²**. Consequence: the ihe_ked KED reference (600 mW
+  series) pairs with the **~20 %** Q3 share — the 48.7 %-above-cap
+  tension softens (20 % Q3 + Q2-strip coverage of 1.0–1.3 eV + the
+  n = 1 bg-sensitive far tail); the 300 mW vmi droplet curves pair
+  with the cleaner ~7 % condition. Confirmation of the mapping stays
+  an open item.
 
 ### RQ9 — Physicality of the fitted cooling time τ ≈ 4.1 ps vs the GAH25 pin (opened 2026-07-15, Addendum I Step 1b; parked by user decision same day)
 

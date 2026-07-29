@@ -1511,7 +1511,7 @@ before any successor talk. **Nothing adopts from this section;
 **MD spend:** 3 × N = 1000 (~45–60 min at concurrency 3) + at most one
 conditional cell. Disk checked: ≈ 0.8 GB/cell against 17 GB free.
 
-### 3.5i The drag state coupling s(n) — design ADJUDICATED + probe REGISTERED (2026-07-29; own document)
+### 3.5i The drag state coupling s(n) — EXECUTED 2026-07-29: all SC predictions REFUTED (needle intact); coupling measured GATE-CLIPPED; axis STOPPED (design ADJUDICATED + probe REGISTERED 2026-07-29; own document)
 
 The low-n KE axis continues off the γ(v) surface: after the §3.5h kill
 (velocity-only softening un-damps the cascade) and the user's rejection
@@ -1524,6 +1524,227 @@ seed 20260729; needle-break signature SC-P2; midHot kill SC-P4) live in
 **`TIER2_DRAG_STATE_COUPLING_DESIGN.md`** — the axis's own document.
 Build slices S1–S4 wait for `[PROCEED TO IMPLEMENTATION]` (fresh
 session). Nothing adopts; `finc1v725` stands; G4 adjudications open.
+
+### 3.5j The low-n KE axis off the drag surface: exit channel + source spread — DISCUSSION HELD 2026-07-29 (verification reads + two placement reads EXECUTED, zero MD; OQ-J..N adjudicated; CE-variant + cold-shed DECLINED) — **measured verdict: (A) necessary-not-sufficient (ceiling KE₁ ≈ 0.71), the (C) combination REQUIRED; next = (C) physics definition + budget-probe registration (user)**
+
+After the §3.5i refutation (the s(n) coupling is gate-clipped) and the
+user's rejection of the OQ-F cooling route, the measured kinematic
+decomposition (findings **§3.5i.2**, zero MD) relocated the KE₁ problem
+off the drag surface entirely: the n = 1 enders already exit at 1.086 eV
+dressed, and the model parks its *fastest* exiters (v 11–13 Å/ps) in a
+spurious fully-dressed n = 20–21 spike (17.6 % of detected) whose
+as-if-n = 1 KE is 0.69–1.15 eV — the experimental band. Candidates:
+(A) exit stripping at the surface crossing, (B) per-ion source-KER
+spread through the existing E₀ = f_int·budget wiring, (C) their
+combination; discriminator = budget dependence of KE₁. Dead ends closed
+by measurement (γ/s surface, cooling, shed convention, recoil) are
+listed in §3.5i.2 item 4 — do not reopen.
+
+**2026-07-29 discussion round (full record: findings §3.5i.3 + §3.5j):**
+the three verification reads executed (spike falsified ~30× at the
+reference; gas KER measured multi-channel with the 2.70 eV budget a
+point-Coulomb idealization between the fast channels; cold-shed and the
+CE-instantaneous-stripping variant both declined — the bulk-refill
+argument pins net stripping to the outbound crossing). OQ-J..N
+adjudicated (stochastic knockout **with a depth-graded survival
+element** — counterfactual-measured requirement; strip cost re-labeled
+crossing drag work; n = 0 outcomes allowed; reads-first ordering). The
+two placement reads: the experimental n = 1 KED holds **48.7 % of its
+weight above the ≈ 1.15 eV (A)-cap**, and the checkpoint counterfactual
+(convention gate passed against the committed h405 row) measures the
+(A) **bracket ceiling KE₁ ≈ 0.708** (supp → 0, n₁ 0.353, needle SD
+0.038 → 0.087) — plus the structural identification that the spike IS
+the `suppressed` fate class (mechanical n = 21, scored bare), i.e. (A)
+replaces scoring scaffolding with physics. **Registered next step
+(waits on user adjudication): the (C) design — one document, both
+mechanisms — and the 2–3-cell budget-slope MD probe on the existing
+`coulomb_available_eV`/R₀ knob as (B)'s authority measurement.**
+Nothing adopts from this section; `finc1v725` stands.
+
+### 3.5k The budget-slope probe — REGISTERED 2026-07-29 (user "option 2" adjudication: one cheap measurement before choosing between the honest-residual endpoint and the (C) design); **EXECUTED 2026-07-29 — BP-KILL NOT FIRED: S_k = 0.389 eV/eV (BP-P2 band CONFIRMED), the source-side lever is ALIVE; BP-P3 sign-INVERTED (suppression measured E_int-driven; full (B) wiring parks fast ions in suppressed-bare at baseline KE₁); BP-P4 needle persists. Findings "§3.5k", D0 §19, `atlas_budget_probe.csv`. The honest-residual branch is NOT forced; §3.5l carries the next step**
+
+**Purpose (frozen before launch).** The §3.5j verdict left three options;
+the user adjudicated the middle one: measure whether source energy even
+transfers to the detected n = 1 KE in-model, before any (C) design and
+with the honest-residual branch as the **pre-registered consequence of a
+kill**. This probe is a *slope measurement on an existing knob*, not a
+fit: no distribution is introduced, no weight is tuned.
+
+**Knob.** `E_coulomb_scale` (config-existing; multiplies the pair
+Coulomb `U = scale·14.39964548/r`, `physics/interactions.py`) sets the
+per-fragment kinematic budget at fixed birth geometry
+(R₀ = 2.666 Å ⇒ 2.7006 eV/fragment at scale 1). `coulomb_available_eV`
+(the E₀ stamp: E₀ = f_int·E_avail) moves with it; the two cells marked
+`k` pin E₀ = 0.405 by rescaling f_int (kinematics-only control), the
+unmarked cell keeps f_int = 0.15 (the full (B) proportional wiring).
+Provenance note recorded: the legacy droplet preset itself ships
+`E_coulomb_scale = 0.8` → 2.16 eV/fragment ≈ the measured 2.26 eV CE
+channel (`presets.py`) — the legacy code had already down-scaled the
+point-Coulomb toward the measured channel; production runs scale 1.0.
+
+**Cells (3 × N = 1000 at the committed `g4fh405` pins, seed 20260729,
+CRN-paired; targets = the two measured gas CE channels):**
+
+| cell | budget [eV/frag] | E_coulomb_scale | f_int | E₀ [eV] | role |
+|---|---|---|---|---|---|
+| bud226k | 2.26 | 2.26/2.7006 ≈ 0.8368 | 0.405/2.26 ≈ 0.17920 | 0.405 | kinematic line, down |
+| bud411k | 4.11 | 4.11/2.7006 ≈ 1.5219 | 0.405/4.11 ≈ 0.09854 | 0.405 | kinematic line, up |
+| bud411 | 4.11 | ≈ 1.5219 | 0.15 (unchanged) | 0.6165 | (B) wiring contrast |
+
+**Oracles (§1.4, before any MD and by --dry-run):** cfg-diff against the
+committed `g4fh405` cfg.json in **exactly**
+`{E_coulomb_scale, coulomb_available_eV, internal_energy_partition_fraction}`
+(k-cells) / `{E_coulomb_scale, coulomb_available_eV}` (bud411); a
+kinematic unit oracle asserts scale·14.39964548/(2·R₀) = the registered
+budget and f_int·stamp = the registered E₀, both to 1e-9; scorer O1
+(drift) / O2 (committed h405 row to 4 decimals) as in §3.5h/§3.5i.
+(Consistency note: the baseline stamp is 2.7 vs kinematic 2.7006 —
+pre-existing; the probe cells stamp the exact kinematic value.)
+
+**Pre-registered predictions:**
+
+- **BP-P1 (placement, 1-D anchored):** KE₁ rises along
+  bud226k → h405 → bud411k; placement slope 0.587 eV/eV (mass ratio
+  131/203 × slowdown 0.91 on a constant-force toll); bands
+  bud226k ∈ [0.29, 0.48], bud411k ∈ [1.13, 1.70]. Outside-band ⇒
+  diagnose before any design.
+- **BP-P2 (the number the probe exists for):** the fitted kinematic
+  slope S_k = dKE₁/dbudget over the valid-KE₁ cells (lowke ≥ 5-member
+  convention; kinematic budget axis 2.26/2.7006/4.11) lands in
+  **[0.35, 0.75]**.
+- **BP-P3 (wiring contrast, direction only — PT-P4 lesson):**
+  supp(bud411) < supp(bud411k): E₀ = 0.6165 > E* ≈ 0.46 unfreezes the
+  fast dressed class that the k-cells park in `suppressed`. Magnitudes,
+  n̄/n₁/W₁ exploratory.
+- **BP-P4 (needle persistence):** per-bin n = 1 KE SD stays < 0.08 at
+  the k-cells — a single-valued budget cannot widen a γ(v) path
+  integral; width requires the mixture. Confirms the (C) division of
+  labor by contradiction.
+- **BP-KILL (pre-registered consequence, user-adjudicated):** if
+  **S_k < 0.2**, the source-side lever is dead in-model and the
+  **honest-residual branch is TAKEN** (no (C) design, no parameter
+  chase; the §3.5j record is the write-up basis). midHot/deepKE at a
+  *uniform* ±50 % budget move every ion class and are recorded as
+  exploratory only — they are NOT kill inputs (the (C) forecast is
+  channel-weighted; a §3.5h-style category error is guarded against
+  here by registration).
+- **Success shape:** S_k ≥ 0.35 with the BP-P1 bands held ⇒ the (C)
+  design discussion proceeds with S_k as its measured authority.
+  Nothing adopts from this probe; `finc1v725` stands; the G4
+  adjudications stay open.
+
+**Instruments:** generator `gen_tier2atlas_budget_probe.py` + scorer
+`tier2atlas_budget_table.py` (sn-probe pattern; scorer reuses the
+committed observable/lowke/needle columns). MD spend 3 × N = 1000
+(~45–60 min at concurrency 3), disk ≈ 2.5 GB.
+
+### 3.5l The (C) design discussion — **CURRENT GOAL (2026-07-29; fresh-session entry point); design doc DRAFTED 2026-07-29**
+
+Physics definition first — no code, `[PROCEED TO IMPLEMENTATION]`
+discipline; the deliverable is a design doc on the
+`TIER2_DRAG_STATE_COUPLING_DESIGN.md` precedent (own document,
+dimensional analysis, enum surface, pre-registered probe).
+**Status: `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md` DRAFTED +
+ADJUDICATED 2026-07-29** (channel mixture w/ shared fraction f,
+per-pair scale emulation + Q3 partner mask, per-channel f_int,
+depth-graded strip P₀(v)·G(j) with retention-twin anchoring, ledger
+strip term, probe sketch P1–P3 + 4 MD cells; **OQ-A..J CLOSED per
+recommendations** (incl. checkpoint v8 granted-scoped — three
+per-ion fields; emulation route, no scope flags un-refused);
+**OQ-K stays open** (power↔intensity mapping = fact to confirm
+before the OQ-C weight values freeze); dof accounting added (§6:
+raw ~11 → 8 anchor-frozen / 3 P1-pinned / 1 probe-scanned). Next:
+zero-MD P1–P3, then probe registration.)
+
+**Measured inputs on record (do not re-derive):**
+
+- **S_k = 0.389 eV/eV** — the KER → KE₁ transfer slope (§3.5k / D0
+  §19); back-reaction factor 0.66 on the 1-D constant-toll placement.
+- **Suppression is E_int-driven** (∂supp/∂E₀ ≈ +1.7/eV); the full
+  proportional E₀ = f_int·budget wiring sends fast ions to
+  suppressed-bare with KE₁ at baseline — so Q3 feeds the n = 1 upper
+  half only via (A) stripping or partial E₀ decoupling.
+- **(A) ceiling ≈ 0.71 eV** (findings §3.5j counterfactual) with the
+  closure constraint: stochastic knockout **with depth-graded
+  survival** (pure binding-threshold → all-bare; pure Poisson-count →
+  mid-tail parking). OQ-J/K/L adjudicated (findings §3.5j).
+- **Paper-anchored channels (RQ7/RQ8 NBs):** 0.8·E_C from 2.666 Å;
+  Q2 = 2.16, Q3 = 4.32 eV per I⁺ (fast peak = I⁺–I²⁺); the standing
+  2.70 budget is ~25 % high vs this calibration — any re-anchor owes a
+  basin re-tune (bud226k measured the breakage).
+- Experimental n = 1 KED: mode 0.891 / mean 1.302 / σ 0.697; 48.7 %
+  above 1.15 eV; needle persists at any single budget (width must come
+  from the mixture).
+
+**Design axes to settle (the discussion agenda):**
+
+1. Channel set {single-ionization I₂⁺ PECs, Q2, Q3} — implementation
+   route: un-refuse the legacy scope flags
+   (`single_charge_ionization_allowed`, `highly_charged_iodine` — a
+   **declared scope change requiring explicit user approval**) vs
+   per-ion budget-sampling emulation on the existing knobs.
+2. Per-channel E₀ coupling (channel-dependent f_int — measured
+   leverage; the bud411/bud411k contrast is the calibration pair).
+3. The (A) exit-strip closure (stochastic knockout + depth-graded
+   survival; bookkeeping = re-labeled crossing drag work; n = 0
+   allowed).
+4. Channel weights — Bounded, anchored on the bare peak
+   (position/width), the I²⁺ discriminator, and the power series;
+   never fitted on the n = 1 KED itself (the circularity guard from
+   the 2026-07-29 meta-discussion).
+
+**Pre-design zero-MD verification reads:**
+(i) bare-KED bimodality (`IHe_KED_curves_n0.csv` — tests the
+two-component bare and the under-dressed Q3 transit whose toll
+arithmetic matches the 3.706 eV position) — **EXECUTED 2026-07-29**
+(findings "§3.5l reads (i)+(iii)"): bimodality WEAKLY PRESENT (lumps
+≈ 2.0–2.7 / 3.5–5.1 eV, dip ≈ 3.1–3.3); the bare row is FAST-FED
+(< 1 eV holds 1.9 %; bgOffShift 0.000) → slow-bare overpopulation is
+a new (C) kill axis; the toll arithmetic is mean-level only (upper
+mode 4.758 > 4.32 — see the calibration-frame item);
+(ii) **I²⁺ — ANSWERED 2026-07-29 (user figure input, thesis Fig. 6.2
+covariance maps; RQ8 NB):** I²⁺Heₙ measured in event covariance with
+I⁺He at **~7 % (1.47×10¹⁴) / ~20 % (2.94×10¹⁴ W/cm²)** — the Q3
+weight is MEASURED, intensity-dependent; flagged tension: 7–20 % <
+the 48.7 % KED weight above the (A) cap (resolutions: condition
+matching / n = 1 bg sensitivity / Q2-strip reach). **Mapping adopted
+provisionally (2026-07-29, user-recalled, unconfirmed): 300 mW ↔
+1.47×10¹⁴, 600 mW ↔ 2.94×10¹⁴** → the 600 mW KED reference pairs
+with the ~20 % Q3 share (tension softened). The I⁺He-row I⁺ bar is
+additionally recorded as the **retention-twin anchor** ((I⁺He, I⁺) =
+same-KER twins with different dressing → per-ion retention is
+stochastic at fixed kinematics; the (A) closure's target
+distribution — RQ8 NB follow-up round). Open rider: the **bare-I⁺
+(m/q 127) row** trace/bar-chart — the (I⁺, I⁺) and (I⁺, I²⁺Heₙ)
+pairs that decompose the 43.5 % bare peak are invisible in the
+I⁺He row (user question / matrix extraction);
+(iii) power-matched channel weights from the gas radial series
+(160/300/600 mW), with the droplet-reference condition stated (vmi
+droplet curves 300 mW-campaign; ihe_ked reference 600 mW series) —
+**EXECUTED 2026-07-29** (findings "§3.5l reads (i)+(iii)"): Q3
+fast-share 10.2/16.8/23.1 % at 160/300/600 mW, monotonic; 600 mW
+matches the ~20 % covariance anchor (the two instruments agree at
+the reference condition); 2-D-projection caveats recorded. A
+rim-position "calibration-frame split" rider was posted and
+**WITHDRAWN same-session** — the committed Abel export
+`vmi_iplus_gas.csv` confirms the 0.8·E_C channels (peaks 2.26/4.11
+≈ 2.16/4.32 within the 4 % calib band) in the repo's own frame; the
+2-D rims are position-biased (centers/projection), valid for power
+ordering only. RQ7 stance unchanged: the standing 2.70 budget is
+known-high ~25 %. The 0.8-provenance question was **ANSWERED
+same-session** (user supplied the source: Hatherly et al 1994,
+J. Phys. B 27 2993–3003; consulted, not repo-kept) — the reduction is
+**gas-phase finite-pulse CE physics** (sequential ionization during
+separation; fraction channel-independent, 0.75/0.65·E_C at
+90/200 fs), NOT droplet screening; in-droplet channels = 2.16/4.32
+with one shared Bounded fraction f ≈ 0.8; channel KERs carry
+measured intrinsic width (FWHM 2.6/5.8 eV at 200 fs) → the (B)
+source spread is sampled-with-width by design (findings "§3.5l
+reads (i)+(iii)").
+
+Nothing adopts from this section; `finc1v725` stands; the G4
+adjudications (successor point, retained policy, ledger re-issue)
+stay open.
 
 ### 3.6 Open questions this axis must answer or explicitly defer
 

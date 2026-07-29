@@ -152,10 +152,62 @@ EXHAUSTED on KE₁, shallow-birth/mixture lever REJECTED unphysical
 (user); §3.5h p_tail ring — placement confirmed but the kill fired
 (velocity-only tail softening un-damps the cascade; single-knob p_tail
 CLOSED; capped_cubic p_tail guard now [−4, 0]); band-limited tail
-rejected as overfitting (user). **Current goal: the drag state
-coupling s(n)** — design ADJUDICATED (all OQ-A..I closed) + 3-cell
-probe REGISTERED in `docs/drag_port/Tier2/TIER2_DRAG_STATE_COUPLING_DESIGN.md`;
-next session builds S1–S4 and runs the probe behind the trigger. The
+rejected as overfitting (user). The **s(n) drag state coupling was
+BUILT and probe-EXECUTED 2026-07-29** (S1–S4 delivered, `off` default
+bit-identical, full suite green): **all SC predictions REFUTED —
+the coupling is measured GATE-CLIPPED** (no ion reaches n ≤ 8 inside
+the droplet; ions exit fully dressed at n̄ 19), the axis is STOPPED,
+and OQ-F cooling was REJECTED (user). **The §3.5j discussion was HELD
+2026-07-29** (records: findings §3.5i.3 + §3.5j, plan §3.5j): the three
+verification reads + two placement reads executed zero-MD — the
+n = 20–21 spike is falsified ~30× at the reference AND identified as
+the `suppressed` fate class (scoring scaffolding); the gas KER is
+multi-channel (2.70 eV = point-Coulomb idealization); the experimental
+n = 1 KED holds 48.7 % above the (A) cap 1.15 eV; the h405
+counterfactual measures the (A) bracket ceiling KE₁ ≈ 0.708. Cold shed
+and the CE-instantaneous-stripping variant DECLINED (bulk-refill
+argument: net stripping only at the outbound crossing). **Measured
+verdict: (A) exit stripping is necessary-not-sufficient; (B)
+source-KER spread is required for the KE₁ position; the (C)
+combination is the design target.** The **§3.5k budget-slope probe
+EXECUTED 2026-07-29** (3 × N = 1000 at the h405 pins, CRN; plan §3.5k,
+findings §3.5k, D0 §19): **BP-KILL NOT fired — S_k = 0.389 eV/eV**
+(the source-side lever is alive; the pre-registered honest-residual
+consequence is not forced); BP-P3 sign-inverted — suppression is
+measured **E_int-driven** (∂supp/∂E₀ ≈ +1.7/eV; full proportional (B)
+wiring parks fast ions in suppressed-bare with KE₁ at baseline → the
+(A)/(B) complementarity is measured from both sides); needle persists
+(width requires the mixture). **Domain input recorded (user paper,
+RQ7/RQ8 NBs):** gas phase reproduced at 0.8·E_C with Q = 2/Q = 3 from
+2.666 Å → channels 2.16 / 4.32 eV per I⁺ (fast peak = I⁺–I²⁺); the
+standing 2.70 budget is ~25 % high vs this calibration; Q = 3 /
+single-ionization exist as refused scope flags; the I²⁺ discriminator
+is ANSWERED (covariance Fig. 6.2: Q3 share ~7 %/~20 % at
+1.47/2.94×10¹⁴ W/cm²; retention-twin anchor recorded — per-ion
+retention stochastic at fixed kinematics; RQ8 NB). **The §3.5l
+pre-design state is CLOSED 2026-07-29**: reads (i)+(iii) executed
+zero-MD (bare KED fast-fed + weakly two-lump → slow-bare is a new
+kill axis; gas Q3 share 10/17/23 % at 160/300/600 mW; a
+calibration-frame rider posted and withdrawn same-session — the Abel
+gas export confirms 0.8·E_C in the repo frame), and the 0.8
+provenance is CLOSED (Hatherly 1994, J. Phys. B 27 2993 — gas-phase
+finite-pulse CE physics, channel-independent fraction, NOT droplet
+screening; key numbers extracted to the docs, paper not repo-kept;
+RQ7 NB). **Current goal: the (C)
+build — `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md` is the fresh-session
+entry point** (design DRAFTED + ADJUDICATED 2026-07-29: channel
+mixture {single, Q2 2.16, Q3 4.32} × shared f 0.8 via per-pair scale
+emulation + Q3 partner mask, per-channel f_int, depth-graded exit
+strip P₀(v)·G(j) retention-twin-anchored, ledger strip term;
+OQ-A..J closed per recommendations incl. **checkpoint v8
+granted-scoped** to three per-ion fields; **OQ-K open** — the
+300/600 mW ↔ 1.47/2.94×10¹⁴ mapping is an unconfirmed fact gating
+the weight freeze; still open: the bare-I⁺ m/q-127-row covariance
+decomposition; weights never fitted on the n = 1 KED — the
+circularity guard; dof accounting §6: 8 anchor-frozen / 3 P1-pinned /
+1 probe-scanned). **Next: zero-MD P1–P3** (strip-form prior
+calibration on committed g4fh405 checkpoints; Abel width read;
+composition forecast), then the probe registration freeze. The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

@@ -63,6 +63,11 @@ PickupRateForm = Literal["density_only", "sweeping", "dwell_time"]
 ValidationHistogramMetric = Literal["wasserstein", "chi2", "ks"]
 RelaxationForces = Literal["coulomb", "free_flight"]   # Tier-2 Phase-E relaxation translation arm
 RelaxationDissipation = Literal["zero_gamma", "landau_gated_drag"]  # Tier-2 §I.11.2 item 2 arm (c)
+# Tier-2 atlas §3.5i drag-shell state coupling (TIER2_DRAG_STATE_COUPLING_DESIGN.md).
+# "off" (default) = bit-identical current behavior; "shell_area" = the geometric
+# s(n) = (R_eff(n)/R_eff(n_ref))**2 per-ion factor on gamma (BC-4: activation is
+# pure config -- flipping this enum is the entire switch).
+DragStateCoupling = Literal["off", "shell_area"]
 
 # Tier-2 Phase-B pickup channel (Slice P). ``PickupOccupancyCap`` selects the
 # Langmuir shell-saturation factor ``(1 - n/n*)_+^p`` (``langmuir``, default) vs the
@@ -515,6 +520,22 @@ class SimConfig:
     # the arm -- the T9 legs stamp it explicitly (the T5/T7 precedent).
     internal_energy_partition_law: InternalEnergyPartitionLaw = "constant"
 
+    # -- Tier-2 atlas §3.5i drag-shell state coupling s(n) (design doc S1) --
+    # "off" (default) = bit-identical current behavior: the driver passes its
+    # base gamma_fn closure verbatim (no wrapper object, BC-2). "shell_area" =
+    # the geometric per-ion factor s(n) = (R_eff(n)/R_eff(n_ref))**2 with
+    # R_eff(n) = (R_core**3 + 3n/(4*pi*rho_shell))**(1/3), multiplying gamma in
+    # the ion-stage O-step AND the E2 landau_gated_drag arm (OQ-A), jump-then-O
+    # from the same post-event n_shell the step's m(t) reads (BC-1/BC-3).
+    # Biphasic-only (the coupling variable is the generative n_shell state);
+    # n_ref is DERIVED from the bundle's extraction-mass stamp at the seam
+    # (OQ-C: never a config field). Both coefficients are Bounded physical
+    # parameters (CALIBRATION_MAP classes; design §3 priors), inert under
+    # "off"; guard-checked below (check_drag_state_coupling_config).
+    drag_state_coupling: DragStateCoupling = "off"
+    state_coupling_R_core_angstrom: float = 3.2    # A; bare-core collision radius (Bounded 3.0-3.6)
+    state_coupling_rho_shell_per_A3: float = 0.030  # A^-3; shell He density (Bounded bulk..2x bulk)
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -679,6 +700,7 @@ class SimConfig:
         check_evaporation_config(self)
         check_initial_shell_config(self)
         check_internal_energy_partition_config(self)
+        check_drag_state_coupling_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
         check_detection_config(self)
@@ -1141,6 +1163,97 @@ def check_internal_energy_partition_config(cfg: "SimConfig") -> None:
             "silently inert otherwise (keep the 'constant' default there)"
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 atlas §3.5i drag-shell state-coupling config-load guard (design S1)
+# ---------------------------------------------------------------------------
+_KNOWN_DRAG_STATE_COUPLINGS = ("off", "shell_area")
+
+
+def check_drag_state_coupling_config(cfg: "SimConfig") -> None:
+    """Validate the s(n) drag-state-coupling surface of ``cfg`` at config-load.
+
+    Rules (``TIER2_DRAG_STATE_COUPLING_DESIGN.md`` §5/§9/§10)
+    -----
+    1. ``drag_state_coupling`` must be a known selector (typo guard).
+    2. The geometric coefficients must be finite and positive **always**
+       (fail-early even while inert under ``off`` -- the T7 margin
+       precedent does not apply because the defaults are physical priors,
+       not zeros).
+    3. ``shell_area`` is a biphasic-only coupling: the state variable is the
+       generative per-ion ``n_shell``, absent under ``fixed`` and scheduled
+       (not per-ion-stochastic) under ``anchored_discrete`` -- refused
+       loudly outside ``mass_scenario='biphasic'`` (the T5/T6/T7
+       no-silent-inert convention).
+    4. ``shell_area`` requires a drag-coefficient bundle: ``n_ref`` is
+       derived from the bundle's extraction-mass stamp (OQ-C), and the
+       derivation must succeed (near-integer shell count -- the
+       n_ref-vs-stamp consistency check, OQ-H: the *only* new §6.5-family
+       coupling).
+    5. The bare-end factor must satisfy ``0 < s(0) < 1`` at the configured
+       coefficients (design §5 guard clause; degenerate closures refused).
+
+    Raises
+    ------
+    ValueError
+        On any of the five rules above.
+    """
+    from .physics.state_coupling import (
+        derive_n_ref_amu,
+        shell_area_state_factor,
+    )
+
+    _reject_unknown_enum(
+        cfg.drag_state_coupling,
+        _KNOWN_DRAG_STATE_COUPLINGS,
+        field="drag_state_coupling",
+    )
+    for name, value in (
+        ("state_coupling_R_core_angstrom", cfg.state_coupling_R_core_angstrom),
+        ("state_coupling_rho_shell_per_A3", cfg.state_coupling_rho_shell_per_A3),
+    ):
+        if not (np.isfinite(value) and value > 0):
+            raise ValueError(f"{name} must be finite and > 0, got {value!r}")
+    _require_pairing(
+        field="drag_state_coupling", value=cfg.drag_state_coupling,
+        trigger="shell_area", dep_field="mass_scenario",
+        dep_value="biphasic", actual=cfg.mass_scenario,
+        reason=(
+            "the coupling variable is the generative per-ion n_shell state, "
+            "which only the biphasic scenario evolves (fixed has no shell "
+            "state; anchored_discrete follows a shared schedule), so s(n) "
+            "would be ill-defined otherwise (keep the 'off' default there)"
+        ),
+    )
+    if cfg.drag_state_coupling != "shell_area":
+        return
+    if cfg.drag_coefficients is None:
+        raise ValueError(
+            "drag_state_coupling='shell_area' requires a drag_coefficients "
+            "bundle: n_ref is derived from the bundle's extraction-mass stamp "
+            "(OQ-C) and the coupling multiplies the drag-path gamma, which "
+            "does not run without a bundle."
+        )
+    # Rules 4 + 5: the stamp derivation and the bare-end sanity of the closure
+    # (both raise ValueError with field-specific messages from the module).
+    n_ref = derive_n_ref_amu(cfg.drag_coefficients.extraction_mass_amu)
+    s_bare = float(
+        shell_area_state_factor(
+            0.0,
+            R_core_angstrom=cfg.state_coupling_R_core_angstrom,
+            rho_shell_per_A3=cfg.state_coupling_rho_shell_per_A3,
+            n_ref=n_ref,
+        )
+    )
+    if not (0.0 < s_bare < 1.0):
+        raise ValueError(
+            f"drag_state_coupling='shell_area' with "
+            f"R_core={cfg.state_coupling_R_core_angstrom!r}, "
+            f"rho_shell={cfg.state_coupling_rho_shell_per_A3!r}, "
+            f"n_ref={n_ref} gives a degenerate bare-end factor "
+            f"s(0)={s_bare!r}; the design guard requires 0 < s(0) < 1."
+        )
 
 
 # ---------------------------------------------------------------------------

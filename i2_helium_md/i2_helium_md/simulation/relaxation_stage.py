@@ -102,6 +102,11 @@ from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.drag import drag_gamma
 from ..physics.leapfrog import make_ion_accel_fn
 from ..physics.solvation_cooling import e_bind_pair_eV
+from ..physics.state_coupling import (
+    apply_state_factor,
+    derive_n_ref_amu,
+    shell_area_state_factor,
+)
 from .checkpoint import (
     IonCheckpoint,
     check_biphasic_seed_checkpoint,
@@ -486,6 +491,21 @@ def run_relaxation_stage(
     # bundle + cutoff); only the coulomb translation consumes it (the config-load
     # guard forbids landau_gated_drag under free_flight).
     gamma_fn = _make_relaxation_gamma_fn(relax_cfg, gate_steepness)
+    # Tier-2 atlas §3.5i s(n) state coupling in the E2 stage (OQ-A: one force
+    # law everywhere; design S2, BC-3): under "shell_area" the per-step coulomb
+    # translation wraps the Landau-gated arm with s(n_shell) on the post-event
+    # state (jump-then-O, BC-1). The zero_gamma arm is exempt on purpose --
+    # s * 0 == 0, and wrapping would break the arm's verbatim-closure
+    # byte-identity convention for nothing.
+    state_coupling_live = (
+        cfg.drag_state_coupling == "shell_area"
+        and cfg.relaxation_dissipation == "landau_gated_drag"
+    )
+    n_ref_coupling = None
+    if state_coupling_live:
+        n_ref_coupling = derive_n_ref_amu(
+            cfg.drag_coefficients.extraction_mass_amu
+        )
 
     seed = ion_state_from_checkpoint_column(ion, -1)
 
@@ -513,12 +533,23 @@ def run_relaxation_stage(
             state, rng=rng, cfg=relax_cfg, droplet_radii=droplet_radii,
             gate_steepness=gate_steepness,
         )
-        # Translation (drag off).
+        # Translation (drag off unless the landau_gated_drag arm is selected).
         if forces == "coulomb":
+            step_gamma_fn = gamma_fn
+            if state_coupling_live:
+                step_gamma_fn = apply_state_factor(
+                    gamma_fn,
+                    shell_area_state_factor(
+                        state.n_shell,
+                        R_core_angstrom=cfg.state_coupling_R_core_angstrom,
+                        rho_shell_per_A3=cfg.state_coupling_rho_shell_per_A3,
+                        n_ref=n_ref_coupling,
+                    ),
+                )
             state = _coulomb_translate(
                 state, relax_cfg=relax_cfg, droplet_radii=droplet_radii,
-                charge=charge, picture=picture, kappa=kappa, gamma_fn=gamma_fn,
-                ladder=ladder,
+                charge=charge, picture=picture, kappa=kappa,
+                gamma_fn=step_gamma_fn, ladder=ladder,
             )
         else:
             state = _free_flight_translate(

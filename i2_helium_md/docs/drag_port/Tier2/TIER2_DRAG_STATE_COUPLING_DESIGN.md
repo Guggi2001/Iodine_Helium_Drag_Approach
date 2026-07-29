@@ -1,9 +1,17 @@
 # Tier-2 Drag State Coupling — Design Draft (s(n): the drag learns the ion has stripped)
 
-**Status: DESIGN ADJUDICATED (user, 2026-07-29) — all nine open questions
-closed (§9, decisions inline) and the probe REGISTERED (§8). No code
-exists yet; the build waits for `[PROCEED TO IMPLEMENTATION]` in a fresh
-session. Nothing here moves `finc1v725` or any G4 adjudication.**
+**Status: EXECUTED 2026-07-29 — built (S1–S4, full suite 2848 passed) and
+the §8 probe run: ALL registered predictions REFUTED, including the SC-P2
+needle-break signature. Measured cause: the coupling is GATE-CLIPPED — no
+ion reaches n ≤ 8 while inside the droplet (mean exit shell 19.0 He), so
+the low-n regime of s(n) is structurally unreachable; the §2 premise
+(early strippers transit small) is factually absent. The axis is STOPPED
+per the SC-P2 clause; options revert to the honest-residual branch or
+OQ-F (user adjudication). Records: findings "§3.5i", D0 §18, log
+2026-07-29. The code stays delivered behind the `off` default
+(bit-identical). Nothing here moved `finc1v725` or any G4 adjudication.
+Design history below (adjudication §9, conventions §10) is preserved
+as registered.**
 
 ---
 
@@ -95,7 +103,12 @@ dimensionless ✓. Illustrative magnitudes at the priors (R_core 3.2,
 
 | n | 21 | 19 | 14 | 8 | 5 | 2 | 1 | 0 |
 |---|---|---|---|---|---|---|---|---|
-| s(n) | 1.06 | 1.00 | 0.85 | 0.65 | 0.54 | 0.40 | 0.37 | 0.32 |
+| s(n) | 1.057 | 1.000 | 0.850 | 0.650 | 0.538 | 0.412 | 0.366 | 0.317 |
+
+*(Erratum 2026-07-29, pre-build: the draft's illustrative values carried
+last-digit rounding slips — s(2) 0.40 → 0.412, s(5) 0.54 → 0.538,
+s(21) 1.06 → 1.057; corrected to the exact closure arithmetic before the
+unit oracle was coded against this table. No physics moved.)*
 
 The bare-end value s ≈ 0.32–0.37 is the **prior**, not a fit — and it
 sits at the order the KE₁ deficit requires (toll ratio ≈ 0.45 for a
@@ -181,9 +194,16 @@ parameter's uncertainty interval, not a fit axis:
 
 | cell | ρ_shell [Å⁻³] | reading | s(19) ref R_eff [Å] | s(1) | s(0) |
 |---|---|---|---|---|---|
-| sa22 | 0.0218 (bulk) | strong-coupling end | 6.22 | 0.320 | 0.266 |
-| sa30 | 0.030 (prior) | the geometric prior | 5.68 | 0.367 | 0.317 |
-| sa44 | 0.0436 (2× bulk) | weak-coupling end | 5.16 | 0.427 | 0.385 |
+| sa22 | 0.0218 (bulk) | strong-coupling end | 6.22 | 0.321 | 0.265 |
+| sa30 | 0.030 (prior) | the geometric prior | 5.69 | 0.366 | 0.317 |
+| sa44 | 0.0436 (2× bulk) | weak-coupling end | 5.15 | 0.428 | 0.386 |
+
+*(Erratum 2026-07-29, pre-build: last-digit rounding slips in the draft
+corrected to the exact closure arithmetic (sa22 s(1) 0.320 → 0.321,
+s(0) 0.266 → 0.265; sa30 R_eff 5.68 → 5.69, s(1) 0.367 → 0.366; sa44
+R_eff 5.16 → 5.15, s(1) 0.427 → 0.428, s(0) 0.385 → 0.386) before the
+unit oracle was coded against this table. ρ_shell, R_core and every
+prediction band unchanged.)*
 
 (Note the direction: *lower* shell density → fluffier dressed object →
 larger dressed/bare contrast → stronger coupling.)
@@ -263,3 +283,30 @@ disk ≈ 2.5 GB.
   consistency check.
 - **OQ-I — basin re-finding: deferred to the probe's outcome.** The
   §3.5g slopes are pre-s and are NOT reusable once s is live.
+
+## 10. Build conventions (adjudicated 2026-07-29, pre-trigger amendment)
+
+Implementation-level conventions fixed before the build; none moves any
+§9 adjudication.
+
+- **BC-1 — step-timing (which n the O-step sees):** s(n) is evaluated
+  from the **same shell state the step's m(t) uses** — the state at the
+  start of the step, consistent with the SQ2 post-jump `m⁺` convention.
+  A shed/pickup at step k changes both m and s from step k+1's O-step
+  onward. One convention, one variable, no half-step asymmetry.
+- **BC-2 — seam signature:** the integrator's gamma evaluation gains a
+  per-ion multiplier the driver refreshes each step from `n_shell`;
+  `physics/drag.py` is untouched (the module stays mass-agnostic and
+  state-blind, §5). Under `off` the multiplier is exactly 1.0 — a
+  float-exact multiply, so `off` is bit-identical even structurally
+  (defended by the S4 regression).
+- **BC-3 — E2 threading:** the same per-ion s is threaded through the
+  relaxation stage's `landau_gated_drag` (OQ-A), using the live n as
+  stripping continues in E2, under the BC-1 timing convention.
+- **BC-4 — swappability (user clarification, 2026-07-29):** activation
+  is **pure config** — flipping `drag_state_coupling` between `off` and
+  `shell_area` in the cfg is the entire switch; no code edits, no
+  divergent code path beyond the multiplier value. Every existing cfg
+  (which lacks the field → default `off`) reproduces bit-identically,
+  and any future run can carry the coupling active or inactive as a
+  first-class per-run choice.
