@@ -11609,3 +11609,47 @@ adjudications stay open. **Next (user):** the next-axis choice —
 p_tail study (deep-channel toll, KE-first) vs birth-law/mixture probe
 (fast shallow channel, weight-first) vs both, each requiring its own
 pre-registered design.
+
+## §3.5h p_tail ring DESIGNED + user-approved — shallow-birth/mixture lever REJECTED on physics (user); composition ceiling measured (h405 n = 1 KE max 0.734 eV, zero of 1556 ions above 1.0); config guard widened {0, −1} → [−4, 0] under the fresh adjudication its own message required; placement: KE₁ = 1.00 at p_tail ≈ −1.80 (2026-07-29)
+
+Follow-on of the §3.5g continuation discussion. **User adjudications:**
+(1) the §3.5g R4 shallow-birth/mixture lever is **rejected as
+unphysical** — the central parent-Boltzmann birth law is the physics
+(solvated I₂ sits centrally); R4 re-reads as evidence that real
+deep-born n = 1 ions are fast, i.e. **the p_tail = −1 tail over-drags**;
+(2) the **p_tail axis is approved** (proposal accepted verbatim:
+{−1.5, −2, −3} × N = 1000 at the h405 pins).
+
+**Composition ceiling (exploratory read, committed h405 battery):**
+n = 1 KE max 0.734 eV / p99 0.724 / zero of 1556 above 1.0 eV (n = 2 max
+0.643) — no re-selection knob can reach a 1.0 mean over a 0.73-capped
+population; with KER experimental and geometry physically fixed, the
+force law above the TDDFT band (traces end 5.58 Å/ps) is the unique
+remaining energy-side lever. Together with §3.5g R5 this closes the
+"is there another way" question.
+
+**Scoped code change (the guard's own message named the condition):**
+`config.py` capped_cubic p_tail guard widened from the Step-1c set
+{0, −1} to **−4 ≤ p_tail ≤ 0** (dissipative softening only; positive
+refused; lq keeps {0, −1}). The drag module was already general — no
+physics code changed. Tests: guard parametrizations updated as
+adjudication-driven (in-file comments), all 9 capped-cubic identity/
+continuity parametrizations extended to {−2, −3}, plus an explicit
+p_tail = −2 closed-form exponent-law regression (F = g·b·v_c⁴/v) that
+the generic identities cannot catch. `tests/test_drag.py` +
+`test_drag_config.py`: 183 passed.
+
+**Placement (1-D anchored transit integral, zero MD):** anchored to the
+measured h405 toll (14.33 → 9.87 Å/ps at p = −1 ⇒ L_eff 26.1 Å at
+ρ̂ = 1, extraction mass 202.95; p* mass-bracket-invariant):
+−1.5 → 0.889, −1.75 → 0.984, −2 → 1.062, −3 → 1.241 eV;
+**KE₁ = 1.00 at p_tail ≈ −1.80**. The approved bracket straddles the
+target; launch authorized per the approval.
+
+Full registration frozen as plan **§3.5h** (cells pt15/pt20/pt30, seed
+20260729 CRN-paired to the finals; cfg-diff oracle exactly
+`{"drag_coefficients"}` with only p_tail differing; predictions
+PT-P1..P5 incl. the midHot kill criterion and the conditional
+E₀-recenter cell; Tier-0 legitimacy by construction — the in-band
+branch is byte-identical and no trace reaches the tail). Nothing
+adopts; `finc1v725` stands.

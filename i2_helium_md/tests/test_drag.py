@@ -498,7 +498,23 @@ class TestCappedCubic:
                 F_sat / v, rel=1e-12
             )
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    def test_tail_pm2_explicit_values(self):
+        # p_tail = -2 (§3.5h softening tail): F = g*b*v_c^4/v falls off as
+        # 1/v above the cap — an explicit exponent-law check the generic
+        # identities cannot catch (an off-by-one in p_tail would survive
+        # F = gamma*v and continuity-at-the-cap).
+        bundle = self._capped(p_tail=-2.0)
+        d = -400.0
+        for v in (4.0, 6.0):
+            expected_F = self.B * self.V_C**4 / v
+            assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                expected_F, rel=1e-12
+            )
+            assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+                expected_F / v, rel=1e-12
+            )
+
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_continuous_at_the_cap(self, p_tail):
         # Both branches evaluate to g*b*v_c^2 at v = v_c; approach from both
         # sides agrees to first order (eps*rel band, analytical continuity).
@@ -513,7 +529,7 @@ class TestCappedCubic:
             )
 
     # --- convention identities (mirror TestFormPhaseFamilies) ---
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_gamma_closed_form_equals_force_over_v(self, p_tail):
         bundle = self._capped(p_tail=p_tail)
         v = self.V[self.V > 0.0]  # away from rest (division is legal)
@@ -522,7 +538,7 @@ class TestCappedCubic:
             gam = drag_gamma(v, d, bundle, STEEPNESS_A)
             np.testing.assert_allclose(gam, F / v, rtol=1e-12)
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_dissipative_and_gate_shared(self, p_tail):
         # F >= 0 (magnitude convention) and gamma carries the SAME gate factor
         # as the force (hard FDT coupling carrier, §5.2).
@@ -534,7 +550,7 @@ class TestCappedCubic:
             assert np.all(gam >= 0.0)
             np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_gamma_at_rest_is_zero(self, p_tail):
         # v = 0 sits on the in-band pure-cubic branch: gamma -> 0 regularly
         # (the p_tail = -1 tail formula is never evaluated at rest).
@@ -542,7 +558,7 @@ class TestCappedCubic:
         gam0 = drag_gamma(0.0, -40.0, bundle, STEEPNESS_A)
         assert float(gam0) == 0.0
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_no_floating_point_warnings_across_the_cap(self, p_tail):
         # Mixed-speed arrays (rest + in-band + tail) and v_c = inf must never
         # touch a singular intermediate (0**-1, inf/inf): errstate-raise makes
@@ -557,7 +573,7 @@ class TestCappedCubic:
 
     # --- §I.10 oracle 2: v_c = inf (or >= v_max) byte-identity with the
     # --- locked pure cubic. Exact ``==``: same arithmetic, not "close".
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     @pytest.mark.parametrize("v_c", [np.inf, 6.0])  # 6.0 == max(V) >= v_max
     def test_vc_at_or_above_vmax_is_byte_identical_to_pure_cubic(
         self, p_tail, v_c
@@ -759,7 +775,7 @@ class TestCappedLinearQuadratic:
                 np.asarray(drag_force(self.V, d, lq, STEEPNESS_A)),
             )
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_continuous_at_the_cap(self, p_tail):
         bundle = self._capped(p_tail=p_tail)
         d = -5.0
@@ -771,7 +787,7 @@ class TestCappedLinearQuadratic:
                 expected, rel=1e-6
             )
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_dissipative_gate_shared_and_gamma_is_force_over_v(self, p_tail):
         bundle = self._capped(p_tail=p_tail)
         for d in self.DEPTHS:
@@ -781,7 +797,7 @@ class TestCappedLinearQuadratic:
             assert np.all(gam >= 0.0)
             np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -2.0, -3.0])
     def test_no_floating_point_warnings_across_the_cap(self, p_tail):
         # Mixed arrays (rest + in-band + tail) and v_c = inf: no singular
         # intermediate may be touched (errstate-raise makes leaks fatal).

@@ -145,7 +145,8 @@ class DragCoefficients:
         ``{"a": <amu/ps>, "c": <amu/A>}``; ``POWER_LAW``:
         ``{"C": <amu*A^(1-n)*ps^(n-2)>, "n": <dimensionless>}``;
         ``CAPPED_CUBIC``: ``{"b": <amu*ps/A^2>, "v_c": <A/ps>,
-        "p_tail": <dimensionless, one of {0, -1} (config-load guard)>}``.
+        "p_tail": <dimensionless, -4 <= p_tail <= 0 (config-load guard;
+        §3.5h adjudication 2026-07-29)>}``.
     extraction_mass_model : str
         How mass was treated during extraction: ``"constant"`` or
         ``"time_resolved"``. The §6.5 guard (Slice 3) reads this; Slice 1

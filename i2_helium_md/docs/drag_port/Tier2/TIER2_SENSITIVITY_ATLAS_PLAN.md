@@ -1400,6 +1400,117 @@ schema, RNG draw order and the constants table untouched. N = 500 KE₁
 carries ≈ 0.02–0.03 eV single-seed scatter — ring/grid rows are read at
 that resolution, never over it.
 
+### 3.5h The p_tail ring — the low-n KE axis opened on the drag tail (DESIGNED + user-approved 2026-07-29)
+
+**Adjudications recorded (user, 2026-07-29, post-§3.5g discussion):**
+
+1. **The shallow-birth/mixture lever is REJECTED on physics.** The central
+   parent-Boltzmann birth law *is* the physics (solvated I₂ sits at the
+   droplet center); the §3.5g R4 shallow cells were an artifact of the old
+   wrong geometry, not a channel reality offers. The R4 bifurcation is
+   re-read diagnostically: if real births are central and the real n = 1
+   peak is ≈ 1.0 eV, then real deep-born n = 1 ions ARE fast — **the
+   current tail over-drags**, and R4 becomes evidence *for* weak high-v
+   drag, not for a mixture lever.
+2. **The p_tail axis is approved** as the next designed axis (this
+   section), with the §3.5g record + the composition ceiling as its
+   motivation.
+
+**The composition ceiling (exploratory read on the committed h405 battery,
+2026-07-29; to be re-scored under this section's oracle chain):** the
+pooled n = 1 KE distribution is a needle — max **0.734 eV**, p99 0.724,
+**zero of 1556 ions above 1.0 eV** (n = 2: max 0.643). No re-selection /
+composition knob (λ₀, s_eff, f_ret, ladder, retained policy, occupancy p)
+can raise a mean to 1.0 over a population capped at 0.73 — only levers
+that *add kinetic energy to an ion* can, and with KER experimental and
+the geometry physically fixed, the force law above the TDDFT band is the
+unique remaining energy-side lever.
+
+**Guard widening (the §3.5h scoped code change):** the config-load guard
+pinned `capped_cubic` `p_tail` to the Step-1c set {0, −1} with the
+explicit message "any other exponent needs a fresh adjudication" — this
+is that adjudication. Widened to **−4 ≤ p_tail ≤ 0** (dissipative
+softening only; positive exponents stay refused). The drag module itself
+was already general (`(v/v_c)**p_tail`); no physics code changed. Tests
+updated as adjudication-driven (documented in-file), plus an explicit
+p_tail = −2 closed-form exponent-law regression the generic identities
+cannot catch. `capped_linear_quadratic` keeps {0, −1}.
+
+**Placement (1-D anchored transit integral, zero MD — placement
+authority only, no ranking):** anchored to reproduce the measured h405
+toll (start 14.33 Å/ps = 1.35 eV; exit 9.87 = 0.641 eV at p_tail = −1
+⇒ L_eff = 26.1 Å at ρ̂ = 1 under the extraction mass 202.95; the
+calibration absorbs the mass — p* is bracket-invariant over m ∈
+[127, 250]):
+
+| p_tail | −1.0 | −1.5 | −1.75 | −2.0 | −2.5 | −3.0 |
+|---|---|---|---|---|---|---|
+| predicted KE₁ [eV] | 0.641 (anchor) | 0.889 | 0.984 | 1.062 | 1.173 | 1.241 |
+
+**KE₁ = 1.00 eV at p_tail ≈ −1.80.** Known omissions: the heating
+back-reaction (weaker tail → less drag work → less E_int → shallower
+cascade → the *population* ending at n = 1 changes) and the ensemble
+spread — MD measures the truth.
+
+**Cells (3 × N = 1000 + 1 conditional; seed 20260729 = the finals seed,
+so every comparison against the committed h405 row is CRN-paired):**
+
+| cell | p_tail | role |
+|---|---|---|
+| pt15 | −1.5 | below-target bracket |
+| pt20 | −2.0 | at/above-target bracket (placement 1.06) |
+| pt30 | −3.0 | far probe: overshoot + midHot-damage measurement |
+
+Everything else = the committed `g4fh405` pins verbatim (corrected
+geometry, v_c 5.5 / τ 4.4 / E₀ 0.405, exclude_all_coupled). The
+conditional 4th cell (E₀ recenter along the measured §3.5g slopes)
+fires only per PT-P4 below.
+
+**Oracles (§1.4, before any MD and by --dry-run):** each cell's cfg
+diffs against the committed `g4fh405` `cfg.json` in **exactly**
+`{"drag_coefficients"}`, and inside the bundle only `p_tail` differs
+(b, v_c, stamps bit-identical); the scorer re-runs the standing
+scorer-drift oracle and reproduces the committed finals h405 row to 4
+decimals before any new number is read.
+
+**Pre-registered predictions:**
+
+- **PT-P1 (placement band):** KE₁ rises monotonically with |p_tail|;
+  per-cell bands = placement ± 0.10 eV: pt15 ∈ [0.79, 0.99], pt20 ∈
+  [0.96, 1.16], pt30 ∈ [1.14, 1.34]. Outside-band ⇒ the 1-D placement
+  model is wrong in a way worth diagnosing before any further tail work.
+- **PT-P2:** KE₂ rises toward 0.706 with the same ordering; KE₃ rises
+  mildly (≤ +0.10 at pt20).
+- **PT-P3 (the kill criterion, v525-informed):** if **every** cell with
+  KE₁ ≥ 0.95 shows midHot > 1.15, the tail exponent alone fails the
+  axis exactly as the v_c cap move did, and the axis moves to a joint
+  (p_tail × v_c/τ/E₀) re-tune or the honest-residual branch — no
+  further single-knob tail cells.
+- **PT-P4 (back-reaction):** n₁ falls and n̄ rises with |p_tail| (less
+  drag work → less E_int → shallower cascades). If a cell with KE₁ ∈
+  [0.95, 1.16] lands n₁ < 0.19, the conditional recenter cell fires:
+  E₀ raised along the measured §3.5g arm slopes (+0.004…+0.007 n₁ per
+  +0.005 eV), one cell, same seed, registered by this clause.
+- **PT-P5 (orthogonality):** deep bins are untouched — deep-n ions live
+  near/below v_c, where the law is byte-identical; deepKE within ±0.05
+  of the h405 battery's 0.50 (per-seed SD 0.02). A violation means the
+  tail reaches deeper into the cascade than the exit-speed picture
+  says, and the §3.5g slope arithmetic must be redone with p_tail live.
+- **Tier-0 legitimacy by construction:** the in-band branch (v ≤ 5.5)
+  is byte-identical to the Tier-0-locked pure cubic; the TDDFT traces
+  end at 5.58 / 3.36 Å/ps, so no trace constrains any of these cells'
+  tail. No Tier-0 re-run is owed.
+
+**Scoring:** the full standing surface + the §3.5g KE terms (KE₁ vs the
+1.00 anchor, KE₂ vs 0.706). Success shape: a cell holding KE₁ ∈
+[0.95, 1.16], midHot ≤ 1.15, gate (n₁/n̄) intact — such a cell becomes
+the candidate for a pooled verification battery (the GV precedent)
+before any successor talk. **Nothing adopts from this section;
+`finc1v725` stands; the G4 adjudications stay open.**
+
+**MD spend:** 3 × N = 1000 (~45–60 min at concurrency 3) + at most one
+conditional cell. Disk checked: ≈ 0.8 GB/cell against 17 GB free.
+
 ### 3.6 Open questions this axis must answer or explicitly defer
 
 - **Is E_bind R-dependent? — ANSWERED at G0 (2026-07-26): yes, but

@@ -218,7 +218,9 @@ class TestFormPhaseDissipativityGuard:
 
 # ---------------------------------------------------------------------------
 # Guard: capped_cubic dissipativity + adjudicated-tail restriction
-# (Tier-2 Addendum I §I.10 Slice T1: b > 0, v_c > 0, p_tail in {0, -1})
+# (Tier-2 Addendum I §I.10 Slice T1: b > 0, v_c > 0; tail range widened to
+# -4 <= p_tail <= 0 by the §3.5h low-n-KE-axis adjudication, 2026-07-29 —
+# the Step-1c set {0, -1} is a subset)
 # ---------------------------------------------------------------------------
 class TestCappedCubicGuard:
     def _cfg(self, coefficients):
@@ -227,8 +229,10 @@ class TestCappedCubicGuard:
             drag_coefficients=_form_coeffs(CAPPED_CUBIC, coefficients),
         )
 
-    @pytest.mark.parametrize("p_tail", [0.0, -1.0])
+    @pytest.mark.parametrize("p_tail", [0.0, -1.0, -1.5, -2.0, -3.0, -4.0])
     def test_adjudicated_tails_pass(self, p_tail):
+        # {0, -1} = the Step-1c set; the continuous extension to [-4, 0] is
+        # the §3.5h low-n-KE-axis adjudication (2026-07-29).
         check_drag_config(
             self._cfg({"b": 2.5153509, "v_c": 6.5, "p_tail": p_tail})
         )
@@ -252,10 +256,11 @@ class TestCappedCubicGuard:
                     self._cfg({"b": 2.5, "v_c": v_c, "p_tail": 0.0})
                 )
 
-    @pytest.mark.parametrize("p_tail", [1.0, 0.5, -2.0])
+    @pytest.mark.parametrize("p_tail", [1.0, 0.5, -4.5])
     def test_unadjudicated_tail_exponent_refused(self, p_tail):
-        # Only the Step-1c-surviving set {0, -1} is loadable (§I.10); any
-        # other exponent needs a fresh adjudication, not a config value.
+        # Positive exponents (tail force growing faster than the cap force)
+        # and anything below -4 stay refused: the §3.5h adjudication covers
+        # dissipative softening only, -4 <= p_tail <= 0.
         with pytest.raises(ValueError, match="p_tail"):
             check_drag_config(
                 self._cfg({"b": 2.5, "v_c": 6.5, "p_tail": p_tail})

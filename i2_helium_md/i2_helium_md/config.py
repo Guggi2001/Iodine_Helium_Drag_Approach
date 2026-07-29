@@ -1801,11 +1801,13 @@ def check_drag_config(cfg: "SimConfig") -> None:
                 f"v_c = inf is the pure-cubic byte-identity limit), got "
                 f"v_c={v_c!r}"
             )
-        if p_tail not in (0.0, -1.0):
+        if not (-4.0 <= p_tail <= 0.0):
             raise ValueError(
-                f"capped_cubic drag requires p_tail in {{0, -1}} (the "
-                f"Step-1c-surviving tail set, TIER2_STAIRCASE_PROBE_PLAN "
-                f"§I.10; any other exponent needs a fresh adjudication), "
+                f"capped_cubic drag requires -4 <= p_tail <= 0 (tail force "
+                f"F ~ v^(p_tail+1) must not grow with v — dissipative "
+                f"softening only; the continuous range was adjudicated for "
+                f"the low-n KE axis, TIER2_SENSITIVITY_ATLAS_PLAN §3.5h, "
+                f"2026-07-29, superseding the Step-1c set {{0, -1}}), "
                 f"got p_tail={p_tail!r}"
             )
     elif form == CAPPED_LINEAR_QUADRATIC:
