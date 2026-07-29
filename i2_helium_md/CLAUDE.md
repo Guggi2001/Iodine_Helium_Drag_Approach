@@ -219,9 +219,14 @@ a = 1 disfavored on W₁-parking + slow-bare; measured channel widths
 carries 53–61 % of the n = 1 bin; two registered tensions —
 two-lump mode vs single-mode reference 0.891, and n₁ 0.18–0.23
 short of the 0.31 reference; findings "(C) pre-step P3"). **P1–P3
-COMPLETE. Next: the probe registration freeze** (CP-1..8 band
-proposal in the findings — user gate), then the probe build behind
-`[PROCEED TO IMPLEMENTATION]`. The
+COMPLETE and the PROBE REGISTRATION IS FROZEN 2026-07-29 (user
+approved the CP-1..8 bands — authoritative table: design doc §8,
+incl. frozen inputs and the two registered tensions). Next: the
+(C) probe build** (channel sampler, exit strip, checkpoint v8
+scoped to three per-ion fields, 4 MD cells C-full/A-only/B-only/
+coupling arm at N = 1000 CRN) **behind `[PROCEED TO
+IMPLEMENTATION]` — design doc §8/§9 is the fresh-session entry
+point.** The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

@@ -2607,8 +2607,8 @@ assumption; full CSV committed):**
    ~0.2 eV at full strip); proxy-budget occupancy bias; KE_conv
    budget-independence; the single-channel row is an assumption.
 
-**Registration-band PROPOSAL (to freeze at probe registration — user
-adjudication):** CP-1 supp ≤ 0.05; CP-2 KE₁ SD ∈ [0.30, 0.70];
+**Registration-band proposal — FROZEN 2026-07-29 (user: "I approve
+the bands"); the authoritative frozen table is design doc §8:** CP-1 supp ≤ 0.05; CP-2 KE₁ SD ∈ [0.30, 0.70];
 CP-3 KE₁ mean ∈ [0.85, 1.20] AND above-1.15 ∈ [0.35, 0.55];
 CP-4 n₁_solv ∈ [0.18, 0.26] (forecast band + one seed-SD);
 CP-5 (kill) ensemble slow-bare ≤ 0.01 (bare-row share below 1 eV
@@ -2618,6 +2618,6 @@ MD cells per the design §9: C-full / A-only / B-only / coupling arm
 (f_int,Q3 0.0985 vs 0.15), N = 1000, CRN, `drag_state_coupling off`.
 
 **Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy +
-G4 adjudications open. P1–P3 are complete — the probe registration
-freeze (bands above + the weight vector) is the next user gate; the
-probe build stays behind `[PROCEED TO IMPLEMENTATION]`.
+G4 adjudications open. P1–P3 are complete and the **registration is
+FROZEN** (design §8) — the probe build (channel sampler, exit strip,
+checkpoint v8) is next, behind `[PROCEED TO IMPLEMENTATION]`.

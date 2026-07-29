@@ -12298,3 +12298,36 @@ deliberately:** the registration freeze itself (user adjudication on
 the band proposal), the probe build (`[PROCEED TO IMPLEMENTATION]`),
 G4 adjudications. Atlas stance intact: nothing adopted, `finc1v725`
 stands, F5 undischarged.
+
+## (C) PROBE REGISTRATION FROZEN (user: "I approve the bands") — CP-1..8 magnitudes + frozen inputs recorded as design doc §8; the probe build (channel sampler, exit strip, checkpoint v8) is NEXT behind [PROCEED TO IMPLEMENTATION]; design §8 = fresh-session entry point (2026-07-29)
+
+The P3 band proposal is adopted verbatim as the registered magnitudes
+(authoritative table now in `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`
+§8): CP-1 supp ≤ 0.05; CP-2 KE₁ SD ∈ [0.30, 0.70]; CP-3 KE₁ MEAN ∈
+[0.85, 1.20] AND above-1.15 ∈ [0.35, 0.55] (mean-level per the
+registered two-lump Tension 1 — the mode is a named discriminator,
+not a gate); CP-4 n₁_solv ∈ [0.18, 0.26] (the forecast band, NOT the
+0.31 reference — Tension 2); CP-5 kill slow-bare ≤ 0.01 (bare-row
+< 1 eV share ≤ 5 %); CP-6 kill midHot ∈ [0.85, 1.15]; CP-7 kill W₁
+≤ 0.80; CP-8 soft bare two-lump. Frozen inputs: weights (0.30, 0.50,
+0.20); f 0.80; σ_Q2/σ_Q3 0.31/0.55; E_single 0.53; strip box a = 2
+[1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1]; f_int,Q3 the scanned arm
+(0.0985/0.15); v_strip 9.9; ε_carry [0, 0.05]. Cells: C-full /
+A-only / B-only / coupling arm, N = 1000, CRN, seed at build time,
+`drag_state_coupling = "off"` (STOPPED axis), cfg-diff oracles per
+the s(n) precedent. Circularity guard absolute (nothing fitted on
+the n = 1 KED).
+
+**Fresh-session handoff state:** the build scope granted so far is
+checkpoint **v8 scoped to exactly three per-ion fields** (channel
+label, sampled E_m [eV], strip count — OQ-E; revocable); enum surface
+sketch in design §5; off-mode byte-identity + new RNG stream appended
+after all existing streams (forbidden-list draw order honored);
+biphasic-only config guard; partner mask non-optional. The committed
+instruments to reuse at scoring: `tier2atlas_ce_strip_prior.py`
+(crossing extraction + conversion conventions), the §3.5k scorer
+column stack, the P3 forecast CSV as the placement expectation.
+**The probe build itself has NOT been triggered** — it awaits
+`[PROCEED TO IMPLEMENTATION]` in the fresh session. Atlas stance
+intact: nothing adopted, `finc1v725` stands, h405 candidacy + G4
+adjudications open, F5 undischarged.

@@ -15,11 +15,13 @@ ask is postponed (user) until the method proves successful. **P3
 EXECUTED 2026-07-29** (weight vector entering registration
 (0.30, 0.50, 0.20); C-full placement forecast + two registered
 tensions — mode two-lump, n₁ 0.18–0.23; findings "(C) pre-step
-P3"). P1–P3 are complete. Next: the probe REGISTRATION FREEZE
-(the CP band proposal in the findings + the weight vector — user
-gate), then the probe build behind `[PROCEED TO IMPLEMENTATION]`.
-Nothing here is adopted; `finc1v725` stands; h405 candidacy and
-the G4 adjudications stay open.**
+P3"). **PROBE REGISTRATION FROZEN 2026-07-29 (user: "I approve the
+bands")** — the CP-1..8 magnitudes and frozen inputs are in §8; the
+probe cells in §9. **Next: the probe build (channel sampler, exit
+strip, checkpoint v8) behind `[PROCEED TO IMPLEMENTATION]` — this
+section §8 is the fresh-session entry point.** Nothing here is
+adopted; `finc1v725` stands; h405 candidacy and the G4
+adjudications stay open.**
 
 Precedent and template: `TIER2_DRAG_STATE_COUPLING_DESIGN.md` (the
 s(n) axis — designed, probed, refuted, stopped). This document designs
@@ -343,7 +345,34 @@ arbitration observable). Anchors, in priority order:
 5. **Bare KED**: soft anchor (lump positions; the ≤ 2 % slow-bare
    bound is a kill, not a fit target).
 
-## 8. Sign-level predictions (magnitudes frozen at probe registration)
+## 8. Sign-level predictions — REGISTRATION FROZEN (user approval 2026-07-29)
+
+**Frozen bands (the P3 proposal, user: "I approve the bands"). These
+are the registered magnitudes; the sign-level statements below stand
+as their rationale. Scored on the C-full cell unless stated; kills
+are kills wherever they fire.**
+
+| prediction | frozen band | basis |
+|---|---|---|
+| CP-1 | supp ≤ 0.05 | conversion by construction (from 0.183) |
+| CP-2 | KE₁ SD ∈ [0.30, 0.70] | P3 forecast 0.51–0.55 |
+| CP-3 | KE₁ **mean** ∈ [0.85, 1.20] AND above-1.15 share ∈ [0.35, 0.55] | P3 forecast 0.92–1.04 / 0.43–0.50; mean-level per Tension 1 (the two-lump mode is a named discriminator, not a gate) |
+| CP-4 | n₁_solv ∈ [0.18, 0.26] | P3 forecast band + one seed-SD; NOT the 0.31 reference (Tension 2) |
+| CP-5 (kill) | ensemble slow-bare ≤ 0.01 (bare-row share below 1 eV ≤ 5 %) | experimental 1.9 % |
+| CP-6 (kill) | midHot ∈ [0.85, 1.15] | h405 neighborhood (§4cc seed-robust band) |
+| CP-7 (kill) | W₁_solv ≤ 0.80 | baseline 0.709 + one seed-SD |
+| CP-8 (soft) | bare KED two-lump qualitative | read (i); Q4 rider acknowledged |
+
+**Frozen inputs:** weights (w_single, w_Q2, w_Q3) = (0.30, 0.50,
+0.20) (OQ-C closed; OQ-K confirmed); f = 0.80; σ_Q2/σ_Q3 =
+0.31/0.55 eV, E_single = 0.53 (P2); strip box a = 2 [1.5, 2.5],
+j₀ ∈ [1.5, 2], w_j ∈ [0.5, 1] (P1); f_int,Q3 = the scanned arm
+(0.0985 / 0.15); v_strip 9.9 Sourced; ε_carry [0, 0.05].
+Cells: C-full / A-only / B-only / coupling arm, N = 1000, CRN,
+`drag_state_coupling = "off"`. Circularity guard absolute: nothing
+above was fitted on the n = 1 KED.
+
+Original sign-level statements (rationale record):
 
 - **CP-1**: suppressed-class occupancy → ~0 under (C)-on (the
   scaffolding retires; replaced by physical n = 0…2 at fast KE).
@@ -365,7 +394,7 @@ arbitration observable). Anchors, in priority order:
 - **CP-8**: bare KED two-lump structure qualitatively reproduced
   (soft; Q4 rider acknowledged).
 
-## 9. THE PROBE — sketch (registration frozen after §10 adjudication)
+## 9. THE PROBE — REGISTERED (P1–P3 executed; bands frozen in §8, user-approved 2026-07-29). Build awaits `[PROCEED TO IMPLEMENTATION]`
 
 Zero-MD pre-steps (before any launch):
 

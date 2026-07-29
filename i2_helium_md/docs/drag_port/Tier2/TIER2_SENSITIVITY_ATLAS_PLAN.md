@@ -1668,8 +1668,10 @@ P1 + P2"; design doc §3.5/§9/§10 updated. **P3 EXECUTED same day**
 0.20) entering registration; C-full forecast KE₁ mean 0.92–1.04 /
 SD 0.51–0.55 / above-1.15 43–50 %; two registered tensions —
 two-lump mode vs single-mode reference, n₁ 0.18–0.23 short of
-0.31; findings "(C) pre-step P3"). P1–P3 complete. Next: the
-probe registration freeze (user gate), then the probe build.
+0.31; findings "(C) pre-step P3"). P1–P3 complete. **REGISTRATION
+FROZEN 2026-07-29 (user approved the CP-1..8 bands — authoritative
+table: design doc §8).** Next: the probe build behind
+`[PROCEED TO IMPLEMENTATION]` (design §8/§9 = fresh-session entry).
 
 **Measured inputs on record (do not re-derive):**
 
