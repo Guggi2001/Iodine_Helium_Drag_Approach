@@ -1,8 +1,10 @@
 # Tier 2 — Free-Form Linear Drag Twin Sweep (atlas counterfactual arm)
 
-**Status: DESIGNED 2026-07-30 (discussion-adjudicated in-session; awaiting
-user review). Zero code exists; all implementation sits behind
-`[PROCEED TO IMPLEMENTATION]`.**
+**Status: Step 0 + arm 1 EXECUTED 2026-07-30 (triggered; findings
+in-chapter: §2.1 twin KE₁ LICENSED ρ 0.998; §3.1/§5.1 arm-1 basin —
+35 cells gate incl. 6 sub-plateau, R4 fires at twin KE₁ 0.892; §7.1
+oracles). Arm 2 (`linqscan`, a* = 35.0) running at status-write. The
+§6 MD ring remains behind its own trigger (user gate).**
 
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
@@ -189,6 +191,41 @@ landmark) × the same E_bind/τ/E₀ grids. 24 chord integrations.
 detected-subset R quantiles (§3.5c convention) + **KE₁_mean, KE₂_mean,
 above-1.15, Φ** (this arm's additions).
 
+### 3.1 Findings — arm 1 EXECUTED 2026-07-30 (zero MD): 35/12 312 cells gate; the basin spans Φ 0.64–1.39
+
+Stage `linscan` (57 chord integrations ≈ 2.3 h, npz-cached; committed
+outputs `atlas_linsweep.csv` / `_chords.csv` / `_gated_ke.csv` /
+`_summary.csv`). Basin anatomy:
+
+- **35 gated cells**: τ = 4.8 carries 28/35 (τ = 6.4 the rest; **zero
+  τ-flags** — no landing leans on an off-calibration cooling clock);
+  all three wells gate (eb0482 19 / eb1168 9 / eb154 7 — shallow
+  *favored*, not required: the R3 shallow-end-only prediction was too
+  strong); a spans 27.5–60 with the coherent core 27.5–42.5 at
+  E₀ 0.35–0.39.
+- **Φ anatomy (R2):** 6 sub-plateau (Φ ≤ 0.7: the a = 27.5 and a = 30
+  columns at τ 4.8, all three wells), 7 intermediate, 17
+  plateau-convergent, 5 above-window; **0 sub-bare** — the entire
+  gated set stays above the bare-ram floor, so no cell needs the
+  unphysical-flag discount.
+- **KE₁ along the basin (twin-ranked, licensed):** monotone in Φ —
+  a = 27.5/Φ 0.64 → twin KE₁ 0.892; a = 30/0.69 → 0.817; a = 35/0.81 →
+  0.703; a = 40/0.93 → 0.575 (eb0482, τ 4.8 column). Softer fast-class
+  force buys n = 1 heat *inside* the histogram gate.
+- **Twin-level flags (pre-registered blind spots, MD-undecidable
+  here):** deepKE at the sub-plateau cells runs **2.0–3.4× HOT**
+  (unlicensed observable — recorded, carries no authority, and is the
+  first place the MD ring can kill); above-1.15 = 0.0 everywhere (the
+  twin has no source-KER width by construction — the width axis stays
+  (B)-side and MD-only); twin trap ≤ 0.011 but trap is a floor and
+  the lin form's low-v over-drag (×8–18 at v = 1) makes MD trap the
+  single most exposed gate.
+- W₁ (reported, bias-loaded): best gated 0.586–0.673 — same range the
+  capped twin basin reported at this geometry.
+
+Arm 2 (`linqscan` at the R5 freeze a* = 35.0) appended below when
+scored.
+
 ## 4. Gates — §3.5c frozen bands, reused verbatim
 
 **Hard gate (unchanged):** n₁_solv ∈ [0.19, 0.30] AND n̄ ∈ [4.4, 7.1]
@@ -241,6 +278,38 @@ No band is re-frozen, tightened, or loosened for this arm.
   best-W₁ non-gated a). The c-read: does the landing want c > 0 (the
   ram term) and does c move Φ/KE₁ at fixed histogram?
 
+### 5.1 Findings — readings R1–R5 (arm 1, 2026-07-30)
+
+- **R1 — basin EXISTS** (35 cells). The constant-γ family is *not*
+  dead by experiment at twin level; "linear is ruled out" remains
+  true only in-band (Tier-0), not as a system statement.
+- **R2 — sub-plateau class POPULATED: kill-3's universality claim
+  BREAKS at twin level.** Six gated cells carry Φ ≤ 0.7 (down to
+  0.64), none sub-bare. The histogram gate does not pin the
+  fast-class force inside the linear family — the plateau-pinning
+  record (958.5/990.6 convergence, §3.5h) does not extend to this
+  family at the corrected geometry. Twin-level statement only; the
+  §6 ring is the arbiter.
+- **R3 — shallow-well preference CONFIRMED as a preference, REFUTED
+  as a requirement** (19/9/7 across the wells; the lq-precedent
+  co-compensation shows up as ordering, not as a gate).
+- **R4 — FIRES: best gated twin KE₁ 0.892 (a = 27.5, Φ 0.64) vs the
+  h405 twin anchor 0.624**, monotone softer-tail → hotter-n = 1 along
+  the basin. Under the ~2 % cold level stamp this forecasts an MD
+  KE₁ ≈ 0.91 *if* the capped→lin transfer holds — against h405's MD
+  0.637, the (A)-ceiling 0.708, and the 1.00 reference peak. This is
+  the strongest drag-side KE₁ signal the program has produced;
+  everything rides on the transfer caveat and the MD ring.
+- **R5 — arm-2 trigger MET; a\* = 35.0 frozen** (the gated-basin W₁
+  optimum, 0.586 at eb0482/τ 4.8/E₀ 0.37, per the §3.5c ranking
+  convention). Noted for the record: the KE₁ optimum sits at
+  a = 27.5 — the a\* freeze follows the pre-registered rule, not the
+  KE₁-favorable choice.
+- **§6 proceed criterion: MET** (contiguous gated sub-plateau basin,
+  not sub-bare-only, R4 positive). The CRN MD ring vs h405 is now the
+  decision point — design to be frozen at ring time, **behind its own
+  trigger** (user gate).
+
 ## 6. Conditional MD confirmation ring (behind its own trigger)
 
 Runs only on a §5-qualifying basin (R2 sub-plateau, or R4 positive, or
@@ -273,6 +342,21 @@ its committed conventions are fixed here:
    table on re-run (drift guard for the licensure measurement itself).
 4. **Arm-2 seam oracle:** `linq` at c = 0 reproduces the arm-1 `lin`
    row at the same (a*, E_bind, τ, E₀) bit-exact.
+
+### 7.1 Findings — oracle outcomes (2026-07-30)
+
+1. Landmark oracle: PASSED before Step 0, arm 1, and arm 2 (row + KE
+   files string-identical each time).
+2. Non-regression: **measured, not assumed** — after the form-switch
+   edit, `ke1auth` re-ran end-to-end: landmark row bit-exact AND both
+   committed Step-0 CSVs reproduced string-identically (the capped
+   path is byte-identical with the `lin`/`linq` branch present).
+   Plus 22/22 focused tests (`test_tier2atlas_ke1auth.py` +
+   `test_tier2_linsweep.py` — validation, seam bit-identity on a toy
+   ensemble, dissipation direction, Φ/sub-bare/R2-class arithmetic).
+3. Step-0 drift oracle: exercised on the re-run (green, see 2).
+4. Seam oracle: run at arm-2 launch (result recorded in §3.1's arm-2
+   block).
 
 ## 8. Records and bookkeeping
 

@@ -1,0 +1,2 @@
+arm,n_cells,n_gated,ke1_anchor_h405_twin,gated_phi_min,gated_phi_max,n_sub_plateau,n_intermediate,n_plateau_convergent,n_above_window,n_gated_subbare,gated_a_min,gated_a_max,gated_wells,n_gated_tau_flagged,best_gated_twin_KE1,best_gated_cell,r4_beats_h405_anchor
+lin,12312,35,0.6236,0.637,1.391,6,7,17,5,0,27.5,60.0,eb0482|eb1168|eb154,0,0.8922,a=27.5 c= eb0482 tau=4.8 E0=0.35,1

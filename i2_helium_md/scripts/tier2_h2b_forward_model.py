@@ -35,7 +35,8 @@ center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
         w12pred | birthlaw | legaprime | legb | legc | legd | repilots1 |
-        repilots2 | g3landmarks | g3scan | g4scan | ke1auth
+        repilots2 | g3landmarks | g3scan | g4scan | ke1auth | linscan |
+        linqscan <a_star>
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 
 ``g3landmarks`` (atlas §3.5 G3 Step 1, 2026-07-27): the twin landmark
@@ -56,6 +57,15 @@ measurement -- landmark oracle, then the twin replayed at the committed
 `atlas_ke_lown_scan.csv` corrected-ensemble MD cells (capped-cubic family,
 cached g3scan chords, exact tau rescale) and Spearman rho(twin KE1, MD KE1)
 scored against the pre-registered licensure bands (0.8 / 0.5).
+
+``linscan`` / ``linqscan <a_star>`` (free-form linear sweep arms 1/2,
+2026-07-30, plan §3-§5): the counterfactual γ = ρ̂·a (a ∈ [15, 60] × the
+three Tier-0 wells) / γ = ρ̂·(a* + c·v) chord surfaces on the committed
+corrected master, scored over the §3.5c free surface against the frozen
+hard gate, with the plan-§1 Φ tail-force coordinate, the §2 sub-bare
+diagnostic, and the §5 R1-R4 readings (twin KE₁ ranked under the Step-0
+licensure). Landmark oracle first; linq c = 0 is seam-oracled against
+the lin family; committed outputs drift-oracled before overwrite.
 """
 
 from __future__ import annotations
@@ -215,6 +225,9 @@ def integrate_pairs(
     v_c=None,
     p_tail=None,
     e_bind_ev=None,
+    drag_form="cubic",
+    lin_a=None,
+    linq_c=None,
 ):
     """Integrate fragment pairs born at radius r0 (cos(pos,axis) = mu).
 
@@ -233,10 +246,36 @@ def integrate_pairs(
     law). ``None`` (default) keeps the bundle stamp ``E_BIND_ION_EV`` with
     identical arithmetic — byte-inert.
 
+    ``drag_form`` (free-form linear sweep extension, 2026-07-30, plan
+    `TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` §1/§9): the counterfactual
+    form switch. ``"cubic"`` (default) is the existing path, arithmetic
+    untouched — byte-inert. ``"lin"``: gamma = rho_hat * lin_a
+    [amu/ps], constant friction coefficient, no cap. ``"linq"``:
+    gamma = rho_hat * (lin_a + linq_c * |v|), linq_c [amu/A]; at
+    linq_c = 0 the arithmetic is bit-identical to ``"lin"`` (the §7.4
+    seam). The counterfactual forms forbid ``v_c``/``p_tail``.
+
     Returns dict with per-fragment (2, M) arrays: K (cooling exposure),
     v_inf (asymptotic speed, A/ps, residual-Coulomb-corrected), t_exit (ps),
     v_peak; optional center-pin profile samples.
     """
+    if drag_form not in ("cubic", "lin", "linq"):
+        raise ValueError(f"unknown drag_form {drag_form!r}")
+    if drag_form == "cubic":
+        if lin_a is not None or linq_c is not None:
+            raise ValueError("lin_a/linq_c require drag_form='lin'/'linq'")
+    else:
+        if v_c is not None or p_tail is not None:
+            raise ValueError(
+                f"drag_form={drag_form!r} has no cap: v_c/p_tail forbidden")
+        if lin_a is None or float(lin_a) <= 0.0:
+            raise ValueError(f"drag_form={drag_form!r} requires lin_a > 0")
+        if drag_form == "linq" and (linq_c is None or float(linq_c) < 0.0):
+            raise ValueError("drag_form='linq' requires linq_c >= 0")
+        if drag_form == "lin" and linq_c is not None:
+            raise ValueError("linq_c requires drag_form='linq'")
+        lin_a = float(lin_a)
+        linq_c = float(linq_c) if drag_form == "linq" else None
     if v_c is not None and p_tail is None:
         raise ValueError("v_c requires p_tail (the capped-cubic tail exponent)")
     e_bind = E_BIND_ION_EV if e_bind_ev is None else float(e_bind_ev)
@@ -274,7 +313,11 @@ def integrate_pairs(
         F_ev = F_c + F_solv
         F = F_ev * EV_TO_AMU_A2_PS2
         if drag_on:
-            if v_c is None:
+            if drag_form == "lin":
+                F = F - rho * lin_a * v_arr
+            elif drag_form == "linq":
+                F = F - rho * (lin_a + linq_c * np.abs(v_arr)) * v_arr
+            elif v_c is None:
                 F = F - rho * B_DRAG * np.abs(v_arr) ** 2 * v_arr
             else:
                 gam = drag_gamma_tail_amu_per_ps(np.abs(v_arr), v_c, p_tail)
@@ -3473,22 +3516,8 @@ def stage_ke1auth(m=20000, force_rebuild=False):
     sig = _g3_md_rung_tables()["rq4graded"]
     ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
 
-    # 1. Landmark oracle (string-identical against the committed row).
-    with open(OUT / "h2b_g3_corrected_row.csv", newline="") as fh:
-        committed_rows = list(csv.DictReader(fh))
-    if len(committed_rows) != 1:
-        raise AssertionError(
-            f"h2b_g3_corrected_row.csv holds {len(committed_rows)} rows, "
-            "expected exactly 1")
-    committed = committed_rows[0]
-    mine = {k: str(v) for k, v in ens["row"].items()}
-    for col, want in committed.items():
-        if mine.get(col, "<missing>") != want:
-            raise AssertionError(
-                f"ke1auth landmark oracle FAILED at {col}: "
-                f"{mine.get(col)!r} != {want!r}")
-    print("[ke1auth] landmark oracle PASSED: h2b_g3_corrected_row.csv "
-          "re-derived string-identically")
+    # 1. Landmark oracle (string-identical against the committed row + KE).
+    _g3_corrected_row_oracle(ens)
 
     # 2. Frozen replay set.
     with open(OUT / KE1AUTH_MD_TABLE, newline="") as fh:
@@ -3566,23 +3595,8 @@ def stage_ke1auth(m=20000, force_rebuild=False):
     }]
 
     # 5. Drift oracle, then write.
-    for name, rows in (("atlas_ke1_authority.csv", out_rows),
-                       ("atlas_ke1_authority_summary.csv", summary)):
-        path = OUT / name
-        if path.exists():
-            with open(path, newline="") as fh:
-                old = list(csv.DictReader(fh))
-            new = [{k: str(v) for k, v in row.items()} for row in rows]
-            if old != new:
-                raise AssertionError(
-                    f"ke1auth drift oracle FAILED: regenerated {name} "
-                    "differs from the existing committed copy")
-            print(f"[ke1auth] drift oracle PASSED: {name} reproduced "
-                  "string-identically")
-        with open(path, "w", newline="") as fh:
-            wr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
-            wr.writeheader()
-            wr.writerows(rows)
+    _write_csv_with_drift("atlas_ke1_authority.csv", out_rows)
+    _write_csv_with_drift("atlas_ke1_authority_summary.csv", summary)
 
     print(f"[ke1auth] rho(KE1) = {rho1:.4f} over {len(tw_ke1)} cells "
           f"({n_dropped} twin-NaN dropped); rho(KE2) = {rho2:.4f} over "
@@ -3591,6 +3605,415 @@ def stage_ke1auth(m=20000, force_rebuild=False):
           f"(bands: >= {KE1AUTH_RHO_LICENSED} licensed / "
           f">= {KE1AUTH_RHO_DIRECTIONAL} directional-only)")
     return summary[0]
+
+
+# ---------------------------------------------------------------------------
+# Free-form linear sweep arms 1/2 (TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN
+# §3-§5): the (a x E_bind) / (c x E_bind at frozen a*) chord surfaces scored
+# over the §3.5c free surface against the frozen hard gate. Zero MD.
+
+LINSCAN_A_GRID = tuple(np.round(np.arange(15.0, 60.01, 2.5), 2))  # 19 values
+LINQSCAN_C_GRID = (0.0, 1.0, 2.0, 3.0, 4.5, 6.13, 9.0, 12.79)  # amu/A;
+# 0 = arm-1 seam; 6.13 = the user's 18 A per-case lq fit; 12.79 = shared lq
+PHI_V_APS = 9.7  # the n = 1-class velocity anchor (plan §1)
+PHI_DENOM = B_DRAG * 5.5**3  # h405 plateau b*v_c^3 = 418.49 (plan: "418.5")
+SUBBARE_F_LO = 175.0  # bare-ion ram floor at 9.7 A/ps, sigma_bare 20 A^2
+SUBBARE_F_HI = 245.0  # ... sigma_bare 28 A^2 (plan §2 diagnostic band)
+
+
+def linsweep_f97(a, c=None):
+    """Tail-force coordinate: F(9.7) [amu*A/ps^2] for lin (c=None) / linq."""
+    gam = float(a) if c is None else float(a) + float(c) * PHI_V_APS
+    return gam * PHI_V_APS
+
+
+def linsweep_subbare(f97):
+    """Plan-§2 bare-ram diagnostic: 2 = below the whole sigma_bare band,
+    1 = inside the 175-245 band, 0 = above it (never gating)."""
+    if f97 < SUBBARE_F_LO:
+        return 2
+    return 1 if f97 < SUBBARE_F_HI else 0
+
+
+def linsweep_phi_class(phi):
+    """Plan-§5 R2 outcome class for a gated cell's Phi."""
+    if phi <= 0.7:
+        return "sub_plateau"
+    if phi < 0.85:
+        return "intermediate"
+    if phi <= 1.15:
+        return "plateau_convergent"
+    return "above_window"
+
+
+def _g3_corrected_row_oracle(ens):
+    """Landmark oracle: the committed corrected-row (+KE) files re-derived
+    string-identically from ``ens`` (the g3scan Block-0 convention)."""
+    with open(OUT / "h2b_g3_corrected_row.csv", newline="") as fh:
+        committed_rows = list(csv.DictReader(fh))
+    if len(committed_rows) != 1:
+        raise AssertionError(
+            f"h2b_g3_corrected_row.csv holds {len(committed_rows)} rows, "
+            "expected exactly 1")
+    committed = committed_rows[0]
+    mine = {k: str(v) for k, v in ens["row"].items()}
+    for col, want in committed.items():
+        if mine.get(col, "<missing>") != want:
+            raise AssertionError(
+                f"corrected-row landmark oracle FAILED at {col}: "
+                f"{mine.get(col)!r} != {want!r}")
+    with open(OUT / "h2b_g3_corrected_ke.csv", newline="") as fh:
+        ref_ke_rows = [(int(r["n"]), r["weight"], r["mean_KE_eV"])
+                       for r in csv.DictReader(fh)]
+    mine_ke = [(n, str(round(w, 4)), str(round(k, 4)))
+               for n, w, k in ens["ke_bins"]]
+    if mine_ke != ref_ke_rows:
+        raise AssertionError(
+            "corrected-row landmark oracle FAILED: KE rows differ from the "
+            "committed h2b_g3_corrected_ke.csv")
+    print("[landmark] oracle PASSED: h2b_g3_corrected_row.csv + _ke.csv "
+          "re-derived string-identically")
+
+
+def _write_csv_with_drift(name, rows):
+    """Write ``rows`` to OUT/name; if the file already exists the regenerated
+    content must reproduce it string-identically first (the drift oracle)."""
+    path = OUT / name
+    if path.exists():
+        with open(path, newline="") as fh:
+            old = list(csv.DictReader(fh))
+        new = [{k: str(v) for k, v in row.items()} for row in rows]
+        if old != new:
+            raise AssertionError(
+                f"drift oracle FAILED: regenerated {name} differs from the "
+                "existing copy")
+        print(f"[drift] {name} reproduced string-identically")
+    with open(path, "w", newline="") as fh:
+        wr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        wr.writeheader()
+        wr.writerows(rows)
+    print(f"written    -> {path}")
+
+
+def _linsweep_chord_tag(arm, a, c, eb_tag):
+    atag = str(float(a)).replace(".", "p")
+    if arm == "lin":
+        return f"a{atag}_{eb_tag}"
+    return f"a{atag}_c{str(float(c)).replace('.', 'p')}_{eb_tag}"
+
+
+def _linsweep_chord_family(arm, a, c, eb_tag, e_bind_ev, m,
+                           force_rebuild=False):
+    """One lin/linq chord-surface integration of the committed corrected
+    master, npz-cached with (a, c, e_bind, m, seed) staleness stamps.
+    ``c`` is stamped -1.0 for the lin arm (npz cannot hold None)."""
+    c_stamp = float(c) if c is not None else -1.0
+    cache = (OUT / f"h2b_{arm}scan_chord_"
+                   f"{_linsweep_chord_tag(arm, a, c, eb_tag)}.npz")
+    if cache.exists() and not force_rebuild:
+        dat = dict(np.load(cache))
+        stamps = (float(dat["a"]), float(dat["c"]), float(dat["e_bind_ev"]),
+                  int(dat["m"]), int(dat["seed"]))
+        if stamps != (float(a), c_stamp, float(e_bind_ev), int(m), G3_SEED):
+            raise AssertionError(
+                f"stale {arm}scan chord cache {cache.name}: stamps {stamps}")
+        return dat
+    ms = _g3_corrected_master(m)
+    rho = rho_he_ratio(ms["r0"] - ms["R"], steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    res = integrate_pairs(
+        ms["r0"], ms["mu"], ms["R"], complex_mass_amu(ne_mol).astype(float),
+        r0_sep=R0_SEP_PROD_A, drag_on=True, e_bind_ev=e_bind_ev,
+        drag_form=arm, lin_a=float(a),
+        linq_c=(float(c) if arm == "linq" else None),
+    )
+    out = {"K": res["K"], "v_inf": res["v_inf"], "t_exit": res["t_exit"],
+           "trapped": res["trapped"], "a": float(a), "c": c_stamp,
+           "e_bind_ev": float(e_bind_ev), "m": float(m),
+           "seed": float(G3_SEED)}
+    np.savez_compressed(cache, **out)
+    return out
+
+
+def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild):
+    """The nested scoring loop shared by both arms: chord families from
+    ``specs`` (dicts with a/c/eb_tag/e_bind) x the §3.5c free surface,
+    §3.5c hard gate verbatim, plan-§3 per-cell output columns."""
+    import time as _time
+
+    ne = ens["ne"]
+    R_frag = np.concatenate([ens["R"], ens["R"]])
+    chord_rows, scan_rows, gated_ke_rows = [], [], []
+    t0 = _time.time()
+    for sp in specs:
+        a, c, eb_tag, e_bind = sp["a"], sp["c"], sp["eb_tag"], sp["e_bind"]
+        fam = _linsweep_chord_family(arm, a, c, eb_tag, e_bind, m,
+                                     force_rebuild)
+        K655 = np.asarray(fam["K"]).reshape(-1)
+        trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+        v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+        t_exit = np.asarray(fam["t_exit"]).reshape(-1)
+        det = ~trapped
+        det_yield = float(det.mean())
+        if det.sum() == 0:
+            raise AssertionError(
+                f"{arm} chord family {_linsweep_chord_tag(arm, a, c, eb_tag)}"
+                ": every fragment trapped — the non-trapped read is empty")
+        f97 = linsweep_f97(a, c)
+        phi = f97 / PHI_DENOM
+        subbare = linsweep_subbare(f97)
+        base = {"arm": arm, "a": a, "c": "" if c is None else c,
+                "E_bind_tag": eb_tag, "E_bind_eV": e_bind,
+                "ebind_exception": int(eb_tag != "eb1168")}
+        chord_rows.append({
+            **base, "m": m,
+            "F97": round(f97, 1), "phi": round(phi, 3), "subbare": subbare,
+            "trapped_frac": round(float(trapped.mean()), 4),
+            "det_yield": round(det_yield, 4),
+            "K655_q05": round(float(np.quantile(K655, 0.05)), 4),
+            "K655_q50": round(float(np.quantile(K655, 0.50)), 4),
+            "K655_q95": round(float(np.quantile(K655, 0.95)), 4),
+            "v_inf_det_q50": round(float(np.quantile(v_inf[det], 0.50)), 3),
+            "t_exit_q50": round(float(np.nanquantile(t_exit, 0.50)), 2),
+            "R_det_q05": round(float(np.quantile(R_frag[det], 0.05)), 2),
+            "R_det_q50": round(float(np.quantile(R_frag[det], 0.50)), 2),
+            "R_det_q95": round(float(np.quantile(R_frag[det], 0.95)), 2),
+            "R_src_q05": round(float(np.quantile(R_frag, 0.05)), 2),
+            "R_src_q50": round(float(np.quantile(R_frag, 0.50)), 2),
+            "R_src_q95": round(float(np.quantile(R_frag, 0.95)), 2),
+        })
+        fam_gated = 0
+        for tau in G3SCAN_TAU_PS:
+            K = K655 * (TAU_PS / tau)
+            for e0 in G3SCAN_E0_GRID:
+                n_det, sup = fate_map(ne, K, e0, 1, sig)
+                row = {
+                    **base, "tau_ps": tau,
+                    "tau_flag": int(tau > G3SCAN_TAU_SOURCED),
+                    "E0_eV": e0, "m": m, "det_yield": round(det_yield, 4),
+                    "F97": round(f97, 1), "phi": round(phi, 3),
+                    "subbare": subbare,
+                }
+                try:
+                    obs, ke_bins = g3_score(
+                        n_det, sup, trapped, v_inf, ref_ke, solv_exp)
+                except ValueError:
+                    # legitimate scan outcome (nothing solvates): recorded
+                    # un-scoreable, never gated
+                    row.update({k: np.nan for k in (
+                        "trapped_frac", "suppressed_frac", "nbar_det",
+                        "n1_solv", "ratio_n1_n2", "w1_solv", "midhot_arith",
+                        "midhot_geo", "deepke", "n1_ke_eV", "ke2_eV",
+                        "above115_n1")})
+                    row.update({"midhot_bins": 0, "deepke_bins": 0,
+                                "gate_n1": 0, "gate_nbar": 0, "gate": 0})
+                    scan_rows.append(row)
+                    continue
+                ke_by_n = {n: k_ for n, _, k_ in ke_bins}
+                ke = kinetic_energy_eV(complex_mass_amu(n_det), v_inf)
+                m1 = (n_det == 1) & det
+                above115 = (float((ke[m1] > 1.15).mean())
+                            if int(m1.sum()) >= 20 else np.nan)
+                g_n1 = (G3SCAN_GATE_N1SOLV[0] <= obs["n1_solv"]
+                        <= G3SCAN_GATE_N1SOLV[1])
+                g_nb = (G3SCAN_GATE_NBAR[0] <= obs["nbar"]
+                        <= G3SCAN_GATE_NBAR[1])
+                gate = bool(g_n1 and g_nb)
+                row.update({
+                    "trapped_frac": round(obs["trapped_frac"], 4),
+                    "suppressed_frac": round(obs["sup_frac"], 4),
+                    "nbar_det": round(obs["nbar"], 3),
+                    "n1_solv": round(obs["n1_solv"], 4),
+                    "ratio_n1_n2": round(obs["ratio"], 3),
+                    "w1_solv": round(obs["w1"], 4),
+                    "midhot_arith": round(obs["midhot_arith"], 4),
+                    "midhot_geo": round(obs["midhot_geo"], 4),
+                    "midhot_bins": obs["midhot_bins"],
+                    "deepke": _ke1auth_nan_round(obs["deepke"], 4),
+                    "deepke_bins": obs["deepke_bins"],
+                    "n1_ke_eV": _ke1auth_nan_round(obs["n1_ke"], 4),
+                    "ke2_eV": _ke1auth_nan_round(
+                        ke_by_n.get(2, float("nan")), 4),
+                    "above115_n1": _ke1auth_nan_round(above115, 4),
+                    "gate_n1": int(g_n1), "gate_nbar": int(g_nb),
+                    "gate": int(gate),
+                })
+                scan_rows.append(row)
+                if gate:
+                    fam_gated += 1
+                    gated_ke_rows.extend(
+                        {"arm": arm, "a": a, "c": "" if c is None else c,
+                         "E_bind_tag": eb_tag, "tau_ps": tau, "E0_eV": e0,
+                         "n": n, "weight": round(w, 4),
+                         "mean_KE_eV": round(k_, 4)}
+                        for n, w, k_ in ke_bins)
+        print(f"[{arm}scan {_linsweep_chord_tag(arm, a, c, eb_tag):18s}] "
+              f"trap={trapped.mean():.3f} phi={phi:.2f} "
+              f"gated={fam_gated}/216  [{_time.time() - t0:6.0f} s]")
+    return chord_rows, scan_rows, gated_ke_rows
+
+
+def _linsweep_r4_anchor():
+    """The h405 twin KE1 anchor for R4, read from the committed Step-0
+    table (gate-on-committed-artifacts rule)."""
+    with open(OUT / "atlas_ke1_authority.csv", newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r["group"] == "h405bat" and r["label"] == "pooled":
+                return float(r["twin_KE1"])
+    raise AssertionError(
+        "h405bat/pooled row missing from atlas_ke1_authority.csv — "
+        "Step 0 must be committed before the sweep runs")
+
+
+def _linsweep_verdict(arm, scan_rows):
+    """Plan-§5 readings R1-R4 over the scored cells; returns the summary
+    row (printed + written by the caller)."""
+    gated = [r for r in scan_rows if r["gate"] == 1]
+    ke1_anchor = _linsweep_r4_anchor()
+    summary = {
+        "arm": arm, "n_cells": len(scan_rows), "n_gated": len(gated),
+        "ke1_anchor_h405_twin": round(ke1_anchor, 4),
+    }
+    print(f"\n=== {arm}scan verdict: {len(gated)}/{len(scan_rows)} cells "
+          "inside the §3.5c hard gate ===")
+    if not gated:
+        summary.update({
+            "gated_phi_min": np.nan, "gated_phi_max": np.nan,
+            "n_sub_plateau": 0, "n_intermediate": 0,
+            "n_plateau_convergent": 0, "n_above_window": 0,
+            "n_gated_subbare": 0, "gated_a_min": np.nan,
+            "gated_a_max": np.nan, "gated_wells": "",
+            "n_gated_tau_flagged": 0, "best_gated_twin_KE1": np.nan,
+            "best_gated_cell": "", "r4_beats_h405_anchor": 0,
+        })
+        print("  R1: NO cell gates — the constant-γ family is dead by "
+              "experiment at the corrected geometry (plan §5 R1; zero MD "
+              "spent). R2-R4 are moot.")
+        return summary
+    phis = [r["phi"] for r in gated]
+    classes = {"sub_plateau": 0, "intermediate": 0,
+               "plateau_convergent": 0, "above_window": 0}
+    for r in gated:
+        classes[linsweep_phi_class(r["phi"])] += 1
+    ke1_ranked = sorted(
+        (r for r in gated if np.isfinite(float(r["n1_ke_eV"]))),
+        key=lambda r: -float(r["n1_ke_eV"]))
+    best = ke1_ranked[0] if ke1_ranked else None
+    best_cell = (f"a={best['a']} c={best['c']} {best['E_bind_tag']} "
+                 f"tau={best['tau_ps']} E0={best['E0_eV']}" if best else "")
+    summary.update({
+        "gated_phi_min": round(min(phis), 3),
+        "gated_phi_max": round(max(phis), 3),
+        "n_sub_plateau": classes["sub_plateau"],
+        "n_intermediate": classes["intermediate"],
+        "n_plateau_convergent": classes["plateau_convergent"],
+        "n_above_window": classes["above_window"],
+        "n_gated_subbare": sum(1 for r in gated if r["subbare"] > 0),
+        "gated_a_min": min(r["a"] for r in gated),
+        "gated_a_max": max(r["a"] for r in gated),
+        "gated_wells": "|".join(sorted({r["E_bind_tag"] for r in gated})),
+        "n_gated_tau_flagged": sum(r["tau_flag"] for r in gated),
+        "best_gated_twin_KE1": (round(float(best["n1_ke_eV"]), 4)
+                                if best else np.nan),
+        "best_gated_cell": best_cell,
+        "r4_beats_h405_anchor": int(
+            best is not None and float(best["n1_ke_eV"]) > ke1_anchor),
+    })
+    print(f"  R1: basin EXISTS ({len(gated)} cells). "
+          f"R2: Phi in [{min(phis):.2f}, {max(phis):.2f}] — "
+          f"sub-plateau {classes['sub_plateau']} / intermediate "
+          f"{classes['intermediate']} / plateau-convergent "
+          f"{classes['plateau_convergent']} / above-window "
+          f"{classes['above_window']}; sub-bare-flagged "
+          f"{summary['n_gated_subbare']}.")
+    print(f"  R3: gated wells {summary['gated_wells']} "
+          f"(shallow-end prediction: eb0482). "
+          f"R4 (LICENSED, ~2% cold levels): best gated twin KE1 = "
+          f"{summary['best_gated_twin_KE1']} at [{best_cell}] vs h405 twin "
+          f"anchor {ke1_anchor:.4f} -> "
+          f"{'BEATS' if summary['r4_beats_h405_anchor'] else 'does NOT beat'}"
+          " the anchor.")
+    print("  gated cells by W1 (reported, NOT gating):")
+    for r in sorted(gated, key=lambda r: r["w1_solv"])[:12]:
+        print(f"    a={r['a']:<5} c={r['c'] if r['c'] != '' else '-':<5} "
+              f"{r['E_bind_tag']:6s} tau={r['tau_ps']:<4} "
+              f"E0={r['E0_eV']:<5} phi={r['phi']:.2f} "
+              f"n1={r['n1_solv']:.3f} nbar={r['nbar_det']:.2f} "
+              f"W1={r['w1_solv']:.3f} KE1={r['n1_ke_eV']} "
+              f"supp={r['suppressed_frac']:.3f}"
+              f"{' TAU-FLAG' if r['tau_flag'] else ''}"
+              f"{' SUBBARE' if r['subbare'] else ''}")
+    return summary
+
+
+def stage_linscan(m=20000, force_rebuild=False):
+    """Free-form linear sweep arm 1 (plan §3-§5, zero MD): γ = ρ̂·a over
+    a ∈ [15, 60] step 2.5 x the three Tier-0 wells, scored over the §3.5c
+    free surface against the frozen hard gate. Landmark oracle first;
+    committed outputs drift-oracled before overwrite."""
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    specs = [{"a": float(a), "c": None, "eb_tag": tag, "e_bind": e_bind}
+             for a in LINSCAN_A_GRID for tag, e_bind in G3SCAN_EBIND]
+    print(f"\n=== linscan: {len(specs)} chord families x "
+          f"{len(G3SCAN_TAU_PS) * len(G3SCAN_E0_GRID)} free cells ===")
+    chord_rows, scan_rows, gated_ke_rows = _linsweep_scan(
+        "lin", specs, ens, sig, ref_ke, solv_exp, m, force_rebuild)
+    summary = _linsweep_verdict("lin", scan_rows)
+    _write_csv_with_drift("atlas_linsweep_chords.csv", chord_rows)
+    _write_csv_with_drift("atlas_linsweep.csv", scan_rows)
+    if gated_ke_rows:
+        _write_csv_with_drift("atlas_linsweep_gated_ke.csv", gated_ke_rows)
+    _write_csv_with_drift("atlas_linsweep_summary.csv", [summary])
+    return summary
+
+
+def stage_linqscan(a_star, m=20000, force_rebuild=False):
+    """Free-form linear sweep arm 2 (plan §3/§5 R5, zero MD): γ = ρ̂·(a* +
+    c·v) at the frozen a* over the c grid x wells. Runs the §7.4 seam
+    oracle (linq c = 0 bit-identical to the lin family at a*) before
+    scoring. ``a_star`` comes from the R5 freeze, passed explicitly on the
+    command line — never inferred silently."""
+    a_star = float(a_star)
+    if a_star not in [float(a) for a in LINSCAN_A_GRID]:
+        raise ValueError(
+            f"a_star {a_star} is not on LINSCAN_A_GRID — the R5 freeze "
+            "must pick an arm-1 grid point")
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    # §7.4 seam oracle at the bundle well.
+    eb_tag, e_bind = "eb1168", E_BIND_ION_EV
+    fam_lin = _linsweep_chord_family("lin", a_star, None, eb_tag, e_bind, m)
+    fam_c0 = _linsweep_chord_family("linq", a_star, 0.0, eb_tag, e_bind, m,
+                                    force_rebuild)
+    for key in ("K", "v_inf", "trapped"):
+        if not np.array_equal(np.asarray(fam_lin[key]),
+                              np.asarray(fam_c0[key])):
+            raise AssertionError(f"linq c=0 seam oracle FAILED on {key}")
+    if not np.array_equal(np.asarray(fam_lin["t_exit"]),
+                          np.asarray(fam_c0["t_exit"]), equal_nan=True):
+        raise AssertionError("linq c=0 seam oracle FAILED on t_exit")
+    print(f"[linqscan] seam oracle PASSED: linq(a*={a_star}, c=0) "
+          "bit-identical to the lin family")
+    specs = [{"a": a_star, "c": float(cc), "eb_tag": tag, "e_bind": e_bind}
+             for cc in LINQSCAN_C_GRID for tag, e_bind in G3SCAN_EBIND]
+    print(f"\n=== linqscan (a* = {a_star}): {len(specs)} chord families ===")
+    chord_rows, scan_rows, gated_ke_rows = _linsweep_scan(
+        "linq", specs, ens, sig, ref_ke, solv_exp, m, force_rebuild)
+    summary = _linsweep_verdict("linq", scan_rows)
+    summary["a_star"] = a_star
+    _write_csv_with_drift("atlas_linqsweep_chords.csv", chord_rows)
+    _write_csv_with_drift("atlas_linqsweep.csv", scan_rows)
+    if gated_ke_rows:
+        _write_csv_with_drift("atlas_linqsweep_gated_ke.csv", gated_ke_rows)
+    _write_csv_with_drift("atlas_linqsweep_summary.csv", [summary])
+    return summary
 
 
 def main():
@@ -3622,6 +4045,16 @@ def main():
         stage_g4scan(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "ke1auth":
         stage_ke1auth(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "linscan":
+        stage_linscan(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "linqscan":
+        args = [a for a in sys.argv[2:] if a != "--force-rebuild"]
+        if not args:
+            raise SystemExit(
+                "linqscan requires the frozen a* (plan §5 R5), e.g. "
+                "`... linqscan 40.0`")
+        stage_linqscan(args[0],
+                       force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -3636,7 +4069,7 @@ def main():
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
             "legaprime | legb | legc | legd | repilots1 | repilots2 | "
-            "g3landmarks | g3scan | g4scan | ke1auth)"
+            "g3landmarks | g3scan | g4scan | ke1auth | linscan | linqscan)"
         )
 
 

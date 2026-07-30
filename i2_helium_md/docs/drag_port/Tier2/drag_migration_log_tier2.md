@@ -12650,3 +12650,40 @@ is the backstop. Artifacts committed: `atlas_ke1_authority.csv` +
 `_summary.csv`; records: plan §2.1 (findings-in-chapter), D0 §14.4
 authority box back-filled (KE₁ row). The sweep itself (§3, stages
 `linscan`/`linqscan`) awaits its own `[PROCEED TO IMPLEMENTATION]`.
+
+## Free-form linear sweep arm 1 (`linscan`) EXECUTED — the pure-linear counterfactual GATES at the corrected geometry incl. SUB-PLATEAU tail force: kill-3 universality breaks at twin level; R4 fires (best gated twin KE₁ 0.892 vs h405 anchor 0.624) (2026-07-30, zero MD)
+
+**Trigger:** `[PROCEED TO IMPLEMENTATION] on the sweep` (plan §3–§5).
+
+**Instrument delivered:** `integrate_pairs` form switch (`drag_form`
+cubic/lin/linq; default byte-inert — proven by re-running `ke1auth`
+end-to-end after the edit: landmark + both drift oracles green);
+stages `linscan`/`linqscan <a_star>` (shared `_linsweep_scan` worker,
+§3.5c gate verbatim, Φ/sub-bare/KE columns, `_write_csv_with_drift` +
+`_g3_corrected_row_oracle` factored and reused by `ke1auth`); tests
+`tests/test_tier2_linsweep.py` (11; with Step-0 suite 22/22 green,
+incl. the linq-c=0 seam bit-identity on a toy ensemble).
+
+**Arm-1 result (57 chord integrations ≈ 2.3 h, 12 312 scored cells,
+committed `atlas_linsweep*.csv`):** 35 cells gate — τ 4.8 dominant
+(28/35, zero τ-flags), all three wells (19/9/7 shallow-favored), a
+core 27.5–42.5 at E₀ 0.35–0.39. **Φ spans 0.64–1.39 with 6
+sub-plateau cells (a 27.5/30 at τ 4.8, every well), none sub-bare** —
+the histogram gate does not pin the fast-class force inside the
+linear family; the plateau-pinning record does not extend to this
+family at twin level. **Twin KE₁ (LICENSED, ~2 % cold) is monotone in
+Φ: 0.892 at Φ 0.64 → 0.575 at Φ 0.93** — softer tail buys n = 1 heat
+inside the gate; forecast MD KE₁ ≈ 0.91 at a = 27.5 IF the
+capped→lin transfer holds. Twin-level flags pre-registered: deepKE
+2.0–3.4× hot at the sub-plateau cells (unlicensed, ρ 0.33 — the MD
+ring's first kill axis), above-1.15 = 0 (no source-KER width in the
+twin), trap a floor with lin's low-v over-drag the MD risk.
+
+**R5 fired → arm 2 launched at a\* = 35.0** (gated-basin W₁ optimum
+per the §3.5c ranking convention; the KE₁ optimum a = 27.5 noted —
+the freeze follows the pre-registered rule). **Nothing adopted:**
+Tier-0 stands, h405/finc1v725 stand, the landing is twin-level only;
+the §6 CRN MD ring vs h405 is the decision instrument and stays
+behind its own trigger (user gate). Records: plan §2.1/§3.1/§5.1/§7.1
+(findings-in-chapter), D0 §1 form-entry bullet (FIRST) + §14.4 (KE₁
+authority row, Step 0).

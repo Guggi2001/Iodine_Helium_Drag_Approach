@@ -200,6 +200,29 @@
   corrected geometry for lq's own basin, then a CRN-paired MD ring vs
   h405 with frozen KE/fate bands — NOT adjudicated.**
 
+- **The pure-linear counterfactual holds the corrected-geometry twin
+  gate INCLUDING at sub-plateau tail force — kill-3's universality
+  BREAKS at twin level (free-form linear sweep arm 1 `linscan`,
+  2026-07-30, zero MD; `TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`
+  §3.1/§5.1, `atlas_linsweep*.csv`).** γ = ρ̂·a swept a ∈ [15, 60] × 3
+  wells × the §3.5c free surface (12 312 cells, frozen gate verbatim):
+  **35 cells gate** (R1), τ = 4.8 dominant (28/35, zero τ-flags), all
+  three wells (shallow-favored 19/9/7), a core 27.5–42.5. **Φ =
+  F(9.7)/418.5 spans 0.64–1.39 with 6 sub-plateau cells (Φ ≤ 0.7),
+  none below the bare-ram floor** — the histogram gate does NOT pin
+  the fast-class force inside the linear family. **R4 (twin KE₁
+  ranked under the Step-0 licensure, levels ~2 % cold): softer tail →
+  hotter n = 1 monotonically — best gated twin KE₁ 0.892 at a = 27.5
+  (Φ 0.64) vs the h405 twin anchor 0.624 (+0.27).** Twin-level
+  caveats, pre-registered: deepKE (unlicensed, ρ 0.33) runs 2.0–3.4×
+  HOT at the sub-plateau cells — the declared MD-undecidable axis;
+  above-1.15 = 0 (the twin carries no source-KER width by
+  construction); trap is a twin floor and the lin form's low-v
+  over-drag makes MD trap the risk axis. **Nothing adopted; the MD
+  ring (plan §6) is the decision instrument and sits behind its own
+  trigger.** Arm 2 (`linqscan`, a* = 35.0 W₁-optimum, R5 freeze) probes
+  whether the landing wants the ram term c > 0.
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).
