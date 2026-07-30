@@ -190,7 +190,15 @@
   figure set rendered (`..._lq_N5000_tier2atlas_conf270_qccbigpooled`,
   pair-preserving container via the committed
   `build_pooled_detection_container.py`, builder-oracled against
-  `bigc1v725pooled`).
+  `bigc1v725pooled`). **Provenance caveat (user-raised, 2026-07-30):
+  this battery sits at the PRE-CORRECTION geometry (leg-D
+  uniform-volume birth, old droplet ensemble) — the corrected-geometry
+  lq-vs-cubic KE ordering is UNMEASURED, and the Δ is a whole-path
+  integral (lq is softer in the 5–9 mid-band yet colder at n = 1/2
+  net), so the ordering does not transfer by argument alone. Candidate
+  resolving test posted (log 2026-07-30): lq twin scan at the
+  corrected geometry for lq's own basin, then a CRN-paired MD ring vs
+  h405 with frozen KE/fate bands — NOT adjudicated.**
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
@@ -245,7 +253,12 @@ zero-cost arithmetic** (atlas D4 Step 1): in-band cubicity forces
 v_s ≳ ~15 Å/ps, which forfeits the p_tail = −1 saturation at the
 production peak — the principled cap-remover remains extending TDDFT
 authority to production kinematics (the collaborator ask), not a
-different closed form. **Mid-band γ magnitude (band top → cap,
+different closed form. **Domain input (user, 2026-07-30): the
+collaborator ask is INFEASIBLE — TDDFT itself breaks down at
+production kinematics. The principled cap-remover is therefore
+unavailable: the cap is a PERMANENT effective element (§17 class
+unchanged), and no velocity band outside the existing traces can ever
+gain ab-initio authority.** **Mid-band γ magnitude (band top → cap,
 v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
 spot-check, NB-RQ11-12; escalated by the §6.7 item-1 lq battery to
 ~300 counts/bin, 2026-07-24): the lq system's softer γ in exactly this

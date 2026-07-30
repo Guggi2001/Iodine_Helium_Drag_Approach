@@ -12556,3 +12556,35 @@ Tier-0 lq rejection (held-out 0.699 FAIL), and the (C) closure verdict
 all stand. The lq battery run dirs stay local-only; every number read
 from them is in the committed CSV. Open agenda unchanged: the
 new-approach direction (user gate), G4 adjudications, Tier-3.
+
+## DOMAIN INPUT (user) + item-3 provenance caveat + the lq corrected-geometry counterfactual POSTED for adjudication (2026-07-30)
+
+**Domain input recorded (D0 §2):** the high-v TDDFT collaborator ask is
+**infeasible — TDDFT breaks down at production kinematics**. The
+"principled cap-remover" path is closed; the capped tail is a
+**permanent effective element** (§17 class unchanged). Consequence: no
+velocity band outside the existing Tier-0 traces can ever gain
+ab-initio authority.
+
+**Item-3 caveat recorded (user-raised, D0 form entry + findings):** the
+§6.7 battery sits at the PRE-CORRECTION geometry (uniform-volume
+birth); the corrected-geometry lq-vs-cubic KE ordering is UNMEASURED,
+and the paired Δ is a whole-path integral (lq softer in the 5–9
+mid-band yet net colder at n = 1/2 there) — the ordering does not
+transfer by argument. Two of the assistant's argument frames were
+conceded (low-v-limb-only reasoning; reach of the "downhill-only"
+claim); the §3.5h p_tail kill (high-v softening un-damps the cascade)
+and the Tier-0 held-out rejection (the sole form anchor; the histogram
+is measured form-blind) stand as the constraints any form change must
+clear.
+
+**Posted for adjudication (NOT taken): the lq corrected-geometry
+counterfactual.** (1) Zero-MD: lq twin scan at the corrected geometry
+(the §6.6 lq twin × the G3 corrected-geometry twin infrastructure) to
+locate lq's OWN (v_c, τ, E₀) basin — no transplanted cubic pins.
+(2) CRN-paired MD ring (lq-basin cells vs h405, N = 1000) with
+KE₁/KE₂/fate bands frozen before launch. Outcome semantics
+pre-stated: lq warmer at n = 1 at realistic geometry ⇒ the form axis
+RE-OPENS on a real signal and the item-3 ordering is retired as
+unrepresentative; lq colder again ⇒ the form axis closes with the
+geometry objection discharged by measurement.

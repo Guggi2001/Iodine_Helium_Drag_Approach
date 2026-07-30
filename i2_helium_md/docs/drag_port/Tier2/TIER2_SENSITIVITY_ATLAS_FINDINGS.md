@@ -633,6 +633,19 @@ local-only; everything read from them is now in the committed CSV
 (full observable vector — the regeneration-cost lesson applied).
 **Status: EXECUTED 2026-07-30.**
 
+**Provenance caveat (user-raised, same day; full record in the log +
+D0 form entry):** this battery is at the PRE-CORRECTION geometry
+(uniform-volume birth, old droplet ensemble) — the corrected-geometry
+lq-vs-cubic KE ordering is UNMEASURED, and the paired Δ is a
+whole-path integral (lq is softer in the 5–9 Å/ps mid-band yet net
+colder at n = 1/2 here), so reading 1's sign argument is not a
+transfer proof. The high-v TDDFT collaborator ask is recorded
+INFEASIBLE (user domain input: TDDFT breaks down at production
+kinematics — D0 §2; the cap is a permanent effective element). A
+resolving lq corrected-geometry counterfactual (own-basin twin scan →
+CRN-paired MD ring vs h405, bands frozen pre-launch) is POSTED for
+adjudication, not taken.
+
 ## Axis A pre-read — the pooled N = 5000 battery binned by its own sampled geometry (2026-07-26, zero MD)
 
 Plan §3.4's "optional follow-up", executed **before** the Axis A grid because
