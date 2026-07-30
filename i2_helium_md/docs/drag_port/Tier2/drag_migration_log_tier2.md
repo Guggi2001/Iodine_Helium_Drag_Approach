@@ -12578,6 +12578,20 @@ and the Tier-0 held-out rejection (the sole form anchor; the histogram
 is measured form-blind) stand as the constraints any form change must
 clear.
 
+**Same-day zero-MD arithmetic (user form-logic challenge — "n = 1/2
+ions are never slow, so we need lower high-v drag"): premise
+CONFIRMED, inference REFUTED in-system (D0 §2 addendum, findings
+item-3 appendix).** Detected |v|: n = 1 12.3 / n = 2 10.4 Å/ps —
+above both caps (and above the corrected-geometry cap too: KE₁ 0.637
+⇒ 9.7 vs v_c 5.5); the form redistributes only below-cap drag. Tail
+plateaus from the committed bundles: cubic 958.5 vs lq 990.6
+amu·Å/ps² — **form-invariant to 3 %, the lower power arbitrated
+HIGHER** (v_c 7.25 → 8.8): at fast-ion velocities drag is
+plateau-set, not power-set, and the plateau is histogram-pinned
+(§3.5h = its direct lowering test). The item-3 reading-1 sign
+mechanism corrected accordingly (tail-plateau re-arbitration, not the
+low-v limb); the measured ordering stands.
+
 **Posted for adjudication (NOT taken): the lq corrected-geometry
 counterfactual.** (1) Zero-MD: lq twin scan at the corrected geometry
 (the §6.6 lq twin × the G3 corrected-geometry twin infrastructure) to

@@ -646,6 +646,21 @@ resolving lq corrected-geometry counterfactual (own-basin twin scan →
 CRN-paired MD ring vs h405, bands frozen pre-launch) is POSTED for
 adjudication, not taken.
 
+**Same-day arithmetic follow-up (user form-logic challenge; full
+numbers in D0 §2 "Velocity anatomy + tail-force invariance"):** the
+user's kinematic premise is CONFIRMED — detected n = 1 ions move at
+12.3 Å/ps (n = 2 10.4), entirely above both caps, so the low-v limb
+is irrelevant for them (it governs n ≥ 5). But the inference "lower
+power ⇒ lower high-v drag" fails in the arbitrated systems: the tail
+plateaus are cubic 958.5 vs lq 990.6 amu·Å/ps² — form-invariant to
+3 %, with the LOWER power ending HIGHER (its own landing pushed
+v_c 7.25 → 8.8). At n = 1/n = 2 velocities drag is plateau-set, not
+power-set; the plateau is histogram-pinned (§3.5h is its direct
+lowering test, kill fired). Reading 1's sign mechanism is thereby
+CORRECTED (it is not the low-v limb; it is the tail-plateau
+re-arbitration), while the measured ordering itself stands
+unchanged.
+
 ## Axis A pre-read — the pooled N = 5000 battery binned by its own sampled geometry (2026-07-26, zero MD)
 
 Plan §3.4's "optional follow-up", executed **before** the Axis A grid because

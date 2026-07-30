@@ -258,7 +258,30 @@ collaborator ask is INFEASIBLE — TDDFT itself breaks down at
 production kinematics. The principled cap-remover is therefore
 unavailable: the cap is a PERMANENT effective element (§17 class
 unchanged), and no velocity band outside the existing traces can ever
-gain ab-initio authority.** **Mid-band γ magnitude (band top → cap,
+gain ab-initio authority.**
+
+**Velocity anatomy + tail-force invariance (zero-MD arithmetic,
+2026-07-30, from the two pooled containers + committed coefficient
+bundles through the committed drag module; triggered by the user's
+form-logic challenge):** detected |v| by terminal n (old-geometry
+pools, co-moving shed preserves v through the vacuum cascade, minus
+residual post-exit Coulomb gain): **n = 1 mean 12.3 Å/ps (p10 11.3),
+n = 2 10.4** — the n = 1/n = 2 ions live entirely ABOVE both caps
+(user-argued premise CONFIRMED; at the corrected geometry KE₁ 0.637 ⇒
+≈ 9.7 Å/ps vs v_c 5.5, even deeper in the tail); n = 5 at 6.5
+(band top), n = 10 at 3.5 (mid/low band). Production force curves:
+cubic tail plateau **958.5** amu·Å/ps² (b 2.515, v_c 7.25) vs lq tail
+plateau **990.6** (c 12.79, v_c 8.8) — **the two independently
+arbitrated systems, one power apart, land within 3 % of the SAME tail
+force, with the LOWER power ending HIGHER** (its landing pushed v_c up
+to recover dissipation). The form redistributes drag only BELOW the
+cap (lq ×5.1 harder at v = 1, ×0.70 softer at 7.25) — where the
+n = 1/n = 2 ions never are. **Reading: at n = 1/n = 2 velocities the
+drag is plateau-set, not power-set, and the plateau is
+histogram-pinned (the §3.5h p_tail kill is its direct lowering test) —
+a lower-power form does NOT deliver lower drag to the fast ions in any
+landed system. The KE₁ ceiling is a dissipation-budget property of
+the mass mechanism, not of the drag power.** **Mid-band γ magnitude (band top → cap,
 v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
 spot-check, NB-RQ11-12; escalated by the §6.7 item-1 lq battery to
 ~300 counts/bin, 2026-07-24): the lq system's softer γ in exactly this
