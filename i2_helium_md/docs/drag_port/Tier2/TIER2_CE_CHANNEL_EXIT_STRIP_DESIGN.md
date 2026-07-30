@@ -34,6 +34,17 @@ user.** Nothing here is
 adopted; `finc1v725` stands; h405 candidacy and the G4
 adjudications stay open.**
 
+**ADJUDICATED CLOSED 2026-07-30 (user): the PC-3 consequences are
+ratified, ALL candidate follow-ups are DECLINED (ε → ~0 gated strip /
+E_int co-strip / trap-class pricing), and the (C) line is SHELVED as
+a measured boundary — the covariance-anchored mixture cannot populate
+n = 1 at the reference level (Q3 feeder ceiling ≈ 0.11 of the scored
+ensemble; suppressed-conversion bound n₁ ≈ 0.22 < 0.31). Re-opening
+requires new external evidence, not a re-parameterization. Records:
+findings "(C) adjudication CLOSED", D0 §20, log 2026-07-30. The
+positive result stands: KE₁ position is source physics (B-only
+0.920, needle broken) — not drag or mass-mechanism physics.**
+
 Precedent and template: `TIER2_DRAG_STATE_COUPLING_DESIGN.md` (the
 s(n) axis — designed, probed, refuted, stopped). This document designs
 the **(C) combination** adjudicated in findings §3.5j: (B) supplies

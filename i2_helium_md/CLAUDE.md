@@ -235,9 +235,18 @@ vs the 0.2 eV anchor) and FEEDS the suppressed gate (A-only supp
 0.55 — Σ(n) collapses under untouched E_int). PC-3 TRIGGERED:
 (A)-v1 stops, the current f_int wiring closes, the mixture
 survives. Records: findings "(C) probe EXECUTED", D0 §20, design
-§8/§9/§11, `atlas_ce_probe.csv`. NEXT USER GATE: adjudicate the
-follow-up (candidates in the findings); nothing adopted, the
-scalar budget did NOT retire.** The
+§8/§9/§11, `atlas_ce_probe.csv`.** **(C) ADJUDICATED CLOSED
+2026-07-30 (user): PC-3 ratified, ALL candidate follow-ups
+DECLINED, the (C) line SHELVED as a measured boundary — the
+covariance-anchored mixture cannot populate n = 1 at the reference
+level (Q3 feeder ceiling ≈ 0.11 of the scored ensemble;
+suppressed-conversion bound n₁ ≈ 0.22 < 0.31); the positive result
+stands (KE₁ position is source physics, not drag/mass-mechanism);
+nothing adopted, the scalar budget did NOT retire. Records:
+findings "(C) adjudication CLOSED", D0 §20, log 2026-07-30. NEXT
+USER GATE: pick the new-approach direction (slate in the log:
+n = 1-bin ownership test / mechanism-side re-examination / scope
+closure + G4 close-out).** The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

@@ -2717,3 +2717,79 @@ moot at this outcome level.
 h405 candidacy + G4 adjudications open, the scalar budget did NOT
 retire (it stands with the standing points). The (C) run dirs are
 instrument runs (`tier2atlas_conf270_ce*`).
+
+## (C) adjudication CLOSED (2026-07-30, user: "document these tries and find a new approach") — PC-3 ratified, ALL candidate follow-ups DECLINED, the (C) line SHELVED as a measured boundary; B-only anatomy + n₁-ceiling reading recorded; the residual attribution narrowed to three forks
+
+**Decision (user).** The PC-3 consequences stand ratified ((A) strip
+design v1 stopped; the current f_int wiring closed) and the three
+candidate follow-ups recorded at the probe are **DECLINED, none
+taken** (ε → ~0 + suppressed-class-gated strip variant; E_int
+co-strip; single-channel trap-class pricing) — each would be a
+post-hoc repair proposed after a failed registration, the epicycle
+path. The (C) line is **SHELVED as a measured boundary**: re-opening
+requires new external evidence, not a re-parameterization. PC-4
+stands (no CP pass ⇒ the m/q-127 bare-row ask stays postponed).
+Nothing adopted; `finc1v725` stands; the next agenda item is a
+**new-approach search** (candidates in the log entry 2026-07-30 —
+posted for discussion, NOT adopted).
+
+**B-only anatomy (closure discussion record).** Status of the
+numbers: arithmetic estimates composed from the committed
+`atlas_ce_probe.csv` scored counts and the design §3.1 spec — NOT a
+per-ion read; the v8 `ce_channel`/`ce_E_m_eV` fields support an
+exact zero-MD per-channel decomposition of the committed bonly run
+if a future direction needs it (offered, declined at closure as
+confirmatory-only).
+
+1. **Weight-provenance asymmetry.** Of (w_single, w_Q2, w_Q3) =
+   (0.30, 0.50, 0.20), only w_Q3 ≈ 0.20 is *measured* (I²⁺
+   covariance at the OQ-K-confirmed 600 mW mapping). The
+   w_single/w_Q2 split 0.30/0.50 is provisional with wide bounds
+   (design §7/OQ-C); its clean closer (the m/q-127 decomposition)
+   is user-postponed. The entire trap class is fed by that
+   provisional 0.30.
+2. **n₁ = 0.080 is arithmetic, not mistuning.** h405 reached n₁
+   0.208 with every ion at 2.70 eV; the mixture moves 80 % of ions
+   below that (2.16 / 0.53 eV), and under the energy-gated
+   mechanism less source energy ⇒ less shedding ⇒ higher landing n.
+   The n = 1 feeder pool is essentially the partner-masked Q3
+   channel: ~200 of ~1800 scored-eligible ions per 1000 molecules
+   ≈ **0.11 of the scored ensemble as a hard ceiling** (consistent
+   with the measured KE₁ 0.920 — "n = 1 is Q3"). Trapped ions are
+   already outside the scored denominator (scored 970 ≈ 1800 −
+   ~830 trapped: the single channel + the Q2 low tail).
+3. **The suppressed-conversion bound.** Even converting *every*
+   bonly suppressed ion to n = 1 (the strip's idealized job) gives
+   n₁ ≈ (78 + 134)/970 ≈ 0.22 — back to roughly the h405 level and
+   still short of the reference 0.31. P3's Tension 2 (forecast
+   0.18–0.23) said this in advance; MD came in below it.
+4. **The structural statement.** The experiment demands n = 1
+   simultaneously *populated* (n₁ 0.31) and *fast* (mean 1.302 eV).
+   Within the mechanism plus the covariance-anchored source these
+   anti-correlate: only the fast minority channels reach n = 1, so
+   n₁ is capped near the fast weight, while the ions that could
+   populate it (the Q2 majority at 2.16 eV) land dressed. B-only
+   did not fail to tune — **the anchors forbid the reference n₁.**
+   Re-splitting w_single/w_Q2 drains trap (helps W₁/n̄) but barely
+   feeds n = 1, so even the postponed m/q-127 measurement would
+   clean the histogram, not the peak population.
+
+**Three-fork residual attribution (the closure verdict).** The n = 1
+population deficit has exactly three live explanations: **(1)**
+exit-conversion physics exists (something strips dressed exiters to
+n = 1 without a large KE toll — the (A) role; v1 measured dead, the
+family shelved); **(2)** the soft anchors are wrong (measurably
+insufficient for n₁ per reading 4); **(3)** the reference n = 1 bin
+is partly not owned by the modeled droplet ensemble (small-droplet /
+surface events or gas-side feed producing fast I⁺He₁ outside the
+simulated geometry — the one unmeasured branch, an
+experimental-decomposition question, not an MD question). What (C)
+*did* establish stays on record as understanding: the KE₁ position
+is source physics (B-only 0.920 needle-broken), not drag or
+mass-mechanism physics — the drag surface is not the cause of the
+n = 1/n = 2 KE deviation.
+
+**Atlas stance:** nothing adopted; `finc1v725` stands; h405 candidacy
++ the G4 adjudications open; the scalar budget stands with the
+standing points; the strip family closed; the new-approach search is
+the open agenda item.

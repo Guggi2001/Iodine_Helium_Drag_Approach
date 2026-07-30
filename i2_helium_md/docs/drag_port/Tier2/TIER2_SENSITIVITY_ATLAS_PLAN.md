@@ -1687,6 +1687,14 @@ TRIGGERED: (A)-v1 stops (family-level kills), the current f_int
 wiring closes, the mixture survives as measured. Next-step
 adjudication is with the user** (candidates recorded in the
 findings; PC-4 does not fire).
+**ADJUDICATED CLOSED 2026-07-30 (user): all candidate follow-ups
+DECLINED, the (C) line SHELVED as a measured boundary (the anchored
+mixture cannot populate n = 1 at the reference level — n₁ ceiling
+≈ 0.22 incl. full suppressed conversion, vs 0.31; findings "(C)
+adjudication CLOSED", D0 §20, log 2026-07-30). §3.5l is no longer
+the current goal; the open agenda is the NEW-APPROACH search
+(candidate slate in the log 2026-07-30: n = 1-bin ownership test /
+mechanism-side re-examination / scope closure + G4 close-out).**
 
 **Measured inputs on record (do not re-derive):**
 

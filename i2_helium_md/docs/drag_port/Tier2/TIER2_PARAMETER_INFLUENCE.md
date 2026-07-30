@@ -1928,10 +1928,35 @@ registered; no value inside the frozen boxes can undo mechanisms 1–3
 pre-commitment). The scalar `coulomb_available_eV` budget did NOT
 retire — it stands with `finc1v725`/h405 (nothing adopted).
 
+**ADJUDICATED CLOSED (2026-07-30, user).** The PC-3 consequences are
+ratified ((A) strip design v1 stopped; the current f_int wiring
+closed) and **all three candidate follow-ups are DECLINED** (ε → ~0 +
+suppressed-class-gated strip; E_int co-strip; single-channel
+trap-class pricing) — the (C) line is SHELVED as a measured boundary,
+re-openable only on new external evidence, not a re-parameterization.
+Structural reading recorded at closure (arithmetic estimate from the
+committed probe-table scored counts, NOT a per-ion read — the v8
+`ce_channel`/`ce_E_m_eV` fields support an exact zero-MD
+decomposition if ever needed): under the covariance-anchored weights
+the n = 1 feeder pool is essentially the partner-masked Q3 channel
+(~200 of ~1800 scored-eligible ions per 1000 molecules ≈ 0.11 of the
+scored ensemble, a hard ceiling); even converting every bonly
+suppressed ion to n = 1 gives n₁ ≈ (78 + 134)/970 ≈ 0.22 < 0.31 —
+**the anchored mixture cannot populate n = 1 at the reference level**,
+and re-splitting the provisional w_single/w_Q2 pair drains the trap
+class without feeding n = 1 (Q2 at 2.16 eV lands dressed). The n = 1
+residual therefore has exactly three live attributions: (1)
+exit-conversion physics (the strip family — v1 measured dead here);
+(2) the soft anchors (w_single/w_Q2 — measurably insufficient for
+n₁); (3) the reference n = 1 bin partly not owned by the modeled
+droplet ensemble (small-droplet / surface / gas-side feed — the
+unmeasured branch). Record: findings "(C) adjudication CLOSED", log
+2026-07-30.
+
 Records: findings "(C) probe EXECUTED" (full table + verdicts +
 decomposition), scorer CSV `atlas_ce_probe.csv`, generator
 `gen_tier2atlas_ce_probe.py`, scorer `tier2atlas_ce_probe_table.py`,
-design doc §8/§9/§11, log entry 2026-07-29.
+design doc §8/§9/§11, log entries 2026-07-29 + 2026-07-30.
 
 ---
 

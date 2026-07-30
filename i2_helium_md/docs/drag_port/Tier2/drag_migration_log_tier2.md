@@ -12442,3 +12442,59 @@ pricing — candidates listed in the findings for the user), PC-4
 Atlas stance intact: nothing adopted, `finc1v725` stands, the scalar
 budget did NOT retire, F5 undischarged. Off-mode is the config
 default everywhere — production behavior unchanged.
+
+## (C) ADJUDICATED CLOSED (user) — PC-3 ratified, ALL candidate follow-ups DECLINED, the (C) line SHELVED as a measured boundary; B-only n₁-ceiling reading recorded; NEW-APPROACH search OPENED (2026-07-30)
+
+**User decision** ("I think our best way is to continue now document
+these tries and find a new approach"), reached after a B-only anatomy
+discussion (weight provenance + n₁ arithmetic; recorded as findings
+"(C) adjudication CLOSED"):
+
+1. **Closed.** PC-3 consequences ratified ((A)-v1 stopped, current
+   f_int wiring closed); the three probe-recorded follow-up
+   candidates DECLINED — no (C) v2; the strip family is shelved,
+   re-openable only on new external evidence, not
+   re-parameterization. PC-4 stands: the m/q-127 bare-row ask stays
+   postponed.
+2. **Recorded (D0 §20 first, per the standing rule; then findings).**
+   The closure reading: the covariance-anchored mixture cannot
+   populate n = 1 at the reference level — Q3 feeder-pool hard
+   ceiling ≈ 0.11 of the scored ensemble; even full suppressed →
+   n = 1 conversion gives n₁ ≈ 0.22 < 0.31; the w_single/w_Q2
+   re-split drains trap but does not feed n = 1. Residual
+   attribution narrowed to three forks: exit-conversion physics /
+   soft w_single–w_Q2 anchors (measurably insufficient for n₁) /
+   n = 1-bin ownership (small-droplet–surface–gas-side feed, the
+   unmeasured branch). Positive result kept on record: KE₁ position
+   is source physics (B-only 0.920, needle broken) — the drag
+   surface is not the cause of the n = 1/n = 2 KE deviation.
+3. **Not done, deliberately:** the per-channel zero-MD decomposition
+   of the committed bonly run (exact per-ion version of reading 2;
+   available any time via the v8 `ce_channel`/`ce_E_m_eV` fields —
+   offered, declined as confirmatory-only); any new code; any weight
+   or fate re-tune (circularity guard intact — nothing was ever
+   fitted on the n = 1 KED).
+
+**New-approach candidate slate (posted for discussion — NOT adopted,
+no order implied):**
+
+- **(i) n = 1-bin ownership test (fork 3, experimental side).**
+  Decompose what feeds the experimental I⁺He₁ row before asking MD
+  to reproduce it: droplet-size-distribution tail / surface events /
+  gas-phase contamination. Zero-MD + experimental-artifact work;
+  the only fork nobody has measured.
+- **(ii) Mechanism-side re-examination (the G4 W₁-floor thread).**
+  G4 Step 1 already localized "n₁ and n̄ not simultaneously
+  matchable" to the *mechanism*, pre-(C); the suppressed-gate /
+  ladder-bottom physics (RQ3/RQ4 territory) is where a structural
+  change would act. Distinct from the strip family: it changes how
+  ions shed, not a boundary conversion.
+- **(iii) Scope closure + G4 close-out.** Record the KE residual as
+  a boundary (source/detection-side, not drag), finish the open G4
+  adjudications (successor point h405, retained policy, ledger
+  re-issue), proceed to Tier-3 noise as planned.
+
+**Docs updated:** D0 §20 (adjudication block, first), findings "(C)
+adjudication CLOSED", design doc status header, plan §3.5l status,
+CLAUDE.md compact state bridged. Next user gate: pick the
+new-approach direction.
