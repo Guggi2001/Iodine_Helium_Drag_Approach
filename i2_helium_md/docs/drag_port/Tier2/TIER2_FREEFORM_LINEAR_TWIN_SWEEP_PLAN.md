@@ -121,6 +121,39 @@ zero MD:
   against the experimental n = 1 **peak ≈ 1.00 eV**; older anchors
   (median 1.128, mean 1.302) reported, not chased. KE₂ vs mean 0.706.
 
+### 2.1 Findings — Step 0 EXECUTED 2026-07-30 (zero MD): twin KE₁ ranking **LICENSED**, ρ = 0.998
+
+Stage `ke1auth` in `scripts/tier2_h2b_forward_model.py` (committed);
+outputs `atlas_ke1_authority.csv` + `_summary.csv` (committed); helper
+tests `tests/test_tier2atlas_ke1auth.py` (11 passed).
+
+- **Oracle:** the committed `h2b_g3_corrected_row.csv` re-derived
+  string-identically at the standing cell before any new number (the
+  twin is unchanged where its authority was measured).
+- **Frozen replay set:** 26 distinct-pin corrected-ensemble cells kept
+  out of the 52-row table; 26 exclusions, every one recorded with its
+  reason in the CSV (6 incumbent = standing geometry; 11 geogrid =
+  controlled single-R cells; 5 h405 battery members → their pooled row;
+  3 duplicate pins deduped per pooled N = 5000 > g4finals N = 1000 >
+  g3ring N = 500; 1 f725 = MD n₁ = 0, KE₁ unmeasured). Pin
+  spread: v_c 5.0–6.5, all three wells, τ 4.4–6.4, E₀ 0.29–0.415; MD
+  KE₁ dynamic range 0.279–0.956 eV.
+- **Result: Spearman ρ(KE₁) = +0.9979 over 26 cells (0 twin-NaN);
+  ρ(KE₂) = +0.9966. Verdict vs the pre-registered bands (0.8/0.5):
+  LICENSED** — twin KE₁ may rank cells and report a best-KE₁ basin
+  (§5 R4 active). The n = 1 bin is the twin's *best* KE observable
+  (deepKE stays +0.33 unlicensed): short chords, mechanism-light —
+  the prior's favorable branch confirmed.
+- **Level bias (levels stay unlicensed, standing rule):** twin KE₁
+  uniformly cold — ratio twin/MD 0.897–0.984 (median 0.975), additive
+  −0.013…−0.037 eV (median −0.017); 3/25 adjacent rank inversions,
+  all among near-tie neighbours. Any twin KE₁ number quoted from the
+  sweep carries the ~−2 % level stamp.
+- **Carried caveat (unchanged):** licensure measured on the
+  capped-cubic family; transfer to `lin`/`linq` is an assumption the
+  conditional MD ring (§6) backstops.
+- D0 §14.4 authority box back-filled (KE₁ row beside W₁/midHot/deepKE).
+
 ## 3. Sweep design (zero MD)
 
 Structure and machinery are §3.5c verbatim (nested Route A/B): trap and

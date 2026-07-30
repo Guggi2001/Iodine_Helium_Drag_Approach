@@ -35,7 +35,7 @@ center-pin K = 0.74460, 9 A kinematics K = 0.89767, Sigma(21) = 0.18783720 eV.
 
 Usage:  python tier2_h2b_forward_model.py oracles | levers | scan | report |
         w12pred | birthlaw | legaprime | legb | legc | legd | repilots1 |
-        repilots2 | g3landmarks | g3scan
+        repilots2 | g3landmarks | g3scan | g4scan | ke1auth
 Outputs: CSVs + text summaries in OUT (see USER SETTINGS).
 
 ``g3landmarks`` (atlas §3.5 G3 Step 1, 2026-07-27): the twin landmark
@@ -49,6 +49,13 @@ scan at the corrected geometry -- landmark + S6 oracles, the
 zero-integration pre-scan (analytic Route-A kill criterion), then the chord
 surface (v_c x E_bind, one integration each, npz-cached) scored over the
 free surface (tau x E0) against the §3.5c pre-registered gate.
+
+``ke1auth`` (free-form linear sweep Step 0, 2026-07-30,
+`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` §2): twin KE1 ranking-authority
+measurement -- landmark oracle, then the twin replayed at the committed
+`atlas_ke_lown_scan.csv` corrected-ensemble MD cells (capped-cubic family,
+cached g3scan chords, exact tau rescale) and Spearman rho(twin KE1, MD KE1)
+scored against the pre-registered licensure bands (0.8 / 0.5).
 """
 
 from __future__ import annotations
@@ -3334,6 +3341,258 @@ def stage_g4scan(m=20000, force_rebuild=False):
               f"{' EBIND-EXC' if r['ebind_exception'] else ''}")
 
 
+# ---------------------------------------------------------------------------
+# Free-form linear sweep Step 0 (TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN §2):
+# twin KE1 ranking-authority measurement against the committed MD KE table.
+# Zero MD; capped-cubic family only (the family the MD rows belong to).
+
+KE1AUTH_MD_TABLE = "atlas_ke_lown_scan.csv"
+KE1AUTH_GROUPS = ("g3ring", "g4finals", "h405bat")  # corrected-ensemble MD
+# Duplicate-pin winner = the largest-N measurement:
+# battery pooled (N=5000) > g4finals (N=1000) > g3ring (N=500).
+KE1AUTH_PREF = {"h405bat": 0, "g4finals": 1, "g3ring": 2}
+KE1AUTH_RHO_LICENSED = 0.8     # pre-registered: rho >= 0.8 -> LICENSED
+KE1AUTH_RHO_DIRECTIONAL = 0.5  # [0.5, 0.8) directional-only; below: none
+
+
+def ke1auth_verdict(rho):
+    """Map Spearman rho to the plan-§2 pre-registered licensure band."""
+    if not np.isfinite(rho):
+        raise ValueError("rho is not finite -- no licensure verdict")
+    if rho >= KE1AUTH_RHO_LICENSED:
+        return "LICENSED"
+    if rho >= KE1AUTH_RHO_DIRECTIONAL:
+        return "DIRECTIONAL_ONLY"
+    return "UNLICENSED"
+
+
+def spearman_rho(x, y):
+    """Spearman rank correlation, average ranks on ties (no scipy).
+
+    Inputs: equal-length 1-D sequences, finite values, size >= 2 and
+    non-constant (raises ValueError otherwise -- a degenerate replay set
+    must fail loudly, not return NaN into a licensure verdict).
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if x.shape != y.shape or x.ndim != 1 or x.size < 2:
+        raise ValueError(f"bad shapes for spearman: {x.shape} vs {y.shape}")
+    if not (np.isfinite(x).all() and np.isfinite(y).all()):
+        raise ValueError("non-finite values reached spearman_rho")
+
+    def _rank(a):
+        order = np.argsort(a, kind="mergesort")
+        r = np.empty(a.size, dtype=float)
+        r[order] = np.arange(1, a.size + 1, dtype=float)
+        vals, inv, cnt = np.unique(a, return_inverse=True,
+                                   return_counts=True)
+        sums = np.zeros(vals.size)
+        np.add.at(sums, inv, r)
+        return sums[inv] / cnt[inv]
+
+    rx, ry = _rank(x), _rank(y)
+    rx -= rx.mean()
+    ry -= ry.mean()
+    den = np.sqrt((rx ** 2).sum() * (ry ** 2).sum())
+    if den == 0.0:
+        raise ValueError("constant input -- spearman undefined")
+    return float((rx * ry).sum() / den)
+
+
+def ke1auth_select_rows(md_rows):
+    """The frozen replay-set rule (plan §2), applied to the raw MD table.
+
+    Keeps corrected-ensemble MD groups only, drops battery members in
+    favour of their pooled row, drops rows whose MD KE1 is unmeasured, and
+    dedupes identical (v_c, well, tau, E0) pins to the largest-N
+    measurement (KE1AUTH_PREF). Returns ``(kept, excluded)`` where
+    ``excluded`` is a list of ``(row, reason)`` -- every exclusion is
+    recorded, none is silent.
+    """
+    kept_by_pins = {}
+    excluded = []
+    for r in md_rows:
+        if r["group"] not in KE1AUTH_GROUPS:
+            excluded.append((r, "not a corrected-ensemble MD group"))
+            continue
+        if r["group"] == "h405bat" and r["label"] != "pooled":
+            excluded.append((r, "battery member: pooled row preferred"))
+            continue
+        if not np.isfinite(float(r["KE1_mean"])):
+            excluded.append((r, "MD KE1 unmeasured (empty n=1 bin)"))
+            continue
+        pins = (float(r["v_c"]), r["well"], float(r["tau"]), float(r["E0"]))
+        prev = kept_by_pins.get(pins)
+        if prev is None:
+            kept_by_pins[pins] = r
+        elif KE1AUTH_PREF[r["group"]] < KE1AUTH_PREF[prev["group"]]:
+            excluded.append(
+                (prev, f"duplicate pins: superseded by "
+                       f"{r['group']}/{r['label']}"))
+            kept_by_pins[pins] = r
+        else:
+            excluded.append(
+                (r, f"duplicate pins: kept {prev['group']}/{prev['label']}"))
+    kept = sorted(kept_by_pins.values(),
+                  key=lambda r: (KE1AUTH_PREF[r["group"]], r["label"]))
+    return kept, excluded
+
+
+def _ke1auth_nan_round(x, nd):
+    return round(float(x), nd) if np.isfinite(float(x)) else float("nan")
+
+
+def stage_ke1auth(m=20000, force_rebuild=False):
+    """Free-form linear sweep Step 0: twin KE1 ranking authority (zero MD).
+
+    Order (plan §2 / §7, oracles first, hard-fail before any new number):
+
+    1. **Landmark oracle** -- the committed ``h2b_g3_corrected_row.csv``
+       re-derived string-identically at the standing cell (proves the twin
+       is unchanged where its authority was measured).
+    2. **Frozen replay set** from the committed ``atlas_ke_lown_scan.csv``
+       (``ke1auth_select_rows``; every exclusion recorded with a reason).
+    3. **Twin at each row's pins** -- capped_cubic p_tail -1 (the family
+       the MD rows belong to), cached g3scan chord families on the
+       committed corrected master, exact tau rescale, rq4graded ladder,
+       p = 1 -- scored by ``g3_score`` (twin KE1 = the n = 1 bin mean).
+    4. **Spearman rho** (twin KE1, MD KE1) primary over rows where both
+       are measured; rho(KE2) secondary; verdict per the pre-registered
+       bands (LICENSED >= 0.8 / DIRECTIONAL_ONLY >= 0.5 / UNLICENSED).
+    5. Outputs ``atlas_ke1_authority.csv`` (every replay-candidate row,
+       kept and excluded, with twin columns) + ``_summary.csv``. If the
+       outputs already exist, the regenerated content must reproduce them
+       string-identically before overwrite (the drift oracle).
+
+    Transfer caveat (pre-registered, plan §2): licensure is measured on
+    capped-cubic cells; transfer to the linear family is an assumption,
+    backstopped by the conditional MD ring.
+    """
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+
+    # 1. Landmark oracle (string-identical against the committed row).
+    with open(OUT / "h2b_g3_corrected_row.csv", newline="") as fh:
+        committed_rows = list(csv.DictReader(fh))
+    if len(committed_rows) != 1:
+        raise AssertionError(
+            f"h2b_g3_corrected_row.csv holds {len(committed_rows)} rows, "
+            "expected exactly 1")
+    committed = committed_rows[0]
+    mine = {k: str(v) for k, v in ens["row"].items()}
+    for col, want in committed.items():
+        if mine.get(col, "<missing>") != want:
+            raise AssertionError(
+                f"ke1auth landmark oracle FAILED at {col}: "
+                f"{mine.get(col)!r} != {want!r}")
+    print("[ke1auth] landmark oracle PASSED: h2b_g3_corrected_row.csv "
+          "re-derived string-identically")
+
+    # 2. Frozen replay set.
+    with open(OUT / KE1AUTH_MD_TABLE, newline="") as fh:
+        md_rows = list(csv.DictReader(fh))
+    kept, excluded = ke1auth_select_rows(md_rows)
+    print(f"[ke1auth] replay set: {len(kept)} cells kept, "
+          f"{len(excluded)} rows excluded (all with reasons)")
+
+    # 3. Twin at each kept row's pins.
+    ebind_by_tag = dict(G3SCAN_EBIND)
+    fam_cache = {}
+    out_rows = []
+    md_ke1, md_ke2, tw_ke1, tw_ke2 = [], [], [], []
+    for r in kept:
+        v_c, well = float(r["v_c"]), r["well"]
+        tau, e0 = float(r["tau"]), float(r["E0"])
+        key = (v_c, well)
+        if key not in fam_cache:
+            fam_cache[key] = _g3scan_chord_family(
+                v_c, well, ebind_by_tag[well], m, ens, force_rebuild)
+        fam = fam_cache[key]
+        K = fam["K"].reshape(-1) * (TAU_PS / tau)
+        n_det, sup = fate_map(ens["ne"], K, e0, 1, sig)
+        obs, ke_bins = g3_score(
+            n_det, sup, fam["trapped"].reshape(-1).astype(bool),
+            fam["v_inf"].reshape(-1), ref_ke, solv_exp)
+        ke_by_n = {n: mke for n, _, mke in ke_bins}
+        twin_ke1 = obs["n1_ke"]
+        twin_ke2 = ke_by_n.get(2, float("nan"))
+        if np.isfinite(twin_ke1):
+            md_ke1.append(float(r["KE1_mean"]))
+            tw_ke1.append(float(twin_ke1))
+        if np.isfinite(twin_ke2) and np.isfinite(float(r["KE2_mean"])):
+            md_ke2.append(float(r["KE2_mean"]))
+            tw_ke2.append(float(twin_ke2))
+        out_rows.append({
+            "group": r["group"], "label": r["label"], "kept": 1,
+            "reason": "", "v_c": v_c, "well": well, "tau_ps": tau,
+            "E0_eV": e0,
+            "md_KE1": _ke1auth_nan_round(r["KE1_mean"], 4),
+            "md_KE2": _ke1auth_nan_round(r["KE2_mean"], 4),
+            "twin_KE1": _ke1auth_nan_round(twin_ke1, 4),
+            "twin_KE2": _ke1auth_nan_round(twin_ke2, 4),
+            "twin_n1_solv": _ke1auth_nan_round(obs["n1_solv"], 4),
+            "twin_nbar": _ke1auth_nan_round(obs["nbar"], 3),
+            "twin_w1": _ke1auth_nan_round(obs["w1"], 4),
+            "twin_midhot": _ke1auth_nan_round(obs["midhot_arith"], 4),
+            "twin_deepke": _ke1auth_nan_round(obs["deepke"], 4),
+        })
+    for r, reason in excluded:
+        out_rows.append({
+            "group": r["group"], "label": r["label"], "kept": 0,
+            "reason": reason, "v_c": r["v_c"], "well": r["well"],
+            "tau_ps": r["tau"], "E0_eV": r["E0"],
+            "md_KE1": _ke1auth_nan_round(r["KE1_mean"], 4),
+            "md_KE2": _ke1auth_nan_round(r["KE2_mean"], 4),
+            "twin_KE1": "", "twin_KE2": "", "twin_n1_solv": "",
+            "twin_nbar": "", "twin_w1": "", "twin_midhot": "",
+            "twin_deepke": "",
+        })
+
+    # 4. Spearman rho + verdict (pre-registered bands).
+    n_dropped = len(kept) - len(tw_ke1)
+    rho1 = spearman_rho(tw_ke1, md_ke1)
+    rho2 = spearman_rho(tw_ke2, md_ke2)
+    verdict = ke1auth_verdict(rho1)
+    summary = [{
+        "n_replay": len(kept), "n_excluded": len(excluded),
+        "n_rho_KE1": len(tw_ke1), "n_twin_KE1_nan": n_dropped,
+        "rho_KE1": round(rho1, 4), "n_rho_KE2": len(tw_ke2),
+        "rho_KE2": round(rho2, 4),
+        "band_licensed": KE1AUTH_RHO_LICENSED,
+        "band_directional": KE1AUTH_RHO_DIRECTIONAL,
+        "verdict": verdict,
+    }]
+
+    # 5. Drift oracle, then write.
+    for name, rows in (("atlas_ke1_authority.csv", out_rows),
+                       ("atlas_ke1_authority_summary.csv", summary)):
+        path = OUT / name
+        if path.exists():
+            with open(path, newline="") as fh:
+                old = list(csv.DictReader(fh))
+            new = [{k: str(v) for k, v in row.items()} for row in rows]
+            if old != new:
+                raise AssertionError(
+                    f"ke1auth drift oracle FAILED: regenerated {name} "
+                    "differs from the existing committed copy")
+            print(f"[ke1auth] drift oracle PASSED: {name} reproduced "
+                  "string-identically")
+        with open(path, "w", newline="") as fh:
+            wr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+            wr.writeheader()
+            wr.writerows(rows)
+
+    print(f"[ke1auth] rho(KE1) = {rho1:.4f} over {len(tw_ke1)} cells "
+          f"({n_dropped} twin-NaN dropped); rho(KE2) = {rho2:.4f} over "
+          f"{len(tw_ke2)}")
+    print(f"[ke1auth] pre-registered verdict: twin KE1 ranking {verdict} "
+          f"(bands: >= {KE1AUTH_RHO_LICENSED} licensed / "
+          f">= {KE1AUTH_RHO_DIRECTIONAL} directional-only)")
+    return summary[0]
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -3361,6 +3620,8 @@ def main():
         stage_g3scan()
     elif mode == "g4scan":
         stage_g4scan(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "ke1auth":
+        stage_ke1auth(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -3375,7 +3636,7 @@ def main():
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
             "legaprime | legb | legc | legd | repilots1 | repilots2 | "
-            "g3landmarks | g3scan | g4scan)"
+            "g3landmarks | g3scan | g4scan | ke1auth)"
         )
 
 

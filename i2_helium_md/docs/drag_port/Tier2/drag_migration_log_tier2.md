@@ -12616,3 +12616,37 @@ pre-stated: lq warmer at n = 1 at realistic geometry ⇒ the form axis
 RE-OPENS on a real signal and the item-3 ordering is retired as
 unrepresentative; lq colder again ⇒ the form axis closes with the
 geometry objection discharged by measurement.
+
+## Free-form linear twin sweep: plan COMMITTED + Step 0 (`ke1auth`) EXECUTED — twin KE₁ ranking **LICENSED**, Spearman ρ = 0.998 over 26 corrected-ensemble MD cells (2026-07-30, zero MD)
+
+**Trigger (user):** the linear-drag discussion (this session) resolved
+into the free-form counterfactual proposal — "by fitting v_c we
+basically didn't care about TDDFT for the fast class anyway; sweep a
+free linear γ = ρ̂·a in the twin with three wells and let the
+observables arbitrate, not worse than fitting v_c." Plan drafted,
+discussed section-wise, committed:
+`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` (stance: atlas
+counterfactual arm, §6.6 precedent; Tier-0 stands; findings appended
+per-chapter in the plan doc itself — user convention for this arm).
+`[PROCEED TO IMPLEMENTATION]` granted for **Step 0 only**.
+
+**Step 0 delivered (stage `ke1auth`, driver
+`scripts/tier2_h2b_forward_model.py`; helpers `spearman_rho` /
+`ke1auth_select_rows` / `ke1auth_verdict` + focused tests
+`tests/test_tier2atlas_ke1auth.py`, 11 passed):** landmark oracle
+green (`h2b_g3_corrected_row.csv` re-derived string-identically before
+any new number); frozen replay set = 26 distinct-pin
+corrected-ensemble cells from the committed `atlas_ke_lown_scan.csv`
+(26 exclusions, each with a recorded reason; dedupe pooled N = 5000 >
+g4finals N = 1000 > g3ring N = 500); twin replayed at each cell's pins
+(cached g3scan chords, exact τ rescale, rq4graded, p = 1).
+**Result: ρ(KE₁) = +0.9979, ρ(KE₂) = +0.9966 → LICENSED against the
+pre-registered 0.8/0.5 bands** — the n = 1 bin is the twin's best KE
+observable (deepKE stays +0.33 unlicensed); levels remain unlicensed
+(twin uniformly ~2 % cold, additive −0.013…−0.037 eV; 3/25 adjacent
+inversions, near-ties only). §5 R4 (twin-ranked KE₁ read) is active
+for the sweep. Capped-family→linear transfer caveat carried; MD ring
+is the backstop. Artifacts committed: `atlas_ke1_authority.csv` +
+`_summary.csv`; records: plan §2.1 (findings-in-chapter), D0 §14.4
+authority box back-filled (KE₁ row). The sweep itself (§3, stages
+`linscan`/`linqscan`) awaits its own `[PROCEED TO IMPLEMENTATION]`.

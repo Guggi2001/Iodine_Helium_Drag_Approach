@@ -1243,6 +1243,24 @@ W₁ 0.5791 ± 0.0954, midHot 1.0108 ± 0.0222, deepKE 0.6327 ± 0.0209,
    most likely reading is the deep-bin *population weight*. Flagged, not
    resolved; the G4 score normalizes by the measured 0.0209.
 
+**KE₁ joins the authority box — ranking LICENSED (free-form linear
+sweep Step 0 `ke1auth`, 2026-07-30, zero MD;
+`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` §2/§2.1,
+`atlas_ke1_authority.csv`).** Twin KE₁ (the `g3_score` n = 1 bin mean)
+vs MD KE1_mean over the 26 distinct-pin corrected-ensemble cells of the
+committed `atlas_ke_lown_scan.csv` (dedupe: pooled N = 5000 > finals
+N = 1000 > ring N = 500; f725 excluded — MD n₁ = 0): **Spearman ρ
++0.9979** (KE₂ +0.9966), against the pre-registered bands 0.8/0.5 —
+far above the licensure line, the twin's best KE bin (deepKE stays
++0.33 NOT licensed; the n = 1 class is short-chord and
+mechanism-light, the opposite of the deep bins). Levels are *not*
+licensed (the standing rule): twin KE₁ runs uniformly cold, ratio
+0.897–0.984 (median 0.975), additive −0.013…−0.037 eV (median
+−0.017); 3/25 adjacent rank inversions, all among near-ties.
+Transfer caveat pre-registered: measured on capped-cubic cells;
+transfer to any new form family is an assumption backstopped by that
+family's MD ring.
+
 ### 14.5 The corrected-geometry landing surface — (v_c, τ, E₀, E_bind) re-arbitrated by the G3 Step 2 twin scan (2026-07-27, zero MD)
 
 The §3.5c nested Route A/B factorial: 30 chord families (v_c × E_bind,
