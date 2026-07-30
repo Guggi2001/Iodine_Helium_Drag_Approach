@@ -64,7 +64,21 @@ from ..physics.internal_energy_budget import e_int_onset_eV, sigma_partition_fac
 from ..physics.potentials import droplet_potential
 from ..physics.shell_schedule import ANCHOR_N_START, complex_mass_amu
 from ..physics.solvation_cooling import e_bind_pair_eV
-from .checkpoint import IonCheckpoint, NeutralCheckpoint, _ION_SCHEMA_VERSION
+from ..sampling.ce_channels import (
+    CE_CHANNEL_NONE,
+    CE_CHANNEL_Q2,
+    CE_CHANNEL_Q3,
+    CE_CHANNEL_Q3_PARTNER,
+    CE_CHANNEL_SINGLE,
+    CE_CHANNEL_STREAM_KEY,
+    sample_ce_channels,
+)
+from .checkpoint import (
+    IonCheckpoint,
+    NeutralCheckpoint,
+    _ION_SCHEMA_VERSION,
+    stage_stream_rng,
+)
 
 
 # ===========================================================================
@@ -219,16 +233,33 @@ def build_initial_ion_state(
     #    (verified above by _check_scope).
     charge = np.ones(two_N, dtype=float)
 
+    # 5b. Tier-2 (C) design (B): the per-molecule CE channel draw, on its own
+    #     dedicated stream (SeedSequence((seed, CE_CHANNEL_STREAM_KEY))) --
+    #     the passed driver rng (the ion-stage stream) is NEVER consumed here,
+    #     so channels-off is byte-identical and channels-on leaves every
+    #     pre-existing stream untouched (design §5; the s(n) S1 precedent).
+    ce_draw = None
+    if cfg.ce_channel_mode == "sampled":
+        ce_draw = sample_ce_channels(
+            N,
+            stage_stream_rng(cfg.seed, CE_CHANNEL_STREAM_KEY),
+            weights=cfg.ce_channel_weights,
+            fraction_f=cfg.ce_fraction_f,
+            sigma_eV=cfg.ce_channel_sigma_eV,
+            single_ker_eV=cfg.ce_single_ker_eV,
+        )
+    pair_scale = None if ce_draw is None else ce_draw.pair_scale
+
     # 6. Compute t=0 energies. These are the "fixed" formulas (see
     #    module docstring): include z component, and include the
-    #    partner Coulomb energy.
+    #    partner Coulomb energy (per-pair CE-scaled under "sampled").
     E_kin_t0 = _compute_E_kin_per_atom(mass_kg_initial, vx0, vy0, vz0)
 
     E_drop_t0 = _compute_E_pot_droplet_per_atom(
         x0, y0, z0, droplet_radii_angstrom, cfg,
     )
     _, _, _, E_partner_per_atom_t0 = partner_interaction_ion(
-        x0, y0, z0, mass_kg_initial, charge, cfg,
+        x0, y0, z0, mass_kg_initial, charge, cfg, pair_scale=pair_scale,
     )
     # partner_interaction_ion already returns per-atom half-pair energy
     E_pot_t0 = E_drop_t0 + E_partner_per_atom_t0
@@ -314,10 +345,27 @@ def build_initial_ion_state(
         # n0_initial and resolved ladder as the E_pot binding fold above, so
         # under-dressed births get less onset. Inert at n0 = n* regardless of
         # law (factor 1) -- a no-op without the T5 dressing axis.
-        E_int_eV[:, 0] = e_int_onset_eV(
-            f_int=cfg.internal_energy_partition_fraction,
-            e_avail_eV=cfg.coulomb_available_eV,
-        ) * sigma_partition_factor(
+        # Under the (C) mixture (ce_channel_mode="sampled") the scalar
+        # budget retires (design §3.1/§3.2): the per-ion onset becomes
+        # f_int,c(m) * E_m with the T6 p-law factor preserved verbatim; the
+        # emulated q3_partner rides the Q3 coupling.
+        if ce_draw is not None:
+            fc = cfg.ce_internal_energy_partition_fractions
+            f_int_by_code = np.zeros(4, dtype=float)
+            f_int_by_code[CE_CHANNEL_SINGLE] = fc[0]
+            f_int_by_code[CE_CHANNEL_Q2] = fc[1]
+            f_int_by_code[CE_CHANNEL_Q3] = fc[2]
+            f_int_by_code[CE_CHANNEL_Q3_PARTNER] = fc[2]
+            onset = e_int_onset_eV(
+                f_int=f_int_by_code[ce_draw.channel],
+                e_avail_eV=ce_draw.E_m_eV,
+            )
+        else:
+            onset = e_int_onset_eV(
+                f_int=cfg.internal_energy_partition_fraction,
+                e_avail_eV=cfg.coulomb_available_eV,
+            )
+        E_int_eV[:, 0] = onset * sigma_partition_factor(
             n0_initial,
             law=cfg.internal_energy_partition_law,
             picture=cfg.ladder_electronic_picture,
@@ -339,6 +387,17 @@ def build_initial_ion_state(
 
     # 9. Time axis: dt_ion * t_index, filled in by driver. Initialize to zeros.
     time_ps = np.zeros(T)
+
+    # 10. Tier-2 (C) per-ion fields (schema v8, OQ-E scope): the channel
+    #     assignment / KER stamp from the draw (or the exact no-channel
+    #     sentinels), and a zero strip counter the drivers accumulate into.
+    if ce_draw is not None:
+        ce_channel = ce_draw.channel.copy()
+        ce_E_m_eV = ce_draw.E_m_eV.copy()
+    else:
+        ce_channel = np.full(two_N, CE_CHANNEL_NONE, dtype=int)
+        ce_E_m_eV = np.full(two_N, np.nan, dtype=float)
+    ce_strip_count = np.zeros(two_N, dtype=int)
 
     return IonCheckpoint(
         num_molecules=N,
@@ -369,6 +428,9 @@ def build_initial_ion_state(
         relative_loss_per_ps=relative_loss_per_ps,
         number_of_collisions=number_of_collisions,
         temperature_diagnostic=temperature_diagnostic,
+        ce_channel=ce_channel,
+        ce_E_m_eV=ce_E_m_eV,
+        ce_strip_count=ce_strip_count,
         mass_scenario=cfg.mass_scenario,
         schema_version=_ION_SCHEMA_VERSION,
     )

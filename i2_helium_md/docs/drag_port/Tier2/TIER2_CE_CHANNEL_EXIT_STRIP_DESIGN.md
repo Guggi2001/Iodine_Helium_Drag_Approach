@@ -17,9 +17,20 @@ EXECUTED 2026-07-29** (weight vector entering registration
 tensions — mode two-lump, n₁ 0.18–0.23; findings "(C) pre-step
 P3"). **PROBE REGISTRATION FROZEN 2026-07-29 (user: "I approve the
 bands")** — the CP-1..8 magnitudes and frozen inputs are in §8; the
-probe cells in §9. **Next: the probe build (channel sampler, exit
-strip, checkpoint v8) behind `[PROCEED TO IMPLEMENTATION]` — this
-section §8 is the fresh-session entry point.** Nothing here is
+probe cells in §9. **Outcome pre-commitments PC-1..5
+ADJUDICATED 2026-07-29 (§11); `[PROCEED TO IMPLEMENTATION]` ISSUED;
+the probe was BUILT and EXECUTED 2026-07-29 (4 × N = 1000, seed
+20260729; findings "(C) probe EXECUTED", `atlas_ce_probe.csv`) —
+REGISTRATION FAILED: CP-1..4 FAIL, kills CP-5/6/7 FIRED on C-full,
+CP-6 at both coupling-arm ends. Measured decomposition: (B) alone
+places KE₁ = 0.920 with the needle broken (its slow single channel
+traps 0.465); (A) as specified over-tolls (ε-dominated 0.5–0.7 eV
+at knock counts p90 = 20 — the ε box is inconsistent with its own
+0.2 eV anchor) and FEEDS the suppressed gate (supp 0.55 in A-only:
+Σ(n) collapses under an untouched E_int). The §11 PC-3 consequences
+are TRIGGERED — (A)-v1 stops, the current f_int wiring closes, the
+mixture survives as measured; next-step adjudication is with the
+user.** Nothing here is
 adopted; `finc1v725` stands; h405 candidacy and the G4
 adjudications stay open.**
 
@@ -394,7 +405,7 @@ Original sign-level statements (rationale record):
 - **CP-8**: bare KED two-lump structure qualitatively reproduced
   (soft; Q4 rider acknowledged).
 
-## 9. THE PROBE — REGISTERED (P1–P3 executed; bands frozen in §8, user-approved 2026-07-29). Build awaits `[PROCEED TO IMPLEMENTATION]`
+## 9. THE PROBE — EXECUTED 2026-07-29 (built behind `[PROCEED TO IMPLEMENTATION]`; cells cfull/aonly/bonly/cq3hi via `gen_tier2atlas_ce_probe.py`, scored by `tier2atlas_ce_probe_table.py` — REGISTRATION FAILED, see the status header + findings "(C) probe EXECUTED")
 
 Zero-MD pre-steps (before any launch):
 
@@ -507,7 +518,51 @@ mixture changes the game but is not presumed to preserve the pins).
   (the clean w_single/w_Q2 closer) is **postponed by the user until
   the (C) method proves successful**.
 
-## 11. Cross-links
+## 11. Outcome pre-commitments — ADJUDICATED (user, 2026-07-29: "I agree with your recommendations")
+
+Recorded **before** the probe build so outcome interpretation cannot be
+post-hoc rationalized:
+
+- **PC-1 (Tension 1 interpretation).** If C-full lands the CP-3 mean
+  but the n = 1 KED stays clearly bimodal against the single-mode
+  0.891 reference, the pre-named candidate deficiencies are
+  (a) the designed-out intensity–position correlation (channel draw ⊥
+  geometry; focal-volume averaging would smear channel weights
+  continuously and fill the valley) and (b) missing channel structure
+  (the single-channel idealization; the Q4 rider). (a) is the
+  physically favored valley-filler. No other explanation may be
+  introduced without a new registered read.
+- **PC-2 (sequencing on a pass).** Probe passes CP-1..8 →
+  (i) mechanism provisionally adopted at the h405 pins,
+  (ii) drag-surface re-tune (v_c/τ/E₀) with the mixture ON (G3-ring
+  machinery reused), (iii) only then the G4 adjudications close
+  (successor point, retained-policy finalization from the
+  `exclude_all_coupled` interim, ledger re-issue) against the
+  re-tuned point. G4 does NOT close before the re-tune.
+- **PC-3 (failure semantics).** CP-5 firing at a = 2 indicts the
+  P₀(v) *family* (a = 1 already disfavored in-box); CP-7 firing
+  indicts the G(j) family (P1 may only move values inside the box,
+  OQ-D) — either family-level kill stops the (A) strip design and
+  returns to the §3.5j alternatives. CP-6 firing at **both** coupling-
+  arm ends closes the current (C) f_int wiring but not the mixture
+  itself; at one end only, the other end is the surviving arm.
+- **PC-4 (m/q-127 trigger).** "Method proves successful" = a CP-band
+  pass on the probe (not post-re-tune adoption): the postponed
+  bare-I⁺ m/q-127-row covariance ask fires at probe-pass, so the
+  re-tune runs with properly anchored w_single/w_Q2 instead of
+  re-tuning twice.
+- **PC-5 (CRN scope note, build-level).** CRN pairing with the
+  standing batteries holds on all pre-existing streams, but C-full /
+  B-only break *per-molecule* pairing at the source (every E_m
+  differs). Seed-level comparisons against the h405 battery are clean
+  only for A-only (single channel at the retiring 2.7006; strip
+  Bernoullis aside). The probe scorer must state this explicitly.
+- **Tension-2 note.** An MD n₁ landing *above* the CP-4 forecast band
+  is diagnostic (kernel saw first crossings only; OQ-J re-crossings
+  can convert trap-class ions), not a miss; the residual toward the
+  0.31 reference is expected to wait for the PC-2 re-tune.
+
+## 12. Cross-links
 
 - Plan: `TIER2_SENSITIVITY_ATLAS_PLAN.md` §3.5j–§3.5l.
 - Findings: "§3.5j", "§3.5k", "§3.5l reads (i)+(iii)".

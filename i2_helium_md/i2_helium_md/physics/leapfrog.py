@@ -228,6 +228,9 @@ class _StepContext:
     # optional:
     charge: np.ndarray | None = None
     state_ids: np.ndarray | None = None
+    # Per-molecule CE emulation Coulomb scale s_m (Tier-2 (C) design §3.1);
+    # None = byte-identical pre-(C) force assembly.
+    pair_scale: np.ndarray | None = None
 
 
 def _neutral_accel_fn(
@@ -283,6 +286,7 @@ def _ion_accel_fn(
 
     ax_p, ay_p, az_p, E_pot_per_atom = partner_interaction_ion(
         x, y, z, ctx.mass, ctx.charge, cfg, state_ids=ctx.state_ids,
+        pair_scale=ctx.pair_scale,
     )
     ax = ax + ax_p
     ay = ay + ay_p
@@ -337,6 +341,7 @@ def make_ion_accel_fn(
     droplet_radii: np.ndarray,
     charge: np.ndarray,
     state_ids: np.ndarray | None = None,
+    pair_scale: np.ndarray | None = None,
 ) -> AccelFn:
     """Build the bare conservative ion acceleration ``acc_fn``.
 
@@ -360,6 +365,9 @@ def make_ion_accel_fn(
     state_ids : np.ndarray, shape (N,), optional
         Per-molecule I2+ electronic state (0..3). Only used when
         ``cfg.single_charge_ionization_allowed`` is True.
+    pair_scale : np.ndarray, shape (N,), optional
+        Per-molecule CE emulation Coulomb scale s_m (Tier-2 (C) design
+        §3.1); ``None`` (default) = byte-identical pre-(C) force assembly.
 
     Returns
     -------
@@ -371,6 +379,7 @@ def make_ion_accel_fn(
         droplet_radii=droplet_radii,
         charge=charge,
         state_ids=state_ids,
+        pair_scale=pair_scale,
     )
 
     def acc_fn(p: Positions) -> tuple[Accelerations, np.ndarray]:

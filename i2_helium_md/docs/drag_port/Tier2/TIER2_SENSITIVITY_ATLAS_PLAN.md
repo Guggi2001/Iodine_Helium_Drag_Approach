@@ -1670,8 +1670,23 @@ SD 0.51–0.55 / above-1.15 43–50 %; two registered tensions —
 two-lump mode vs single-mode reference, n₁ 0.18–0.23 short of
 0.31; findings "(C) pre-step P3"). P1–P3 complete. **REGISTRATION
 FROZEN 2026-07-29 (user approved the CP-1..8 bands — authoritative
-table: design doc §8).** Next: the probe build behind
-`[PROCEED TO IMPLEMENTATION]` (design §8/§9 = fresh-session entry).
+table: design doc §8).**
+**PC-1..5 outcome pre-commitments ADJUDICATED + `[PROCEED TO
+IMPLEMENTATION]` issued + the probe BUILT and EXECUTED 2026-07-29**
+(4 × N = 1000 at the h405 pins, seed 20260729; findings "(C) probe
+EXECUTED", D0 §20, `atlas_ce_probe.csv`): **REGISTRATION FAILED —
+CP-1..4 FAIL, kills CP-5/6/7 FIRED on C-full, CP-6 at both
+coupling-arm ends.** Measured decomposition: (B) alone places KE₁
+0.920 / above-1.15 0.42 / SD 0.286 (needle broken — the source
+lever confirmed in-mixture) but its E_single ≈ 0.53 channel traps
+0.465 of the ensemble; (A) as specified over-tolls (ε_carry ×
+measured knock counts p90 = 20 → 0.5–0.7 eV, vs the design's
+0.2 eV anchor) and FEEDS the suppressed gate (A-only supp 0.55:
+Σ(n) collapses under an untouched E_int). **PC-3 consequences
+TRIGGERED: (A)-v1 stops (family-level kills), the current f_int
+wiring closes, the mixture survives as measured. Next-step
+adjudication is with the user** (candidates recorded in the
+findings; PC-4 does not fire).
 
 **Measured inputs on record (do not re-derive):**
 

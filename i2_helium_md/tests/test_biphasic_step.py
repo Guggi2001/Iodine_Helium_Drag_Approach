@@ -532,7 +532,7 @@ class TestDriverSmokeAndClosure:
 
     def test_completes_v7_and_finite(self, biphasic_run):
         _, ck = biphasic_run
-        assert ck.schema_version == 7
+        assert ck.schema_version == 8
         for name in ("positions_x", "velocities_x", "E_kin_eV", "E_pot_eV",
                      "E_dissip_eV", "E_mass_transfer_eV", "E_int_eV", "n_shell"):
             assert np.all(np.isfinite(getattr(ck, name))), name

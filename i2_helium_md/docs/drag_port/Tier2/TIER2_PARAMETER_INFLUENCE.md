@@ -1882,6 +1882,59 @@ findings "§3.5l reads (i)+(iii)", `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`.
 
 ---
 
+## 20. CE channel mixture (B) + depth-graded exit strip (A) — MEASURED at the (C) probe (2026-07-29): registration FAILED, all three kills fired; the strip arm over-tolls (ε-dominated) and FEEDS the suppressed gate; the mixture alone PLACES KE₁
+
+**Status: probe-measured (4 × N = 1000 at the h405 pins, seed 20260729,
+CRN; `atlas_ce_probe.csv`; findings "(C) probe EXECUTED"). Knobs built
+2026-07-29 (config surface `ce_*` / `exit_strip_*`, checkpoint v8, both
+enums default off = bit-identical). Frozen inputs and CP bands: design
+doc §8. NOTHING adopted; the §11 PC-3 failure semantics are triggered
+and await user adjudication.**
+
+Measured influence (deltas vs the committed h405 baseline row
+trap 0.087 / supp 0.183 / n̄ 3.955 / n₁ 0.208 / W₁ 0.709 / midHot 0.957 /
+KE₁ 0.637 / KE₁ SD 0.038):
+
+| knob / arm | measured influence |
+|---|---|
+| `ce_channel_mode = sampled` alone (bonly) | **KE₁ 0.920** (± the 1.00 anchor; above-1.15 share 0.42 ∈ the CP-3 band; KE₁ SD 0.286 — needle broken): the source-side placement works as forecast. **But** trap 0.087 → 0.465 (the E_single ≈ 0.53 channel, s_m ≈ 0.2, cannot climb out of realistic droplets — a class P3's registered single-channel assumption never priced), n̄ 6.69, n₁ 0.080, W₁ 2.97 (CP-7 range). supp 0.138 (mild w_Q3-diluted parking, not the full §3.5k complementarity). |
+| `exit_strip_mode = depth_graded` alone (aonly) | **Catastrophic over-toll.** 90 % of ions strip, knock count mean 13.7 / p90 20: the box-mid ε_carry 0.025 × the measured knock count = 0.34–0.50 eV, plus Σ-outer 0.14–0.20 eV → total toll ≈ 0.5–0.7 eV per exiter, 2.5–3.5× the design's "≈ 0.2 eV" anchor. KE₁ 0.637 → **0.119**, midHot 0.96 → 0.30, W₁ 0.709 → 0.947, trap 0.087 → 0.167 (toll converts marginal escapers to retained). **supp 0.183 → 0.551**: the strip lowers Σ(n) faster than E_int drains — post-strip survivors at n 2–12 with E_int ≈ 0.15 eV sit above the tiny post-strip Σ(n) and park suppressed forever. **(A) feeds the suppressed scaffolding instead of retiring it** — the §17 ledger entry inverts. |
+| C-full (both on) | The two failures compose: trap 0.564, supp 0.368, KE₁ 0.180, W₁ 1.887, midHot 0.370, slow-bare 0.446. CP-1..4 FAIL, CP-5/6/7 kills FIRED. |
+| `f_int,Q3` 0.0985 → 0.15 (coupling arm, in-mixture) | Nearly flat: midHot 0.370 → 0.350, supp 0.368 → 0.361, KE₁ 0.180 → 0.213 — the coupling is second-order behind the strip toll; **CP-6 fired at both bracket ends**. |
+
+Structural reads (why the P1/P3 forecasts missed):
+
+1. **ε-box internal inconsistency, now measured.** ε_carry ∈ [0, 0.05]
+   was anchored on "total ≈ 0.2 eV" assuming few knocks; the measured
+   knock count (median ~14, p90 20 at the pinned box: P₀ ≈ 0.25–1 for
+   ordinary exiters × G ≈ 1 on all rungs above j₀ ≈ 2) makes the box
+   mid alone worth 0.35–0.50 eV. Consistency with the 0.2 eV anchor at
+   the measured knock counts needs ε ≲ 0.005 eV/He.
+2. **P1's evidence base stripped the suppressed class only** (the CF-3
+   counterfactual re-labels), with no energy toll; the live §3.3 strip
+   acts on EVERY outbound crossing of EVERY ion — the general solvated
+   population that carried the good histogram is stripped too (W₁/midHot
+   kills), and multi-crossing (OQ-J) ratchets the count to p90 = 20.
+3. **The E_int/Σ(n) gate inversion.** CP-1's "conversion by
+   construction" was occupancy arithmetic; live, a stripped survivor
+   keeps its E_int while Σ(n) collapses → gate-closed → suppressed
+   (aonly: 918 suppressed at n_det 2–12, E_int ≈ 0.15 eV). Emptying the
+   class needs the strip to touch E_int (or the E_int at crossing to be
+   below the post-strip Σ) — a design change, not a knob setting.
+
+Class/identifiability: the (C) knobs stay Bounded-with-anchor as
+registered; no value inside the frozen boxes can undo mechanisms 1–3
+(the kills are family/structure-level, per the design §11 PC-3
+pre-commitment). The scalar `coulomb_available_eV` budget did NOT
+retire — it stands with `finc1v725`/h405 (nothing adopted).
+
+Records: findings "(C) probe EXECUTED" (full table + verdicts +
+decomposition), scorer CSV `atlas_ce_probe.csv`, generator
+`gen_tier2atlas_ce_probe.py`, scorer `tier2atlas_ce_probe_table.py`,
+design doc §8/§9/§11, log entry 2026-07-29.
+
+---
+
 ## Cross-references
 
 - Archive/provenance: `TIER2_STAIRCASE_PROBE_FINDINGS.md` (§4a–§4ee,

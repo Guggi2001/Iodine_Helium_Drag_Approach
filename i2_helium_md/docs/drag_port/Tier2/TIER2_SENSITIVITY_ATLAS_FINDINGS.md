@@ -2621,3 +2621,99 @@ MD cells per the design §9: C-full / A-only / B-only / coupling arm
 G4 adjudications open. P1–P3 are complete and the **registration is
 FROZEN** (design §8) — the probe build (channel sampler, exit strip,
 checkpoint v8) is next, behind `[PROCEED TO IMPLEMENTATION]`.
+
+## (C) probe EXECUTED (2026-07-29, 4 × N = 1000 at the h405 pins, seed 20260729) — **REGISTRATION FAILED: CP-1..4 FAIL, ALL THREE KILLS (CP-5/6/7) FIRED on C-full; CP-6 fired at BOTH coupling-arm ends.** Decomposition: the mixture alone PLACES KE₁ (0.920, above-1.15 0.42 in-band, needle broken) but traps the slow single channel; the strip AS SPECIFIED over-tolls (ε-dominated, 0.5–0.7 eV at the measured knock counts) and FEEDS the suppressed gate (supp 0.18 → 0.55 in A-only). PC-3 failure semantics TRIGGERED — user adjudication next
+
+**Provenance.** Build + probe both this session (2026-07-29), behind the
+user's `[PROCEED TO IMPLEMENTATION]`: sampler `sampling/ce_channels.py`
+(dedicated stream 0xCE1_2026, frozen three-draw order), strip forms
+`physics/exit_strip.py` + step operator `exit_strip_step` (co-moving
+carry → E_mass_transfer; count-consistent top-rung D₀ toll → the E_pot
+e_bind fold; ε_carry + full-strip E_int residual → E_dissip, OQ-H;
+5-term closure bit-tight, unit-tested), config surface `ce_*` /
+`exit_strip_*` (biphasic-only guards; partner mask non-optional),
+checkpoint **v8** (exactly the OQ-E three fields: `ce_channel`,
+`ce_E_m_eV`, `ce_strip_count`; silent exact v7→v8 shim), pair-scale
+seam threaded through ion driver / relaxation / detection escape
+energetics / t0 (off = `None` = byte-identical), partner-mask scoring
+seam (`ce_partner_include_mask` + `include_mask` on the confirmation
+read). Off-mode: zero new draws, defaults bit-identical (56 new tests +
+full suite green, 2881 passed). Generator `gen_tier2atlas_ce_probe.py`
+(unit + cfg-diff oracles passed pre-launch; A-only CRN-paired to the
+committed h405 per PC-5), scorer `tier2atlas_ce_probe_table.py`
+(O1 pooled-battery + O2 committed-h405-row oracles passed before any
+new number), CSV `atlas_ce_probe.csv`.
+
+**The table (partner-masked where channels on; h405 = committed
+baseline rescored):**
+
+| cell | scored | trap | supp | n̄ | n₁ | W₁ | midHot | KE₁ | KE₁ SD | >1.15 | slow-bare | strip frac / mean knocks |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| h405 | 1826 | 0.087 | 0.183 | 3.955 | 0.208 | 0.709 | 0.957 | 0.637 | 0.038 | 0.000 | 0.000 | — |
+| cfull | 791 | 0.564 | 0.368 | 3.197 | 0.148 | 1.887 | 0.370 | 0.180 | 0.169 | 0.000 | 0.446 | 0.578 / 11.1 |
+| aonly | 1666 | 0.167 | 0.551 | 1.428 | 0.210 | 0.947 | 0.302 | 0.119 | 0.049 | 0.000 | 0.740 | 0.903 / 13.7 |
+| bonly | 970 | 0.465 | 0.138 | 6.690 | 0.080 | 2.968 | 1.167 | **0.920** | 0.286 | **0.418** | 0.000 | 0 / 0 |
+| cq3hi | 792 | 0.563 | 0.361 | 3.221 | 0.165 | 1.937 | 0.350 | 0.213 | 0.207 | 0.000 | 0.442 | 0.573 / 11.3 |
+
+**Frozen verdicts (design §8, scored on C-full):** CP-1 supp 0.368 >
+0.05 FAIL; CP-2 KE₁ SD 0.169 below [0.30, 0.70] FAIL; CP-3 KE₁ mean
+0.180 far below [0.85, 1.20] and above-1.15 = 0 FAIL; CP-4 n₁ 0.148
+below [0.18, 0.26] FAIL; **CP-5 KILL** (slow-bare 0.446 vs ≤ 0.01);
+**CP-6 KILL** (midHot 0.370, and 0.350 at the other coupling end —
+fired at BOTH ends); **CP-7 KILL** (W₁ 1.887 vs ≤ 0.80). CP-8 moot at
+this level (the bare row is toll-fed, mean 0.45 eV — not the
+experimental fast bare lump).
+
+**Decomposition (the attribution cells carry the physics):**
+
+1. **(B) works where the design put it.** B-only KE₁ = 0.920 near the
+   1.00 anchor with above-1.15 share 0.418 (CP-3 band [0.35, 0.55])
+   and KE₁ SD 0.286 — the needle is broken by source spread alone, and
+   the placement confirms the §3.5k S_k lever live in-mixture. The
+   fast branch parks only mildly (supp 0.138 — w_Q3-diluted, partial
+   §3.5k complementarity).
+2. **The mixture's slow tail traps.** trap 0.465 (B-only): the
+   E_single ≈ 0.53 eV channel (s_m ≈ 0.2) cannot climb out of
+   realistic droplets — ~30 % of molecules land droplet-retained, n₁
+   collapses to 0.080 and W₁ blows to 2.97. P3's registered
+   single-channel assumption (n₁ ∈ [0, 0.05]) never priced this class.
+3. **The strip as specified over-tolls, ε-dominated.** rq4graded outer
+   rungs are tiny (Σ(21)−Σ(7) = 0.136 eV), so the D₀ part of the toll
+   is small — but the measured knock counts (mean 13.7, p90 = 20 in
+   A-only: P₀ ≈ 0.25–1 for ordinary exiters, G ≈ 1 above j₀, OQ-J
+   multi-crossing ratchet) make the box-mid ε_carry = 0.025 eV/He
+   worth 0.34–0.50 eV alone → total toll 0.5–0.7 eV ≈ 2.5–3.5× the
+   design's "≈ 0.2 eV" anchor. KE₁ 0.637 → 0.119 (A-only); the toll
+   also converts marginal escapers to retained (trap 0.087 → 0.167).
+   **The ε box is internally inconsistent with its own 0.2 eV anchor
+   at the measured knock counts** (consistency needs ε ≲ 0.005).
+4. **The strip FEEDS the suppressed gate instead of retiring it.**
+   A-only supp 0.183 → 0.551: 918 ions land suppressed at n_det 2–12
+   with E_int ≈ 0.15 eV — the strip collapses Σ(n) under a survivor
+   whose E_int it never touches, closing the self-bound gate at small
+   n. CP-1's "conversion by construction" was occupancy arithmetic;
+   the live E_int/Σ(n) gate inverts it. Structural: no value in the
+   frozen boxes undoes it.
+5. **Why P1/P3 missed:** P1's counterfactual stripped the suppressed
+   class only, with no energy toll; P3 composed P1's kernel with
+   toll-free channel proxies. The live §3.3 strip acts on every
+   outbound crossing of every ion — the first time the general
+   population, the toll, and the gate ran together.
+
+**PC-3 (design §11) consequences — TRIGGERED, adjudication with the
+user:** CP-5 fired at a = 2 and CP-7 fired ⇒ family-level kills — per
+the pre-commitment the **(A) strip design v1 stops** and the question
+returns to the §3.5j alternatives; CP-6 fired at both bracket ends ⇒
+the **current (C) f_int wiring closes** (the mixture itself is NOT
+killed — read 1 is its measured success). Candidate follow-ups for
+adjudication (NOT taken): ε → ~0 + suppressed-class-gated strip
+variant; an E_int co-strip term (the gate-inversion fix); pricing the
+single channel's trap class into the mixture (weights are
+covariance-anchored, so this is a fate question, not a weight refit).
+PC-4: the m/q-127 ask does NOT fire (no CP pass). Tension-2 note
+moot at this outcome level.
+
+**Atlas stance:** nothing adopted, nothing moved — `finc1v725` stands,
+h405 candidacy + G4 adjudications open, the scalar budget did NOT
+retire (it stands with the standing points). The (C) run dirs are
+instrument runs (`tier2atlas_conf270_ce*`).

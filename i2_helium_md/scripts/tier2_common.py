@@ -477,7 +477,10 @@ def cfg_diff_vs_reference(
         )
     fields = SimConfig.__dataclass_fields__
     for key in sorted(set(mine) - set(ref)):
-        default = fields[key].default
+        # Compare in JSON-space: ``mine`` was json-round-tripped above, so a
+        # tuple-typed default (the (C) fields) must be round-tripped the same
+        # way or it would false-positive as list != tuple.
+        default = json.loads(json.dumps(fields[key].default))
         if mine[key] != default:
             raise AssertionError(
                 f"{tag}field {key!r} is absent from the reference cfg.json "

@@ -418,7 +418,7 @@ class TestArtifact:
         assert path.exists()
 
         loaded = load_ion_checkpoint(path)
-        assert loaded.schema_version == 7
+        assert loaded.schema_version == 8
         assert loaded.mass_scenario == "biphasic"
         np.testing.assert_array_equal(loaded.n_shell, result.checkpoint.n_shell)
         # The 5-term ledger machinery applies to the artifact unchanged.

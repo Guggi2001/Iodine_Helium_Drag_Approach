@@ -96,9 +96,21 @@ from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
 #        Back-compat: the migration shim is a stepwise cascade (v5->v6->v7);
 #        the v6->v7 arm synthesizes an all-zero E_int_eV and emits a
 #        UserWarning that the file predates the reservoir.
+#   8 -- Tier-2 atlas (C) design (OQ-E: granted-scoped to exactly THREE
+#        per-ion static fields; scope creep re-opens the OQ):
+#          * ADD ce_channel     (2N,) int   -- CE channel code (-1 none /
+#            0 single / 1 Q2 / 2 Q3 / 3 q3_partner; sampling/ce_channels.py)
+#          * ADD ce_E_m_eV      (2N,) float -- sampled per-I+ channel KER
+#            stamp [eV]; NaN when no channel was sampled
+#          * ADD ce_strip_count (2N,) int   -- cumulative exit-strip He
+#            knock count across the ion + relaxation stages
+#        Back-compat: the v7->v8 migration arm synthesizes the exact
+#        no-channel sentinels (-1 / NaN / 0) SILENTLY -- unlike the v6->v7
+#        E_int arm there is nothing approximate about them (a pre-v8 run
+#        truly had no channel sampling and no strip), the v5->v6 precedent.
 # ===========================================================================
 _NEUTRAL_SCHEMA_VERSION: int = 2
-_ION_SCHEMA_VERSION: int = 7
+_ION_SCHEMA_VERSION: int = 8
 
 
 # ===========================================================================
@@ -205,12 +217,22 @@ class IonCheckpoint:
     renames ``E_mass_attach_defect_eV`` to ``E_mass_transfer_eV`` (the
     channel now also covers shedding), adds ``n_shell`` and the
     ``mass_scenario`` tag, and drops the non-decreasing-mass assumption.
-    Schema v7 (the current version) adds the Tier-2 ``E_int_eV`` internal-
-    energy reservoir. Legacy v5 and v6 files are migrated on load
-    (v5->v6->v7; see :func:`load_ion_checkpoint` and
-    :func:`_migrate_ion_checkpoint`); a v6-origin file gets an all-zero
-    synthesized ``E_int_eV`` plus a load-time warning. Pre-v5 files cannot
-    be loaded.
+    Schema v7 adds the Tier-2 ``E_int_eV`` internal-energy reservoir.
+    Schema v8 (the current version) adds the three (C)-design per-ion static
+    fields granted under OQ-E:
+
+    * ``ce_channel``      : (2 * num_molecules,) int   -- CE channel code
+      (``sampling/ce_channels.py`` ``CE_CHANNEL_*``: -1 = no sampling)
+    * ``ce_E_m_eV``       : (2 * num_molecules,) float -- sampled per-I+
+      channel KER stamp [eV] (NaN = no sampling)
+    * ``ce_strip_count``  : (2 * num_molecules,) int   -- cumulative
+      exit-strip He knocks (ion + relaxation stages)
+
+    Legacy v5–v7 files are migrated on load (v5->v6->v7->v8; see
+    :func:`load_ion_checkpoint` and :func:`_migrate_ion_checkpoint`); a
+    v6-origin file gets an all-zero synthesized ``E_int_eV`` plus a
+    load-time warning, a v7-origin file gets the exact no-channel sentinels
+    silently. Pre-v5 files cannot be loaded.
     """
 
     num_molecules: int
@@ -241,8 +263,24 @@ class IonCheckpoint:
     relative_loss_per_ps: np.ndarray
     number_of_collisions: np.ndarray
     temperature_diagnostic: np.ndarray
+    # The v8 (C)-design per-ion fields. ``None`` at construction synthesizes
+    # the exact no-channel sentinels in ``__post_init__`` (-1 / NaN / 0) so
+    # pre-v8 construction sites (fixtures, builders without CE state) stay
+    # valid; after construction the attributes are ALWAYS arrays.
+    ce_channel: np.ndarray | None = None
+    ce_E_m_eV: np.ndarray | None = None
+    ce_strip_count: np.ndarray | None = None
     mass_scenario: str = "fixed"
     schema_version: int = _ION_SCHEMA_VERSION
+
+    def __post_init__(self) -> None:
+        two_n = np.asarray(self.mass_final_kg).shape[0]
+        if self.ce_channel is None:
+            self.ce_channel = np.full(two_n, -1, dtype=int)
+        if self.ce_E_m_eV is None:
+            self.ce_E_m_eV = np.full(two_n, np.nan, dtype=float)
+        if self.ce_strip_count is None:
+            self.ce_strip_count = np.zeros(two_n, dtype=int)
 
 
 # ===========================================================================
@@ -387,6 +425,21 @@ def _migrate_ion_checkpoint(
             )
         raw["schema_version"] = np.asarray(7)
         version = 7
+    if version == 7:
+        # v7 -> v8: the three (C)-design per-ion fields (OQ-E). The
+        # synthesized sentinels are EXACT for a pre-v8 file (no channel was
+        # sampled, no strip ran), so this arm is silent -- the v5->v6
+        # precedent, not the approximate v6->v7 warning arm.
+        if "mass_final_kg" in raw:
+            two_n = np.asarray(raw["mass_final_kg"]).shape[0]
+            if "ce_channel" not in raw:
+                raw["ce_channel"] = np.full(two_n, -1, dtype=int)
+            if "ce_E_m_eV" not in raw:
+                raw["ce_E_m_eV"] = np.full(two_n, np.nan, dtype=float)
+            if "ce_strip_count" not in raw:
+                raw["ce_strip_count"] = np.zeros(two_n, dtype=int)
+        raw["schema_version"] = np.asarray(8)
+        version = 8
     return raw, version
 
 
@@ -582,7 +635,8 @@ def _validate_against_cfg(
                         "mass_final_kg",
                         "positions_final_x", "positions_final_y",
                         "positions_final_z", "velocities_final_x",
-                        "velocities_final_y", "velocities_final_z")
+                        "velocities_final_y", "velocities_final_z",
+                        "ce_channel", "ce_E_m_eV", "ce_strip_count")
     for fname in static_2N_fields:
         if hasattr(checkpoint, fname):
             arr = getattr(checkpoint, fname)

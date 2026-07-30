@@ -107,6 +107,7 @@ from ..physics.state_coupling import (
     derive_n_ref_amu,
     shell_area_state_factor,
 )
+from ..sampling.ce_channels import ce_pair_scale_from_checkpoint
 from .checkpoint import (
     IonCheckpoint,
     check_biphasic_seed_checkpoint,
@@ -116,8 +117,10 @@ from .checkpoint import (
 from .ion import DEFAULT_MAX_CHECKPOINT_BYTES_ION, _decide_stride_ion, drag_gate_steepness
 from .ion_propagation_step import (
     IonStepState,
+    _depth,
     baoab_propagation_step,
     biphasic_step,
+    exit_strip_step,
     ion_state_from_checkpoint_column,
     write_ion_state_to_checkpoint_column,
 )
@@ -127,6 +130,11 @@ from .ion_propagation_step import (
 # touched (the Slice-X freeze is *extended by a new stage*, never re-ordered).
 RELAXATION_STREAM_KEY: int = 0xE2_2026
 
+# The relaxation stage's own exit-strip Bernoulli stream (Tier-2 (C) design
+# §3.3/OQ-J: trapped orbits re-strip on every outbound crossing). Distinct
+# from the ion driver's strip key -- the stages never replay each other.
+EXIT_STRIP_RELAX_STREAM_KEY: int = 0xCE3_2026
+
 
 @dataclass(frozen=True)
 class RelaxationResult:
@@ -135,7 +143,7 @@ class RelaxationResult:
     Attributes
     ----------
     checkpoint : IonCheckpoint
-        A bona fide v7 ``IonCheckpoint`` covering the relaxation window (column 0
+        A bona fide current-schema ``IonCheckpoint`` covering the relaxation window (column 0
         = the seed = the ion stage's final column). Round-trips through
         ``load_ion_checkpoint``; ``ion_ledger_closure`` applies unchanged.
     freeze_flags : np.ndarray, shape (2N,), bool
@@ -295,6 +303,7 @@ def _coulomb_translate(
     kappa: float,
     gamma_fn,
     ladder=None,
+    pair_scale: np.ndarray | None = None,
 ) -> IonStepState:
     """One conservative BAOAB translation step + the e_bind_pair fold.
 
@@ -303,8 +312,13 @@ def _coulomb_translate(
     :func:`_zero_gamma` (decay = 1, dE_dissip = 0) or the Landau-gated pure-cubic
     drag. Either way the BAOAB step threads its ``dE_dissip`` into ``E_dissip`` on
     top of the K2 cooling drain, so the 5-term invariant closes.
+    ``pair_scale`` is the per-molecule CE emulation Coulomb scale (Tier-2 (C)
+    design §3.1; ``None`` = byte-identical).
     """
-    acc_fn = make_ion_accel_fn(relax_cfg, state.mass_kg, droplet_radii, charge)
+    acc_fn = make_ion_accel_fn(
+        relax_cfg, state.mass_kg, droplet_radii, charge,
+        pair_scale=pair_scale,
+    )
     step = make_ion_baoab_step(
         state.mass_kg / U, droplet_radii, acc_fn, gamma_fn, T_eff=0.0,
     )
@@ -358,7 +372,7 @@ def _build_relaxation_checkpoint(
     num_molecules: int,
     stored: list[IonStepState],
 ) -> IonCheckpoint:
-    """Assemble a v7 ``IonCheckpoint`` from the stored relaxation states.
+    """Assemble a current-schema ``IonCheckpoint`` from the stored relaxation states.
 
     Trajectory arrays are written column-by-column with the delivered
     :func:`write_ion_state_to_checkpoint_column` (no new I/O). Static /
@@ -373,6 +387,12 @@ def _build_relaxation_checkpoint(
 
     ckpt = IonCheckpoint(
         num_molecules=num_molecules,
+        # Tier-2 (C) v8 per-ion fields: channel assignment / KER stamp pass
+        # through from the seed; the strip counter continues cumulatively
+        # (the caller adds this stage's accepted knocks after the build).
+        ce_channel=np.asarray(ion.ce_channel).copy(),
+        ce_E_m_eV=np.asarray(ion.ce_E_m_eV).copy(),
+        ce_strip_count=np.asarray(ion.ce_strip_count).copy(),
         time_ps=np.zeros(T, dtype=float),
         positions_x=_z2nt(), positions_y=_z2nt(), positions_z=_z2nt(),
         velocities_x=_z2nt(), velocities_y=_z2nt(), velocities_z=_z2nt(),
@@ -506,8 +526,20 @@ def run_relaxation_stage(
         n_ref_coupling = derive_n_ref_amu(
             cfg.drag_coefficients.extraction_mass_amu
         )
+    # Tier-2 (C) surfaces (both None/off = byte-identical): the CE Coulomb
+    # scale from the seed's v8 fields, and the exit strip on this stage's
+    # own dedicated Bernoulli stream (OQ-J: every outbound crossing).
+    pair_scale = ce_pair_scale_from_checkpoint(ion)
+    strip_live = cfg.exit_strip_mode == "depth_graded"
+    strip_rng = None
+    strip_counts = np.zeros(two_n, dtype=int)
+    if strip_live:
+        strip_rng = stage_stream_rng(cfg.seed, EXIT_STRIP_RELAX_STREAM_KEY)
 
     seed = ion_state_from_checkpoint_column(ion, -1)
+    prev_depth = None
+    if strip_live:
+        prev_depth = _depth(seed.x, seed.y, seed.z, droplet_radii)
 
     # Free-flight holds the MD conservative potential constant (no work under free
     # flight); recover it once by removing the seed's e_bind fold.
@@ -550,6 +582,7 @@ def run_relaxation_stage(
                 state, relax_cfg=relax_cfg, droplet_radii=droplet_radii,
                 charge=charge, picture=picture, kappa=kappa,
                 gamma_fn=step_gamma_fn, ladder=ladder,
+                pair_scale=pair_scale,
             )
         else:
             state = _free_flight_translate(
@@ -557,6 +590,18 @@ def run_relaxation_stage(
                 held_md_pot=held_md_pot, num_molecules=num_molecules,
                 picture=picture, kappa=kappa, ladder=ladder,
             )
+
+        # Tier-2 (C) exit strip at this step's outbound crossings (OQ-J:
+        # trapped orbits strip on every outbound pass; re-entry re-dresses
+        # through the live pickup channel). AFTER the translate -- both arms
+        # leave E_pot fold-consistent, and the operator books its own fold
+        # delta for the knocked rungs.
+        if strip_live:
+            state, prev_depth, knocks = exit_strip_step(
+                state, rng=strip_rng, cfg=cfg, droplet_radii=droplet_radii,
+                prev_depth_angstrom=prev_depth, ladder=ladder,
+            )
+            strip_counts += knocks
 
         if internal_id % stride == 0:
             stored.append(state)
@@ -574,6 +619,8 @@ def run_relaxation_stage(
         stored.append(state)
 
     ckpt = _build_relaxation_checkpoint(ion, num_molecules, stored)
+    # Continue the cumulative v8 strip counter across the stage boundary.
+    ckpt.ce_strip_count[:] = ckpt.ce_strip_count + strip_counts
 
     if save_path is not None:
         save_ion_checkpoint(ckpt, save_path)

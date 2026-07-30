@@ -112,6 +112,7 @@ from ..physics.interactions import ion_interaction_potential
 from ..physics.internal_energy_budget import dE_int_shed_eV
 from ..physics.mass_jump import cold_shed, continuous_velocity_shed
 from ..physics.potentials import droplet_potential
+from ..sampling.ce_channels import ce_pair_scale_from_checkpoint
 from .checkpoint import check_biphasic_seed_checkpoint, stage_stream_rng
 from .ion import drag_gate_steepness
 from .ion_propagation_step import (
@@ -822,7 +823,9 @@ def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
     # pair as the [:N]/[N:] halves (the leapfrog convention). The full pair
     # energy is credited to BOTH fragments (conservative over-estimate, see
     # docstring); coincident synthetic fragments are distance-clamped -- the
-    # blown-up energy just lands them in the loud violator arm.
+    # blown-up energy just lands them in the loud violator arm. Under the
+    # Tier-2 (C) mixture the same per-molecule CE scale that drove the
+    # dynamics scales the residual term (v8 fields; None = byte-identical).
     n_mol = x.size // 2
     dx = x[:n_mol] - x[n_mol:]
     dy = y[:n_mol] - y[n_mol:]
@@ -830,7 +833,11 @@ def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
     r_sep = np.maximum(np.sqrt(dx**2 + dy**2 + dz**2), 1e-12)
     ones = np.ones(n_mol)
     E_coul_pair = np.asarray(
-        ion_interaction_potential(r_sep, ones, ones, cfg), dtype=float
+        ion_interaction_potential(
+            r_sep, ones, ones, cfg,
+            pair_scale=ce_pair_scale_from_checkpoint(seed_ckpt),
+        ),
+        dtype=float,
     )
     E_tot = E_kin + U_here + np.tile(E_coul_pair, 2)         # eV
 

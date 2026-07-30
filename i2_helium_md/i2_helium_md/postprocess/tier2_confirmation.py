@@ -213,6 +213,7 @@ def read_confirmation_detection(
     *,
     label: str = "",
     n_max: int = N_STAR,
+    include_mask: np.ndarray | None = None,
 ) -> ConfirmationDetectionRead:
     """Reduce one ``DetectionResult`` under the §4r scoring conventions.
 
@@ -220,15 +221,36 @@ def read_confirmation_detection(
     shared ``RETAINED_REASONS`` vocabulary); ``suppressed`` ions score in
     bin 0; the histogram lives on ``0..n_max``.
 
+    Parameters
+    ----------
+    include_mask
+        Optional per-ion boolean mask ``(2N,)`` applied BEFORE every read —
+        the Tier-2 (C) q3-partner mask (OQ-I): the emulated I²⁺ partners are
+        removed from the scored universe entirely (every fraction's
+        denominator shrinks with them). ``None`` (default) = the delivered
+        behavior, byte-identical.
+
     Raises
     ------
     ValueError
         If the exclusion empties the ensemble, any scored ``n`` is
-        non-integer, or any scored ``n`` exceeds ``n_max``.
+        non-integer, any scored ``n`` exceeds ``n_max``, or the mask shape
+        mismatches.
     """
     state = np.asarray(detection.state_reason)
     n_det = np.asarray(detection.n_detected, dtype=float)
     ke = np.asarray(detection.E_kin_detected_eV, dtype=float)
+
+    if include_mask is not None:
+        include_mask = np.asarray(include_mask, dtype=bool)
+        if include_mask.shape != n_det.shape:
+            raise ValueError(
+                f"run {label!r}: include_mask shape {include_mask.shape} "
+                f"!= per-ion shape {n_det.shape}."
+            )
+        state = state[include_mask]
+        n_det = n_det[include_mask]
+        ke = ke[include_mask]
 
     num_ions = int(n_det.size)
     keep = ~np.isin(state, _RETAINED_LIST)
@@ -288,6 +310,7 @@ def load_confirmation_run(
     *,
     label: str | None = None,
     n_max: int = N_STAR,
+    include_mask: np.ndarray | None = None,
 ) -> ConfirmationDetectionRead:
     """Load ``detection.npz`` from a finished run dir and reduce it.
 
@@ -297,6 +320,10 @@ def load_confirmation_run(
         Run directory holding a ``detection.npz`` artifact.
     label
         Row label; defaults to the directory name.
+    include_mask
+        Optional per-ion pre-mask (the (C) q3-partner mask — see
+        :func:`read_confirmation_detection`; build it with
+        :func:`ce_partner_include_mask`). ``None`` = delivered behavior.
     """
     p = Path(run_dir)
     detection_path = p / _DETECTION_FILENAME
@@ -307,7 +334,38 @@ def load_confirmation_run(
         )
     detection = load_detection_result(detection_path)
     return read_confirmation_detection(
-        detection, label=p.name if label is None else label, n_max=n_max
+        detection, label=p.name if label is None else label, n_max=n_max,
+        include_mask=include_mask,
+    )
+
+
+def ce_partner_include_mask(run_dir: str | Path) -> np.ndarray | None:
+    """The (C) q3-partner scoring mask for a finished run dir (OQ-I).
+
+    Lazily reads the ``ce_channel`` v8 field from ``relaxation.npz`` (the
+    detection seed) or, on the skip path, ``ion.npz`` — no full checkpoint
+    load. Returns the boolean keep-mask (``True`` = scored I⁺) from
+    :func:`~i2_helium_md.sampling.ce_channels.ce_scored_ion_mask`, or
+    ``None`` when the run predates schema v8 or sampled no channels (both
+    mean: nothing to mask).
+    """
+    from ..sampling.ce_channels import CE_CHANNEL_NONE, ce_scored_ion_mask
+
+    p = Path(run_dir)
+    for name in ("relaxation.npz", "ion.npz"):
+        ckpt_path = p / name
+        if not ckpt_path.exists():
+            continue
+        with np.load(ckpt_path, allow_pickle=False) as npz:
+            if "ce_channel" not in npz.files:
+                return None                      # pre-v8 file: nothing to mask
+            channel = np.asarray(npz["ce_channel"], dtype=int)
+        if np.all(channel == CE_CHANNEL_NONE):
+            return None                          # channels off: nothing to mask
+        return ce_scored_ion_mask(channel)
+    raise FileNotFoundError(
+        f"no relaxation.npz or ion.npz in {p.resolve()} — cannot resolve the "
+        "q3-partner mask."
     )
 
 

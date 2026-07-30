@@ -219,14 +219,25 @@ a = 1 disfavored on W₁-parking + slow-bare; measured channel widths
 carries 53–61 % of the n = 1 bin; two registered tensions —
 two-lump mode vs single-mode reference 0.891, and n₁ 0.18–0.23
 short of the 0.31 reference; findings "(C) pre-step P3"). **P1–P3
-COMPLETE and the PROBE REGISTRATION IS FROZEN 2026-07-29 (user
-approved the CP-1..8 bands — authoritative table: design doc §8,
-incl. frozen inputs and the two registered tensions). Next: the
-(C) probe build** (channel sampler, exit strip, checkpoint v8
-scoped to three per-ion fields, 4 MD cells C-full/A-only/B-only/
-coupling arm at N = 1000 CRN) **behind `[PROCEED TO
-IMPLEMENTATION]` — design doc §8/§9 is the fresh-session entry
-point.** The
+COMPLETE and the PROBE REGISTRATION FROZEN 2026-07-29 (CP-1..8
+bands user-approved — authoritative table: design doc §8).
+PC-1..5 outcome pre-commitments ADJUDICATED (design §11) and the
+probe BUILT + EXECUTED 2026-07-29 behind `[PROCEED TO
+IMPLEMENTATION]`** (sampler + exit strip + checkpoint **v8**
+(three OQ-E per-ion fields, silent v7→v8 shim) + pair-scale seam +
+partner-mask scoring, off-mode byte-identical, full suite green;
+4 cells cfull/aonly/bonly/cq3hi at the h405 pins, seed 20260729):
+**REGISTRATION FAILED — CP-1..4 FAIL, kills CP-5/6/7 FIRED on
+C-full (CP-6 at both f_int,Q3 ends). Measured: (B) alone places
+KE₁ 0.920/needle broken but its E_single 0.53 channel traps 0.465;
+(A) as specified over-tolls (ε × knock counts p90 20 → 0.5–0.7 eV
+vs the 0.2 eV anchor) and FEEDS the suppressed gate (A-only supp
+0.55 — Σ(n) collapses under untouched E_int). PC-3 TRIGGERED:
+(A)-v1 stops, the current f_int wiring closes, the mixture
+survives. Records: findings "(C) probe EXECUTED", D0 §20, design
+§8/§9/§11, `atlas_ce_probe.csv`. NEXT USER GATE: adjudicate the
+follow-up (candidates in the findings); nothing adopted, the
+scalar budget did NOT retire.** The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

@@ -105,7 +105,7 @@ class TestRoundTrip:
         path = save_ion_checkpoint(ckpt, tmp_path / "i.npz")
         loaded = load_ion_checkpoint(path)
         assert loaded.num_molecules == 3
-        assert loaded.schema_version == 7
+        assert loaded.schema_version == 8
         np.testing.assert_array_equal(loaded.positions_final_x,
                                        ckpt.positions_final_x)
         np.testing.assert_array_equal(loaded.b_ion_outside, ckpt.b_ion_outside)
@@ -302,8 +302,8 @@ class TestIonSchemaV6:
         with pytest.warns(UserWarning, match="E_int"):
             loaded = load_ion_checkpoint(path)
 
-        # Version walked all the way to v7; renamed field preserved verbatim.
-        assert loaded.schema_version == 7
+        # Version walked all the way to v8; renamed field preserved verbatim.
+        assert loaded.schema_version == 8
         np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
                                        ckpt.E_mass_transfer_eV)
         # mass_scenario defaulted; n_shell synthesized from mass_history_kg
@@ -353,11 +353,11 @@ class TestIonSchemaV7:
         return ckpt, path
 
     def test_v7_round_trip_preserves_E_int(self, tmp_path):
-        """A genuine v7 file round-trips E_int_eV bit-for-bit."""
+        """A current-schema file round-trips E_int_eV bit-for-bit."""
         ckpt = _make_ion_checkpoint(num_molecules=3, num_steps=7)
         path = save_ion_checkpoint(ckpt, tmp_path / "v7.npz")
         loaded = load_ion_checkpoint(path)
-        assert loaded.schema_version == 7
+        assert loaded.schema_version == 8
         np.testing.assert_array_equal(loaded.E_int_eV, ckpt.E_int_eV)
 
     def test_v6_backcompat_shim_synthesizes_zeros_and_warns(self, tmp_path):
@@ -365,7 +365,7 @@ class TestIonSchemaV7:
         ckpt, path = self._write_v6_file(tmp_path)
         with pytest.warns(UserWarning, match="E_int"):
             loaded = load_ion_checkpoint(path)
-        assert loaded.schema_version == 7
+        assert loaded.schema_version == 8
         # Every v6 field survives verbatim; the reservoir is synthesized zeros.
         np.testing.assert_array_equal(loaded.E_mass_transfer_eV,
                                        ckpt.E_mass_transfer_eV)
@@ -388,6 +388,74 @@ class TestIonSchemaV7:
         np.savez_compressed(path, **data)
         with pytest.raises(ValueError, match="missing fields"):
             load_ion_checkpoint(path)
+
+    def test_v7_backcompat_shim_synthesizes_ce_sentinels_silently(
+        self, tmp_path, recwarn,
+    ):
+        """A v7 ion .npz loads under v8 with the exact no-channel sentinels.
+
+        The v7->v8 arm is SILENT (the v5->v6 precedent): the synthesized
+        values (-1 / NaN / 0) are exact for a pre-(C) file, not
+        approximations — no warning must fire.
+        """
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=5)
+        path = save_ion_checkpoint(ckpt, tmp_path / "v7file.npz")
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        for name in ("ce_channel", "ce_E_m_eV", "ce_strip_count"):
+            data.pop(name)
+        data["schema_version"] = np.asarray(7)
+        np.savez_compressed(path, **data)
+
+        loaded = load_ion_checkpoint(path)
+        assert loaded.schema_version == 8
+        assert not any(
+            issubclass(w.category, UserWarning) for w in recwarn.list
+        )
+        two_n = 2 * loaded.num_molecules
+        np.testing.assert_array_equal(
+            loaded.ce_channel, np.full(two_n, -1, dtype=int)
+        )
+        assert np.all(np.isnan(loaded.ce_E_m_eV))
+        np.testing.assert_array_equal(
+            loaded.ce_strip_count, np.zeros(two_n, dtype=int)
+        )
+
+    def test_v8_round_trip_preserves_ce_fields(self, tmp_path):
+        """A genuine v8 file round-trips the three (C) fields bit-for-bit."""
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=4)
+        two_n = 2 * ckpt.num_molecules
+        ckpt.ce_channel = np.array([0, 1, 2, 3], dtype=int)
+        ckpt.ce_E_m_eV = np.array([0.53, 2.16, 4.32, 4.32])
+        ckpt.ce_strip_count = np.array([0, 2, 21, 5], dtype=int)
+        assert ckpt.ce_channel.shape == (two_n,)
+        path = save_ion_checkpoint(ckpt, tmp_path / "v8.npz")
+        loaded = load_ion_checkpoint(path)
+        assert loaded.schema_version == 8
+        np.testing.assert_array_equal(loaded.ce_channel, ckpt.ce_channel)
+        np.testing.assert_array_equal(loaded.ce_E_m_eV, ckpt.ce_E_m_eV)
+        np.testing.assert_array_equal(loaded.ce_strip_count,
+                                      ckpt.ce_strip_count)
+
+    def test_genuine_v8_missing_ce_field_raises(self, tmp_path):
+        """A file stamped v8 but missing a ce field fails loudly (no repair)."""
+        ckpt = _make_ion_checkpoint(num_molecules=2, num_steps=4)
+        path = save_ion_checkpoint(ckpt, tmp_path / "broken_v8.npz")
+        with np.load(path, allow_pickle=False) as z:
+            data = {k: z[k] for k in z.files}
+        data.pop("ce_channel")  # schema_version stays 8
+        np.savez_compressed(path, **data)
+        with pytest.raises(ValueError, match="missing fields"):
+            load_ion_checkpoint(path)
+
+    def test_post_init_synthesizes_ce_sentinels(self):
+        """Constructing without the ce fields yields the exact sentinels."""
+        ckpt = _make_ion_checkpoint(num_molecules=3, num_steps=2)
+        two_n = 2 * ckpt.num_molecules
+        assert ckpt.ce_channel.shape == (two_n,)
+        assert np.all(ckpt.ce_channel == -1)
+        assert np.all(np.isnan(ckpt.ce_E_m_eV))
+        assert np.all(ckpt.ce_strip_count == 0)
 
     def test_wrong_shape_E_int_rejected(self, tmp_path):
         """E_int_eV must be (2N, num_steps) like the other trajectory arrays."""

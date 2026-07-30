@@ -77,6 +77,7 @@ def ion_interaction_potential(
     cfg: SimConfig,
     *,
     state_ids: np.ndarray | None = None,
+    pair_scale: np.ndarray | None = None,
 ) -> np.ndarray:
     """Ion-ion interaction energy.
 
@@ -99,6 +100,11 @@ def ion_interaction_potential(
         Per-molecule I2+ electronic state (0..3) -- only required when
         ``cfg.single_charge_ionization_allowed`` is True. Must have the same
         shape as ``dr``.
+    pair_scale : np.ndarray or None, optional
+        Per-molecule dimensionless CE emulation scale ``s_m`` (shape (N,);
+        Tier-2 (C) design §3.1 — multiplies the Coulomb term on top of the
+        global ``E_coulomb_scale``; charges stay unit). ``None`` (default)
+        leaves the expression byte-identical to the pre-(C) path.
 
     Returns
     -------
@@ -112,6 +118,8 @@ def ion_interaction_potential(
     """
     # pure Coulomb term, scaled by the empirical knob E_coulomb_scale
     U_pot = cfg.E_coulomb_scale * q1 * q2 * 14.39964548 / dr
+    if pair_scale is not None:
+        U_pot = U_pot * pair_scale
 
     if cfg.single_charge_ionization_allowed:
         if state_ids is None:
@@ -290,6 +298,7 @@ def partner_interaction_ion(
     cfg: SimConfig,
     *,
     state_ids: np.ndarray | None = None,
+    pair_scale: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Accelerations and potential energies from ion-ion interaction.
 
@@ -307,6 +316,11 @@ def partner_interaction_ion(
         Uses E_coulomb_scale and single_charge_ionization_allowed.
     state_ids : np.ndarray, shape (N,), optional
         Required when single-charge ionization is active.
+    pair_scale : np.ndarray, shape (N,), optional
+        Per-molecule CE emulation scale s_m (Tier-2 (C) design §3.1);
+        ``None`` (default) = byte-identical pre-(C) path. Scales force and
+        energy together (both derive from the same ``U_fn``), so the
+        emulated trajectory is the exact scaled-charge-product trajectory.
 
     Returns
     -------
@@ -324,11 +338,17 @@ def partner_interaction_ion(
         raise ValueError(
             f"charge must have length 2*N = {2*N}, got {charge.shape[0]}"
         )
+    if pair_scale is not None and np.shape(pair_scale) != (N,):
+        raise ValueError(
+            f"pair_scale must have shape ({N},), got {np.shape(pair_scale)}"
+        )
     q1 = charge[:N]
     q2 = charge[N:]
 
     def U_fn(r):
-        return ion_interaction_potential(r, q1, q2, cfg, state_ids=state_ids)
+        return ion_interaction_potential(
+            r, q1, q2, cfg, state_ids=state_ids, pair_scale=pair_scale,
+        )
 
     E_pot_pair = U_fn(dr)
     F = _force_from_potential_fd(U_fn, dr)

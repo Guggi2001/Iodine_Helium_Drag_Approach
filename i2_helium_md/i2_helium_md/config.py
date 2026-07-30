@@ -69,6 +69,16 @@ RelaxationDissipation = Literal["zero_gamma", "landau_gated_drag"]  # Tier-2 §I
 # pure config -- flipping this enum is the entire switch).
 DragStateCoupling = Literal["off", "shell_area"]
 
+# Tier-2 atlas (C) design (TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md). Two
+# independent enums, both default "off" = bit-identical current behavior
+# (zero new RNG draws when off — the s(n) S1–S4 precedent):
+# * ``CeChannelMode``: (B) the per-molecule CE channel mixture
+#   {single, Q2, Q3} with per-pair Coulomb-scale emulation (design §3.1).
+# * ``ExitStripMode``: (A) the depth-graded outbound-crossing He knockout
+#   P₀(v)·G(j) (design §3.3). Both biphasic-only (config-load guarded).
+CeChannelMode = Literal["off", "sampled"]
+ExitStripMode = Literal["off", "depth_graded"]
+
 # Tier-2 Phase-B pickup channel (Slice P). ``PickupOccupancyCap`` selects the
 # Langmuir shell-saturation factor ``(1 - n/n*)_+^p`` (``langmuir``, default) vs the
 # density-only limit (``none``, cap inert). ``HeCaptureVelocity`` selects the incoming
@@ -536,6 +546,54 @@ class SimConfig:
     state_coupling_R_core_angstrom: float = 3.2    # A; bare-core collision radius (Bounded 3.0-3.6)
     state_coupling_rho_shell_per_A3: float = 0.030  # A^-3; shell He density (Bounded bulk..2x bulk)
 
+    # -- Tier-2 atlas (C) design: (B) CE channel mixture (design §3.1/§3.2) --
+    # "off" (default) = bit-identical: no channel draw, no per-pair Coulomb
+    # scale, the scalar coulomb_available_eV budget stands. "sampled" = the
+    # per-molecule Categorical(w) x TruncNormal(E_c, sigma_c) draw on the
+    # dedicated CE_CHANNEL_STREAM_KEY stream (sampling/ce_channels.py); the
+    # pair Coulomb drive is scaled s_m = E_m/E_ref at unit charges (the OQ-A
+    # emulation route, exact for the scored I+), the per-ion S2 onset becomes
+    # E_int(0) = f_int,c * E_m * (Sigma(n0)/Sigma(n*))^p (T6 p-law verbatim),
+    # and in Q3 molecules one fragment is tagged q3_partner and excluded from
+    # every I+-scored observable (OQ-I, non-optional in v1). Biphasic-only;
+    # guard-checked below (check_ce_channel_config). Frozen registration
+    # inputs (design §8): weights (0.30, 0.50, 0.20), f 0.80, sigmas
+    # (0.42, 0.31, 0.55) = (single, Q2, Q3) P2-measured, E_single 0.53.
+    ce_channel_mode: CeChannelMode = "off"
+    ce_channel_weights: tuple[float, float, float] = (0.30, 0.50, 0.20)  # (w_single, w_Q2, w_Q3)
+    ce_fraction_f: float = 0.80          # shared Coulomb fraction f; Bounded [0.65, 0.90]
+    ce_channel_sigma_eV: tuple[float, float, float] = (0.42, 0.31, 0.55)  # (single, Q2, Q3) widths
+    ce_single_ker_eV: float = 0.53       # eV per I+; Bounded [0.3, 0.8] (P2 measured)
+    ce_q3_partner_mask: bool = True      # OQ-I: non-optional True in v1 (guard refuses False)
+    # Per-channel S2 onset partition (f_int,single, f_int,Q2, f_int,Q3);
+    # required non-None under "sampled" (each in [0,1]), must stay None under
+    # "off" (no silent stealth surface). The scalar
+    # internal_energy_partition_fraction is onset-superseded under "sampled"
+    # (the budget retires with the mixture) but stays config-required by the
+    # biphasic guard — it is still the f_int stamp of the drag surface pins.
+    ce_internal_energy_partition_fractions: Optional[tuple[float, float, float]] = None
+
+    # -- Tier-2 atlas (C) design: (A) depth-graded exit strip (design §3.3) --
+    # "off" (default) = bit-identical: no crossing detection, no draws.
+    # "depth_graded" = at every OUTBOUND surface crossing (OQ-J) each rung
+    # j = 1..n_x is independently knocked with P0(v_x)*G(j)
+    # (physics/exit_strip.py forms); per accepted knock the mass drops m_He
+    # co-moving (carried KE -> E_mass_transfer), the top-rung binding D_0(c)
+    # is paid from the outbound KE (the E_pot e_bind fold rises by the same
+    # amount — count-consistent closure), and epsilon_carry per He books to
+    # E_dissip as the labeled strip sub-term; a full strip discards the
+    # residual E_int to E_dissip with the ledger label (OQ-H). Draws live on
+    # the dedicated per-stage strip streams (ion driver / relaxation stage).
+    # Biphasic-only; guard-checked below (check_exit_strip_config). Frozen
+    # P1 box (design §8): a = 2 [1.5, 2.5], j0 [1.5, 2], w_j [0.5, 1];
+    # v_strip 9.9 Sourced; epsilon_carry [0, 0.05].
+    exit_strip_mode: ExitStripMode = "off"
+    exit_strip_v_ref: float = 9.9        # A/ps; Sourced (equal-mass max transfer vs rq4graded)
+    exit_strip_exponent: float = 2.0     # a; Bounded [1.5, 2.5] (P1: a=1 disfavored)
+    exit_strip_protect_j0: float = 1.75  # rungs; Bounded [1.5, 2] (P1 box center)
+    exit_strip_width_rungs: float = 0.75  # rungs; Bounded [0.5, 1] (P1 box center)
+    exit_strip_carry_eV: float = 0.025   # eV/He; Bounded [0, 0.05] (0.2 eV total-scale)
+
     # -- Deferred (declared now, no Tier-0 reader; activated later) --
     noise_form: NoiseForm = "none"                       # Slice >=4 / Tier 3
     noise_calibration: NoiseCalibration = "hard_sphere_variance"   # Tier 3
@@ -701,6 +759,8 @@ class SimConfig:
         check_initial_shell_config(self)
         check_internal_energy_partition_config(self)
         check_drag_state_coupling_config(self)
+        check_ce_channel_config(self)
+        check_exit_strip_config(self)
         check_biphasic_config(self)
         check_relaxation_config(self)
         check_detection_config(self)
@@ -1254,6 +1314,157 @@ def check_drag_state_coupling_config(cfg: "SimConfig") -> None:
             f"n_ref={n_ref} gives a degenerate bare-end factor "
             f"s(0)={s_bare!r}; the design guard requires 0 < s(0) < 1."
         )
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 atlas (C) design config-load guards (TIER2_CE_CHANNEL_EXIT_STRIP_
+# DESIGN.md §3.1–§3.3/§5): the (B) channel mixture and the (A) exit strip.
+# ---------------------------------------------------------------------------
+_KNOWN_CE_CHANNEL_MODES = ("off", "sampled")
+_KNOWN_EXIT_STRIP_MODES = ("off", "depth_graded")
+
+
+def check_ce_channel_config(cfg: "SimConfig") -> None:
+    """Validate the (B) CE channel-mixture surface of ``cfg`` at config-load.
+
+    Rules (design §3.1/§3.2/§10)
+    -----
+    1. ``ce_channel_mode`` must be a known selector (typo guard).
+    2. The channel parameters must be well-formed **always** (fail-early even
+       while inert under ``off``): three non-negative weights summing to 1,
+       f ∈ (0, 1], three finite widths ≥ 0, a positive single-channel mean.
+    3. ``sampled`` is biphasic-only (the S2 onset and the emulation ride the
+       generative per-ion state) and requires a drag bundle (the biphasic
+       drag-path contract).
+    4. ``ce_q3_partner_mask`` must stay True under ``sampled`` (OQ-I:
+       non-optional in v1 — an unmasked run gains a spurious fast-I⁺
+       population of weight ≈ w_Q3/2, a designed-in scoring error).
+    5. ``ce_internal_energy_partition_fractions`` is required non-None under
+       ``sampled`` (each entry in [0, 1]) and must stay None under ``off``
+       (a set-but-unread tuple would be a stealth surface).
+
+    Raises
+    ------
+    ValueError
+        On any of the five rules above.
+    """
+    _reject_unknown_enum(
+        cfg.ce_channel_mode, _KNOWN_CE_CHANNEL_MODES, field="ce_channel_mode",
+    )
+    w = np.asarray(cfg.ce_channel_weights, dtype=float)
+    if w.shape != (3,) or np.any(~np.isfinite(w)) or np.any(w < 0) \
+            or not np.isclose(w.sum(), 1.0):
+        raise ValueError(
+            "ce_channel_weights must be 3 finite non-negative values "
+            f"(w_single, w_Q2, w_Q3) summing to 1, got {cfg.ce_channel_weights!r}"
+        )
+    if not (np.isfinite(cfg.ce_fraction_f) and 0.0 < cfg.ce_fraction_f <= 1.0):
+        raise ValueError(
+            f"ce_fraction_f must be in (0, 1], got {cfg.ce_fraction_f!r}"
+        )
+    sig = np.asarray(cfg.ce_channel_sigma_eV, dtype=float)
+    if sig.shape != (3,) or np.any(~np.isfinite(sig)) or np.any(sig < 0):
+        raise ValueError(
+            "ce_channel_sigma_eV must be 3 finite values >= 0 "
+            f"(single, Q2, Q3), got {cfg.ce_channel_sigma_eV!r}"
+        )
+    if not (np.isfinite(cfg.ce_single_ker_eV) and cfg.ce_single_ker_eV > 0):
+        raise ValueError(
+            f"ce_single_ker_eV must be finite and > 0, got {cfg.ce_single_ker_eV!r}"
+        )
+    _require_pairing(
+        field="ce_channel_mode", value=cfg.ce_channel_mode,
+        trigger="sampled", dep_field="mass_scenario",
+        dep_value="biphasic", actual=cfg.mass_scenario,
+        reason=(
+            "the channel mixture stamps the per-ion S2 onset and the "
+            "per-pair Coulomb scale of the generative biphasic path; other "
+            "scenarios have no E_int state to receive the onset (keep the "
+            "'off' default there)"
+        ),
+    )
+    if cfg.ce_channel_mode != "sampled":
+        if cfg.ce_internal_energy_partition_fractions is not None:
+            raise ValueError(
+                "ce_internal_energy_partition_fractions is set but "
+                "ce_channel_mode='off' — the per-channel onset tuple is read "
+                "only by the sampled mixture; a set-but-unread tuple is a "
+                "stealth surface (set it together with "
+                "ce_channel_mode='sampled')."
+            )
+        return
+    if cfg.drag_coefficients is None:
+        raise ValueError(
+            "ce_channel_mode='sampled' requires a drag_coefficients bundle: "
+            "the mixture rides the biphasic drag path, which does not run "
+            "without a bundle."
+        )
+    if not cfg.ce_q3_partner_mask:
+        raise ValueError(
+            "ce_q3_partner_mask=False is refused (OQ-I: the partner mask is "
+            "non-optional in v1 — without it the ensemble gains a spurious "
+            "fast-I+ population of weight ~ w_Q3/2)."
+        )
+    f_int_c = cfg.ce_internal_energy_partition_fractions
+    if f_int_c is None:
+        raise ValueError(
+            "ce_channel_mode='sampled' requires "
+            "ce_internal_energy_partition_fractions=(f_int_single, f_int_Q2, "
+            "f_int_Q3) — the per-channel S2 onset couplings (design §3.2)."
+        )
+    fc = np.asarray(f_int_c, dtype=float)
+    if fc.shape != (3,) or np.any(~np.isfinite(fc)) or np.any(fc < 0) \
+            or np.any(fc > 1):
+        raise ValueError(
+            "ce_internal_energy_partition_fractions must be 3 finite values "
+            f"in [0, 1], got {f_int_c!r}"
+        )
+
+
+def check_exit_strip_config(cfg: "SimConfig") -> None:
+    """Validate the (A) depth-graded exit-strip surface of ``cfg`` at config-load.
+
+    Rules (design §3.3/§10)
+    -----
+    1. ``exit_strip_mode`` must be a known selector (typo guard).
+    2. The form parameters must be well-formed **always** (fail-early even
+       while inert under ``off``): v_ref > 0, exponent a > 0, j₀ ≥ 0,
+       w_j > 0, ε_carry ≥ 0 — all finite.
+    3. ``depth_graded`` is biphasic-only: the strip operates on the
+       generative per-ion ``n_shell``/``E_int`` state and the SQ variable-
+       mass machinery (the T5/T6/s(n) no-silent-inert convention).
+
+    Raises
+    ------
+    ValueError
+        On any of the three rules above.
+    """
+    _reject_unknown_enum(
+        cfg.exit_strip_mode, _KNOWN_EXIT_STRIP_MODES, field="exit_strip_mode",
+    )
+    for name, value, lo_ok in (
+        ("exit_strip_v_ref", cfg.exit_strip_v_ref, lambda v: v > 0),
+        ("exit_strip_exponent", cfg.exit_strip_exponent, lambda v: v > 0),
+        ("exit_strip_protect_j0", cfg.exit_strip_protect_j0, lambda v: v >= 0),
+        ("exit_strip_width_rungs", cfg.exit_strip_width_rungs, lambda v: v > 0),
+        ("exit_strip_carry_eV", cfg.exit_strip_carry_eV, lambda v: v >= 0),
+    ):
+        if not (np.isfinite(value) and lo_ok(value)):
+            raise ValueError(
+                f"{name} must be finite and "
+                f"{'>= 0' if name in ('exit_strip_protect_j0', 'exit_strip_carry_eV') else '> 0'}, "
+                f"got {value!r}"
+            )
+    _require_pairing(
+        field="exit_strip_mode", value=cfg.exit_strip_mode,
+        trigger="depth_graded", dep_field="mass_scenario",
+        dep_value="biphasic", actual=cfg.mass_scenario,
+        reason=(
+            "the strip knocks rungs off the generative per-ion n_shell "
+            "state through the SQ variable-mass machinery, which only the "
+            "biphasic scenario evolves (keep the 'off' default there)"
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

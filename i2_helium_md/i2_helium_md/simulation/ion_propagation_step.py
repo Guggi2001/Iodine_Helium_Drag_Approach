@@ -51,6 +51,7 @@ checkpoint.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -64,7 +65,7 @@ from ..physics.collisions import (
 )
 from ..physics.baoab import BaoabStep
 from ..physics.constants import EV, MASS_HE_AMU, MASS_I_ION_AMU, U
-from ..physics.dissociation_ladder import resolve_ladder
+from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.evaporation import evaporation_step_components
 from ..physics.helium_density import rho_he_ratio
 from ..physics.internal_energy_budget import pickup_bath_release_eV
@@ -687,6 +688,193 @@ def biphasic_step(
         E_dissip_eV=E_dissip,
         E_mass_transfer_eV=E_mass_transfer,
     )
+
+
+# ===========================================================================
+# Tier-2 (C) depth-graded exit-strip step (design §3.3) -- outbound crossings
+# ===========================================================================
+def exit_strip_step(
+    state: IonStepState,
+    *,
+    rng: np.random.Generator,
+    cfg: SimConfig,
+    droplet_radii: np.ndarray,
+    prev_depth_angstrom: np.ndarray,
+    ladder=None,
+) -> tuple[IonStepState, np.ndarray, np.ndarray]:
+    r"""Apply the depth-graded exit strip at this step's outbound crossings. Pure.
+
+    The (A) arm of the Tier-2 (C) design
+    (``TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`` §3.3), run by the ion driver
+    and the relaxation stage AFTER their translation step (post-BAOAB
+    positions, post-fold ``E_pot``). An **outbound crossing** is
+    ``prev_depth <= 0 and depth > 0`` (depth = r − R_droplet); every outbound
+    pass strips again (OQ-J — bulk-refill re-dresses on re-entry through the
+    live pickup channel).
+
+    Per crossing ion with shell ``n_x > 0`` and exit speed ``v_x``:
+
+    1. Draw ``n_x`` independent Bernoullis with
+       ``P_knock(j) = P₀(v_x)·G(j)`` (``physics/exit_strip.py`` forms;
+       j = 1 innermost) — the retention-twin stochasticity anchor.
+    2. Process the drawn knock count sequentially at the running count
+       ``c = n_x, n_x−1, …``; each accepted knock:
+
+       * drops one He **co-moving** (velocity unchanged, ``m → m − m_He``);
+         the carried KE ``½·m_He·v²`` books to ``E_mass_transfer`` (the
+         Tier-1a continuous-velocity convention),
+       * pays the toll ``D₀(c) + ε_carry`` from the outbound KE by rescaling
+         the speed (direction preserved). The binding part ``D₀(c)`` lands
+         in ``E_pot`` (the count-based ``e_bind_pair`` fold rises by exactly
+         ``D₀(c)`` when ``n`` drops — booked here so the driver's absolute
+         fold recompute next step agrees), the carry-off ``ε_carry`` books
+         to ``E_dissip`` as the labeled strip sub-term. **Count-consistency
+         convention:** the toll is the top rung at the running count — the
+         knocked set's identity draw selects *how many* He go (outer-eager
+         via G(j)), the ledger prices them at the top-of-ladder rungs so
+         the 5-term invariant closes bit-tight against the count-based
+         E_pot fold.
+       * A knock the remaining KE cannot pay is rejected and knocking stops
+         (affordability truncation — no energy is created; rare, since
+         P₀ suppresses slow exiters).
+
+    3. On a **full strip** (``c = 0``) the complex ceases to exist: the
+       residual ``E_int`` is discarded to ``E_dissip`` with this ledger
+       label (OQ-H — never silently dropped).
+
+    ``E_kin`` is recomputed from the post-strip ``(m, v)`` for every
+    stripped ion. The 5-term invariant is unchanged in total.
+
+    Parameters
+    ----------
+    state : IonStepState
+        Post-translation state (read only; not mutated). ``n_shell`` must be
+        genuine per-ion state (biphasic path).
+    rng : np.random.Generator
+        The **dedicated per-stage strip stream** (never the ion-stage /
+        relaxation mass-subsystem streams). Draws ``n_x`` uniforms per
+        crossing ion, in ascending ion order — data-dependent count,
+        acceptable on a stage-private stream (the detection precedent).
+    cfg : SimConfig
+        Reads the ``exit_strip_*`` surface.
+    droplet_radii : np.ndarray, shape (2N,)
+        Per-atom droplet radius [Å].
+    prev_depth_angstrom : np.ndarray, shape (2N,)
+        Per-atom depth at the PREVIOUS step's positions [Å].
+    ladder
+        The resolved dissociation ladder (``resolve_ladder`` output) for the
+        ``D₀`` rung costs; ``None`` rides Form-U.
+
+    Returns
+    -------
+    (new_state, depth_angstrom, knocks) :
+        The post-strip state, this step's per-atom depth (the caller's next
+        ``prev_depth``), and the per-ion accepted knock counts ``(2N,)`` int
+        (for the cumulative v8 ``ce_strip_count``).
+
+    Raises
+    ------
+    ValueError
+        If ``state.n_shell`` is ``None`` (the strip is biphasic-only,
+        guarded at config-load; this is the bypassing-caller backstop).
+    """
+    depth = _depth(state.x, state.y, state.z, droplet_radii)
+    if state.n_shell is None:
+        raise ValueError(
+            "exit_strip_step requires genuine n_shell state (biphasic path)."
+        )
+    crossing = (np.asarray(prev_depth_angstrom) <= 0.0) & (depth > 0.0)
+    knocks = np.zeros(depth.shape[0], dtype=int)
+    if not np.any(crossing):
+        return state, depth, knocks
+
+    from ..physics.exit_strip import strip_knock_probabilities
+
+    vx = np.asarray(state.vx, dtype=float).copy()
+    vy = np.asarray(state.vy, dtype=float).copy()
+    vz = np.asarray(state.vz, dtype=float).copy()
+    n = np.asarray(state.n_shell, dtype=float).copy()
+    mass_kg = np.asarray(state.mass_kg, dtype=float).copy()
+    E_kin = np.asarray(state.E_kin_eV, dtype=float).copy()
+    E_pot = np.asarray(state.E_pot_eV, dtype=float).copy()
+    E_dissip = np.asarray(state.E_dissip_eV, dtype=float).copy()
+    E_mt = np.asarray(state.E_mass_transfer_eV, dtype=float).copy()
+    E_int = np.asarray(state.E_int_eV, dtype=float).copy()
+
+    picture = cfg.ladder_electronic_picture
+    kappa = cfg.ladder_steepness
+    eps_eV = float(cfg.exit_strip_carry_eV)
+
+    for i in np.flatnonzero(crossing):
+        n_x = int(round(float(n[i])))
+        if n_x <= 0:
+            continue
+        v_exit = float(np.sqrt(vx[i] ** 2 + vy[i] ** 2 + vz[i] ** 2))
+        p = strip_knock_probabilities(
+            n_x, v_exit,
+            v_strip_aps=cfg.exit_strip_v_ref,
+            exponent=cfg.exit_strip_exponent,
+            protect_j0=cfg.exit_strip_protect_j0,
+            width_rungs=cfg.exit_strip_width_rungs,
+        )
+        drawn = int(np.count_nonzero(rng.random(n_x) < p))
+        if drawn == 0:
+            continue
+
+        c = n_x
+        m_amu = float(mass_kg[i]) / U
+        accepted = 0
+        for _ in range(drawn):
+            v2 = float(vx[i] ** 2 + vy[i] ** 2 + vz[i] ** 2)   # (A/ps)^2
+            m_after_amu = m_amu - MASS_HE_AMU
+            ke_after_eV = float(
+                _E_kin_eV(m_after_amu * U, vx[i], vy[i], vz[i])
+            )
+            cost_eV = float(
+                d0_of_n(c, picture=picture, kappa=kappa, ladder=ladder)
+            ) + eps_eV
+            if ke_after_eV <= cost_eV:
+                break                       # affordability truncation
+            # Co-moving He carry-off: mass drops at unchanged velocity, the
+            # carried KE books to E_mass_transfer (the Tier-1a convention).
+            E_mt[i] += float(_amu_ang2_ps2_to_eV(0.5 * MASS_HE_AMU * v2))
+            m_amu = m_after_amu
+            # Pay the toll from the outbound KE (direction preserved).
+            scale = math.sqrt(1.0 - cost_eV / ke_after_eV)
+            vx[i] *= scale
+            vy[i] *= scale
+            vz[i] *= scale
+            E_pot[i] += cost_eV - eps_eV    # the D0(c) e_bind-fold rise
+            E_dissip[i] += eps_eV           # the labeled strip carry-off
+            c -= 1
+            accepted += 1
+
+        if accepted == 0:
+            continue
+        n[i] = float(c)
+        mass_kg[i] = m_amu * U
+        E_kin[i] = float(_E_kin_eV(mass_kg[i], vx[i], vy[i], vz[i]))
+        knocks[i] = accepted
+        if c == 0:
+            # OQ-H: full strip -- the complex ceases to exist; the residual
+            # E_int is discarded to E_dissip with this ledger label.
+            E_dissip[i] += E_int[i]
+            E_int[i] = 0.0
+
+    if not np.any(knocks):
+        return state, depth, knocks
+    new_state = replace(
+        state,
+        vx=vx, vy=vy, vz=vz,
+        mass_kg=mass_kg,
+        n_shell=n,
+        E_kin_eV=E_kin,
+        E_pot_eV=E_pot,
+        E_dissip_eV=E_dissip,
+        E_mass_transfer_eV=E_mt,
+        E_int_eV=E_int,
+    )
+    return new_state, depth, knocks
 
 
 # ===========================================================================

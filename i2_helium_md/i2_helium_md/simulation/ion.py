@@ -58,19 +58,29 @@ from ..physics.state_coupling import (
 )
 from ..physics.dissociation_ladder import resolve_ladder
 from ..physics.solvation_cooling import e_bind_pair_eV
-from .checkpoint import IonCheckpoint, NeutralCheckpoint
+from ..sampling.ce_channels import ce_pair_scale_from_checkpoint
+from .checkpoint import IonCheckpoint, NeutralCheckpoint, stage_stream_rng
 from .ion_initial_state import build_initial_ion_state
 from .ion_propagation_step import (
     IonStepState,
     baoab_propagation_step,
     biphasic_step,
+    exit_strip_step,
     ion_propagation_step,
     ion_state_from_checkpoint_column,
     shed_step,
     write_ion_state_to_checkpoint_column,
     _check_drag_scope,
+    _depth,
 )
 from .run_directory import RunDirectory
+
+# Fixed module-level key for the ion driver's exit-strip Bernoulli stream via
+# SeedSequence((cfg.seed, EXIT_STRIP_ION_STREAM_KEY)) -- dedicated, appended
+# after all existing streams (the CE design §5 draw-order contract: the
+# ion-stage stream is never touched; strip-off consumes nothing). The
+# relaxation stage derives its own strip stream from its own key.
+EXIT_STRIP_ION_STREAM_KEY: int = 0xCE2_2026
 
 
 # ===========================================================================
@@ -199,6 +209,17 @@ def run_ion_propagation(
     schedule = None
     next_shed_idx = 0
     ladder = None
+    # Tier-2 (C) surfaces (both None/off = byte-identical): the per-molecule
+    # CE Coulomb scale from the t0 channel draw (stored in the v8 fields by
+    # build_initial_ion_state), and the depth-graded exit strip.
+    pair_scale = ce_pair_scale_from_checkpoint(ckpt)
+    strip_live = cfg.exit_strip_mode == "depth_graded"
+    strip_rng = None
+    strip_counts = None
+    prev_depth = None
+    if strip_live:
+        strip_rng = stage_stream_rng(cfg.seed, EXIT_STRIP_ION_STREAM_KEY)
+        strip_counts = np.zeros(2 * cfg.num_molecules, dtype=int)
     if use_drag:
         if cfg.mass_scenario == "biphasic":
             # Slice T2 (§I.10): resolve the ladder once for the per-step
@@ -248,6 +269,8 @@ def run_ion_propagation(
     state = ion_state_from_checkpoint_column(ckpt, 0)
     prev_dist: np.ndarray | None = None
     next_storage_idx = 1
+    if strip_live:
+        prev_depth = _depth(state.x, state.y, state.z, droplet_radii)
 
     for internal_id in range(1, num_internal_steps):
         if use_drag:
@@ -273,7 +296,10 @@ def run_ion_propagation(
             # `fixed` it is constant, under `anchored_discrete` it follows the
             # shed schedule, under `biphasic` the generative channels. Noise dormant
             # (T_eff=0).
-            acc_fn = make_ion_accel_fn(cfg, state.mass_kg, droplet_radii, charge)
+            acc_fn = make_ion_accel_fn(
+                cfg, state.mass_kg, droplet_radii, charge,
+                pair_scale=pair_scale,
+            )
             step_gamma_fn = gamma_fn
             if state_coupling_live:
                 step_gamma_fn = apply_state_factor(
@@ -306,6 +332,17 @@ def run_ion_propagation(
                         ladder=ladder,
                     ),
                 )
+                # Tier-2 (C) exit strip at this step's outbound crossings
+                # (design §3.3; AFTER the fold -- the operator books its own
+                # fold delta for the knocked rungs). Dedicated stream; off =
+                # structurally absent.
+                if strip_live:
+                    new_state, prev_depth, knocks = exit_strip_step(
+                        new_state, rng=strip_rng, cfg=cfg,
+                        droplet_radii=droplet_radii,
+                        prev_depth_angstrom=prev_depth, ladder=ladder,
+                    )
+                    strip_counts += knocks
         else:
             new_state = ion_propagation_step(
                 state,
@@ -344,6 +381,9 @@ def run_ion_propagation(
 
     # 6. Final-state fields, taken from the actual last internal step.
     _write_final_state(state, ckpt, cfg)
+    if strip_counts is not None:
+        # Cumulative v8 strip counter (build_initial_ion_state zero-seeds it).
+        ckpt.ce_strip_count[:] = ckpt.ce_strip_count + strip_counts
 
     # 7. Save if run_dir given.
     if run_dir is not None:
@@ -434,13 +474,14 @@ def _estimate_checkpoint_bytes_ion(num_molecules: int, num_steps: int) -> int:
     * ``_NUM_2N_T_ARRAYS_ION`` (15) trajectory/diagnostic arrays of shape
       (2N, num_steps) at 8 bytes/cell
     * Static (2N,) arrays for mass_kg, mass_final_kg, droplet_radii_angstrom,
-      and the six positions/velocities final placeholders (9 arrays).
+      the six positions/velocities final placeholders, and the three v8
+      (C)-design per-ion fields (12 arrays).
     * Static (N,) array for b_ion_outside (1 byte, but we count 8 for slack).
     * (num_steps,) for time_ps.
     """
     n_atoms = 2 * num_molecules
     bytes_2N_T = _NUM_2N_T_ARRAYS_ION * n_atoms * num_steps * 8
-    bytes_static_2N = 9 * n_atoms * 8
+    bytes_static_2N = 12 * n_atoms * 8
     bytes_static_N = num_molecules * 8
     bytes_time = num_steps * 8
     return bytes_2N_T + bytes_static_2N + bytes_static_N + bytes_time

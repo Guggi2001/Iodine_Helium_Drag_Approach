@@ -186,6 +186,29 @@ class RunDirectory:
                     f"tabulated_ladder_rungs_eV: {exc}"
                 ) from exc
 
+        # The (C) design tuple fields round-trip as JSON arrays too; coerce
+        # back to the declared tuples (same contract as the rung table). The
+        # per-channel f_int tuple is Optional — None passes through.
+        for tuple_field in ("ce_channel_weights", "ce_channel_sigma_eV",
+                            "ce_internal_energy_partition_fractions"):
+            raw_tuple = payload.get(tuple_field)
+            if raw_tuple is None:
+                continue
+            if not isinstance(raw_tuple, (list, tuple)):
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid {tuple_field}: "
+                    "expected a JSON array" + (
+                        " or null." if tuple_field
+                        == "ce_internal_energy_partition_fractions" else "."
+                    )
+                )
+            try:
+                payload[tuple_field] = tuple(float(x) for x in raw_tuple)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"cfg.json in {self.root} has invalid {tuple_field}: {exc}"
+                ) from exc
+
         raw_drag_coefficients = payload.get("drag_coefficients")
         if raw_drag_coefficients is not None:
             if not isinstance(raw_drag_coefficients, dict):

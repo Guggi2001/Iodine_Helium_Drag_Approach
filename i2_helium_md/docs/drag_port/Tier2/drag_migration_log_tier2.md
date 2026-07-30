@@ -12331,3 +12331,114 @@ column stack, the P3 forecast CSV as the placement expectation.
 `[PROCEED TO IMPLEMENTATION]` in the fresh session. Atlas stance
 intact: nothing adopted, `finc1v725` stands, h405 candidacy + G4
 adjudications open, F5 undischarged.
+
+## (C) PROBE BUILT + EXECUTED behind [PROCEED TO IMPLEMENTATION] — REGISTRATION FAILED (CP-1..4 FAIL; kills CP-5/6/7 FIRED on C-full, CP-6 at both coupling ends); measured decomposition: (B) places KE1 0.920 needle-broken but traps its slow channel; (A) as specified over-tolls (eps-dominated) and FEEDS the suppressed gate; PC-3 consequences TRIGGERED — (A)-v1 stops, f_int wiring closes, mixture survives; user adjudication next (2026-07-29)
+
+**Adjudications recorded (user: "I agree with your recommendations
+record then and then [PROCEED TO IMPLEMENTATION] for the probe
+build").** The five outcome pre-commitments are recorded as design doc
+§11 (PC-1 Tension-1 interpretation with pre-named valley-fillers;
+PC-2 pass-sequencing adopt→re-tune→G4; PC-3 failure semantics —
+family-level kill stops (A), CP-6-both-ends closes the f_int wiring;
+PC-4 the m/q-127 ask fires at probe-pass; PC-5 the CRN scope caveat)
+plus the Tension-2 above-band-is-diagnostic note; the build trigger
+was issued in the same message.
+
+**Delivered (code; all forbidden-list touches inside the granted
+scopes).**
+
+1. `i2_helium_md/sampling/ce_channels.py` — the (B) sampler: dedicated
+   stream `CE_CHANNEL_STREAM_KEY = 0xCE1_2026` via the shared
+   `stage_stream_rng`; frozen three-draw order (channel uniform /
+   E_m truncated normal with per-molecule rejection / partner-pick
+   uniform, all N-sized so the count is composition-independent);
+   `E_REF_PER_ION_EV = 2.7006`; per-ion codes (-1/0/1/2/3 incl.
+   `q3_partner`); `ce_pair_scale_from_checkpoint` (None ⇔ off) and
+   `ce_scored_ion_mask` (OQ-I single source).
+2. `i2_helium_md/physics/exit_strip.py` — the (A) pure forms
+   P₀(v) = min(1,(v/v_strip)^a), G(j) logistic (validated, vectorised).
+3. `simulation/ion_propagation_step.exit_strip_step` — the strip
+   operator at outbound crossings (prev_depth ≤ 0 < depth; OQ-J every
+   crossing): per crossing ion n_x Bernoullis on the dedicated
+   per-stage strip streams (`0xCE2_2026` ion driver / `0xCE3_2026`
+   relaxation), then per accepted knock — co-moving He drop (carried
+   KE → E_mass_transfer, the Tier-1a operator convention), the
+   **count-consistent top-rung toll** D₀(c) paid from the outbound KE
+   into the e_bind fold (E_pot), ε_carry → E_dissip (the labeled strip
+   sub-term), affordability truncation (a knock the KE cannot pay is
+   rejected — no energy creation), full-strip E_int residual →
+   E_dissip (OQ-H discard-with-label). 5-term invariant closes
+   bit-tight (unit-tested to 1e-12). Convention note (recorded, not
+   silent): the ledger prices knocks at the top of the running count —
+   the G(j)-drawn identity selects how many, the count-based fold
+   fixes the price; this is the only closure consistent with an
+   occupancy-only state.
+4. Config surface: `ce_channel_mode/{off,sampled}`, weights, f,
+   sigmas (3-tuple incl. the single channel), `ce_single_ker_eV`,
+   `ce_q3_partner_mask` (guard refuses False under sampled),
+   `ce_internal_energy_partition_fractions` (required-when-sampled,
+   refused-when-off), `exit_strip_mode/{off,depth_graded}` + the five
+   form knobs at the P1 box centers as defaults;
+   `check_ce_channel_config` / `check_exit_strip_config` (typo,
+   well-formedness-always, biphasic-only pairing). cfg.json tuple
+   round-trip added in `RunDirectory.load_cfg`; the shared
+   `cfg_diff_vs_reference` got a JSON-space default comparison (its
+   tuple-default false positive surfaced here; 20 pre-fix test
+   failures re-run green).
+5. Checkpoint **v8** (OQ-E, exactly three per-ion static fields):
+   `ce_channel`, `ce_E_m_eV`, `ce_strip_count`; silent exact v7→v8
+   shim (the v5→v6 precedent — the sentinels are exact for pre-(C)
+   files, unlike the approximate v6→v7 warning arm); `__post_init__`
+   sentinel synthesis keeps every pre-v8 construction site valid;
+   shape validation extended.
+6. Seams: per-molecule `pair_scale` threaded
+   `ion_interaction_potential → partner_interaction_ion →
+   make_ion_accel_fn → ion driver / relaxation _coulomb_translate /
+   detection escape_energetics / t0 E_pot + E_int onset` (None
+   default = byte-identical expression); per-channel S2 onset
+   E_int(0) = f_int,c·E_m×(T6 p-law verbatim) in
+   `build_initial_ion_state`; cumulative `ce_strip_count` across ion +
+   relaxation stages; partner mask at scoring
+   (`tier2_confirmation.read_confirmation_detection(include_mask=)` +
+   `ce_partner_include_mask` lazy field read).
+7. Instruments: `scripts/gen_tier2atlas_ce_probe.py` (4 cells at the
+   h405 pins, finals seed 20260729 — PC-5: aonly CRN-clean vs the
+   committed h405; unit + cfg-diff oracles pre-launch) and
+   `scripts/post_processing/tier2atlas_ce_probe_table.py` (O1 pooled +
+   O2 committed-row oracles, partner-masked reads, CE columns
+   slow_bare/bare_lt1/KE1_above115/strip stats, frozen CP-1..8
+   verdicts). Artifact `data/runs/h2b_forward_model/atlas_ce_probe.csv`.
+8. Tests: `tests/test_ce_channel_exit_strip.py` (41),
+   `tests/test_gen_tier2atlas_ce_probe.py` (15), checkpoint v8
+   coverage (silent shim / round-trip / fail-loud / post-init);
+   schema assertions bumped to 8. Full suite green (2881 + the re-run
+   cfg-diff files; off-mode byte-identity pinned structurally + by
+   re-run equality).
+
+**Executed.** All four cells (cfull/aonly/bonly/cq3hi, N = 1000)
+ran to detection; oracles green. **The registration FAILED** — full
+record in findings "(C) probe EXECUTED" + D0 §20 (top-priority update
+made first, per the standing rule): CP-1 supp 0.368, CP-2 SD 0.169,
+CP-3 KE₁ 0.180/above-1.15 0, CP-4 n₁ 0.148 — all FAIL; CP-5 slow-bare
+0.446, CP-6 midHot 0.370 (0.350 at the other f_int,Q3 end), CP-7 W₁
+1.887 — all three kills FIRED. Decomposition: (B)-only KE₁ 0.920 /
+above-1.15 0.418 / SD 0.286 (the source lever works; trap 0.465 from
+the slow single channel); (A)-only KE₁ 0.119 / supp 0.551 / 90 %
+stripped at mean 13.7, p90 20 knocks — the ε box is internally
+inconsistent with its own 0.2 eV anchor at the measured knock counts
+(needs ε ≲ 0.005), P1's box was calibrated suppressed-class-only and
+toll-free, and the strip collapses Σ(n) under an untouched E_int
+(the gate inversion that grows the suppressed class the design meant
+to retire).
+
+**Docs updated:** design doc §11 (PC-1..5) + status header + §9
+(EXECUTED/FAILED); findings new section; D0 §20 (first); plan §3.5l;
+CLAUDE.md compact state bridged.
+
+**Not done, deliberately:** any follow-up design change (ε → ~0 arm,
+suppressed-class-gated strip, E_int co-strip, single-channel trap
+pricing — candidates listed in the findings for the user), PC-4
+(no pass ⇒ no m/q-127 ask), G4 adjudications, D2b A/B remainder.
+Atlas stance intact: nothing adopted, `finc1v725` stands, the scalar
+budget did NOT retire, F5 undischarged. Off-mode is the config
+default everywhere — production behavior unchanged.
