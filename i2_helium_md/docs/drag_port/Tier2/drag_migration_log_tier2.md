@@ -12592,6 +12592,20 @@ plateau-set, not power-set, and the plateau is histogram-pinned
 mechanism corrected accordingly (tail-plateau re-arbitration, not the
 low-v limb); the measured ordering stands.
 
+**Mechanism correction (user-caught, same discussion; D0 §2 amended):**
+the assistant's "E_int is fed by drag work" was WRONG at the wiring
+level — `biphasic_step` books drag loss to E_dissip; E_int's sources
+are the E₀ seed + f_ret·D₀ pickup heat, its sinks the density-gated τ
+cooling + per-shed D₀. The real drag↔shedding coupling is a TIME
+coupling (E_int^exit ≈ E₀·e^(−t_res/τ_eff); the plateau sets t_res for
+the fast class): the KE↔histogram anti-correlation is a co-selection
+on residence time (exit fast ⇔ exit hot), which unifies the (v_c, τ)
+joint-closure "race coordinate", the §3.5h un-damping kill, ∂supp/∂E₀
+≈ +1.7/eV, and the uniqueness of the source-KER lever for KE₁ (it
+shortens residence — raises KE and preserves E_int together). The
+plateau-pinning conclusion stands; only its causal mechanism is
+corrected.
+
 **Posted for adjudication (NOT taken): the lq corrected-geometry
 counterfactual.** (1) Zero-MD: lq twin scan at the corrected geometry
 (the §6.6 lq twin × the G3 corrected-geometry twin infrastructure) to

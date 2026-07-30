@@ -280,8 +280,20 @@ n = 1/n = 2 ions never are. **Reading: at n = 1/n = 2 velocities the
 drag is plateau-set, not power-set, and the plateau is
 histogram-pinned (the §3.5h p_tail kill is its direct lowering test) —
 a lower-power form does NOT deliver lower drag to the fast ions in any
-landed system. The KE₁ ceiling is a dissipation-budget property of
-the mass mechanism, not of the drag power.** **Mid-band γ magnitude (band top → cap,
+landed system.** **Mechanism correction (user-caught, 2026-07-30):
+drag work never enters E_int (it books to E_dissip; E_int sources are
+the E₀ seed + the f_ret·D₀ pickup heat, sinks are the density-gated τ
+cooling + the per-shed D₀ — `biphasic_step` K1/K2/S1). The
+drag↔shedding coupling is a TIME coupling, not an energy pipe:
+E_int^exit ≈ E₀·exp(−t_res/τ_eff), and the plateau sets t_res for the
+fast class. Reaching n = 1 requires exiting hot, and the ions that
+exit hot are exactly the ones that exit fast — the KE↔histogram
+anti-correlation (I47) is a CO-SELECTION on residence time. This is
+why (v_c, τ) close only jointly (the race coordinate), why §3.5h
+softening un-damps the cascade (more ions exit fast-and-hot,
+over-shedding small-n while mid bins starve), and why the source-KER
+lever is the unique KE₁ mover (it shortens residence: raises exit KE
+AND preserves E_int simultaneously).** **Mid-band γ magnitude (band top → cap,
 v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
 spot-check, NB-RQ11-12; escalated by the §6.7 item-1 lq battery to
 ~300 counts/bin, 2026-07-24): the lq system's softer γ in exactly this
