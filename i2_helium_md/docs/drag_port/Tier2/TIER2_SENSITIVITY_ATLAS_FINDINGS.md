@@ -551,6 +551,88 @@ discharges the item-1 E_bind confound (→ form) and reframes the histogram
 form-blindness as co-compensation. **Status: EXECUTED 2026-07-24 (initial
 N = 500 single-seed + firm-up N = 1000 × 3 seeds).**
 
+## §6.7 item 3 — the direct KE₁ read on the lq battery (2026-07-30, regenerated 5 × N = 1000, paired) — **lq is COLDER at n = 1/n = 2 on every seed (ΔKE₁ −0.047 ± 0.005, ~10σ paired); no width gain, no n₁ gain — the "lower-power form raises low-n KE" hypothesis is REFUTED with the direct observable**
+
+**Question (user, at the (C) closure discussion).** Could a drag form with
+a lower velocity power than cubic — "so lower n get more speed" — fix the
+n = 1/n = 2 KE deficit? Items 1–2 answered via the KED χ² (worse on all
+5 seeds) but never stated KE₁ itself; this read states it.
+
+**Provenance.** The §6.7 lq run dirs were local-only and had been cleaned
+after the 2026-07-24 scoring (run dirs are never committed; the original
+scorer's table carried no KE columns — lesson recorded), so the battery
+was **regenerated seed-exact** from the committed
+`gen_tier2atlas_lqbattery.py` (dry-run cfg-diff guard green; three
+harness-level kill/restart cycles, final wave detached; no code changes).
+Instrument: **committed** `scripts/post_processing/tier2atlas_lq_ke1_table.py`
+(full observable vector CSV `atlas_lq_ke1_table.csv`). Oracles, all green
+before any new number: **O1** scorer-drift (standing pooled battery);
+**O2** KE-read path (committed `g4fh405` rescored = the committed
+`atlas_ce_probe.csv` h405 row to 4 decimals on KE1_mean/med/SD/n₁);
+**O3** regeneration fidelity — every one of the 10 members reproduces its
+committed §6.7 (W₁, supp) to the printed 3 decimals and the pooled lq row
+reproduces (scored 9635 exact, trap/supp/n̄/n₁/W₁ at printed precision).
+O3 is compared at **printed precision** (string-format), after a numeric
+half-band check false-fired on an exact boundary: pooled trap is exactly
+365/10000 = 0.0365, which prints "0.036" but sits at |Δ| = 0.0005 + 4e-19.
+midHot/χ²_med are reported, not oracled (the original session scorer's
+conventions differ from the committed `observable_columns`; W₁/supp/trap/
+n̄/n₁ are convention-shared — the §4cc oracle chain).
+
+**The numbers (pooled; per-seed table in the CSV):**
+
+| pool | KE₁ mean ± SD | KE₁ med / mode | above-1.15 | KE₂ mean ± SD | n₁_solv |
+|---|---|---|---|---|---|
+| cubic (§4cc battery) | 1.034 ± 0.128 | 1.038 / 1.006 | 0.188 | 0.754 ± 0.120 | 0.2433 |
+| lq | 0.987 ± 0.132 | 0.992 / 1.006 | 0.095 | 0.694 ± 0.124 | 0.2447 |
+| reference | 1.302 / σ 0.697 | 1.128 / 0.891 | 0.487 | 0.706 (mean) | 0.31 |
+
+**Paired Δ (lq − cubic), mean ± sample SD over the 5 seed pairs:**
+ΔKE₁_mean **−0.0467 ± 0.0046** (negative on every seed); ΔKE₂_mean
+−0.0598 ± 0.0036 (every seed); Δabove-1.15 −0.0928 ± 0.0178 (every
+seed); ΔKE₁_SD +0.0048 ± 0.0024; Δn₁_solv +0.0014 ± 0.0063 (ns).
+
+**Readings:**
+
+1. **The sign is measured, and it is downhill.** Both forms are pinned to
+   the same TDDFT traces in the constrained band; below it a lower power
+   decays slower ⇒ more residual drag on slow ions. lq bleeds the n = 1
+   and n = 2 ions by ~0.05–0.06 eV — away from the reference (1.302),
+   not toward it. The mechanism proposed in the question ("lower n get
+   more speed") acts with the opposite sign.
+2. **No compensating benefit anywhere in the low-n KE surface:** width
+   +0.005 (the reference σ 0.697 needs ~5× either form's SD — source
+   spread territory, per the (C) record), n₁ +0.001 (ns), above-1.15
+   halves (0.188 → 0.095, reference 0.487). Interestingly KE₂: cubic
+   0.754 vs reference 0.706 — the n = 2 bin is form-adjacent to
+   reference at this (old) geometry; lq undershoots it (0.694).
+3. **Consistency:** the χ²_med ordering (item 1: lq worse on all 5
+   seeds) is now explained at the observable level — colder KE₁/KE₂
+   at essentially unchanged histogram. Together with item 2 (colder
+   midHot/n̄ at matched well, over-suppression = form), the quadratic
+   form is colder *everywhere* it differs, at every scale measured.
+4. **Program-level closure:** with Tier-0 rejecting lq on held-out
+   traces AND the Tier-2 low-n KE now measured worse under lq, the
+   drag-form axis holds **no upside for the KE tension in any measured
+   direction**. The KE₁ lever remains where the (C) record put it:
+   source-side (KER spread), not drag-side.
+
+**Figure surface.** Pooled lq container
+`9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigpooled` (10 000
+fragments, 1290 events) built by the **committed**
+`scripts/build_pooled_detection_container.py` — pair-preserving block
+layout (the 2026-07-22 cov lesson is now enforced in code), builder
+oracle = exact array-for-array rebuild of the committed
+`bigc1v725pooled` from its five members, per-molecule pairing
+spot-check in-build. All 14 `plot_detection_summary.py` sections
+rendered into its `figures/` (run-dir artifacts, not committed).
+
+**Atlas stance.** Nothing moves; `finc1v725` and the Tier-0 form verdict
+stand; adoption stays outside the program. The battery run dirs remain
+local-only; everything read from them is now in the committed CSV
+(full observable vector — the regeneration-cost lesson applied).
+**Status: EXECUTED 2026-07-30.**
+
 ## Axis A pre-read — the pooled N = 5000 battery binned by its own sampled geometry (2026-07-26, zero MD)
 
 Plan §3.4's "optional follow-up", executed **before** the Axis A grid because

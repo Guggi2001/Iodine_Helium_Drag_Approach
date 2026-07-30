@@ -12498,3 +12498,61 @@ no order implied):**
 adjudication CLOSED", design doc status header, plan §3.5l status,
 CLAUDE.md compact state bridged. Next user gate: pick the
 new-approach direction.
+
+## §6.7 item 3 EXECUTED — the direct KE₁ read on the lq battery (regenerated 5 × N = 1000, paired): **lq COLDER at n = 1/n = 2 on every seed (ΔKE₁ −0.047 ± 0.005, ~10σ); no width/n₁ gain — the user's "lower-power form raises low-n KE" hypothesis REFUTED with the direct observable**; pooled lq figures container built by a now-COMMITTED pair-preserving builder (2026-07-30)
+
+**Trigger (user):** at the (C)-closure discussion the user asked whether
+drag could still own the low-n KE deficit — "at least we should try a
+quadratic one … which scales lower than cubic so lower n get more
+speed" — and requested the KE₁ read on the §6.7 lq battery, then
+("once it finished") the pooled container + figures.
+
+1. **Regeneration (MD, ~5 × 80 min).** The §6.7 lq run dirs had been
+   cleaned locally (run dirs are never committed; the 2026-07-24
+   scorer's committed table had no KE columns). Regenerated seed-exact
+   via the committed `gen_tier2atlas_lqbattery.py` (dry-run cfg-diff
+   guard green first). Operational note: the harness background-task
+   mechanism killed two launch attempts mid-run (s3's partial
+   relaxation.npz was a truncated zip — fail-loud caught it; partials
+   deleted, no resume attempted); the final s3/s4/s5 wave ran as a
+   detached OS process at `--concurrency 3` (RAM-checked) and
+   completed. No code changes anywhere in the physics path.
+2. **Instrument (committed):**
+   `scripts/post_processing/tier2atlas_lq_ke1_table.py` +
+   `atlas_lq_ke1_table.csv` (FULL observable vector per member +
+   pooled — the regeneration-cost lesson applied). Oracles O1
+   (scorer drift), O2 (KE path vs the committed h405 probe row, 4
+   decimals), O3 (regeneration fidelity: all 10 members' committed
+   §6.7 W₁+supp + the pooled lq row, compared at printed precision —
+   a numeric half-band check false-fired on the exact boundary
+   trap = 365/10000 = 0.0365 → "0.036"; midHot/χ² reported-not-oracled,
+   original scorer convention not repo-kept). All green.
+3. **Result (findings "§6.7 item 3", D0 form-entry bullet added
+   FIRST):** pooled KE₁ lq 0.987 ± 0.132 vs cubic 1.034 ± 0.128
+   (reference 1.302); paired ΔKE₁ −0.0467 ± 0.0046 and ΔKE₂
+   −0.0598 ± 0.0036, negative on every seed; above-1.15 0.095 vs
+   0.188 (ref 0.487); ΔKE₁_SD +0.005, Δn₁ +0.001 (both ns for the
+   tension). **Below the TDDFT-constrained band a lower power means
+   MORE drag on slow ions — the proposed mechanism has the opposite
+   sign. The drag-form axis holds no measured upside for the KE
+   tension; the KE₁ lever stays source-side per the (C) record.**
+4. **Pooling + figures (user request):**
+   `scripts/build_pooled_detection_container.py` is the pooling
+   builder, now **committed** (the 2026-07-22 session-local builder
+   never was): pair-preserving block layout + per-ion event-CSR
+   permutation (the cov-panel lesson enforced in code), builder
+   oracle = exact array-for-array rebuild of the committed
+   `bigc1v725pooled` from its five members (PASSED), in-build
+   per-molecule pairing spot-check. Output container
+   `9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigpooled`
+   (10 000 fragments / 1290 events, README_POOLED.txt with the
+   layout requirement); all 14 `plot_detection_summary.py` sections
+   rendered into its `figures/` (`RUN_DIR` setting now points at it,
+   the h405-pooled precedent; figures are run-dir artifacts, not
+   committed).
+
+**Atlas stance:** nothing adopted, nothing moves — `finc1v725`, the
+Tier-0 lq rejection (held-out 0.699 FAIL), and the (C) closure verdict
+all stand. The lq battery run dirs stay local-only; every number read
+from them is in the committed CSV. Open agenda unchanged: the
+new-approach direction (user gate), G4 adjudications, Tier-3.

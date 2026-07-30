@@ -169,6 +169,28 @@
   **Atlas stance: no adoption** — the Tier-0 traces reject this form
   (held-out 0.699 FAIL); these entries document what the observables
   *reward/penalize*, not a form change.
+- **lq runs COLDER at n = 1/n = 2 — the direct KE₁ read (§6.7 item 3,
+  2026-07-30, committed `tier2atlas_lq_ke1_table.py`,
+  `atlas_lq_ke1_table.csv`).** Measured on the regenerated §6.7 battery
+  (the lq run dirs had been cleaned locally; regenerated seed-exact from
+  the committed generator and gated by a printed-precision reproduction
+  oracle on the committed §6.7 rows — all 10 members + the pooled row
+  reproduce). Paired (lq − cubic), 5 × N = 1000: **ΔKE₁_mean
+  −0.047 ± 0.005 eV (lower on every seed, ~10σ paired)**, ΔKE₂_mean
+  −0.060 ± 0.004, Δabove-1.15 −0.093 ± 0.018 (pooled 0.095 vs 0.188;
+  reference 0.487), ΔKE₁_SD +0.005 ± 0.002 (no width gain), Δn₁_solv
+  +0.001 ± 0.006 (no population gain). Pooled KE₁: lq 0.987 ± 0.132 vs
+  cubic 1.034 ± 0.128 (reference n = 1 mean 1.302). **This closes the
+  "could a lower-power form raise the low-n KE" question with the
+  direct observable: below the TDDFT-calibrated band a lower power
+  decays slower ⇒ MORE drag on slow ions — quadratic moves KE₁/KE₂ the
+  wrong way, buys no width and no n₁, and keeps its over-suppression.**
+  Consistent with (and sharper than) the item-1 χ² read; the drag-form
+  KE lever at low n is measured DOWNHILL-ONLY toward lq. Pooled lq
+  figure set rendered (`..._lq_N5000_tier2atlas_conf270_qccbigpooled`,
+  pair-preserving container via the committed
+  `build_pooled_detection_container.py`, builder-oracled against
+  `bigc1v725pooled`).
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
