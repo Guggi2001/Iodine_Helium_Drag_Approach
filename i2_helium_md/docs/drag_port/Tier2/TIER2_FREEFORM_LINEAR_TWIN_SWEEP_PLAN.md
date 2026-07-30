@@ -1,10 +1,13 @@
 # Tier 2 — Free-Form Linear Drag Twin Sweep (atlas counterfactual arm)
 
-**Status: Step 0 + arm 1 EXECUTED 2026-07-30 (triggered; findings
-in-chapter: §2.1 twin KE₁ LICENSED ρ 0.998; §3.1/§5.1 arm-1 basin —
-35 cells gate incl. 6 sub-plateau, R4 fires at twin KE₁ 0.892; §7.1
-oracles). Arm 2 (`linqscan`, a* = 35.0) running at status-write. The
-§6 MD ring remains behind its own trigger (user gate).**
+**Status: Step 0 + BOTH ARMS EXECUTED 2026-07-30 (findings
+in-chapter): §2.1 twin KE₁ LICENSED ρ 0.998; §3.1/§5.1 — arm-1 basin
+35 cells incl. 6 sub-plateau (kill-3 universality breaks at twin
+level), R4 fires (twin KE₁ 0.892 vs anchor 0.624); arm 2 — the
+landing rejects the ram term, c = 0 optimal, pure linear selected
+in-family; §7.1 oracles all green. NEXT GATE: the §6 CRN MD ring vs
+h405 (user trigger) — candidate set = the arm-1 sub-plateau core
+a 27.5–35.**
 
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
@@ -223,8 +226,22 @@ outputs `atlas_linsweep.csv` / `_chords.csv` / `_gated_ke.csv` /
 - W₁ (reported, bias-loaded): best gated 0.586–0.673 — same range the
   capped twin basin reported at this geometry.
 
-Arm 2 (`linqscan` at the R5 freeze a* = 35.0) appended below when
-scored.
+**Arm 2 (`linqscan`, a\* = 35.0, EXECUTED 2026-07-30; 24 chord
+families ≈ 1 h, 5 184 cells; committed `atlas_linqsweep*.csv`; §7.4
+seam oracle PASSED — linq c = 0 bit-identical to the lin family):
+the landing does NOT want the ram term.** 13 cells gate and the c = 0
+seam column carries every best cell (W₁ 0.586/0.643/0.677 = the arm-1
+a = 35 cells reproduced); everything degrades monotonically with c —
+W₁ 0.586 (c = 0) → 0.608 (c = 1) → 0.675 (c = 2) → 0.959+ (c ≥ 3);
+twin KE₁ 0.703 → 0.531 → 0.345 → ≤ 0.252; trap explodes (0.18/0.29 at
+c = 2/3 bundle-well up to 0.93–0.97 at c = 12.79, where nothing gates
+at any well — the shared-lq landmark is dead in this family); the
+only far-c gated cells (c = 6.13/9) need τ-flagged off-calibration
+cooling (τ 9.6/12.8) and sit at KE₁ 0.11–0.15. c > 0 buys nothing on
+any observable at fixed a\*: within the free-form family the
+experimental arbitration prefers **pure linear**, and softer-is-hotter
+(arm 1) extends to softer-is-*better-landing* against the quadratic
+admixture.
 
 ## 4. Gates — §3.5c frozen bands, reused verbatim
 
@@ -305,6 +322,13 @@ No band is re-frozen, tightened, or loosened for this arm.
   convention). Noted for the record: the KE₁ optimum sits at
   a = 27.5 — the a\* freeze follows the pre-registered rule, not the
   KE₁-favorable choice.
+- **R5 c-read (arm 2 EXECUTED): the landing wants c = 0.** At frozen
+  a\* = 35.0 every observable degrades monotonically with the ram
+  term (W₁, KE₁, trap; §3.1 arm-2 block); c = 12.79 (the shared-lq
+  landmark) gates nowhere; the far-c stragglers need τ-flags. Within
+  the free-form family the data selects **pure linear** — the c-axis
+  closes at twin level, and the MD-ring candidate set stays the
+  arm-1 basin (sub-plateau core a 27.5–35).
 - **§6 proceed criterion: MET** (contiguous gated sub-plateau basin,
   not sub-bare-only, R4 positive). The CRN MD ring vs h405 is now the
   decision point — design to be frozen at ring time, **behind its own

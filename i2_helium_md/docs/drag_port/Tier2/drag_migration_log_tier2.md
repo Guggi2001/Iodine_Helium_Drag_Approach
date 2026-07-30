@@ -12687,3 +12687,22 @@ the §6 CRN MD ring vs h405 is the decision instrument and stays
 behind its own trigger (user gate). Records: plan §2.1/§3.1/§5.1/§7.1
 (findings-in-chapter), D0 §1 form-entry bullet (FIRST) + §14.4 (KE₁
 authority row, Step 0).
+
+## Free-form linear sweep arm 2 (`linqscan`, a* = 35.0) EXECUTED — the landing REJECTS the ram term: c = 0 optimal on every observable, pure linear selected in-family; the c-axis closes at twin level (2026-07-30, zero MD)
+
+24 chord families (c ∈ {0…12.79} × 3 wells) ≈ 1 h, 5 184 cells;
+landmark + §7.4 seam oracles green (linq c = 0 bit-identical to the
+lin family). **13 cells gate and the c = 0 seam column carries every
+best cell** (the arm-1 a = 35 cells reproduced); monotone degradation
+with c: W₁ 0.586 → 0.608 → 0.675 → ≥ 0.959 (c = 0/1/2/≥3), twin KE₁
+0.703 → 0.531 → 0.345 → ≤ 0.25, trap up to 0.93–0.97 at c = 12.79
+where nothing gates at any well (the shared-lq landmark measured dead
+in this family); the only far-c gated cells are τ-flagged
+(9.6/12.8). Committed: `atlas_linqsweep*.csv`; records: plan §3.1
+arm-2 block + §5.1 R5 c-read + status header, D0 §1 bullet extended.
+**Program state: both arms + Step 0 complete, all zero-MD. NEXT USER
+GATE: the §6 CRN MD ring vs h405** (candidate set = the arm-1
+sub-plateau core a 27.5–35, eb0482/eb1168, τ 4.8, E₀ 0.35–0.36; ring
+design + KE/fate bands to be frozen at ring time; deepKE and trap are
+the pre-registered kill axes, the capped→lin KE₁-licensure transfer
+the pre-registered assumption under test).

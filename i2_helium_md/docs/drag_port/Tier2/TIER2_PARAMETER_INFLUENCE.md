@@ -220,8 +220,14 @@
   construction); trap is a twin floor and the lin form's low-v
   over-drag makes MD trap the risk axis. **Nothing adopted; the MD
   ring (plan §6) is the decision instrument and sits behind its own
-  trigger.** Arm 2 (`linqscan`, a* = 35.0 W₁-optimum, R5 freeze) probes
-  whether the landing wants the ram term c > 0.
+  trigger.** **Arm 2 (`linqscan`, a* = 35.0 W₁-optimum, R5 freeze;
+  seam oracle bit-exact): the landing REJECTS the ram term** — at
+  fixed a* every observable degrades monotonically with c (W₁ 0.586 →
+  1.02, twin KE₁ 0.703 → ≤ 0.25, trap → 0.93–0.97 by c = 12.79 where
+  nothing gates — the shared-lq landmark is dead in-family; far-c
+  stragglers τ-flagged). Within the free-form family the data selects
+  **pure linear**; the MD-ring candidate set is the arm-1 sub-plateau
+  core a 27.5–35.
 
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
