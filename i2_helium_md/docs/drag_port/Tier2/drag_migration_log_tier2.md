@@ -12729,3 +12729,37 @@ at the single best cell. Code scope named (first production-path code
 of the arm): lin form behind its SimConfig enum in physics/drag.py,
 gen_tier2atlas_linring.py, scorer extension. Awaiting
 `[PROCEED TO IMPLEMENTATION]`.
+
+## Free-form linear ring: outcome-space edges ADJUDICATED (plan §6.2) — all-miss = recalibration not kill, survivor ≠ success, bracket ends pinned to the §3.5b Arm A/Arm B construction (2026-07-31, docs-only)
+
+**Trigger (user):** pre-launch discussion of the frozen §6.1 design's
+open outcome-space edges; all six assistant-identified gaps settled
+per recommendation, recorded as plan §6.2 (pre-registered before
+launch, nothing in the frozen bands/cells/kill surface touched):
+
+1. **All-miss = recalibration, not kill** — 7/7 hard-gate misses
+   license ONE bias-corrected twin re-scan (the ring's measured
+   lin-family twin↔MD bias vector applied to the §3 scan); family
+   dead at this stage only if the corrected re-scan finds no
+   gateable basin in-grid or the bias vector is incoherent
+   (sign-flipping). Any second recalibration iteration = new user
+   gate. This resolves the latent collision between the N = 500
+   recalibration rationale and the §4.1 hard-gate kill axis.
+2. **Survivor ≠ success** — escalation eligibility = gated + not
+   policy-blocked + ΔKE₁ ≥ +0.05 vs h405; KE₁ ≥ 0.75 stays the
+   interpretive (A)-ceiling stamp only.
+3. **Bracket ends named** — Arm A `exclude_all_coupled` vs Arm B
+   marginal-injection (asymptotic-KE, `tier2atlas_retained_bracket.py`
+   `marginal_dossier`/`arm_b_detection` reused; consumer note to be
+   extended at implementation). Verdict flip A↔B ⇒ policy-blocked.
+4. **deepKE mixed/1.6–2.0 outcomes** — reported-no-flag; the
+   form-questioned escalation fires only on ≥ 2.0 at every core cell.
+5. **h405 partner Δ-only** — lin gate verdicts absolute vs the
+   frozen bands; a seed-noise partner band-miss is disclosed, never
+   contaminating.
+6. **Twin forecast columns committed beside MD in the ring CSV** —
+   the bias vector becomes a pure CSV read.
+
+**Sequencing (user):** the §9 pure-linear Method-B row set stays
+deferred until after the ring. Ring still awaiting
+`[PROCEED TO IMPLEMENTATION]`.

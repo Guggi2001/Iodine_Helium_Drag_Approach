@@ -7,8 +7,11 @@ level), R4 fires (twin KE₁ 0.892 vs anchor 0.624); arm 2 — the
 landing rejects the ram term, c = 0 optimal, pure linear selected
 in-family; §7.1 oracles all green. Ring design FROZEN 2026-07-31
 (§6.1: 8 × N = 500 CRN, kills per §4.1 — trap kill removed,
-policy-robustness added). NEXT GATE: `[PROCEED TO IMPLEMENTATION]`
-on the §6.1 ring.**
+policy-robustness added); outcome-space edges ADJUDICATED same day
+(§6.2: all-miss = recalibration not kill, survivor definition,
+bracket ends = §3.5b Arm A/Arm B, deepKE mixed default, partner
+role, twin columns in the ring CSV). NEXT GATE:
+`[PROCEED TO IMPLEMENTATION]` on the §6.1 ring.**
 
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
@@ -440,7 +443,8 @@ measurable even if every cell individually misses):
   vector to committed CSV (the regeneration-cost rule).
 - **Escalation pre-registered:** survivors → one N = 1000 × 5-seed
   battery at the single best cell (the G4 pattern); no wider ring
-  without a new adjudication.
+  without a new adjudication. (Survivor defined in §6.2 item 2;
+  all-miss semantics in §6.2 item 1.)
 
 **Code scope (production path — this is the first non-twin code of
 the program arm):** `lin` drag form in `physics/drag.py` behind its
@@ -452,6 +456,57 @@ pattern, CRN seed plumbing), scorer extending
 `tier2atlas_g3ring_table.py` (KE columns + trap decomposition + both
 retained-policy scores + the CRN fate-flow read). Cost ≈ 5.5 h MD +
 scoring. All behind `[PROCEED TO IMPLEMENTATION]`.
+
+### 6.2 Outcome-space edges ADJUDICATED (2026-07-31, user; pre-registered before launch)
+
+Six semantic gaps the frozen §6.1 design left open, settled by
+discussion — none touches the frozen bands, the cell list, or the
+§4.1 kill surface:
+
+1. **All-miss is recalibration, not a kill.** If all 7 lin cells miss
+   the §3.5c hard gate, the family is **not** declared dead — the
+   N = 500 choice was made *for* this branch. One bias-corrected twin
+   re-scan is licensed: the ring's measured lin-family twin↔MD bias
+   vector (the authority-box product) is applied and the §3 twin scan
+   re-run with it. The family dies at this stage only if (a) the
+   corrected re-scan finds no gateable basin inside the a ∈ [15, 60]
+   grid, or (b) the bias vector is incoherent (sign-flipping across
+   cells, so no coherent correction exists). Any second recalibration
+   iteration (more MD) is a **new user gate**, never automatic.
+2. **Survivor ≠ success.** Escalation eligibility (the N = 1000 ×
+   5-seed battery) = hard-gated + not policy-blocked + CRN-paired
+   ΔKE₁ ≥ +0.05 eV vs h405. The KE₁ ≥ 0.75 band is the *interpretive*
+   success stamp (beats the measured (A)-ceiling 0.708), **not** the
+   escalation threshold — a gated cell at e.g. KE₁ 0.70 with
+   ΔKE₁ ≥ +0.05 escalates.
+3. **Retained-policy bracket ends NAMED** (the §4.1 condition made
+   concrete): **Arm A** = `exclude_all_coupled` (headline scoring,
+   marginals excluded) vs **Arm B** = marginal-injection at handover
+   n with conservative asymptotic KE — the §3.5b bracket construction
+   (`tier2atlas_retained_bracket.py`: `marginal_dossier` /
+   `arm_b_detection`, the sanctioned-reuse precedent; that file's
+   consumer note gets extended when the ring scorer imports it). A
+   cell whose hard-gate verdict differs between Arm A and Arm B is
+   policy-blocked per §4.1.
+4. **deepKE mixed outcome defaults to reported-no-flag.** The
+   form-questioned escalation fires only on the frozen condition
+   (≥ 2.0 at *every* core cell). Mixed cells and the 1.6–2.0 strip
+   are reported with the band read, carry no flag, and trigger
+   nothing.
+5. **h405 partner is Δ-only.** Lin-cell gate verdicts are absolute
+   against the frozen bands. The fresh N = 500 h405 partner serves
+   the paired Δ reads (K-KE, fate-flow) exclusively; if seed noise
+   puts the partner itself marginally outside a gate band, that is
+   disclosed as seed noise and never contaminates any lin verdict.
+6. **Twin forecast columns join the ring CSV.** The scorer commits
+   each cell's twin-predicted observables beside the MD values, so
+   the bias vector ∂(twin−MD)/∂knob is a pure CSV read (full-vector
+   memory rule extended to the authority-box product).
+
+**Sequencing (user):** the §9 pure-linear Method-B row set stays
+deferred until after the ring — it never blocks the ring and is
+revisited only if the ring outcome makes the Tier-0-side answer
+relevant.
 
 ## 7. Oracles and non-regression (run before any new number)
 
