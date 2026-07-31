@@ -5,9 +5,10 @@ in-chapter): §2.1 twin KE₁ LICENSED ρ 0.998; §3.1/§5.1 — arm-1 basin
 35 cells incl. 6 sub-plateau (kill-3 universality breaks at twin
 level), R4 fires (twin KE₁ 0.892 vs anchor 0.624); arm 2 — the
 landing rejects the ram term, c = 0 optimal, pure linear selected
-in-family; §7.1 oracles all green. NEXT GATE: the §6 CRN MD ring vs
-h405 (user trigger) — candidate set = the arm-1 sub-plateau core
-a 27.5–35.**
+in-family; §7.1 oracles all green. Ring design FROZEN 2026-07-31
+(§6.1: 8 × N = 500 CRN, kills per §4.1 — trap kill removed,
+policy-robustness added). NEXT GATE: `[PROCEED TO IMPLEMENTATION]`
+on the §6.1 ring.**
 
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
@@ -260,6 +261,51 @@ not goalpost-moving).
 
 No band is re-frozen, tightened, or loosened for this arm.
 
+### 4.1 Ring-level kill adjudication (2026-07-31, discussion record): the trap kill is REMOVED
+
+The draft ring design carried "trap ≥ 0.15 at every core cell → family
+dead." **User challenge sustained; the number was incumbent-pattern-
+matched (f725's 0.437), not experiment-derived, and it does not
+survive scrutiny:**
+
+- f725's falsification ran through the histogram gates (n₁ = 0); its
+  trap number was the *mechanism* of the failure, not the verdict.
+- Trap is not constrained by the scored surface at all: a trapped ion
+  exits the detected window entirely (experimentally: an unscored
+  heavy ion-doped-droplet channel). The n = 20–21/suppressed lesson
+  applies verbatim — fate bookkeeping outside the detected window has
+  no experimental anchor. A high-trap system that lands the detected
+  gates is making an unscored *prediction*, not failing.
+
+**What replaces it (frozen for the ring):**
+
+1. **Kills are experiment-anchored only:** the §3.5c hard gate
+   (n₁_solv/n̄, MD-side) and K-KE (CRN-paired ΔKE₁ vs h405, §6.1).
+2. **Policy-robustness condition:** every cell is scored under both
+   ends of the retained-policy bracket (the open G4
+   `exclude_all_coupled` question); a cell whose gate verdict flips
+   with policy is **policy-blocked** (neither passed nor killed —
+   escalates to the user). A wholly policy-blocked basin escalates,
+   never auto-resolves.
+3. **Trap is reported, decomposed** (bound/marginal, g3ring column
+   convention), plus the **CRN fate-flow read**: same-seed per-ion
+   comparison vs the h405 partner — who traps under lin that escaped
+   under capped, from which (R, depth, v₀) stratum. This is the
+   landing-by-amputation diagnostic (the §4ee precedent in reverse):
+   reported, never gating; it determines what a landing *means*
+   (cascade-carried vs selection-carried), not whether it counts.
+4. **deepKE stays interpretation-banded, not auto-killing** (same
+   logic applied consistently): [0.6, 1.6] reads neutral-to-improved
+   (the NB-RQ11-12 mid-band-softening direction); ≥ 2.0 at every core
+   cell reads as the twin's hot flag confirmed → **form-questioned,
+   user adjudicates**.
+
+Consequence, stated openly: the ring's genuine kill surface is narrow
+(histogram gates + ΔKE₁) — which is honest, because those are the
+only observables the experiment actually pins. Everything else the
+ring produces is calibration (the lin-family authority box) and
+mechanism understanding.
+
 ## 5. Pre-registered readings and outcome semantics
 
 - **R1 — existence.** Does any (a, E_bind, τ, E₀) cell pass the hard
@@ -351,6 +397,61 @@ its committed conventions are fixed here:
   (the §6.7 regeneration-cost lesson, memory rule).
 - The ring is the backstop for every twin-authority assumption in this
   plan (Step-0 transfer caveat, deepKE blind spot, n̄ bias bracket).
+
+### 6.1 Ring design FROZEN (2026-07-31, discussion-adjudicated; awaiting `[PROCEED TO IMPLEMENTATION]`)
+
+**N choice (user-adjudicated): N = 500, not 1000** — the G3-Step-3
+precedent, motivated by the recalibration strategy (MD may shift the
+basin; the ring then measures the lin-family twin↔MD bias vector and
+the twin re-scans with it, rather than burning MD hunting). Measured
+resolution at N = 500: trap SE ≈ 0.01, KE₁ seed-SE ≈ 0.005 vs an
+expected signal +0.1…+0.27, n₁ SE ≈ 0.02 vs gate half-width 0.055,
+deepKE direction-only (sufficient for its band read), W₁ ≈ ±0.13
+single-seed (disclosed; W₁ is nowhere gating).
+
+**Cells: 8 × N = 500, one fresh shared seed 20260731, CRN across all
+cells including the incumbent partner.** Axes deliberately spread so
+the ring doubles as the lin-family authority box (∂(twin−MD)/∂knob
+measurable even if every cell individually misses):
+
+| # | cell | role |
+|---|---|---|
+| 1 | a 27.5 / eb0482 / τ 4.8 / E₀ 0.35 | KE₁ optimum, Φ 0.64 |
+| 2 | a 27.5 / eb1168 / τ 4.8 / E₀ 0.35 | well axis at the optimum |
+| 3 | a 30 / eb0482 / τ 4.8 / E₀ 0.36 | sub-plateau W₁-best |
+| 4 | a 30 / eb1168 / τ 4.8 / E₀ 0.36 | well axis, second point |
+| 5 | a 32.5 / eb0482 / τ 4.8 / E₀ 0.36 | mid-core |
+| 6 | a 35 / eb0482 / τ 4.8 / E₀ 0.37 | W₁ optimum (a\*), Φ 0.81 |
+| 7 | a 27.5 / eb0482 / τ 4.8 / E₀ 0.37 | E₀ axis at fixed chord |
+| 8 | h405 (capped, v_c 5.5 / τ 4.4 / E₀ 0.405) | CRN incumbent partner |
+
+**Frozen bands and semantics (kills per §4.1 — trap kill removed):**
+
+- Hard gate: §3.5c bands MD-side (n₁_solv [0.19, 0.30], n̄ [4.4, 7.1]).
+- **K-KE kill:** CRN-paired ΔKE₁ < +0.05 eV vs h405 at every gated
+  cell → co-selection wins in real MD; the drag-side KE₁ question
+  closes with the full instrument chain.
+- **Success:** any gated cell with KE₁ ≥ 0.75 (beats the measured
+  (A)-ceiling 0.708).
+- Policy-robustness, trap reporting + CRN fate-flow, deepKE
+  interpretation band: §4.1 verbatim.
+- Reported: W₁ (±0.13 disclosure), above-1.15 + KE₁_SD (the width
+  read — the twin predicts nothing here), supp, full observable
+  vector to committed CSV (the regeneration-cost rule).
+- **Escalation pre-registered:** survivors → one N = 1000 × 5-seed
+  battery at the single best cell (the G4 pattern); no wider ring
+  without a new adjudication.
+
+**Code scope (production path — this is the first non-twin code of
+the program arm):** `lin` drag form in `physics/drag.py` behind its
+own `SimConfig` enum value (architecture rule: every form behind an
+enum; mass-agnostic γ(v) = ρ̂·a, same gate convention), config-load
+guard posture as biphasic (`allow_inconsistent_mass_pairing=True`,
+§6.6 mid-window defense), generator `gen_tier2atlas_linring.py` (g3ring
+pattern, CRN seed plumbing), scorer extending
+`tier2atlas_g3ring_table.py` (KE columns + trap decomposition + both
+retained-policy scores + the CRN fate-flow read). Cost ≈ 5.5 h MD +
+scoring. All behind `[PROCEED TO IMPLEMENTATION]`.
 
 ## 7. Oracles and non-regression (run before any new number)
 

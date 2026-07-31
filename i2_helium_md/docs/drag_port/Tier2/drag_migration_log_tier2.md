@@ -12706,3 +12706,26 @@ sub-plateau core a 27.5–35, eb0482/eb1168, τ 4.8, E₀ 0.35–0.36; ring
 design + KE/fate bands to be frozen at ring time; deepKE and trap are
 the pre-registered kill axes, the capped→lin KE₁-licensure transfer
 the pre-registered assumption under test).
+
+## Free-form linear sweep: MD ring design FROZEN (plan §6.1) after the trap-kill adjudication (§4.1) — 8 × N = 500 CRN vs h405; trap kill REMOVED (user challenge sustained), policy-robustness condition added (2026-07-31, docs-only)
+
+Discussion record: the draft "trap ≥ 0.15 → kill" was challenged by
+the user and did not survive — the number was pattern-matched from
+f725 (whose falsification actually ran through n₁ = 0; trap was the
+mechanism), and trap is unconstrained by the scored surface (trapped
+ions exit the detected window; the n = 20–21/suppressed scaffolding
+lesson applies). Replacement (plan §4.1): kills are
+experiment-anchored only (§3.5c hard gate MD-side + K-KE paired
+ΔKE₁ < +0.05 vs h405); retained-policy robustness scored at both
+bracket ends (verdict flips ⇒ policy-blocked ⇒ escalate); trap
+reported decomposed + the CRN fate-flow landing-by-amputation
+diagnostic (reported, never gating); deepKE interpretation-banded
+([0.6, 1.6] neutral-to-improved per NB-RQ11-12; ≥ 2.0 everywhere ⇒
+form-questioned, user adjudicates). Ring (plan §6.1, user-adjudicated
+N): 8 cells × N = 500 fresh seed 20260731 CRN incl. the h405 partner —
+sub-plateau core a 27.5/30 both wells + mid-core 32.5 + a* 35 + E₀
+axis cell; success KE₁ ≥ 0.75; escalation = N = 1000 × 5-seed battery
+at the single best cell. Code scope named (first production-path code
+of the arm): lin form behind its SimConfig enum in physics/drag.py,
+gen_tier2atlas_linring.py, scorer extension. Awaiting
+`[PROCEED TO IMPLEMENTATION]`.
