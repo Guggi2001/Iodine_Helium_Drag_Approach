@@ -229,6 +229,38 @@
   **pure linear**; the MD-ring candidate set is the arm-1 sub-plateau
   core a 27.5–35.
 
+- **The MD ring CONFIRMS the twin landing — the drag-side KE₁ door is
+  MD-OPEN (free-form linear ring, 2026-07-31, 8 × N = 500 CRN seed
+  20260731 vs the h405 partner; plan §6.3, `atlas_linring_table.csv`).**
+  6/7 lin cells pass the MD-side hard gate under BOTH retained-policy
+  ends (zero policy-blocked; lr7's miss was twin-predicted — the gate
+  pattern transfers 7/7). **K-KE does NOT fire: ΔKE₁ = +0.077…+0.266 eV
+  at every gated cell; five cells beat the (A)-ceiling success band
+  (KE₁ ≥ 0.75), best KE₁ 0.903 at a = 27.5/eb0482/E₀ 0.35 vs h405p
+  0.637 — the first MD-measured drag-side KE₁ result above the exit-
+  stripping ceiling.** The capped→lin twin transfer HELD: twin KE₁
+  uniformly ~1–2 % cold in-family (d(twin−MD) −0.010…−0.015 eV), n₁
+  transfer ≤ 0.006, n̄ twin-hot bias uniform ≈ +0.46…+0.59 — the
+  lin-family authority box is a near-copy of the capped one. **The two
+  pre-registered kill axes both came back benign:** trap ≤ 0.011 (all
+  bound, zero marginal; the low-v over-drag fear is DEAD — the CRN
+  fate flow runs the other way, lin *frees* the ~60 ions h405p traps,
+  new-trapped = 0 at every cell); deepKE mixed/neutral (2.37 at the
+  KE₁-best cell down to 0.95 at a = 35 — the twin's 2.0–3.4× hot flag
+  was itself ~30 % hot; no form-question). **Honest costs, reported:**
+  midHot 1.39–1.98 (the soft band is 0.85–1.15) and χ²_med 795–2160 vs
+  h405p's 267 — the n = 1/2 heat is bought with mid-band overheating
+  (the NB-RQ11-12 coordinate, now measured from the lin side); W₁
+  0.78–0.97 vs h405p 0.767 (±0.13 single-seed, not gating);
+  above-1.15 = 0 everywhere (source-KER width stays (B)-side, as
+  designed). h405p itself sat just under the n̄ band this seed (3.748
+  vs 3.77; Arm-B flips it in) — disclosed Δ-only per §6.2 item 5.
+  **Nothing adopted; per plan §0 an MD-level win on the form-sensitive
+  observables opens the adoption discussion — that discussion + the
+  pre-registered escalation (one N = 1000 × 5-seed battery at the
+  single best cell; KE₁-best lr1 vs W₁-convention lr6 is part of the
+  call) are the NEXT USER GATE.**
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).

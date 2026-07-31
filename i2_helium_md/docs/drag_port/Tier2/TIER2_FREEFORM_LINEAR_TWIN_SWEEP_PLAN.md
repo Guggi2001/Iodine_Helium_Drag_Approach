@@ -8,10 +8,13 @@ landing rejects the ram term, c = 0 optimal, pure linear selected
 in-family; §7.1 oracles all green. Ring design FROZEN 2026-07-31
 (§6.1: 8 × N = 500 CRN, kills per §4.1 — trap kill removed,
 policy-robustness added); outcome-space edges ADJUDICATED same day
-(§6.2: all-miss = recalibration not kill, survivor definition,
-bracket ends = §3.5b Arm A/Arm B, deepKE mixed default, partner
-role, twin columns in the ring CSV). NEXT GATE:
-`[PROCEED TO IMPLEMENTATION]` on the §6.1 ring.**
+(§6.2). **MD ring EXECUTED 2026-07-31 (§6.3): the ring LANDS — 6/7
+cells gate both-policy-clean, K-KE does not fire, SUCCESS at five
+cells (best KE₁ 0.903 at a 27.5 vs h405p 0.637, ΔKE₁ +0.266
+CRN-paired); capped→lin twin transfer HELD (~1–2 % cold); trap dead
+(≤ 0.011, lin frees h405p's trapped ions); costs = mid-band
+overheating (midHot 1.4–2.0) + χ²; nothing adopted. NEXT USER GATE:
+the adoption discussion + escalation battery (§6.3).**
 
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
@@ -507,6 +510,88 @@ discussion — none touches the frozen bands, the cell list, or the
 deferred until after the ring — it never blocks the ring and is
 revisited only if the ring outcome makes the Tier-0-side answer
 relevant.
+
+### 6.3 Findings — MD ring EXECUTED 2026-07-31: the ring LANDS — 6/7 cells gate both-policy-clean, K-KE does not fire, the success band is met at five cells (best KE₁ 0.903 vs h405p 0.637); the capped→lin twin transfer HELD
+
+Instrument (behind `[PROCEED TO IMPLEMENTATION]`, first production-path
+code of the arm): `pure_linear` form in `physics/drag.py` +
+`SimConfig`/guard surface (a > 0; new `free_form` extraction-method
+vocabulary — a free-form parameter may not carry a §6.5.1 binding
+stamp, enforced), generator `gen_tier2atlas_linring.py` (8 × N = 500,
+CRN seed 20260731, LR-P1 committed-artifact oracle, cfg-diff guard),
+scorer `tier2atlas_linring_table.py` (Arm A/Arm B via the §3.5b
+bracket construction, KE + width columns, trap decomposition, CRN
+fate flow, twin join). Full suite 2992 passed with the form present
+(default path inert); focused tests 38. MD ≈ 2 h wall at
+concurrency 3, all 8 cells clean. Committed CSV:
+`atlas_linring_table.csv`.
+
+**Gate-band clarification (documented at scoring, before any verdict
+was read):** §6.1's "hard gate: §3.5c bands MD-side" quoted the
+*twin*-side n̄ band [4.4, 7.1] (target 4.07 + twin-hot bias bracket);
+the MD-side realization is the committed g3ring/ke_lown precedent
+**n̄ ∈ [3.77, 4.37]** (4.07 ± 0.3) — applying the twin band MD-side
+would fail the h405 partner itself (pooled MD n̄ 3.955). The scorer
+uses [3.77, 4.37]; n₁ band unchanged [0.19, 0.30].
+
+**Results (Arm A; Arm B verdict-identical at every lin cell —
+policy-blocked = 0, marginal class = 0 in-family):**
+
+| cell | a/well/E₀ | n₁ | n̄ | gate | KE₁ | ΔKE₁ vs h405p | deepKE | midHot | trap |
+|---|---|---|---|---|---|---|---|---|---|
+| lr1 | 27.5/eb0482/0.35 | 0.203 | 3.98 | ✓ | **0.903** | **+0.266** | 2.37 | 1.98 | 0.000 |
+| lr2 | 27.5/eb1168/0.35 | 0.202 | 3.98 | ✓ | 0.867 | +0.230 | 1.92 | 1.84 | 0.004 |
+| lr3 | 30/eb0482/0.36 | 0.209 | 3.89 | ✓ | 0.830 | +0.192 | 1.67 | 1.74 | 0.003 |
+| lr4 | 30/eb1168/0.36 | 0.202 | 3.87 | ✓ | 0.795 | +0.158 | 1.46 | 1.61 | 0.009 |
+| lr5 | 32.5/eb0482/0.36 | 0.198 | 4.11 | ✓ | 0.786 | +0.149 | 1.29 | 1.59 | 0.007 |
+| lr6 | 35/eb0482/0.37 | 0.202 | 4.03 | ✓ | 0.715 | +0.077 | 0.95 | 1.39 | 0.011 |
+| lr7 | 27.5/eb0482/0.37 | 0.235 | 3.38 | ✗ (twin-predicted) | 0.847 | — | 2.18 | 1.84 | 0.000 |
+| h405p | capped 5.5/4.4/0.405 | 0.205 | 3.75 | (Δ-only) | 0.637 | 0 | 0.47 | 0.95 | 0.063 |
+
+- **Hard gate:** 6/7 lin cells pass under BOTH policy ends; the gate
+  pattern transferred from the twin **7/7** (incl. lr7's miss, twin
+  n̄ 3.838 → MD 3.376). h405p itself sits just under the n̄ floor this
+  seed (3.748; Arm B flips it in → the *partner* is the only
+  policy-blocked row) — disclosed Δ-only per §6.2 item 5, lin
+  verdicts absolute and unaffected.
+- **K-KE does NOT fire** (every gated cell ΔKE₁ ≥ +0.077, CRN-paired,
+  seed-SE ≈ 0.005). **Survivors = all six gated cells; SUCCESS band
+  (KE₁ ≥ 0.75, beats the measured (A)-ceiling 0.708) met at five**
+  (lr1–lr5). Best: **KE₁ 0.903 at lr1** vs the 1.00 reference peak —
+  the twin's R4 forecast (~0.91 if transfer holds) confirmed at MD
+  level.
+- **Authority box (the §6.2 item-6 product): the capped→lin transfer
+  HELD.** Twin KE₁ uniformly ~1–2 % cold in-family (twin−MD
+  −0.010…−0.015 eV — the Step-0 level stamp transfers); n₁ transfer
+  ≤ 0.006; n̄ twin-hot bias uniform +0.46…+0.59 (small end of the
+  bracket); the recalibration branch (§6.2 item 1) was never needed.
+- **Both pre-registered kill axes benign:** trap ≤ 0.011 (all bound,
+  ZERO marginal — the lin low-v over-drag fear is dead); the CRN fate
+  flow runs in reverse: new-trapped = 0 at every lin cell while lin
+  *frees* the 52–63 ions h405p traps — the landing is
+  cascade-carried, not selection-carried (the §4ee amputation
+  diagnostic finds nothing amputated). deepKE mixed
+  (hot/strip/neutral along the a-axis, monotone in Φ) → per §6.2
+  item 4 reported-no-flag; the twin's 2.0–3.4× hot flag was itself
+  ~30 % hot (MD 2.37 at lr1).
+- **Honest costs (reported, none gating):** midHot 1.39–1.98 vs soft
+  band [0.85, 1.15] and χ²_med 795–2160 vs h405p 267 — the n = 1/2
+  heat is bought with **mid-band overheating** (the NB-RQ11-12
+  mid-band coordinate measured from the lin side; constant γ
+  under-drags the 5–9 Å/ps class relative to cubic). W₁ 0.78–0.97 vs
+  h405p 0.767 (±0.13 single-seed disclosure). above-1.15 = 0
+  everywhere incl. h405p — the KER width axis stays (B)-side, exactly
+  as the (C) record predicts.
+
+**Standing per §0:** an MD-level win on the form-sensitive observables
+(KE₁, fate, trap) at matched histogram gates is measured — this
+**opens the adoption discussion with real standing**; nothing is
+adopted, Tier-0's in-band record and h405/finc1v725 stand untouched.
+**NEXT USER GATE:** the adoption discussion + the pre-registered
+escalation (one N = 1000 × 5-seed battery at the *single best cell*;
+the KE₁-vs-W₁ best-cell convention — lr1 vs lr6 — is part of that
+call), and whether the §9 Method-B Tier-0-side row set now becomes
+relevant (the ring outcome makes it so).
 
 ## 7. Oracles and non-regression (run before any new number)
 

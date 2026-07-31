@@ -12763,3 +12763,72 @@ launch, nothing in the frozen bands/cells/kill surface touched):
 **Sequencing (user):** the §9 pure-linear Method-B row set stays
 deferred until after the ring. Ring still awaiting
 `[PROCEED TO IMPLEMENTATION]`.
+
+## Free-form linear MD ring EXECUTED (plan §6.1–§6.3, `[PROCEED TO IMPLEMENTATION]` granted) — **the ring LANDS: 6/7 lin cells gate both-policy-clean, K-KE does not fire, SUCCESS at five cells (best KE₁ 0.903 vs h405p 0.637, CRN ΔKE₁ +0.266); capped→lin twin transfer HELD; trap axis dead; the drag-side KE₁ door is MD-OPEN** (2026-07-31, 8 × N = 500 MD ≈ 2 h at concurrency 3)
+
+**Instrument delivered (first production-path code of the arm):**
+
+1. **`pure_linear` drag form** in `physics/drag.py` behind its own
+   tag (F = g·a·v, γ = g·a, coefficient {a}; bitwise the
+   linear_cubic(a, b = 0) corner — identity locked by test), in
+   `REALIZED_FORMS` (driver + loader guards inherit), `DragForm`
+   Literal + config guard a > 0. New provenance vocabulary
+   `extraction_method="free_form"` (counterfactual parameter, never
+   extracted): may not carry a §6.5.1 binding stamp — enforced in
+   `DragCoefficients`; every lin cell runs stamp-None under the
+   documented `allow_unvalidated_binding_pairing` hatch (warn-fires)
+   + the biphasic §6.5 posture.
+2. **`gen_tier2atlas_linring.py`**: 8 cells (lr1–lr7 sub-plateau core
+   + h405p capped partner at the g4finals pins), N = 500, ONE fresh
+   CRN seed 20260731; LR-P1 oracle string-exact vs the committed
+   `atlas_linsweep.csv` (7 twin rows) + `atlas_ke1_authority.csv`
+   (h405 pooled anchor); cfg-diff guard vs the standing battery
+   reference passes with exactly the pre-registered key sets.
+3. **`tier2atlas_linring_table.py`** scorer: Arm A/Arm B retained-
+   policy bracket (Arm B = the §3.5b marginal-injection construction
+   reused from `tier2atlas_retained_bracket.py`; consumer note
+   extended), KE₁/KE₂ + KE₁_SD + above-1.15, trap decomposed, CRN
+   per-ion fate flow vs h405p with (R, depth, v₀) strata, twin
+   forecast columns joined (§6.2 item 6), §4.1/§6.2 verdict logic.
+   Oracles: LR-P1 + scorer-drift + KE-path (committed incumbent
+   pooled KE row, rtol 1e-9) — all green before any new number.
+   Tests: 38 focused new; **full suite 2992 passed** with the form
+   present (default path inert).
+
+**Gate-band clarification (documented before scoring):** §6.1's "hard
+gate §3.5c MD-side" quoted the twin-side n̄ band [4.4, 7.1]; the
+MD-side realization is the committed g3ring/ke_lown precedent
+[3.77, 4.37] (twin band would fail h405 itself). Recorded in plan
+§6.3 + scorer docstring; n₁ [0.19, 0.30] unchanged.
+
+**Result (committed `atlas_linring_table.csv`; full table plan §6.3):**
+6/7 lin cells pass the hard gate under BOTH policy ends
+(policy-blocked = 0; lr7's miss twin-predicted — gate pattern 7/7
+transfer). **K-KE does NOT fire** (gated ΔKE₁ +0.077…+0.266,
+seed-SE ≈ 0.005); **survivors = all six; SUCCESS (KE₁ ≥ 0.75) at
+lr1–lr5, best 0.903 at a 27.5/eb0482/E₀ 0.35** — the first MD
+measurement above the (A)-ceiling 0.708, vs the 1.00 reference peak
+and h405p's 0.637. **Authority box: capped→lin transfer HELD** (twin
+KE₁ ~1–2 % cold in-family; n₁ ≤ 0.006; n̄ twin-hot +0.46…+0.59;
+recalibration branch never needed). **Kill axes benign:** trap
+≤ 0.011 all-bound zero-marginal (low-v over-drag fear dead; CRN fate
+flow REVERSED — new-trapped = 0 everywhere, lin *frees* h405p's
+52–63 trapped ions; landing cascade-carried, nothing amputated);
+deepKE mixed hot→neutral along a (2.37→0.95), no form-question
+(§6.2 item 4). **Costs, reported:** midHot 1.39–1.98 + χ² 795–2160
+vs h405p 267 — n = 1/2 heat bought with mid-band overheating (the
+NB-RQ11-12 coordinate measured from the lin side); W₁ 0.78–0.97
+(±0.13 disclosure); above-1.15 = 0 (KER width stays (B)-side).
+h405p sat 0.02 under the n̄ floor this seed (3.748; Arm-B flips it
+in — the only policy-blocked row) — Δ-only disclosure per §6.2
+item 5.
+
+**Stance:** nothing adopted — Tier-0's in-band record, h405, and
+finc1v725 all stand. Per plan §0 the measured MD-level win on the
+form-sensitive observables **opens the adoption discussion with real
+standing. NEXT USER GATE:** adoption discussion + pre-registered
+escalation (one N = 1000 × 5-seed battery at the single best cell;
+KE₁-best lr1 vs W₁-convention lr6 is part of the call) + whether §9
+(pure-linear Method-B Tier-0 rows) now runs. Records: plan §6.3
+(findings-in-chapter) + status header, D0 §1 form-entry bullet
+(FIRST, memory rule), this entry.

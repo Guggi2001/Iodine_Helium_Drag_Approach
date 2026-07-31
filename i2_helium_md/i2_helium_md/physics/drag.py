@@ -33,6 +33,13 @@ outside -- the same convention as :func:`i2_helium_md.physics.potentials.droplet
     power_law        {C [amu*A^(1-n)*ps^(n-2)], n [dimensionless]}:
         F_drag = g * C * v**n                        # amu*A/ps^2 by [C]
         gamma  = g * C * v**(n-1)                    # amu/ps     by [C]
+    pure_linear      {a [amu/ps]}:
+        F_drag = g * a * v                           # amu*A/ps^2
+        gamma  = g * a                               # amu/ps
+        # the constant-gamma one-parameter family (free-form linear ring,
+        # TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN §1/§6.1): exactly the
+        # a-corner of linear_cubic (b = 0), kept as its own tag so the
+        # cfg.json names the family; identity locked by test.
     capped_cubic     {b [amu*ps/A^2], v_c [A/ps], p_tail [dimensionless]}:
         v <= v_c:  F_drag = g * b*v**3               # the LOCKED pure cubic
                    gamma  = g * b*v**2               # amu/ps
@@ -79,17 +86,22 @@ from ._gates import _erf_complement
 
 # Drag-form tags. LINEAR_CUBIC (Slice 1), LINEAR_QUADRATIC and POWER_LAW
 # (METHOD_B §10 form phase), CAPPED_CUBIC (Tier-2 Addendum I §I.10
-# Slice T1: locked pure cubic in-band + {0, -1}-exponent high-v tail), and
+# Slice T1: locked pure cubic in-band + {0, -1}-exponent high-v tail),
 # CAPPED_LINEAR_QUADRATIC (atlas §6.6 MD spot-check, 2026-07-24: the lq
 # in-band law under the same tail convention -- counterfactual instrument,
-# never preset-wired) are realised; THRESHOLD stays reserved behind the
-# dispatch (see :func:`_raise_unrealised_form`).
+# never preset-wired), and PURE_LINEAR (free-form linear twin-sweep MD ring,
+# TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN §6.1, 2026-07-31: the constant-gamma
+# one-parameter family gamma = g*a -- counterfactual instrument, never
+# preset-wired; exactly the a-corner of LINEAR_CUBIC, kept as its own tag so
+# a cfg.json names the family it belongs to) are realised; THRESHOLD stays
+# reserved behind the dispatch (see :func:`_raise_unrealised_form`).
 LINEAR_CUBIC = "linear_cubic"
 LINEAR_QUADRATIC = "linear_quadratic"
 THRESHOLD = "threshold"
 POWER_LAW = "power_law"
 CAPPED_CUBIC = "capped_cubic"
 CAPPED_LINEAR_QUADRATIC = "capped_linear_quadratic"
+PURE_LINEAR = "pure_linear"
 
 # Required coefficient keys per form (variable arity by form, §3.8).
 # POWER_LAW's amplitude key is "C" (METHOD_B §10.3/§10.5 raw-{C, n} stamp);
@@ -104,6 +116,7 @@ _REQUIRED_COEFF_KEYS: dict[str, tuple[str, ...]] = {
     CAPPED_CUBIC: ("b", "v_c", "p_tail"),  # amu*ps/A^2, A/ps, dimensionless
     # amu/ps, amu/A, A/ps, dimensionless
     CAPPED_LINEAR_QUADRATIC: ("a", "c", "v_c", "p_tail"),
+    PURE_LINEAR: ("a",),                 # amu/ps
 }
 
 # The forms with realised force/gamma branches below -- the single source for
@@ -115,6 +128,7 @@ REALIZED_FORMS: tuple[str, ...] = (
     POWER_LAW,
     CAPPED_CUBIC,
     CAPPED_LINEAR_QUADRATIC,
+    PURE_LINEAR,
 )
 
 _VALID_MASS_MODELS = ("constant", "time_resolved")
@@ -122,8 +136,13 @@ _VALID_MASS_MODELS = ("constant", "time_resolved")
 # How the coefficients were extracted (provenance, METHOD_B doc §6):
 # "force_balance" = Method A (direct F_drag-vs-v regression, the original
 # pipeline); "trajectory_matching" = Method B (joint {a, b, E_bind} fit by
-# forward-integrated trajectory RMSE).
-_VALID_EXTRACTION_METHODS = ("force_balance", "trajectory_matching")
+# forward-integrated trajectory RMSE); "free_form" = NOT extracted -- a
+# counterfactual free-form parameter selected by a twin-scan instrument
+# (first use: the pure_linear MD ring, TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN
+# §6.1; the mass fields then describe the selection instrument's context and
+# effective_binding_energy_I_ion_eV must be None -- no §6.5.1 joint
+# calibration exists to claim).
+_VALID_EXTRACTION_METHODS = ("force_balance", "trajectory_matching", "free_form")
 
 
 @dataclass(frozen=True)
@@ -219,6 +238,15 @@ class DragCoefficients:
                 f"effective_binding_energy_I_ion_eV must be positive or None, "
                 f"got {self.effective_binding_energy_I_ion_eV!r}"
             )
+        if (self.extraction_method == "free_form"
+                and self.effective_binding_energy_I_ion_eV is not None):
+            raise ValueError(
+                "extraction_method='free_form' forbids an "
+                "effective_binding_energy_I_ion_eV stamp: a free-form "
+                "parameter was never jointly calibrated with any binding "
+                "(§6.5.1), so the stamp would claim a validation that does "
+                f"not exist; got {self.effective_binding_energy_I_ion_eV!r}"
+            )
 
 
 def _raise_unrealised_form(form: str) -> None:
@@ -283,6 +311,7 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         linear_cubic:     F_drag = g(depth) * (a*v + b*v**3)
         linear_quadratic: F_drag = g(depth) * (a*v + c*v**2)
         power_law:        F_drag = g(depth) * C * v**n
+        pure_linear:      F_drag = g(depth) * a*v
         capped_cubic:     F_drag = g(depth) * b*v**3                (v <= v_c)
                           F_drag = g(depth) * b*v_c**2 * v * (v/v_c)**p_tail
                                                                     (v >  v_c)
@@ -332,6 +361,9 @@ def drag_force(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         C = float(coeffs.coefficients["C"])
         n = float(coeffs.coefficients["n"])
         return g * C * v**n
+    if coeffs.form == PURE_LINEAR:
+        a = float(coeffs.coefficients["a"])
+        return g * (a * v)
     if coeffs.form == CAPPED_CUBIC:
         b = float(coeffs.coefficients["b"])
         v_c = float(coeffs.coefficients["v_c"])
@@ -391,6 +423,7 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         linear_cubic:     gamma = g(depth) * (a + b*v**2)
         linear_quadratic: gamma = g(depth) * (a + c*v)
         power_law:        gamma = g(depth) * C * v**(n-1)
+        pure_linear:      gamma = g(depth) * a
         capped_cubic:     gamma = g(depth) * b*v**2                 (v <= v_c)
                           gamma = g(depth) * b*v_c**2 * (v/v_c)**p_tail
                                                                     (v >  v_c)
@@ -447,6 +480,11 @@ def drag_gamma(v, depth, coeffs: DragCoefficients, steepness: float) -> np.ndarr
         # n >= 1 (guard-enforced) keeps v**(n-1) finite at v = 0; numpy's
         # 0.0**0.0 == 1.0 realizes the n = 1 limit gamma -> g*C exactly.
         return g * C * v ** (n - 1.0)
+    if coeffs.form == PURE_LINEAR:
+        a = float(coeffs.coefficients["a"])
+        # full_like keeps the v-broadcast shape the other closed forms have;
+        # the value is bitwise linear_cubic(a, b = 0)'s g*(a + 0.0).
+        return g * np.full_like(v, a)
     if coeffs.form == CAPPED_CUBIC:
         b = float(coeffs.coefficients["b"])
         v_c = float(coeffs.coefficients["v_c"])

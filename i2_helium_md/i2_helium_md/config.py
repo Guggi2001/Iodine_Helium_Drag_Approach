@@ -24,6 +24,7 @@ from .physics.drag import (
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
     POWER_LAW,
+    PURE_LINEAR,
     THRESHOLD,
 )
 
@@ -50,7 +51,7 @@ CollisionMode = Literal[1, 2, 3]
 # ---------------------------------------------------------------------------
 DragForm = Literal[
     "linear_cubic", "linear_quadratic", "threshold", "power_law",
-    "capped_cubic", "capped_linear_quadratic"
+    "capped_cubic", "capped_linear_quadratic", "pure_linear"
 ]
 DragSpatialGate = Literal["density_proportional", "erf_tied", "erf_independent", "sharp"]
 MassScenario = Literal["fixed", "biphasic", "anchored_discrete"]
@@ -263,6 +264,7 @@ _KNOWN_DRAG_FORMS = (
     POWER_LAW,
     CAPPED_CUBIC,
     CAPPED_LINEAR_QUADRATIC,
+    PURE_LINEAR,
 )
 
 
@@ -2165,6 +2167,19 @@ def check_drag_config(cfg: "SimConfig") -> None:
                 f"(the Step-1c-surviving tail set carried over to the atlas "
                 f"§6.6 instrument; any other exponent needs a fresh "
                 f"adjudication), got p_tail={p_tail!r}"
+            )
+    elif form == PURE_LINEAR:
+        # Free-form linear ring instrument (TIER2_FREEFORM_LINEAR_TWIN_SWEEP
+        # _PLAN §1/§6.1, 2026-07-31): gamma = g*a, the one-parameter
+        # constant-gamma family. a > 0 is the whole dissipativity condition
+        # (a = 0 would be a zero-drag law, not a drag law; there is no
+        # second coefficient to carry it).
+        a = float(c["a"])
+        if not (a > 0.0):
+            raise ValueError(
+                f"pure_linear drag requires a > 0 (one-parameter "
+                f"constant-gamma family; a zero-drag law is not a drag "
+                f"law), got a={a!r}"
             )
     else:  # pragma: no cover -- membership already enforced above
         raise ValueError(f"unknown drag form {form!r}")

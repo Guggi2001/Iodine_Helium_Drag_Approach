@@ -243,10 +243,17 @@ level (Q3 feeder ceiling ≈ 0.11 of the scored ensemble;
 suppressed-conversion bound n₁ ≈ 0.22 < 0.31); the positive result
 stands (KE₁ position is source physics, not drag/mass-mechanism);
 nothing adopted, the scalar budget did NOT retire. Records:
-findings "(C) adjudication CLOSED", D0 §20, log 2026-07-30. NEXT
-USER GATE: pick the new-approach direction (slate in the log:
-n = 1-bin ownership test / mechanism-side re-examination / scope
-closure + G4 close-out).** The
+findings "(C) adjudication CLOSED", D0 §20, log 2026-07-30.**
+**Current arm (2026-07-30/31): the free-form linear counterfactual —
+`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` is the fresh-session entry
+point.** Step 0 (twin KE₁ ranking LICENSED ρ 0.998) + both twin arms
+(35-cell basin incl. sub-plateau; ram term rejected, pure linear
+selected in-family) + the §6.1 CRN MD ring all EXECUTED: **the ring
+LANDS — 6/7 cells gate both-policy-clean, K-KE not fired, SUCCESS at
+five cells (best MD KE₁ 0.903 at a = 27.5 vs h405p 0.637; `pure_linear`
+form now in `physics/drag.py`; trap axis dead; cost = mid-band
+overheating); nothing adopted. NEXT USER GATE: the adoption discussion
++ escalation battery (plan §6.3).** The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

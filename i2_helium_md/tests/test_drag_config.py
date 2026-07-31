@@ -44,6 +44,7 @@ from i2_helium_md.physics.drag import (
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
     POWER_LAW,
+    PURE_LINEAR,
 )
 
 # The frozen 9 A extraction mass; both cases share it (verified on disk).
@@ -214,6 +215,16 @@ class TestFormPhaseDissipativityGuard:
         # n < 1 diverges at rest (would need the inert §3.8 floor) -> refused.
         with pytest.raises(ValueError, match="n >= 1"):
             check_drag_config(self._cfg(POWER_LAW, {"C": 10.0, "n": 0.5}))
+
+    # --- pure_linear: a > 0 (the whole dissipativity condition; free-form
+    #     linear ring instrument, TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN §6.1) ---
+    def test_pure_linear_positive_a_passes(self):
+        check_drag_config(self._cfg(PURE_LINEAR, {"a": 27.5}))
+
+    def test_pure_linear_nonpositive_a_refused(self):
+        for a in (0.0, -1.0):
+            with pytest.raises(ValueError, match="a > 0"):
+                check_drag_config(self._cfg(PURE_LINEAR, {"a": a}))
 
 
 # ---------------------------------------------------------------------------
@@ -704,7 +715,7 @@ class TestEnumCompleteness:
     def test_all_members_present(self):
         assert set(typing.get_args(DragForm)) == {
             "linear_cubic", "linear_quadratic", "threshold", "power_law",
-            "capped_cubic", "capped_linear_quadratic",
+            "capped_cubic", "capped_linear_quadratic", "pure_linear",
         }
         assert set(typing.get_args(DragSpatialGate)) == {
             "density_proportional", "erf_tied", "erf_independent", "sharp"

@@ -24,6 +24,7 @@ from i2_helium_md.physics.drag import (
     LINEAR_CUBIC,
     LINEAR_QUADRATIC,
     POWER_LAW,
+    PURE_LINEAR,
     THRESHOLD,
     DragCoefficients,
     drag_force,
@@ -812,3 +813,94 @@ class TestCappedLinearQuadratic:
         bundle = self._capped(p_tail=-1.0)
         gam0 = float(drag_gamma(0.0, -400.0, bundle, STEEPNESS_A))
         assert gam0 == pytest.approx(self.A, rel=1e-12)
+
+
+class TestPureLinear:
+    """Free-form linear ring form (TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN §1):
+    gamma = g*a constant in v, F = g*a*v. The family is exactly the a-corner
+    of ``linear_cubic`` (b = 0) -- the identity is locked EXACTLY (``==``),
+    because the MD ring's twin comparison rides on the form being nothing
+    but the constant-gamma law. Analytical pins tight (rtol 1e-12).
+    """
+
+    A = 27.5                    # amu/ps (a ring sub-plateau value)
+    DEPTHS = np.array([-400.0, -40.0, -5.0, 0.0, 10.0])
+    V = np.linspace(0.0, 14.0, 29)   # includes v = 0 and fast-class speeds
+
+    def _lin(self, a=A):
+        return _bundle(PURE_LINEAR, {"a": a})
+
+    def test_explicit_values_at_unit_gate(self):
+        bundle = self._lin()
+        d, v = -400.0, 3.0
+        assert float(drag_force(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.A * v, rel=1e-12
+        )
+        assert float(drag_gamma(v, d, bundle, STEEPNESS_A)) == pytest.approx(
+            self.A, rel=1e-12
+        )
+
+    def test_gamma_constant_in_v_and_regular_at_rest(self):
+        # The defining property of the family: one number sets the force at
+        # every velocity. gamma(v) is exactly constant across the whole grid
+        # (including v = 0 -- no 0/0; closed form).
+        bundle = self._lin()
+        for d in self.DEPTHS:
+            g = spatial_gate(d, STEEPNESS_A)
+            gam = np.asarray(drag_gamma(self.V, d, bundle, STEEPNESS_A))
+            np.testing.assert_array_equal(gam, np.full_like(self.V, g * self.A))
+
+    def test_exact_identity_with_linear_cubic_b0(self):
+        # pure_linear(a) == linear_cubic(a, b = 0) bitwise, force AND gamma:
+        # the a-corner nesting identity (the §10.3 obligation pattern).
+        lin = self._lin()
+        lc = _bundle(LINEAR_CUBIC, {"a": self.A, "b": 0.0})
+        for d in self.DEPTHS:
+            np.testing.assert_array_equal(
+                np.asarray(drag_force(self.V, d, lin, STEEPNESS_A)),
+                np.asarray(drag_force(self.V, d, lc, STEEPNESS_A)),
+            )
+            np.testing.assert_array_equal(
+                np.asarray(drag_gamma(self.V, d, lin, STEEPNESS_A)),
+                np.asarray(drag_gamma(self.V, d, lc, STEEPNESS_A)),
+            )
+
+    def test_dissipative_and_gate_shared(self):
+        # F >= 0 magnitude convention; gamma carries the SAME gate as the
+        # force (FDT coupling carrier, §5.2): F == gamma * v on the grid.
+        bundle = self._lin()
+        for d in self.DEPTHS:
+            F = np.asarray(drag_force(self.V, d, bundle, STEEPNESS_A))
+            gam = np.asarray(drag_gamma(self.V, d, bundle, STEEPNESS_A))
+            assert np.all(F >= 0.0)
+            assert np.all(gam >= 0.0)
+            np.testing.assert_allclose(F, gam * self.V, rtol=1e-12)
+
+    def test_requires_coefficient_a(self):
+        with pytest.raises(ValueError, match="missing"):
+            _bundle(PURE_LINEAR, {})
+
+    def test_free_form_extraction_method_accepted(self):
+        # The ring bundles carry the honest provenance vocabulary.
+        bundle = DragCoefficients(
+            form=PURE_LINEAR,
+            coefficients={"a": self.A},
+            extraction_mass_model="constant",
+            extraction_mass_amu=202.953908,
+            extraction_method="free_form",
+            effective_binding_energy_I_ion_eV=None,
+        )
+        assert bundle.extraction_method == "free_form"
+
+    def test_free_form_forbids_binding_stamp(self):
+        # A free-form parameter was never jointly calibrated with any
+        # binding: a stamp would claim a nonexistent §6.5.1 validation.
+        with pytest.raises(ValueError, match="free_form"):
+            DragCoefficients(
+                form=PURE_LINEAR,
+                coefficients={"a": self.A},
+                extraction_mass_model="constant",
+                extraction_mass_amu=202.953908,
+                extraction_method="free_form",
+                effective_binding_energy_I_ion_eV=0.1168,
+            )
