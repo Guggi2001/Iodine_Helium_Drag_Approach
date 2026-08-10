@@ -164,11 +164,15 @@ correlated between the series, so the z column is indicative.
   the reference CSV as the `conditionSyst_frac = 0.06` correlated band (see
   Error model above).
 - **n = 0 is the outlier: −6.3%** (300 mW *below* the reference, formally
-  z ≈ −6 against its ~1% analysis error). I⁺ ran at ~81 counts/frame at
-  600 mW vs ~11 at 300 mW, so saturation/space-charge or true power dependence
-  of the bare-I⁺ channel are plausible; the sign is opposite to the cluster
-  offset. The I⁺ scale anchor is therefore good to ~1% ⊕ 4% (calib) *within*
+  z ≈ −6 against its ~1% analysis error). I⁺ ran at ~157 counts/frame at
+  600 mW vs ~81 at 300 mW (whole-image counts in the mass gate: 628743/4000
+  and 324601/4000), so saturation/space-charge or true power dependence of the
+  bare-I⁺ channel are plausible; the sign is opposite to the cluster offset.
+  The I⁺ scale anchor is therefore good to ~1% ⊕ 4% (calib) *within*
   the 600 mW condition, but carries a ~6% condition sensitivity.
+  (Corrected 2026-08-10: this line previously read "~81 … vs ~11", which mixed
+  up the two runs — 81 counts/frame is the *300 mW* rate. See
+  `POWER_COMPARISON.md` in the MATLAB source folder.)
 
 ---
 
@@ -214,6 +218,29 @@ matlab -batch "run('crosscheck_300mW_series.m')"    % ~4 min (2 Abel passes)
 4. **κ of ⟨E⟩(n) not re-fit.** The earlier consistency check (κ ≈ 2.5 vs paper
    2.27, ±0.4) was done under the legacy measure; if κ is needed it must be
    re-fit to these corrected means.
+5. **⚠️ n = 0 only: angular coverage runs out at 4.70 eV, so ⟨E⟩(I⁺) is biased
+   low.** (Found 2026-08-10 in the MATLAB source folder; see its
+   `POWER_COMPARISON.md` for the measurement.) `generate_polar_image` extends
+   the radial grid to 1.1× the nearest crop edge and zero-fills off-image
+   samples, and `VM_center` sits ~23 px off the MCP centre — so azimuthal
+   coverage falls from 1.00 at 309 px (2672 m/s, 4.70 eV) to 0.43 at 340 px and
+   0.12 at 354 px, the top of the I⁺ signal window. Consequences:
+   - `meanKE_eV` (n=0) = 3.706 eV is a **lower bound**; the suppressed
+     high-energy bins would raise it by roughly 4% (rough estimate, not
+     propagated into the error columns), plus an unmeasurable contribution
+     beyond the detector edge at 6.13 eV.
+   - `modeKE_eV` (n=0) = 4.758 eV sits within 0.1 eV of where coverage
+     collapses. Coverage loss only suppresses, so it cannot manufacture the rim
+     peak, but the peak *position* and the shape above it are not trustworthy.
+   - The "Abel inversion validated (I⁺ shape is real)" section above does not
+     cover this — it validated the inversion, and both the manual shell integral
+     and pyabel see the same zero-filled off-detector region.
+   - **Every cluster (n ≥ 1) is unaffected**: each signal window ends far inside
+     309 px (n=1 at 267 px, coverage 1.000). All MD-relevant points are clean.
+
+   Not pursued further because I⁺ is not used for the MD comparison. If an I⁺
+   number is ever needed, restrict it to r ≤ 309 px (E ≤ 4.70 eV) and quote it
+   over that defined range.
 
 ---
 
