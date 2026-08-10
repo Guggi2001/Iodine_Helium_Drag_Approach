@@ -261,6 +261,33 @@
   single best cell; KE₁-best lr1 vs W₁-convention lr6 is part of the
   call) are the NEXT USER GATE.**
 
+- **The linear family has TWO personalities, and the second one
+  CLONES h405 with no cap — the choice between forms is *where the
+  deviation is hidden*, not whether there is one (adoption-discussion
+  re-read of the committed arm-1 rows, 2026-08-10, zero MD; plan
+  §6.4).** a is a continuous dial: Φ 0.64 buys KE₁ 0.892 at midHot
+  2.16/deepKE 3.38 (the ring's MD-confirmed corner), while **Φ 0.985
+  (a = 42.5 / eb0482 / τ 6.4 / E₀ 0.31) reproduces the h405 twin
+  vector near observable-for-observable — KE₁ 0.615 vs 0.624, midHot
+  1.003 vs 1.069, W₁ 0.686 vs 0.703, n₁ 0.197 vs 0.208, n̄ 4.58 vs
+  4.48 — from a kink-free pure-linear law**, at the price of the KE₁
+  gain (the user's proposed trade, confirmed). **But the cap is not
+  thereby retired:** crossover √(a/b) = 4.11 Å/ps means that same
+  line runs ×4.2 the Tier-0 cubic at v = 2, ×1.9 at v = 3 and 31 %
+  soft at the band top — the fiction moves *into* the TDDFT-validated
+  window (the Tier-0 linear rejection, n̂ = 2.927, restated at system
+  level), whereas `capped_cubic` is exact in-band and parks its free
+  element above 4.95 where TDDFT is permanently infeasible. Cap
+  physics recorded: v_c 5.5 ≈ **Mach 2.3** (He sound ~2.4 Å/ps),
+  constant force = constant loss per Å = wave-drag/vortex-shedding
+  signature; the *sharpness* of the corner is forced (any smooth
+  saturation `b·v³/(1+(v/v_c)^m)` breaks the in-band lock unless
+  m → ∞, which is the cap). Posted-not-taken: a Hill-type
+  smooth-saturation twin scan to measure how sharp the corner must be
+  (plan §6.4 item 5; NOT a §3.5h p_tail re-open — corner vs tail
+  exponent). Arm 2 already closed the ram term (c = 0 optimal), so
+  the flatness is what the landing wants.
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).

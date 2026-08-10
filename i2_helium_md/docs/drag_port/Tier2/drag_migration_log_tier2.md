@@ -12832,3 +12832,53 @@ KE₁-best lr1 vs W₁-convention lr6 is part of the call) + whether §9
 (pure-linear Method-B Tier-0 rows) now runs. Records: plan §6.3
 (findings-in-chapter) + status header, D0 §1 form-entry bullet
 (FIRST, memory rule), this entry.
+
+## Adoption-discussion reads RECORDED (plan §6.4, D0 §1) — the linear family's SECOND personality: `a ≈ 42.5` CLONES the h405 landing with **no cap**; the cap survives on deviation-accounting, not on fit (2026-08-10, docs-only, zero MD)
+
+**Trigger (user):** post-ring adoption thread — *"I want to reach the
+relatively good result of h405 without capping, this is so unphysical
+… could sweeping more linear or linear+quadratic fix the curve shape
+by giving up KE₁?"* — followed by *"are both linear families in
+document for future?"*. **Audit answer: they were NOT** — the
+sub-plateau/KE₁-buyer family was fully written up (D0, plan
+§3.1/§5.1/§6.3, log, ring CSV), but the plateau-convergent family
+existed durably only as the bare count "17 plateau-convergent"; the
+h405-clone reading lived only in the conversation. Recorded now from
+the committed `atlas_linsweep.csv` — **no new computation, nothing
+adopted.**
+
+1. **The proposal is CONFIRMED at twin level.** `a = 42.5 / eb0482 /
+   τ 6.4 / E₀ 0.31` (Φ 0.985) reproduces the h405 twin vector near
+   observable-for-observable: KE₁ 0.615 vs 0.624, midHot 1.003 vs
+   1.069, W₁ 0.686 vs 0.703, n₁ 0.197 vs 0.208, n̄ 4.58 vs 4.48
+   (deepKE 0.644 vs 0.844) — kink-free pure linear, KE₁ gain given
+   up exactly as proposed. Licensed transfer (the §6.3 ring measured
+   the lin-family twin↔MD box), so an MD check is a 1–2 cell CRN
+   spot-check, not a ring. **a is a continuous dial** from this clone
+   (Φ ≈ 1) to the MD-confirmed KE₁-buyer (Φ 0.64, KE₁ 0.892/midHot
+   2.16). Quadratic re-sweep NOT needed — arm 2 measured c = 0
+   optimal; the landing wants maximal flatness.
+2. **The cap is not retired by this — deviation-accounting.**
+   Crossover √(a/b) = 4.11 Å/ps: the same line is ×4.2 the Tier-0
+   cubic at v = 2, ×1.9 at v = 3, 31 % soft at the band top 4.95 —
+   the free element moves INTO the TDDFT-validated window (Tier-0's
+   linear rejection, n̂ = 2.927, at system level), while
+   `capped_cubic` is exact in-band and parks its fiction above 4.95
+   where TDDFT is permanently infeasible (D0 §2). Both forms carry a
+   fiction; the cap hides it where no instrument can see it.
+3. **Cap-physics recorded** (so "unphysical" is not re-litigated from
+   scratch): v_c 5.5 ≈ Mach 2.3 vs He sound ~2.4 Å/ps; constant force
+   above the cap = constant energy loss per Å = wave-drag /
+   vortex-shedding signature. Only the *corner sharpness* is
+   idealized — and it is forced: smooth saturation
+   `b·v³/(1+(v/v_c)^m)` breaks the in-band lock unless m → ∞, which
+   IS the cap.
+4. **POSTED, NOT TAKEN:** Hill-type smooth-saturation twin scan (b
+   Tier-0-locked, free (v_c, m)) to measure how sharp the corner must
+   be — turns the aesthetic into a measurement. Explicitly NOT a
+   §3.5h p_tail re-open (that softens the tail exponent at fixed
+   corner; this softens the corner at fixed tail). Behind its own
+   trigger.
+
+Stance unchanged: Tier-0, h405, finc1v725 all stand; the §6.3 gates
+(adoption discussion + escalation battery + §9 relevance) stay open.

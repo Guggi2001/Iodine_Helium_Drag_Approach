@@ -217,7 +217,9 @@ outputs `atlas_linsweep.csv` / `_chords.csv` / `_gated_ke.csv` /
   columns at τ 4.8, all three wells), 7 intermediate, 17
   plateau-convergent, 5 above-window; **0 sub-bare** — the entire
   gated set stays above the bare-ram floor, so no cell needs the
-  unphysical-flag discount.
+  unphysical-flag discount. **The plateau-convergent class is the
+  family's SECOND personality — read out in §6.4: it clones the h405
+  landing with no cap at all.**
 - **KE₁ along the basin (twin-ranked, licensed):** monotone in Φ —
   a = 27.5/Φ 0.64 → twin KE₁ 0.892; a = 30/0.69 → 0.817; a = 35/0.81 →
   0.703; a = 40/0.93 → 0.575 (eb0482, τ 4.8 column). Softer fast-class
@@ -592,6 +594,83 @@ escalation (one N = 1000 × 5-seed battery at the *single best cell*;
 the KE₁-vs-W₁ best-cell convention — lr1 vs lr6 — is part of that
 call), and whether the §9 Method-B Tier-0-side row set now becomes
 relevant (the ring outcome makes it so).
+
+### 6.4 Adoption-discussion reads (2026-08-10, zero MD, re-read of committed arm-1 rows): the family has TWO measured personalities — the KE₁-buyer AND an uncapped h405 clone
+
+Discussion record from the post-ring adoption thread (user question:
+*"can we reach the relatively good result of h405 without capping —
+this is so unphysical — maybe by giving up KE₁?"*). Answered by
+re-reading the committed `atlas_linsweep.csv`; **no new computation,
+nothing adopted.** Recorded because the second personality was
+previously durable only as the bare count "17 plateau-convergent" —
+the reading itself would have been lost.
+
+**1. The family is a DIAL, not two corners.** a is a one-knob traverse
+of a continuous frontier (all rows gated, eb0482 unless noted):
+
+| cell | Φ | twin KE₁ | midHot | deepKE | W₁ | reading |
+|---|---|---|---|---|---|---|
+| a 27.5, τ 4.8, E₀ 0.35 | 0.64 | **0.892** | 2.16 | 3.38 | 0.673 | KE₁-buyer |
+| a 35, τ 4.8, E₀ 0.37 | 0.81 | 0.703 | 1.53 | 1.86 | 0.586 | mid |
+| a 42.5, τ 6.4, E₀ 0.31 | **0.985** | 0.615 | **1.003** | 0.644 | 0.686 | **h405 clone** |
+| a 45, τ 4.8, E₀ 0.40 | 1.04 | 0.487 | 0.914 | 0.879 | 0.880 | past the clone |
+| h405 (capped) twin | 1.00 | 0.624 | 1.069 | 0.844 | 0.703 | incumbent |
+
+**2. The user's proposal is CONFIRMED at twin level.** `a = 42.5 /
+eb0482 / τ 6.4 / E₀ 0.31` reproduces the h405 twin vector near
+observable-for-observable — KE₁ 0.615 vs 0.624, midHot 1.003 vs
+1.069, W₁ 0.686 vs 0.703, n₁ 0.197 vs 0.208, n̄ 4.58 vs 4.48 (deepKE
+0.644 vs 0.844, the lin cell slightly colder) — from a **pure linear
+form with no cap and no kink**, at the cost of the KE₁ gain, exactly
+as proposed. Standing: the §6.3 ring measured the lin-family twin↔MD
+box (KE₁ ~1–2 % cold, gate pattern 7/7, n̄ bias +0.46…+0.59), so this
+forecast is licensed-transfer, not speculation; an MD check would be
+a 1–2 cell CRN spot-check, not a new ring. **Arm 2 already closed the
+quadratic question** (c = 0 measured optimal, §3.1/§5.1): the landing
+wants maximal flatness, so a ram term only tilts the curve away.
+
+**3. Why this is NOT a reason to retire the cap (the deviation-
+accounting argument).** The plateau-matched linear does not remove
+the effective element — it *relocates* it into the region where the
+program has ab-initio authority. Crossover √(a/b) = 4.11 Å/ps
+(b = 2.5153, Tier-0): the a = 42.5 line runs **×4.2 the Tier-0 cubic
+at v = 2, ×1.9 at v = 3, and 31 % SOFT at the band top 4.95** — i.e.
+wrong by factors precisely inside the TDDFT-calibrated window, which
+is the Tier-0 linear rejection (n̂ = 2.927; a → 0 whenever a higher
+power competes) restated in system terms. `capped_cubic` by contrast
+is *exact* where the traces speak and parks its whole free element
+above 4.95, where TDDFT is permanently infeasible (D0 §2 domain
+input) and only the experiment has authority. **Both forms carry a
+fiction; the cap hides it where nothing can see it, the smooth line
+hides it where the traces can.** By the validation hierarchy that is
+a worse trade, bought with aesthetics.
+
+**4. Cap-physics assessment (recorded so "the cap is unphysical" is
+not re-litigated from scratch).** v_c 5.5 Å/ps ≈ **Mach 2.3** against
+the He sound speed (~2.4 Å/ps); constant force above it = constant
+energy loss per Å, the signature of wave-drag / vortex-shedding
+regimes — saturating drag on a supersonic bubble is respectable
+physics, not a fudge. What *is* idealized is the sharp corner: any
+smooth saturation family (e.g. `F = b·v³/(1 + (v/v_c)^m)`, cubic at
+low v, saturating at high v) departs from the Tier-0 cubic near the
+band top unless m is large — and **m → ∞ is exactly the cap**. The
+kink's sharpness is therefore *forced* by the two authorities
+(in-band trace lock + the experiment's demand for a flat fast-class
+force), not chosen.
+
+**5. POSTED, NOT TAKEN — the smooth-saturation twin read.** If the
+kink itself is the objection, the physically-motivated instrument is
+not the polynomial family but a Hill-type smooth saturation (b
+Tier-0-locked; free (v_c, m)), twin-scanned at zero MD to measure
+*how sharp the corner has to be* — i.e. the largest smoothing the
+in-band lock and the histogram jointly tolerate. Turns an aesthetic
+into a measurement. Not adjudicated; behind its own trigger. (Note:
+this is NOT a §3.5h p_tail re-open — p_tail softens the *tail
+exponent* at fixed corner; this softens the *corner* at fixed tail.)
+
+**Standing:** nothing adopted; both personalities are counterfactual
+readings of a committed twin artifact. Tier-0, h405, and finc1v725
+stand.
 
 ## 7. Oracles and non-regression (run before any new number)
 
