@@ -331,6 +331,50 @@
     measured wrong by an order of magnitude more than the gap it was
     asserting. Twin W₁ is not transferable at a 42.5 / τ 6.4.
 
+- **The (a, τ) joint ring CLOSES the question: KE₁ and the histogram are
+  NOT simultaneously improvable in this family, and the reason is the
+  FLIGHT MASS (§6.6 ring, 2026-08-12, 6 × N = 500 at the §6.3 seed
+  20260731 — CRN with lr1–lr7, h405p and the clone; plan §6.6,
+  `atlas_linjoint_table.csv`).** The τ 4.8 a-curve is monotone in every
+  observable at once — a ∈ {35, 37.5, 40, 42.5, 45} gives W₁ 0.785 →
+  0.790 → 0.831 → 0.853 → 0.879, KE₁ 0.715 → 0.653 → 0.587 → 0.557 →
+  0.501, midHot 1.393 → 1.216 → 1.059 → 0.969 → 0.841, tail(n ≥ 10)
+  0.096 → 0.097 → 0.103 → 0.115 → 0.117. Consequences:
+  - **W₁ has a genuine minimum at a ≈ 35 worth 0.785**, above h405's
+    0.767 — the family cannot match the incumbent histogram, let alone
+    beat it. (Below 35 the ring already measured W₁ rising again: 0.856
+    at 32.5, 0.877 at 30.)
+  - **Every cell that brings midHot into band (a ≥ 40) sits below h405
+    on KE₁**; every cell that beats h405 on KE₁ (a ≤ 37.5) is out of
+    band on midHot. **JR-P3 empty: no cell beats h405 on W₁ and KE₁
+    together at midHot ≤ 1.15.**
+  - **τ owns the histogram, measured at three chords with no overlap
+    between the clocks:** W₁(τ 6.4) − W₁(τ 4.8) = +0.407 (a 35), +0.314
+    (a 40), +0.226 (a 42.5) — a clean interaction (the penalty shrinks
+    with a) on top of a uniformly disqualifying τ 6.4. The CRN per-ion
+    shell flow separates identically: mean Δn vs lr6 is **+0.21…+0.53**
+    at τ 4.8 (tail preserved, 178–224 of 237 heavy ions survive) and
+    **−7.65…−9.80** at τ 6.4 (tail destroyed, 94–114 survive). Only
+    3–59 ions are trapped anywhere, so this is **evaporation, not
+    capture**.
+  - **The one escape from the coupling proves the mechanism.** `j1`
+    (a 40 / τ 6.4) is the sole cell beating h405 on KE₁ (0.666) while
+    holding midHot in band (0.977) — and it does so by *evaporating the
+    shells*: lighter ions fly faster and vacate the mid-band. It pays
+    W₁ 1.145 and the worst tail measured (0.052, n_max 14).
+  - **Synthesis: KE₁ = E_exit · m(1)/m_flight is a flight-mass
+    observable and the size distribution is what pins the flight mass** —
+    two readings of one quantity. (a, τ, E₀) can move mass between them
+    but cannot decouple them, which is why the Pareto front stays
+    {h405p (0.767, 0.637), lr6 (0.785, 0.715)} and why the residual is
+    a mass question, not a drag question ([[TIER2_MASS_SCENARIOS]]).
+  - Reported, non-gating: χ²_med falls monotonically to **199.8 at
+    a 45 — below h405p's 267** (the KE *curve* is fit better than the
+    incumbent at chords whose KE₁ is worst); s45's midHot 0.841 dips
+    just under the soft-band floor 0.85. Every ring cell returns
+    `gate-marginal` on n₁ (0.188–0.214 against the 0.19 floor), which is
+    exactly why the gate was made reporting-only for this ring.
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).

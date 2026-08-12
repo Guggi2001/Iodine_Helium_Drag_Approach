@@ -13405,3 +13405,93 @@ which no twin column currently predicts at this corner.
 Records: plan §6.5 (design + findings block), findings "§6.5 h405-clone
 MD battery", D0 §1 form-entry bullet (D0-first rule), artifact
 `atlas_linclone_table.csv`.
+
+---
+
+## 2026-08-12 — free-form linear §6.6: the (a, τ) joint ring EXECUTED (6 × N = 500) — **the arm's boundary is measured: KE₁ and the histogram are NOT simultaneously improvable, and the residual is the FLIGHT MASS**
+
+User question after §6.5: *"lets think what sweep we can try to improve
+histogram and kinetic energy simultaneously (that KE₁ doesn't land fully
+is accepted)"*. Answered by first measuring the mechanism zero-MD off
+committed artifacts (§6.5 anatomy: the clone's damage is a tail deficit;
+the tail was evaporated not trapped, per exact CRN shell flow; E₀ is not
+the width knob; a improves W₁ monotonically below 35 — so τ owns it by
+elimination), then by a 6-cell ring at the §6.3 seed so that every new
+cell is CRN-paired with lr1–lr7, `h405p` and the clone.
+
+**Design honesty note.** The first version of this ring — the one the
+user approved — contained two τ 3.2 cells. Checking the twin *before*
+pinning E₀ killed them: at a 42.5, τ 3.2 gives n̄ 6.7–16.0 across the
+entire E₀ grid (shorter cooling = *less* evaporation = far more retained
+helium), so under the validated −0.55 transfer they miss the band by a
+factor, not a margin. The cells were replaced and re-approved rather than
+silently substituted.
+
+**Result — JR-P3 EMPTY.** The τ 4.8 a-curve is monotone in every
+observable simultaneously (a 35 → 45): W₁ 0.785 → 0.790 → 0.831 → 0.853
+→ 0.879; KE₁ 0.715 → 0.653 → 0.587 → 0.557 → 0.501; midHot 1.393 → 1.216
+→ 1.059 → 0.969 → 0.841; tail(n ≥ 10) 0.096 → 0.117. With the ring's
+a 30/32.5 points the family's W₁ minimum is an interior optimum at
+**a ≈ 35 worth 0.785 — above h405's 0.767**. Cells that bring midHot into
+band (a ≥ 40) all sit below h405 on KE₁; cells beating h405 on KE₁
+(a ≤ 37.5) are all out of band on midHot. So **no cell beats the
+incumbent on W₁ and KE₁ together at midHot ≤ 1.15**, and JR-P4 (the
+Pareto front as the result) applies: front = h405p (0.767, 0.637) and
+lr6 (0.785, 0.715), extended to higher KE₁ at worse W₁ by lr5/lr3/lr7/lr1.
+
+**τ owns the histogram — measured at three chords with no overlap between
+the clocks:** W₁(τ 6.4) − W₁(τ 4.8) = +0.407 (a 35), +0.314 (a 40),
++0.226 (a 42.5). The exact per-ion CRN shell flow vs lr6 separates
+identically: mean Δn +0.21…+0.53 at τ 4.8 (178–224 of 237 heavy ions
+survive n ≥ 10) vs −7.65…−9.80 at τ 6.4 (94–114 survive), with only 3–59
+ions trapped anywhere — **evaporation, not capture**, at every chord.
+
+**JR-P1 is recorded MIXED, not upgraded.** The frozen conjunction needed
+s425 ≤ 0.85 AND d2 ≥ 0.95: d2 cleared by 0.24, s425 missed by **0.003
+against a measured per-seed SD of 0.031** — ten times smaller than the
+noise. The physics is confirmed three ways; the pre-registered claim is
+not met; both statements are on record and the threshold is not
+retro-fitted. (It was set before the ring measured that W₁ turns
+non-monotonically in a, which is what lifted s425.)
+
+**The one escape names the real owner.** `j1` (a 40 / τ 6.4) is the only
+cell beating h405 on KE₁ (0.6657, +0.029) while holding midHot in band
+(0.9774) — and it does it by *evaporating the shells*: lighter ions fly
+faster and vacate the mid-band. It pays W₁ 1.1454 and the worst tail
+measured (0.0521, n_max 14). **KE₁ = E_exit · m(1)/m_flight is a
+flight-mass observable and the I⁺Heₙ size distribution is what pins the
+flight mass** — two readings of one quantity. (a, τ, E₀) move mass
+between them but cannot decouple them, so raising KE₁ *requires* shedding
+mass, which *necessarily* moves the size distribution off the reference.
+The ring re-derives the `TIER2_MASS_SCENARIOS.md` thread from the drag
+side, independently.
+
+**Reported, non-gating:** χ²_med falls monotonically to **199.8 at a 45,
+below h405p's 267** — the KE *curve* is fit better than the incumbent
+exactly at the chords whose KE₁ *position* is worst, so χ² and KE₁ are
+not one axis; s45 midHot 0.841 dips just under the 0.85 soft floor; every
+ring cell is n₁ `gate-marginal` (0.188–0.214 against the 0.19 floor),
+which is precisely why the gate was made reporting-only for this ring
+(user call); j1 is the single policy-blocked row; trap benign family-wide
+(0.011–0.049).
+
+**Operational record (the ring cost three launches).** Two background
+launches at concurrency 3 were killed ~30–35 min in, both inside the
+relaxation→detection transition, leaving **truncated** checkpoints
+(218/295/315 MB vs a complete 420 MB) — so the interrupted MD was NOT
+recoverable and an in-session claim that it was is corrected. Disk was
+ruled out (24 GB free); a wall-clock limit was ruled out by the single-
+cell run completing. Concurrency was the discriminated cause; the ring
+finished as singles and pairs (user: "2 should be okay"). The §3.5b
+zero-MD detection-only recovery path was added to the generator for
+future interruptions, with a truncated-checkpoint fallback (the first
+attempt failed 3/3 with BadZipFile, which is the bug that exposed it).
+
+**Standing: nothing adopted.** Tier-0 (n̂ = 2.927), h405 and `finc1v725`
+stand. The free-form linear arm has now measured its boundary from both
+sides — §6.5 (KE-equivalent only) and §6.6 (no joint improvement) — and
+hands the residual forward as a flight-mass question.
+
+Records: plan §6.6 (design + findings), findings "§6.6 (a, τ) joint
+ring", D0 §1 form-entry bullet (D0-first rule), artifact
+`atlas_linjoint_table.csv`.

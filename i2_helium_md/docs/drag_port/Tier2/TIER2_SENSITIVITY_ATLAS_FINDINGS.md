@@ -3524,3 +3524,109 @@ which no twin column currently predicts at this corner.
 
 **Atlas stance:** unchanged. Nothing adopted; Tier-0's in-band rejection
 (n̂ = 2.927), h405 and `finc1v725` all stand.
+
+## §6.6 (a, τ) joint ring EXECUTED (2026-08-12, 6 × N = 500 at the §6.3 seed 20260731, CRN with the whole family) — **JR-P3 EMPTY: KE₁ and the histogram are NOT simultaneously improvable in this family. τ owns the histogram at every chord; the residual is a FLIGHT-MASS coupling, not a drag one**
+
+Plan §6.6, frozen and committed **before** launch (`bc0bb72`); instrument
+committed before any number was read (`71e5946`). Artifact:
+`atlas_linjoint_table.csv`. All cells `pure_linear`, `eb0482`, corrected
+geometry, seed 20260731 — deliberately the §6.3 ring seed, so every cell
+is CRN-paired ion-for-ion with lr1–lr7, `h405p` and the §6.5 clone.
+
+Oracles green before any number: LJ-P1 (all six frozen twin rows
+string-exact from the committed `atlas_linsweep.csv`), the §6.3 LR-P1,
+scorer-drift, KE-path, and committed-row anchors re-deriving both context
+rows (`h405p`, `lr6`) before either was used as a comparison target.
+
+### 1. The τ 4.8 a-curve — monotone in every observable at once
+
+| a | cell | W₁ | KE₁ | midHot | χ²_med | tail ≥ 10 | n₁ | n̄ |
+|---|---|---|---|---|---|---|---|---|
+| 35 | lr6 | **0.7848** | **0.7146** | 1.393 | 794.8 | 0.0961 | 0.2019 | 4.033 |
+| 37.5 | s37 | 0.7901 | 0.6533 | 1.216 | 559.7 | 0.0973 | 0.1998 | 3.927 |
+| 40 | s40 | 0.8311 | 0.5870 | 1.059 | 351.7 | 0.1029 | 0.1961 | 3.815 |
+| 42.5 | s425 | 0.8530 | 0.5568 | 0.969 | 405.5 | 0.1146 | 0.1884 | 4.020 |
+| 45 | s45 | 0.8785 | 0.5005 | **0.841** | **199.8** | **0.1173** | 0.1915 | 3.871 |
+
+`a` is a single dial that trades KE₁ against mid-band heat, χ² and the
+tail — and **W₁ gets worse the whole way**. With the ring's earlier
+points (0.877 at a 30, 0.856 at 32.5) the family's W₁ minimum is a
+genuine interior optimum at **a ≈ 35, worth 0.785 — still above h405's
+0.767**.
+
+### 2. τ owns the histogram — three chords, no overlap between the clocks
+
+| a | W₁ (τ 4.8) | W₁ (τ 6.4) | penalty |
+|---|---|---|---|
+| 35 | 0.785 (lr6) | **1.192** (d2) | +0.407 |
+| 40 | 0.831 (s40) | **1.145** (j1) | +0.314 |
+| 42.5 | 0.853 (s425) | **1.079** (clone) | +0.226 |
+
+The CRN per-ion shell flow vs `lr6` separates on exactly the same line:
+mean Δn is **+0.21…+0.53** at τ 4.8 (178–224 of lr6's 237 heavy ions
+survive at n ≥ 10) and **−7.65…−9.80** at τ 6.4 (94–114 survive). Trapped
+counts are 3–59 everywhere, so the tail is **evaporated, not captured** —
+the §6.5 anatomy's mechanism, now confirmed at three chords. The penalty
+shrinks monotonically with a (a real a×τ interaction), but τ 6.4 is
+disqualifying at every chord tested.
+
+**JR-P1 verdict, reported as frozen: MIXED.** The condition required
+`s425` ≤ 0.85 **and** `d2` ≥ 0.95. `d2` cleared its leg by 0.24; `s425`
+missed its by **0.003 against a measured per-seed SD of 0.031** — a
+margin ten times smaller than the noise. The physical claim (τ owns the
+damage) is supported at three chords and by the shell-flow diagnostic;
+the *pre-registered conjunction* is not met, and it is recorded as MIXED
+rather than upgraded. The threshold was set before the ring measured
+that W₁ turns non-monotonically in a, which is what lifted `s425`.
+
+### 3. JR-P3 empty, and the reason is structural
+
+No cell beats `h405p` on W₁ **and** KE₁ with midHot ≤ 1.15:
+
+- every cell that brings midHot into band (a ≥ 40, plus j1) sits **below**
+  h405 on KE₁;
+- every cell that beats h405 on KE₁ (a ≤ 37.5) is **out of band** on
+  midHot (1.216–1.393);
+- the family's best W₁ (0.785) is above h405's 0.767 to begin with.
+
+**JR-P4 — the Pareto front IS the result:** `h405p` (W₁ 0.767, KE₁ 0.637)
+and `lr6` (0.785, 0.715), with the lin cells lr5/lr3/lr7/lr1 extending
+the front to higher KE₁ at monotonically worse W₁ (up to 0.903 at 0.948).
+`lr6`'s W₁ deficit is +0.017 = **0.5σ** against its +0.077 eV KE₁
+advantage — but `lr6` fails the midHot cost line at 1.393.
+
+### 4. The one escape proves the mechanism — and names the real owner
+
+`j1` (a 40 / τ 6.4 / E₀ 0.31) is the **only** cell to beat h405 on KE₁
+(0.6657, +0.029) while holding midHot in band (0.9774). It achieves this
+by **evaporating the shells**: lighter ions fly faster and vacate the
+mid-band. The bill is W₁ 1.1454 and the worst tail measured (0.0521,
+n_max 14, Δn −7.65).
+
+That is the whole result in one cell. **KE₁ = E_exit · m(1)/m_flight is a
+flight-mass observable, and the I⁺Heₙ size distribution is the observable
+that pins the flight mass** — they are two readings of one quantity. The
+(a, τ, E₀) knobs can move mass between them; they cannot decouple them.
+Raising KE₁ *requires* shedding mass, which *necessarily* moves the size
+distribution away from the reference. This ring therefore re-derives the
+`TIER2_MASS_SCENARIOS.md` thread from the drag side, independently: the
+residual is a mass question, not a drag question.
+
+### 5. Reported, non-gating
+
+- **χ²_med falls monotonically to 199.8 at a 45 — below h405p's 267.**
+  The KE *curve* is fit better than the incumbent precisely at the chords
+  whose KE₁ *position* is worst; χ² and KE₁ are not the same axis.
+- `s45`'s midHot 0.841 dips just under the soft-band floor 0.85 (cold).
+- **Every ring cell returns `gate-marginal` on n₁** (0.188–0.214 against
+  the 0.19 floor) — the shelved (C) source-side deficit h405 shares, and
+  exactly why the gate was made reporting-only here (user call). `j1` is
+  the single policy-blocked row (n₁ passes, n̄ 3.764 marginal).
+- Trap stays benign family-wide (0.011–0.049 at τ 4.8, 0.014–0.040 at
+  τ 6.4), all bound.
+
+**Atlas stance:** unchanged. Nothing adopted; Tier-0's in-band rejection
+(n̂ = 2.927), h405 and `finc1v725` all stand. The free-form linear arm has
+now measured its own boundary from both sides — §6.5 (the clone is a
+KE-equivalent only) and §6.6 (no joint improvement exists) — and the open
+question it hands forward is the flight mass.

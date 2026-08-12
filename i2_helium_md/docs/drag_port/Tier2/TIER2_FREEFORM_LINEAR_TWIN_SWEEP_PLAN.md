@@ -957,6 +957,46 @@ adds the JR-P5 tail diagnostic, and commits the full vector to
 **Standing:** nothing adopted; instrument runs only. Tier-0's in-band
 rejection (n̂ = 2.927), h405 and `finc1v725` stand.
 
+**Findings — EXECUTED 2026-08-12 (6 × N = 500; full record in
+`TIER2_SENSITIVITY_ATLAS_FINDINGS.md` "§6.6 (a, τ) joint ring" and D0 §1;
+artifact `atlas_linjoint_table.csv`). JR-P3 is EMPTY — KE₁ and the
+histogram are not simultaneously improvable in this family:**
+
+- **JR-P2, the τ 4.8 a-curve, is monotone in everything at once**
+  (a 35 → 45): W₁ 0.785 → 0.790 → 0.831 → 0.853 → 0.879, KE₁ 0.715 →
+  0.653 → 0.587 → 0.557 → 0.501, midHot 1.393 → 0.841, tail 0.096 →
+  0.117. With the ring's a 30/32.5 points, the family's W₁ minimum is an
+  interior optimum at **a ≈ 35 worth 0.785 — above h405's 0.767**.
+- **JR-P1: MIXED as frozen.** `d2` cleared its leg by 0.24 (W₁ 1.192 vs
+  the ≥ 0.95 bar); `s425` missed its by **0.003 against a 0.031 SD**
+  (0.853 vs ≤ 0.85). Recorded as MIXED, not upgraded — though the
+  physical claim is confirmed at three chords (τ penalty +0.407/+0.314/
+  +0.226 at a 35/40/42.5, no overlap between the clocks) and by the
+  shell flow (Δn +0.21…+0.53 at τ 4.8 vs −7.65…−9.80 at τ 6.4, with only
+  3–59 ions trapped anywhere — **evaporated, not captured**).
+- **JR-P3 empty, structurally:** cells with midHot in band (a ≥ 40, j1)
+  are all below h405 on KE₁; cells beating h405 on KE₁ (a ≤ 37.5) are
+  all out of band on midHot.
+- **JR-P4 is therefore the result** — Pareto front `h405p` (0.767,
+  0.637) and `lr6` (0.785, 0.715), extended to higher KE₁ at worse W₁ by
+  lr5/lr3/lr7/lr1. `lr6`'s W₁ deficit is 0.5σ against +0.077 eV KE₁, but
+  it fails the midHot cost line (1.393).
+- **`j1` is the one escape and it names the owner:** the only cell
+  beating h405 on KE₁ (0.666) at in-band midHot (0.977) — achieved by
+  *evaporating the shells* (W₁ 1.145, tail 0.052, n_max 14). **KE₁ is a
+  flight-mass observable and the size distribution pins the flight
+  mass**; the knobs move mass between them but cannot decouple them.
+- Reported: χ²_med falls monotonically to **199.8 at a 45, below h405p's
+  267** (the KE curve fits better exactly where KE₁ is worst); every
+  cell is n₁ `gate-marginal` (0.188–0.214), which is why the gate was
+  reporting-only here; trap benign family-wide.
+
+**Consequence for the arm:** the free-form linear line has now measured
+its boundary from both sides — §6.5 (the clone is a KE-equivalent only)
+and §6.6 (no joint improvement exists) — and hands the residual forward
+as a **flight-mass** question (`TIER2_MASS_SCENARIOS.md`), not a drag
+one. Nothing adopted.
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact

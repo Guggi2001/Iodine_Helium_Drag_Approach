@@ -260,9 +260,18 @@ overheating); nothing adopted. The §6.5 h405-clone battery (2026-08-12,
 matches h405 to −0.006 eV and midHot returns to 0.891 (so the mid-band
 overheating is an *a*-coordinate, not a property of constant γ), but
 W₁ lands 1.079 vs 0.765 and n₁ sits on the gate floor (`gate-marginal`);
-twin W₁ is measured non-transferable outside the ring's box. NEXT USER
-GATE: routing the clone (accept-marginal / re-site / recalibrate) + the
-§6.3 adoption discussion and escalation battery.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+twin W₁ is measured non-transferable outside the ring's box. The §6.6
+(a, τ) joint ring (2026-08-12, 6 × N = 500) then closed the arm's central
+question: **JR-P3 empty — KE₁ and the histogram are NOT simultaneously
+improvable here.** The τ 4.8 a-curve is monotone in everything at once,
+the family's W₁ minimum (0.785 at a ≈ 35) sits above h405's 0.767, τ 6.4
+costs +0.23…+0.41 W₁ at every chord by *evaporating* the shells, and the
+one cell beating h405 on KE₁ at in-band midHot (`j1`) pays W₁ 1.145 —
+i.e. **KE₁ is a flight-mass observable and the size distribution pins the
+flight mass**, so the residual is a mass question (`TIER2_MASS_SCENARIOS.md`),
+not a drag one. NEXT USER GATE: routing the clone (accept-marginal /
+re-site / recalibrate) + the §6.3 adoption discussion and escalation
+battery.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
 2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
 half the naive ledger value (shared-erf well/density overlap refunds
 ~45 %), form- and depth-invariant, trap lever form-split, and the axis is
