@@ -59,6 +59,7 @@ import os
 from pathlib import Path
 import sys
 from typing import NamedTuple, Optional
+import zipfile
 
 for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
              "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
@@ -94,7 +95,15 @@ from scripts.gen_tier2atlas_linring import (  # noqa: E402
 from scripts.tier0_common import run_dir_name  # noqa: E402
 from scripts.tier2_common import cfg_diff_vs_reference  # noqa: E402
 from i2_helium_md.config import SimConfig  # noqa: E402
-from i2_helium_md.simulation.detection_stage import run_detection_stage  # noqa: E402
+from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
+    read_confirmation_detection,
+)
+from i2_helium_md.simulation.checkpoint import load_ion_checkpoint  # noqa: E402
+from i2_helium_md.simulation.detection_stage import (  # noqa: E402
+    load_detection_result,
+    run_detection_stage,
+    save_detection_result,
+)
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
 from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
 from i2_helium_md.simulation.relaxation_stage import run_relaxation_stage  # noqa: E402
@@ -156,6 +165,21 @@ OVERWRITE_EXISTING_RUN = True
 _REQUIRED_ARTIFACTS: tuple[str, ...] = (
     "cfg.json", "neutral.npz", "ion.npz", "relaxation.npz", "detection.npz",
 )
+
+# Artifacts that make a cell resumable at the detection step: everything the
+# MD produced. A cell holding these needs ZERO new MD to be completed — the
+# §3.5b geometry-grid recovery path (`gen_tier2atlas_geometry.py`), reused
+# here after the 2026-08-12 wave-1 interruptions killed the ring twice inside
+# the detection stage with the 30-minute relaxation already on disk.
+_PRE_DETECTION_ARTIFACTS: tuple[str, ...] = (
+    "cfg.json", "neutral.npz", "ion.npz", "relaxation.npz",
+)
+
+# This ring changes NOTHING about a stored cell when it resumes — unlike the
+# geometry grid (which was allowed to re-policy), a resumed cell here must
+# rebuild to a byte-identical cfg. Any difference means the MD on disk came
+# from different physics and must not be reused.
+_DETECTION_ONLY_DIFF_KEYS: frozenset[str] = frozenset()
 
 
 # =============================================================================
@@ -266,6 +290,56 @@ def _run_is_complete(run_dir: Path) -> bool:
     return all((run_dir / name).exists() for name in _REQUIRED_ARTIFACTS)
 
 
+def _run_detection_only(label: str, cfg: SimConfig, run_dir: Path) -> str:
+    """Complete an interrupted cell from its stored ``relaxation.npz`` —
+    **zero new MD** (the §3.5b geometry-grid recovery path).
+
+    The stored cfg is diffed against the freshly built one first: nothing may
+    have moved (see :data:`_DETECTION_ONLY_DIFF_KEYS`), otherwise the MD on
+    disk was produced under different physics and reusing it would be
+    silently wrong. If ``detection.npz`` somehow exists it must reproduce
+    bit-for-bit; a differing result is raised, never overwritten.
+    """
+    stored_diff = cfg_diff_vs_reference(
+        cfg, run_dir / "cfg.json", context=f"{label} (stored)")
+    if not set(stored_diff) <= _DETECTION_ONLY_DIFF_KEYS:
+        raise AssertionError(
+            f"[{label}] stored cfg differs from the rebuilt cfg in "
+            f"{sorted(stored_diff)} — the MD on disk was produced under "
+            "different physics and must not be reused. Delete the run dir to "
+            "recompute it from scratch."
+        )
+    seed_ckpt = load_ion_checkpoint(run_dir / "relaxation.npz")
+    print(f"[{label}] detection-only (ZERO MD) from relaxation.npz "
+          f"({(run_dir / 'relaxation.npz').stat().st_size / 1e6:.0f} MB) ...",
+          flush=True)
+    detect = run_detection_stage(seed_ckpt, cfg, save_path=None)
+
+    det_path = run_dir / "detection.npz"
+    if det_path.exists():
+        previous = load_detection_result(det_path)
+        same = np.array_equal(np.asarray(detect.n_detected),
+                              np.asarray(previous.n_detected)) and np.array_equal(
+                                  np.asarray(detect.state_reason),
+                                  np.asarray(previous.state_reason))
+        if not same:
+            raise AssertionError(
+                f"[{label}] the recomputed detection result DIFFERS from the "
+                "stored one; nothing was written. Investigate before "
+                "overwriting."
+            )
+        print(f"[{label}] ORACLE OK: detection reproduces the stored result.",
+              flush=True)
+    save_detection_result(detect, det_path)
+    read = read_confirmation_detection(detect, label=label)
+    print(f"[{label}] done (zero MD) -> {run_dir} "
+          f"(scored={read.num_scored}/{read.num_ions}, "
+          f"trap_bound={read.trap_bound_frac:.3f}, "
+          f"trap_marginal={read.trap_marginal_frac:.3f}, "
+          f"n_mean={read.n_mean:.2f})", flush=True)
+    return label
+
+
 def _run_one(label: str) -> str:
     cell = _SPEC_BY_LABEL[label]
     cfg, _ = verify_joint_cell(label)
@@ -274,6 +348,17 @@ def _run_one(label: str) -> str:
         if SKIP_COMPLETED_RUNS and _run_is_complete(run_dir):
             print(f"[{label}] skip (complete) -> {run_dir}", flush=True)
             return label
+        if all((run_dir / name).exists() for name in _PRE_DETECTION_ARTIFACTS):
+            # Interrupted after relaxation: the expensive MD may be on disk.
+            # "Exists" is NOT "readable" — a run killed *during* the
+            # checkpoint write leaves a truncated npz (measured 2026-08-12:
+            # 218-315 MB against a complete 420 MB). Fall through to a full
+            # recompute in that case instead of failing forever.
+            try:
+                return _run_detection_only(label, cfg, run_dir)
+            except (zipfile.BadZipFile, EOFError, OSError, ValueError) as exc:
+                print(f"[{label}] stored relaxation.npz is unusable ({exc!r}) "
+                      "— recomputing the cell from scratch.", flush=True)
         if not OVERWRITE_EXISTING_RUN:
             raise FileExistsError(f"{run_dir} exists and is not complete.")
     run = RunDirectory(run_dir)

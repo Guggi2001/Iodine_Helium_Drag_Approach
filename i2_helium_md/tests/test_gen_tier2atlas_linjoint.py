@@ -136,6 +136,38 @@ class TestLjP1Oracle:
         assert "LR-P1 twin oracle PASSED" in out
 
 
+class TestDetectionOnlyRecovery:
+    """The §3.5b zero-MD recovery path, added after the 2026-08-12 wave-1
+    interruptions killed the ring inside the checkpoint write."""
+
+    def _stored(self, tmp_path, label):
+        from i2_helium_md.simulation.run_directory import RunDirectory
+        cfg = _build(label)
+        RunDirectory(tmp_path).save_cfg(cfg)
+        return cfg
+
+    def test_truncated_checkpoint_raises_a_caught_exception(self, tmp_path):
+        # A run killed mid-write leaves a partial npz. The recovery path must
+        # fail with an exception the caller catches (so it falls back to a
+        # full recompute) rather than something that escapes.
+        import zipfile
+        from scripts.gen_tier2atlas_linjoint import _run_detection_only
+        cfg = self._stored(tmp_path, "s425")
+        (tmp_path / "relaxation.npz").write_bytes(b"PK\x03\x04 truncated...")
+        with pytest.raises((zipfile.BadZipFile, EOFError, OSError, ValueError)):
+            _run_detection_only("s425", cfg, tmp_path)
+
+    def test_stored_cfg_mismatch_refuses_to_reuse_the_md(self, tmp_path):
+        # Physics on disk must match the rebuilt cell exactly — this ring
+        # allows no diff at all when resuming.
+        from scripts.gen_tier2atlas_linjoint import _run_detection_only
+        self._stored(tmp_path, "s425")
+        (tmp_path / "relaxation.npz").write_bytes(b"unused")
+        other = _build("s40")
+        with pytest.raises(AssertionError, match="must not be reused"):
+            _run_detection_only("s40", other, tmp_path)
+
+
 class TestParetoHelper:
     def test_front_minimises_w1_and_maximises_ke1(self):
         from scripts.post_processing.tier2atlas_linjoint_table import (
