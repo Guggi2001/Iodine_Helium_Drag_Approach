@@ -672,6 +672,142 @@ exponent* at fixed corner; this softens the *corner* at fixed tail.)
 readings of a committed twin artifact. Tier-0, h405, and finc1v725
 stand.
 
+### 6.5 h405-clone MD battery — DESIGN FROZEN (2026-08-12, discussion-adjudicated; `[PROCEED TO IMPLEMENTATION]` given)
+
+The §6.4 item-2 reading is a **twin** forecast. This battery measures it
+in MD: does the uncapped, kink-free pure-linear cell actually reproduce
+the h405 landing? The §6.3 ring never went there — it covered
+a ∈ [27.5, 35] at τ 4.8, and the clone sits at **a 42.5 / τ 6.4**,
+outside the measured twin↔MD bias box in *both* swept axes. That
+extrapolation is the reason MD is required and, per CL-P6 below, is a
+program product regardless of the verdict.
+
+**Cell (one) × seeds (three), N = 500.** `pure_linear a = 42.5 amu/ps /
+E_bind 0.0482 (eb0482) / τ 6.4 ps / E₀ 0.31 eV`, corrected geometry,
+standing pins otherwise — the committed `atlas_linsweep.csv` row
+verbatim (Φ 0.985; twin KE₁ 0.6153, midHot 1.0144, deepKE 0.6444,
+W₁ 0.6857, n₁ 0.1966, n̄ 4.576, trap-floor 0.0476, supp 0.0456).
+Seeds **20260731** (the §6.3 ring seed — the clone thereby slots into
+the committed ring table as a same-N, same-seed 8th cell directly
+comparable to lr1–lr7, *and* CRN-pairs for free against the committed
+`h405p` partner) **+ 20260812 + 20260813** (fresh, audited unused —
+committed generators end at 20260734). ≈ 45 min at concurrency 3.
+
+**No new h405 MD is needed, and that is measured, not assumed.** The
+committed g4 Step-2 battery (h405, N = 1000, seeds 20260730–34) has a
+seed spread small enough that the comparison target is a constant:
+
+| | KE₁ | midHot | n₁ | n̄ | W₁ | trap | deepKE |
+|---|---|---|---|---|---|---|---|
+| h405 5-seed mean | 0.6406 | 0.9464 | 0.2094 | 3.877 | 0.765 | 0.078 | 0.503 |
+| per-seed SD | **0.0024** | 0.0074 | 0.0102 | 0.047 | 0.030 | 0.0076 | 0.028 |
+
+Cross-N licence: the committed N = 500 `h405p` agrees with the N = 1000
+pooled battery on every intensive observable within ~2σ (KE₁ 0.6371 vs
+0.6406, midHot 0.9466 vs 0.9464, W₁ 0.7675 vs 0.7653, n₁ 0.2054 vs
+0.2094; the two ~2σ entries are trap 0.063 vs 0.078 and n̄ 3.748 vs
+3.877). **Exception — χ²_med is N-extensive** (267 at N = 500 vs 461 at
+N = 1000): the clone's χ² is compared to `h405p` and per-seed only,
+never to the pooled N = 1000 number.
+
+**Measured resolution at 3 × N = 500 (pooled 1500 ions).** Per-seed SDs
+are taken from the battery table above, scaled ×√2 to N = 500, and
+SE = SD/√3:
+
+| read | pooled SE | band | quality |
+|---|---|---|---|
+| CL-P2 ΔKE₁ | ≈ 0.003 | ≤ 0.05 | decisive |
+| CL-P3 midHot | ≈ 0.006 | ≤ 1.15 (forecast ≈ 0.92) | decisive |
+| CL-P1 n̄ | ≈ 0.038 | [3.77, 4.37] (forecast 3.99–4.12) | decisive |
+| CL-P1 n₁ | ≈ 0.008 | ≥ 0.19 (forecast **0.19–0.20**) | **marginal — the failure mechanism** |
+| CL-P4 trap | ≈ 0.006 | reported | fine |
+| CL-P5 W₁ | ≈ 0.024 (ring disclosure ±0.13/seed) | reported-only | fine |
+
+The N cut costs nothing on the two headline reads; it costs only on n₁,
+which is where the run was already most likely to fail.
+
+**Frozen reads (pre-registered before launch):**
+
+- **CL-P1 — hard gate**, pooled ensemble, both retained-policy arms:
+  n₁_solv ∈ [0.19, 0.30] ∧ n̄_det ∈ [3.77, 4.37] (the §6.3 MD-side
+  realization). **Three-way outcome, forced by the N cut:** a pooled
+  value within 1 SE of a band edge returns **gate-marginal** — neither
+  pass nor fail — where SE is the *measured* per-seed SD/√3 of this
+  battery, not a forecast. Per-seed verdicts are reported with their
+  spread; no single seed decides.
+- **CL-P2 — equivalence:** |ΔKE₁| ≤ 0.05 eV vs h405. The ring's K-KE
+  kill is **inverted here** — this run is an equivalence test, the
+  clone *wants* ΔKE₁ ≈ 0, and a large positive ΔKE₁ would mean the cell
+  is not a clone, not that it won.
+- **CL-P3 — the cost read:** midHot ≤ 1.15 (the soft band top). The
+  §6.3 ring's honest cost was midHot 1.39–1.98; the twin says the clone
+  returns to 1.014. This is the read that decides whether mid-band
+  overheating is an a-dial artifact or intrinsic to constant γ.
+- **CL-P4 — trap:** reported decomposed (bound/marginal); no kill
+  (§4.1). Flagged if the marginal class is non-zero (the ring measured
+  zero in-family) or Δtrap vs h405 > +0.05. Twin floor here is 0.0476,
+  4× the ring cells' — the a-axis raises the low-v over-drag.
+- **CL-P5 — W₁: reported-only** (user-adjudicated 2026-08-12). W₁ never
+  gated anywhere in this arm and the histogram-level landing was
+  measured form-blind in §6.6; a pooled loss > +0.10 vs h405 is recorded
+  as an honest cost line beside midHot/χ², and cannot overturn
+  CL-P1..P3. Standing expectation: the lin family's twin W₁ ran ~0.2
+  cold in the ring, so a clone W₁ ≈ 0.85 vs h405's 0.766 is the
+  *forecast*, not a surprise.
+- **CL-P6 — authority-box extension:** the measured twin−MD deltas at
+  a 42.5 / τ 6.4 are committed beside the MD values and compared to the
+  ring-measured in-family bias ranges (KE₁ twin−MD −0.010…−0.015; n₁
+  ≤ 0.006; n̄ +0.46…+0.59). Outside those ranges ⇒ the bias vector is
+  declared a-/τ-dependent. **This product lands regardless of the
+  verdict** — it is the first bias data outside the ring's box.
+
+**Failure branch, pre-registered (no improvisation).** Any of CL-P1
+miss / CL-P2 / CL-P3 miss routes to **§6.2 item 1's recalibration
+machinery, not a new ring**: CL-P6's measured bias vector is applied to
+the committed `atlas_linsweep.csv` and the twin re-scanned
+bias-corrected — **zero MD** — which *names* the corrected clone cells.
+A second MD iteration is a **new user gate**, never automatic.
+
+**Instrument.** `scripts/gen_tier2atlas_linclone.py` — 3 runs built
+through `gen_tier2atlas_linring.build_cell` with only the seed replaced
+(rule 1: no second copy of the cell construction), reusing that module's
+`verify_corrected_geometry` / `verify_against_reference` guards and free-form
+provenance posture (`extraction_method="free_form"`, no §6.5.1 binding
+stamp, `allow_unvalidated_binding_pairing`). Scorer
+`scripts/post_processing/tier2atlas_linclone_table.py` extends the
+§6.3 ring scorer (Arm A/Arm B via the §3.5b bracket, KE + width columns,
+trap decomposition, CRN fate flow, twin join) and pools the three seeds
+with `pool_confirmation_reads`. Artifact:
+`atlas_linclone_table.csv` — per-seed + pooled, full observable vector
+incl. every KE column, twin-forecast columns beside MD (memory rule).
+
+**Oracles, all before any new number:**
+
+1. **LC-P1** — the frozen clone twin row reproduces **string-exact**
+   from the committed `atlas_linsweep.csv`, plus the §6.3 ring's own
+   LR-P1 (7 lin rows + h405 authority anchor) re-run unchanged.
+2. **CRN guard (the pairing *is* the guard).** The seed-20260731 cell's
+   cfg diff vs the committed `h405p` cfg must contain neither `seed` nor
+   `num_molecules` — their identity is what makes the pair CRN. The two
+   fresh-seed cells must diff against the 20260731 cell in exactly
+   `{"seed"}` (the g4 Step-2 precedent).
+3. **Partner anchor** — the committed `atlas_linring_table.csv` `h405p`
+   row is re-derived by this scorer before it is used as the Δ target
+   (gate-on-committed-artifacts rule).
+4. Scorer-drift + KE-path oracles inherited from the ring scorer;
+   default path inert (`pure_linear` already suite-covered).
+
+**Outcome semantics (§0 unchanged — nothing is adopted by this run).**
+CL-P1 ∧ CL-P2 ∧ CL-P3 all passing = *an uncapped, kink-free pure-linear
+cell reproduces the h405 landing in real MD*. That **opens** the
+form-choice on the §6.4 item-3 deviation-accounting grounds; it does
+not settle it, because Tier-0's in-band rejection (n̂ = 2.927) is
+untouched by any Tier-2 landing. A gate miss on the n₁ floor means the
+twin transfer breaks outside the ring's measured box. midHot > 1.15
+means the mid-band overheating is **form-intrinsic to constant γ**, not
+an a-dial artifact — which is the cleanest available answer to the
+question that opened §6.4.
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact
