@@ -808,6 +808,40 @@ means the mid-band overheating is **form-intrinsic to constant γ**, not
 an a-dial artifact — which is the cleanest available answer to the
 question that opened §6.4.
 
+**Findings — EXECUTED 2026-08-12 (3 × N = 500; full record in
+`TIER2_SENSITIVITY_ATLAS_FINDINGS.md` "§6.5 h405-clone MD battery" and
+D0 §1; artifact `atlas_linclone_table.csv`).** All four oracles green
+including the CRN guard. **The clone is a KE-equivalent, not a
+landing-equivalent:**
+
+- **CL-P2 PASS** — pooled KE₁ 0.6348 vs the h405 battery 0.6406,
+  ΔKE₁ **−0.0059 eV** (CRN pair −0.0016) against a ±0.05 band.
+- **CL-P3 PASS, and it inverts the §6.3 cost** — midHot **0.891**,
+  *cooler* than h405's 0.946 and far below the ring's 1.39–1.98;
+  per-seed χ² 173/234/241 vs h405p's 267. **Mid-band overheating is an
+  a-coordinate, not a property of constant γ.**
+- **CL-P1 `gate-marginal`, both policy ends** — n̄ 3.993 passes; n₁
+  0.1921 sits *on* the 0.19 floor (gap 0.0021, per-seed SD 0.0181 ⇒
+  ~72 seeds of N = 500 to separate). Boundary is the measurement, not a
+  resolution shortfall.
+- **CL-P4 benign** — trap 0.062 *below* h405's 0.078, marginal 2 ions,
+  CRN flow new-trapped 1 / freed 9; supp 0.051 vs 0.216.
+- **CL-P5 the cost that names the result** — W₁ **1.079 vs 0.765**
+  (+0.314) while both histogram *moments* sit at/inside band: the
+  moments match, the shape does not.
+- **CL-P6 the box does NOT extend here** — n₁/n̄ transfer inside the
+  ring ranges, KE₁ (−0.0195) outside, and **twin W₁ collapses (0.686 →
+  MD 1.079, −0.39 bias vs the ring's ≈ −0.2)**. The §6.4 clone claim
+  rested on a 0.017 twin-W₁ gap; the transfer error here is ~20× it.
+
+**Standing:** nothing adopted. §6.2 item 1 is pre-registered for a
+*miss* and this is not one, so routing (accept-marginal / re-site off
+the n₁ floor / recalibrate) is a **USER GATE**. Note the target has
+changed shape: a re-sited search is no longer for an h405 *clone* — the
+twin coordinate that promised one is now measured untrustworthy at this
+corner — but for a linear cell that lands the histogram *shape*, which
+no twin column currently predicts here.
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact

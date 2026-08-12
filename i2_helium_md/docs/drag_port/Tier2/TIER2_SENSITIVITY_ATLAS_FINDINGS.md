@@ -3426,3 +3426,101 @@ document, **`TIER2_MASS_SCENARIOS.md`**. Full mechanism record: D0 §9.6.
 
 **Atlas stance:** unchanged. Nothing adopted; Tier-0, h405 and
 `finc1v725` all stand.
+
+## §6.5 h405-clone MD battery EXECUTED (2026-08-12, 3 × N = 500, seeds 20260731/0812/0813, CRN vs the committed h405p) — **the clone is a KE-EQUIVALENT, not a landing-equivalent: KE₁ matches h405 to −0.006 eV and midHot comes back *cooler* than h405 (0.891 vs 0.946), but W₁ lands 1.079 vs 0.765 and n₁ sits ON the gate floor (gate-marginal, both policy ends)**
+
+Plan §6.5, pre-registered and committed **before** launch (`bfdc053`);
+instrument committed before any number was read (`73de255`). Cell:
+`pure_linear a = 42.5 amu/ps / eb0482 / τ 6.4 ps / E₀ 0.31 eV` — the
+§6.4 item-2 "h405 clone", the one committed twin row that reproduces the
+h405 landing vector from a **kink-free, uncapped** law. Artifact:
+`atlas_linclone_table.csv` (per-seed + pooled, full vector, twin-forecast
+columns). MD ≈ 45 min at concurrency 3; all three runs clean.
+
+**Oracles (all four green before any number):** LC-P1 — the frozen clone
+twin row reproduces string-exact from the committed `atlas_linsweep.csv`;
+the §6.3 LR-P1 (7 lin rows + h405 authority anchor) re-run unchanged;
+scorer-drift + KE-path; and a **partner-anchor** oracle re-deriving the
+committed `atlas_linring_table.csv` `h405p` row before it was used as a
+Δ target. **CRN guard** (the pairing *is* the guard): the seed-20260731
+member's cfg diff vs `h405p` contained neither `seed` nor
+`num_molecules`, and was otherwise exactly the six pre-registered keys.
+
+### 1. Results
+
+| | s1 (20260731) | s2 (20260812) | s3 (20260813) | pooled | h405p (N = 500) | h405 battery (N = 1000 ×5) |
+|---|---|---|---|---|---|---|
+| n₁_solv | 0.1937 | 0.1734 | 0.2095 | **0.1921** | 0.2054 | 0.2094 |
+| n̄_det | 3.912 | 4.104 | 3.965 | **3.993** | 3.748 | 3.877 |
+| KE₁ | 0.6355 | 0.6367 | 0.6324 | **0.6348** | 0.6371 | 0.6406 |
+| KE₂ | 0.5226 | 0.5257 | 0.5290 | 0.5257 | 0.5511 | 0.5493 |
+| midHot | 0.8878 | 0.8925 | 0.8913 | **0.8909** | 0.9466 | 0.9464 |
+| deepKE | 0.333 | 0.369 | 0.412 | 0.376 | 0.472 | 0.503 |
+| W₁ | 1.083 | 1.116 | 1.054 | **1.079** | 0.7675 | 0.7653 |
+| trap | 0.055 | 0.068 | 0.063 | 0.062 | 0.063 | 0.078 |
+| supp | 0.060 | 0.041 | 0.052 | 0.051 | 0.216 | 0.194 |
+| χ²_med | 234.1 | 241.1 | 173.1 | (N-ext.) | 267.3 | (N-ext.) |
+
+### 2. Verdicts against the frozen reads
+
+- **CL-P1 — `gate-marginal` under BOTH retained-policy ends** (Arm A and
+  Arm B agree; policy-blocked = 0; marginal class = 2 ions). n̄ passes
+  comfortably (3.993 in [3.77, 4.37]); **n₁ 0.1921 sits on the 0.19
+  floor**, gap 0.0021 against a measured per-seed SD of 0.0181. Per-seed
+  the gate flips 2/3 (s2 misses at 0.1734). **Resolving this is not a
+  matter of more seeds:** SE = SD/√k puts the requirement at **~72 seeds
+  of N = 500**. The cell *is* boundary; that is the measurement.
+- **CL-P2 — PASS, and not marginally.** Pooled KE₁ 0.6348 vs the
+  committed h405 battery 0.6406 ⇒ **ΔKE₁ = −0.0059 eV** against a
+  ±0.05 band; the same-seed same-N CRN pair gives **−0.0016**. The
+  §6.4 KE₁ forecast (0.615 vs 0.624) is confirmed in MD, and the
+  equivalence is an order of magnitude tighter than the band.
+- **CL-P3 — PASS, and it inverts the §6.3 cost.** midHot **0.891**,
+  *below* h405's own 0.946 and far below the ring's 1.39–1.98 at
+  a 27.5–35. Per-seed χ²_med 173/234/241 vs h405p's 267 — the KE-curve
+  fit is as good or better. **The mid-band overheating is therefore NOT
+  form-intrinsic to constant γ; it is a position on the a dial.** This
+  is the direct answer to the question that opened §6.4.
+- **CL-P4 — no substantive flag.** Trap 0.062 (bound 0.0613, marginal
+  0.0007 = 2 ions) is *below* h405's 0.078; Δtrap = −0.016; CRN fate
+  flow new-trapped 1 / freed 9. The scorer's flag fired only on the
+  non-zero-marginal trigger (2 ions out of ~2800) — the substantive
+  read is benign, and the low-v over-drag fear does not revive at 1.5×
+  the ring's chord. Suppression collapses to 0.051 vs h405p's 0.216.
+- **CL-P5 — W₁ 1.079 vs 0.765, Δ +0.314 (cost line).** Reported-only by
+  the pre-launch user adjudication and it cannot overturn CL-P1..P3 —
+  but it is the finding that names the result: **the two histogram
+  moments (n₁, n̄) sit at/inside their bands while the distribution
+  *shape* does not match.** The clone reproduces h405's KE observables,
+  not h405's landing.
+- **CL-P6 — the in-family twin↔MD box does NOT extend to this corner.**
+  n₁ (twin−MD +0.0045) and n̄ (+0.583) transfer inside the §6.3 ranges;
+  KE₁ (−0.0195) falls outside [−0.015, −0.010]; and **W₁ transfer
+  collapses — twin 0.686 → MD 1.079, a −0.39 bias against the ring's
+  ≈ −0.2.** The §6.4 clone claim rested on twin W₁ 0.686 vs h405's
+  0.703, a 0.017 gap; the transfer error at this corner is ~20× that
+  gap. Twin W₁ is not transferable at a 42.5 / τ 6.4.
+
+### 3. What this settles, and what it does not
+
+**Settled:** (i) an uncapped, kink-free pure-linear law *can* match the
+incumbent on the KE observables — KE₁ to 0.006 eV, KE curve to a better
+χ², midHot cooler, trap lower — so "the cap buys the KE landing" is
+false; (ii) the ring's mid-band overheating is an a-coordinate, not a
+property of the form; (iii) the twin's W₁ authority, licensed in the
+ring's a 27.5–35 / τ 4.8 box, does **not** hold at a 42.5 / τ 6.4 —
+every future free-form claim resting on twin W₁ outside that box is
+unsupported until re-measured.
+
+**Not settled:** whether the clone gates. CL-P1 returned the
+pre-registered third outcome, and the §6.2 item-1 recalibration branch
+is pre-registered for a **miss**, which this is not. Routing —
+accept-marginal, re-site the cell off the n₁ floor, or recalibrate — is
+a **user gate**. Note also that the W₁ result changes what a re-sited
+cell would be looking for: the search would no longer be for an h405
+*clone* (the twin coordinate that promised it is now measured
+untrustworthy) but for a linear cell that lands the histogram *shape*,
+which no twin column currently predicts at this corner.
+
+**Atlas stance:** unchanged. Nothing adopted; Tier-0's in-band rejection
+(n̂ = 2.927), h405 and `finc1v725` all stand.

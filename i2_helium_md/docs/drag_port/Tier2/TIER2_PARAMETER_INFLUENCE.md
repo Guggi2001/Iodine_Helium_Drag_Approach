@@ -288,6 +288,49 @@
   exponent). Arm 2 already closed the ram term (c = 0 optimal), so
   the flatness is what the landing wants.
 
+- **The clone is MD-measured a KE-equivalent, NOT a landing-equivalent
+  — and the ring's mid-band overheating is a position on the a dial,
+  not a property of constant γ (h405-clone battery, 2026-08-12,
+  3 × N = 500 seeds 20260731/0812/0813, CRN vs the committed h405p;
+  plan §6.5, `atlas_linclone_table.csv`).** At `pure_linear a 42.5 /
+  eb0482 / τ 6.4 / E₀ 0.31` the KE side of the §6.4 forecast transfers
+  and the histogram side does not:
+  - **KE₁ equivalence confirmed** — pooled 0.6348 vs the committed
+    h405 battery 0.6406 (Δ **−0.0059 eV**; the same-seed same-N CRN
+    pair gives **−0.0016**), against a ±0.05 band. χ²_med per seed
+    173/234/241 vs h405p's 267 — the KE *curve* fit is as good or
+    better (pooled χ² is N-extensive and not comparable).
+  - **midHot 0.891 — cooler than h405 itself (0.946), against the
+    ring's 1.39–1.98 at a 27.5–35.** The §6.3 "honest cost" is
+    therefore **not form-intrinsic**: constant γ can be mid-band
+    neutral; where it sits on the NB-RQ11-12 coordinate is set by a,
+    not by the form. (deepKE 0.376, i.e. cold, vs h405p 0.472.)
+  - **Trap stays dead at 1.5× the ring's chord:** 0.062 (bound 0.0613,
+    marginal 0.0007 = 2 ions) *below* h405's 0.078; CRN fate flow
+    new-trapped 1 / freed 9. The low-v over-drag fear does not revive
+    at a = 42.5. Suppression collapses to 0.051 vs h405p's 0.216
+    (τ 6.4 + E₀ 0.31).
+  - **But W₁ 1.079 vs h405 0.765 (+0.31)** while n₁ 0.192 and n̄ 3.99
+    sit at/inside their gate bands — the two histogram *moments* match
+    and the *shape* does not. Reported-only per the §6.5 user
+    adjudication; it cannot overturn the KE reads, and it is what makes
+    "clone" the wrong word for anything but the KE observables.
+  - **n₁ sits ON the gate floor**: pooled 0.1921 vs the 0.19 edge, gap
+    0.0021, per-seed 0.1734/0.1937/0.2095 (SD 0.0181) ⇒ **~72 seeds of
+    N = 500** would be needed to separate it from the edge. Verdict
+    `gate-marginal` under **both** retained-policy ends (not
+    policy-blocked). That is a measurement, not a resolution
+    shortfall — this cell is boundary, and no affordable MD makes it
+    otherwise.
+  - **CL-P6 — the in-family twin↔MD box does NOT extend to this
+    corner.** n₁ (twin−MD +0.0045) and n̄ (+0.583) transfer inside the
+    §6.3 ring ranges, but KE₁ (−0.0195) falls outside [−0.015, −0.010],
+    and **W₁ transfer collapses: twin 0.686 → MD 1.079, a −0.39 bias
+    against the ring's ≈ −0.2.** The §6.4 clone claim rested on the
+    twin W₁ being within 0.02 of h405's; that specific number is now
+    measured wrong by an order of magnitude more than the gap it was
+    asserting. Twin W₁ is not transferable at a 42.5 / τ 6.4.
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).

@@ -95,7 +95,7 @@ _TIER3_NOTE = (
 # Run directory holding cfg.json + ion.npz + relaxation.npz + detection.npz.Ag
 RUN_DIR: Path = (
     PROJECT_ROOT / "data" / "runs"
-    / "9A_drag_shared_pure_cubic_N1000_tier2atlas_conf270_g4fh415"
+    / "9A_drag_shared_pure_cubic_N500_tier2atlas_conf270_linclones3"
 )
 
 # Reference paths (same meanings as in plot_run_summary.py). ``None``

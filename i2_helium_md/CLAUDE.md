@@ -255,8 +255,14 @@ selected in-family) + the §6.1 CRN MD ring all EXECUTED: **the ring
 LANDS — 6/7 cells gate both-policy-clean, K-KE not fired, SUCCESS at
 five cells (best MD KE₁ 0.903 at a = 27.5 vs h405p 0.637; `pure_linear`
 form now in `physics/drag.py`; trap axis dead; cost = mid-band
-overheating); nothing adopted. NEXT USER GATE: the adoption discussion
-+ escalation battery (plan §6.3).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+overheating); nothing adopted. The §6.5 h405-clone battery (2026-08-12,
+3 × N = 500) then measured that clone a **KE-equivalent only** — KE₁
+matches h405 to −0.006 eV and midHot returns to 0.891 (so the mid-band
+overheating is an *a*-coordinate, not a property of constant γ), but
+W₁ lands 1.079 vs 0.765 and n₁ sits on the gate floor (`gate-marginal`);
+twin W₁ is measured non-transferable outside the ring's box. NEXT USER
+GATE: routing the clone (accept-marginal / re-site / recalibrate) + the
+§6.3 adoption discussion and escalation battery.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
 2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
 half the naive ledger value (shared-erf well/density overlap refunds
 ~45 %), form- and depth-invariant, trap lever form-split, and the axis is

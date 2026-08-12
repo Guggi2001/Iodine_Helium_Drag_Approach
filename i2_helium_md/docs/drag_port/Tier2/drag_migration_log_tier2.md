@@ -13310,3 +13310,98 @@ question (M5). M1 still gates Route A; it no longer decides Route B.
 Doc updated: header note, §4.1 (new), §10.2 (measured v_peak), §12
 (criterion), §13.4/§13.5 (R9 + revised verdict). Nothing adopted; no code
 written; no committed artifact rewritten.
+
+---
+
+## 2026-08-12 — free-form linear §6.5: the h405-clone MD battery EXECUTED (3 × N = 500) — **KE-equivalent CONFIRMED, landing-equivalent REFUTED; the ring's mid-band overheating is an a-coordinate, not a property of constant γ**
+
+User request: run the N = 500 MD the §6.4 adoption-discussion reading
+never got — does the uncapped, kink-free `pure_linear a 42.5 / eb0482 /
+τ 6.4 / E₀ 0.31` cell actually reproduce the h405 landing, or was that a
+twin artifact? Design discussion first (no code), then
+`[PROCEED TO IMPLEMENTATION]`.
+
+**Design adjudications (plan §6.5, frozen and committed BEFORE launch,
+`bfdc053`).** Opened at 5 seeds × N = 1000; **user cut it to 3 × N = 500**
+on an explicit "high possibility of failing" call. Two things were
+measured rather than assumed before accepting the cut: (1) **no new h405
+MD is needed** — the committed g4 Step-2 battery's per-seed SD is 0.0024
+on KE₁ / 0.0074 midHot / 0.0102 n₁, so the Δ target is a *constant*, and
+the N = 500 `h405p` agrees with the N = 1000 pool within ~2σ on every
+**intensive** observable (χ²_med is N-extensive and was restricted to the
+N = 500 partner); (2) **the cut costs nothing on the headline reads**
+(pooled SE 0.003 on ΔKE₁ vs a 0.05 band, 0.006 on midHot vs 1.15) and
+costs only n₁ — precisely where the run was already most likely to fail.
+Seed 20260731 was chosen as one of the three because it is the §6.3 ring
+seed: the clone thereby slots into the committed ring table as a same-N,
+same-seed cell **and** CRN-pairs for free against `h405p`. W₁ was
+adjudicated **reported-only** (user): it never gated in this arm and the
+landing was measured form-blind in §6.6. The N cut forced a **third
+CL-P1 outcome** — `gate-marginal` within 1 *measured* SE of a band edge,
+neither pass nor fail, so no single seed decides a program-level question.
+
+**Instrument (committed before any number was read, `73de255`).**
+`gen_tier2atlas_linclone.py` builds the cell through
+`gen_tier2atlas_linring.build_cell` with only the seed replaced (rule 1 —
+no second copy of the cell construction, and the geometry/free-form
+provenance guards are the ring's). The new content is the **CRN guard,
+whose whole point is an absence**: the seed-20260731 member's cfg diff vs
+the committed `h405p` must contain neither `seed` nor `num_molecules`,
+because the identity of those two keys *is* the pairing; fresh-seed
+members must diff against the CRN member in exactly `{"seed"}`. Scorer
+`tier2atlas_linclone_table.py` pools the three seeds on **both** policy
+ends and adds a **partner-anchor oracle** re-deriving the committed
+`atlas_linring_table.csv` `h405p` row before it is used as a Δ target.
+20 focused tests, including both CRN-guard failure modes. MD ≈ 45 min at
+concurrency 3, all three runs clean.
+
+**Result — the twin forecast is half right, and the half that fails is
+the half the §6.4 claim rested on.**
+
+- **CL-P2 PASS:** pooled KE₁ 0.6348 vs the h405 battery 0.6406 ⇒ ΔKE₁
+  **−0.0059 eV**, CRN pair **−0.0016**, against a ±0.05 band. An
+  uncapped linear law matches the incumbent's KE₁ to well inside a
+  percent.
+- **CL-P3 PASS and it inverts the §6.3 "honest cost":** midHot **0.891**
+  — *cooler than h405 itself* (0.946) and far below the ring's 1.39–1.98
+  at a 27.5–35; per-seed χ² 173/234/241 vs h405p's 267. **Mid-band
+  overheating is a position on the a dial, not a property of constant γ.**
+- **CL-P4 benign:** trap 0.062 *below* h405's 0.078 (marginal = 2 ions),
+  CRN fate flow new-trapped 1 / freed 9, supp 0.051 vs 0.216. The low-v
+  over-drag fear does not revive at 1.5× the ring's chord.
+- **CL-P5 — the finding that names the result:** W₁ **1.079 vs 0.765**
+  (+0.314) *while* n₁ and n̄ sit at/inside their gate bands. The two
+  histogram **moments** match and the **shape** does not: the cell is a
+  **KE-equivalent, not a landing-equivalent**. "Clone" is the wrong word
+  for anything but the KE observables.
+- **CL-P1 `gate-marginal`, both policy ends** (not policy-blocked): n̄
+  3.993 passes; n₁ **0.1921 sits on the 0.19 floor**, gap 0.0021 against
+  a measured per-seed SD 0.0181 ⇒ **~72 seeds of N = 500** to separate it
+  from the edge. The cell is boundary; that is the measurement, not a
+  resolution shortfall, and the "just run more seeds" reflex is priced
+  out rather than assumed.
+- **CL-P6 (lands regardless of verdict) — the §6.3 twin↔MD box does NOT
+  extend to this corner:** n₁ (+0.0045) and n̄ (+0.583) transfer inside
+  the ring ranges, KE₁ (−0.0195) falls outside [−0.015, −0.010], and
+  **twin W₁ collapses: 0.686 → MD 1.079, a −0.39 bias vs the ring's
+  ≈ −0.2.** The §6.4 clone claim rested on a **0.017** twin-W₁ gap; the
+  transfer error here is ~20× that gap.
+
+**Consequence for the program.** "The cap buys the KE landing" is
+**false** — measured. What the cap (or rather, this cell's position on
+the a dial) does *not* buy is the histogram shape, and the twin column
+that was carrying the clone claim is now measured untrustworthy outside
+the ring's a 27.5–35 / τ 4.8 box. Any future free-form claim resting on
+twin W₁ outside that box is unsupported until re-measured.
+
+**Standing: nothing adopted.** Tier-0's in-band rejection (n̂ = 2.927),
+h405 and `finc1v725` all stand. §6.2 item 1 is pre-registered for a
+*miss* and this is not one, so **routing is a USER GATE**:
+accept-marginal, re-site the cell off the n₁ floor, or recalibrate. Note
+the target has changed shape — a re-sited search would no longer be for
+an h405 *clone* but for a linear cell that lands the histogram *shape*,
+which no twin column currently predicts at this corner.
+
+Records: plan §6.5 (design + findings block), findings "§6.5 h405-clone
+MD battery", D0 §1 form-entry bullet (D0-first rule), artifact
+`atlas_linclone_table.csv`.

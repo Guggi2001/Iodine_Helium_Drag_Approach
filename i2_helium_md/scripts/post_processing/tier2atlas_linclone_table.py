@@ -342,9 +342,18 @@ def main() -> None:
                                  - float(h405_pooled["trap"]))
 
     partner_out = dict(partner)
-    partner_out.update({"label": PARTNER_LABEL, "seed": MEMBER_SEEDS[CRN_MEMBER],
-                        "md_gate_A": hard_gate(float(partner["n1_solv"]),
-                                               float(partner["nbar_det"]))})
+    partner_out.update({
+        "label": PARTNER_LABEL, "seed": MEMBER_SEEDS[CRN_MEMBER],
+        "KE1_n": int((partner_read.n_scored == 1).sum()),
+        "KE2_n": int((partner_read.n_scored == 2).sum()),
+        "md_gate_A": hard_gate(float(partner["n1_solv"]),
+                               float(partner["nbar_det"])),
+    })
+    # The partner carries no Arm-B / twin-forecast / Δ columns (it IS the Δ
+    # target and its own §6.3 Arm-B read lives in the committed ring CSV):
+    # pad so the shared table keeps one column set.
+    for key in pooled:
+        partner_out.setdefault(key, "-")
     table_rows = rows + [pooled, partner_out]
 
     print(f"=== h405-clone MD battery (plan §6.5): pure_linear "
@@ -423,10 +432,15 @@ def main() -> None:
              if d_w1 > W1_COST_DELTA else "")
           + f"  (single-seed disclosure +-{W1_SINGLE_SEED_DISCLOSURE}; "
             "cannot overturn CL-P1..P3)")
-    print(f"  chi2_med (N-EXTENSIVE — compared to the N=500 partner only): "
-          f"pooled {float(pooled['chi2_med']):.1f} across "
-          f"{len(rows)}x500 vs h405p {float(partner['chi2_med']):.1f} at 500; "
-          + "; ".join(f"{r['label']} {float(r['chi2_med']):.1f}" for r in rows))
+    # chi2_med is N-EXTENSIVE: the pooled value sums over 3x the ions and is
+    # NOT comparable to anything here (it is committed to the CSV, not read).
+    # Only the per-seed values may be compared, and only to the N = 500
+    # partner (plan §6.5).
+    print(f"  chi2_med (N-EXTENSIVE — per-seed only, vs the N=500 partner "
+          f"h405p {float(partner['chi2_med']):.1f}): "
+          + "; ".join(f"{r['label']} {float(r['chi2_med']):.1f}" for r in rows)
+          + f"   [pooled {float(pooled['chi2_med']):.1f} spans "
+            f"{len(rows)}x500 ions and is NOT comparable]")
 
     print("CL-P6 (authority-box extension at a 42.5 / tau 6.4 — lands "
           "regardless of the verdict), twin minus MD:")
@@ -454,8 +468,28 @@ def main() -> None:
               f"{int(flow['flow_freed'])}")
 
     clone_holds = (cl_p1_A == "pass" and cl_p1_B == "pass" and cl_p2 and cl_p3)
+    hard_miss = (cl_p1_A == "fail" or cl_p1_B == "fail"
+                 or not cl_p2 or not cl_p3)
     print()
-    if clone_holds:
+    if not clone_holds and not hard_miss:
+        # CL-P1's third outcome. Report what it would COST to resolve, so the
+        # "just run more seeds" reflex is priced rather than assumed.
+        n1_vals = np.asarray([float(r["n1_solv"]) for r in rows], dtype=float)
+        sd = float(n1_vals.std(ddof=1)) if n1_vals.size > 1 else float("nan")
+        gap = min(abs(float(pooled["n1_solv"]) - GATE_N1[0]),
+                  abs(float(pooled["n1_solv"]) - GATE_N1[1]))
+        need = (sd / gap) ** 2 if gap > 0 and np.isfinite(sd) else float("inf")
+        print("VERDICT: NOT confirmed and NOT missed — CL-P1 returned "
+              "gate-marginal while CL-P2 and CL-P3 both PASS. The clone sits "
+              f"ON the n1 gate floor: pooled {float(pooled['n1_solv']):.4f} vs "
+              f"{GATE_N1[0]}, gap {gap:.4f}, per-seed SD {sd:.4f} => "
+              f"~{need:.0f} seeds of N = 500 would be needed to separate it "
+              "from the edge. That is the measurement, not a resolution "
+              "shortfall: more MD at this cell buys a decision only at "
+              "absurd cost. Routing (recalibration vs accept-marginal vs "
+              "re-site the cell) is a USER GATE — the §6.2 item-1 branch is "
+              "pre-registered for a MISS, and this is not one.")
+    elif clone_holds:
         print("VERDICT: CL-P1 ∧ CL-P2 ∧ CL-P3 all PASS — an uncapped, "
               "kink-free pure_linear cell reproduces the h405 landing in MD. "
               "This OPENS the form-choice on the §6.4 item-3 "
