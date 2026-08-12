@@ -53,6 +53,9 @@ Repo root:
   (atlas D0; living doc — its GAP markers are the atlas targets; §17 is
   the physical-sensibility ledger: physics / convention / effective /
   scaffolding / missing, with what would retire each)
+- `TIER2_MASS_SCENARIOS.md` — **open investigation** (2026-08-11): what
+  mass flies through the Coulomb explosion, and why that is the KE₁
+  deficit; M1–M6 open questions, M1 gates
 
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline
@@ -253,7 +256,18 @@ LANDS — 6/7 cells gate both-policy-clean, K-KE not fired, SUCCESS at
 five cells (best MD KE₁ 0.903 at a = 27.5 vs h405p 0.637; `pure_linear`
 form now in `physics/drag.py`; trap axis dead; cost = mid-band
 overheating); nothing adopted. NEXT USER GATE: the adoption discussion
-+ escalation battery (plan §6.3).** The
++ escalation battery (plan §6.3).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
+half the naive ledger value (shared-erf well/density overlap refunds
+~45 %), form- and depth-invariant, trap lever form-split, and the axis is
+**closed as a KE lever**; **Step 3 MD-CONFIRMED** (1 × N = 500 CRN,
+−0.5308, 2 % from the twin; MD-P5 withdrew the Step-2 twin-grading
+caveat) — D0 §9.2/§9.3 + findings §6.5 Steps 2–3. **The "45 % refund" is
+SOLVED 2026-08-11 as a mass-frame partition — the model is correct, the
+ion pays 98.1 % of the well; RQ12's density-width leg is measured NULL
+(+0.002 eV) and atlas §6.8 T1–T4 are closed — D0 §9.6.** **Current arm:
+`TIER2_MASS_SCENARIOS.md`** — the flight mass, not the drag, carries the
+KE₁ deficit (M1 gates). The
 G4 adjudications (successor point, retained policy, ledger re-issue)
 stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
 convention (I88) stay open in-tier. Tier-3 noise

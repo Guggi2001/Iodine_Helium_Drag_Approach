@@ -12882,3 +12882,431 @@ adopted.**
 
 Stance unchanged: Tier-0, h405, finc1v725 all stand; the §6.3 gates
 (adoption discussion + escalation battery + §9 relevance) stay open.
+
+---
+
+## Atlas §6.5 Step 2 — the E_bind twin scan DELIVERED + EXECUTED (2026-08-10, zero MD)
+
+**Trigger.** User question: does raising `E_bind` by 0.1 eV shift every
+velocity peak down by 0.1 eV, measured on h405 at realistic droplets?
+Discussion held first (the physics argument before the instrument), then
+`[PROCEED TO IMPLEMENTATION]` with scope **twin-only first** (user).
+
+**Delivered code** (all behind the trigger; default paths byte-inert):
+
+- `scripts/tier2_h2b_forward_model.py` — new **`ebindscan`** stage
+  (2 arms × 7 wells), `EBINDSCAN_WELLS` / `EBINDSCAN_ARMS` /
+  frozen `EBINDSCAN_P1..P5` prediction bands, `_ebindscan_ols`,
+  `_ebindscan_band_ev` (band mean KE in **eV**, not the ref-ratio
+  `g3_score` reports), `_ebindscan_md_ring_slopes` (reads the committed
+  ring CSV — the EB-P1 reference number is never hardcoded),
+  `_ebindscan_cell`, the O1/O2 oracles, `_ebindscan_arm_summary`;
+  CLI dispatcher + usage string extended. Reuses the existing
+  `e_bind_ev` chord override (built for the g3scan E_bind axis) and the
+  `_g3scan_chord_family` / `_linsweep_chord_family` npz caches — no new
+  integration path.
+- `tests/test_tier2_h2b_forward_model.py` — 10 new focused tests (well
+  grid = the Tier-0 provenance spread, arm pins, frozen bands, exact-line
+  OLS + the ≥ 3-point guard, band aggregation incl. the empty band, the
+  committed-ring read, one test per falsifier, a nonlinearity case).
+  Module: **51 passed**.
+- Artifacts committed: `data/runs/h2b_forward_model/atlas_ebind_twin.csv`
+  + `atlas_ebind_twin_summary.csv`.
+
+**Rule-2 note:** no new declared-but-unread config fields; the stage adds
+no `SimConfig` surface. Every cell overrides `binding_energy_I_ion_eV`
+away from its jointly-extracted bundle partner — the documented §6.5.1
+pairing exception (the §6.7 item-2 precedent), sensitivity reads only.
+
+**Outcome (full record: findings "§6.5 Step 2", D0 §9.2).** Both oracles
+string-exact. `dKE₁/dE_bind = −0.5421` (h405) / `−0.5486` (lin) eV/eV —
+the first-order ledger argument is structurally right (a rigid
+translation in eV) but 2× too large, because `U = E_bind·(1 − ρ̂)` shares
+the density gate's erf at 14.2 Å and ~45 % of the toll is refunded as
+un-incurred drag. Affine to ≤ 0.0007 eV across 0 → 0.2168 eV, and
+form-invariant to 1.2 %. New: **trap lever form-split** (0.620/eV capped
+vs 0.033/eV linear). Axis **closed as a KE lever** — `E_bind = 0` leaves
+h405 at KE₁ 0.6876. EB-P3 and EB-P4(lin) failed as registered; both
+failures are the findings. Plan §6.5 Step 1 superseded, Step 3 not
+triggered.
+
+Stance unchanged: nothing adopted; Tier-0, h405, `finc1v725` all stand;
+the free-form linear §6.3/§6.4 adoption gate remains the next user gate.
+
+---
+
+## Atlas §6.5 Step 3 — the E_bind MD confirmation cell DELIVERED + EXECUTED (2026-08-10, 1 × N = 500)
+
+**Trigger.** User: "lets run the MD and then lets discuss this result
+together." Scope = the one MD-worthy remainder Step 2 named — a
+capped-arm check of the coefficient, since the twin's over-steepness was
+measured on the linear arm only.
+
+**Delivered code:**
+
+- `scripts/gen_tier2atlas_ebindmd.py` — the single shallow-well cell
+  (`ebmdh405s`), built by calling the ring's own `build_cell` on the
+  committed `h405p` spec and applying exactly two overrides, so no pin is
+  re-typed. **CRN guard:** the cfg diff against the committed partner run
+  must be exactly `{binding_energy_I_ion_eV,
+  allow_unvalidated_binding_pairing}`. This *subsumes* the ring's
+  `verify_corrected_geometry` (the partner is itself geometry-verified),
+  and the ring helper could not be reused anyway — on the capped branch
+  it asserts `well == bundle stamp`, the very pairing this cell breaks on
+  purpose. The drag bundle stamp is held, so the exception is the
+  declared one.
+- `scripts/post_processing/tier2atlas_ebindmd_table.py` — pair scorer:
+  full observable vector, both KE bands additionally in **absolute eV**
+  (the ratio columns hide the energy question behind a cold denominator),
+  measured slopes, twin-forecast join, MD-P1..P6 verdicts, and a partner
+  oracle against the committed ring row. Artifact `atlas_ebind_md.csv`.
+- `tests/test_gen_tier2atlas_ebindmd.py` — 11 focused tests (pins
+  inherited, well moved, stamp held, the two-key CRN diff against the
+  real committed partner, atlas namespace, frozen bands, band arithmetic
+  incl. the min-bin-count rule and the empty band). Full suite green.
+
+**Rule-2 note:** no new config surface; both scripts are instruments.
+
+**Outcome (full record: findings "§6.5 Step 3", D0 §9.3).** Partner
+oracle green. **dKE₁/dE_bind = −0.5308 MD vs −0.5421 twin — a 2 %
+transfer**, tighter than the lin arm's 6 %; the twin's residual is a
+near-constant KE₁ *level* offset (−0.0135 / −0.0127 eV), not a slope
+error. n̄ lever −7.25 /eV agrees with the twin (−7.36) and the §6.7 lq
+scan (−7.3). Trap lever 0.744 /eV. Ceiling holds on MD evidence
+(KE₁ 0.6735; MD-slope extrapolation to `E_bind = 0` gives 0.699 < 0.75).
+
+**MD-P5 FAILED — a recorded conclusion was corrected.** Step 2's claim
+that the twin systematically under-reports cross-bin KE grading by ~2.5×
+was generalized from one lin-arm number and does **not** hold on the
+capped arm (MD +0.0184 vs twin +0.0277). Withdrawn as stated in D0 §9.2
+and the Step-2 findings; replaced by "grading is small and
+drag-form-dependent, measure it per arm". EB-P3's Step-2 band was
+mis-calibrated for the same reason, and that is now on record so the
+Step-2 verdict is not over-read.
+
+Stance unchanged: nothing adopted; Tier-0, h405, `finc1v725` all stand;
+§6.5 is complete across all three steps and the E_bind axis is CLOSED;
+the free-form linear §6.3/§6.4 adoption gate remains the next user gate.
+
+---
+
+## RQ12 opened + the refund-geometry probe DELIVERED (2026-08-10, zero MD)
+
+**Trigger.** User read of the §6.5 result: if only ~55 % of the well is
+cashed, Tier-0's *co-fit* of `E_bind` against TDDFT traces must have
+returned an inflated value, and correcting the density width should
+deflate it and raise KE₁. Discussion first (per the working method), then
+"let's build it".
+
+**Provenance finding that opened RQ12.** The legacy source shows
+`potential_steepness = 14.2` / `14.3324` are fits to a **solvation
+potential** DFT result (`% from ernesto dft result beta = [14.3324
+26.9916 34.4431]`), while the Python reuses that width as the **He
+density** width via `drag_gate_steepness`. Those are different objects
+(the potential is ρ ⊗ V_I–He + cavity). Literature stand-in adopted:
+Harms/Toennies/Dalfovo PRB 58, 3341 (1998) — 10–90 % surface 5.7 Å (DFT)
+/ 6–8 Å (expt) ⇒ s_ρ ≈ 3.1–4.4 Å vs the model's 14.2. Recorded as **RQ12**
+in `RESEARCH_QUESTIONS.md` with what would retire it (the DFT *density*
+profile from the same calculation) and a second open oddity (the fit's
+34.4431 Å offset, discarded by the code).
+
+**Delivered code:**
+
+- `scripts/tier2_h2b_forward_model.py` — `rho_steepness` override on
+  `integrate_pairs` (byte-inert default; twin-side mirror of production's
+  `erf_independent` gate — the well force and the escape criterion stay on
+  `STEEP_A`), plus the `refundscan` stage: `REFUND_RADII_A`,
+  `REFUND_S_RHO_A`, `REFUND_LAWS`, `REFUND_H405_VC`, frozen RF-P1..P5
+  bands, `_refund_available_frac`, `_refund_cell`, `_refund_by`.
+  Artifacts `atlas_refund_geometry{,_summary}.csv`.
+- `tests/test_tier2_h2b_refund_probe.py` — 10 focused tests, incl. the
+  byte-inertness guard (omitted / `None` / `STEEP_A` all bit-identical)
+  and a drag-off test proving the override touches the density only.
+
+**Two defects found *during* execution, both of which changed the answer
+— recorded because the first-pass conclusions were reported before they
+were caught:**
+
+1. **Birth inside the well.** The raw finite difference conflated the
+   refund with birth geometry (the ion is born partway up the well at
+   small R). The birth term alone reproduced the raw `c` to four decimals
+   at R = 9/18 Å. Corrected by dividing by `ρ̂(depth_birth)`.
+2. **The wrong drag law.** The build hardcoded `G3_STANDING[1]` = v_c
+   7.25 (the *superseded* chord, not h405's 5.5) and applied a **capped**
+   law at the calibration radii — where Method B actually extracted with
+   the **uncapped** cubic. Above a cap the force is v-independent, so a
+   refund cannot exist by construction; this produced a spurious
+   `c = 1.000` at calibration and a reported conclusion wrong in sign and
+   substance ("Tier-0 unbiased; production under-pays; correcting costs
+   KE₁"). Fixed by carrying both laws explicitly — the transfer factor is
+   cross-law by construction.
+
+**Outcome (full record: findings "RQ12 refund-geometry probe", D0 §9.4 +
+the §9.2 mechanism correction + the §17 row).** The refund tracks the
+drag's **velocity sensitivity**, not profile overlap. `c_cal` = 0.482
+under the Tier-0 law ⇒ the co-fitted `E_bind` **is** inflated ≈ 2.1×;
+`T = c_prod/c_cal` = 1.49–2.07 > 1, so production **over-pays** and the
+correction is **correctly signed for KE₁** (RF-P3 passes: sharpening
+drives T → 1). Payoff ≈ **+0.006 to +0.02 eV** — real, far short of the
+0.36 eV deficit. **RF-P5 FALSIFIED**: `c(18)/c(9)` = 1.02, so the refund
+does *not* explain the Tier-0 per-case split (E_bind 0.154 at 9 Å vs
+0.071 at 18 Å) — that remains an open defect. RF-P4 withdrawn as
+mis-specified.
+
+Stance unchanged: nothing adopted; Tier-0, h405, `finc1v725` all stand.
+Open: a Tier-0 re-extraction under the corrected width (needed before any
+adoption), an ensemble-level re-measurement of the production-side `c`
+(single trajectories give 0.80–1.00 vs the MD ensemble 0.531), and the
+unexplained 0.154/0.071 split.
+
+---
+
+## §6.5 dynamical-vs-cascade decomposition DELIVERED + EXECUTED (2026-08-11, zero MD, zero new integrations)
+
+**Trigger.** Assistant raised a defect against its own RQ12 probe (fixed
+mass, no fate map — so it cannot see cascade repopulation, which might
+carry most of the ensemble response and would be unreachable by the
+density width); user asked for the decomposition.
+
+**Delivered code:** `stage_ebinddecomp` in
+`scripts/tier2_h2b_forward_model.py` (`EBDECOMP_CELLS`, `EBDECOMP_WELLS`,
+frozen DC-P1..P4 bands, `_bin1_mean_ke` mirroring the `g3_score` bin rule
+verbatim, `_ebdecomp_bundles`), CLI dispatcher extended, artifact
+`atlas_ebind_decomp.csv`. Four new tests in
+`tests/test_tier2_h2b_refund_probe.py` (frozen bands, the bin rule incl.
+the trapped/thin-bin exclusions, closure identity for both orderings);
+module 14 passed.
+
+**Anchoring.** Per the probe-anchoring rule adopted after the two RQ12
+defects, both un-crossed corners must reproduce the committed
+`atlas_ebind_twin.csv` n = 1 bin means *before* any crossed value is
+read. Anchors passed; landmark oracle green.
+
+**Outcome (full record: findings "§6.5 decomposition", D0 §9.5).**
+h405: c_total 0.5422 = c_traj **+0.6090** + c_casc **−0.0669** (cascade
+share 12.3 %); lr1: 0.5488 = +0.5817 − 0.0330 (6.0 %). Interaction
+≤ 1e-4, so the split is ordering-independent. **DC-P1 FAILS — the
+cascade hypothesis is refuted**: the refund is **85 % dynamical**, hence
+reachable by the density width, and RQ12's leverage argument is not
+mis-attributed. DC-P2/P3/P4 PASS. The 1.000-vs-0.53 gap is ≈ 0.39
+ensemble geometry (birth spread + non-radial paths crossing below v_c)
+and only ≈ 0.07 cascade — the probe's defect was representativeness.
+
+**Also corrected in this pass (docs):** the §9.2/§9.4 mechanism framing.
+Both earlier statements — "geometric overlap" alone, then "velocity
+sensitivity, **not** overlap" — were wrong as stated; the second was a
+false dichotomy. The refund is a **product of two necessary factors**
+(overlap × velocity sensitivity), which is why a supercritical capped ion
+measures c = 1.000 flat at every density width while sharpening halves
+the refund under the uncapped law. The user caught this. The
+"+0.006–0.02 eV" payoff estimate is **withdrawn** — it mixed a
+trajectory-level `c_cal` with a system-level `c_prod`.
+
+Stance unchanged: nothing adopted; Tier-0, h405, `finc1v725` all stand.
+Open, in order: split `trapped` out of `c_traj` (one further crossing)
+before the 85 % is leaned on; ensemble-level `c(s_ρ)`; then the Tier-0
+re-extraction decision; and the unexplained 0.154/0.071 split.
+
+---
+
+## §6.8 T2 EXECUTED + the "45 % refund" SOLVED as a mass-frame partition — the model is exonerated, RQ12's production leg retired, and a new thread opened as `TIER2_MASS_SCENARIOS.md` (2026-08-11, zero MD)
+
+**Two triggers, both user, in sequence.**
+
+1. *"Aren't we overcomplicating trying to understand and quantifying
+   everything? Can't we just change the sharpness and see if changing
+   E_bind then has a larger influence than before?"* — accepted. The
+   T-factor arithmetic, the T3 consumer adjudication and T1 were dropped
+   as scaffolding; T2 reduced to a two-well slope at five widths
+   (licensed by the committed EB-P2 affinity result). The kept guardrail
+   was the anchoring rule.
+2. *"Why is consistently 45 % of the toll of the solvation potential not
+   paid physically — it makes no sense. Where is that energy coming from?
+   This really screams like a potential physics bug."* — **challenge
+   sustained; the standing explanation was wrong, the model is not.**
+
+**Method.** Four scratchpad probes against the committed forward model, no
+committed stage modified, no committed artifact rewritten. Every probe
+anchored on a committed value before any new number was read:
+re-integration bit-identical to the committed chord npz; all four
+(arm × well) `n1_ke_eV` string-exact against `atlas_ebind_twin.csv`;
+`h2b_g3_corrected_row.csv` landmark oracle green in every run.
+
+**Results (full records: D0 §9.6 — written FIRST per the standing rule —
+plus findings "§6.8 T2 + the mass-frame resolution").**
+
+- **T2 NULL.** `c = −dKE₁/dE_bind` over s_ρ ∈ {14.2, 7.1, 4.4, 3.5, 3.14}:
+  h405 0.5422 → 0.5597, lr1 0.5488 → 0.5695. A 4.5× sharpening buys 3 %,
+  i.e. **+0.002 eV** on KE₁. Converged by 4.4. Both assistant
+  pre-registrations refuted (no climb toward 1; no form split).
+- **The mechanism.** `c = m(1)/m(21) = 0.6205`. The twin integrates at the
+  dressed mass and scores at the bare mass, so only 62 % of a
+  dressed-frame toll reaches the observable. Re-scored in the dressed
+  frame: **c_traj = 0.9815 (h405) / 0.9375 (lr1) — the ion pays 98.1 % /
+  93.8 % of the well.** Confirmed independently by energy closure:
+  budget 2.7006 − well **0.1167** (99.9 % of 0.1168) − drag 1.5790 =
+  1.0050 eV dressed × 0.6205 = **0.6236** = the committed KE₁.
+- **Corrected decomposition** of the observed 0.5422: 38.0 % mass
+  partition + 6.7 % cascade + **1.9 % genuine drag refund** (form-split
+  3.3× against the lin arm's 6.2 % — the split §9.2 predicted, buried
+  under a constant 30× larger). Retro-explains the EB-P3 FAIL (mass ratio
+  predicts a grading increment ≈ 0.057, not the registered 0.10–0.20).
+- **Three invariances explained at once**: form (1.2 %), depth, and now
+  width — a quantity indifferent to everything about the drag was never a
+  drag effect. And `refundscan`'s c = 1.000 was never "supercriticality":
+  it scores at the same fixed mass it integrates with.
+
+**Doc corrections issued this session** (measured numbers unchanged
+throughout; only attributed mechanism moved): D0 §9.2 mechanism block
+(third revision), §9.4 magnitude paragraph (the withdrawn "+0.006–0.02 eV"
+**reinstated at ≈ +0.02 eV** on level-consistent calibration-side
+arithmetic; **T = 2.04** ensemble-confirmed), §9.5 "0.39 ensemble
+geometry" attribution **WITHDRAWN** and its T1 caveat retired unrun
+(trapped ions land at n_det = 21 and never enter the n = 1 bin).
+
+**Programme consequences.** T1 retired unrun; T2 done (null); T3 moot
+twin-side (pickup measured inert — n₀ = 21 for 20000/20000 at every
+width; twin has no detection stage); T4 does not fire; T5 is now the whole
+of RQ12 at ≈ +0.02 eV; T6 is the highest-value remainder. RQ12 stays open
+as a **model-correctness** question only. New structural ceiling recorded:
+∂KE₁/∂(any pre-evaporation energy) ≤ 0.6205, against which §3.5k's
+S_k = 0.389 is 63 % and the top 32 % of its registered band was
+unreachable (BP-KILL verdict unaffected).
+
+**New thread opened.** The same identity gives KE₁ = E_exit ·
+m(1)/m_flight with E_exit **measured mass-invariant to 0.09 %**
+(1.0050 at m(21) vs 1.0059 at m(1); drag loss 1.5789 vs 1.5780), so the
+whole KE₁ deficit reduces to what mass actually flies. The §3.5g
+cross-check was run and is **NEGATIVE** — the attenuation cancels in
+§3.5g's ratio (0.6019 in both frames), so "in-surface freedom exhausted"
+stands unmodified. The KE-vs-n shape work (user objection: *"we need a
+boost specifically for n = 1 and maybe n = 2 but not for middle
+fragments"* — **correct, and decisive**) measured that a uniform
+flight-mass change is the p_tail failure mode (midHot 1.72 uniform-bare /
+1.53 fly-at-m(n) vs 1.068 production), that the required correction is a
+**U** (boost only at n ≤ 3 and n ≥ 13; the middle needs 8–16 % cooling),
+and that the required threshold sits at v ≈ 8–9 Å/ps — where the
+co-moving kinetic energy (15 meV) crosses the I⁺–He charge-induced-dipole
+binding (18 meV at 3 Å). All of it is recorded in the new document
+**`docs/drag_port/Tier2/TIER2_MASS_SCENARIOS.md`**, with M1–M6 open
+questions; **M1 (is the co-moving shell defensible?) gates everything and
+is a user/physics discussion, not a run.**
+
+**Stance unchanged: nothing adopted; Tier-0, h405 and `finc1v725` all
+stand; no code written and no build authorised.**
+
+**Addendum, same day — the re-dressing discussion (docs-only, zero MD).**
+`TIER2_MASS_SCENARIOS.md` extended to §16 with the session's second half:
+§10 dimensions the born-light + re-dressed-in-transit candidate and
+**measures it half-broken** — pickup is *linear* in exposure, the exposure
+spread is only **4.0×** (⟨∫ρ̂ dt⟩ 2.65 → 10.68 ps across bins) against a
+~17× size spread, so **pickup cannot generate the width at any λ₀**, while
+evaporation can because `E_ej = E₀e^(−K)` is *exponential* in the same
+quantity; §11 checks the mechanism and finds the ladder and the µs-flight
+physics intact but **E_int(0) fatally stripped** (S2's `f_int·E_avail`
+departs with the shell; rebuild heat at `f_ret = 0.1` is 10× short of
+re-evaporation — RQ1 becomes structural), plus a required **athermal** loss
+channel the model lacks, whose price the (C) `exit_strip` probe already
+measured (0.5–0.7 eV at p90 ≈ 20 knocks); §12 records the surviving
+variant — a **graded partial strip** of the loosely-bound outer shell,
+**KE₁ ≈ 0.83 eV** with the mechanism intact but n_det capped at ~8 — and
+§12.1 poses the pivot, **is the deep tail load-bearing** (now **M5**, user
++ supervisor). Open questions now **M1–M8** (added M7 E_int(0)-under-strip,
+M8 the unbooked `γ_pickup = λ₀·ρ̂·m_He` = 3.6 amu/ps). §13 records **three
+withdrawn claims** from this session: the imported **Langevin** pickup rate
+(13× above the pinned λ₀ = 0.9/ps and a violation of MASS **A2**, which
+forbids importing a pickup rate — the `pure_linear` "physical derivation"
+goes with it, so **nothing here supports the §6.3/§6.4 adoption gate**),
+the "slow ions get plenty of pickup" magnitude, and the "dynamic range a
+factor two too weak" claim (an n = 0 artifact — over n = 1–17 the model
+spans 23.1× vs the reference's 15–20×). Also recorded: **n = 0 is
+energetically unreachable** (reference 3.706 eV vs a 2.7006 eV budget) and
+is a source-channel observable, not a mass one. Nothing adopted; no code
+written.
+
+**Addendum 2, same day — Route B posted (docs-only, zero MD).** User
+proposal: make pickup velocity-dependent so slow ions dress more.
+Recorded as `TIER2_MASS_SCENARIOS.md` **§13, Route B** (the doc is now
+§1–§17; §12 retitled Route A). Established: this **is** the declared
+`dwell_time` rate-form arm, and MASS §5 rules it out only as
+**unregularized** (ρ/v diverges at rest vs [Nat23]'s finite 2.0/ps) — a
+**sticking** formulation S(v) → 1 at rest is untouched by that objection.
+Also established: gas-phase Langevin gives σ ∝ v⁻¹ hence a **constant**
+rate coefficient, i.e. `density_only` is the gas-phase-correct form and now
+carries a second independent argument; λ ∝ 1/v needs σ ∝ v⁻² (s = 2,
+Coulomb), which has no ion-neutral basis — so Route B is an
+**accommodation/sticking claim**, not a cross-section claim. Its appeal:
+it is the only proposal that **breaks the λ₀-independence** of the §10.3
+width obstruction (fast ions × S ≈ 0, so raising λ₀ lifts only the slow
+bins), and one function yields the strip, the differential re-dressing and
+the n ≤ 2 boost with a threshold fixed by `½m_He v² = D₀`. **Risks R1–R8
+recorded, and R1 is currently disqualifying:** on the committed ladder
+(`d0_of_n`, D₀ ≈ 9.2 meV core / 5.5–6.0 meV at n = 21) the threshold is
+**6.7 Å/ps**, which strips everything above n ≈ 5 and empties the low-n
+bins — the p_tail failure mode. R2: the outcome spans a factor-four D₀
+window (ladder 9.2 / KE-data need ≈ 15 / CID 18 / CID 38 meV) with **three
+of four outcomes failures**. R3: the sticking-weighted friction lands on
+the slow deep bins that need heating. R4/R5: the E_int fuel problem and
+the hot middle / unreachable n = 0 are untouched. R6: overturning
+`density_only` must defeat both its arguments, and MASS §1920 licenses a
+v-dependence *"only if density-only fails Tier 1/2"*, undemonstrated. R7:
+the surface-retention constraint (experimental n = 1 at 12.14 Å/ps carries
+an atom with 30.6 meV co-moving KE vs a 9.2 meV rung) is unsatisfied by
+every variant. **Verdict: not to be built; its effect is to upgrade M1
+from a gate to the decisive measurement** (M-table updated; open questions
+remain M1–M8). Nothing adopted; no code written.
+
+---
+
+## The shedding-cost law MEASURED + Route B CLOSED on kinematics (2026-08-12, zero MD)
+
+**Trigger.** User: *"right after explosion they are the fastest — why not
+set the threshold closely below there so that all are stripped at start but
+still fast n = 1 can keep it later?"* Measured rather than argued (this
+thread's envelope estimates had gone 0-for-3).
+
+**Measured (landmark oracle green; committed chord for bin membership,
+`integrate_pairs` re-run at a ladder of short `t_end`):** `v_peak = 13.44
+Å/ps` for **every detected bin, identical to four digits** (n = 0 … 17),
+reached by **t ≈ 0.75 ps** (11.81 at 0.25, 13.28 at 0.50). This confirms
+the §10.2 Phase-1 claim by measurement — early in flight the ensemble is
+one object, and the whole v_inf spread (10.665 → 1.587) develops
+afterwards. Headroom above exit speed: +26 % (n = 0) to +747 % (n = 17).
+
+**The result — a closed-form law, recorded as `TIER2_MASS_SCENARIOS.md`
+§4.1:** because the drag work is mass-invariant and the Coulomb budget
+fixed, the only thing that changes with *when* the helium leaves is the
+kinetic energy it carries off:
+
+    KE1 = E_exit − ½·Δm·v_shed²  =  1.006 eV − ½·Δm·v_shed²
+
+Algebraically the same identity as `KE₁ = E_exit·m(1)/m_flight`, but in the
+variable that matters. **Validated at both measured endpoints** — v_shed 0
+→ 1.006 (measured 1.0059) and v_shed 9.584 (exit, current model) → 0.625
+(measured 0.6236). **The entire KE₁ question is one number: the speed at
+which the helium departs.** Shedding cost goes as v², so late shedding is
+expensive and **the velocity peak is the worst possible moment** — the
+user's variant is law-predicted at KE₁ ≈ **0.257 eV, worse than doing
+nothing**. It also retro-explains (A) exit-stripping's measured 0.708
+ceiling: stripping at the exit sheds at the speed the model already sheds
+at, so it buys nothing.
+
+**Route B CLOSED (doc §13.4, new risk R9) — and closed on kinematics, not
+on binding energies.** A sticking threshold sheds at `v = v_c` by
+construction and every ion crosses it (all reach 13.44). An n = 1 bin
+requires `v_c > 9.584` Å/ps, and at exactly that speed the strip costs
+0.381 eV — *identical* to the current model's exit-shed. Hence
+`v_c < 9.584` ⇒ no n = 1 bin; `v_c ≥ 9.584` ⇒ KE₁ ≤ 0.625. **No gain at
+any threshold, for any D₀** — a cleaner kill than R1, because it does not
+depend on M1's outcome.
+
+**Route A re-scoped (doc §12).** Its criterion is now explicit: the outer
+shell must leave **early and slow**, `v_shed ≲ 3 Å/ps`, i.e. within the
+first few tenths of a picosecond. **No physical mechanism for that has been
+identified** — at v ≈ 0 the helium has no reason to leave. This is now
+Route A's central difficulty and it is sharper than the deep-tail
+question (M5). M1 still gates Route A; it no longer decides Route B.
+
+Doc updated: header note, §4.1 (new), §10.2 (measured v_peak), §12
+(criterion), §13.4/§13.5 (R9 + revised verdict). Nothing adopted; no code
+written; no committed artifact rewritten.

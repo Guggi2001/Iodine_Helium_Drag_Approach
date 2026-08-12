@@ -225,6 +225,7 @@ def integrate_pairs(
     v_c=None,
     p_tail=None,
     e_bind_ev=None,
+    rho_steepness=None,
     drag_form="cubic",
     lin_a=None,
     linq_c=None,
@@ -279,6 +280,16 @@ def integrate_pairs(
     if v_c is not None and p_tail is None:
         raise ValueError("v_c requires p_tail (the capped-cubic tail exponent)")
     e_bind = E_BIND_ION_EV if e_bind_ev is None else float(e_bind_ev)
+    # RQ12 extension (2026-08-10): the He *density* gate may carry its own
+    # width, decoupled from the solvation-potential width STEEP_A. This is
+    # the twin-side mirror of production's `erf_independent` (G3) gate +
+    # `cfg.drag_gate_steepness`. `None` (default) keeps one shared surface
+    # with identical arithmetic -- byte-inert. The well force (`dUdr`) and
+    # the numerical escape criterion stay on STEEP_A, exactly as production
+    # keeps `droplet_potential` on `potential_steepness`.
+    s_rho = STEEP_A if rho_steepness is None else float(rho_steepness)
+    if s_rho <= 0.0:
+        raise ValueError(f"rho_steepness must be > 0, got {rho_steepness!r}")
     r0 = np.atleast_1d(np.asarray(r0, dtype=float))
     mu = np.atleast_1d(np.asarray(mu, dtype=float))
     R_drop = np.atleast_1d(np.asarray(R_drop, dtype=float))
@@ -303,7 +314,7 @@ def integrate_pairs(
     def accel(s_arr, v_arr):
         r, dr_ds = geom(s_arr)
         depth = r - R_drop
-        rho = rho_he_ratio(depth, steepness=STEEP_A)
+        rho = rho_he_ratio(depth, steepness=s_rho)
         r_sep = r0_sep + s_arr[0] + s_arr[1]
         F_c = KE_COUL_EVA / r_sep**2  # eV/A, outward along axis, both
         dUdr = (
@@ -4016,6 +4027,760 @@ def stage_linqscan(a_star, m=20000, force_rebuild=False):
     return summary
 
 
+# ---------------------------------------------------------------------------
+# Atlas §6.5 Step 2 — the E_bind twin scan (zero MD, designed 2026-08-10)
+#
+# Physics. The droplet exit well and the He density gate are the SAME erf at
+# the SAME width (`cfg.potential_steepness` = 14.2 Å), so identically
+#
+#     U(r) = E_bind · (1 − ρ̂(r)),   U(deep inside) = 0,  U(∞) = E_bind.
+#
+# Births sit ~35 Å inside a ~48 Å droplet ⇒ U(birth) = 0, so for a FIXED
+# trajectory E_bind is a purely additive, velocity-independent per-fragment
+# exit toll and dKE_inf/dE_bind = −1 exactly. The committed lin MD ring
+# measures ≈ −0.52 on the n = 1 bin (CRN pairs lr1→lr2 / lr3→lr4 across the
+# 0.0686 eV well step): because the well is paid INSIDE the drag medium, a
+# deeper well slows the ion where drag is still live and part of the toll is
+# refunded. This stage measures that refund coefficient, its linearity in
+# E_bind, and whether it is drag-form dependent.
+#
+# Provenance posture. E_bind is *Derived* — jointly extracted with the drag
+# coefficients (Tier-0 Method B, §6.5.1). Overriding it alone deliberately
+# breaks that pairing, exactly as the §6.7 item-2 scan did: every row here is
+# a sensitivity read of a broken joint calibration, never a candidate point.
+# The two out-of-provenance wells (0.0 / 0.2168 eV) are mechanism diagnostics
+# only — flagged `in_provenance = 0` and excluded from every fit.
+# ---------------------------------------------------------------------------
+
+# tag, depth [eV], in_provenance. The five provenance wells are the Tier-0
+# on-disk co-extracted spread (atlas plan §6.5): 0.048 lq shared / 0.071 18 Å
+# per-case cubic / 0.113 power law / 0.1168 standing bundle stamp / 0.154 9 Å
+# per-case cubic. Tags eb0482/eb1168/eb154 reuse the G3SCAN_EBIND spelling so
+# the chord caches are shared, not duplicated.
+EBINDSCAN_WELLS: tuple[tuple[str, float, int], ...] = (
+    ("eb0", 0.0, 0),
+    ("eb0482", 0.0482, 1),
+    ("eb071", 0.071, 1),
+    ("eb113", 0.113, 1),
+    ("eb1168", E_BIND_ION_EV, 1),
+    ("eb154", 0.154, 1),
+    ("eb2168", 0.2168, 0),
+)
+
+# arm, label, drag form, a [amu/ps] (lin) | v_c [Å/ps] (capped), tau, E0.
+# H = the target (h405 successor candidate). L = the lin chord the MD ring
+# measured at two wells — it carries the only MD-anchored oracle and makes
+# the form contrast (EB-P1) measurable.
+EBINDSCAN_ARMS: tuple[tuple[str, str, str, float, float, float], ...] = (
+    ("H", "h405", "capped", 5.5, 4.4, 0.405),
+    ("L", "lr1", "lin", 27.5, 4.8, 0.35),
+)
+
+# --- Pre-registered predictions (FROZEN 2026-08-10, before any number) ------
+EBINDSCAN_P1_MAX = 0.56          # EB-P1 falsified if |slope_H(KE1)| >= this
+EBINDSCAN_P2_MAX_RESID_EV = 0.005  # EB-P2 linearity envelope
+EBINDSCAN_P3_BAND = (0.10, 0.20)   # EB-P3 |slope_mid| − |slope_KE1|
+EBINDSCAN_P4_BAND = (0.6, 1.1)     # EB-P4 trap lever [1/eV] (D0 §9: 0.85)
+EBINDSCAN_P5_KE1 = 0.75            # EB-P5 the (A)-ceiling success band
+EBINDSCAN_MD_RING_CSV = "atlas_linring_table.csv"
+
+
+def _ebindscan_ols(x, y):
+    """Least-squares line through ``(x, y)``: (slope, intercept, max|resid|, n).
+
+    Finite pairs only; needs >= 3 to be a fit rather than an interpolation.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    if int(ok.sum()) < 3:
+        raise ValueError(
+            f"E_bind fit needs >= 3 finite points, got {int(ok.sum())}")
+    x, y = x[ok], y[ok]
+    slope, icept = np.linalg.lstsq(
+        np.vstack([x, np.ones_like(x)]).T, y, rcond=None)[0]
+    resid = y - (slope * x + icept)
+    return (float(slope), float(icept), float(np.max(np.abs(resid))),
+            int(ok.sum()))
+
+
+def _ebindscan_band_ev(ke_bins, lo, hi, aggregate):
+    """Band mean KE in **eV** (not the ref-ratio ``g3_score`` reports).
+
+    Same present-bin rule as :func:`g3_score` (bins that cleared its
+    ``min_bin_count``), so the counts must agree with ``midhot_bins`` /
+    ``deepke_bins`` — asserted by the caller.
+    """
+    vals = [k for n, _, k in ke_bins if lo <= n <= hi]
+    if not vals:
+        return float("nan"), 0
+    if aggregate == "geometric":
+        return float(np.exp(np.mean(np.log(vals)))), len(vals)
+    return float(np.mean(vals)), len(vals)
+
+
+def _ebindscan_md_ring_slopes():
+    """The MD refund coefficients from the committed lin ring (CRN well pairs).
+
+    Gate-on-committed-artifacts: the EB-P1 reference number is read from
+    ``atlas_linring_table.csv``, never hardcoded. Returns the per-pair
+    ``dKE1/dE_bind`` [eV/eV] plus their mean.
+    """
+    with open(OUT / EBINDSCAN_MD_RING_CSV, newline="") as fh:
+        rows = {r["label"]: r for r in csv.DictReader(fh)}
+    d_well = E_BIND_ION_EV - 0.0482
+    out = {}
+    for lo, hi in (("lr1", "lr2"), ("lr3", "lr4")):
+        if lo not in rows or hi not in rows:
+            raise AssertionError(
+                f"{EBINDSCAN_MD_RING_CSV} is missing the {lo}/{hi} well pair")
+        out[f"{lo}_{hi}"] = (
+            (float(rows[hi]["KE1_mean"]) - float(rows[lo]["KE1_mean"]))
+            / d_well
+        )
+    out["mean"] = float(np.mean(list(out.values())))
+    return out
+
+
+def _ebindscan_cell(arm, well, ens, sig, ref_ke, solv_exp, m, force_rebuild):
+    """One (arm × well) twin cell: chord family → τ rescale → fate map → score."""
+    key, label, form, coeff, tau, e0 = arm
+    eb_tag, e_bind, in_prov = well
+    if form == "capped":
+        fam = _g3scan_chord_family(coeff, eb_tag, e_bind, m, ens,
+                                   force_rebuild)
+    else:
+        fam = _linsweep_chord_family("lin", coeff, None, eb_tag, e_bind, m,
+                                     force_rebuild)
+    trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+    v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+    K = np.asarray(fam["K"]).reshape(-1) * (TAU_PS / tau)
+    n_det, sup = fate_map(ens["ne"], K, e0, 1, sig)
+    obs, ke_bins = g3_score(n_det, sup, trapped, v_inf, ref_ke, solv_exp)
+    ke_by_n = {n: k_ for n, _, k_ in ke_bins}
+
+    ke_mid, mid_bins = _ebindscan_band_ev(ke_bins, 2, 8, "geometric")
+    ke_deep, deep_bins = _ebindscan_band_ev(ke_bins, 10, 17, "arithmetic")
+    if (mid_bins, deep_bins) != (obs["midhot_bins"], obs["deepke_bins"]):
+        raise AssertionError(
+            f"[{label}/{eb_tag}] band bin-count mismatch: eV bands "
+            f"{(mid_bins, deep_bins)} vs g3_score ratio bands "
+            f"{(obs['midhot_bins'], obs['deepke_bins'])}")
+
+    det = ~trapped
+    m1 = (n_det == 1) & det
+    above115 = (float((kinetic_energy_eV(complex_mass_amu(n_det), v_inf)[m1]
+                       > 1.15).mean()) if int(m1.sum()) >= 20 else np.nan)
+    g_n1 = G3SCAN_GATE_N1SOLV[0] <= obs["n1_solv"] <= G3SCAN_GATE_N1SOLV[1]
+    g_nb = G3SCAN_GATE_NBAR[0] <= obs["nbar"] <= G3SCAN_GATE_NBAR[1]
+    return {
+        "arm": key, "cell": label, "form": form,
+        "a": coeff if form == "lin" else "",
+        "v_c": coeff if form == "capped" else "",
+        "tau_ps": tau, "E0_eV": e0,
+        "E_bind_tag": eb_tag, "E_bind_eV": e_bind,
+        "in_provenance": in_prov, "m": m,
+        "trapped_frac": round(obs["trapped_frac"], 4),
+        "suppressed_frac": round(obs["sup_frac"], 4),
+        "nbar_det": round(obs["nbar"], 3),
+        "n1_solv": round(obs["n1_solv"], 4),
+        "ratio_n1_n2": round(obs["ratio"], 3),
+        "w1_solv": round(obs["w1"], 4),
+        "midhot_arith": round(obs["midhot_arith"], 4),
+        "midhot_geo": round(obs["midhot_geo"], 4),
+        "midhot_bins": obs["midhot_bins"],
+        "deepke": _ke1auth_nan_round(obs["deepke"], 4),
+        "deepke_bins": obs["deepke_bins"],
+        "n1_ke_eV": _ke1auth_nan_round(obs["n1_ke"], 4),
+        "ke2_eV": _ke1auth_nan_round(ke_by_n.get(2, float("nan")), 4),
+        "ke_mid_geo_eV": _ke1auth_nan_round(ke_mid, 4),
+        "ke_deep_eV": _ke1auth_nan_round(ke_deep, 4),
+        "above115_n1": _ke1auth_nan_round(above115, 4),
+        "gate_n1": int(g_n1), "gate_nbar": int(g_nb),
+        "gate": int(bool(g_n1 and g_nb)),
+    }
+
+
+def _ebindscan_oracle_L(rows):
+    """O1 — the MD-anchored arm-L oracle: the three wells arm L shares with
+    the committed ``atlas_linsweep.csv`` must reproduce string-exact."""
+    cols = ("trapped_frac", "suppressed_frac", "nbar_det", "n1_solv",
+            "w1_solv", "midhot_arith", "midhot_geo", "midhot_bins",
+            "deepke", "deepke_bins", "n1_ke_eV", "ke2_eV", "above115_n1",
+            "gate_n1", "gate_nbar", "gate")
+    arm = next(a for a in EBINDSCAN_ARMS if a[0] == "L")
+    _, _, _, a_val, tau, e0 = arm
+    with open(OUT / "atlas_linsweep.csv", newline="") as fh:
+        idx = {r["E_bind_tag"]: r for r in csv.DictReader(fh)
+               if r["arm"] == "lin" and r["a"] == f"{a_val:.1f}"
+               and r["tau_ps"] == str(tau) and r["E0_eV"] == str(e0)}
+    checked = 0
+    for row in rows:
+        if row["arm"] != "L" or row["E_bind_tag"] not in idx:
+            continue
+        committed = idx[row["E_bind_tag"]]
+        for col in cols:
+            if str(row[col]) != committed[col]:
+                raise AssertionError(
+                    f"O1 FAILED at arm L / {row['E_bind_tag']} / {col}: "
+                    f"{row[col]!r} != committed {committed[col]!r}")
+        checked += 1
+    if checked != 3:
+        raise AssertionError(
+            f"O1 FAILED: expected 3 committed linsweep wells, matched {checked}")
+    print(f"[ebindscan] O1 PASSED: arm L reproduces {checked} committed "
+          "atlas_linsweep.csv wells string-exact (MD-anchored chord)")
+
+
+def _ebindscan_oracle_H(rows):
+    """O2 — the arm-H anchor: the bundle well must reproduce the committed
+    ``atlas_ke1_authority.csv`` h405bat/pooled twin columns string-exact."""
+    with open(OUT / "atlas_ke1_authority.csv", newline="") as fh:
+        anchor = next(
+            (r for r in csv.DictReader(fh)
+             if r["group"] == "h405bat" and r["label"] == "pooled"), None)
+    if anchor is None:
+        raise AssertionError(
+            "O2 FAILED: h405bat/pooled row missing from "
+            "atlas_ke1_authority.csv")
+    row = next(r for r in rows
+               if r["arm"] == "H" and r["E_bind_tag"] == "eb1168")
+    if (str(row["v_c"]), str(row["tau_ps"]), str(row["E0_eV"])) != (
+            anchor["v_c"], anchor["tau_ps"], anchor["E0_eV"]):
+        raise AssertionError(
+            "O2 FAILED: arm-H pins differ from the committed h405 anchor")
+    for mine, theirs in (("n1_ke_eV", "twin_KE1"), ("ke2_eV", "twin_KE2"),
+                         ("n1_solv", "twin_n1_solv"), ("nbar_det", "twin_nbar"),
+                         ("w1_solv", "twin_w1"),
+                         ("midhot_arith", "twin_midhot"),
+                         ("deepke", "twin_deepke")):
+        if str(row[mine]) != anchor[theirs]:
+            raise AssertionError(
+                f"O2 FAILED at {mine}/{theirs}: {row[mine]!r} != "
+                f"committed {anchor[theirs]!r}")
+    print("[ebindscan] O2 PASSED: arm H at the bundle well reproduces the "
+          "committed h405 twin anchor string-exact")
+
+
+def _ebindscan_arm_summary(key, rows, md_ring):
+    """Per-arm fits + the pre-registered EB-P1..P6 verdicts."""
+    mine = sorted((r for r in rows if r["arm"] == key),
+                  key=lambda r: r["E_bind_eV"])
+    prov = [r for r in mine if r["in_provenance"] == 1]
+    x = [r["E_bind_eV"] for r in prov]
+
+    def fit(col):
+        return _ebindscan_ols(x, [r[col] for r in prov])
+
+    s_ke1, i_ke1, res_ke1, n_fit = fit("n1_ke_eV")
+    s_ke2 = fit("ke2_eV")[0]
+    s_mid, res_mid = fit("ke_mid_geo_eV")[0], fit("ke_mid_geo_eV")[2]
+    s_deep = fit("ke_deep_eV")[0]
+    s_trap = fit("trapped_frac")[0]
+
+    zero = next((r for r in mine if r["E_bind_tag"] == "eb0"), None)
+    ke1_zero = float(zero["n1_ke_eV"]) if zero else float("nan")
+    ke1_zero_pred = i_ke1  # the provenance line extrapolated to E_bind = 0
+    zero_excess = ke1_zero - ke1_zero_pred
+
+    p3_delta = abs(s_mid) - abs(s_ke1)
+    ke1_max_prov = max(r["n1_ke_eV"] for r in prov)
+    summary = {
+        "arm": key, "cell": mine[0]["cell"], "form": mine[0]["form"],
+        "tau_ps": mine[0]["tau_ps"], "E0_eV": mine[0]["E0_eV"],
+        "n_fit": n_fit,
+        "slope_KE1": round(s_ke1, 4), "resid_max_KE1_eV": round(res_ke1, 5),
+        "slope_KE2": round(s_ke2, 4),
+        "slope_mid_geo": round(s_mid, 4),
+        "resid_max_mid_eV": round(res_mid, 5),
+        "slope_deep": round(s_deep, 4),
+        "slope_trap_per_eV": round(s_trap, 4),
+        "KE1_at_bundle": next(r["n1_ke_eV"] for r in mine
+                              if r["E_bind_tag"] == "eb1168"),
+        "KE1_max_provenance": ke1_max_prov,
+        "KE1_at_zero": _ke1auth_nan_round(ke1_zero, 4),
+        "KE1_zero_linpred": round(ke1_zero_pred, 4),
+        "zero_excess_eV": round(zero_excess, 4),
+        "KE1_at_2168": next((r["n1_ke_eV"] for r in mine
+                             if r["E_bind_tag"] == "eb2168"), ""),
+        "md_ring_slope_KE1": round(md_ring["mean"], 4),
+        "EB_P1": ("PASS" if abs(s_ke1) < EBINDSCAN_P1_MAX else "FAIL")
+                 if key == "H" else "",
+        "EB_P2": "PASS" if res_ke1 <= EBINDSCAN_P2_MAX_RESID_EV else "FAIL",
+        "EB_P3": ("PASS" if EBINDSCAN_P3_BAND[0] <= p3_delta
+                  <= EBINDSCAN_P3_BAND[1] else "FAIL"),
+        "EB_P3_delta": round(p3_delta, 4),
+        "EB_P4": ("PASS" if EBINDSCAN_P4_BAND[0] <= s_trap
+                  <= EBINDSCAN_P4_BAND[1] else "FAIL"),
+        "EB_P5": ("PASS" if ke1_max_prov < EBINDSCAN_P5_KE1 else "FAIL")
+                 if key == "H" else "",
+        "EB_P6": ("PASS" if zero_excess > 0 else "FAIL") if zero else "",
+    }
+    return summary
+
+
+def stage_ebindscan(m=20000, force_rebuild=False):
+    """Atlas §6.5 Step 2: the E_bind twin scan at h405 (zero MD).
+
+    Order (oracles first, hard-fail before any new number):
+
+    1. **Landmark oracle** — the committed ``h2b_g3_corrected_row.csv``
+       re-derived string-identically (the twin is unchanged).
+    2. **Scan** — ``EBINDSCAN_ARMS`` × ``EBINDSCAN_WELLS`` (2 × 7): chord
+       families on the committed corrected master (npz-cached, the
+       ``e_bind_ev`` override built for the g3scan E_bind chord axis), exact
+       τ rescale, rq4graded ladder, p = 1, scored by ``g3_score`` at each
+       arm's own pins.
+    3. **O1 / O2** — the MD-anchored arm-L wells reproduce
+       ``atlas_linsweep.csv`` and arm H at the bundle well reproduces the
+       committed h405 twin anchor, both string-exact.
+    4. **Fits + EB-P1..P6** over the five provenance wells only.
+    5. Outputs ``atlas_ebind_twin.csv`` + ``_summary.csv``, drift-oracled.
+
+    Every row is a §6.5.1 joint-pairing exception (see the section header):
+    a sensitivity read, never a candidate point.
+    """
+    import time as _time
+
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    md_ring = _ebindscan_md_ring_slopes()
+    print(f"[ebindscan] MD ring refund coefficients (committed "
+          f"{EBINDSCAN_MD_RING_CSV}): "
+          + ", ".join(f"{k}={v:+.4f}" for k, v in md_ring.items()) + " eV/eV")
+
+    print(f"\n=== ebindscan: {len(EBINDSCAN_ARMS)} arms x "
+          f"{len(EBINDSCAN_WELLS)} wells ===")
+    t0 = _time.time()
+    rows = []
+    for arm in EBINDSCAN_ARMS:
+        for well in EBINDSCAN_WELLS:
+            row = _ebindscan_cell(arm, well, ens, sig, ref_ke, solv_exp, m,
+                                  force_rebuild)
+            rows.append(row)
+            print(f"[ebindscan {arm[0]}/{well[0]:7s}] "
+                  f"E_bind={well[1]:.5f} KE1={row['n1_ke_eV']} "
+                  f"mid={row['ke_mid_geo_eV']} trap={row['trapped_frac']} "
+                  f"nbar={row['nbar_det']} n1={row['n1_solv']} "
+                  f"gate={row['gate']}  [{_time.time() - t0:6.0f} s]")
+
+    _ebindscan_oracle_L(rows)
+    _ebindscan_oracle_H(rows)
+
+    summary = [_ebindscan_arm_summary(a[0], rows, md_ring)
+               for a in EBINDSCAN_ARMS]
+    print("\n=== ebindscan verdict (pre-registered EB-P1..P6) ===")
+    for s in summary:
+        print(f"  arm {s['arm']} ({s['cell']}, {s['form']}): "
+              f"dKE1/dE_bind = {s['slope_KE1']:+.4f} eV/eV "
+              f"(max resid {s['resid_max_KE1_eV']:.5f} eV over "
+              f"{s['n_fit']} provenance wells); mid-band "
+              f"{s['slope_mid_geo']:+.4f}; trap {s['slope_trap_per_eV']:+.4f}"
+              f"/eV")
+        for p in ("EB_P1", "EB_P2", "EB_P3", "EB_P4", "EB_P5", "EB_P6"):
+            if s[p]:
+                print(f"      {p}: {s[p]}")
+    _write_csv_with_drift("atlas_ebind_twin.csv", rows)
+    _write_csv_with_drift("atlas_ebind_twin_summary.csv", summary)
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# RQ12 probe — is the E_bind refund fraction geometry-dependent? (2026-08-10)
+#
+# The question. The §6.5 study measured dKE/dE_bind = -0.545 at production
+# geometry, i.e. only ~55 % of the nominal exit toll is cashed; ~45 % is
+# refunded as drag never incurred, because the well is paid inside the drag
+# medium (U = E_bind*(1 - rho_hat), one shared erf at 14.2 A).
+#
+# The consequence nobody had checked. Tier-0 Method B *co-fitted* E_bind to
+# TDDFT traces at R = 9 and 18 A. A fit anchored to data returns whatever
+# E_bind reproduces the observed deceleration, so it returns
+# E_bind^fit ~ E_bind^true / c(R_cal) where c is the cashed fraction at the
+# calibration radius. Production then pays c(R_prod) * E_bind^fit, i.e.
+#
+#     transfer factor  T = c(R_prod) / c(R_cal).
+#
+# T != 1 is a calibration-to-production error that no amount of Tier-2
+# arbitration can see. If c is flat in R, T = 1 and the whole refund is an
+# unobservable re-parametrisation.
+#
+# Committed evidence that T != 1: the Tier-0 per-case cubic fits return
+# E_bind = 0.154 eV at 9 A and 0.071 eV at 18 A -- the SAME form and method,
+# a factor 2.17 from radius alone, against a Born bound (D0 §9.1) that
+# allows <= 0.009 eV of true R-dependence and with the opposite sign. If
+# that split is the refund, then c(18)/c(9) ~ 2.17 should be measurable
+# here directly.
+#
+# Design. A deliberately simple controlled probe, NOT an ensemble: single
+# monodisperse radii, fully-dressed fixed mass, radial launch, two wells,
+# per-fragment finite difference. No fate map, no cascade, no selection --
+# the refund is a trajectory property and mixing in bin repopulation would
+# only add noise to a geometric question. (The `center` arm reuses the
+# oracle's own call signature: r0 = 0, mu = 1, m21.)
+# ---------------------------------------------------------------------------
+
+REFUND_RADII_A = (9.0, 18.0, 26.6, 34.4, 47.8, 68.3)
+# 9 / 18 = the Tier-0 calibration droplets; 26.6 = the legacy <N> = 2000
+# production radius; 34.4 = the DFT solvation fit's own offset (RQ12);
+# 47.8 = the corrected-geometry median; 68.3 = the largest Axis-A cell.
+REFUND_S_RHO_A = (14.2, 7.1, 4.4, 3.5, 3.14)
+# 14.2 = the standing shared width (solvation-potential fit, reused for the
+# density); 3.14 = Harms/Toennies/Dalfovo PRB 58 3341 (1998) DFT 10-90 %
+# 5.7 A; 4.4 = their experimental upper end (8 A); 3.5 = central; 7.1 = half
+# the standing value, to expose the trend rather than only its endpoints.
+REFUND_WELLS_EV = (0.0482, E_BIND_ION_EV)   # the same step §6.5 measured
+REFUND_BIRTH_ARMS = (("center", 0.0), ("frac027", 0.27))
+# 0.27 = the corrected-geometry median birth radius fraction (r0 ~ 13 A of
+# R ~ 47.8 A); the `center` arm is the clean geometric limit.
+
+# --- Pre-registered predictions (FROZEN 2026-08-10, before execution) -------
+RF_P1_MIN_SPREAD = 0.05     # c is NOT flat in R at the standing width
+RF_P4_PROBE_TOL = 0.10      # probe c at R 47.8 vs the §6.5 ensemble 0.5308
+RF_P4_ENSEMBLE_C = 0.5308   # the committed MD value (atlas_ebind_md.csv)
+RF_P5_MIN_RATIO = 1.3       # c(18)/c(9); the fitted E_bind split predicts 2.17
+RF_FITTED_EBIND_RATIO = 0.154 / 0.071   # 2.169, from the Tier-0 per-case fits
+
+
+def _refund_ke_eV(R, s_rho, e_bind, r0_frac, mass_amu, law):
+    """Asymptotic per-fragment KE [eV] for one controlled trajectory pair.
+
+    ``law`` selects the drag law, and it is **not** a free choice — the two
+    sides of the transfer question were calibrated under different laws:
+
+    * ``"tier0"`` — uncapped ``shared_pure_cubic``, the law Method B
+      actually extracted {a, b, E_bind} with at R = 9/18 Å;
+    * ``"h405"`` — ``capped_cubic`` at the h405 cap **v_c = 5.5**, the
+      production law §6.5 measured.
+
+    (Bug fixed 2026-08-10: the first build hardcoded ``G3_STANDING[1]``,
+    which is the *superseded* v_c = 7.25 chord, not h405's 5.5 — so the
+    first run measured neither side of the question.)
+    """
+    r0 = np.array([r0_frac * R])
+    cap = {} if law == "tier0" else {"v_c": REFUND_H405_VC, "p_tail": -1.0}
+    res = integrate_pairs(
+        r0, np.array([1.0]), np.array([float(R)]), np.array([mass_amu]),
+        r0_sep=R0_SEP_PROD_A, drag_on=True,
+        e_bind_ev=e_bind, rho_steepness=s_rho, **cap,
+    )
+    v_inf = np.asarray(res["v_inf"]).reshape(-1)      # (2,) A and B
+    return kinetic_energy_eV(np.full(2, mass_amu), v_inf), res
+
+
+def _refund_available_frac(R, r0_frac):
+    """Fraction of the nominal well the ion still has to climb from birth.
+
+    **Correction found in first execution (2026-08-10), not a refinement.**
+    The raw finite difference silently conflates two effects: at small R the
+    ion is born partway UP the well (``U(birth) != 0``), so it can never pay
+    the full ``E_bind`` no matter what the drag does. At R = 9 A that term
+    alone is 22 % and it reproduced the raw ``c`` to 4 decimals -- i.e. the
+    small-R cells were measuring birth geometry, not refund. The available
+    toll is ``E_bind - U(birth) = E_bind * (1 - U(birth)/E_bind)``; dividing
+    by this factor isolates the drag refund. Uses ``STEEP_A`` because the
+    *well* keeps the solvation-potential width whatever the density does.
+
+    Rule-1 reuse: ``1 - U(d)/E_bind`` **is** the erf complement, so this is
+    ``rho_he_ratio`` at the potential width -- not a second copy of the
+    same expression.
+    """
+    depth_birth = 0.5 * R0_SEP_PROD_A + r0_frac * R - R
+    return float(rho_he_ratio(depth_birth, steepness=STEEP_A))
+
+
+REFUND_H405_VC = 5.5        # the h405 cap; NOT G3_STANDING's superseded 7.25
+REFUND_LAWS = ("tier0", "h405")
+
+
+def _refund_cell(R, s_rho, arm_name, r0_frac, mass_amu, law="h405"):
+    """One (R, s_rho, arm) cell: the cashed fraction c = -dKE/dE_bind.
+
+    ``c_raw`` is the bare finite difference; ``c_mean`` is the
+    birth-corrected value and is the one every verdict reads.
+
+    Note on sign: ``c < 0`` is **physical, not a failure** -- in the
+    strongly over-dissipated regime (large R, exit speed below v_c where
+    drag is cubic) a deeper well slows the ion enough that it loses *less*
+    to drag than it gained in toll, so the refund exceeds 100 %.
+    """
+    lo, hi = REFUND_WELLS_EV
+    ke_lo, res_lo = _refund_ke_eV(R, s_rho, lo, r0_frac, mass_amu, law)
+    ke_hi, res_hi = _refund_ke_eV(R, s_rho, hi, r0_frac, mass_amu, law)
+    c_raw = (ke_lo - ke_hi) / (hi - lo)
+    avail = _refund_available_frac(R, r0_frac)
+    c = c_raw / avail
+    trapped = int(np.asarray(res_lo["trapped"]).sum()
+                  + np.asarray(res_hi["trapped"]).sum())
+    return {
+        "arm": arm_name, "law": law, "R_A": R, "s_rho_A": s_rho,
+        "E_bind_lo": lo, "E_bind_hi": hi,
+        "avail_frac": round(avail, 5),
+        "KE_lo_A_eV": round(float(ke_lo[0]), 5),
+        "KE_hi_A_eV": round(float(ke_hi[0]), 5),
+        "KE_lo_B_eV": round(float(ke_lo[1]), 5),
+        "KE_hi_B_eV": round(float(ke_hi[1]), 5),
+        "c_raw_mean": round(float(c_raw.mean()), 4),
+        "c_A": round(float(c[0]), 4), "c_B": round(float(c[1]), 4),
+        "c_mean": round(float(c.mean()), 4),
+        "refund_frac": round(float(1.0 - c.mean()), 4),
+        "v_end_A_aps": round(float(
+            np.asarray(res_hi["v_inf"]).reshape(-1)[0]), 4),
+        "escaped": int(bool(
+            np.asarray(res_hi["depth_end"]).reshape(-1)[0] > 2.0 * STEEP_A)),
+        "n_trapped_flags": trapped,
+    }
+
+
+def _refund_by(rows, arm, s_rho, law="h405"):
+    """Birth-corrected c keyed by radius for one (arm, s_rho, law) slice."""
+    return {r["R_A"]: r["c_mean"] for r in rows
+            if r["arm"] == arm and r["s_rho_A"] == s_rho
+            and r.get("law", "h405") == law}
+
+
+def stage_refundscan():
+    """RQ12: measure the cashed fraction c(R, s_rho) of the E_bind exit toll.
+
+    Zero MD, no ensemble, no fate map. Outputs
+    ``atlas_refund_geometry.csv`` (one row per R x s_rho x birth arm) and
+    ``_summary.csv`` (the transfer factors + the frozen RF-P1..P5 verdicts).
+    """
+    m21 = float(complex_mass_amu(N_STAR))
+    rows = []
+    for law in REFUND_LAWS:
+        for arm_name, r0_frac in REFUND_BIRTH_ARMS:
+            for s_rho in REFUND_S_RHO_A:
+                for R in REFUND_RADII_A:
+                    rows.append(_refund_cell(R, s_rho, arm_name, r0_frac,
+                                             m21, law))
+
+    s_std, s_sharp = REFUND_S_RHO_A[0], REFUND_S_RHO_A[-1]
+    summary = []
+    for arm_name, _ in REFUND_BIRTH_ARMS:
+        # The transfer question is cross-law by construction: Method B
+        # extracted under the UNCAPPED cubic at R = 9/18; production runs
+        # the h405 cap at R ~ 47.8. Comparing one law across radii answers
+        # a different (and, for this question, wrong) thing.
+        cal = _refund_by(rows, arm_name, s_std, "tier0")
+        prod = _refund_by(rows, arm_name, s_std, "h405")
+        cal_sh = _refund_by(rows, arm_name, s_sharp, "tier0")
+        prod_sh = _refund_by(rows, arm_name, s_sharp, "h405")
+        mono = all(
+            _refund_by(rows, arm_name, a, law)[R]
+            <= _refund_by(rows, arm_name, b, law)[R] + 1e-9
+            for law in REFUND_LAWS
+            for a, b in zip(REFUND_S_RHO_A, REFUND_S_RHO_A[1:])
+            for R in REFUND_RADII_A if R != 68.3   # over-dissipated cell
+        )
+        T_std = prod[47.8] / cal[9.0]
+        T_sharp = prod_sh[47.8] / cal_sh[9.0]
+        summary.append({
+            "arm": arm_name,
+            "c_cal9_tier0_std": round(cal[9.0], 4),
+            "c_cal18_tier0_std": round(cal[18.0], 4),
+            "c_prod48_h405_std": round(prod[47.8], 4),
+            "c_cal9_tier0_sharp": round(cal_sh[9.0], 4),
+            "c_prod48_h405_sharp": round(prod_sh[47.8], 4),
+            "T_std": round(T_std, 4), "T_sharp": round(T_sharp, 4),
+            "ratio_c18_c9_tier0": round(cal[18.0] / cal[9.0], 4),
+            "fitted_Ebind_ratio": round(RF_FITTED_EBIND_RATIO, 4),
+            "RF_P1": ("PASS" if abs(prod[47.8] - cal[9.0])
+                      > RF_P1_MIN_SPREAD else "FAIL"),
+            "RF_P2": "PASS" if mono else "FAIL",
+            "RF_P3": ("PASS" if abs(T_sharp - 1.0) < abs(T_std - 1.0)
+                      else "FAIL"),
+            "RF_P5": ("PASS" if cal[18.0] / cal[9.0] > RF_P5_MIN_RATIO
+                      else "FAIL"),
+        })
+
+    print("\n=== RQ12: cashed fraction c(R, s_rho) of the E_bind exit toll ===")
+    print("  c = -dKE/dE_bind, birth-corrected. c = 1 is the naive ledger.")
+    print("  laws: tier0 = UNCAPPED cubic (what Method B extracted with);")
+    print(f"        h405  = capped_cubic at v_c = {REFUND_H405_VC} "
+          "(what production runs).")
+    for law in REFUND_LAWS:
+        for arm_name, _ in REFUND_BIRTH_ARMS:
+            print(f"\n  [{law} / {arm_name}]  "
+                  + "".join(f"R={R:>6.1f}" for R in REFUND_RADII_A))
+            for s_rho in REFUND_S_RHO_A:
+                by = _refund_by(rows, arm_name, s_rho, law)
+                tag = (" (standing)" if s_rho == s_std else
+                       " (Harms DFT)" if s_rho == s_sharp else "")
+                print(f"  s_rho={s_rho:5.2f} "
+                      + "".join(f"{by[R]:6.3f} " for R in REFUND_RADII_A)
+                      + tag)
+    print("\n  verdicts (transfer factor T = c_prod(h405, 47.8) / "
+          "c_cal(tier0, 9)):")
+    for s in summary:
+        print(f"    [{s['arm']}] c_cal {s['c_cal9_tier0_std']:.3f} -> "
+              f"c_prod {s['c_prod48_h405_std']:.3f}  T = {s['T_std']:.3f}"
+              f"   (sharpened: T = {s['T_sharp']:.3f})")
+        print(f"      c(18)/c(9) under the Tier-0 law = "
+              f"{s['ratio_c18_c9_tier0']:.3f} vs the fitted E_bind ratio "
+              f"{s['fitted_Ebind_ratio']:.3f}")
+        print("      " + ", ".join(f"{k}={s[k]}" for k in
+                                   ("RF_P1", "RF_P2", "RF_P3", "RF_P5")))
+    _write_csv_with_drift("atlas_refund_geometry.csv", rows)
+    _write_csv_with_drift("atlas_refund_geometry_summary.csv", summary)
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# §6.5 decomposition — is the measured E_bind "refund" dynamical or cascade?
+# (2026-08-10)
+#
+# The tension. A supercritical single trajectory measures c = 1.000 (full
+# toll, no refund) under the h405 cap, but the ensemble measures c = 0.542
+# (twin) / 0.531 (MD). Those cannot both describe the same ions. The
+# `refundscan` probe integrates at FIXED mass with NO fate map, so it sees
+# only the dynamical response; the ensemble additionally re-populates the
+# n = 1 bin through the evaporation cascade. If most of the 0.53 is
+# cascade, then sharpening the density gate -- which acts on the drag --
+# cannot reach it, and the RQ12 leverage estimate is mis-attributed.
+#
+# Method. KE1 depends on the well through two bundles:
+#   T (trajectory): v_inf, trapped     -- pure dynamics
+#   C (cascade):    n_det              -- which fragments are in the n=1 bin
+# Score all four cross-combinations KE1(T_x, C_y) and difference them. The
+# split is exact by construction (the two orderings sum to the same total);
+# their difference is the interaction term and is reported, not hidden.
+#
+# Note KE1 conditions on n_det == 1, so the complex mass is pinned at
+# m(1) -- the cascade enters ONLY through bin membership, not through mass.
+#
+# Cost: zero new integrations. Both chord families are already cached by
+# the §6.5 Step-2 scan; this is a pure re-score.
+# ---------------------------------------------------------------------------
+
+# label, form, coeff (v_c | a), tau, E0  -- the two §6.5 arms
+EBDECOMP_CELLS = (
+    ("h405", "capped", 5.5, 4.4, 0.405),
+    ("lr1", "lin", 27.5, 4.8, 0.35),
+)
+EBDECOMP_WELLS = (("eb0482", 0.0482), ("eb1168", E_BIND_ION_EV))
+
+# --- Pre-registered predictions (FROZEN 2026-08-10, before execution) -------
+DC_P1_MIN_CASCADE = 0.15    # the cascade contributes materially to c
+DC_P2_MAX_TRAJ = 1.00       # the ensemble's dynamical refund is real (<1)
+DC_P3_CLOSURE_TOL = 1e-9    # arithmetic identity: c_traj + c_casc == c_total
+DC_P4_MAX_INTERACTION = 0.10  # ordering-dependence of the split
+
+
+def _bin1_mean_ke(n_det, trapped, v_inf, min_count=20):
+    """Mean KE [eV] of the n = 1 bin, the ``g3_score`` rule verbatim."""
+    mask = (n_det == 1) & ~trapped
+    if int(mask.sum()) < min_count:
+        return float("nan"), int(mask.sum())
+    ke = kinetic_energy_eV(complex_mass_amu(n_det[mask]), v_inf[mask])
+    return float(ke.mean()), int(mask.sum())
+
+
+def _ebdecomp_bundles(cell, well, ens, sig, m, force_rebuild=False):
+    """(v_inf, trapped, n_det) for one (cell, well) -- cached chord re-score."""
+    label, form, coeff, tau, e0 = cell
+    eb_tag, e_bind = well
+    if form == "capped":
+        fam = _g3scan_chord_family(coeff, eb_tag, e_bind, m, ens,
+                                   force_rebuild)
+    else:
+        fam = _linsweep_chord_family("lin", coeff, None, eb_tag, e_bind, m,
+                                     force_rebuild)
+    v_inf = np.asarray(fam["v_inf"]).reshape(-1)
+    trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
+    K = np.asarray(fam["K"]).reshape(-1) * (TAU_PS / tau)
+    n_det, _sup = fate_map(ens["ne"], K, e0, 1, sig)
+    return v_inf, trapped, n_det
+
+
+def stage_ebinddecomp(m=20000, force_rebuild=False):
+    """Split the measured E_bind response into dynamical vs cascade parts.
+
+    Anchored first: the un-crossed corners must reproduce the committed
+    ``atlas_ebind_twin.csv`` n = 1 bin means before any crossed number is
+    read (the probe-anchoring rule). Zero MD, zero new integrations.
+    """
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+
+    with open(OUT / "atlas_ebind_twin.csv", newline="") as fh:
+        committed = {(r["arm"], r["E_bind_tag"]): float(r["n1_ke_eV"])
+                     for r in csv.DictReader(fh)}
+    arm_of = {"h405": "H", "lr1": "L"}
+
+    (lo_tag, lo_e), (hi_tag, hi_e) = EBDECOMP_WELLS
+    d_well = hi_e - lo_e
+    rows = []
+    for cell in EBDECOMP_CELLS:
+        label = cell[0]
+        T_lo, trap_lo, C_lo = _ebdecomp_bundles(cell, (lo_tag, lo_e), ens,
+                                                sig, m, force_rebuild)
+        T_hi, trap_hi, C_hi = _ebdecomp_bundles(cell, (hi_tag, hi_e), ens,
+                                                sig, m, force_rebuild)
+
+        ke_lolo, n_lolo = _bin1_mean_ke(C_lo, trap_lo, T_lo)
+        ke_hihi, n_hihi = _bin1_mean_ke(C_hi, trap_hi, T_hi)
+        ke_lohi, _ = _bin1_mean_ke(C_hi, trap_lo, T_lo)   # T from lo, C from hi
+        ke_hilo, _ = _bin1_mean_ke(C_lo, trap_hi, T_hi)   # T from hi, C from lo
+
+        # ANCHOR (runs before any crossed value is interpreted)
+        for tag, mine in ((lo_tag, ke_lolo), (hi_tag, ke_hihi)):
+            want = committed[(arm_of[label], tag)]
+            if abs(round(mine, 4) - want) > 1e-9:
+                raise AssertionError(
+                    f"[{label}/{tag}] ANCHOR FAILED: re-scored n1 bin mean "
+                    f"{mine:.6f} != committed atlas_ebind_twin.csv {want}")
+
+        c_total = (ke_lolo - ke_hihi) / d_well
+        c_traj = (ke_lohi - ke_hihi) / d_well      # C frozen at hi
+        c_casc = (ke_lolo - ke_lohi) / d_well      # T frozen at lo
+        c_traj_alt = (ke_lolo - ke_hilo) / d_well  # C frozen at lo
+        c_casc_alt = (ke_hilo - ke_hihi) / d_well  # T frozen at hi
+        interaction = c_traj - c_traj_alt
+        rows.append({
+            "cell": label, "form": cell[1], "coeff": cell[2],
+            "tau_ps": cell[3], "E0_eV": cell[4], "d_well_eV": round(d_well, 6),
+            "KE1_lo_lo": round(ke_lolo, 5), "KE1_hi_hi": round(ke_hihi, 5),
+            "KE1_Tlo_Chi": round(ke_lohi, 5), "KE1_Thi_Clo": round(ke_hilo, 5),
+            "n1_count_lo": n_lolo, "n1_count_hi": n_hihi,
+            "c_total": round(c_total, 4),
+            "c_traj": round(c_traj, 4), "c_casc": round(c_casc, 4),
+            "c_traj_alt": round(c_traj_alt, 4),
+            "c_casc_alt": round(c_casc_alt, 4),
+            "interaction": round(interaction, 4),
+            "cascade_share": round(abs(c_casc) / abs(c_total), 4)
+            if c_total else float("nan"),
+            "DC_P1": "PASS" if abs(c_casc) >= DC_P1_MIN_CASCADE else "FAIL",
+            "DC_P2": "PASS" if c_traj < DC_P2_MAX_TRAJ else "FAIL",
+            "DC_P3": ("PASS" if abs(c_traj + c_casc - c_total)
+                      <= DC_P3_CLOSURE_TOL else "FAIL"),
+            "DC_P4": ("PASS" if abs(interaction) <= DC_P4_MAX_INTERACTION
+                      else "FAIL"),
+        })
+
+    print("\n=== §6.5 decomposition: dynamical vs cascade share of c ===")
+    print("  anchors PASSED: both un-crossed corners reproduce the committed "
+          "atlas_ebind_twin.csv n = 1 bin means")
+    for r in rows:
+        print(f"\n  [{r['cell']}] c_total = {r['c_total']:+.4f}")
+        print(f"    dynamical (bin membership frozen)  c_traj = "
+              f"{r['c_traj']:+.4f}   [alt ordering {r['c_traj_alt']:+.4f}]")
+        print(f"    cascade   (velocities frozen)      c_casc = "
+              f"{r['c_casc']:+.4f}   [alt ordering {r['c_casc_alt']:+.4f}]")
+        print(f"    cascade share of |c_total| = {r['cascade_share']:.3f}"
+              f"   interaction = {r['interaction']:+.4f}")
+        print("    " + ", ".join(f"{k}={r[k]}" for k in
+                                 ("DC_P1", "DC_P2", "DC_P3", "DC_P4")))
+    _write_csv_with_drift("atlas_ebind_decomp.csv", rows)
+    return rows
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "oracles"
     OUT.mkdir(parents=True, exist_ok=True)
@@ -4055,6 +4820,12 @@ def main():
                 "`... linqscan 40.0`")
         stage_linqscan(args[0],
                        force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "ebindscan":
+        stage_ebindscan(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "refundscan":
+        stage_refundscan()
+    elif mode == "ebinddecomp":
+        stage_ebinddecomp(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "levers":
         tab = build_fragment_table()
         stage_levers(tab)
@@ -4069,7 +4840,8 @@ def main():
             f"unknown mode {mode!r} "
             "(oracles | levers | scan | report | w12pred | birthlaw | "
             "legaprime | legb | legc | legd | repilots1 | repilots2 | "
-            "g3landmarks | g3scan | g4scan | ke1auth | linscan | linqscan)"
+            "g3landmarks | g3scan | g4scan | ke1auth | linscan | linqscan | "
+            "ebindscan | refundscan)"
         )
 
 

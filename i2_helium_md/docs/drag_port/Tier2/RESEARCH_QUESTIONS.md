@@ -1726,6 +1726,152 @@ mandatory if ever pursued).
   §6.7 item-1 RESULTS. Confound: E_bind 0.048 unseparated (§6.5 scan
   pending). Atlas stance; Tier-0 still rejects lq.
 
+### RQ12 — The He **density** surface width: is there a DFT density profile from the same calculation that produced the solvation-potential fit? (opened 2026-08-10, fired by the §6.5 E_bind study; **scope HALVED 2026-08-11 — production leg retired, calibration leg intact**)
+
+> **STATUS 2026-08-11 (measured; D0 §9.6, findings "§6.8 T2 + the
+> mass-frame resolution").** The width was opened because the model
+> appeared to cash only ~55 % of the solvation well. **It does not — it
+> cashes 98.1 %.** The shortfall is a **mass-frame partition**
+> (`m(1)/m(21) = 0.6205`: the toll is paid by the dressed complex, KE₁
+> scores the bare ion), not a drag refund. Decomposition: 38.0 % mass +
+> 6.7 % cascade + **1.9 % genuine drag refund**.
+>
+> Consequently the **production-side leg is retired**: an ensemble scan
+> over s_ρ ∈ {14.2, 7.1, 4.4, 3.5, 3.14} moves `c` by 3 % ⇒ **+0.002 eV**
+> on KE₁. The width cannot act at R ≈ 48 Å because ∫ρ̂ dr = R to 0.0 % and
+> a deep-born ion is already at terminal speed crossing the surface shell.
+>
+> The **calibration-side leg is intact and now sized.** At R = 9 Å,
+> s_ρ ∼ R and the ion is still accelerating through the profile, so the
+> drag refund there is real and large (c_cal 0.482 → 0.754 on sharpening).
+> The transfer factor is now level-consistent and ensemble-confirmed:
+> **T = c_prod/c_cal = 0.9815/0.482 = 2.04**, i.e. the co-fitted `E_bind`
+> is inflated ≈ 2×. A Tier-0 re-extraction (atlas §6.8 T5) is forecast at
+> ≈ **+0.02 eV** on KE₁.
+>
+> **RQ12 therefore remains open as a model-correctness question** — a
+> potential width must not be used as a density width, and retiring it
+> still requires the DFT *density* profile named below — but it is **no
+> longer a candidate fix for the KE₁ deficit**. That question moved to
+> `TIER2_MASS_SCENARIOS.md`.
+
+**The question in one line.** `potential_steepness = 14.2 Å` is a fit to a
+DFT *solvation potential*; the code reuses it as the *helium density*
+width. Is the underlying DFT **density** profile available, so the
+density gate can carry its own sourced width instead of a borrowed one?
+
+**Provenance (established, legacy source).**
+
+```matlab
+% from ernesto dft result beta = [14.3324   26.9916   34.4431]
+potential_steepness_molecule = 14.3324; % from fit of solvation potential DFT result
+potential_steepness_atom     = 14.2;    % from fit of solvation potential DFT result
+```
+
+Both are erf widths $s$ in $\tfrac12(\mathrm{erf}((r-R)/s)+1)\cdot E$,
+fitted to a DFT **solvation-potential** profile (I atom / I₂). The
+Python then resolves `rho_he_ratio(depth, steepness=drag_gate_steepness(cfg))`
+→ `potential_steepness` under the default `density_proportional` gate,
+i.e. it uses the potential's width as the density's width.
+
+**Why they are not the same object.** The solvation potential is the He
+density convolved with the I–He pair interaction plus the bubble/snowball
+cavity: $U_\text{solv} \simeq \rho_\text{He}\otimes V_\text{I–He} +
+\text{cavity}$. Convolution with a ~5–7 Å-range pair potential broadens a
+sharp density interface substantially, so ≈ 14 Å is *plausible for $U$*
+and simultaneously ~3–4× too wide for $\rho$.
+
+**Literature stand-in adopted for now (2026-08-10, user).** Harms,
+Toennies & Dalfovo, *Density of Superfluid Helium Droplets*, PRB **58**,
+3341 (1998), for $N = 10^3$–$10^4$ (our regime): DFT predicts a 10–90 %
+surface thickness of **5.7 Å**; the experimental extraction gives
+**6–8 Å**. Converting via width $= 1.8124\,s$:
+
+| source | 10–90 % width | erf $s$ |
+|---|---|---|
+| model (`potential_steepness`) | 25.7 Å | 14.2 |
+| Harms DFT | 5.7 Å | **3.14** |
+| Harms experiment | 6–8 Å | **3.3–4.4** |
+
+So the borrowed density width is $s_\rho \approx 3.1$–4.4 Å, central
+≈ 3.5, against the model's 14.2 — a factor ≈ 4.
+
+**What would retire this RQ.** The radial He density profile
+$\rho(r)$ from the same DFT calculation that produced
+`beta = [14.3324, 26.9916, 34.4431]` (Ernesto's result), fitted with the
+same erf form. That sources $s_\rho$ directly instead of borrowing a
+different droplet's literature value, and it would also settle the
+offset question below.
+
+**Second, separate provenance oddity (open).** The DFT fit's third
+parameter is an **offset of 34.4431 Å** — the profile's half-rise point.
+The code applies the profile centred exactly on the sampled droplet
+radius (offset 0 relative to the surface). If that 34.44 Å was the
+calibration droplet's radius, it implies $N \approx 3700$ for the DFT
+droplet, not the 2000 of the legacy prior. Whether the fitted centre
+should be carried as a surface *shift* is unresolved and was never
+examined.
+
+**Measured leverage — three channels, EXECUTED 2026-08-10 (D0 §9.4, §17).**
+
+1. **Total dissipation: nearly width-blind at production.** For a radial
+   exit path $\int_0^\infty \hat\rho(r-R)\,dr = R$ exactly — the
+   erf-complement's excess outside the nominal radius cancels its deficit
+   inside — so a *saturated* drag is insensitive to $s_\rho$: 0.0 % at
+   $R = 47.8$ Å, 0.05 % at 26.6 Å, +0.8 % at 18 Å, **+11 % at the 9 Å
+   calibration droplet**. The cancellation only fails where $s \sim R$.
+2. **The E_bind transfer factor — the live channel.** The `refundscan`
+   probe measures the cashed fraction $c = -dKE/dE_\text{bind}$
+   cross-law (Method B extracted under the **uncapped** cubic; production
+   runs the h405 cap). $c_\text{cal} = 0.482$ at $R = 9$ Å, so the
+   co-fitted $E_\text{bind}$ is **inflated ≈ 2.1×**, and
+   $T = c_\text{prod}/c_\text{cal} \approx 1.1$–2.1 **> 1**: production
+   *over*-pays the exit toll. Sharpening $s_\rho$ raises $c$ toward 1
+   everywhere (0.482 → 0.754 at $R = 9$) and drives $T \to 1$
+   (2.07 → 1.33 centre-born; 1.49 → 1.03 at a production-like birth).
+   **So the correction is correctly signed for KE₁**, and sharpening
+   **halves the refund** (0.518 → 0.246 at $R = 9$ Å). Its **size is not
+   yet established**: the first "+0.006–0.02 eV" estimate mixed a
+   trajectory-level $c_\text{cal}$ with a system-level $c_\text{prod}$
+   and is withdrawn. Taken consistently at trajectory level,
+   $T \approx 1.66$–2.07. Doing it properly requires a **Tier-0
+   re-extraction**, and $c_\text{prod}$ must first be re-measured on the
+   *ensemble* (single trajectories give 0.80–1.00 vs the MD ensemble
+   0.531).
+
+   **The mechanism is a product of two necessary factors** (§9.4): the
+   deceleration must land where drag is live (*overlap* — what $s_\rho$
+   controls) **and** the drag force must respond to being slowed
+   (*velocity sensitivity*). Either at zero kills the refund; that is why
+   a supercritical capped ion measures c = 1.000 flat at every width.
+
+   **The channel is reachable — decomposed 2026-08-11 (§9.5).** The
+   ensemble response splits **85 % dynamical / 15 % cascade** (h405:
+   c_traj +0.609, c_casc −0.067). The worry that most of the "refund" was
+   fate-map repopulation — which $s_\rho$ could not touch — is
+   **refuted**. Caveat: `trapped` is bundled with the trajectory side, so
+   part of the 0.609 is selection; split it out before leaning on the
+   85 %.
+3. **Birth dressing — untouched.**
+   $n_0 = \mathrm{round}(n^*\hat\rho(d_\text{birth}))$: at $d = 10$ Å a
+   sharper profile takes $\hat\rho$ from 0.84 to ~1.00, i.e. $n_0$ from
+   ≈ 18 to 21 for the shallow-birth class (the §14.3 lever, pushing n̄
+   *up* — the direction the h405 n̄ shortfall needs).
+
+**Not explained by any of this:** the Tier-0 per-case cubic fits return
+$E_\text{bind} = 0.154$ eV at 9 Å vs **0.071** eV at 18 Å — a factor 2.17
+from radius alone, against a Born bound of ≤ 0.009 eV *with the opposite
+sign* (§9.1). The probe measures $c(18)/c(9) = 1.02$, so the refund
+**cannot** be the cause. That split is a separate open defect.
+
+**Coupling.** `drag_gate_steepness` feeds four consumers — drag gate,
+pickup occupancy (initial shell), `density_scaled` cooling, detection
+density — so it is not a single-channel knob. The `erf_independent` (G3)
+enum + `cfg.drag_gate_steepness` already exist and default to
+`potential_steepness` (bit-inert), held in reserve in
+`DRAG_PORT_DESIGN_DECISIONS.md` §5.7 "until a calibration source for the
+separate steepness becomes available" — this RQ is that source question.
+
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);
 `TIER2_DETECTION_STAGE_DESIGN.md` (§4 scope caveats → RQ5);

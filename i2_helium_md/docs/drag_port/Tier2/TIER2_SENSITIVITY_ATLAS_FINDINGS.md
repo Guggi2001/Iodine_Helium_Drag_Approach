@@ -2903,3 +2903,526 @@ n = 1/n = 2 KE deviation.
 + the G4 adjudications open; the scalar budget stands with the
 standing points; the strip family closed; the new-approach search is
 the open agenda item.
+
+## §6.5 Step 2 — the E_bind twin scan EXECUTED (2026-08-10, zero MD, 2 arms × 7 wells; both oracles string-exact) — **the first-order exit-toll argument is structurally right and quantitatively 2× wrong: dKE₁/dE_bind = −0.542 (h405) / −0.549 (lin), a fixed ~45 % refund that is form- and depth-invariant; the trap lever is form-SPLIT (0.620 vs 0.033 /eV); the axis is CLOSED as a KE lever**
+
+**Origin (user, 2026-08-10).** Asked whether raising `E_bind` by 0.1 eV
+shifts every velocity peak down by 0.1 eV, and whether to measure it on
+h405 at realistic droplets. The hypothesis is the atlas plan's own §6.5
+Step-1 counterfactual restated from the physics side, so it was worth
+measuring rather than arguing. Adjudicated: twin-only first (user);
+scope = the plan's Tier-0 provenance well grid plus two labelled
+out-of-provenance diagnostics.
+
+**Instrument.** New `ebindscan` stage in `scripts/tier2_h2b_forward_model.py`
+(artifacts `atlas_ebind_twin.csv` + `_summary.csv`), reusing the
+`e_bind_ev` chord override built for the g3scan E_bind axis; committed
+corrected master, exact τ rescale, rq4graded ladder, p = 1, `g3_score`.
+Ten new focused tests in `tests/test_tier2_h2b_forward_model.py` (grid,
+pins, frozen prediction bands, OLS arithmetic, band-eV aggregation,
+committed-ring read, one per falsifier); module 51 passed; default paths
+byte-inert.
+
+**Cells.** Arm **H** = h405 (`capped_cubic` v_c 5.5 / τ 4.4 / E₀ 0.405);
+arm **L** = the lin chord the MD ring measured at two wells
+(`pure_linear` a 27.5 / τ 4.8 / E₀ 0.35). Wells: **0.048 / 0.071 / 0.113
+/ 0.1168 / 0.154** eV (the Tier-0 co-extracted spread, in-provenance, the
+only cells entering any fit) + **0.0 / 0.2168** eV (labelled
+out-of-provenance mechanism diagnostics; 0.2168 is the user's +0.1 eV
+point).
+
+**Oracles (before any new number).** Landmark `h2b_g3_corrected_row.csv`
+re-derived string-identically; **O1** — arm L reproduces all three wells
+it shares with the committed `atlas_linsweep.csv` string-exact (16
+columns each), anchoring the arm to the MD ring; **O2** — arm H at the
+bundle well reproduces the committed `atlas_ke1_authority.csv`
+h405bat/pooled twin row string-exact. All green.
+
+### The physics the number settles
+
+The droplet well and the He density gate are the **same erf at the same
+width** (`cfg.potential_steepness` = 14.2 Å): identically
+`U(r) = E_bind·(1 − ρ̂(r))`, zero deep inside, `E_bind` at infinity.
+Births sit ~35 Å inside a ~48 Å droplet ⇒ `U(birth) = 0`, so for a
+**fixed trajectory** `E_bind` is a purely additive, velocity-independent
+per-fragment exit toll and `dKE_∞/dE_bind = −1` — exactly the user's
+argument, uniform for every peak. Measured it is **≈ −0.545**: the
+14.2 Å well is paid *inside* the drag medium, so a deeper well slows the
+ion where drag is still live and **~45 % of the toll returns** as
+dissipation never incurred. The correct statement is *"a rigid
+translation, at half the nominal size"* — the shape half of the
+hypothesis survives, the magnitude half does not.
+
+| | arm H (h405, capped) | arm L (lin a 27.5) |
+|---|---|---|
+| dKE₁/dE_bind [eV/eV] | **−0.5421** | **−0.5486** |
+| max fit residual [eV] | 0.00008 | 0.00007 |
+| dKE₂/dE_bind | −0.5513 | −0.5619 |
+| d⟨KE⟩(n2–8 geo)/dE_bind | −0.5617 | −0.6077 |
+| d⟨KE⟩(n10–17)/dE_bind | −0.4171 | −0.6813 |
+| dtrap/dE_bind [1/eV] | **+0.6199** | **+0.0326** |
+| KE₁ at E_bind = 0 / bundle / 0.2168 | 0.6876 / 0.6236 / 0.5696 | 0.9189 / 0.8546 / 0.8000 |
+
+### Four established results
+
+1. **Affine over the whole span — no saturation.** Residuals against the
+   five-well provenance line stay ≤ 0.0007 eV out to *both* diagnostics
+   (0.0 and 0.2168 eV — a 4.5× range in depth). The refund is a **fixed
+   fraction**, not a depth-dependent one.
+2. **Form-invariant.** 0.5421 vs 0.5486 — 1.2 % apart across two
+   genuinely different laws (Φ 0.64 lin vs the h405 plateau). A refund
+   driven by drag *magnitude* could not do that. Fixed-fraction +
+   form-invariant is what the shared-erf geometry predicts (the overlap
+   between where the well is paid and where drag is live is set by the
+   profile, not the coefficient) — **consistent with, not proof of**; the
+   decisive test decouples `potential_steepness` from the density gate
+   and so breaks the shared-surface convention (**posted, not taken**).
+3. **The trap lever is form-SPLIT — the genuinely new number.**
+   0.620/eV on capped_cubic, **0.033/eV on linear**: across the entire
+   0 → 0.2168 eV span the lin family moves trap 0.0003 → 0.0085. The
+   ring's "trap axis dead for lin" single-point read is now a slope over
+   seven wells, ~19× flatter than the capped family. Adjacent to D0 §9's
+   recorded (v_c, well) over-dissipation coupling.
+4. **The axis is closed as a KE lever.** Even at the physically
+   impossible `E_bind = 0`, h405 reaches KE₁ **0.6876** — short of the
+   0.75 (A)-ceiling band and far short of the 1.00 eV reference peak.
+   The entire well axis is worth **≤ +0.064 eV** on KE₁, against a
+   ~0.36 eV deficit.
+
+### The user's question, answered directly
+
+At `E_bind` = 0.2168 (the standing 0.1168 **+ 0.1**), arm H measures
+KE₁ **0.5696** vs 0.6236 — **ΔKE₁ = −0.0540 eV for a nominal −0.1000**,
+i.e. 54 %, exactly on the fitted line. Side effects at that well: trap
+**+0.058** (0.0535 → 0.1113), n̄ **−0.563** (4.484 → 3.921), and the cell
+**falls out of the twin hard gate** (n̄ below the §3.5c twin band
+[4.4, 7.1]). The direction is also wrong for the standing problem: +0.1 eV
+moves KE₁ *away* from the 1.00 eV reference. And §9.1 bounds the
+physically defensible variation at ≤ 0.009 eV, so 0.2168 eV sits ~14×
+outside what any geometry argument licenses — a mechanism diagnostic,
+never a candidate.
+
+### Cross-instrument: the twin's limits, measured
+
+The committed lin MD ring gives the same coefficient on CRN well pairs:
+−0.5268 (lr1→lr2), −0.5062 (lr3→lr4), **mean −0.5165** vs the twin's
+−0.5486 on that chord — the twin runs **≈ 6 % steep** there. On the same
+chord the *size grading* differs much more: MD (mid-band − n₁) = **+0.15**
+vs the twin's **+0.059**.
+
+> **Superseded same-day by the Step-3 MD cell (below).** The inference
+> drawn here — "the twin under-reports cross-bin KE grading by ~2.5×,
+> a general instrument caveat" — does **not** hold on the capped arm and
+> is withdrawn as stated. Slopes transfer; grading is form-specific and
+> must be measured per arm. See "§6.5 Step 3" and D0 §9.3.
+
+### W₁ side effect (twin, non-gating)
+
+On the capped arm W₁ is **non-monotone** in the well: 1.388 (0) → 0.703
+(bundle) → **0.600** (0.154) → 0.676 (0.2168). The 0.154 cell sits below
+the G4 W₁ floor ≈ 0.67 — but it **fails the twin n̄ gate** (4.247 < 4.4):
+it buys W₁ by pushing n̄ out of band, the known trade, not a new landing.
+The lin arm runs the opposite way (0.665 → 0.734, monotone worsening) and
+stays gated at every well. Gate verdicts here are the §3.5c
+**twin-convention** band (n₁ [0.19, 0.30], n̄ [4.4, 7.1]); the lin ring
+recorded that this differs from the MD-side realization band.
+
+### Pre-registered predictions (frozen before execution)
+
+| id | outcome | reading |
+|---|---|---|
+| EB-P1 \|slope_H\| < 0.56 | **PASS** | passes the threshold, but the *mechanism* behind it (capped refunds visibly more) is only marginally supported at 1.2 % — read the result as **form-invariance**, not a form effect |
+| EB-P2 linear to ±0.005 eV | **PASS** | residual 8e-5, ~60× inside the envelope |
+| EB-P3 mid−n₁ slope ∈ [0.10, 0.20] | **FAIL both arms** | grading is real and correctly signed (heavier clusters pay closer to nominal: +0.020 H, +0.059 L) but 2.5–7× smaller than predicted; the MD +0.15 that motivated the band is itself a twin-vs-MD discrepancy |
+| EB-P4 trap 0.6–1.1 /eV | **PASS** H / **FAIL** L | the failure *is* result 3 |
+| EB-P5 no provenance well reaches KE₁ 0.75 | **PASS** | result 4 |
+| EB-P6 KE₁(0) above the linear extrapolation | **PASS on sign only** | +0.0007 eV — the predicted saturation is absent, which is result 1 |
+
+Two of six failed and one passed only nominally. Both failures are
+informative rather than instrument problems, and both were adjudicable
+only because the bands were frozen first.
+
+### Consequences for the plan
+
+- **§6.5 Step 1 (the scoring-level swap) is SUPERSEDED, not deferred.**
+  Its stated first-order rule — "escapers shift final KE by −δ" — is the
+  hypothesis this scan measures as 2× too large; running it would encode
+  the error it was designed to bound.
+- **§6.5 Step 3 (MD confirmation) is NOT triggered** under its own rule
+  (no provenance well's effect changes a verdict). The one MD-worthy
+  remainder is a **capped-arm check of the coefficient itself**, since
+  the twin's ≈ 6 % over-steepness is measured on the lin arm only — a
+  1-pair CRN spot-check, not a ring.
+- **Posted, not taken:** the steepness-decoupling test of the
+  geometric-overlap explanation (breaks the shared-surface convention;
+  behind its own trigger).
+
+**Atlas stance:** nothing adopted. `finc1v725` stands; h405 candidacy and
+the G4 adjudications stay open; the free-form linear adoption gate
+(`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` §6.3/§6.4) is untouched and
+remains the next user gate. E_bind stays *Derived* and joint-paired —
+every row above is a §6.5.1 pairing exception, never a candidate point.
+
+## §6.5 Step 3 — the E_bind MD confirmation cell EXECUTED (2026-08-10, 1 × N = 500, CRN against the committed h405 ring cell) — **the transfer function is MD-CONFIRMED at −0.5308 eV/eV (2 % from the twin); MD-P5 FAILED and withdraws the Step-2 twin-grading caveat**
+
+**Design.** One MD cell only. The committed free-form-ring cell
+`linrh405p` (h405 pins, bundle well, seed 20260731, N = 500) is already
+on disk, so the shallow-well twin `ebmdh405s` (same everything, well
+0.0482 eV) completes a CRN pair for the cost of a single run. The
+validity condition is enforced structurally: the cfg diff against the
+committed partner must be **exactly**
+`{binding_energy_I_ion_eV, allow_unvalidated_binding_pairing}` — a third
+key would mean the pair is not CRN and the slope would carry an
+uncontrolled second difference. The drag bundle stamp is deliberately
+**held** at 0.1168 (the §6.7 item-2 posture), which is what makes this a
+*declared* §6.5.1 pairing exception rather than a silent re-pairing.
+Instruments: `scripts/gen_tier2atlas_ebindmd.py` +
+`scripts/post_processing/tier2atlas_ebindmd_table.py`, 11 focused tests.
+Partner oracle green (nine committed `atlas_linring_table.csv`
+observables reproduced). Artifact `atlas_ebind_md.csv`.
+
+| observable | bundle 0.11676 | shallow 0.0482 | MD slope [eV/eV] | twin (Step 2) |
+|---|---|---|---|---|
+| ⟨KE⟩ n=1 | 0.6371 | 0.6735 | **−0.5308** | −0.5421 |
+| ⟨KE⟩ n=2 | 0.5511 | 0.5848 | −0.4914 | −0.5513 |
+| ⟨KE⟩ n2–8 (geo) | 0.3205 | 0.3581 | −0.5493 | −0.5617 |
+| ⟨KE⟩ n10–17 | 0.0789 | 0.1098 | −0.4521 | −0.4171 |
+| trap | 0.0630 | 0.0120 | **+0.7439 /eV** | +0.6199 |
+| n̄ | 3.748 | 4.245 | −7.25 /eV | −7.36 /eV |
+| n₁_solv | 0.2054 | 0.2018 | — | — |
+
+The deep band rests on only **3** bins at N = 500 (vs 7 for mid), so
+`slope_deep` is reported and not leaned on.
+
+### What the MD settles
+
+1. **The transfer function is confirmed.** −0.5308 measured vs −0.5421
+   forecast — **2 %**, tighter than the lin arm's 6 %. The ~45 % refund
+   of the naive exit toll is a real MD property of the model, not a twin
+   artifact.
+2. **The twin's error is a level offset, not a slope error.** KE₁ twin −
+   MD = −0.0135 eV at the bundle well and −0.0127 at the shallow well —
+   essentially constant. This is the cleanest statement yet of what the
+   twin is licensed for: **slopes, not levels**.
+3. **The n̄ lever agrees across three independent systems** — MD −7.25/eV,
+   twin −7.36/eV, and the §6.7 item-2 lq scan's −0.50 per 0.0686 eV step
+   (= −7.3/eV). 
+4. **The trap lever lands at 0.744/eV**, between the twin's 0.620 and the
+   §6.7 lq value 0.85, inside D0 §9's band. The capped arm's
+   well-sensitivity on the trapped channel is confirmed real, which
+   sharpens the Step-2 form-split against the lin arm's 0.033/eV.
+5. **The ceiling holds in MD.** KE₁ = 0.6735 at the shallow well;
+   extrapolating the *measured MD* slope to `E_bind = 0` gives 0.699 —
+   still below the 0.75 (A)-ceiling band. The axis is closed as a KE
+   lever on MD evidence, not only twin evidence.
+
+### MD-P5 FAILED — and it corrects the Step-2 record
+
+Pre-registered MD-P1 **PASS**, MD-P2 **PASS** (0.5308 inside the
+[−0.55, −0.47] band built from the lin arm's MD/twin ratio), MD-P3
+**PASS** (KE2 within 0.039 of KE1 — the rigid translation holds across
+bins in MD), MD-P4 **PASS** (trap 0.0120 ≤ 0.025), MD-P6 **PASS**.
+
+**MD-P5 FAIL.** It predicted the Step-2 twin-grading caveat would
+reproduce: MD (mid − n₁) in [0.05, 0.25], exceeding the twin's +0.0277.
+Measured **+0.0184** — *below* the twin, and an order of magnitude below
+the lin arm's MD +0.13. Consequences, stated plainly:
+
+- The Step-2 claim "**the twin under-reports cross-bin KE grading by
+  ~2.5×**, a new instrument caveat" is **withdrawn as stated**. It was
+  generalized from a single lin-arm measurement and does not hold on the
+  capped arm, where the twin slightly *over*-reports.
+- The defensible replacement: **cross-bin KE grading is small and
+  drag-form-dependent** — ≈ 0.02 on the capped arm, ≈ 0.06–0.13 on the
+  linear arm. The twin tracks it to ±0.01 on capped and misses by ≈ 0.07
+  on linear.
+- EB-P3's band [0.10, 0.20] was therefore **mis-calibrated at
+  registration** (built from that one lin number). Its double failure in
+  Step 2 is partly a bad band, not only a real effect — recorded so the
+  Step-2 verdict is not over-read.
+- The general lesson, now twice-measured: **slopes transfer across
+  instruments and arms; differences of slopes do not.** Grading must be
+  measured per arm.
+
+**Atlas stance:** unchanged. Nothing adopted, no standing point moved;
+`finc1v725`, h405 candidacy and the G4 adjudications all stand, and the
+free-form linear adoption gate remains the next user gate. E_bind stays
+*Derived* and joint-paired. §6.5 is now complete across all three steps
+(Step 1 superseded, Step 2 twin, Step 3 MD) and the axis is **closed**.
+
+## RQ12 refund-geometry probe EXECUTED (2026-08-10, zero MD) — **the E_bind refund is a velocity-sensitivity effect; the co-fitted E_bind IS inflated ≈ 2.1× and production OVER-pays (T ≈ 1.1–2.1); sharpening the density width is correctly signed for KE₁ but worth only ≈ +0.006–0.02 eV; RF-P5 falsified — the refund does NOT explain the 0.154/0.071 per-case split**
+
+**Origin (user, 2026-08-10).** After §6.5 measured that only ~55 % of the
+well is cashed at production, the user argued the consequence nobody had
+checked: Tier-0 *co-fitted* `E_bind` against real TDDFT traces, so a fit
+anchored to data must have returned an **inflated** `E_bind` ≈
+`E_bind^true`/c. Correct the density width, the refund shrinks, a re-fit
+returns a smaller `E_bind`, and production KE₁ rises. The counter is
+self-consistency: if `c` is the same at calibration and production the
+re-partitioning is unobservable. So the whole question reduces to the
+**transfer factor** `T = c(R_prod)/c(R_cal)`.
+
+**Instrument.** Twin stage `refundscan` + a byte-inert `rho_steepness`
+override on `integrate_pairs` (twin-side mirror of production's
+`erf_independent` gate). Controlled single trajectories: monodisperse R,
+fully dressed fixed mass, radial launch, two wells, per-fragment finite
+difference — no fate map, no ensemble. Artifacts
+`atlas_refund_geometry{,_summary}.csv`; 10 focused tests.
+
+### Two defects found and fixed during execution — both changed the answer
+
+1. **Birth inside the well.** The raw finite difference conflated the
+   refund with birth geometry: at small R the ion is born partway *up* the
+   well and can never pay the full depth. That term alone reproduced the
+   raw `c` to four decimals at R = 9/18 Å (0.7774 predicted, 0.7771
+   measured). All values are now divided by the available fraction
+   `ρ̂(depth_birth)` at the potential width.
+2. **The wrong drag law (the serious one).** The first working build
+   measured *both* sides under a **capped** law, hardcoding
+   `G3_STANDING[1]` = v_c **7.25** — the superseded chord — rather than
+   h405's 5.5. Above a cap the drag force is v-independent, so a refund
+   cannot exist *by construction*; that produced a spurious `c = 1.000` at
+   the calibration radii and, from it, a **reported conclusion that was
+   wrong in both sign and substance** ("the Tier-0 fit is unbiased;
+   production under-pays; correcting costs KE₁"). Method B extracted under
+   the **uncapped** `shared_pure_cubic`; production runs the h405 cap. The
+   transfer factor is therefore **cross-law by construction**, and the
+   probe now carries both laws explicitly.
+
+Birth-corrected `c` under the **Tier-0 (uncapped) law**, centre-born:
+
+| s_ρ [Å] | R 9 | R 18 | R 26.6 | R 34.4 |
+|---|---|---|---|---|
+| **14.2** (standing) | **0.482** | 0.494 | 0.553 | 0.612 |
+| 7.1 | 0.663 | 0.625 | 0.659 | 0.700 |
+| 3.14 (Harms DFT) | **0.754** | 0.681 | 0.700 | 0.732 |
+
+### Five results
+
+1. **Mechanism — a PRODUCT of two necessary factors.** From the energy
+   balance `c = 1 + d(∫F_drag ds)/dδ`, a refund needs **both** (i) the
+   extra deceleration to land where drag is live (*overlap* — the factor
+   the density width controls) and (ii) the drag force to respond to
+   being slowed (*velocity sensitivity*). Either at zero kills it. Under
+   the h405 cap a centre-born ion stays above v_c from 9 to 47.8 Å and
+   measures `c` = 1.000 flat: factor (ii) is zero, so varying (i) does
+   nothing. Under the uncapped cubic (ii) is live and `c` ≈ 0.48–0.73,
+   and **sharpening the density halves the refund** (0.518 → 0.246 at
+   R = 9). In the over-dissipated corner `c` goes **negative** (>100 %
+   refund): a deeper well slows the ion enough that it loses *less* to
+   cubic drag than it gained in toll. Physical, not a failure.
+   *(Both earlier framings — "geometric overlap" alone, then "velocity
+   sensitivity, NOT overlap" — were wrong as stated; the second was a
+   false dichotomy, corrected 2026-08-11.)*
+2. **Sharpening makes E_bind's effect STRONGER** — `c` rises toward 1 at
+   every radius (0.482 → 0.754 at R = 9). RF-P2 holds off the
+   over-dissipated cell.
+3. **The user's mechanism is CONFIRMED in sign.** `c_cal` = 0.482 ⇒ the
+   co-fitted `E_bind` is inflated ≈ 2.1×, and `T` = **2.073** (centre) /
+   **1.488** (production-like birth), both **> 1**: production *over*-pays
+   the toll. Sharpening drives `T` → 1 (1.327 / 1.032) — **RF-P3 PASSES on
+   both arms**, i.e. the correction removes a real transfer error and is
+   correctly signed for KE₁.
+4. **Magnitude — small, and the probe cannot set it.** The probe's
+   production-side `c` (0.80–1.00) disagrees with the MD ensemble
+   **0.5308**, because one centre-born radial trajectory is not an
+   ensemble. Substituting the MD value gives **T ≈ 1.10**. So `T > 1` is
+   robust, its size spans ≈ 1.1–2.1, and the KE₁ payoff — (T−1)/T ×
+   0.062 eV — is **≈ +0.006 eV at T = 1.1, +0.02 eV at T = 1.5**. Real,
+   correctly signed, far short of the ~0.36 eV deficit.
+5. **RF-P5 FALSIFIED, and only it.** RF-P5 predicted `c(18)/c(9)` ≈ 2.17
+   — the ratio of the Tier-0 per-case fitted E_binds (0.154 at 9 Å /
+   0.071 at 18 Å) — if that split were the refund. Measured **1.023**
+   (centre) / 0.994 (frac027) under the correct law. `c` is essentially
+   *equal* at the two calibration radii, so the refund cannot produce a
+   2.2× difference. **The 0.154/0.071 split has another, unknown cause**
+   — a live loose end, against a Born bound of ≤ 0.009 eV with the
+   opposite sign (§9.1).
+
+**Also measured:** birth position matters as much as radius — under the
+h405 cap at R = 47.8, `c` = 1.000 centre-born vs 0.800 at the
+production-median birth fraction (Tier-0 law: 0.706 vs 0.164). The refund
+is not a geometric constant; it couples to the §14.3 birth-depth lever.
+
+**Verdicts.** RF-P1 PASS; RF-P2 PASS (production-like arm); RF-P3 PASS
+both arms; RF-P5 **FAIL**. RF-P4 withdrawn as mis-specified — a single
+trajectory cannot reproduce an ensemble mean; the two birth arms bracket
+it instead.
+
+**Consequence for RQ12.** Sharpening the density width is right physics
+*and* correctly signed, but it is not a solution to the KE₁ deficit.
+Doing it properly needs a **Tier-0 re-extraction** under the corrected
+width, and the production-side `c` must first be re-measured on the
+ensemble. Nothing adopted; no standing point moved.
+
+> **Magnitude estimate WITHDRAWN 2026-08-11.** The "T ≈ 1.10 ⇒
+> +0.006–0.02 eV" figure above mixed a **trajectory-level** `c_cal`
+> (Method B fitted trajectories: fixed mass, no cascade) with a
+> **system-level** `c_prod` (MD KE₁, cascade included). Not the same
+> derivative. Taken consistently at trajectory level the probe gives
+> `T ≈ 1.66–2.07`; the step to a KE₁ number needs the system-level
+> response and has not been done. `T > 1` — production over-pays — is
+> the robust part.
+
+## §6.5 decomposition EXECUTED (2026-08-11, zero MD, zero new integrations) — **the ensemble E_bind response is 85 % dynamical / 15 % cascade: the cascade-repopulation worry is REFUTED and the density-width lever CAN reach the refund**
+
+**Origin.** The §6.5/RQ12 probe measures `c` = 1.000 for a supercritical
+single trajectory while the ensemble measures 0.5422 (twin) / 0.5308
+(MD). The probe runs at **fixed mass with no fate map**, so the worry was
+that much of the ensemble "refund" is **cascade repopulation** of the
+n = 1 bin — a channel the density width cannot touch, which would make
+the whole RQ12 leverage argument mis-attributed. Raised by the assistant
+against its own probe; the user asked for the decomposition.
+
+**Method.** KE₁ responds to the well through two bundles: **T**
+(trajectory — `v_inf`, `trapped`) and **C** (cascade — `n_det` from the
+fate map). Score all four cross-combinations KE₁(T_x, C_y) and
+difference; the split is exact by construction and the
+ordering-dependence is reported as an interaction term rather than
+hidden. Because KE₁ conditions on n = 1, the complex mass is pinned at
+m(1) — the cascade enters **only** through bin membership, not mass.
+Stage `ebinddecomp`, artifact `atlas_ebind_decomp.csv`; both un-crossed
+corners **anchored** against the committed `atlas_ebind_twin.csv` bin
+means before any crossed value was read. Zero new integrations — the
+chord families were already cached by Step 2.
+
+| cell | c_total | c_traj (dynamical) | c_casc (cascade) | cascade share | interaction |
+|---|---|---|---|---|---|
+| **h405** | 0.5422 | **+0.6090** | −0.0669 | **12.3 %** | −0.0000 |
+| **lr1** (lin) | 0.5488 | **+0.5817** | −0.0330 | 6.0 % | +0.0001 |
+
+**1. DC-P1 FAILS — the hypothesis is refuted.** Registered: cascade
+≥ 0.15. Measured 0.067 / 0.033. In refund terms the total refund 0.458
+splits **0.391 dynamical (85 %) / 0.067 cascade (15 %)**. The response is
+overwhelmingly the drag channel, so **the density width can reach it**.
+
+**2. It resolves the 1.000-vs-0.53 tension — and not as guessed.** The
+ensemble's *dynamical* value is 0.6090 (DC-P2 PASS: a real refund even
+with membership frozen). So the gap from 1.000 to 0.542 is ≈ 0.39
+**ensemble geometry** — birth-position spread and non-radial paths
+putting real ions below v_c during the surface crossing — and only ≈ 0.07
+cascade. The probe's defect was **representativeness**, not the missing
+mass mechanism.
+
+**3. Cascade sign.** Small and **negative**: deepening the well shifts
+n = 1 membership toward slightly *faster* ions, partially offsetting the
+dynamical loss.
+
+**4. Open caveat.** `trapped` was bundled with T (it is a trajectory
+output), so **c_traj = velocity response + trapping selection**. Trap
+moves 0.012 → 0.063 across this well pair, so part of the 0.609 is
+selection. Splitting trapping into its own bundle is one further crossing
+and should be done **before the 85 % figure is leaned on**. DC-P3
+(closure) and DC-P4 (interaction ≤ 0.10) both PASS — the split is
+well-conditioned (interaction ≤ 1e-4).
+
+**Atlas stance:** unchanged. Nothing adopted, no standing point moved.
+
+---
+
+## §6.8 T2 + the mass-frame resolution EXECUTED (2026-08-11, zero MD) — **the "45 % E_bind refund" is a MASS-FRAME PARTITION, not a drag refund: the ion pays 98.1 % of the well and the model is working correctly; the density-width lever is measured NULL at production (+0.002 eV)**
+
+**Trigger.** User challenge, in these terms: *"Why is consistently 45 % of
+the toll of the solvation potential not paid physically — it makes no
+sense. Where is that energy coming from? This really screams like a
+potential physics bug."* The challenge is **sustained**: the standing
+explanation was wrong. The model, however, is not.
+
+Preceded by the user's methodological correction — *"aren't we
+overcomplicating trying to understand and quantifying everything? Can't we
+just change the sharpness and see if changing E_bind then has a larger
+influence than before?"* — which is what T2 became. Accepted: the T-factor
+arithmetic and the T3 consumer adjudication were dropped as scaffolding,
+T1 was dropped, and the probe reduced to a two-well slope at five widths
+(licensed by the committed EB-P2 affinity result).
+
+### 1. T2 — the density-width scan: NULL
+
+Anchors first, both passed: re-integration at s_ρ = 14.2 is **bit-identical**
+to the committed chord npz, and all four (arm × well) `n1_ke_eV` reproduce
+`atlas_ebind_twin.csv` **string-exact**. The two-well slopes reproduce the
+committed 7-well OLS to 1e-4 (−0.5422 vs −0.5421 H; −0.5488 vs −0.5486 L).
+
+`c = −dKE₁/dE_bind`, ensemble, corrected geometry:
+
+| s_ρ [Å] | 14.2 | 7.10 | 4.40 | 3.50 | 3.14 |
+|---|---|---|---|---|---|
+| h405 (capped) | 0.5422 | 0.5548 | 0.5583 | 0.5590 | **0.5597** |
+| lr1 (lin) | 0.5488 | 0.5635 | 0.5686 | 0.5693 | **0.5695** |
+
+A **4.5× sharpening moves c by 3 %**, converged by s_ρ = 4.4 ⇒ **+0.002 eV**
+on KE₁ against a 0.36 eV deficit. Both pre-registered expectations
+**REFUTED**: c did not climb toward 1, and there was no form split
+(lr1 +0.021 vs h405 +0.018).
+
+Also measured: the **pickup consumer is exactly inert** — `n₀ = 21` for
+20000/20000 fragments at every width (shallowest birth −19.95 Å), and the
+twin has no detection stage. **T3's four-consumer confound is therefore
+moot on the twin side** and needed no adjudication.
+
+### 2. Why — the mass-frame partition
+
+Three invariances made the "drag refund" story untenable: invariant to
+drag **form** (1.2 %), to birth **depth**, and now to density **width**.
+A quantity indifferent to everything about the drag is not a drag effect.
+
+$$c = \frac{m(1)}{m(21)} = \frac{130.903}{210.955} = 0.6205$$
+
+The twin integrates at the dressed mass m(21) but scores KE₁ at the bare
+mass m(1), so only 62 % of any dressed-frame toll reaches the observable.
+Measured by re-scoring in both frames (anchored corners first):
+
+| arm | c_traj bare | c_traj **dressed** | toll actually paid |
+|---|---|---|---|
+| h405 | +0.6090 | **+0.9815** | **98.1 %** |
+| lr1 | +0.5817 | **+0.9375** | **93.8 %** |
+
+**Independent confirmation by energy closure** (6375 scored n = 1 ions):
+budget 2.7006 − well **0.1167** (99.9 % of 0.1168) − drag 1.5790 = exit
+1.0050 eV dressed, × 0.6205 = **0.6236** = the committed KE₁.
+
+Corrected decomposition of the observed 0.5422:
+
+| component | h405 | lr1 |
+|---|---|---|
+| mass partition | 38.0 % | 38.0 % |
+| cascade | 6.7 % | 3.3 % |
+| **genuine drag refund** | **1.9 %** | **6.2 %** |
+
+The genuine refund **is** form-split 3.3× as §9.2's mechanism reasoning
+expected — it was buried under a constant 30× larger. It also
+retro-explains **EB-P3's FAIL**: the mass ratio predicts a grading
+increment ≈ 0.057, not the registered 0.10–0.20.
+
+### 3. Verdicts
+
+- **The user's challenge is sustained; the model is exonerated.** There is
+  no missing energy: the ion pays 99.9 % of the well. The 45 % was an
+  observable-frame artifact of an entirely correct calculation.
+- **RQ12's production leg is retired** (nothing to recover); its
+  **calibration leg is intact and now sized**: T = c_prod/c_cal =
+  0.9815/0.482 = **2.04**, ensemble-confirmed and level-consistent — the
+  quantity T2 was originally chartered to produce. Payoff of a Tier-0
+  re-extraction (T5) forecast at **≈ +0.02 eV**.
+- **T1 is retired without running.** Trapped ions accumulate a large K,
+  land at n_det = 21 and never enter the n = 1 bin, so the `& ~trapped`
+  mask is near-inert for KE₁. The split that was missing was the mass
+  frame, not the trapping.
+- **§9.5's "0.39 ensemble geometry" attribution is WITHDRAWN.** The 1.000
+  vs 0.53 gap is the mass frame; DC-P1's cascade verdict is unaffected.
+- **New structural ceiling:** ∂KE₁/∂(any pre-evaporation energy) ≤ 0.6205.
+  §3.5k's S_k = 0.389 is 63 % of it, and the top 32 % of its registered
+  band [0.35, 0.75] was unreachable. BP-KILL verdict unaffected.
+
+### 4. The larger consequence
+
+The same identity gives KE₁ = E_exit · m(1)/m_flight with E_exit measured
+**mass-invariant to 0.09 %**, turning the entire KE₁ deficit into a
+question about what mass actually flies. That thread — the §3.5g
+cross-check (attenuation does **not** explain "exhausted"; the ratio is
+frame-invariant at 0.6019), the flight-mass measurement, the KE-vs-n shape
+problem, and the speed-gated co-moving hypothesis — is recorded in its own
+document, **`TIER2_MASS_SCENARIOS.md`**. Full mechanism record: D0 §9.6.
+
+**Atlas stance:** unchanged. Nothing adopted; Tier-0, h405 and
+`finc1v725` all stand.

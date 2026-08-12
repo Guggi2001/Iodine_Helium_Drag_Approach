@@ -2060,7 +2060,34 @@ Only for forms still interesting after Steps 1–2. Requires the drag-form
 enum build (new `SimConfig` enum members + `physics/drag.py` branches),
 behind its own `[PROCEED TO IMPLEMENTATION]`; N = 500 each.
 
-### 6.5 E_bind influence study (zero-MD first, MD confirmation second)
+### 6.5 E_bind influence study (zero-MD first, MD confirmation second) — **Step 2 EXECUTED 2026-08-10** (twin, zero MD; 2 arms × 7 wells at h405 + the MD-measured lin chord; both oracles string-exact)
+
+> **Outcome (full record: findings "§6.5 Step 2", D0 §9.2).** The
+> first-order ledger argument (`dKE₁/dE_bind = −1`, uniform for every
+> peak) is **structurally right and quantitatively wrong by 2×**:
+> measured **−0.5421 (h405) / −0.5486 (lin)** eV/eV. `U = E_bind·(1 − ρ̂)`
+> is the *same* erf at the *same* 14.2 Å width as the density gate, so
+> the well is paid inside the drag medium and ~45 % is refunded.
+> Affine to ≤ 0.0007 eV across the whole 0 → 0.2168 eV span (no
+> saturation), and **form-invariant** to 1.2 %. New: the **trap lever is
+> form-split** — 0.620/eV capped vs **0.033/eV linear**. **Axis closed as
+> a KE lever**: even `E_bind = 0` leaves h405 at KE₁ 0.6876, below the
+> 0.75 (A)-ceiling band. Step 1 (the scoring-level swap) is **superseded**
+> — it linearizes away exactly the ~45 % the twin measures.
+>
+> **Step 3 EXECUTED 2026-08-10 (user), 1 × N = 500 CRN against the
+> committed h405 ring cell — the transfer function is MD-CONFIRMED:
+> −0.5308 vs the twin's −0.5421 (2 %).** The twin's residual error is a
+> near-constant KE₁ *level* offset (−0.013 eV), not a slope error; the n̄
+> lever agrees across three systems (−7.25 /eV MD, −7.36 twin, −7.3 lq);
+> trap lever 0.744 /eV. MD-P1..P4 and P6 all PASS; **MD-P5 FAILED and
+> withdraws the Step-2 twin-grading caveat** — grading is form-specific
+> (≈ 0.02 capped, ≈ 0.06–0.13 linear), not a systematic twin
+> under-report, and EB-P3's band was mis-calibrated from one lin number.
+> **§6.5 is complete and the axis is CLOSED.** Nothing adopted;
+> `finc1v725` / h405 / the lin adoption gate all stand.
+
+
 
 **Learning goal (user-stressed, 2026-07-23):** does the
 jointly-extracted E_bind actually influence the landed histogram and
@@ -2230,6 +2257,152 @@ seed-pairing discipline. Atlas stance unchanged: nothing here moves
 `finc1v725`; adoption of any form/E_bind value stays outside this
 program.
 
+## 6.8 — the helium-density surface width (RQ12): program (opened 2026-08-10/11; **T1–T3 CLOSED, T2 EXECUTED NULL 2026-08-11**)
+
+> **STATUS 2026-08-11 — read this before the program text below.**
+> **T2 EXECUTED (zero MD): NULL.** A 4.5× sharpening (s_ρ 14.2 → 3.14)
+> moves `c = −dKE₁/dE_bind` from 0.5422 to 0.5597 — 3 %, i.e. **+0.002 eV**
+> on KE₁. Converged by s_ρ = 4.4; no form split.
+>
+> **The reason retires most of this section's premise.** The "~45 % refund"
+> is **not a drag refund**: it is a **mass-frame partition**,
+> `m(1)/m(21) = 0.6205`. The ion pays **98.1 %** of the well (two
+> independent measurements). The shortfall decomposes 38.0 % mass +
+> 6.7 % cascade + **1.9 % genuine drag refund** — so the width had almost
+> nothing to act on, and the null is structural rather than unlucky.
+> Full record: **D0 §9.6**, findings "§6.8 T2 + the mass-frame resolution".
+>
+> - **T1 RETIRED without running** — trapped ions land at n_det = 21 and
+>   never enter the n = 1 bin, so the `& ~trapped` mask is near-inert for
+>   KE₁. The missing split was the mass frame.
+> - **T2 EXECUTED** — null, above. It also delivered the `T` it was
+>   chartered for, now level-consistent: **T = 0.9815/0.482 = 2.04**.
+> - **T3 MOOT on the twin side** — pickup measured inert (n₀ = 21 for
+>   20000/20000 at every width), and the twin has no detection stage.
+>   "Change the sharpness" is one argument to `integrate_pairs`. The
+>   adjudication only becomes live if T4 is ever run.
+> - **T4 DOES NOT FIRE** — its trigger is "T2 clears its band"; a
+>   0.002 eV twin effect is far below one seed-SD.
+> - **T5 is now the whole of RQ12**, and is sized: ≈ **+0.02 eV** on KE₁
+>   via a Tier-0 re-extraction. Still a user decision with its own plan.
+> - **T6 unaffected** and is now the highest-value remaining item here.
+>
+> **The thread that grew out of this is larger than the programme it came
+> from:** the same mass frame turns the whole KE₁ deficit into a
+> flight-mass question — see **`TIER2_MASS_SCENARIOS.md`**.
+
+**Why its own section, not a §6.5 sub-item.** `potential_steepness` is
+neither a drag form (§6.1–§6.4) nor E_bind (§6.5). It is a **shared
+surface convention** read by four consumers — the drag spatial gate,
+pickup occupancy (the initial shell `n₀`), the `density_scaled` cooling
+gate, and the detection-stage density. That coupling, not the drag law,
+is what makes it hard to design against.
+
+**Results live elsewhere.** This section is the *forward program*. The
+established findings are recorded in **D0 §9.4/§9.5** (mechanism,
+transfer factor, decomposition), **`RESEARCH_QUESTIONS.md` RQ12**
+(provenance + what retires it), the findings doc ("RQ12 refund-geometry
+probe", "§6.5 decomposition") and the migration log. Do not restate them
+here; cite them.
+
+### 6.8.1 What is established (one paragraph each, pointers only)
+
+- **The defect.** `potential_steepness = 14.2 / 14.3324 Å` are fits to a
+  DFT **solvation potential** (legacy: *"from fit of solvation potential
+  DFT result"*, `beta = [14.3324, 26.9916, 34.4431]`). The code reuses
+  that width as the **He density** width. The solvation potential is
+  ρ ⊗ V_I–He + cavity, hence necessarily broader than ρ — so 14.2 Å is
+  plausible for *U* and too wide for *ρ*. The defect is the **reuse**,
+  not the value. (RQ12)
+- **The mechanism.** The E_bind "refund" is a **product of two necessary
+  factors**: *overlap* (the extra deceleration must land where drag is
+  live — what the width controls) × *velocity sensitivity* (the drag
+  force must respond to being slowed). Either at zero kills it. Hence a
+  supercritical capped ion measures c = 1.000 flat at every width, while
+  under the uncapped law sharpening **halves** the refund
+  (0.518 → 0.246 at R = 9 Å). (D0 §9.4)
+- **The direction is favourable.** `c_cal = 0.482` under the uncapped
+  Tier-0 law ⇒ the co-fitted E_bind is inflated ≈ 2.1×, and
+  **T = c_prod/c_cal > 1** (1.66–2.07 at trajectory level): production
+  over-pays the exit toll, so correcting the width **raises** KE₁.
+  (D0 §9.4)
+- **The channel is reachable.** The ensemble response is **85 %
+  dynamical / 15 % cascade** (h405: c_traj +0.609, c_casc −0.067), so
+  the width — which acts on the drag — can reach it. (D0 §9.5)
+- **The magnitude is NOT established.** The "+0.006–0.02 eV" estimate is
+  **withdrawn**: it mixed a trajectory-level `c_cal` with a system-level
+  `c_prod`. Nothing measured has put the KE₁ payoff above ~0.02 eV, and
+  even that is unvalidated. (D0 §9.4)
+- **Total dissipation is nearly width-blind at production.** Analytic:
+  ∫₀^∞ ρ̂(r−R) dr = R exactly, so a saturated drag is insensitive to the
+  width (0.0 % at R = 47.8 Å) — the cancellation only fails where s ∼ R
+  (**+11 % at the 9 Å Tier-0 droplet**). The width therefore acts through
+  the *E_bind transfer* and *birth dressing*, not through bulk drag loss.
+  (D0 §17)
+
+### 6.8.2 The literature stand-in — ADOPTED as an interim (user, 2026-08-10)
+
+No DFT **density** profile is available from the calculation that
+produced the solvation-potential fit (that is RQ12's retiring artifact).
+Interim source: **Harms, Toennies & Dalfovo, *Density of Superfluid
+Helium Droplets*, Phys. Rev. B 58, 3341 (1998)** — ⁴He droplets at
+N = 10³–10⁴, i.e. our regime. Converting 10–90 % width = 1.8124·s:
+
+| source | 10–90 % width | erf `s_ρ` [Å] |
+|---|---|---|
+| model (`potential_steepness`, standing) | 25.7 | 14.2 |
+| Harms **DFT** | 5.7 | **3.14** |
+| Harms **experiment** | 6–8 | **3.3–4.4** |
+
+Working value **`s_ρ ≈ 3.5 Å`** (central), with 3.14 and 4.4 as the
+bracket ends. Flagged as *borrowed*: a different droplet's profile, not
+our calculation's. Every table using it says so.
+
+**Second, unresolved provenance oddity.** The DFT fit's third parameter
+is an **offset of 34.4431 Å** — the profile's half-rise point — which the
+code discards, applying the profile centred exactly on the sampled
+droplet radius. If that was the calibration droplet's radius it implies
+N ≈ 3700, not the 2000 of the legacy prior. Whether the fitted centre
+should be carried as a surface *shift* has never been examined.
+
+### 6.8.3 Tasks, in execution order
+
+Each task carries its own pre-registered predictions, frozen before it
+runs, and must **anchor against an already-committed value before any new
+number is interpreted** (the rule adopted after the two RQ12 probe
+defects — see the log, 2026-08-10).
+
+| # | task | cost | gate / trigger | what it retires |
+|---|---|---|---|---|
+| **T1** | **Split `trapped` out of `c_traj`.** The §9.5 decomposition bundles trapping with the trajectory side, so part of the 0.609 is *selection*, not dynamics. One further crossing on the existing `ebinddecomp` machinery. | zero MD, zero new integrations | trigger (one stage edit) | the open caveat on the **85 % dynamical** figure — which nothing should lean on until this runs |
+| **T2** | **Ensemble-level `c(s_ρ)` at h405.** The gating measurement. Single trajectories give c = 0.80–1.00 against the MD ensemble's 0.531, so the probe cannot set `T`. Run the corrected master through the `ebindscan` machinery with `s_ρ` as an added axis; report `c` per width **and** the observable vector (n̄, n₁, trap, W₁) since all four consumers move together. | zero MD | trigger | the withdrawn magnitude estimate; produces the first defensible `T` |
+| **T3** | **Adjudicate the four-consumer confound.** `drag_gate_steepness` feeds drag + pickup + cooling + detection. Decide: treat the sharpening as **one coherent physical correction** (all four together — physically right, not decomposable) or run diagnostic single-channel arms (physically incoherent, but attributable). `erf_independent` (G3) + `cfg.drag_gate_steepness` already exist and are bit-inert. **Decision, not a run** — and it must precede any MD. | zero | **user adjudication** | the ambiguity in how to read T2/T4 |
+| **T4** | **MD confirmation at the literature width.** 1 × N = 500, CRN-paired against the committed `linrh405p` — the pattern that worked for the §6.5 Step-3 cell. **Conditional on T2** showing an effect above ~1 seed-SD. | 1 × 500 | trigger; **fires only if T2 clears its band** | whether the twin's `c(s_ρ)` transfers to MD |
+| **T5** | **Tier-0 re-extraction under the corrected width.** Re-fit {a, b, E_bind} by Method B with the sharpened density gate. **This is a program decision, not a follow-on:** it re-opens the only thing stable since the beginning and invalidates the G3/G4 arbitration chain behind h405 (v_c, τ, E₀ were arbitrated *against the current drag surface*). Needs its own plan document and its own trigger. | Tier-0 re-fit + downstream re-arbitration | **user decision, own plan** | the pairing defect itself — the only path to *adopting* anything from this program |
+| **T6** | **The 0.154 vs 0.071 split** (independent; may run in parallel). The Tier-0 per-case cubic fits return E_bind = 0.154 eV at 9 Å vs 0.071 eV at 18 Å — same form, same method, a factor 2.17 from radius alone, against a Born bound of ≤ 0.009 eV **with the opposite sign** (D0 §9.1). Measured **not** to be the refund (c(18)/c(9) = 1.02). An unexplained factor-2 inconsistency inside the calibration the whole program rests on. Method-B artifacts are committed, so it is cheap. | zero MD | trigger | a documented, unexplained defect in the Tier-0 calibration |
+
+**Ordering rationale.** T1 and T2 are zero-MD and gate everything
+downstream; T3 is a decision that must land before any MD is spent; T4 is
+conditional on T2; T5 is a program-level commitment that should not be
+entered until T2/T4 have sized the payoff. T6 is independent and is
+arguably the higher-value thread — it is a defect in the existing
+calibration rather than a refinement of it.
+
+### 6.8.4 Standing rules for this program
+
+- **Nothing here is adoptable without T5.** Running production at a
+  corrected width while keeping {a, b, E_bind} extracted under the wide
+  profile is a *sensitivity read* under the documented §6.5.1 hatch, not
+  a model prediction — the coefficients absorbed the uncorrected profile.
+- **Every width table states that `s_ρ` is borrowed** until RQ12's DFT
+  density profile arrives.
+- **Expectation management, on the record:** the measured direction is
+  favourable but the size is small. This program is justified by **model
+  correctness** (a potential width must not be used as a density width)
+  and by the **n̄/dressing channel**, not as a fix for the KE₁ deficit.
+- Atlas stance unchanged: nothing here moves `finc1v725`, h405
+  candidacy, or the free-form linear adoption gate.
+
 ## 7. Execution order and budget
 
 | stage | content | MD cost | gate |
@@ -2244,6 +2417,12 @@ program.
 | 7 | synthesis: merge all results into `TIER2_PARAMETER_INFLUENCE.md`, close GAP markers | zero | none |
 | G3 | geometry re-arbitration: Step 1 landmarks + Step 2 twin scan (zero MD) + Step 3 MD ring (**DONE** 2026-07-27/28) | 14 × 500 | trigger (per step) |
 | G4-1 | fine ridge sweep (§3.5e): Blocks 0/1 zero-MD + Block 3 finalists **and** the ladder arm (**DONE** 2026-07-28) | 15 × 1000 | trigger (per block) |
+| E-2/3 | §6.5 E_bind study: Step 2 twin scan + Step 3 MD confirmation (**DONE** 2026-08-10; Step 1 superseded) | 1 × 500 | trigger (per step) |
+| W-1 | §6.8 **T1** trapping/dynamics split (**RETIRED unrun**) + **T2** ensemble `c(s_ρ)` at h405 (**DONE 2026-08-11 — NULL**) | zero | done |
+| W-2 | §6.8 **T3** four-consumer confound adjudication (**MOOT twin-side**; live only if T4 runs) | zero | closed |
+| W-3 | §6.8 **T4** MD confirmation at the literature width, CRN vs `linrh405p` | 1 × 500 | **does not fire** — T2 null |
+| W-4 | §6.8 **T5** Tier-0 re-extraction + downstream re-arbitration | large | **user decision, own plan document** |
+| W-5 | §6.8 **T6** the 0.154/0.071 per-case E_bind split (independent; may run in parallel) | zero | trigger |
 
 Total new MD ≈ 19–26 cells × N = 500 ≈ 9.5–13k fragments ≈ 1.9–2.6×
 the pooled battery — the explicit spend of the program (E_bind MD

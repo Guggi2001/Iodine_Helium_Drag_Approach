@@ -768,3 +768,146 @@ def test_g4_ridge_connectivity_detects_a_gap(twin):
     assert not twin._g4_ridge_connected(
         [(5.5, 4.8), (6.0, 6.4)], (5.5, 4.8), (6.0, 6.4), vc, tau
     )
+
+
+# ---------------------------------------------------------------------------
+# Atlas §6.5 Step 2 — the E_bind twin scan (designed 2026-08-10)
+# ---------------------------------------------------------------------------
+def _ebind_rows(twin, arm="H", slope=-0.55, mid_slope=-0.70, trap_slope=0.85,
+                zero_ke1=None):
+    """Synthetic scan rows on an exact line, in the stage's row schema."""
+    rows = []
+    for tag, e_bind, in_prov in twin.EBINDSCAN_WELLS:
+        ke1 = 0.90 + slope * e_bind
+        if tag == "eb0" and zero_ke1 is not None:
+            ke1 = zero_ke1
+        rows.append({
+            "arm": arm, "cell": "synthetic", "form": "capped",
+            "tau_ps": 4.4, "E0_eV": 0.405,
+            "E_bind_tag": tag, "E_bind_eV": e_bind, "in_provenance": in_prov,
+            "n1_ke_eV": ke1,
+            "ke2_eV": 0.80 + slope * e_bind,
+            "ke_mid_geo_eV": 0.60 + mid_slope * e_bind,
+            "ke_deep_eV": 0.20 + mid_slope * e_bind,
+            "trapped_frac": 0.02 + trap_slope * e_bind,
+        })
+    return rows
+
+
+def test_ebindscan_well_grid_is_the_tier0_provenance_spread(twin):
+    """Plan §6.5: five co-extracted wells + two labelled diagnostics."""
+    tags = [w[0] for w in twin.EBINDSCAN_WELLS]
+    vals = [w[1] for w in twin.EBINDSCAN_WELLS]
+    assert len(set(tags)) == len(tags) == 7
+    assert vals == sorted(vals)
+    prov = [w[1] for w in twin.EBINDSCAN_WELLS if w[2] == 1]
+    diag = [w[1] for w in twin.EBINDSCAN_WELLS if w[2] == 0]
+    assert prov == [0.0482, 0.071, 0.113, twin.E_BIND_ION_EV, 0.154]
+    assert diag == [0.0, 0.2168]
+    # the bundle stamp is the standing well, carried exactly (no re-typing)
+    assert dict((t, v) for t, v, _ in twin.EBINDSCAN_WELLS)["eb1168"] == (
+        twin.E_BIND_ION_EV
+    )
+
+
+def test_ebindscan_arms_pin_h405_and_the_md_measured_lin_chord(twin):
+    arms = {a[0]: a for a in twin.EBINDSCAN_ARMS}
+    assert arms["H"] == ("H", "h405", "capped", 5.5, 4.4, 0.405)
+    assert arms["L"] == ("L", "lr1", "lin", 27.5, 4.8, 0.35)
+
+
+def test_ebindscan_prediction_bands_are_frozen(twin):
+    """EB-P1..P6 thresholds frozen 2026-08-10 before any number was read."""
+    assert twin.EBINDSCAN_P1_MAX == 0.56
+    assert twin.EBINDSCAN_P2_MAX_RESID_EV == 0.005
+    assert twin.EBINDSCAN_P3_BAND == (0.10, 0.20)
+    assert twin.EBINDSCAN_P4_BAND == (0.6, 1.1)
+    assert twin.EBINDSCAN_P5_KE1 == 0.75
+
+
+def test_ebindscan_ols_recovers_an_exact_line(twin):
+    x = [0.0482, 0.071, 0.113, 0.1168, 0.154]
+    y = [0.9 - 0.55 * xi for xi in x]
+    slope, icept, resid, n = twin._ebindscan_ols(x, y)
+    assert abs(slope + 0.55) < 1e-12
+    assert abs(icept - 0.9) < 1e-12
+    assert resid < 1e-12
+    assert n == 5
+
+
+def test_ebindscan_ols_rejects_a_two_point_fit(twin):
+    with pytest.raises(ValueError, match=">= 3 finite"):
+        twin._ebindscan_ols([0.0482, 0.1168], [0.9, 0.85])
+
+
+def test_ebindscan_band_ev_aggregations(twin):
+    ke_bins = [(1, 0.2, 1.0), (2, 0.1, 0.8), (4, 0.1, 0.2),
+               (10, 0.1, 0.3), (12, 0.1, 0.1)]
+    mid, mid_n = twin._ebindscan_band_ev(ke_bins, 2, 8, "geometric")
+    deep, deep_n = twin._ebindscan_band_ev(ke_bins, 10, 17, "arithmetic")
+    assert (mid_n, deep_n) == (2, 2)
+    assert abs(mid - np.sqrt(0.8 * 0.2)) < 1e-12
+    assert abs(deep - 0.2) < 1e-12
+    empty, empty_n = twin._ebindscan_band_ev(ke_bins, 15, 17, "arithmetic")
+    assert empty_n == 0 and np.isnan(empty)
+
+
+def test_ebindscan_md_ring_slopes_read_the_committed_artifact(twin):
+    """EB-P1's reference number is read from the ring CSV, never hardcoded."""
+    slopes = twin._ebindscan_md_ring_slopes()
+    assert set(slopes) == {"lr1_lr2", "lr3_lr4", "mean"}
+    # both CRN pairs measured a partial refund: strictly between the rigid
+    # -1 prediction and no response at all
+    for key in ("lr1_lr2", "lr3_lr4"):
+        assert -1.0 < slopes[key] < 0.0
+    assert abs(slopes["mean"] + 0.52) < 0.03
+
+
+def test_ebindscan_summary_passes_its_predictions_on_the_designed_case(twin):
+    md_ring = {"mean": -0.52}
+    rows = _ebind_rows(twin, slope=-0.50, mid_slope=-0.65, trap_slope=0.85,
+                       zero_ke1=0.95)
+    s = twin._ebindscan_arm_summary("H", rows, md_ring)
+    assert s["EB_P1"] == "PASS"          # |slope| 0.50 < 0.56
+    assert s["EB_P2"] == "PASS"          # exact line
+    assert s["EB_P3"] == "PASS"          # 0.65 - 0.50 = 0.15 in [0.10, 0.20]
+    assert s["EB_P4"] == "PASS"          # 0.85/eV in [0.6, 1.1]
+    assert s["EB_P6"] == "PASS"          # 0.95 above the 0.90 extrapolation
+    assert abs(s["EB_P3_delta"] - 0.15) < 1e-9
+    assert s["n_fit"] == 5
+
+
+def test_ebindscan_summary_fires_each_falsifier(twin):
+    md_ring = {"mean": -0.52}
+    # EB-P1/P3: a rigid (unrefunded) response
+    rigid = twin._ebindscan_arm_summary(
+        "H", _ebind_rows(twin, slope=-1.0, mid_slope=-1.0), md_ring)
+    assert rigid["EB_P1"] == "FAIL" and rigid["EB_P3"] == "FAIL"
+    # EB-P4: trap lever outside the D0 §9 band
+    flat_trap = twin._ebindscan_arm_summary(
+        "H", _ebind_rows(twin, trap_slope=0.05), md_ring)
+    assert flat_trap["EB_P4"] == "FAIL"
+    # EB-P6: E_bind = 0 sitting below the provenance extrapolation
+    below = twin._ebindscan_arm_summary(
+        "H", _ebind_rows(twin, zero_ke1=0.80), md_ring)
+    assert below["EB_P6"] == "FAIL"
+    # EB-P5 is arm-H only and fires when a provenance well clears the band
+    high = _ebind_rows(twin, slope=-0.50)
+    for r in high:
+        r["n1_ke_eV"] += 0.20
+    assert twin._ebindscan_arm_summary("H", high, md_ring)["EB_P5"] == "FAIL"
+    high_l = _ebind_rows(twin, arm="L", slope=-0.50)
+    for r in high_l:
+        r["n1_ke_eV"] += 0.20
+    assert twin._ebindscan_arm_summary("L", high_l, md_ring)["EB_P5"] == ""
+
+
+def test_ebindscan_summary_flags_a_nonlinear_response(twin):
+    """EB-P2 is the linearity envelope: a bent response must fail it."""
+    md_ring = {"mean": -0.52}
+    rows = _ebind_rows(twin, slope=-0.50)
+    for r in rows:
+        r["n1_ke_eV"] += 10.0 * r["E_bind_eV"] ** 2  # bend ~ 0.014 eV resid
+    s = twin._ebindscan_arm_summary("H", rows, md_ring)
+    assert s["EB_P2"] == "FAIL"
+    assert s["resid_max_KE1_eV"] > twin.EBINDSCAN_P2_MAX_RESID_EV

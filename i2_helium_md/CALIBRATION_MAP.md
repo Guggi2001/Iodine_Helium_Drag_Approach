@@ -266,7 +266,7 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 |---|---|---|---|---|---|---|---|
 | 1 | Drag | $b=2.5154$ (amu·ps/Å²) | cubic drag coefficient, $F=g\,b\,v^3$ | **Locked** | Tier 0 (9A/18A trajectory-match) | held-out cross-case shared-form (Tier 1); `power_law` $n̂{=}2.93$ recovers cubic | 9 Å transverse flag **[D]** |
 | 2 | Drag | $a=0$ (amu/ps) | linear drag coefficient (pure cubic) | **Locked** | Tier 0 (Method B drove $a\to0$) | $\gamma_0=0$ accepted; noise null | §1.2 **[D]** |
-| 3 | Drag | $E_\text{bind}=0.1168$ (eV) | effective ion binding, co-fit with drag | **Locked** (Tier-0), VMI **pending** | Tier 0 trajectory-match → Tier 2 VMI | TDDFT escape-energy sanity; integrated ladder $\sum_i D_0$ (§6.5.1) | OQ1 (electronic provenance) |
+| 3 | Drag | $E_\text{bind}=0.1168$ (eV) | effective ion binding, co-fit with drag | **Locked** (Tier-0), VMI **pending**; **identifiability flag** — its Tier-0 co-extraction spread moves $\bar n$ by 1.3× the gate band (see "Flagged identifiability item") | Tier 0 trajectory-match → Tier 2 VMI | TDDFT escape-energy sanity; integrated ladder $\sum_i D_0$ (§6.5.1) | OQ1 (electronic provenance) |
 | 4 | Drag | $v_c$ (Å/ps) | high-$v$ drag cap — `capped_cubic` tail onset (in-band $v\le v_c$ is the **byte-identical** locked pure cubic; realizes the former contingent $v_\text{ceiling}$) | **Bounded (2026-07-16, §I.10 Slice T1; was contingent R10-(b))** — band $5.3\lesssim v_c\lesssim15$ (H.4; the ≥5.3 floor protects 0.80 eV in-window byte-identity, measured max speed 5.23); Step-1c refined targets $p{=}{-}1$: 7.5 / $p{=}0$: 6.0–6.5 → **Derived** at the T4 winner | Tier 2 $(n,\langle E\rangle)$ mean-KE curve (I-D4 full-curve fit) | Slice-T1 oracles: $v_c{=}\infty$ / $v_c\ge v_\text{max}$ byte-identity vs `linear_cubic(a{=}0)`; delivered 0.80 eV bridge probe dir reproduced **byte-identically** at $v_c{=}5.3$ (both tails); Tier-0 lock untouched | R10, §I.10 |
 | 4b | Drag | $p_\text{tail}\in\{0,-1\}$ (dimensionless) | `capped_cubic` tail exponent, $\gamma_\text{tail}=b\,v_c^2(v/v_c)^{p}$ ($p{=}0$ Stokes-like linear force, $p{=}{-}1$ saturated constant force) | **Free choice (2 arms, 1 selection; config-load-restricted 2026-07-16, §I.10 Slice T1)** — $p{=}1$ (Newton tail) **excluded** (Step-1c K-P2: zero joint closures); hard cutoff **excluded as physics** (I48) | Tier 2 $(n,\langle E\rangle)$ + solvated histogram (C1/C2 form discrimination) | discrimination read (I50): $p{=}{-}1$ wins $n_1/n_2$ ratio, sags $n\ge13$ KE tail; $p{=}0$ flattest KE curve of the program | §I.10, I50 |
 | 5 | Gate | $g(\text{depth})$ (dimensionless) | drag spatial gate, G4→G2 | **Derived** (erf-tied G2 until $\rho_\text{He}$ profile exists) | confining-potential steepness (14.2 Å) | Tier-1 trajectory; promote to G4 with measured $\rho_\text{He}$ | §5 **[D]** |
@@ -376,6 +376,46 @@ small-$n$ tail.)*
   ($KE_\text{shed}$ — **resolved 2026-07-10, ε≈0**), OQ3 ($E_\text{bind}(N)$ vs ladder — **RQ4 sharpened target: the $D_0(1{:}2{:}3)$ ratios**), OQ4 ($S_{\mathrm{I^+}}$/$n^*$
   provenance), OQ5 (cascade timing), OQ6 ($E_\infty$ stripping reach), OQ7
   ($S_{\mathrm{I^+}}$ energy reference — interprets the $|S|$-vs-$\sum D_0$ gap).
+
+### Flagged identifiability item — $E_\text{bind}$'s provenance spread exceeds the $\bar n$ gate (2026-08-10)
+
+Measured by the atlas §6.5 E_bind study (twin Step 2 + MD Step 3; D0
+§9.2/§9.3). $E_\text{bind}$ is **row 3** above — classed **Locked**
+(Tier-0, co-fit with the drag pair); D0 §17 carries the same quantity as
+*Derived / P (paired)* with the note "pairing is the constraint, not the
+value". Both framings are now too weak on one axis:
+
+- The measured lever is $\partial\bar n/\partial E_\text{bind} \approx
+  \mathbf{-7.3\ \text{eV}^{-1}}$, agreeing across **three independent
+  systems** — MD $-7.25$, twin $-7.36$, and the §6.7 item-2 lq scan
+  ($-0.50$ per the $0.0686$ eV step).
+- The Tier-0 **co-extracted** well spread is $0.048$–$0.154$ eV
+  ($0.106$ eV wide; every value is some Tier-0 form's own joint fit).
+  That maps to $\Delta\bar n \approx \mathbf{0.77}$.
+- The MD-side $\bar n$ hard gate is $[3.77, 4.37]$ — **$0.60$ wide**.
+
+So **the extraction uncertainty on $E_\text{bind}$ alone spans $1.3\times$
+the entire $\bar n$ gate band**. Concretely, at the corrected geometry
+h405 measures $\bar n = 3.748$ at the bundle well — $0.022$ *below* the
+gate floor (the §6.1 ring recorded the same shortfall) — and
+$\bar n = 4.245$, comfortably mid-band, at the shallow Tier-0 well, with
+trap dropping $0.063 \to 0.012$ at the same time.
+
+**Consequence for the calibration map.** $E_\text{bind}$ is functionally
+an $\bar n$ knob with a KE side-effect: per eV it moves $\bar n$ roughly
+**30× more efficiently** than it moves $\text{KE}_1$ (the KE axis is
+closed — the whole well span buys $\le 0.064$ eV, §9.2). Any $\bar n$-gated
+arbitration — the G4 successor point above all — is therefore
+conditional on *which* Tier-0 well its drag partner was co-extracted
+with, not merely on the pairing being self-consistent. This does **not**
+license moving $E_\text{bind}$ (it stays Derived and joint-paired, and
+§9.1 bounds the physically defensible variation at $\le 0.009$ eV); it
+means an $\bar n$ verdict inside $\pm 0.4$ of a band edge should be read
+as *not resolved by this observable* until the pairing is stated.
+
+**Open:** whether the $\bar n$ gate band should carry an explicit
+$E_\text{bind}$-pairing caveat, or the successor-point arbitration should
+quote $\bar n$ with a pairing-conditional interval. Not decided here.
 
 *Note:* Tier 2 carries a heavy load (8+ quantities on one observable). The
 identifiability arguments are documented per-parameter (e.g. $f_\text{ret}$ via
