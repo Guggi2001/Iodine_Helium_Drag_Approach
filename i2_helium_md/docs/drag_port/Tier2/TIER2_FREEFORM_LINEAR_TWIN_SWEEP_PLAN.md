@@ -842,6 +842,121 @@ twin coordinate that promised one is now measured untrustworthy at this
 corner — but for a linear cell that lands the histogram *shape*, which
 no twin column currently predicts here.
 
+### 6.6 The (a, τ) joint ring — DESIGN FROZEN (2026-08-12, discussion-adjudicated; `[PROCEED TO IMPLEMENTATION]` given)
+
+User question after §6.5: *"what sweep can improve histogram and kinetic
+energy simultaneously (that KE₁ doesn't land fully is accepted)"*. This
+ring answers it, and it exists because the §6.5 anatomy identified a
+mechanism the program had never isolated.
+
+**What the §6.5 anatomy measured (all zero-MD reads of committed
+artifacts; the reason this ring is well-posed):**
+
+1. **The clone's W₁ damage is entirely a tail deficit.** Signed CDF-gap
+   decomposition: lead mass (sim short in the tail) 0.880 for the clone
+   vs 0.439 h405p / 0.482 lr6 / 0.725 lr1; the clone's *low-n* side is
+   the best of the four (0.200). At n = 12/13/14 it holds
+   0.0116/0.0064/0.0041 vs reference 0.0222/0.0197/0.0187.
+2. **The tail was evaporated, not trapped.** lr6, h405p, clone-s1 all
+   share seed 20260731, so the per-ion CRN flow is exact: of the 237
+   ions at n ≥ 10 under lr6, only **43** are trapped in the clone; 194
+   survive detected and the heavily-dressed group falls from mean
+   n **18.3 → 9.6**. Low-n ions *gain* (+0.49/+0.25/+0.12 for lr6-n of
+   0–2/2–5/5–10). The clone compresses the distribution from both ends
+   at a correct mean — right n̄, wrong width.
+3. **E₀ is NOT the width knob.** lr1 → lr7 (a 27.5, E₀ 0.35 → 0.37)
+   doubles suppression 0.093 → 0.191 and moves n̄ 3.98 → 3.38, while W₁
+   moves 0.9477 → 0.9459 — i.e. nothing.
+4. **`a` improves W₁ monotonically at τ 4.8** (0.948 → 0.877 → 0.856 →
+   0.785 over a 27.5 → 35), taking midHot 1.976 → 1.393 and χ²
+   2160 → 795 with it, and costing only KE₁ (0.903 → 0.715).
+5. **By elimination, τ owns the clone's +0.35 W₁.** Extrapolating (4) to
+   a 42.5 predicts W₁ ≈ 0.72; the clone measured 1.079, and τ is the
+   only remaining moved knob.
+6. **τ ↓ is not available** (checked before pinning any cell, and it
+   killed the first version of this design): at a 42.5, τ 3.2 gives
+   twin n̄ **6.7–16.0** across the whole E₀ grid (τ 2.4: 10.9–17.7).
+   Shorter τ = faster cooling = *less* evaporation = far more retained
+   helium. With the validated n̄ transfer (−0.55 MD-side) those cells
+   land n̄ ≈ 6+ against a [3.77, 4.37] band — not marginal, a different
+   distribution.
+
+**Cells: 6 × N = 500, seed 20260731 — deliberately the §6.3 ring seed**,
+so every new cell is CRN-paired ion-for-ion with lr1–lr7, `h405p` **and**
+clone-s1. Cell-to-cell differences are therefore common-random-number
+paired (far tighter than absolute noise), while absolute values carry the
+per-seed SD measured by the §6.5 battery in this exact family at N = 500:
+**W₁ 0.031, n₁ 0.0181, n̄ 0.099, KE₁ 0.0022, midHot 0.0024, deepKE 0.040,
+trap 0.0066.** All cells `eb0482` (better than eb1168 on both W₁ and KE₁
+throughout the ring).
+
+| # | cell | role | projected MD (measured biases KE₁ +0.02, midHot ×0.88, n̄ −0.55) |
+|---|---|---|---|
+| `s37` | a 37.5 / τ 4.8 / E₀ 0.38 | a-curve | KE₁ 0.66, midHot 1.18, n̄ 4.01, n₁ 0.203 |
+| `s40` | a 40 / τ 4.8 / E₀ 0.39 | a-curve | KE₁ 0.60, midHot 1.03, n̄ 3.96, n₁ 0.203 |
+| `s425` | a 42.5 / τ 4.8 / E₀ 0.39 | **decomposition** — the clone's a at the ring's clock | KE₁ 0.56, midHot 0.94, n̄ 4.17, n₁ 0.193 |
+| `s45` | a 45 / τ 4.8 / E₀ 0.40 | does the a-trend saturate? | KE₁ 0.51, midHot 0.82, n̄ 4.09, n₁ 0.194 |
+| `d2` | a 35 / τ 6.4 / E₀ 0.30 | **τ mirror** — lr6's a at the clone's clock | KE₁ 0.79, midHot 1.26, n̄ 3.87, n₁ 0.192 |
+| `j1` | a 40 / τ 6.4 / E₀ 0.31 | **the joint candidate** | KE₁ 0.67, midHot 0.98, n̄ 3.84, n₁ 0.211 |
+
+With lr6 (a 35, τ 4.8) and the clone (a 42.5, τ 6.4) already committed,
+this gives a **5-point a-curve at τ 4.8** and a **3-point τ contrast at
+a 35 / 40 / 42.5**. (`j1` misses the *twin*-side n̄ band at 4.392 — the
+twin band's floor is 4.4 — but lands inside the MD-side band under the
+validated −0.55 transfer; recorded here so its twin `gate = 0` is not
+later misread as a prediction of failure.)
+
+**Frozen reads (pre-registered before launch):**
+
+- **JR-P1 — the decomposition (this ring's primary question).** τ owns
+  the W₁ damage ⟺ `s425` W₁ ≤ 0.85 **and** `d2` W₁ ≥ 0.95. Killed if
+  `s425` ≥ 1.0 (then a = 42.5 itself broke the a-trend and the dial
+  saturates) or `d2` ≤ 0.85 (then τ 6.4 is harmless at a 35 and the
+  clone's damage is an a×τ interaction). Any other combination is
+  reported as mixed and claims nothing.
+- **JR-P2 — the a-curve at τ 4.8**: W₁, KE₁, midHot, χ² and the tail
+  diagnostic vs a ∈ {35, 37.5, 40, 42.5, 45}; the saturation point (if
+  any) is reported.
+- **JR-P3 — the joint target (the user's actual question).** SUCCESS =
+  any cell beating h405 on **both** W₁ (< 0.767) **and** KE₁ (> 0.637)
+  with midHot ≤ 1.15. `j1` is the pre-registered favourite and it wins
+  only if JR-P1 comes back "a×τ interaction" rather than "τ".
+- **JR-P4 — the fallback is a result, not a failure.** If no cell meets
+  JR-P3, the Pareto front of (W₁, KE₁) over the whole measured family is
+  reported and named as the boundary: KE₁ and histogram are then
+  **not simultaneously improvable in this family**, with lr6 (equal W₁,
+  KE₁ +0.078) as its ceiling.
+- **JR-P5 — the tail diagnostic** (the mechanism read that made this
+  ring possible): scored n ≥ 10 fraction, max n, and the per-ion CRN
+  shell flow vs lr6, per cell.
+- **Gate: reported, never selecting** (user call, 2026-08-12) — pass /
+  gate-marginal / fail under both retained-policy arms, with the §6.5
+  three-way band verdict. Rationale: every cell in this family sits at
+  n₁ 0.19–0.21 against a 0.19 floor because of the shelved **(C)**
+  source-side deficit that h405 shares, so gating on it discriminates
+  nothing *within* the family and only manufactures marginal verdicts.
+  Selection is on W₁ + KE₁, with midHot as the cost line.
+
+**Honest prior, on record before launch:** the τ 4.8 cells that are
+projected to fix W₁ land KE₁ ≈ 0.56–0.60, i.e. **below** h405's 0.637 —
+on that line the trade is real and not broken. `j1` is the only cell
+projected to break it. A JR-P4 outcome is therefore a live and
+respectable possibility, not a disappointment.
+
+**Instrument.** `scripts/gen_tier2atlas_linjoint.py` — same construction
+path as §6.5 (cells built through `gen_tier2atlas_linring.build_cell`,
+its geometry/free-form guards reused; rule 1), LJ-P1 oracle freezing all
+six committed twin rows string-exact, and the CRN guard extended: with
+the seed *shared* with `h405p`, `seed` and `num_molecules` must both be
+absent from every cell's diff. Scorer
+`scripts/post_processing/tier2atlas_linjoint_table.py` joins the
+committed lr6 / clone-pool / h405p rows for the curve and the contrast,
+adds the JR-P5 tail diagnostic, and commits the full vector to
+`atlas_linjoint_table.csv`.
+
+**Standing:** nothing adopted; instrument runs only. Tier-0's in-band
+rejection (n̂ = 2.927), h405 and `finc1v725` stand.
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact
