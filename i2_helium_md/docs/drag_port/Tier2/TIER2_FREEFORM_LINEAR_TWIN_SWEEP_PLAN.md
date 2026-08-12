@@ -997,6 +997,71 @@ and §6.6 (no joint improvement exists) — and hands the residual forward
 as a **flight-mass** question (`TIER2_MASS_SCENARIOS.md`), not a drag
 one. Nothing adopted.
 
+### 6.7 The τ refinement scan — EXECUTED 2026-08-12 (zero MD): the family is CLOSED, and the closure is earned on licensed axes
+
+**Why it was run.** §6.6 concluded "no joint improvement" from τ ∈ {4.8,
+6.4} only — while the committed grid jumps **3.2 → 4.8 with nothing
+between** and §6.6 itself measured τ as the arm's dominant W₁ lever
+(+0.23…+0.41 per 33 % step). The controlling axis was sampled roughly ten
+times coarser than the effect being resolved, so "exhausted" was not yet
+earned. All 57 chord families were already cached, making the refill
+zero-MD and chord-free.
+
+**Instrument.** `stage_lintau` in `scripts/tier2_h2b_forward_model.py`:
+τ = {3.6, 4.0, 4.4, **4.8**, 5.2, 5.6, **6.4**} × the full a grid ×
+3 wells × the §3.5c E₀ grid = **14 364 cells**. `_linsweep_scan` gained
+`tau_grid=None` / `with_tail=False`, both defaulting to the committed
+behaviour so `linscan`/`linqscan` are untouched. **Anchor oracle:** the
+4104 rows at τ ∈ {4.8, 6.4} must reproduce the committed
+`atlas_linsweep.csv` value-for-value — PASSED, which is the licence for
+the interpolated rows. Output `atlas_lintau.csv` (+ summary), with new
+`twin_tail_ge10/13` columns computed on the twin's own solvated branch.
+
+**First product — the twin transfer, measured over the 14-cell MD family
+(reusable beyond this arm):**
+
+| observable | Pearson ρ | Spearman | bias (twin−MD) | SD |
+|---|---|---|---|---|
+| KE₁ | **0.9998** | 0.996 | −0.0142 | 0.0029 |
+| **tail ≥ 10** | **0.964** | **0.982** | +0.0687 | 0.0140 |
+| n₁ | 0.943 | 0.771 | +0.0008 | 0.0040 |
+| n̄ | 0.921 | 0.745 | +0.590 | 0.086 |
+| **W₁** | **0.319** | **0.437** | −0.257 | 0.131 |
+
+midHot transfers as a ratio MD/twin = **0.906 ± 0.004**. **W₁ is refuted
+as a ranking instrument** over 14 cells; the τ-step sign check is the
+sharpest form — at a 42.5 the twin says τ 6.4 *improves* W₁ by 0.122
+while MD measures +0.226 *worse* (**opposite sign**). Method validation:
+s37 predicted midHot 1.213 vs measured 1.216; clone predicted tail 0.0628
+vs measured 0.0668. **The twin's tail reproduces the very τ effect its W₁
+inverts** — so tail, not W₁, is the histogram-side twin instrument from
+here on.
+
+**Second product — the closure.** The refinement **triples the gated
+basin (35 → 126 cells)**, and every new gated cell sits at the previously
+unsampled τ 3.6–4.4. Scored on the licensed legs only:
+
+- **21 gated cells beat h405 on both KE₁ and tail** — the first time the
+  arm has produced any. Their **minimum predicted midHot is 1.213**,
+  missing the 1.15 band by ≥ 0.063 against a ~0.005 transfer SD (>10σ).
+- The **58 gated cells with midHot in band** reach KE₁ ≈ 0.67 at best,
+  with tails 0.058–0.101 — all below h405's 0.1057.
+- **{gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧ tail > h405} = ∅** over
+  a ∈ [15, 60] × τ ∈ [3.6, 6.4] × E₀ ∈ [0.17, 0.52] × 3 wells.
+
+**Verdict: the free-form linear family is CLOSED**, and unlike the
+§6.6-era statement this one is earned — on the axes that transfer
+(KE₁ ρ 0.9998, tail ρ 0.964, n₁ ρ 0.943, midHot ρ ≈ 1), not on the axis
+that does not (W₁). **No MD follow-up is warranted**: the licensed legs
+say no candidate exists, and the one already-measured cell of the
+near-miss class (`s37`, midHot 1.216) landed MD W₁ 0.790 — better than
+its neighbours but still short of h405's 0.767.
+
+**Standing:** nothing adopted. Tier-0 (n̂ = 2.927), h405 and `finc1v725`
+stand. The arm's residual is handed to the flight mass
+(`TIER2_MASS_SCENARIOS.md`, gated by **M1** — a sourced I⁺–He D₀, a
+literature question, not a compute one).
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact

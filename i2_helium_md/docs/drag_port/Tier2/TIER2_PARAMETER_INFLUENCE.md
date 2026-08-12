@@ -375,6 +375,39 @@
     `gate-marginal` on n₁ (0.188–0.214 against the 0.19 floor), which is
     exactly why the gate was made reporting-only for this ring.
 
+- **The τ refinement CLOSES the family — and this time the exhaustion is
+  earned on licensed axes (§6.7 `lintau` scan, 2026-08-12, zero MD,
+  14 364 cells; `atlas_lintau.csv`).** §6.6's "no joint improvement" was
+  measured only at τ ∈ {4.8, 6.4} while the committed grid jumps 3.2 →
+  4.8 with nothing between — an axis sampled ten times coarser than the
+  effect it controls. Refilling it (τ = 3.6/4.0/4.4/5.2/5.6, all 57
+  chord families cached, anchors at 4.8/6.4 reproducing the committed
+  `atlas_linsweep.csv` value-for-value on 4104 rows) **triples the gated
+  basin, 35 → 126 cells** — and then closes it:
+  - **21 gated cells beat h405 on BOTH KE₁ and tail**, all at the
+    newly-sampled τ 3.6–4.4 — but their **minimum predicted midHot is
+    1.213**, missing the 1.15 band by ≥ 0.063 against a ~0.005 transfer
+    SD (>10σ). The 58 gated cells that *are* in band top out at KE₁
+    ≈ 0.67 with tails 0.058–0.101, all under h405's 0.1057.
+  - **The constraint set {gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧ tail >
+    h405} is EMPTY over a ∈ [15, 60] × τ ∈ [3.6, 6.4] × E₀ ∈ [0.17,
+    0.52] × 3 wells.** The §6.6 conclusion survives the refinement.
+- **Twin transfer MEASURED over the 14-cell MD family (reusable program
+  capital, §6.7):** KE₁ **ρ 0.9998** (bias −0.0142 ± 0.0029),
+  **tail(n ≥ 10) ρ 0.964 / Spearman 0.982** (bias +0.069 ± 0.014, ratio
+  a stable ×1.7–1.9) — a **NEW licensed leg** — n₁ ρ 0.943 (bias
+  +0.0008), n̄ ρ 0.921 (bias +0.590), midHot ratio MD/twin **0.906 ±
+  0.004**; and **W₁ ρ 0.319 / Spearman 0.437 — REFUTED as a ranking
+  instrument**, now quantified over 14 cells rather than inferred from
+  two. The τ-step sign check is the sharpest statement: at a 42.5 the
+  twin predicts τ 6.4 *improves* W₁ by 0.122 while MD measures it
+  *worsening* by 0.226 — **opposite sign**. Validation of the method
+  itself: s37's predicted midHot 1.213 vs measured 1.216, and the
+  clone's predicted tail 0.0628 vs measured 0.0668.
+  **Consequence:** the twin's *tail* correctly reproduces the very τ
+  effect its W₁ gets backwards, so tail — not W₁ — is the histogram-side
+  instrument for any future free-form work.
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).

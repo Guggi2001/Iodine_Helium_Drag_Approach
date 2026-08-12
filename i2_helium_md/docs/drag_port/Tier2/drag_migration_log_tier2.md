@@ -13495,3 +13495,61 @@ hands the residual forward as a flight-mass question.
 Records: plan §6.6 (design + findings), findings "§6.6 (a, τ) joint
 ring", D0 §1 form-entry bullet (D0-first rule), artifact
 `atlas_linjoint_table.csv`.
+
+---
+
+## 2026-08-12 — free-form linear §6.7: the τ refinement scan EXECUTED (zero MD, 14 364 cells) — **an unearned "exhausted" retracted, tested, and then EARNED: the family is CLOSED; twin W₁ REFUTED (ρ 0.32), twin TAIL licensed (ρ 0.96)**
+
+User asked to recap and challenged whether the linear family was really
+exhausted. It was not, and the session's claim that it was is **withdrawn**:
+§6.6 concluded "no joint improvement" from τ ∈ {4.8, 6.4} alone, while the
+committed grid jumps 3.2 → 4.8 with nothing between and §6.6 itself measured
+τ as the arm's dominant W₁ lever (+0.23…+0.41 per 33 % step) — the
+controlling axis sampled ~10× coarser than the effect being resolved. All 57
+chord families were cached, so the refill was zero-MD and chord-free (the
+memory rule "refine free axes before refutation", applied to my own claim).
+
+Instrument: `stage_lintau` (τ = 3.6/4.0/4.4/4.8/5.2/5.6/6.4 × the full a grid
+× 3 wells × the §3.5c E₀ grid); `_linsweep_scan` gained `tau_grid` /
+`with_tail`, both defaulting to the committed behaviour so linscan/linqscan
+are byte-untouched. ANCHOR ORACLE PASSED: all 4104 rows at τ ∈ {4.8, 6.4}
+reproduce the committed atlas_linsweep.csv value-for-value — the licence for
+every interpolated row. Committed artifact: atlas_lintau.csv (+ summary), with
+new twin_tail_ge10/13 columns on the twin's own solvated branch. Tests +3.
+
+FIRST PRODUCT — the twin transfer measured over the 14-cell MD family
+(reusable program capital): KE₁ ρ 0.9998 (bias −0.0142 ± 0.0029); **tail ≥ 10
+ρ 0.964 / Spearman 0.982 (bias +0.069 ± 0.014, ratio a stable ×1.7–1.9) — a
+NEW licensed leg**; n₁ ρ 0.943; n̄ ρ 0.921 (bias +0.590); midHot ratio MD/twin
+0.906 ± 0.004; and **W₁ ρ 0.319 / Spearman 0.437 — REFUTED as a ranking
+instrument** over 14 cells, replacing the two-cell inference of §6.5/§6.6. The
+sharpest form: at a 42.5 the twin predicts τ 6.4 IMPROVES W₁ by 0.122 while MD
+measures it WORSENING by 0.226 — opposite sign, which is exactly why the
+scan's apparent "τ 5.2 optimum" was not read as a result. Method validation:
+s37 predicted midHot 1.213 vs measured 1.216; clone predicted tail 0.0628 vs
+measured 0.0668. Consequence: **the twin's tail reproduces the very τ effect
+its W₁ inverts**, so tail — not W₁ — is the histogram-side twin instrument for
+any future free-form work.
+
+SECOND PRODUCT — the closure. The refinement TRIPLES the gated basin (35 →
+126) and every new gated cell sits at the previously unsampled τ 3.6–4.4.
+Scored on licensed legs only: 21 gated cells beat h405 on BOTH KE₁ and tail
+(the first the arm has produced) but their minimum predicted midHot is 1.213,
+missing the 1.15 band by ≥ 0.063 against a ~0.005 transfer SD (>10σ, not
+marginal); the 58 gated cells that ARE in band top out at KE₁ ≈ 0.67 with
+tails 0.058–0.101, all under h405's 0.1057. **{gate ∧ midHot ≤ 1.15 ∧ KE₁ >
+h405 ∧ tail > h405} = ∅** over a ∈ [15, 60] × τ ∈ [3.6, 6.4] × E₀ ∈ [0.17,
+0.52] × 3 wells.
+
+VERDICT: the free-form linear family is CLOSED — and this time earned, on the
+axes that transfer rather than the one that does not. NO MD follow-up is
+warranted: the licensed legs say no candidate exists, and the one
+already-measured cell of the near-miss class (s37, midHot 1.216, closest of
+the 21) landed MD W₁ 0.790 — short of h405's 0.767.
+
+Standing: nothing adopted; Tier-0 (n̂ = 2.927), h405 and finc1v725 stand. The
+residual is handed to the flight mass (TIER2_MASS_SCENARIOS.md), whose gate M1
+— a sourced I⁺–He D₀ — is a literature question, not a compute one.
+
+Records: plan §6.7, findings "§6.7 τ refinement scan", D0 §1 (two bullets: the
+closure and the transfer table), artifact atlas_lintau.csv.

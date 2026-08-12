@@ -3630,3 +3630,75 @@ residual is a mass question, not a drag question.
 now measured its own boundary from both sides — §6.5 (the clone is a
 KE-equivalent only) and §6.6 (no joint improvement exists) — and the open
 question it hands forward is the flight mass.
+
+## §6.7 τ refinement scan EXECUTED (2026-08-12, zero MD, 14 364 cells; anchor oracle PASSED on 4104 rows) — **the free-form linear family is CLOSED, and the closure is earned on the axes that transfer; W₁ is REFUTED as a twin instrument (ρ 0.32) while the TAIL is licensed (ρ 0.96)**
+
+**Motivation — an unearned claim, retracted and then tested.** §6.6
+concluded "KE₁ and the histogram are not simultaneously improvable"
+having sampled τ only at 4.8 and 6.4, while the committed grid jumps
+**3.2 → 4.8 with nothing between** and §6.6 itself measured τ as the
+arm's dominant W₁ lever (+0.23…+0.41 per 33 % step). The controlling
+axis was ~10× coarser than the effect being resolved, so the family was
+**not** exhausted and the session's claim that it was is withdrawn here.
+All 57 chord families were cached, so refilling the gap cost zero MD and
+no chord work.
+
+Instrument: `stage_lintau` (τ = 3.6/4.0/4.4/**4.8**/5.2/5.6/**6.4** × the
+full a grid × 3 wells × the §3.5c E₀ grid). `_linsweep_scan` gained
+`tau_grid` / `with_tail`, both defaulting to committed behaviour.
+**Anchor oracle PASSED:** all 4104 rows at τ ∈ {4.8, 6.4} reproduce
+`atlas_linsweep.csv` value-for-value — the licence for the interpolated
+rows. Output: `atlas_lintau.csv`.
+
+### 1. The twin transfer, measured over the 14-cell MD family
+
+| observable | Pearson ρ | Spearman | bias (twin−MD) | SD |
+|---|---|---|---|---|
+| KE₁ | **0.9998** | 0.996 | −0.0142 | 0.0029 |
+| **tail ≥ 10** | **0.964** | **0.982** | +0.0687 | 0.0140 |
+| n₁ | 0.943 | 0.771 | +0.0008 | 0.0040 |
+| n̄ | 0.921 | 0.745 | +0.590 | 0.086 |
+| **W₁** | **0.319** | **0.437** | −0.257 | 0.131 |
+
+midHot transfers as a ratio MD/twin = **0.906 ± 0.004**.
+
+- **W₁ is refuted as a ranking instrument** — ρ 0.32 over 14 cells,
+  replacing the two-cell inference of §6.5/§6.6. The sharpest form is the
+  τ-step sign check: at a 42.5 the twin predicts τ 6.4 **improves** W₁ by
+  0.122 while MD measures it **worsening** by 0.226 — *opposite sign*.
+  Any free-form claim resting on twin W₁ is void.
+- **The tail is a NEW licensed leg** (ρ 0.964, ranking 0.982, a stable
+  ×1.7–1.9 ratio) — and it matters because §6.5 measured the tail to *be*
+  the W₁ deficit. **The twin's tail reproduces the very τ effect its W₁
+  inverts.**
+- Method validation, independent of the above: s37 predicted midHot
+  1.213 vs **measured 1.216**; clone predicted tail 0.0628 vs **measured
+  0.0668**.
+
+### 2. The closure
+
+The refinement **triples the gated basin, 35 → 126 cells**, and every new
+gated cell sits at the previously unsampled τ 3.6–4.4. Scored on the
+licensed legs only (h405 bars: KE₁ 0.6371, tail 0.1057, midHot 0.9466):
+
+- **21 gated cells beat h405 on both KE₁ and tail** — the first the arm
+  has produced. Their **minimum predicted midHot is 1.213**, missing the
+  1.15 band by ≥ 0.063 against a ~0.005 transfer SD (**>10σ** — not a
+  marginal miss).
+- The **58 gated cells with midHot in band** reach KE₁ ≈ 0.67 at best,
+  carrying tails 0.058–0.101 — all below h405's 0.1057.
+- **{gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧ tail > h405} = ∅** over
+  a ∈ [15, 60] × τ ∈ [3.6, 6.4] × E₀ ∈ [0.17, 0.52] × 3 wells.
+
+**Verdict: the free-form linear family is CLOSED.** Unlike the §6.6-era
+statement, this closure is earned — measured on the axes that transfer
+(KE₁, tail, n₁, midHot), not on the one that does not (W₁). **No MD
+follow-up is warranted:** the licensed legs say no candidate exists, and
+the one already-measured cell of the near-miss class (`s37`, midHot
+1.216, the closest of the 21) landed MD W₁ 0.790 — better than its
+neighbours, still short of h405's 0.767.
+
+**Atlas stance:** unchanged. Nothing adopted; Tier-0 (n̂ = 2.927), h405
+and `finc1v725` stand. The arm's residual is handed to the flight mass
+(`TIER2_MASS_SCENARIOS.md`), whose own gate **M1** — a sourced I⁺–He D₀ —
+is a literature question, not a compute one.

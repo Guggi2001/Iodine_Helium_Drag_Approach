@@ -911,3 +911,51 @@ def test_ebindscan_summary_flags_a_nonlinear_response(twin):
     s = twin._ebindscan_arm_summary("H", rows, md_ring)
     assert s["EB_P2"] == "FAIL"
     assert s["resid_max_KE1_eV"] > twin.EBINDSCAN_P2_MAX_RESID_EV
+
+
+class TestLinTauRefinement:
+    """Plan §6.7: the τ refinement stage must not disturb the committed
+    sweep, and its anchors must reproduce it."""
+
+    def test_default_tau_grid_is_unchanged(self):
+        from scripts.tier2_h2b_forward_model import (
+            G3SCAN_TAU_PS, LINTAU_GRID, LINTAU_ANCHOR_TAUS,
+        )
+        # The committed grid must not have moved — every earlier stage and
+        # every committed CSV depends on it.
+        assert G3SCAN_TAU_PS == (2.4, 3.2, 4.8, 6.4, 9.6, 12.8)
+        # The refinement fills the 3.2 -> 4.8 gap and carries anchors.
+        assert LINTAU_ANCHOR_TAUS == (4.8, 6.4)
+        assert set(LINTAU_ANCHOR_TAUS) <= set(LINTAU_GRID)
+        assert set(LINTAU_ANCHOR_TAUS) <= set(G3SCAN_TAU_PS)
+        new = sorted(set(LINTAU_GRID) - set(G3SCAN_TAU_PS))
+        assert new == [3.6, 4.0, 4.4, 5.2, 5.6]
+        # every refined value sits inside the committed grid's span
+        assert min(LINTAU_GRID) >= min(G3SCAN_TAU_PS)
+        assert max(LINTAU_GRID) <= max(G3SCAN_TAU_PS)
+
+    def test_scan_signature_defaults_preserve_committed_behaviour(self):
+        import inspect
+
+        from scripts.tier2_h2b_forward_model import _linsweep_scan
+
+        sig = inspect.signature(_linsweep_scan)
+        # Both new knobs must default to the committed behaviour, or the
+        # linscan/linqscan CSVs would silently change schema/values.
+        assert sig.parameters["tau_grid"].default is None
+        assert sig.parameters["with_tail"].default is False
+
+    def test_anchor_oracle_rejects_a_drifted_row(self):
+        from scripts.tier2_h2b_forward_model import _lintau_anchor_oracle
+
+        # A row claiming to be at an anchor τ but carrying a wrong value
+        # must fail loudly — this oracle is the licence for the whole scan.
+        bad = [{
+            "a": "35.0", "E_bind_tag": "eb0482", "tau_ps": "4.8",
+            "E0_eV": "0.37", "trapped_frac": 0.0128, "suppressed_frac": 0.1242,
+            "nbar_det": 4.625, "n1_solv": 0.2008, "w1_solv": 0.9999,
+            "n1_ke_eV": 0.7027, "ke2_eV": 0.6322, "deepke": 1.8634,
+            "midhot_arith": 1.5300, "gate": 1,
+        }]
+        with pytest.raises(AssertionError, match="lintau anchor"):
+            _lintau_anchor_oracle(bad)

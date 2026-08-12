@@ -269,9 +269,17 @@ costs +0.23…+0.41 W₁ at every chord by *evaporating* the shells, and the
 one cell beating h405 on KE₁ at in-band midHot (`j1`) pays W₁ 1.145 —
 i.e. **KE₁ is a flight-mass observable and the size distribution pins the
 flight mass**, so the residual is a mass question (`TIER2_MASS_SCENARIOS.md`),
-not a drag one. NEXT USER GATE: routing the clone (accept-marginal /
-re-site / recalibrate) + the §6.3 adoption discussion and escalation
-battery.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+not a drag one. The §6.7 τ refinement (zero MD, 14 364 cells, anchor oracle
+green) then **CLOSED the family on licensed axes**: refilling the unsampled
+τ 3.6–4.4 gap tripled the gated basin (35 → 126) and produced 21 cells
+beating h405 on KE₁ *and* tail, but `{gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧
+tail > h405}` is **empty**. It also measured the twin transfer over 14 MD
+cells: **W₁ REFUTED as a ranking instrument (ρ 0.32, τ-step sign inverted)
+while tail is newly LICENSED (ρ 0.96)** — tail, not W₁, is the
+histogram-side twin instrument. NEXT USER GATE: routing the clone
+(accept-marginal / re-site / recalibrate) + the §6.3 adoption discussion;
+the arm's own next step is **M1** (a sourced I⁺–He D₀ — literature, not
+compute).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
 2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
 half the naive ledger value (shared-erf well/density overlap refunds
 ~45 %), form- and depth-invariant, trap lever form-split, and the axis is

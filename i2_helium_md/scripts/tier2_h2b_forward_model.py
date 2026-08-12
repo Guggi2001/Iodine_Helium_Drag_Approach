@@ -3746,10 +3746,19 @@ def _linsweep_chord_family(arm, a, c, eb_tag, e_bind_ev, m,
     return out
 
 
-def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild):
+def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
+                   tau_grid=None, with_tail=False):
     """The nested scoring loop shared by both arms: chord families from
     ``specs`` (dicts with a/c/eb_tag/e_bind) x the §3.5c free surface,
-    §3.5c hard gate verbatim, plan-§3 per-cell output columns."""
+    §3.5c hard gate verbatim, plan-§3 per-cell output columns.
+
+    ``tau_grid`` overrides the §3.5c τ values (plan §6.7: the refinement
+    scan needs τ between the committed 3.2 and 4.8 grid points); ``None``
+    keeps :data:`G3SCAN_TAU_PS`, so every committed caller is unchanged.
+    ``with_tail`` adds the twin tail columns — the observable §6.6
+    identified as the W₁ deficit — and defaults off so the committed CSV
+    schemas do not move.
+    """
     import time as _time
 
     ne = ens["ne"]
@@ -3794,7 +3803,7 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild):
             "R_src_q95": round(float(np.quantile(R_frag, 0.95)), 2),
         })
         fam_gated = 0
-        for tau in G3SCAN_TAU_PS:
+        for tau in (G3SCAN_TAU_PS if tau_grid is None else tau_grid):
             K = K655 * (TAU_PS / tau)
             for e0 in G3SCAN_E0_GRID:
                 n_det, sup = fate_map(ne, K, e0, 1, sig)
@@ -3849,6 +3858,17 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild):
                     "gate_n1": int(g_n1), "gate_nbar": int(g_nb),
                     "gate": int(gate),
                 })
+                if with_tail:
+                    # Twin tail on the twin's OWN solvated branch — the same
+                    # renormalised hist[1:] its w1_solv is scored on. NOT
+                    # asserted comparable to the MD scorer's `tail_ge10`
+                    # (which reads n_scored, whose suppressed-class handling
+                    # differs); the twin<->MD relation is measured, not
+                    # assumed (plan §6.7 calibration).
+                    _h = np.asarray(obs["hist"], dtype=float)
+                    _solv = _h[1:] / _h[1:].sum()
+                    row["twin_tail_ge10"] = round(float(_solv[9:].sum()), 5)
+                    row["twin_tail_ge13"] = round(float(_solv[12:].sum()), 5)
                 scan_rows.append(row)
                 if gate:
                     fam_gated += 1
@@ -3979,6 +3999,94 @@ def stage_linscan(m=20000, force_rebuild=False):
     if gated_ke_rows:
         _write_csv_with_drift("atlas_linsweep_gated_ke.csv", gated_ke_rows)
     _write_csv_with_drift("atlas_linsweep_summary.csv", [summary])
+    return summary
+
+
+# Plan §6.7 τ refinement: the committed sweep sampled τ at 3.2 and 4.8 with
+# nothing between, while §6.6 measured τ to be the arm's strongest W₁ lever
+# (+0.23…+0.41 per 33 % step). 4.8 and 6.4 are carried as ANCHORS so the new
+# stage must reproduce the committed atlas_linsweep.csv rows exactly.
+LINTAU_GRID = (3.6, 4.0, 4.4, 4.8, 5.2, 5.6, 6.4)
+LINTAU_ANCHOR_TAUS = (4.8, 6.4)
+_LINTAU_ANCHOR_COLS = ("trapped_frac", "suppressed_frac", "nbar_det",
+                       "n1_solv", "w1_solv", "n1_ke_eV", "ke2_eV", "deepke",
+                       "midhot_arith", "gate")
+
+
+def _lintau_anchor_oracle(scan_rows):
+    """Every τ ∈ {4.8, 6.4} row must reproduce the committed
+    ``atlas_linsweep.csv`` value-for-value (gate-on-committed-artifacts).
+
+    This is the whole licence for the refinement: if the anchors reproduce,
+    the interpolated τ rows come from the same machinery.
+    """
+    import csv as _csv
+
+    path = OUT / "atlas_linsweep.csv"
+    with open(path, newline="", encoding="utf-8") as fh:
+        committed = {
+            (r["a"], r["E_bind_tag"], r["tau_ps"], r["E0_eV"]): r
+            for r in _csv.DictReader(fh) if r["arm"] == "lin"
+        }
+    checked = 0
+    for row in scan_rows:
+        if float(row["tau_ps"]) not in LINTAU_ANCHOR_TAUS:
+            continue
+        key = (str(row["a"]), row["E_bind_tag"], str(row["tau_ps"]),
+               str(row["E0_eV"]))
+        ref = committed.get(key)
+        if ref is None:
+            raise AssertionError(
+                f"lintau anchor oracle: no committed linsweep row at {key}")
+        for col in _LINTAU_ANCHOR_COLS:
+            got, want = row[col], ref[col]
+            if isinstance(got, float) and np.isnan(got):
+                if want not in ("", "nan"):
+                    raise AssertionError(
+                        f"lintau anchor {key} {col}: NaN vs committed {want!r}")
+                continue
+            if str(got) != want and not np.isclose(
+                    float(got), float(want), rtol=0, atol=5e-5):
+                raise AssertionError(
+                    f"lintau anchor {key} {col}: {got!r} != committed {want!r}")
+        checked += 1
+    if checked == 0:
+        raise AssertionError("lintau anchor oracle checked nothing")
+    print(f"[lintau] ANCHOR ORACLE PASSED: {checked} rows at τ ∈ "
+          f"{list(LINTAU_ANCHOR_TAUS)} reproduce the committed "
+          "atlas_linsweep.csv", flush=True)
+
+
+def stage_lintau(m=20000, force_rebuild=False):
+    """Free-form linear τ refinement (plan §6.7, zero MD).
+
+    §6.6 measured τ as the arm's dominant W₁ lever while the committed grid
+    jumps 3.2 → 4.8 with nothing between, and the mechanism points *down*
+    in τ (shorter clock = less evaporation = a fatter tail, which is where
+    the W₁ deficit lives). All 57 chord families are already cached, so
+    this re-scores the free (τ, E₀) surface only — no new chord work.
+
+    Twin authority here is **gate placement only**: n₁/n̄ transfer is
+    ring-validated, twin W₁ is measured non-transferable (§6.5/§6.6), so
+    the deliverable is candidate cells, not a W₁ ranking.
+    """
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    specs = [{"a": float(a), "c": None, "eb_tag": tag, "e_bind": e_bind}
+             for a in LINSCAN_A_GRID for tag, e_bind in G3SCAN_EBIND]
+    print(f"\n=== lintau: {len(specs)} cached chord families x "
+          f"{len(LINTAU_GRID) * len(G3SCAN_E0_GRID)} free cells "
+          f"(τ = {list(LINTAU_GRID)}) ===")
+    chord_rows, scan_rows, gated_ke_rows = _linsweep_scan(
+        "lin", specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
+        tau_grid=LINTAU_GRID, with_tail=True)
+    _lintau_anchor_oracle(scan_rows)
+    summary = _linsweep_verdict("lin", scan_rows)
+    _write_csv_with_drift("atlas_lintau.csv", scan_rows)
+    _write_csv_with_drift("atlas_lintau_summary.csv", [summary])
     return summary
 
 
@@ -4812,6 +4920,8 @@ def main():
         stage_ke1auth(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "linscan":
         stage_linscan(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "lintau":
+        stage_lintau(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "linqscan":
         args = [a for a in sys.argv[2:] if a != "--force-rebuild"]
         if not args:
