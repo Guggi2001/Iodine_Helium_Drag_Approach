@@ -60,220 +60,24 @@ Repo root:
 `docs/matlab_port/`:
 - `PHYSICS_BASELINE.md` — MD baseline
 
-Compact state (verify against the log before relying on it): production law is
-`shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the shared bundle; drag
-form is settled pure-cubic in-band (the production arbitration adds the
-`capped_cubic` tail, cap **v_c ≈ 7.25–7.5** / `p_tail = −1` — the §4w
-joint-landing basin); **Tier 0 is complete** (18 Å clean pass, 9 Å
-non-radial flag). **Tier 1a is delivered** — anchored kinematic mass-dynamics
-validation: the He shell schedule `n(t)` is read from the 9 Å TDDFT loss curve and a
-controlled `fixed` vs `anchored_discrete` A/B was built (variable-mass integrator
-SQ1–SQ3, v6 checkpoint, four-term ledger; continuous-velocity shed is the physical
-path, cold-shed retained as a diagnostic bound). **Tier 2 is in its
-OPTIMIZATION stage (build program A–F complete, F5 reconciled 2026-07-22; the
-tier stays ACTIVE)** — the *generative* `biphasic_energy_gated` mass mechanism
-(Poisson pickup + energy-gated RRK evaporation + `E_int` reservoir + Newton
-cooling, **5-term** invariant, `IonCheckpoint` **v7** with `E_int`) is built
-and arbitrated against the experimental I⁺Heₙ size distribution and fragment
-mean-KE at production 2.70 eV. **Standing production point: `finc1v725`**
-(`capped_cubic` v_c 7.25 / τ 3.2 / E₀ 0.27 / c1 rq4graded ladder / Landau-on
-0.58), statistical reference = the pooled **N = 5000 battery** (5 × N = 1000
-fresh seeds, findings §4cc): histogram-level landing seed-robust (n₁_solv
-0.243, midHot 1.014, W₁ 0.571 ± 0.04). Figure surface: `plot_run_summary.py`
-(MD window) + `plot_detection_summary.py` (detected ensemble, 14 sections) +
-the pooled figures container. **Current goal (2026-07-24): the sensitivity
-atlas** (`TIER2_SENSITIVITY_ATLAS_PLAN.md` + the D0 reference
-`TIER2_PARAMETER_INFLUENCE.md`; results in
-`TIER2_SENSITIVITY_ATLAS_FINDINGS.md`) — understanding-driven OAT influence
-mapping around finc1v725. **Executed so far:** stage 2a (D4 Step 1
-Method-B form table, artifact reuse, oracle bit-exact; Padé excluded by
-arithmetic, subtractive gate fired/fit pending, sub-2.5 Å/ps TDDFT-blind)
-and the §6.6 quadratic counterfactual **twin + MD spot-check → outcome
-(b), MD-measured: the Tier-2 landing is form-blind** (an lq system with
-its own artifacts lands all three N = 500 cells incl. the off-needle
-control; the twin's needle was a frozen-chord artifact; form authority
-rests solely on the Tier-0 traces where lq stays held-out-rejected;
-the landing is never evidence for any form). New RQ11 signal
-(NB-RQ11-12): the deep-KE lever sits in the **5–9 Å/ps mid-band**, not
-sub-2.5 — with the lq E_bind-0.048 confound caveat pending. **§6.7 items 1–2 EXECUTED 2026-07-24** (lq sanity battery + E_bind
-pair-separation scan; full record in `drag_migration_log_tier2.md` +
-findings §6.7): cubic and quadratic are physically distinguishable — the
-histogram (W₁) is form-blind but the KE/size/fate observables are not, and
-the item-1 lq over-suppression is the FORM (the E_bind confound is
-discharged). Nothing moves finc1v725; Tier-0 still rejects lq. **D2b
-§4.1 provenance audit EXECUTED 2026-07-26** (read-only; as-built
-geometry + which sampler ran in which production — D0 §15, plan §3.1
-grid spec amended; parent-document geometry anchor recorded). **GEOMETRY
-CORRECTION adopted in principle 2026-07-26** — the droplet geometry is
-known wrong vs the experiment's source conditions; Axis A re-scoped as
-the correction (atlas plan §3, staged G0–G4 in §3.5); D0 §17
-physical-sensibility ledger added. **G0 FROZEN + stage 2b BUILT + Axis A G1
-EXECUTED + the §3.5b retained-class arm DELIVERED 2026-07-26/27** — the
-geometry grid is **complete at 11/11 cells** (the last five recovered
-detection-only, zero MD; six reproduce bit-for-bit). The marginal-exclusion
-bracket is **not tight**, so the R ≥ 49 Å deepKE/n̄ carry a stated range
-(D0 §14.2, findings §G1.4). **D2b §4.3 grid re-weighting EXECUTED
-2026-07-27** (zero MD): pre-registered oracle INADMISSIBLE (support hole
-below R = 26.6 Å), post-hoc in-support oracle 7/7 (`nearest` adopted),
-corrected-ensemble forecast on record (findings "D2b §4.3", D0 §15.7 —
-the landing breaks at ensemble level). **Birth-depth lever decomposed
-(D0 §14.3, 2026-07-27):** geometry-locked dressing channel (§4p: the T5
-lever tripled supp — load-bearing, saturates at realistic depths) +
-parameter-accessible transit channel. **G2 TAKEN 2026-07-27 (user):
-the corrected geometry (legacy+raw ⟨N⟩ 12794 / Boltzmann 313.2 K /
-E_bind 0.1168) is ADOPTED as the target; retained-policy sub-decision
-deferred to G3; `finc1v725` stands until G4.** **G3 Step 1 EXECUTED 2026-07-27**
-(zero MD, triggered): twin landmark re-issue at the corrected geometry —
-S6 oracle bit-exact, 11-cell twin↔MD authority box measured (supp/n₁_solv
-near-quantitative, n̄ residence-scale hot, trap a twin floor, center-pin
-trap channel twin-invisible), corrected-ensemble twin row confirms the
-D2b forecast cross-instrument (findings "G3 Step 1"; stage `g3landmarks`).
-**G3 Step 2 twin scan EXECUTED 2026-07-27** (stage `g3scan`, zero MD,
-6480 cells): oracles bit-exact, failure criterion NOT fired — **24
-cells gate, all Tier-0-legitimate; fully-unflagged basin (v_c 5.5–6.0,
-τ 4.8–6.4, E₀ 0.32–0.37) at the standing well; the standing chord
-v_c 7.25 gates nowhere at the corrected geometry; landing
-cascade-carried, not selection-carried** (findings "G3 Step 2", D0
-§14.5). **G3 Step 3 MD ring EXECUTED 2026-07-27/28** (plan §3.5d; 14 cells ×
-N = 500, seed 20260728): **GR-P1..P6 all land — the corrected-geometry
-basin is MD-CONFIRMED** (gated: a037 v5.5/τ4.8/E₀0.37 n̄ 4.097; b031
-v6.0/τ6.4/E₀0.31; d030 v5.5/τ6.4/E₀0.30; e154 deep-well; c50 shows
-the basin nearly reaches v_c 5.0); **finc1v725 MD-measured broken at
-realistic droplets** (f725: trap 0.437 incl. 0.159 marginal, n₁ 0);
-instrument MD-calibrated (n̄ bias 0.24–2.66 small-end, n₁ ≤ 0.036);
-marginal class ≈ 0 at the basin (retained-policy evidence). Adjudicated
-(user): `exclude_all_coupled` interim, final call at G4; Axis B folded
-into the ring. Findings "G3 Step 3" + D0 §14.5; scorer
-`tier2atlas_g3ring_table.py`. **G4 Step 1 EXECUTED 2026-07-28** (plan
-§3.5e; 15 × N = 1000): successor candidate `h405` (v_c 5.5 / τ 4.4 /
-E₀ 0.405), the KE tension broken, and a measured W₁ floor ≈ 0.67 whose
-cause — n₁ and n̄ not simultaneously matchable — localizes the residual
-to the mechanism, not the drag surface. **2026-07-29 (low-n KE axis;
-full records in the log + findings):** KE₁ re-anchored to the 1.00 eV
-peak (user); §3.5g retro-scan — in-surface (v_c, τ, E₀) freedom
-EXHAUSTED on KE₁, shallow-birth/mixture lever REJECTED unphysical
-(user); §3.5h p_tail ring — placement confirmed but the kill fired
-(velocity-only tail softening un-damps the cascade; single-knob p_tail
-CLOSED; capped_cubic p_tail guard now [−4, 0]); band-limited tail
-rejected as overfitting (user). The **s(n) drag state coupling was
-BUILT and probe-EXECUTED 2026-07-29** (S1–S4 delivered, `off` default
-bit-identical, full suite green): **all SC predictions REFUTED —
-the coupling is measured GATE-CLIPPED** (no ion reaches n ≤ 8 inside
-the droplet; ions exit fully dressed at n̄ 19), the axis is STOPPED,
-and OQ-F cooling was REJECTED (user). **The §3.5j discussion was HELD
-2026-07-29** (records: findings §3.5i.3 + §3.5j, plan §3.5j): the three
-verification reads + two placement reads executed zero-MD — the
-n = 20–21 spike is falsified ~30× at the reference AND identified as
-the `suppressed` fate class (scoring scaffolding); the gas KER is
-multi-channel (2.70 eV = point-Coulomb idealization); the experimental
-n = 1 KED holds 48.7 % above the (A) cap 1.15 eV; the h405
-counterfactual measures the (A) bracket ceiling KE₁ ≈ 0.708. Cold shed
-and the CE-instantaneous-stripping variant DECLINED (bulk-refill
-argument: net stripping only at the outbound crossing). **Measured
-verdict: (A) exit stripping is necessary-not-sufficient; (B)
-source-KER spread is required for the KE₁ position; the (C)
-combination is the design target.** The **§3.5k budget-slope probe
-EXECUTED 2026-07-29** (3 × N = 1000 at the h405 pins, CRN; plan §3.5k,
-findings §3.5k, D0 §19): **BP-KILL NOT fired — S_k = 0.389 eV/eV**
-(the source-side lever is alive; the pre-registered honest-residual
-consequence is not forced); BP-P3 sign-inverted — suppression is
-measured **E_int-driven** (∂supp/∂E₀ ≈ +1.7/eV; full proportional (B)
-wiring parks fast ions in suppressed-bare with KE₁ at baseline → the
-(A)/(B) complementarity is measured from both sides); needle persists
-(width requires the mixture). **Domain input recorded (user paper,
-RQ7/RQ8 NBs):** gas phase reproduced at 0.8·E_C with Q = 2/Q = 3 from
-2.666 Å → channels 2.16 / 4.32 eV per I⁺ (fast peak = I⁺–I²⁺); the
-standing 2.70 budget is ~25 % high vs this calibration; Q = 3 /
-single-ionization exist as refused scope flags; the I²⁺ discriminator
-is ANSWERED (covariance Fig. 6.2: Q3 share ~7 %/~20 % at
-1.47/2.94×10¹⁴ W/cm²; retention-twin anchor recorded — per-ion
-retention stochastic at fixed kinematics; RQ8 NB). **The §3.5l
-pre-design state is CLOSED 2026-07-29**: reads (i)+(iii) executed
-zero-MD (bare KED fast-fed + weakly two-lump → slow-bare is a new
-kill axis; gas Q3 share 10/17/23 % at 160/300/600 mW; a
-calibration-frame rider posted and withdrawn same-session — the Abel
-gas export confirms 0.8·E_C in the repo frame), and the 0.8
-provenance is CLOSED (Hatherly 1994, J. Phys. B 27 2993 — gas-phase
-finite-pulse CE physics, channel-independent fraction, NOT droplet
-screening; key numbers extracted to the docs, paper not repo-kept;
-RQ7 NB). **Current goal: the (C)
-build — `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md` is the fresh-session
-entry point** (design DRAFTED + ADJUDICATED 2026-07-29: channel
-mixture {single, Q2 2.16, Q3 4.32} × shared f 0.8 via per-pair scale
-emulation + Q3 partner mask, per-channel f_int, depth-graded exit
-strip P₀(v)·G(j) retention-twin-anchored, ledger strip term;
-OQ-A..K ALL closed — **OQ-K closed 2026-07-29 by user confirmation**
-of the 300/600 mW ↔ 1.47/2.94×10¹⁴ mapping (w_Q3 ≈ 0.20
-un-provisional); the bare-I⁺ m/q-127-row covariance decomposition is
-**postponed (user) until the method proves successful**; checkpoint
-v8 granted-scoped to three per-ion fields; weights never fitted on
-the n = 1 KED — the circularity guard; dof accounting §6:
-8 anchor-frozen / 3 P1-pinned / 1 probe-scanned). **P1 + P2 EXECUTED
-2026-07-29 zero-MD** (committed instruments
-`tier2atlas_ce_strip_prior.py` / `tier2atlas_ce_gas_widths.py`, all
-oracles green incl. exact §3.5j crossing-band + variant reproduction:
-strip prior box PINNED a = 2 [1.5, 2.5] / j₀ [1.5, 2] / w_j [0.5, 1],
-a = 1 disfavored on W₁-parking + slow-bare; measured channel widths
-σ_Q2 0.31 / σ_Q3 0.55 eV supersede the Hatherly priors, E_single
-≈ 0.53 — findings "(C) pre-steps P1 + P2"). **P3 EXECUTED
-2026-07-29 zero-MD** (`tier2atlas_ce_p3_forecast.py`; weights
-(0.30, 0.50, 0.20) entering registration; C-full forecast KE₁ mean
-0.92–1.04 / SD 0.51–0.55 / above-1.15 43–50 % vs ref 48.7 % / Q3
-carries 53–61 % of the n = 1 bin; two registered tensions —
-two-lump mode vs single-mode reference 0.891, and n₁ 0.18–0.23
-short of the 0.31 reference; findings "(C) pre-step P3"). **P1–P3
-COMPLETE and the PROBE REGISTRATION FROZEN 2026-07-29 (CP-1..8
-bands user-approved — authoritative table: design doc §8).
-PC-1..5 outcome pre-commitments ADJUDICATED (design §11) and the
-probe BUILT + EXECUTED 2026-07-29 behind `[PROCEED TO
-IMPLEMENTATION]`** (sampler + exit strip + checkpoint **v8**
-(three OQ-E per-ion fields, silent v7→v8 shim) + pair-scale seam +
-partner-mask scoring, off-mode byte-identical, full suite green;
-4 cells cfull/aonly/bonly/cq3hi at the h405 pins, seed 20260729):
-**REGISTRATION FAILED — CP-1..4 FAIL, kills CP-5/6/7 FIRED on
-C-full (CP-6 at both f_int,Q3 ends). Measured: (B) alone places
-KE₁ 0.920/needle broken but its E_single 0.53 channel traps 0.465;
-(A) as specified over-tolls (ε × knock counts p90 20 → 0.5–0.7 eV
-vs the 0.2 eV anchor) and FEEDS the suppressed gate (A-only supp
-0.55 — Σ(n) collapses under untouched E_int). PC-3 TRIGGERED:
-(A)-v1 stops, the current f_int wiring closes, the mixture
-survives. Records: findings "(C) probe EXECUTED", D0 §20, design
-§8/§9/§11, `atlas_ce_probe.csv`.** **(C) ADJUDICATED CLOSED
-2026-07-30 (user): PC-3 ratified, ALL candidate follow-ups
-DECLINED, the (C) line SHELVED as a measured boundary — the
-covariance-anchored mixture cannot populate n = 1 at the reference
-level (Q3 feeder ceiling ≈ 0.11 of the scored ensemble;
-suppressed-conversion bound n₁ ≈ 0.22 < 0.31); the positive result
-stands (KE₁ position is source physics, not drag/mass-mechanism);
-nothing adopted, the scalar budget did NOT retire. Records:
-findings "(C) adjudication CLOSED", D0 §20, log 2026-07-30.**
-**Current arm (2026-07-30/31): the free-form linear counterfactual —
-`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` is the fresh-session entry
-point.** Step 0 (twin KE₁ ranking LICENSED ρ 0.998) + both twin arms
-(35-cell basin incl. sub-plateau; ram term rejected, pure linear
-selected in-family) + the §6.1 CRN MD ring all EXECUTED: **the ring
-LANDS — 6/7 cells gate both-policy-clean, K-KE not fired, SUCCESS at
-five cells (best MD KE₁ 0.903 at a = 27.5 vs h405p 0.637; `pure_linear`
-form now in `physics/drag.py`; trap axis dead; cost = mid-band
-overheating); nothing adopted. **Arm CLOSED 2026-08-13 (§6.5–§6.8);
-open gates + next step: plan §6.8 and `drag_migration_log_tier2.md`.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
-2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
-half the naive ledger value (shared-erf well/density overlap refunds
-~45 %), form- and depth-invariant, trap lever form-split, and the axis is
-**closed as a KE lever**; **Step 3 MD-CONFIRMED** (1 × N = 500 CRN,
-−0.5308, 2 % from the twin; MD-P5 withdrew the Step-2 twin-grading
-caveat) — D0 §9.2/§9.3 + findings §6.5 Steps 2–3. **The "45 % refund" is
-SOLVED 2026-08-11 as a mass-frame partition — the model is correct, the
-ion pays 98.1 % of the well; RQ12's density-width leg is measured NULL
-(+0.002 eV) and atlas §6.8 T1–T4 are closed — D0 §9.6.** **Current arm:
-`TIER2_MASS_SCENARIOS.md`** — the flight mass, not the drag, carries the
-KE₁ deficit (M1 gates). The
-G4 adjudications (successor point, retained policy, ledger re-issue)
-stay open; D2b A/B remainder, RQ3/RQ5 reads and the margin-3 Å pinned
-convention (I88) stay open in-tier. Tier-3 noise
-stays next (second-moment under-dispersion; stubbed behind its enum,
-NOT retired). New drag-program code stays behind the
-`[PROCEED TO IMPLEMENTATION]` trigger.
+Compact state — **pointers only; results and history do not belong here.**
+Production law `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the
+shared bundle; the production arbitration adds the `capped_cubic` tail.
+Standing point `finc1v725`, successor candidate `h405` (G4 adjudication
+open). Tier status: see the Validation hierarchy section below. **Live
+status, every result and all open gates:** `drag_migration_log_tier2.md`
+(chronology), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (results),
+`TIER2_PARAMETER_INFLUENCE.md` (per-knob influence),
+`TIER2_SENSITIVITY_ATLAS_PLAN.md` (goal document),
+`TIER2_MASS_SCENARIOS.md` (open investigation). Verify against the log
+before relying on anything summarised here.
+
+**Current arm: `TIER2_MASS_SCENARIOS.md`** — the flight mass, not the
+drag, carries the KE₁ deficit; **M1 (a sourced I⁺–He D₀) gates it.** The
+free-form linear counterfactual (`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`)
+is **closed** as of 2026-08-13; its open gates, and the standing G4 /
+retained-policy / Tier-3-noise items, are listed in
+`drag_migration_log_tier2.md`.
 
 ## Current Scope
 
@@ -455,7 +259,8 @@ Prefer current Python APIs over ad hoc scripts:
    (`energy_balance.py`, `polar_velocity.py`, `velocity_2d.py`,
    `pair_correlation.py`, `time_resolved.py`, `boltzmann_overlay.py`).
 6. Use `scripts/post_processing/plot_run_summary.py` for every in-scope
-   diagnostic from a finished run.
+   diagnostic from a finished run (MD window), and
+   `plot_detection_summary.py` for the detected ensemble.
 7. Keep plot changes local to `scripts/post_processing/` unless a package API
    change is actually needed.
 8. Add or update focused pytest coverage when behavior changes.
