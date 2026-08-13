@@ -3702,3 +3702,66 @@ neighbours, still short of h405's 0.767.
 and `finc1v725` stand. The arm's residual is handed to the flight mass
 (`TIER2_MASS_SCENARIOS.md`), whose own gate **M1** — a sourced I⁺–He D₀ —
 is a literature question, not a compute one.
+
+## §6.8 short-τ decisive pair EXECUTED (2026-08-13, 2 × N = 500, seed 20260731, whole-family CRN) — **the user's KILL FIRES: both cells land W₁ ≥ h405, the (n₁, tail) predictor is REFUTED at 3.1× and 4.5× its LOO RMSE, and the free-form linear family is CLOSED for real**
+
+Plan §6.8, frozen and committed **before** launch (`436992e`); instrument
+committed before any number was read (`95e7ff5`). All oracles green
+(TR-P0 string-exact against the §6.7 `atlas_lintau.csv`, LR-P1,
+scorer-drift, KE-path, committed `h405p` anchor). Artifact:
+`atlas_lintauring_table.csv`.
+
+### 1. Results against the pre-registered predictions
+
+| | pred W₁ | **MD W₁** | pred KE₁ | **MD KE₁** | pred midHot | **MD midHot** | pred tail | **MD tail** |
+|---|---|---|---|---|---|---|---|---|
+| `t1` a 35 / τ 4.0 / E₀ 0.45 | 0.532 | **0.7805** | 0.659 | **0.6576** | 1.380 | **1.395** | 0.1507 | **0.1232** |
+| `t2` a 42.5 / τ 4.4 / E₀ 0.44 | 0.490 | **0.8528** | 0.506 | **0.5071** | 0.923 | **0.927** | 0.1563 | **0.1187** |
+| h405p (bar) | — | 0.7675 | — | 0.6371 | — | 0.9466 | — | 0.1057 |
+
+- **TR-P1 FAIL** — `t1` beats h405 on KE₁ (0.6576 > 0.6371) but **not**
+  on W₁ (0.7805 ≥ 0.7675).
+- **TR-P2 FAIL** — `t2` holds midHot in band (0.927) but lands W₁ 0.8528.
+- **TR-P3: the predictor is REFUTED** — W₁ errors **+0.2485 (3.1× RMSE)**
+  and **+0.3628 (4.5× RMSE)**. The τ extrapolation fails and the §6.7
+  candidate list retires wholesale.
+- **KILL FIRES** (user pre-committed, 2026-08-13): both cells at
+  W₁ ≥ 0.7675 ⇒ **the free-form linear family is closed for real and no
+  further scan is warranted.**
+
+### 2. Why the predictor failed — and what did *not* fail
+
+**The licensed legs extrapolated in τ essentially perfectly**, at τ values
+outside their entire training range (all 14 training cells were τ 4.8/6.4;
+these are 4.0/4.4):
+
+- **KE₁: predicted 0.659 / 0.506, measured 0.6576 / 0.5071** — errors
+  −0.0014 and +0.0011, i.e. *better* than the ρ 0.9998 transfer's own SD.
+- **midHot: predicted 1.380 / 0.923, measured 1.395 / 0.927** — errors
+  +0.015 and +0.004.
+- Tail over-predicted by 0.028 / 0.038 (≈ 2–3× its 0.014 SD) — the one
+  leg that degraded outside its range.
+
+So the failure is **not** in the transfers and **not** in the τ
+extrapolation. It is in the *functional form*: **W₁ is not a function of
+(n₁, tail).** `t1` carries a tail 17 % *better* than h405's and lands W₁
+*worse* — because the n = 2–9 interior, which neither input constrains,
+is where the remaining mass sits. This is the §6.5 lesson recurring in a
+third guise: matching summary numbers does not pin a distribution.
+
+### 3. The closest the family ever got — recorded, not claimed
+
+`t1` is **W₁-indistinguishable from h405** (Δ +0.0130 against a
+per-seed W₁ SD of 0.031, i.e. ~0.4σ) **with a significantly better KE₁**
+(+0.0205 against a KE₁ seed SD of 0.0022). That is a real, if narrow,
+statement — but it is *not* a TR-P1 pass, and **`lr6` already dominates
+`t1`** (W₁ 0.7848 ≈ same, KE₁ 0.7146 ≫ 0.6576, midHot 1.393 ≈ 1.395).
+The Pareto front is therefore **unchanged**: h405p (0.767, 0.637) and
+lr6 (0.785, 0.715).
+
+**Atlas stance:** unchanged. Nothing adopted; Tier-0 (n̂ = 2.927), h405
+and `finc1v725` stand. The free-form linear arm is **closed** — this time
+on a user-pre-committed kill tested by direct MD at the best candidates
+the licensed instruments could name, not on an assumption. The residual
+is handed to the flight mass (`TIER2_MASS_SCENARIOS.md`, gated by **M1**,
+a sourced I⁺–He D₀ — literature, not compute).

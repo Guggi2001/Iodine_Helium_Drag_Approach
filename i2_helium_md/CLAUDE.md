@@ -276,10 +276,18 @@ beating h405 on KE₁ *and* tail, but `{gate ∧ midHot ≤ 1.15 ∧ KE₁ > h40
 tail > h405}` is **empty**. It also measured the twin transfer over 14 MD
 cells: **W₁ REFUTED as a ranking instrument (ρ 0.32, τ-step sign inverted)
 while tail is newly LICENSED (ρ 0.96)** — tail, not W₁, is the
-histogram-side twin instrument. NEXT USER GATE: routing the clone
-(accept-marginal / re-site / recalibrate) + the §6.3 adoption discussion;
-the arm's own next step is **M1** (a sourced I⁺–He D₀ — literature, not
-compute).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+histogram-side twin instrument. That closure was **withdrawn** (it rested
+on generalising from the weakest candidate and on treating the soft midHot
+band as a gate) and re-tested: §6.8 ran the two best cells a (n₁, tail)
+W₁ predictor could name, and **both failed — the user's pre-committed KILL
+fired, so the free-form linear family is CLOSED for real** (`t1` W₁ 0.7805
+/ KE₁ 0.6576; `t2` W₁ 0.8528). The predictor is refuted at 3–4.5× its LOO
+RMSE while the **licensed legs extrapolated in τ perfectly** (KE₁ error
+∓0.001, midHot ∓0.015 outside their training range) — **W₁ is simply not a
+function of (n₁, tail)**. Pareto front unchanged: h405p (0.767, 0.637) and
+lr6 (0.785, 0.715). NEXT USER GATE: routing the clone (accept-marginal /
+re-site / recalibrate) + the §6.3 adoption discussion; the arm's own next
+step is **M1** (a sourced I⁺–He D₀ — literature, not compute).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
 2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
 half the naive ledger value (shared-erf well/density overlap refunds
 ~45 %), form- and depth-invariant, trap lever form-split, and the axis is

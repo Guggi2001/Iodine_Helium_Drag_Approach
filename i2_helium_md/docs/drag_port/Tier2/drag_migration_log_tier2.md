@@ -13553,3 +13553,64 @@ residual is handed to the flight mass (TIER2_MASS_SCENARIOS.md), whose gate M1
 
 Records: plan §6.7, findings "§6.7 τ refinement scan", D0 §1 (two bullets: the
 closure and the transfer table), artifact atlas_lintau.csv.
+
+---
+
+## 2026-08-13 — free-form linear §6.8: the short-τ decisive pair EXECUTED — **the user's pre-committed KILL FIRES; the family is CLOSED for real, and the (n₁, tail) predictor is REFUTED while the licensed legs survive extrapolation intact**
+
+The user pushed back on §6.7's closure and was right on both counts:
+I had (1) generalised from `s37`, the **weakest** of the 21 candidate
+cells, to dismiss the class — its top predicts KE₁ 0.91–0.99 vs h405's
+0.637 — and (2) promoted midHot ≤ 1.15 from a §6.3 *reported cost* to a
+hard gate of my own making, then closed the arm with it. The verdict was
+withdrawn (plan §6.8) and the question put to MD.
+
+**What was tested.** A W₁ predictor on the two licensed legs
+(W₁ = 2.4340 − 4.6623·n₁ − 6.6179·tail; R² 0.797, LOO RMSE 0.081, fitted
+on the 14-cell MD family) placed 14 gated cells above h405 on W₁ *and*
+KE₁, all in the τ 3.6–4.4 region §6.7 opened. User scoped the ring to the
+decisive pair and restored midHot to reported-never-vetoing. Both cells at
+seed 20260731 (whole-family CRN). Predictions frozen in the instrument
+before launch.
+
+**Result — both FAIL, and the KILL fires.**
+
+| | pred W₁ | MD W₁ | pred KE₁ | MD KE₁ | pred midHot | MD midHot |
+|---|---|---|---|---|---|---|
+| t1 (a 35 / τ 4.0 / E₀ 0.45) | 0.532 | **0.7805** | 0.659 | **0.6576** | 1.380 | **1.395** |
+| t2 (a 42.5 / τ 4.4 / E₀ 0.44) | 0.490 | **0.8528** | 0.506 | **0.5071** | 0.923 | **0.927** |
+
+TR-P1 FAIL (t1 beats h405 on KE₁ but not W₁); TR-P2 FAIL (t2 in band on
+midHot but W₁ 0.853); **TR-P3: predictor REFUTED at 3.1× and 4.5× LOO
+RMSE**; **KILL FIRES** — both cells W₁ ≥ 0.7675, so per the user's
+pre-commitment the free-form linear family is **closed for real and no
+further scan is warranted**.
+
+**The diagnosis matters more than the verdict.** The licensed legs
+extrapolated in τ **essentially perfectly**, at values outside their
+entire training range (training was all τ 4.8/6.4; these are 4.0/4.4):
+KE₁ predicted 0.659/0.506 vs measured **0.6576/0.5071** (errors ∓0.001,
+tighter than the ρ 0.9998 transfer's own SD); midHot 1.380/0.923 vs
+**1.395/0.927**. Only the tail degraded (over-predicted 0.028/0.038 ≈
+2–3σ). **So the failure is neither the transfers nor the τ extrapolation
+— it is the functional form: W₁ is not a function of (n₁, tail).** `t1`
+carries a tail 17 % better than h405's and still loses W₁, because the
+n = 2–9 interior, which neither input constrains, holds the remaining
+mass. That is the §6.5 lesson recurring a third time (moments matched,
+shape not) and it is the durable methodological product of this arm.
+
+**Closest approach, recorded not claimed:** `t1` is W₁-*indistinguishable*
+from h405 (Δ +0.0130 against a 0.031 per-seed SD, ~0.4σ) with a
+significantly better KE₁ (+0.0205 against a 0.0022 seed SD) — the nearest
+the family ever came. It is still not a TR-P1 pass, and `lr6` dominates
+it outright (same W₁, KE₁ 0.7146 vs 0.6576). **Pareto front unchanged:
+h405p (0.767, 0.637) and lr6 (0.785, 0.715).**
+
+**Standing: nothing adopted.** Tier-0 (n̂ = 2.927), h405 and `finc1v725`
+stand. The free-form linear arm is closed on a pre-registered kill tested
+by direct MD at the best candidates the licensed instruments could name.
+The residual is handed to the flight mass (`TIER2_MASS_SCENARIOS.md`),
+gated by **M1** — a sourced I⁺–He D₀, a literature question.
+
+Records: plan §6.8 (design + this result), findings "§6.8 short-τ decisive
+pair", D0 §1, artifact `atlas_lintauring_table.csv`.

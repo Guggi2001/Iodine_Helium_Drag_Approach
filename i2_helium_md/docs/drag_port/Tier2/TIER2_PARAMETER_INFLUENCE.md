@@ -408,6 +408,32 @@
   effect its W₁ gets backwards, so tail — not W₁ — is the histogram-side
   instrument for any future free-form work.
 
+- **The family is CLOSED — measured, on a pre-committed kill (§6.8 pair,
+  2026-08-13, 2 × N = 500, whole-family CRN; `atlas_lintauring_table.csv`).**
+  The §6.7 closure was withdrawn after two errors (generalising from
+  `s37`, the *weakest* of the 21 candidates; and promoting the soft
+  midHot band to a gate). A W₁ predictor on the licensed legs
+  (W₁ = 2.434 − 4.662·n₁ − 6.618·tail; R² 0.797, LOO RMSE 0.081) then
+  named 14 cells above h405 on W₁ *and* KE₁, and the two best were run:
+  - **Both FAIL.** `t1` (a 35 / τ 4.0 / E₀ 0.45): W₁ **0.7805**, KE₁
+    0.6576, midHot 1.395. `t2` (a 42.5 / τ 4.4 / E₀ 0.44): W₁ **0.8528**,
+    KE₁ 0.5071, midHot 0.927. Both W₁ ≥ h405's 0.7675 ⇒ the
+    user-pre-committed **KILL fires**.
+  - **The predictor is refuted at 3.1× and 4.5× its LOO RMSE** — but the
+    **licensed legs are not**: at τ 4.0/4.4, *outside their entire
+    training range*, KE₁ predicted 0.659/0.506 vs measured
+    **0.6576/0.5071** (errors ∓0.001) and midHot 1.380/0.923 vs
+    **1.395/0.927**. Only the tail degraded (over-predicted by 2–3σ).
+    **The failure is the functional form, not the transfers: W₁ is not a
+    function of (n₁, tail).** `t1` carries a tail 17 % better than h405's
+    and still loses W₁, because the n = 2–9 interior — which neither
+    input constrains — holds the remaining mass. Third recurrence of the
+    §6.5 lesson that matched summary numbers do not pin a distribution.
+  - Closest approach on record: `t1` is W₁-**indistinguishable** from
+    h405 (Δ +0.0130 vs a 0.031 seed SD) with KE₁ +0.0205 — but `lr6`
+    dominates it (same W₁, KE₁ 0.7146). **Pareto front unchanged:**
+    h405p (0.767, 0.637), lr6 (0.785, 0.715).
+
 **Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
 anti-correlate through the exposure integral K (I47) — any drag change
 re-opens the (v_c, τ, E₀) arbitration (I99).
