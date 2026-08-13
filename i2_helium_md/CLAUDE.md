@@ -255,39 +255,8 @@ selected in-family) + the §6.1 CRN MD ring all EXECUTED: **the ring
 LANDS — 6/7 cells gate both-policy-clean, K-KE not fired, SUCCESS at
 five cells (best MD KE₁ 0.903 at a = 27.5 vs h405p 0.637; `pure_linear`
 form now in `physics/drag.py`; trap axis dead; cost = mid-band
-overheating); nothing adopted. The §6.5 h405-clone battery (2026-08-12,
-3 × N = 500) then measured that clone a **KE-equivalent only** — KE₁
-matches h405 to −0.006 eV and midHot returns to 0.891 (so the mid-band
-overheating is an *a*-coordinate, not a property of constant γ), but
-W₁ lands 1.079 vs 0.765 and n₁ sits on the gate floor (`gate-marginal`);
-twin W₁ is measured non-transferable outside the ring's box. The §6.6
-(a, τ) joint ring (2026-08-12, 6 × N = 500) then closed the arm's central
-question: **JR-P3 empty — KE₁ and the histogram are NOT simultaneously
-improvable here.** The τ 4.8 a-curve is monotone in everything at once,
-the family's W₁ minimum (0.785 at a ≈ 35) sits above h405's 0.767, τ 6.4
-costs +0.23…+0.41 W₁ at every chord by *evaporating* the shells, and the
-one cell beating h405 on KE₁ at in-band midHot (`j1`) pays W₁ 1.145 —
-i.e. **KE₁ is a flight-mass observable and the size distribution pins the
-flight mass**, so the residual is a mass question (`TIER2_MASS_SCENARIOS.md`),
-not a drag one. The §6.7 τ refinement (zero MD, 14 364 cells, anchor oracle
-green) then **CLOSED the family on licensed axes**: refilling the unsampled
-τ 3.6–4.4 gap tripled the gated basin (35 → 126) and produced 21 cells
-beating h405 on KE₁ *and* tail, but `{gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧
-tail > h405}` is **empty**. It also measured the twin transfer over 14 MD
-cells: **W₁ REFUTED as a ranking instrument (ρ 0.32, τ-step sign inverted)
-while tail is newly LICENSED (ρ 0.96)** — tail, not W₁, is the
-histogram-side twin instrument. That closure was **withdrawn** (it rested
-on generalising from the weakest candidate and on treating the soft midHot
-band as a gate) and re-tested: §6.8 ran the two best cells a (n₁, tail)
-W₁ predictor could name, and **both failed — the user's pre-committed KILL
-fired, so the free-form linear family is CLOSED for real** (`t1` W₁ 0.7805
-/ KE₁ 0.6576; `t2` W₁ 0.8528). The predictor is refuted at 3–4.5× its LOO
-RMSE while the **licensed legs extrapolated in τ perfectly** (KE₁ error
-∓0.001, midHot ∓0.015 outside their training range) — **W₁ is simply not a
-function of (n₁, tail)**. Pareto front unchanged: h405p (0.767, 0.637) and
-lr6 (0.785, 0.715). NEXT USER GATE: routing the clone (accept-marginal /
-re-site / recalibrate) + the §6.3 adoption discussion; the arm's own next
-step is **M1** (a sourced I⁺–He D₀ — literature, not compute).** **Atlas §6.5 Step 2 (E_bind) EXECUTED
+overheating); nothing adopted. **Arm CLOSED 2026-08-13 (§6.5–§6.8);
+open gates + next step: plan §6.8 and `drag_migration_log_tier2.md`.** **Atlas §6.5 Step 2 (E_bind) EXECUTED
 2026-08-10** (twin, zero MD): `dKE₁/dE_bind = −0.54` — the exit toll is
 half the naive ledger value (shared-erf well/density overlap refunds
 ~45 %), form- and depth-invariant, trap lever form-split, and the axis is
