@@ -1062,6 +1062,79 @@ stand. The arm's residual is handed to the flight mass
 (`TIER2_MASS_SCENARIOS.md`, gated by **M1** — a sourced I⁺–He D₀, a
 literature question, not a compute one).
 
+### 6.8 The short-τ decisive pair — DESIGN FROZEN (2026-08-13; `[PROCEED TO IMPLEMENTATION]` carried from §6.7's adjudication)
+
+**Why this exists — a retraction.** §6.7 declared the family "CLOSED".
+That verdict rested on two mistakes the user caught:
+
+1. **Generalising from the floor of a class.** I dismissed the 21 cells
+   beating h405 on KE₁ *and* tail by pointing at `s37` as their
+   already-measured representative. `s37` is the **weakest** of the 21 —
+   lowest predicted KE₁ (0.651) and near-smallest tail margin. The top of
+   that group predicts KE₁ **0.91–0.99** against h405's 0.637.
+2. **Promoting a soft band to a gate.** midHot ≤ 1.15 was never a program
+   gate — §6.3 reports it as an honest cost, never gating. I made it a
+   hard JR-P3 criterion myself and then used it to close the arm.
+
+**What re-opened it.** A W₁ predictor fitted on the two *licensed* legs
+(n₁, tail) over the 14-cell MD family — W₁ = 2.4340 − 4.6623·n₁ −
+6.6179·tail — R² 0.797, **LOO RMSE 0.081**, max |err| 0.159. Crude, but
+sufficient to decide whether MD is worth spending. It puts **14 gated
+cells above h405 on W₁ AND KE₁ simultaneously**, all in the τ 3.6–4.4
+region §6.7 opened.
+
+**The structural caveat, recorded before launch:** the predictor is
+**extrapolated in τ** — all 14 training cells sit at τ 4.8 or 6.4, every
+candidate at τ 4.0–4.4. That is structurally the same error that made
+twin W₁ untrustworthy. Partial reassurance: the fit reproduces the τ 6.4
+cells (d2/j1/clone) to −0.10/−0.08/+0.02 purely through the tail channel,
+so n₁ + tail appears to carry most of the τ effect rather than τ acting
+through a third route. It remains an extrapolation.
+
+**Cells (user-scoped: the decisive pair), N = 500, seed 20260731** —
+the §6.3 ring seed again, so both stay CRN-paired with the whole
+14-cell family. `eb0482`, corrected geometry, standing pins otherwise.
+
+| # | cell | role | frozen twin row | predicted MD |
+|---|---|---|---|---|
+| `t1` | a 35.0 / τ 4.0 / E₀ 0.45 | the best predicted **joint** winner | n₁ 0.1932, n̄ 4.509, W₁ 1.0054, KE₁ 0.6448, midHot 1.5236, tail 0.21945, Φ 0.811 | **W₁ 0.532**, KE₁ 0.659, tail 0.1507, midHot 1.380, n₁ 0.1940, n̄ 3.919 |
+| `t2` | a 42.5 / τ 4.4 / E₀ 0.44 | the **in-band** W₁ optimum (midHot 0.923) | n₁ 0.1943, n̄ 4.418, W₁ 1.0615, KE₁ 0.4914, midHot 1.019, tail 0.225, Φ 0.985 | **W₁ 0.490**, KE₁ 0.506, tail 0.1563, midHot 0.923, n₁ 0.1951, n̄ 3.828 |
+
+Note both cells carry twin W₁ **≈ 1.0–1.06** while the predictor says
+0.49–0.53 — the two instruments disagree by ~0.5, which is exactly the
+§6.7 measurement that twin W₁ is not an instrument. This ring adjudicates
+between them.
+
+**Frozen reads (pre-registered before launch):**
+
+- **TR-P1 — the joint claim.** `t1` beats h405 on **both** W₁ (< 0.7675)
+  and KE₁ (> 0.6371). This is the user's actual question, tested at the
+  best available cell.
+- **TR-P2 — the in-band claim.** `t2` lands W₁ < 0.7675 while holding
+  midHot ≤ 1.15. Its KE₁ is *expected* below h405 (0.506); TR-P2 is a
+  histogram-only claim and is not failed by that.
+- **TR-P3 — predictor adjudication (lands either way).** |pred − MD| on
+  W₁ at both cells, against the LOO RMSE 0.081. Both cells missing by
+  ≫ RMSE refutes the (n₁, tail) predictor and, with it, the τ
+  extrapolation — which would also retire the §6.7 candidate list
+  wholesale.
+- **KILL (user-adjudicated):** if **both** cells land W₁ ≥ 0.7675, the
+  free-form linear family is **closed for real** and no further scan is
+  warranted. Recorded as the user's pre-committed consequence.
+- **midHot: REPORTED, never vetoing** (user, 2026-08-13) — the §6.3
+  precedent restored. `t1`'s predicted 1.380 is a stated cost, not a
+  disqualification; selection is on W₁ + KE₁.
+- Gate reported with the §6.5 three-way band verdict at the measured
+  per-seed SDs; tail, n̄, trap, χ², supp all reported.
+
+**Oracles:** the two frozen twin rows must reproduce **string-exact**
+from the committed `atlas_lintau.csv` (the §6.7 artifact); the §6.3
+LR-P1; the whole-family CRN guard (`seed` and `num_molecules` absent from
+every diff vs `h405p`); scorer-drift + KE-path + the committed
+`h405p`/`lr6` anchors.
+
+**Standing:** nothing adopted; instrument runs only.
+
 ## 7. Oracles and non-regression (run before any new number)
 
 1. **Landmark oracle:** `h2b_g3_corrected_row.csv` re-derived bit-exact
