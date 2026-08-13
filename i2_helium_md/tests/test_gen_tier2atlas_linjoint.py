@@ -189,3 +189,55 @@ class TestParetoHelper:
         )
         front = pareto_front([("a", 0.7, 0.7), ("b", float("nan"), 0.9)])
         assert [lab for lab, _, _ in front] == ["a"]
+
+
+class TestShortTauPair:
+    """Plan §6.8: the decisive pair's frozen design and its CRN guard."""
+
+    def test_frozen_pair(self):
+        from scripts.gen_tier2atlas_lintauring import TAU_MATRIX
+        assert {(c.label, c.a, c.tau_ps, c.e0_eV) for c in TAU_MATRIX} == {
+            ("t1", 35.0, 4.0, 0.45),
+            ("t2", 42.5, 4.4, 0.44),
+        }
+
+    def test_predictions_are_frozen_before_launch(self):
+        from scripts.gen_tier2atlas_lintauring import (
+            PREDICTOR_LOO_RMSE, TAU_MATRIX, TAU_PREDICTED,
+        )
+        assert set(TAU_PREDICTED) == {c.label for c in TAU_MATRIX}
+        # Both are pre-registered BELOW h405's W1 0.7675 — that is the claim
+        # under test, and it must be on record before any MD is read.
+        assert all(p["w1"] < 0.7675 for p in TAU_PREDICTED.values())
+        assert PREDICTOR_LOO_RMSE == 0.081
+
+    def test_t2_tau_coincides_with_the_partner_so_that_key_drops(self):
+        # t2 sits at the partner's own cooling clock; the expected diff set
+        # is computed per cell rather than the guard being loosened.
+        from scripts.gen_tier2atlas_lintauring import (
+            PARTNER_TAU_PS, expected_partner_diff, _SPEC_BY_LABEL,
+        )
+        assert _SPEC_BY_LABEL["t2"].tau_ps == PARTNER_TAU_PS
+        t1_keys = expected_partner_diff(_SPEC_BY_LABEL["t1"])
+        t2_keys = expected_partner_diff(_SPEC_BY_LABEL["t2"])
+        assert "internal_energy_cooling_tau_ps" in t1_keys
+        assert "internal_energy_cooling_tau_ps" not in t2_keys
+        # the coincidence must not licence any OTHER key to drop
+        assert t1_keys - t2_keys == {"internal_energy_cooling_tau_ps"}
+
+    def test_crn_guard_still_forbids_seed_and_n(self):
+        import dataclasses
+        import warnings
+
+        from scripts.gen_tier2atlas_lintauring import (
+            build_tau_cell, verify_crn_pairing,
+        )
+        from scripts.gen_tier2atlas_linring import SEED
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            cfg = build_tau_cell("t1")
+        for bad in (dataclasses.replace(cfg, seed=SEED + 1),
+                    dataclasses.replace(cfg, num_molecules=250)):
+            with pytest.raises(AssertionError, match="CRN guard FAILED"):
+                verify_crn_pairing(bad, "t1")
