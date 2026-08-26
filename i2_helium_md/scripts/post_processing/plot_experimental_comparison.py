@@ -23,7 +23,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_18A_calibration"
 VMI_HE_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_he.csv"
 VMI_GAS_PATH = PROJECT_ROOT / "data" / "reference" / "vmi_summary" / "vmi_iplus_gas.csv"
 VMI_HE_HIGH_SNR_PATH = (

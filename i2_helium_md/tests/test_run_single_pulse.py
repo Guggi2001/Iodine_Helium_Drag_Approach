@@ -120,6 +120,31 @@ def test_production_can_use_18_angst_preset(monkeypatch):
     assert cfg.mass_attach_probability == pytest.approx(0.005)
 
 
+def test_production_can_use_18A_calibration_droplet_preset(monkeypatch):
+    """The experimental-condition run with the 18 A collision calibration.
+
+    Guards the wiring of the never-executed alternative calibration: the
+    droplet-distribution setup must survive intact while the three tuned
+    collision knobs switch to the 18 A values.
+    """
+    monkeypatch.setattr(
+        script, "INPUT_PRESET", "single_pulse_droplet_distribution_18A_calibration",
+    )
+    monkeypatch.setattr(script, "RUN_SIZE", "production")
+    monkeypatch.setattr(script, "PRODUCTION_NUM_MOLECULES", None)
+    monkeypatch.setattr(script, "PRODUCTION_SEED", None)
+    monkeypatch.setattr(script, "PRODUCTION_ION_TIME_PS", None)
+
+    cfg = script.build_config()
+    assert cfg.num_molecules == 8000
+    assert cfg.R0_GS_angstrom == pytest.approx(2.666)
+    assert cfg.E_coulomb_scale == pytest.approx(0.8)
+    assert cfg.use_single_droplet_size is False
+    assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(1600.0)
+    assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
+    assert cfg.mass_attach_probability == pytest.approx(0.005)
+
+
 def test_custom_uses_selected_preset_with_overrides(monkeypatch):
     monkeypatch.setattr(script, "INPUT_PRESET", "single_pulse_droplet_distribution")
     monkeypatch.setattr(script, "RUN_SIZE", "custom")

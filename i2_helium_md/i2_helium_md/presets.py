@@ -115,3 +115,41 @@ def single_pulse_droplet_distribution(**overrides) -> SimConfig:
         use_single_droplet_size=False,
     )
     return replace(cfg, **overrides)
+
+
+def single_pulse_droplet_distribution_18A_calibration(**overrides) -> SimConfig:
+    """Experimental-condition run carrying the **18 A** collision calibration.
+
+    Same physical setup as :func:`single_pulse_droplet_distribution` -- the
+    realistic source-condition droplet-size distribution, the ground-state
+    I2 bond length, and the reduced Coulomb scaling -- but with the three
+    tuned ion-collision knobs taken from the 18 A HeDFT comparison instead
+    of the 9 A one.
+
+    The MATLAB input file records both calibrations side by side and selects
+    one by commenting
+    (``inputfiles_dft_comparison/single_pulse_droplet_distribution.m:66-76``)::
+
+         geometric_scattering_crosssection_Iplus = 2500; % from 9 Angstroem comparison
+        %geometric_scattering_crosssection_Iplus = 1600; % from 18 Angstroem comparison
+         binding_energy_I_ion = 0.3;   % from 9 Angstroem comparison
+        %binding_energy_I_ion = 0.05;  % from 18 Angstroem comparison
+
+    Only the 9 A branch was ever run. This preset is the never-executed
+    alternative, provided so the sensitivity of the experimental comparison
+    to that calibration choice can be measured rather than assumed. The
+    three knobs differ by 1.56x (sigma_0), 6x (ion binding) and 18x (helium
+    attachment probability), so the two are not expected to agree.
+
+    Parameters
+    ----------
+    **overrides
+        Any ``SimConfig`` field to override from the preset default.
+    """
+    cfg = single_pulse_droplet_distribution(
+        # --- the three knobs from single_pulse_N2000_18Angst.m ---
+        geometric_scattering_crosssection_Iplus=1600.0,
+        binding_energy_I_ion_eV=0.05,
+        mass_attach_probability=0.005,
+    )
+    return replace(cfg, **overrides)

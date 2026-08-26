@@ -42,11 +42,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # "single_pulse_N2000_18Angst" ---> HEDFT comparison 18A case
 
 # "single_pulse_droplet_distribution"   ---> Realistic droplet size distribution to compare to experiment
+#
+# "single_pulse_droplet_distribution_18A_calibration"
+#     ---> the SAME experimental-condition run, but carrying the collision
+#          knobs calibrated on the 18 A HeDFT case (sigma_0 = 1600 A^2,
+#          binding 0.05 eV, He attachment 0.005) instead of the 9 A ones
+#          (2500 / 0.30 / 0.09). Every experimental-condition run ever
+#          produced used the 9 A set; this is the never-executed
+#          alternative. Run it against single_pulse_droplet to measure how
+#          much the experimental comparison depends on that choice.
 
 
 #INPUT_PRESET = "single_pulse_N2000"
 #INPUT_PRESET = "single_pulse_N2000_18Angst"
-INPUT_PRESET = "single_pulse_droplet_distribution"
+#INPUT_PRESET = "single_pulse_droplet_distribution"
+INPUT_PRESET = "single_pulse_droplet_distribution_18A_calibration"
 
 # Choose "smoke", "custom", or "production".
 #
@@ -59,7 +69,7 @@ RUN_SIZE = "production"
 # Where the output files are written. Change the final folder name for each run
 # you want to keep. This intentionally points to the project-level data/runs
 # folder, not to scripts/data/runs and not to a top-level results folder.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_18A_calibration"
 
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
@@ -83,8 +93,13 @@ VERBOSE = True
 
 # Set one of these values only if you want a production-like run with a specific
 # override.
+# 8000 matches the existing data/runs/single_pulse_droplet baseline, so the
+# two runs are directly comparable. A fixed seed makes this run reproducible
+# and gives both runs identical droplet sizes and initial positions when the
+# 9 A baseline is re-run with the same seed (see the note in the docstring
+# of single_pulse_droplet_distribution_18A_calibration).
 PRODUCTION_NUM_MOLECULES = 20000
-PRODUCTION_SEED = None
+PRODUCTION_SEED = 20260819
 PRODUCTION_ION_TIME_PS = None
 
 PRODUCTION_CROSSSECTION = None
@@ -113,6 +128,7 @@ from i2_helium_md import (  # noqa: E402
     single_pulse_N2000,
     single_pulse_N2000_18Angst,
     single_pulse_droplet_distribution,
+    single_pulse_droplet_distribution_18A_calibration,
 )
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
 from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
@@ -123,6 +139,7 @@ PRESET_BUILDERS = {
     "single_pulse_N2000": single_pulse_N2000,
     "single_pulse_N2000_18Angst": single_pulse_N2000_18Angst,
     "single_pulse_droplet_distribution": single_pulse_droplet_distribution,
+    "single_pulse_droplet_distribution_18A_calibration": single_pulse_droplet_distribution_18A_calibration,
 }
 
 

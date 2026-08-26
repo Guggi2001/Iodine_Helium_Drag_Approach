@@ -9,6 +9,7 @@ from i2_helium_md import (
     single_pulse_N2000,
     single_pulse_N2000_18Angst,
     single_pulse_droplet_distribution,
+    single_pulse_droplet_distribution_18A_calibration,
 )
 from i2_helium_md.physics import EV, K_B, MASS_I_AMU, U
 
@@ -190,6 +191,68 @@ class TestSinglePulseDropletDistributionPreset:
 
     def test_validate_passes_for_preset(self):
         single_pulse_droplet_distribution().validate()
+
+
+class TestSinglePulseDropletDistribution18ACalibrationPreset:
+    """The experimental-condition run carrying the 18 A collision knobs.
+
+    The MATLAB input file records both calibrations and selects one by
+    commenting; only the 9 A branch was ever run. This preset is the
+    commented-out alternative, so the tests pin (a) that the three knobs
+    come from single_pulse_N2000_18Angst and (b) that nothing else moved
+    relative to single_pulse_droplet_distribution.
+    """
+
+    def test_carries_the_18A_collision_knobs(self):
+        cfg = single_pulse_droplet_distribution_18A_calibration()
+        ref18 = single_pulse_N2000_18Angst()
+        assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(1600.0)
+        assert cfg.binding_energy_I_ion_eV == pytest.approx(0.05)
+        assert cfg.mass_attach_probability == pytest.approx(0.005)
+        # identical to the 18 A HeDFT preset, not just numerically close
+        assert (
+            cfg.geometric_scattering_crosssection_Iplus
+            == ref18.geometric_scattering_crosssection_Iplus
+        )
+        assert cfg.binding_energy_I_ion_eV == ref18.binding_energy_I_ion_eV
+        assert cfg.mass_attach_probability == ref18.mass_attach_probability
+
+    def test_keeps_the_experimental_droplet_setup(self):
+        cfg = single_pulse_droplet_distribution_18A_calibration()
+        assert cfg.use_single_droplet_size is False
+        assert cfg.R0_GS_angstrom == pytest.approx(2.666)
+        assert cfg.E_coulomb_scale == pytest.approx(0.8)
+        assert cfg.single_initial_position is False
+        assert cfg.num_molecules == 8000
+        assert cfg.p_source_mbar == pytest.approx(40.0)
+        assert cfg.T_source_K == pytest.approx(14.0)
+
+    def test_differs_from_9A_calibration_in_exactly_three_fields(self):
+        import dataclasses
+
+        base = single_pulse_droplet_distribution()
+        alt = single_pulse_droplet_distribution_18A_calibration()
+        changed = {
+            f.name
+            for f in dataclasses.fields(base)
+            if getattr(base, f.name) != getattr(alt, f.name)
+        }
+        assert changed == {
+            "geometric_scattering_crosssection_Iplus",
+            "binding_energy_I_ion_eV",
+            "mass_attach_probability",
+        }
+
+    def test_preset_overrides_work(self):
+        cfg = single_pulse_droplet_distribution_18A_calibration(
+            num_molecules=50, seed=7,
+        )
+        assert cfg.num_molecules == 50
+        assert cfg.seed == 7
+        assert cfg.geometric_scattering_crosssection_Iplus == pytest.approx(1600.0)
+
+    def test_validate_passes_for_preset(self):
+        single_pulse_droplet_distribution_18A_calibration().validate()
 
 
 class TestSinglePulseN200018AngstPreset:

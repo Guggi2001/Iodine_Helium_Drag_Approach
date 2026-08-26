@@ -139,13 +139,14 @@ def _build_distance_figure(
 # ===========================================================================
 # Figure 2 -- velocity trajectories
 # ===========================================================================
+fig_scaling = 0.7
 def _build_velocity_figure(
     ion: IonCheckpoint,
     hedft: HedftTrajectory,
     *,
     max_velocity_traces: int = MD_VELOCITY_MAX_TRACES,
 ) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(9.5, 4.0), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(9.5*fig_scaling, 4.0*fig_scaling), constrained_layout=True)
     _draw_velocity_tile(
         ax,
         ion,
@@ -199,7 +200,7 @@ def _draw_velocity_tile(
     ax.set_xlim(0.0, 12.0)
     ax.set_xlabel("t / ps")
     ax.set_ylabel(r"v / $\mathrm{\AA}/\mathrm{ps}$")
-    ax.legend(frameon=False)
+    ax.legend(frameon=False, loc = 'upper right')
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
