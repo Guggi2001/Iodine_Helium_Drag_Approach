@@ -11,4 +11,7 @@ __pycache__/
 .claude/
 data/runs/
 # generated overview figure (rebuild: python data/reference/scripts/experimental_reference_fragments.py)
+# and the thesis figures rebuilt from the frozen reference CSVs
 data/reference/ihe_ked/*.png
+data/reference/ihe_ked/*.pdf
+graphify-out/
