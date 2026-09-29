@@ -91,7 +91,7 @@ def main() -> int:
     )
 
     _build_distance_figure(ion, hedft)
-    _build_velocity_figure(ion, hedft)
+    _build_velocity_figure(ion, hedft, scale = 0.6)
 
     if EXPORT_MEAN_VELOCITY_CSV:
         _export_mean_velocity_csv(ion)
@@ -153,8 +153,9 @@ def _build_velocity_figure(
     hedft: HedftTrajectory,
     *,
     max_velocity_traces: int = MD_VELOCITY_MAX_TRACES,
+    scale = 1
 ) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(9.5, 4.0), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(9.5*scale, 4.0*scale), constrained_layout=True)
     _draw_velocity_tile(
         ax,
         ion,

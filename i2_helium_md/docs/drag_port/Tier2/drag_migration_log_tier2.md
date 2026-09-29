@@ -10696,11 +10696,23 @@ savings were read out of the code and both fail:
 
 - the relaxation early exit is **not** blocked by the retained class —
   `relaxation_stage.py:69` defines "frozen" as the *evaporation cascade*
-  freezing (`n == 0` or `E_int < D₀(n)`), not spatial decoupling, and
-  production runs `cooling_spatial_gate = "none"` (`config.py:419`), where
-  cooling acts everywhere and freeze is guaranteed for retained and escaping
-  ions alike. (An earlier suggestion in this session that retained ions block
-  the all-frozen early stop was wrong and is withdrawn here.)
+  freezing (`n == 0` or `E_int < D₀(n)`), not spatial decoupling. (An
+  earlier suggestion in this session that retained ions block the all-frozen
+  early stop was wrong and is withdrawn here.)
+  **[Corrected 2026-09-29]** This bullet originally continued "production
+  runs `cooling_spatial_gate = "none"` (`config.py:419`), where cooling acts
+  everywhere and freeze is guaranteed for retained and escaping ions alike".
+  That is **false**: `"none"` is only the `SimConfig` default; every
+  atlas/finals generator (incl. `gen_tier2atlas_g4finals.py`, h405) sets
+  `COOLING_GATE = "density_scaled"`, under which an ejected fragment stops
+  cooling and freeze is **not** guaranteed (`config.py:1795–1799`). Moreover
+  these runs use `relaxation_dissipation = "landau_gated_drag"`, whose early
+  exit additionally requires every ion at |v| ≤ v_L
+  (`relaxation_stage.py:_relaxation_converged`) — never met while any ejected
+  fragment flies at ~km/s — so the E2 early exit does not fire at all and E2
+  runs its full `relaxation_time_ps`. The bullet's conclusion (the retained
+  class is not what blocks the early exit) still holds, for this different
+  reason. See `TIER2_DetectorStageFix.md`.
 - an MD-stage early abort on provably-bound ions is not free: the class is not
   identifiable until late in the window and the stage is vectorized, so a real
   saving needs array compaction.

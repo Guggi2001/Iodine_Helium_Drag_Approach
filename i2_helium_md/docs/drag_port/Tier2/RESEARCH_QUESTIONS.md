@@ -1872,6 +1872,64 @@ enum + `cfg.drag_gate_steepness` already exist and default to
 `DRAG_PORT_DESIGN_DECISIONS.md` §5.7 "until a calibration source for the
 separate steepness becomes available" — this RQ is that source question.
 
+### RQ13 — The I⁺ solvation-potential **width**: the ion stage reuses the neutral-I-atom fit (opened 2026-09-23, thesis-writing audit; convention, no measurement yet)
+
+**The question in one line.** After ionization the confining potential
+$U_\text{I⁺}(d) = \tfrac12\big(\mathrm{erf}(d/s)+1\big)\,E_\text{bind}$
+keeps `potential_steepness = 14.2 Å` — a fit to the DFT solvation
+potential of the **neutral I atom** — and only its *depth* is replaced
+(Method-B effective $E_\text{bind} = 0.1168$ eV). Is there a sourced
+width for I⁺ itself?
+
+**Provenance (code + legacy, verified 2026-09-23).**
+
+- Legacy: `potential_steepness_atom = 14.2; % from fit of solvation
+  potential DFT result` (`post_process_compare_radial_distributions.m:74`);
+  the ion stage `vmi_sim_3d_ion_propa.m:94–95` sets `11.89`, immediately
+  overwritten by `14.2`, and builds `droplet_potential_ion` from it with
+  `binding_energy_I_ion`. Provenance of the discarded 11.89 is unknown.
+- Python: one field, `cfg.potential_steepness = 14.2` (`config.py:346`,
+  commented "atoms"), read by the ion confining force
+  (`leapfrog.py:199`), the ion `E_pot` (`ion_propagation_step.py:926`),
+  the ion t = 0 state (`ion_initial_state.py:498`), the detection-stage
+  bound test (`detection_stage.py:817/859`) — and, by default, the density
+  gate (RQ12). `potential_steepness_molecule = 14.3324` (the I₂ fit) is read
+  **only** by the Boltzmann birth sampler (`radial_positions.py:111`),
+  which the drag production path bypasses (`uniform_volume`).
+- The molecular fit triple `beta = [14.3324, 26.9916, 34.4431]` is
+  [steepness Å, depth meV, surface offset Å] (legacy `droplet_potential.m`
+  argument order). The legacy fit scripts are named
+  `…_12800N_droplet.m` — a hint (unverified) that the DFT droplet had
+  N ≈ 12 800, which bears on RQ12's "34.44 Å = radius ⇒ N ≈ 3700"
+  reading.
+
+**Why it is a convention, not physics.** The solvation potential is
+$U_X \simeq \rho_\text{He}\otimes V_{X\text{–He}} + \text{cavity}$. The
+I⁺–He pair interaction differs from I–He in depth and range (charge–
+induced-dipole $\propto -\alpha e^2/2r^4$ tail; snowball/electrostriction
+structure), so $U_\text{I⁺}$ need not share the atom's 14.2 Å width. The
+direction of the difference is **not established** (a longer-range pair
+tail broadens the convolution; a compressed snowball may counteract).
+
+**Coupling.** Method B co-fits $E_\text{bind}$ *through* this shape
+(DESIGN §6.5.1), so width and depth are partly degenerate on the exit
+barrier: the effective 0.1168 eV already absorbs whatever the borrowed
+width gets wrong. Any width change therefore belongs inside a Tier-0
+re-extraction (atlas §6.8 T5), never as a standalone swap. Independent
+of RQ12: RQ12 is the *density* width (consumers: drag gate, pickup n₀,
+cooling, detection density); RQ13 is the *potential* width (consumers:
+confining force, E_pot, bound test).
+
+**Measured leverage.** None — **GAP**. No run has varied the ion
+potential width separately from the density width.
+
+**What would retire this RQ.** A static He-DFT solvation potential for
+**I⁺** in a droplet, fitted with the same erf form (ask alongside the
+RQ12 density-profile request); failing that, the ion's effective
+potential read off the TD-HeDFT trajectories. Until then the thesis
+states: *the I⁺ confining potential borrows the neutral-atom width; only
+its depth is calibrated.*
+
 **Cross-links:** `TIER2_STAIRCASE_PROBE_FINDINGS.md` §4c–§4e (the
 derivations and numbers behind every RQ; insight register I13–I25);
 `TIER2_DETECTION_STAGE_DESIGN.md` (§4 scope caveats → RQ5);

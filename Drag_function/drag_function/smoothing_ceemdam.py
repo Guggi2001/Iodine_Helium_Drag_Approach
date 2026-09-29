@@ -232,7 +232,7 @@ def plot_ceemdan_result(
 if __name__ == "__main__":
     t = dict9["t"]
     v = dict9["v2"]
-    mask = (t >= 2.67) & (t <= 14.08100)
+    mask = (t >= 2.67)
     t_ps = t[mask]
     y = v[mask]
 
@@ -242,20 +242,27 @@ if __name__ == "__main__":
     drop_idx, periods = identify_imfs_by_period(
         t_ps, imfs, target_period_ps=1.2, rel_tol=0.20, method="zero_crossings"
     )
+    #drop_idx = [4,5]
 
     plot_ceemdan_result(t_ps, y, imfs, drop_idx, periods, target_period_ps=1.2)
 
     cleaned = reconstruct_without_imfs(imfs, drop_idx)
+    a = 3
     #%%
-    wls = [8401, 9401, 11401]
-
+    wls = [9401]
+    lambdas = [0.01,0.1,1,10, 100]
+    from scipy.interpolate import make_smoothing_spline
 
     plt.figure(figsize=(10, 5))
     plt.plot(t_ps, y, lw=1.0, label="original signal")
     plt.plot(t_ps, cleaned, lw=2.0, label="IMF filtering")
     for wl in wls:
         cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=2)
-        plt.plot(t_ps, cleaned_SG, lw=2.0, ls = '--', label="IMF + SG filtering (wl={})".format(wl))
+        cleaned_SG = make_smoothing_spline(t_ps, cleaned_SG, lam = 5)
+        plt.plot(t_ps, cleaned_SG(t_ps), lw=2.0, ls = '--', label="IMF + SG filtering (wl={})".format(wl))
+    # for lam in lambdas:
+    #     smoothed = make_smoothing_spline(t_ps, cleaned, lam=lam)
+    #     plt.plot(t_ps, smoothed(t_ps), lw=2.0, ls='--', label="IMF + Smoothing spline (lam={})".format(lam))
     plt.xlabel("t (ps)")
     plt.ylabel("signal (arb.)")
     plt.title(f"Originial vs IMF filtering vs IMF + SG filtering with various window lengths")
@@ -270,11 +277,12 @@ if __name__ == "__main__":
 
     wl = 9401
     cleaned_SG, _, _ = sg_smooth_v(t_ps, cleaned, window_length=wl, polyorder=2)
+    cleaned_SG = make_smoothing_spline(t_ps, cleaned_SG, lam=5)
 
     # Create DataFrame with time, cleaned_SG, and IMF cleaned data
     export_data = pd.DataFrame({
         'time': t_ps,
-        'cleaned_SG': cleaned_SG,
+        'cleaned_SG': cleaned_SG(t_ps),
         'IMF_cleaned': cleaned
     })
 
