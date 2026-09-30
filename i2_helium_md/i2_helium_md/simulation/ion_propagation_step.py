@@ -902,6 +902,16 @@ def _amu_ang2_ps2_to_eV(dE_amu_ang2_ps2):
     return dE_amu_ang2_ps2 * U * (100.0 ** 2) / EV
 
 
+def _eV_to_amu_ang2_ps2(E_eV):
+    """Convert an energy (or energy x length) from eV to MD units.
+
+    The exact inverse of :func:`_amu_ang2_ps2_to_eV`: [eV] -> [amu*A^2/ps^2]
+    (an extra length factor rides through unchanged, e.g. a Coulomb coupling
+    eV*A -> amu*A^3/ps^2). Scalar or ndarray in -> same out.
+    """
+    return E_eV * EV / (U * (100.0 ** 2))
+
+
 def _E_kin_eV(mass_kg, vx, vy, vz):
     """Per-atom kinetic energy in eV from mass in kg and velocity in A/ps.
 

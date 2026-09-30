@@ -140,6 +140,18 @@ DetectionDropletRetainedPolicy = Literal[
     "refuse", "exclude", "exclude_all_coupled"
 ]
 
+# Detector-stage fix (TIER2_DetectorStageFix.md §2e / §5.4 D1, 2026-09-30):
+# the residual pair Coulomb at the detection-stage handover. ``none`` (byte-
+# inert default) carries the handover velocities verbatim -- the E2-era
+# behaviour, where an 8 ns E2 had already spent almost all of it.
+# ``partner_aware`` maps every free (non-retained) ion to its exact Coulomb
+# asymptote before the event loop: both fragments free -> two-body repulsive
+# Kepler asymptote (momentum-fixed split, magnitude and direction); partner
+# retained -> fixed-centre limit (the droplet absorbs the partner's recoil);
+# both retained -> nothing. Required when the handover is early (Stage I to
+# ~0.5 ns, E2 skipped). Valid only under the ``co_moving`` shed convention.
+DetectionCoulombClosure = Literal["none", "partner_aware"]
+
 # Slice T7 (Tier-2 plan §I.11): birth-position law for the molecule centre.
 # ``boltzmann`` is the delivered thermal sampler (byte-inert default);
 # ``uniform_volume`` is the 1D twin's L1 ensemble law — p(r) ∝ r² on
@@ -604,6 +616,9 @@ class SimConfig:
     validation_histogram_metric: ValidationHistogramMetric = "wasserstein"  # Tier 2
 
     # -- Tier-2 Phase-E post-ejection relaxation stage (Slice E2; opt-in) --
+    # LEGACY since 2026-09-30: production skips E2 (Stage I to t_h = 500 ps +
+    # detection_coulomb_closure="partner_aware"; TIER2_DetectorStageFix.md).
+    # Kept to reproduce E2-era numbers; removal = POST_THESIS_CLEANUP.md C1.
     # The R5 mitigation: propagate the biphasic mass subsystem past the 20 ps ion
     # stage to the experimental timescale (pickup off via lambda_0=0, drag off via
     # gamma=0) so the terminal size distribution is read at matched time rather than
@@ -644,6 +659,9 @@ class SimConfig:
     # 2026-07-27) = also classify the still-coupled *unbound* violators
     # `droplet_retained_marginal` and exclude them, so nothing refuses.
     detection_droplet_retained_policy: DetectionDropletRetainedPolicy = "refuse"
+    # Residual pair-Coulomb closure at handover (DetectionCoulombClosure above;
+    # TIER2_DetectorStageFix.md §5.4). "none" = byte-inert default.
+    detection_coulomb_closure: DetectionCoulombClosure = "none"
 
     # ------------------------------------------------------------------
     # Output
@@ -1880,6 +1898,7 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
 
 
 _KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude", "exclude_all_coupled")
+_KNOWN_DETECTION_COULOMB_CLOSURES = ("none", "partner_aware")
 
 
 def check_detection_config(cfg: "SimConfig") -> None:
@@ -1910,9 +1929,20 @@ def check_detection_config(cfg: "SimConfig") -> None:
        meaningless. The biphasic guard merely *warns* at ``nu == 0`` (a legal
        pickup-only diagnostic run); the detection stage refuses it.
 
+    5. ``detection_coulomb_closure == "partner_aware"`` requires
+       ``evaporation_shed_convention == "co_moving"``: under ``co_moving`` a
+       later shed never changes velocity, so closing the pair Coulomb at
+       handover is exactly what an integrated flight would give
+       (TIER2_DetectorStageFix.md §2e); under ``cold`` every shed rescales v
+       and the order of closure and kicks matters -- unvalidated, refused.
+
     The relaxation stage is **not** required (design §1 item 5, the skip
     path): with ``relaxation_stage_enabled=False`` the stage seeds directly
     from ``ion.npz`` and the P1-P3 handover guard is the sole defense.
+
+    Always (stage enabled or not): an unknown ``detection_droplet_retained_policy``
+    or ``detection_coulomb_closure`` is rejected, and ``partner_aware`` with the
+    stage disabled is refused (it would be silently inert).
 
     Raises
     ------
@@ -1924,7 +1954,19 @@ def check_detection_config(cfg: "SimConfig") -> None:
         _KNOWN_DETECTION_RETAINED_POLICIES,
         field="detection_droplet_retained_policy",
     )
+    _reject_unknown_enum(
+        cfg.detection_coulomb_closure,
+        _KNOWN_DETECTION_COULOMB_CLOSURES,
+        field="detection_coulomb_closure",
+    )
     if not cfg.detection_stage_enabled:
+        if cfg.detection_coulomb_closure != "none":
+            raise ValueError(
+                f"detection_coulomb_closure={cfg.detection_coulomb_closure!r} "
+                "requires detection_stage_enabled=True: the closure is applied "
+                "by the detection stage at handover, so with the stage off it "
+                "would be silently inert."
+            )
         return
 
     if cfg.mass_scenario != "biphasic":
@@ -1964,6 +2006,17 @@ def check_detection_config(cfg: "SimConfig") -> None:
             "detection stage's permanent-state taxonomy (frozen / suppressed / "
             "time_exhausted) is unsound and the detector read meaningless; got "
             f"{cfg.evap_rate_prefactor_per_ps!r}."
+        )
+
+    if (cfg.detection_coulomb_closure == "partner_aware"
+            and cfg.evaporation_shed_convention != "co_moving"):
+        raise ValueError(
+            "detection_coulomb_closure='partner_aware' requires "
+            "evaporation_shed_convention='co_moving': the closure maps the "
+            "handover state to its Coulomb asymptote once, which equals the "
+            "integrated flight only when later sheds leave v unchanged; under "
+            f"{cfg.evaporation_shed_convention!r} every shed rescales v "
+            "(TIER2_DetectorStageFix.md §5.4 D1)."
         )
 
 

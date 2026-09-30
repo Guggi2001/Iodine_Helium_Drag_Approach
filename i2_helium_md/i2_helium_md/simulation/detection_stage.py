@@ -68,6 +68,30 @@ E_mass_transfer + E_int`` closes across the stage boundary: per fire
 form). ``E_dissip`` never moves (P3: zero cooling drain). ``E_kin`` at
 detection is recomputed from the terminal ``(m, v)`` by the existing idiom.
 
+Residual pair-Coulomb closure (TIER2_DetectorStageFix.md §2e / §5.4)
+--------------------------------------------------------------------
+Under ``cfg.detection_coulomb_closure == "partner_aware"`` every free
+(non-retained) ion is mapped to its exact Coulomb asymptote before the event
+loop (:mod:`~i2_helium_md.physics.coulomb_closure`, handover masses and
+positions): both fragments free -> two-body asymptote; partner retained ->
+fixed-centre limit; both retained -> untouched. Ledger (D2): each closed ion
+books ``dE_pot = -dE_kin`` (the Coulomb work it received), so the per-ion
+5-term invariant stays exact and the pair sum drops by exactly the pair
+energy ``E_c`` (the ½/½ per-ion split of ``E_pot`` was a convention for a pair
+term; the momentum-fixed share replaces it at closure). The closure amount is
+recoverable per ion as ``E_pot_detected - E_pot_seed - sum(fold)``. The
+retained partner's state stays verbatim. A closed ion must sit on the flat
+well plateau (``|U(depth) - E_bind| <= CLOSURE_WELL_TOL_EV``), else the stage
+raises -- the closure omits the well term by assertion, not by model.
+
+Marginal-partner safeguard (§5.4 D4)
+------------------------------------
+Unconditionally, a ``droplet_retained_marginal`` ion whose partner is free is
+refused: two-fragment trapping is the only mechanism seen for the marginal
+class (§2f), so a marginal ion with an escaped partner signals an unbound
+escaper cut off by too early a handover. Blind spot: both fragments of one
+molecule being slow escapers at ``t_h``.
+
 Seeding (design §1 item 5, the skip path)
 -----------------------------------------
 ``seed_ckpt`` is ``relaxation.npz`` when E2 ran, or ``ion.npz`` directly when
@@ -105,6 +129,10 @@ import numpy as np
 
 from ..config import SimConfig, check_detection_config
 from ..physics.constants import MASS_HE_AMU, MASS_I_ION_AMU, U
+from ..physics.coulomb_closure import (
+    fixed_centre_coulomb_asymptote,
+    two_body_coulomb_asymptote,
+)
 from ..physics.dissociation_ladder import d0_of_n, resolve_ladder
 from ..physics.evaporation import gate_margin_eV, rrk_rate
 from ..physics.helium_density import rho_he_ratio
@@ -119,6 +147,7 @@ from .ion_propagation_step import (
     _amu_ang2_ps2_to_eV,
     _depth,
     _E_kin_eV,
+    _eV_to_amu_ang2_ps2,
     ion_state_from_checkpoint_column,
 )
 
@@ -134,6 +163,13 @@ DETECTION_STREAM_KEY: int = 0xD5_2026
 #: on a genuinely wrong input (a live in-bubble or ungated ion). Dimensionless;
 #: equals the fractional E_int error committed by treating cooling as zero.
 EPS_DRAIN: float = 1e-6
+
+#: Largest allowed well-term gap ``|U(depth) - E_bind|`` [eV] for an ion the
+#: Coulomb closure maps to infinity (TIER2_DetectorStageFix.md §5.4 D3). The
+#: closure omits the rest of the well climb, so this bounds its error; ~1e-6 of
+#: a typical fragment KE, far below the closure's own post-handover mass-change
+#: error (p95 0.2 %). Every read at t_h = 500 ps gave 0 to machine precision.
+CLOSURE_WELL_TOL_EV: float = 1e-6
 
 #: Legal per-ion permanent/terminal state reasons (design §2.3; the fourth
 #: member is the T9 leg-A' V0-2 exclude-policy class -- review fix 2026-07-18:
@@ -212,7 +248,9 @@ class DetectionResult:
     E_kin_detected_eV, E_pot_detected_eV : np.ndarray, shape (2N,)
         Terminal kinetic energy (recomputed from ``(m, v)`` by the existing
         idiom) and potential energy (held MD potential + the ``e_bind_pair``
-        fold at the terminal ``n`` -- the free-flight convention) [eV].
+        fold at the terminal ``n`` -- the free-flight convention; under the
+        ``partner_aware`` Coulomb closure minus the Coulomb work the ion
+        received at handover, ``-dE_kin`` of the closure) [eV].
     E_dissip_detected_eV, E_mass_transfer_detected_eV : np.ndarray, shape (2N,)
         Terminal cumulative ledger channels [eV]: ``E_dissip`` is carried
         through **unchanged** (P3: zero cooling drain); ``E_mass_transfer``
@@ -550,6 +588,37 @@ def run_detection_stage(
             "a MODELLING exclusion conditional on the drag law, not physics."
         )
 
+    free = ~(droplet_retained | droplet_retained_marginal)
+    partner = np.concatenate([np.arange(num_molecules, two_n),
+                              np.arange(num_molecules)])
+
+    # ---- Marginal-partner safeguard (TIER2_DetectorStageFix.md §5.4 D4) --
+    # Marginal = both fragments of a molecule trapped (§2f, 0 exceptions in
+    # 88 finished runs). A marginal ion whose partner escaped is an unbound
+    # escaper the handover cut off -> refuse, whatever the path or closure.
+    cut_off = droplet_retained_marginal & free[partner]
+    if np.any(cut_off):
+        idx = np.flatnonzero(cut_off)
+        raise ValueError(
+            "detection-stage marginal-partner safeguard failed: "
+            f"{idx.size} droplet_retained_marginal ion(s) have a free (escaped) "
+            f"partner at t_h={t_h} ps -- the signature of an unbound slow "
+            "escaper cut off by too early a handover (marginal ions otherwise "
+            "always come as trapped pairs, TIER2_DetectorStageFix.md §2f). "
+            f"Ion ids: {idx.tolist()}. Remedy: raise ion_simulation_time (or "
+            "relaxation_time_ps on the E2 path) so these ions decouple."
+        )
+
+    # ---- Residual pair-Coulomb closure (§2e / §5.4 D1-D3) ---------------
+    vx_h = np.asarray(seed.vx, dtype=float)
+    vy_h = np.asarray(seed.vy, dtype=float)
+    vz_h = np.asarray(seed.vz, dtype=float)
+    dE_kin_closure = np.zeros(two_n, dtype=float)
+    if cfg.detection_coulomb_closure == "partner_aware":
+        vx_h, vy_h, vz_h, dE_kin_closure = _coulomb_closure(
+            seed, seed_ckpt, cfg, free=free, depth=depth,
+        )
+
     # ---- RNG (stage-private stream; shared derivation helper) -----------
     if rng is None:
         rng = stage_stream_rng(cfg.seed, DETECTION_STREAM_KEY)
@@ -558,10 +627,12 @@ def run_detection_stage(
     n_out = n0.astype(float).copy()
     E_int_out = E_int0.copy()
     m_amu_out = np.asarray(seed.mass_kg, dtype=float) / U
-    vx_out = np.asarray(seed.vx, dtype=float).copy()
-    vy_out = np.asarray(seed.vy, dtype=float).copy()
-    vz_out = np.asarray(seed.vz, dtype=float).copy()
-    E_pot_out = np.asarray(seed.E_pot_eV, dtype=float).copy()
+    vx_out = vx_h.copy()
+    vy_out = vy_h.copy()
+    vz_out = vz_h.copy()
+    # D2 ledger: the closure's KE gain is booked as an equal E_pot drop on the
+    # same ion (zero for unclosed ions -> bit-identical under "none").
+    E_pot_out = np.asarray(seed.E_pot_eV, dtype=float) - dE_kin_closure
     E_mt_out = np.asarray(seed.E_mass_transfer_eV, dtype=float).copy()
     E_dissip_out = np.asarray(seed.E_dissip_eV, dtype=float).copy()  # unchanged
     reasons: list[str] = []
@@ -714,8 +785,11 @@ class EscapeEnergetics:
         **half-credit** pair split (each fragment carries half the shared
         Coulomb reservoir -- the physical asymptotic partition for the
         equal-mass pair): ``E_tot - 0.5*E_coul_pair - U(inf)``, clipped at 0.
-        Exact under the E2 dynamics, which are zero-gamma (no drag), so no
-        integration is involved. Meaningless for ``bound`` ions.
+        Exact only for frictionless flight after handover (true outside
+        helium, where the drag gate vanishes) and only for the equal-mass
+        split -- the per-fragment asymptote is the ``partner_aware`` Coulomb
+        closure's job (TIER2_DetectorStageFix.md §2e). Meaningless for
+        ``bound`` ions.
     asymptotic_ke_ceiling_eV : np.ndarray
         The same quantity on the full-credit split, i.e. an upper bound:
         ``E_tot - U(inf)``, clipped at 0. Reported alongside so a bracket
@@ -732,16 +806,20 @@ class EscapeEnergetics:
 
 
 def _conservatively_bound(seed, seed_ckpt, cfg: SimConfig) -> np.ndarray:
-    """Per-ion mask: cannot reach infinity under the E2 conservative dynamics.
+    """Per-ion mask: cannot reach infinity from the handover state.
 
     Thin wrapper over :func:`escape_energetics` (``.bound``), kept as the
     guard's call site and its published name.
 
     The droplet-retained criterion for the ``exclude`` policy (V0-2
-    convention, barrier-corrected 2026-07-16). The E2 relaxation "coulomb"
-    mode is **zero-gamma** (conservative BAOAB: droplet well + residual
-    Coulomb, no drag), so an ion escapes iff its total energy clears the
-    **effective potential** along the outward path:
+    convention, barrier-corrected 2026-07-16). Evaluated on the conservative
+    part of the post-handover dynamics (droplet well + residual Coulomb):
+    without friction an ion escapes iff its total energy clears the
+    **effective potential** along the outward path, and any drag only makes
+    escape harder, so a ``bound`` verdict holds a fortiori with drag. (This
+    docstring used to say "E2 is zero-gamma" -- false since the
+    ``landau_gated_drag`` arm, and meaningless on the skip path, where the
+    stage seeds from ``ion.npz``; TIER2_DetectorStageFix.md §2f.) The test:
 
         E_tot = E_kin + U(depth)   must reach every
         V_eff(r') = U(r' - R) + L^2 / (2 m r'^2)   for r' >= r,
@@ -777,9 +855,10 @@ def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
     The physics is :func:`_conservatively_bound`'s (read that docstring for
     the criterion, the angular-momentum barrier and the pair-Coulomb
     convention); this entry point additionally returns the intermediate
-    energies, because the escaping ion's asymptotic kinetic energy is already
-    one of them -- E2 is zero-gamma, so an unbound ion arrives at infinity
-    with exactly ``E_tot - U(inf)`` and nothing has to be integrated.
+    energies, because a frictionless escaper's asymptotic kinetic energy is
+    already one of them -- ``E_tot - U(inf)`` on the full-credit split (an
+    upper bound), nothing integrated. It is a bracket, not the physical
+    per-fragment asymptote (see :class:`EscapeEnergetics`).
 
     Parameters
     ----------
@@ -817,28 +896,9 @@ def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
         steepness=cfg.potential_steepness,
         binding_energy=cfg.binding_energy_I_ion_eV,
     )
-    # Residual pair Coulomb [eV], the delivered pair physics verbatim
-    # (charges all 1.0 in scope -- the ion_propagation unsupported-feature
-    # guard refuses single_charge_ionization on the biphasic path). Fragments
-    # pair as the [:N]/[N:] halves (the leapfrog convention). The full pair
-    # energy is credited to BOTH fragments (conservative over-estimate, see
-    # docstring); coincident synthetic fragments are distance-clamped -- the
-    # blown-up energy just lands them in the loud violator arm. Under the
-    # Tier-2 (C) mixture the same per-molecule CE scale that drove the
-    # dynamics scales the residual term (v8 fields; None = byte-identical).
-    n_mol = x.size // 2
-    dx = x[:n_mol] - x[n_mol:]
-    dy = y[:n_mol] - y[n_mol:]
-    dz = z[:n_mol] - z[n_mol:]
-    r_sep = np.maximum(np.sqrt(dx**2 + dy**2 + dz**2), 1e-12)
-    ones = np.ones(n_mol)
-    E_coul_pair = np.asarray(
-        ion_interaction_potential(
-            r_sep, ones, ones, cfg,
-            pair_scale=ce_pair_scale_from_checkpoint(seed_ckpt),
-        ),
-        dtype=float,
-    )
+    # The full pair energy is credited to BOTH fragments (conservative
+    # over-estimate, see docstring).
+    E_coul_pair, _ = _pair_coulomb_eV(seed, seed_ckpt, cfg)
     E_tot = E_kin + U_here + np.tile(E_coul_pair, 2)         # eV
 
     # |r x v|^2 per ion [A^4/ps^2]; L^2/(2 m r'^2) = m*h2/(2 r'^2) in
@@ -873,6 +933,128 @@ def escape_energetics(seed, seed_ckpt, cfg: SimConfig) -> EscapeEnergetics:
         asymptotic_ke_eV=np.maximum(E_tot - 0.5 * E_coul_tiled - U_inf, 0.0),
         asymptotic_ke_ceiling_eV=np.maximum(E_tot - U_inf, 0.0),
     )
+
+
+def _pair_coulomb_eV(seed, seed_ckpt, cfg: SimConfig):
+    """Residual pair Coulomb energy per molecule at handover.
+
+    The delivered pair physics verbatim (charges all 1.0 in scope -- the
+    ion_propagation unsupported-feature guard refuses single_charge_ionization
+    on the biphasic path). Fragments pair as the [:N]/[N:] halves (the
+    leapfrog convention). Coincident synthetic fragments are distance-clamped
+    -- in the escape criterion the blown-up energy just lands them in the loud
+    violator arm. Under the Tier-2 (C) mixture the same per-molecule CE scale
+    that drove the dynamics scales the residual term (v8 fields; None =
+    byte-identical). Shared by :func:`escape_energetics` and the Coulomb
+    closure (rule 1).
+
+    Returns
+    -------
+    E_coul_pair_eV, r_sep_angstrom : np.ndarray, shape (N,)
+        Pair energy [eV] and fragment separation [A].
+    """
+    x = np.asarray(seed.x, dtype=float)
+    y = np.asarray(seed.y, dtype=float)
+    z = np.asarray(seed.z, dtype=float)
+    n_mol = x.size // 2
+    dx = x[:n_mol] - x[n_mol:]
+    dy = y[:n_mol] - y[n_mol:]
+    dz = z[:n_mol] - z[n_mol:]
+    r_sep = np.maximum(np.sqrt(dx**2 + dy**2 + dz**2), 1e-12)
+    ones = np.ones(n_mol)
+    E_coul_pair = np.asarray(
+        ion_interaction_potential(
+            r_sep, ones, ones, cfg,
+            pair_scale=ce_pair_scale_from_checkpoint(seed_ckpt),
+        ),
+        dtype=float,
+    )
+    return E_coul_pair, r_sep
+
+
+def _coulomb_closure(seed, seed_ckpt, cfg: SimConfig, *, free, depth):
+    """Map every free ion to its exact residual-Coulomb asymptote (§5.4 D1-D3).
+
+    Parameters
+    ----------
+    seed
+        Handover ion state (``ion_state_from_checkpoint_column``).
+    seed_ckpt
+        The seed checkpoint (CE pair scale).
+    cfg : SimConfig
+        Pair-interaction and droplet-well settings.
+    free : np.ndarray of bool, shape (2N,)
+        Ions in neither retained class.
+    depth : np.ndarray, shape (2N,)
+        ``r - R_droplet`` per ion [A] at handover.
+
+    Returns
+    -------
+    vx, vy, vz : np.ndarray, shape (2N,)
+        Closed velocities [A/ps]; retained ions verbatim.
+    dE_kin_eV : np.ndarray, shape (2N,)
+        Per-ion kinetic-energy gain [eV] (0 for retained ions). Pairs with both
+        fragments free sum to ``E_c``; a free ion with a retained partner gains
+        ``E_c`` alone.
+
+    Raises
+    ------
+    ValueError
+        If a free ion is not on the flat well plateau
+        (``|U(depth) - E_bind| > CLOSURE_WELL_TOL_EV``).
+    """
+    two_n = free.size
+    n_mol = two_n // 2
+    U_here = droplet_potential(
+        depth,
+        steepness=cfg.potential_steepness,
+        binding_energy=cfg.binding_energy_I_ion_eV,
+    )
+    gap = np.where(free, np.abs(U_here - float(cfg.binding_energy_I_ion_eV)), 0.0)
+    if np.any(gap > CLOSURE_WELL_TOL_EV):
+        bad = np.flatnonzero(gap > CLOSURE_WELL_TOL_EV)
+        worst = bad[np.argmax(gap[bad])]
+        raise ValueError(
+            "detection-stage Coulomb closure: "
+            f"{bad.size} free ion(s) are not on the droplet-well plateau at "
+            f"handover (|U(depth) - E_bind| > {CLOSURE_WELL_TOL_EV:g} eV); the "
+            "closure omits the remaining well climb. Worst ion "
+            f"{int(worst)}: depth={float(depth[worst]):.3f} A, "
+            f"gap={float(gap[worst]):.3e} eV. Remedy: raise "
+            "ion_simulation_time so free ions have left the well."
+        )
+
+    pos = np.stack([np.asarray(seed.x, dtype=float),
+                    np.asarray(seed.y, dtype=float),
+                    np.asarray(seed.z, dtype=float)], axis=1)
+    vel = np.stack([np.asarray(seed.vx, dtype=float),
+                    np.asarray(seed.vy, dtype=float),
+                    np.asarray(seed.vz, dtype=float)], axis=1)
+    mass_kg = np.asarray(seed.mass_kg, dtype=float)
+    m_amu = mass_kg / U
+    E_c, r_sep = _pair_coulomb_eV(seed, seed_ckpt, cfg)
+    k_md = _eV_to_amu_ang2_ps2(E_c * r_sep)          # eV*A -> amu*A^3/ps^2
+
+    out = vel.copy()
+    f1, f2 = free[:n_mol], free[n_mol:]
+    both = np.flatnonzero(f1 & f2)
+    if both.size:
+        j = both + n_mol
+        out[both], out[j] = two_body_coulomb_asymptote(
+            pos[both], vel[both], m_amu[both], pos[j], vel[j], m_amu[j], k_md[both],
+        )
+    for mol, ion, other in ((np.flatnonzero(f1 & ~f2), 0, n_mol),
+                            (np.flatnonzero(~f1 & f2), n_mol, 0)):
+        if mol.size:
+            i, p = mol + ion, mol + other
+            out[i] = fixed_centre_coulomb_asymptote(
+                pos[i], vel[i], m_amu[i], pos[p], k_md[mol],
+            )
+
+    dE_kin = (_E_kin_eV(mass_kg, out[:, 0], out[:, 1], out[:, 2])
+              - _E_kin_eV(mass_kg, vel[:, 0], vel[:, 1], vel[:, 2]))
+    dE_kin = np.where(free, dE_kin, 0.0)
+    return out[:, 0], out[:, 1], out[:, 2], dE_kin
 
 
 # ===========================================================================

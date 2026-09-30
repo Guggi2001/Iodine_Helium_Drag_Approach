@@ -525,7 +525,11 @@ class TestExcludeAllCoupledPolicy:
         cfg = self._cfg()
         seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
                          inside=True, num_molecules=2)
-        seed.positions_z[2:, 0] = 1.0e5      # ions 2,3 properly ejected
+        # Ion 2 (partner of 0) properly ejected. Ion 3 (partner of 1) stays
+        # inside: a marginal ion always comes with a retained partner (the
+        # §5.4 D4 safeguard refuses an escaped one). Coincident with ion 1,
+        # the pair term blows up -> both unbound -> both marginal.
+        seed.positions_z[2, 0] = 1.0e5
         # ion 0 stays slow (bound); ion 1 gets 5 A/ps (unbound but coupled)
         fast = 5.0
         seed.velocities_x[1, 0] = fast
@@ -536,9 +540,10 @@ class TestExcludeAllCoupledPolicy:
         res = run_detection_stage(seed, cfg)
         assert res.state_reason[0] == "droplet_retained"
         assert res.state_reason[1] == "droplet_retained_marginal"
-        assert set(res.state_reason[2:]) == {"frozen"}
+        assert res.state_reason[2] == "frozen"
+        assert res.state_reason[3] == "droplet_retained_marginal"
         # One shared constant excludes both; the two remain distinguishable.
-        assert res.detected_mask.tolist() == [False, False, True, True]
+        assert res.detected_mask.tolist() == [False, False, True, False]
 
     def test_agrees_bit_for_bit_with_exclude_when_no_ion_is_marginal(self):
         """The arm oracle in miniature (plan §3.5b item 10): where every
@@ -583,27 +588,33 @@ class TestExcludeAllCoupledPolicy:
         cfg = self._cfg()
         seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
                          inside=True, speed=5.0)
-        seed.positions_z[1:, 0] = 1.0e5
+        # Molecule 0 (ions 0, 2) stays inside as a trapped pair (the D4
+        # safeguard refuses a marginal ion with an escaped partner); molecule
+        # 1 (ions 1, 3) is ejected.
+        seed.positions_z[[1, 3], 0] = 1.0e5
         res = run_detection_stage(seed, cfg)
         loaded = load_detection_result(
             save_detection_result(res, tmp_path / "detection.npz")
         )
         assert loaded.state_reason[0] == "droplet_retained_marginal"
+        assert loaded.state_reason[2] == "droplet_retained_marginal"
         fr = loaded.reason_fractions()
-        assert fr["droplet_retained_marginal"] == pytest.approx(0.25)
+        assert fr["droplet_retained_marginal"] == pytest.approx(0.5)
         assert sum(fr.values()) == pytest.approx(1.0)
         # the three shared readers all drop it through RETAINED_REASONS
-        assert loaded.detected_mask.tolist() == [False, True, True, True]
-        assert int(compute_terminal_shell_distribution(loaded).counts.sum()) == 3
+        assert loaded.detected_mask.tolist() == [False, True, False, True]
+        assert int(compute_terminal_shell_distribution(loaded).counts.sum()) == 2
         view = detected_ensemble_view(loaded)
-        assert np.isnan(view.mass_final_kg[0])
-        assert np.all(np.isfinite(view.mass_final_kg[1:]))
+        assert np.all(np.isnan(view.mass_final_kg[[0, 2]]))
+        assert np.all(np.isfinite(view.mass_final_kg[[1, 3]]))
 
     def test_scorer_reports_the_two_fractions_separately(self):
         cfg = self._cfg()
         seed = _far_seed(cfg, n_shell=21, E_int_eV=self._frozen_E(cfg),
                          inside=True, num_molecules=2)
-        seed.positions_z[2:, 0] = 1.0e5
+        # Same layout as test_bound_and_marginal_stay_decomposed_in_one_run:
+        # ion 0 bound (partner 2 ejected), ions 1 and 3 a marginal pair.
+        seed.positions_z[2, 0] = 1.0e5
         fast = 5.0
         seed.velocities_x[1, 0] = fast
         seed.E_kin_eV[1, 0] = _E_kin_eV(
@@ -611,11 +622,11 @@ class TestExcludeAllCoupledPolicy:
             np.array([0.0]),
         )[0]
         read = read_confirmation_detection(run_detection_stage(seed, cfg))
-        assert read.num_scored == 2
+        assert read.num_scored == 1
         assert read.trap_bound_frac == pytest.approx(0.25)
-        assert read.trap_marginal_frac == pytest.approx(0.25)
+        assert read.trap_marginal_frac == pytest.approx(0.5)
         # `trapped_frac` stays the committed combined column
-        assert read.trapped_frac == pytest.approx(0.5)
+        assert read.trapped_frac == pytest.approx(0.75)
 
     def test_retained_reasons_covers_exactly_the_two_classes(self):
         assert RETAINED_REASONS == {

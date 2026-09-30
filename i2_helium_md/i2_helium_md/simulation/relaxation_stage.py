@@ -1,5 +1,15 @@
 """Post-ejection relaxation stage (Tier-2 Phase E, Slice E2).
 
+.. warning:: **LEGACY -- not in the production pipeline since 2026-09-30.**
+   Production runs Stage I (full physics, pickup live) to a fixed handover
+   ``t_h = 500 ps``, skips this stage (``relaxation_stage_enabled=False``;
+   the detection stage seeds from ``ion.npz``) and closes the residual pair
+   Coulomb exactly at handover (``detection_coulomb_closure =
+   "partner_aware"``). Rationale and validation:
+   ``docs/drag_port/Tier2/TIER2_DetectorStageFix.md``. Kept runnable only to
+   reproduce the E2-era atlas / finals numbers; removal is registered as
+   ``docs/POST_THESIS_CLEANUP.md`` C1.
+
 Propagates the biphasic **mass subsystem** past the 20 ps ion stage under
 fixed-dt integration -- the only correct integrator **while K2 cooling is
 live** (cooling makes ``E_int`` decay continuously between sheds, which the
