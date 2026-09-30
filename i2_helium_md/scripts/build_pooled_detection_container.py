@@ -23,13 +23,19 @@ s1's cfg with ``num_molecules`` set to the pooled count (the seed field
 necessarily shows s1's seed; all member seeds are recorded in
 `README_POOLED.txt`).
 
-Invocation (target = the §6.7 lq battery pool):
+Invocation (``--target``; default = the §6.7 lq battery pool):
 
     python scripts/build_pooled_detection_container.py
+    python scripts/build_pooled_detection_container.py --target detfix_h405
+
+``detfix_h405`` = the detector-stage-fix reference battery
+(``gen_tier2_detfix_battery.py``: h405 s1–s5 + r6, t_h = 500 ps, E2 skipped,
+partner-aware Coulomb closure; N = 6000).
 """
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import sys
 from pathlib import Path
@@ -55,6 +61,10 @@ from scripts.gen_tier2atlas_lqbattery import (  # noqa: E402
     BATTERY_MATRIX,
     atlas_run_dir_name,
 )
+from scripts.gen_tier2_detfix_battery import (  # noqa: E402
+    MEMBER_SEEDS as DETFIX_SEEDS,
+    member_run_dir_name as detfix_run_dir_name,
+)
 
 # ---------------------------------------------------------------------------
 # USER SETTINGS
@@ -72,11 +82,28 @@ ORACLE_CONTAINER = (
     "9A_drag_shared_pure_cubic_N5000_tier2probe_conf270_bigc1v725pooled"
 )
 
-# Target: the §6.7 lq battery pool (atlas namespace: no `_tier2_`, no
-# `tier2probe` substring).
-TARGET_MEMBERS = [atlas_run_dir_name(spec.label) for spec in BATTERY_MATRIX]
-TARGET_SEEDS = [spec.seed for spec in BATTERY_MATRIX]
-TARGET_CONTAINER = "9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigpooled"
+# Targets: name -> (member run dirs, member seeds, container dir, description).
+TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
+    # The §6.7 lq battery pool (atlas namespace: no `_tier2_`, no
+    # `tier2probe` substring).
+    "lq": (
+        [atlas_run_dir_name(spec.label) for spec in BATTERY_MATRIX],
+        [spec.seed for spec in BATTERY_MATRIX],
+        "9A_drag_shared_lq_N5000_tier2atlas_conf270_qccbigpooled",
+        "the §6.7 lq battery",
+    ),
+    # The detector-stage-fix reference battery (TIER2_DetectorStageFix.md
+    # §5.6): h405 s1-s5 + r6, Stage I to t_h = 500 ps, E2 skipped,
+    # partner-aware Coulomb closure.
+    "detfix_h405": (
+        [detfix_run_dir_name(m) for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_shared_pure_cubic_N6000_detfix_conf270_h405pooled_th500",
+        "the detector-stage-fix h405 reference battery (t_h = 500 ps, E2 "
+        "skipped, partner-aware Coulomb closure)",
+    ),
+}
+DEFAULT_TARGET = "lq"
 
 PAIR_SPOTCHECK_MOLECULES = 60      # sampled molecules for the pairing oracle
 PAIR_SPOTCHECK_SEED = 20260730
@@ -202,32 +229,39 @@ def run_builder_oracle() -> bool:
     return True
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--target", choices=sorted(TARGETS), default=DEFAULT_TARGET)
+    args = parser.parse_args(argv)
+    target_members, target_seeds, target_container, target_desc = TARGETS[args.target]
+
     if not run_builder_oracle():
         return
 
-    print("target members:")
-    members = _load_members(TARGET_MEMBERS)
+    print(f"target {args.target!r} members:")
+    members = _load_members(target_members)
     if members is None:
         print("target battery incomplete — container not built.")
         return
     pooled = pool_members(members)
 
-    target_dir = RUNS_ROOT / TARGET_CONTAINER
+    target_dir = RUNS_ROOT / target_container
     if (target_dir / "detection.npz").exists():
         print(f"target container already exists: {target_dir} — not "
               "overwriting (delete it to rebuild).")
         return
 
     run = RunDirectory(target_dir)
-    cfg = RunDirectory(RUNS_ROOT / TARGET_MEMBERS[0]).load_cfg()
+    cfg = RunDirectory(RUNS_ROOT / target_members[0]).load_cfg()
     cfg = dataclasses.replace(cfg, num_molecules=int(pooled.num_molecules))
     run.save_cfg(cfg)
     save_detection_result(pooled, target_dir / "detection.npz")
+    n_member = int(members[0].num_molecules)
     (target_dir / "README_POOLED.txt").write_text(
         "FIGURES CONTAINER, not an MD run.\n\n"
-        f"Pooled from the 5 x N=1000 members (seeds {TARGET_SEEDS}):\n"
-        + "".join(f"  {nm}\n" for nm in TARGET_MEMBERS)
+        f"Pooled from {target_desc}:\n"
+        f"{len(members)} x N={n_member} members (seeds {target_seeds}):\n"
+        + "".join(f"  {nm}\n" for nm in target_members)
         + "\ncfg.json is member 1's cfg with num_molecules set to the "
         "pooled count\n(the seed field shows only member 1's seed).\n\n"
         "LAYOUT REQUIREMENT (do not rebuild sequentially): per-ion arrays\n"
