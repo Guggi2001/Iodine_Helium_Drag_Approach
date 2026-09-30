@@ -1,12 +1,11 @@
 # TIER2_DetectorStageFix — retire the E2 relaxation stage?
 
-**Status:** OPEN — Step 0 (zero-MD read) done 2026-09-29 on h405, extended
-2026-09-30 to b031 + linclones s1–s3 (§2d), Coulomb closure tested against
-E2 (§2e), retained split explained (§2f); decisions (1)/(2) confirmed, (3)
-revised (§3a). Validation MD (h405 + b031, skip path, t_h = 502.84 ps) run
-2026-09-30: **PASS** (§3d). Decisions for production + the new thesis
-reference battery recorded in **§5 (fresh-chat handoff)**. Next: settle the
-implementation design (§5.3), then `[PROCEED TO IMPLEMENTATION]`.
+**Status:** **ADOPTED 2026-09-30 (§5.7)** — the production pipeline is Stage I
+to t_h = 500 ps, E2 skipped, partner-aware Coulomb closure; the production
+reference is the pooled **N = 6000 h405** battery. History: audit §2,
+validation §3d (PASS), decisions §5.2, design §5.4, implementation §5.5,
+battery §5.6. Decision record: `drag_migration_log_tier2.md` (2026-09-30
+entry).
 
 ## 1. The problem
 
@@ -838,12 +837,35 @@ n1_solv 0.2100, w1_solv 0.7646, midHot 0.946, deepKE 0.520, chi2 460,
 KE1 0.6405, KE2 0.5491, S 1.736; trap 0.078 (bound 0.0767 / marginal 0.0013).
 
 **Verdict:** the production pipeline reproduces the E2-era battery member by
-member; the new pooled battery is the thesis reference.
+member.
 
-**After implementation + runs:** records (TIER2_PARAMETER_INFLUENCE §17 v_L /
-closure / t_h rows; migration-log entry; ≤ 2 CLAUDE.md pointer lines) and
-thesis framing (§3c item 5; discussed 2026-09-30: pipeline, E2 rationale,
-validation, closure, limitations incl. no sub-Landau regime in the drag).
+### 5.7 Adoption (user, 2026-09-30)
+
+- **Production pipeline** = this doc's skip path: generator
+  `scripts/gen_tier2_detfix_battery.py` (`build_cell(h405)` + the three
+  pipeline keys). E2 is legacy (`POST_THESIS_CLEANUP.md` C1).
+- **Standing point = h405** (G4 successor adjudication closed; supersedes
+  `finc1v725`). Retained policy = `exclude_all_coupled`, as production runs.
+  The other G4 calls (D0 §17 ledger re-issue, W₁-floor framing; atlas plan
+  §3.5e) stay open.
+- **Production reference = the pooled N = 6000 battery** (s1–s5 + r6;
+  r6 is now a member, departing from §5.2 "not part of the bundle"). Figures
+  container `…N6000_detfix_conf270_h405pooled_th500`
+  (`build_pooled_detection_container.py --target detfix_h405`); scored row
+  `pooled_new6000` in `detfix_battery_table.csv`, equal to the container read
+  (scorer oracle):
+
+  | scored | trap (bound / marg) | nbar | n1_solv | w1_solv | midHot | deepKE | chi2 | KE1 | KE2 | S |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 11046 | 0.0795 (0.0781 / 0.0014) | 3.890 | 0.2093 | 0.7551 | 0.948 | 0.571 | 456.3 | 0.640 | 0.550 | 1.705 |
+
+  deepKE carries the sparse-tail single-ion sensitivity shown in §5.6 (s5).
+  The N = 5000 pool stays the paired E2-era comparison only.
+
+**Thesis framing (open):** §3c item 5 — pipeline, E2 rationale, validation,
+closure, limitations (point charges, fixed droplet, no sub-Landau regime in
+the drag). Records written 2026-09-30: D0 §17 rows, migration-log entry,
+CLAUDE.md pointers, atlas plan §3.5e note.
 
 ## 4. Artifacts
 

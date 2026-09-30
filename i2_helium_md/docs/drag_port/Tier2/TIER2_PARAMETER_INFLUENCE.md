@@ -33,6 +33,11 @@
 > (§15.4/§15.5 — solvation-depth reproduction and the source-condition
 > droplet range; the influence GAPs in §14/§15 stay open).
 >
+> **Standing point superseded 2026-09-30:** h405 (G4 successor adjudication,
+> production pipeline + N = 6000 reference: `TIER2_DetectorStageFix.md`
+> §5.7). The block below is the historical context of the "standing" values
+> quoted in this doc, which remain finc1v725-based unless stated.
+>
 > **Standing point (context for every "standing" value):** finc1v725 —
 > `capped_cubic` v_c 7.25 / p_tail −1, τ 3.2 ps, E₀ 0.27 eV, `rq4graded`
 > ladder, Landau v_L 0.58 Å/ps, locked Tier-0 b, E_bind 0.1168 eV,
@@ -2601,7 +2606,8 @@ physics, and which are scaffolding?** Role codes:
 | κ, picture | Form-U parametrisation | no | **E** (both near-dead levers) | superseded by the tabulated `rq4graded` ladder |
 | ladder D₀(n) rungs | RQ4 literature | **yes** (rungs) | **P** rungs / **E** graded shape | shape: an independent size-resolved binding source |
 | λ₀ pickup, detection time | source conditions / flight geometry | **yes** | **P** | — |
-| Landau v_L 0.58 | literature bulk value | **yes** | **P** (measured quiet) | — |
+| Landau v_L 0.58 | literature bulk value | **yes** | **P** (measured quiet) | — . Since 2026-09-30 its only production reader is the collision cutoff `E_min_eV` (neutral stage); the E2 drag-gate reader is legacy (`TIER2_DetectorStageFix.md` §3a, `POST_THESIS_CLEANUP.md` C1/C4) |
+| **handover t_h = 500 ps + partner-aware Coulomb closure** (added 2026-09-30) | replaces the 8 ns E2 stage; closure = exact two-body / fixed-centre asymptote | **yes** — exact vs E2 ground truth (≤ 0.2 % p95) | **C** (staging), **P** (closure maths) | t_h measured irrelevant (500 vs 502.84 ps: observables ≤ 4·10⁻⁶); omits droplet polarisation and any post-t_h mass change (`TIER2_DetectorStageFix.md` §2e, §5.6) |
 | per-shed ε | bounded small (NB-RQ23-1) | weak | **C** (set 0) | a recoil model |
 | shed convention (cold/co-moving) | two-valued bookkeeping choice | no | **C** | RQ3 resolution |
 | E_bind 0.1168 eV | joint Method-B with the drag pair | **yes** (jointly) | **P** (paired) | measured to matter (§9); pairing is the constraint, not the value. R-dependence **bounded** ≤ 0.009 eV over the Axis A span (§9.1, Born far-field; the local snowball term cancels) |
@@ -2617,7 +2623,7 @@ physics, and which are scaffolding?** Role codes:
 | ↳ *its measured leverage* (2026-08-10/11, §9.4–§9.5) | (a) analytic: for a radial exit $\int_0^\infty\hat\rho(r-R)dr = R$, so a **saturated** drag is width-blind on total dissipation (0.0 % at R = 47.8 Å, +11 % at the 9 Å Tier-0 droplet); (b) the **E_bind transfer factor** $T = c_\text{prod}/c_\text{cal}$, measured cross-law; (c) the dynamical/cascade split of the ensemble response | (a) leaves the drag channel nearly inert on *total* dissipation; (b) $c_\text{cal} = 0.482$ under the **uncapped** Tier-0 cubic ⇒ the co-fitted $E_\text{bind}$ is inflated ≈ 2.1×, and **T > 1** (1.66–2.07 taken consistently at trajectory level): production **over**-pays. Sharpening drives T → 1 and **halves the refund** (0.518 → 0.246 at R = 9); (c) the ensemble response is **85 % dynamical / 15 % cascade** (§9.5) — so the density width *can* reach it | — | **consequence:** correcting $s_\rho$ is right physics and correctly signed for KE₁, but its **size is not yet established** (the "+0.006–0.02 eV" estimate mixed trajectory- and system-level derivatives — withdrawn). Needs: the trapping bundle split out of $c_\text{traj}$, an **ensemble** $c(s_\rho)$, then a **Tier-0 re-extraction**. Third channel, untouched: **birth dressing** ($\hat\rho(10\,\text{Å})$ 0.84 → ~1.00, $n_0 \approx 18 \to 21$), the §14.3 lever |
 | mass / binding pairing hatches | §6.5–§6.6 documented exceptions | n/a | **C** (logged per run) | — |
 | ensemble second moments | not modelled | experiment says under-dispersed | **M** | Tier 3 (discrete-emission drag is the standing candidate) |
-| **three-stage timescale separation** (30 ps drag-active MD → 8 ns conservative E2 → 8.53 µs free flight) | staging calibrated at R ≈ 27 Å, where ejection is effectively instantaneous | **contradicted at the anchored radii**: at R ≥ 49 Å escape takes ~0.1–1 µs with He still present, and ⅓–½ of ions never leave (§14.2) | **S** — scaffolding for the wrong geometry; **no longer a blocker** | **partly retired 2026-07-27** by the second option: the µs-orbiting class *is* defined as retained (`exclude_all_coupled`), decomposed into bound (physics) and marginal (convention), so the grid is readable — §14.2. What remains open is whether the µs residence is real at all, i.e. whether cubic drag over-dissipates on 25–50 Å paths (the collaborator ask; a *geometric* retained fraction is insensitive to (v_c, b), an over-dissipation artifact is not). **The first ledger row the correction created rather than retired** |
+| **three-stage timescale separation** (30 ps drag-active MD → 8 ns conservative E2 → 8.53 µs free flight; **since 2026-09-30: 500 ps full-physics Stage I → closure → free flight**, the E2 middle stage retired from production — `TIER2_DetectorStageFix.md`) | staging calibrated at R ≈ 27 Å, where ejection is effectively instantaneous | **contradicted at the anchored radii**: at R ≥ 49 Å escape takes ~0.1–1 µs with He still present, and ⅓–½ of ions never leave (§14.2) | **S** — scaffolding for the wrong geometry; **no longer a blocker** | **partly retired 2026-07-27** by the second option: the µs-orbiting class *is* defined as retained (`exclude_all_coupled`), decomposed into bound (physics) and marginal (convention), so the grid is readable — §14.2. What remains open is whether the µs residence is real at all, i.e. whether cubic drag over-dissipates on 25–50 Å paths (the collaborator ask; a *geometric* retained fraction is insensitive to (v_c, b), an over-dissipation artifact is not). **The first ledger row the correction created rather than retired** |
 
 **What the ledger says.** The **S** rows share one root: the droplet is
 ~2× too small and births ~3× too shallow, and several arms exist to

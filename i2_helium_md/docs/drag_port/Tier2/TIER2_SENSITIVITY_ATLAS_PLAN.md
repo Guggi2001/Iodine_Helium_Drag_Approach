@@ -23,6 +23,11 @@
 > bracket caveat attached to the R ≥ 49 Å rows. Then the remaining D2b A/B →
 > Axis B E₀/τ curves (sequencing question open: G3 re-locates (v_c, τ, E₀),
 > so Axis B around the pre-G3 point may be deferred past G3/G4).
+> **G4 successor TAKEN 2026-09-30 (user): h405 is the standing point**
+> (supersedes `finc1v725`), run on the new production pipeline with the
+> pooled N = 6000 battery as reference — `TIER2_DetectorStageFix.md` §5.7.
+> Still open from G4: D0 §17 ledger re-issue, W₁-floor framing (§3.5e).
+>
 > **G2 TAKEN 2026-07-27 (user): the corrected geometry is ADOPTED as the
 > target** (retained-policy sub-decision deferred to G3; `finc1v725`
 > stands until G4). The **G3 twin-first scan** is designed along
@@ -1128,6 +1133,10 @@ policy, ledger re-issue, and whether the W₁ floor is recorded as the
 corrected geometry's honest residual or chased into a new mechanism
 axis. Verification before re-baselining: a pooled 5 × N = 1000 battery
 at the chosen point.
+*[Update 2026-09-30]* Successor point **decided: h405**; retained policy =
+`exclude_all_coupled` (as production runs); re-baselined on the N = 6000
+production battery (`TIER2_DetectorStageFix.md` §5.6–§5.7). Ledger re-issue
+and the W₁-floor framing remain open.
 
 ### 3.5f G4 Step 2 — h405 pooled battery + W₁ residual anatomy (DESIGNED + user-approved 2026-07-28; **EXECUTED 2026-07-28** — GV-P1/P2 CONFIRMED, GV-P3 REFUTED (pooled S 1.734 > 1.683); anatomy vs the frozen fingerprints: **no knob matches → honest-residual branch**, F1-partial + trapped-tail caveats recorded; low-n KE axis found mid-stage and pre-registered hard; findings "G4 Step 2" ×3)
 

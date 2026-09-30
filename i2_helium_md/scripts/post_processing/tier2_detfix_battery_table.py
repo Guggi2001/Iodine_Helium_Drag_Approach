@@ -40,8 +40,10 @@ Outputs (committed; every column, incl. KE — memory "scorer CSVs carry full
 vector"):
 
 * ``data/runs/h2b_forward_model/detfix_battery_table.csv`` — one row per
-  (member, pipeline): new, E2-era raw, E2-era closed; s1–s5 + pooled; r6 rows
-  incl. the th503 validation run closed.
+  (member, pipeline): new, E2-era raw, E2-era closed; s1–s5 + pooled
+  (N = 5000, the paired comparison); r6 rows incl. the th503 validation run
+  closed; and ``pooled_new6000`` (s1–s5 + r6) = **the production reference**,
+  cross-checked against the pooled figures container.
 * ``data/runs/h2b_forward_model/detfix_battery_paired.csv`` — new minus
   E2-era-closed per member + pooled, plus the sharp-check outcomes.
 
@@ -110,6 +112,9 @@ from scripts.post_processing.tier2_confirmation_score import (  # noqa: E402
 OUT_DIR = RUNS_ROOT / "h2b_forward_model"
 TABLE_CSV = OUT_DIR / "detfix_battery_table.csv"
 PAIRED_CSV = OUT_DIR / "detfix_battery_paired.csv"
+#: The production reference figures container (build_pooled_detection_container.py
+#: --target detfix_h405); cross-checked against the pooled_new6000 row if present.
+PRODUCTION_CONTAINER = "9A_drag_shared_pure_cubic_N6000_detfix_conf270_h405pooled_th500"
 
 BATTERY_MEMBERS = ("s1", "s2", "s3", "s4", "s5")
 ORACLE_COLS = ("nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE")
@@ -304,6 +309,7 @@ def main() -> int:
             p.update(sharp_th)
             p.update({"ke_same_n_count": n_ke, "ke_rel_med": ke_med, "ke_rel_p99": ke_p99})
             paired.append(p)
+            read_r6_new = read_new
         else:
             reads["new"].append(read_new)
             reads["e2raw"].append(read_twin)
@@ -321,6 +327,19 @@ def main() -> int:
     # Pooled E2raw must equal the committed pooled battery row.
     _check_4dp("committed pooled battery row", pooled["e2raw"],
                _csv_row(E2_BATTERY_CSV, "pooled"), ORACLE_COLS)
+    # The production reference: all six members (s1-s5 + r6), N = 6000.
+    # Oracle: it equals the read of the pooled figures container (in-memory
+    # pooling == the pair-preserving concatenated detection.npz).
+    prod = _row("pooled_new6000", "pooled6000", "skip+closure:partner_aware",
+                "-", pool_confirmation_reads(reads["new"] + [read_r6_new],
+                                             label="pooled_new6000"), ab, ked)
+    container = RUNS_ROOT / PRODUCTION_CONTAINER / "detection.npz"
+    if container.exists():
+        _check_4dp("N=6000 container", prod, _row(
+            "container", "-", "-", "-", read_confirmation_detection(
+                load_detection_result(container), label="container"), ab, ked),
+            ORACLE_COLS + ("chi2_med", "S"))
+    rows.append(prod)
     p = {"member": "pooled", "vs": "E2closed"}
     p.update({f"d_{c}": float(pooled["new"][c]) - float(pooled["e2closed"][c])
               for c in PAIRED_COLS})

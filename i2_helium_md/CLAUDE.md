@@ -53,6 +53,8 @@ Repo root:
   (atlas D0; living doc — its GAP markers are the atlas targets; §17 is
   the physical-sensibility ledger: physics / convention / effective /
   scaffolding / missing, with what would retire each)
+- `TIER2_DetectorStageFix.md` — E2 retirement + production pipeline
+  (adopted 2026-09-30); deferred E2 removal: `docs/POST_THESIS_CLEANUP.md`
 - `TIER2_MASS_SCENARIOS.md` — **open investigation** (2026-08-11): what
   mass flies through the Coulomb explosion, and why that is the KE₁
   deficit; M1–M6 open questions, M1 gates
@@ -63,8 +65,11 @@ Repo root:
 Compact state — **pointers only; results and history do not belong here.**
 Production law `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the
 shared bundle; the production arbitration adds the `capped_cubic` tail.
-Standing point `finc1v725`, successor candidate `h405` (G4 adjudication
-open). Tier status: see the Validation hierarchy section below. **Live
+Standing point `h405` (G4 successor closed 2026-09-30; was `finc1v725`).
+**Production pipeline** (since 2026-09-30): Stage I to 500 ps, E2 skipped,
+partner-aware Coulomb closure — generator `gen_tier2_detfix_battery.py`;
+reference = pooled N = 6000 h405 battery (`TIER2_DetectorStageFix.md` §5.7).
+Tier status: see the Validation hierarchy section below. **Live
 status, every result and all open gates:** `drag_migration_log_tier2.md`
 (chronology), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (results),
 `TIER2_PARAMETER_INFLUENCE.md` (per-knob influence),
@@ -226,8 +231,8 @@ before introducing the next unknown:
   the two genuinely-free knobs (ladder shape + electronic picture). The biphasic
   *generative* mechanism (Poisson pickup + energy-gated RRK evaporation +
   `E_int` reservoir + Newton cooling, **5-term** invariant; schema **v7**,
-  `E_int` field) is built and arbitrated: standing point finc1v725, pooled
-  N = 5000 battery reference, histogram-level landing seed-robust. In-tier
+  `E_int` field) is built and arbitrated: standing point h405, pooled
+  N = 6000 battery reference, histogram-level landing seed-robust. In-tier
   optimization targets: RQ11 (deep-bin KE slope), RQ3, RQ5, the margin pin.
   Plan + slices: `TIER2_IMPLEMENTATION_PLAN.md`; F5 reconciliation entry in
   `drag_migration_log_tier2.md`.

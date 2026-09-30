@@ -13626,3 +13626,33 @@ gated by **M1** — a sourced I⁺–He D₀, a literature question.
 
 Records: plan §6.8 (design + this result), findings "§6.8 short-τ decisive
 pair", D0 §1, artifact `atlas_lintauring_table.csv`.
+
+---
+
+## 2026-09-30 — Detector-stage fix ADOPTED: E2 retired from production (Stage I to 500 ps + partner-aware Coulomb closure); **h405 = standing point** (G4 successor closed); pooled N = 6000 h405 battery = production reference
+
+Full record: `TIER2_DetectorStageFix.md` (audit §2, validation §3d, design
+§5.4, implementation §5.5, battery §5.6, adoption §5.7). Commits `831bb30`,
+`20afc57`.
+
+- **Why.** E2 forced pickup off on a stale premise and cost ~95 % of the
+  compute; the audit (§2a–§2f) showed it score-inert apart from a one-sided
+  residual-Coulomb KE deficit (0.2–0.6 %), which the exact closure removes.
+- **Pipeline.** Stage I (full physics) to t_h = 500 ps → detection seeded
+  from `ion.npz` → `detection_coulomb_closure="partner_aware"` (two-body
+  asymptote; fixed-centre if the partner is retained) + marginal-partner
+  safeguard. ≈ 17× cheaper. Generator `gen_tier2_detfix_battery.py`.
+- **Validation.** Paired vs every E2-era twin: `neutral.npz` identical,
+  `ion.npz` bit-identical ≤ 30 ps, same excluded ids; observables within
+  resampling noise (one sparse-tail deepKE outlier traced to a single ion,
+  §5.6). t_h 500 vs 502.84 ps: observables equal to ≤ 4·10⁻⁶.
+- **Adopted (user).** Production pipeline as above; **standing point h405**
+  (supersedes `finc1v725`); retained policy `exclude_all_coupled`;
+  production reference = pooled **N = 6000** (seeds 20260729–34; container
+  `…N6000_detfix_conf270_h405pooled_th500`): n̄ 3.890, n₁_solv 0.209,
+  W₁ 0.755, midHot 0.948, deepKE 0.571, KE₁ 0.640, S 1.705
+  (`detfix_battery_table.csv`, row `pooled_new6000`).
+- **E2 = legacy**; removal deferred (`POST_THESIS_CLEANUP.md` C1).
+  `v_limit_m_per_s` stays (collision cutoff). Still open from G4: D0 §17
+  ledger re-issue, W₁-floor framing. E2-era atlas results stand as recorded
+  (§2d of the fix doc).

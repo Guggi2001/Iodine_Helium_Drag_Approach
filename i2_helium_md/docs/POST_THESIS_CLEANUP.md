@@ -49,8 +49,8 @@ collision step, read by the **neutral stage** (`simulation/propagation_step.py`)
 and the ion-stage collision path (`simulation/ion_propagation_step.py`). Only
 the E2 reader (`landau_gated_drag`) goes.
 
-**Depends on.** Thesis final; production pipeline switched to the skip path
-(`TIER2_DetectorStageFix.md` §3c item 3); decision on whether any E2-era
+**Depends on.** Thesis final; ~~production pipeline switched to the skip
+path~~ (done 2026-09-30, `TIER2_DetectorStageFix.md` §5.7); decision on whether any E2-era
 number must remain reproducible from code (vs. from committed artifacts).
 
 **Done when.** No `relaxation` symbol left outside history docs; full
