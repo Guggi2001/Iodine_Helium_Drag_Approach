@@ -1271,7 +1271,8 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   (7–20 %) sits below the 48.7 % n = 1 KED weight above the (A) cap
   (1.15 eV); candidate resolutions to check: condition matching (the
   ihe_ked reference is a 600 mW series; the power ↔ intensity mapping
-  160/300/600 mW ↔ 1.47/2.94×10¹⁴ is an OPEN user question), the
+  is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔ 2.94×10¹⁴ — corrected 2026-10-02,
+  see item (3) of the follow-up round below), the
   n = 1 `bgOffShift` tail sensitivity, and Q = 2-strip reach at the
   calibrated 2.16 eV budget. **Open follow-ups (user):** the
   equivalent covariance analysis for the bare-I⁺ row (would decompose
@@ -1294,14 +1295,20 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   that final dressing at fixed kinematics is stochastic per ion**,
   the distribution the (A) knockout closure must reproduce (and
   independent support for the needle-break requirement).
-  (3) *Power ↔ intensity mapping ADOPTED PROVISIONALLY* (user-recalled,
-  ratio-consistent, unconfirmed): **300 mW ↔ 1.47×10¹⁴, 600 mW ↔
-  2.94×10¹⁴ W/cm²**. Consequence: the ihe_ked KED reference (600 mW
-  series) pairs with the **~20 %** Q3 share — the 48.7 %-above-cap
-  tension softens (20 % Q3 + Q2-strip coverage of 1.0–1.3 eV + the
-  n = 1 bg-sensitive far tail); the 300 mW vmi droplet curves pair
-  with the cleaner ~7 % condition. Confirmation of the mapping stays
-  an open item.
+  (3) *Power ↔ intensity mapping* — **corrected 2026-10-02 (user):
+  150 mW ↔ 1.47×10¹⁴, 300 mW ↔ 2.94×10¹⁴ W/cm²** (mean laser powers;
+  the 150 mW condition is the "160 mW" series of `paper_v2`/`paper_v4`).
+  The mapping adopted here on 2026-07-29 (300 mW ↔ 1.47×10¹⁴, 600 mW ↔
+  2.94×10¹⁴; later recorded as user-confirmed, OQ-K) was off by a
+  factor of 2. Consequences: the **~20 %** Q3 share pairs with the
+  300 mW condition (the `ihe_ked` 300 mW cross-check series), the
+  ~7 % share with the 150/160 mW condition, and the 600 mW `ihe_ked`
+  reference has **no measured covariance share**. The 2026-07-29
+  reading "the 600 mW KED reference pairs with ~20 %, so the
+  48.7 %-above-cap tension softens" no longer holds as stated. User
+  reading (unverified): Q3 may already saturate at 300 mW, so ~20 %
+  would be the ceiling at 600 mW. Discussion: `THESIS_DISCUSSION.md`
+  §3–§4.
 
 ### RQ9 — Physicality of the fitted cooling time τ ≈ 4.1 ps vs the GAH25 pin (opened 2026-07-15, Addendum I Step 1b; parked by user decision same day)
 

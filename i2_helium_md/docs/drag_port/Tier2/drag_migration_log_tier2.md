@@ -12094,6 +12094,9 @@ the (A) knockout closure's target distribution. **Power ↔ intensity
 mapping adopted provisionally (user-recalled, unconfirmed): 300 mW ↔
 1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴** → the 600 mW ihe_ked KED reference
 pairs with the ~20 % Q3 share; the 48.7 %-above-cap tension softens.
+**[Corrected 2026-10-02 (user): mapping is 150 mW ↔ 1.47×10¹⁴ /
+300 mW ↔ 2.94×10¹⁴; the ~20 % share pairs with 300 mW, the 600 mW
+reference has no measured share — RQ8 NB follow-up item (3).]**
 Full record RQ8 NB (follow-up round); plan §3.5l item (ii) updated.
 
 ## §3.5l EXECUTED: reads (i)+(iii) + 0.8-provenance CLOSED (Hatherly 1994 on file) + the (C) design doc DRAFTED — OQ-A..K posted (2026-07-29)
@@ -12206,7 +12209,9 @@ P3 (composition forecast), then the probe registration freeze.
 peak intensities are 300 mW and 600 mW equivalently" — the mapping
 300 mW ↔ 1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴ W/cm² is a confirmed fact; the
 600 mW `ihe_ked` reference pairs with the ~20 % Q3 covariance share;
-w_Q3 ≈ 0.20 un-provisional; the OQ-C weight freeze is un-gated (values
+w_Q3 ≈ 0.20 un-provisional; **[Corrected 2026-10-02 (user): the
+mapping is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔ 2.94×10¹⁴; the ~20 % share
+pairs with 300 mW, the 600 mW reference has no measured share]**; the OQ-C weight freeze is un-gated (values
 freeze at registration after P3). (2) The **m/q-127-row covariance
 ask is postponed until the (C) method proves successful** — the
 w_single/w_Q2 split rests on the gas slow band + Q2 partner structure.

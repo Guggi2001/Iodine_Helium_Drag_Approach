@@ -5,7 +5,10 @@ recommendations") — physics definition only. No code until
 `[PROCEED TO IMPLEMENTATION]`. OQ-A..K ALL CLOSED: OQ-K was closed
 2026-07-29 by user confirmation of the power↔intensity mapping
 (300 mW ↔ 1.47×10¹⁴ / 600 mW ↔ 2.94×10¹⁴ W/cm² — the 600 mW KED
-reference pairs with the ~20 % Q3 covariance share). P1 + P2
+reference pairs with the ~20 % Q3 covariance share). **[Corrected
+2026-10-02 (user): the mapping is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔
+2.94×10¹⁴ W/cm²; the ~20 % share pairs with 300 mW and the 600 mW KED
+reference has no measured covariance share — see §10 OQ-K.]** P1 + P2
 EXECUTED 2026-07-29 (zero MD; findings "(C) pre-steps P1 + P2"):
 the strip prior box is PINNED (a = 2 [1.5, 2.5], j₀ ∈ [1.5, 2],
 w_j ∈ [0.5, 1]; a = 1 disfavored) and the width priors are
@@ -354,7 +357,7 @@ KED** (the 2026-07-29 meta-discussion guard — the n = 1 KED is the
 arbitration observable). Anchors, in priority order:
 
 1. **w_Q3**: the I²⁺ covariance shares (~7 %/~20 %) at the mapped
-   condition (600 mW ↔ 2.94×10¹⁴ provisional — §10 OQ-K), cross-checked
+   condition (**300 mW** ↔ 2.94×10¹⁴, corrected 2026-10-02 — §10 OQ-K), cross-checked
    by the read-(iii) power ordering (10.2/16.8/23.1 %).
 2. **w_single vs w_Q2**: the gas slow band + the low-intensity Q2
    partner structure (RQ8 NB); the m/q-127-row covariance ask would
@@ -528,6 +531,15 @@ mixture changes the game but is not presumed to preserve the pins).
   P3). Rider recorded: the m/q-127-row covariance decomposition
   (the clean w_single/w_Q2 closer) is **postponed by the user until
   the (C) method proves successful**.
+  **[Corrected 2026-10-02 (user): the confirmation above was wrong by
+  a factor of 2. The mapping is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔
+  2.94×10¹⁴ W/cm² (150 mW = the "160 mW" series). The ~20 % Q3 share
+  pairs with the 300 mW condition; the 600 mW `ihe_ked` reference has
+  no measured covariance share, so w_Q3 ≈ 0.20 at the reference
+  condition is again unanchored (bounded above by ~0.20 only if Q3
+  saturates at 300 mW — user reading, unverified). The (C) line is
+  shelved (D0 §20), so no registered value is re-frozen here.
+  Discussion: `THESIS_DISCUSSION.md` §3–§4.]**
 
 ## 11. Outcome pre-commitments — ADJUDICATED (user, 2026-07-29: "I agree with your recommendations")
 

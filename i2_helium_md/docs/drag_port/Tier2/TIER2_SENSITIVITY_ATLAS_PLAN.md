@@ -1759,7 +1759,11 @@ the 48.7 % KED weight above the (A) cap (resolutions: condition
 matching / n = 1 bg sensitivity / Q2-strip reach). **Mapping adopted
 provisionally (2026-07-29, user-recalled, unconfirmed): 300 mW ↔
 1.47×10¹⁴, 600 mW ↔ 2.94×10¹⁴** → the 600 mW KED reference pairs
-with the ~20 % Q3 share (tension softened). The I⁺He-row I⁺ bar is
+with the ~20 % Q3 share (tension softened). **[Corrected 2026-10-02
+(user): mapping is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔ 2.94×10¹⁴; the ~20 %
+share pairs with 300 mW, the 600 mW KED reference has no measured
+share, and the "tension softened" reading does not hold as stated —
+`RESEARCH_QUESTIONS.md` RQ8 NB follow-up item (3).]** The I⁺He-row I⁺ bar is
 additionally recorded as the **retention-twin anchor** ((I⁺He, I⁺) =
 same-KER twins with different dressing → per-ion retention is
 stochastic at fixed kinematics; the (A) closure's target

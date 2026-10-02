@@ -2470,7 +2470,16 @@ The Q3 fast-share rises monotonically with power and at 600 mW
 independent instruments agree at the reference condition. At 300 mW
 the band read (16.8 %) sits above the covariance ~7 %; expected
 direction (2-D Q2-tail leakage into the Q3 band inflates the band
-read; the covariance counts only true coincident I²⁺). The slow band
+read; the covariance counts only true coincident I²⁺). **[Corrected
+2026-10-02 (user): the mapping is 150 mW ↔ 1.47×10¹⁴ / 300 mW ↔
+2.94×10¹⁴, so the pairings in this paragraph shift one power step
+down: covariance ~7 % ↔ the 160 mW band read 10.2 % (band above,
+the expected leakage direction), covariance ~20 % ↔ the 300 mW band
+read 16.8 % (band *below*, opposite to the leakage argument); the
+600 mW band read (23.1 %) has no covariance partner. The "agree at the
+reference condition" reading does not hold as stated. Note the gas
+band read still rises 300 → 600 mW (16.8 → 23.1 %), which bears on
+the Q3-saturation question.]** The slow band
 (single-ionization + center fill) *decreases* 75 → 53 % as multiple
 ionization grows. **Weight-anchoring consequence (design axis 4):
 the power series confirms the covariance ordering and the 600 mW
@@ -2546,7 +2555,10 @@ G4 adjudications open. The (C) design discussion now has all three
 trigger "continue with P1+P2" (2026-07-29). Same session, the OQ-K
 condition mapping was **user-confirmed: 300 mW ↔ 1.47×10¹⁴ / 600 mW ↔
 2.94×10¹⁴ W/cm²** — the 600 mW `ihe_ked` reference pairs with the
-~20 % Q3 covariance share; w_Q3 ≈ 0.20 is no longer provisional. The
+~20 % Q3 covariance share; w_Q3 ≈ 0.20 is no longer provisional.
+**[Corrected 2026-10-02 (user): the mapping is 150 mW ↔ 1.47×10¹⁴ /
+300 mW ↔ 2.94×10¹⁴; the ~20 % share pairs with 300 mW and the 600 mW
+`ihe_ked` reference has no measured share.]** The
 m/q-127-row covariance ask (the clean w_single/w_Q2 closer) is
 **postponed by the user until the (C) method proves successful**; the
 split rests on the gas slow band + Q2 partner structure at
