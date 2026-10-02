@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-02",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G4 (atlas \u00a76.8 T5): Stage-2 refit at s_rho = 3.5 A",
+  "preregistration": "THESIS_FINAL_GOALS.md G4.2, committed b729c28 before any run",
+  "thresholds": {
+    "S2_RMSE_18A_MAX_Aps": 0.19,
+    "S2_RMSE_9A_MAX_Aps": 0.45,
+    "escape_band": 1.0,
+    "T_a0_Aps": 0.005,
+    "T_b0_Aps": 0.005
+  },
+  "families": {
+    "shared_linear": {
+      "bundle_id": "srho3p5A_shared_linear",
+      "a": 50.05429341279824,
+      "b": 0.0,
+      "e_bind_eV": 0.01,
+      "objective_mean_Aps": 0.6755228067204262,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.6199513587589812,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.6199513587589812,
+          "num_overlap_points": 10229
+        },
+        "9A": {
+          "rmse_Aps": 0.7310942546818711,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.7310942546818711,
+          "num_overlap_points": 11412
+        }
+      },
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.6199513587589812,
+          "band_max_Aps": 0.19,
+          "pass": false
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.7310942546818711,
+          "band_max_Aps": 0.45,
+          "pass": false
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": false
+      },
+      "converged": true,
+      "bundle_written": true
+    },
+    "shared_cubic": {
+      "bundle_id": "srho3p5A_shared_cubic",
+      "a": 0.0,
+      "b": 2.2300336925914808,
+      "e_bind_eV": 0.12771856572963378,
+      "objective_mean_Aps": 0.16610243994114032,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.12501296457241684,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.12501296457241684,
+          "num_overlap_points": 10229
+        },
+        "9A": {
+          "rmse_Aps": 0.20719191530986378,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.20719191530986378,
+          "num_overlap_points": 11412
+        }
+      },
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.12501296457241684,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.20719191530986378,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      },
+      "converged": true,
+      "bundle_written": true
+    },
+    "shared_linear_cubic": {
+      "bundle_id": "srho3p5A_shared_linear_cubic",
+      "a": 0.0,
+      "b": 2.2297101133520045,
+      "e_bind_eV": 0.12776026139961513,
+      "objective_mean_Aps": 0.16610251202079096,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.1251407058270707,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.1251407058270707,
+          "num_overlap_points": 10229
+        },
+        "9A": {
+          "rmse_Aps": 0.20706431821451124,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.20706431821451124,
+          "num_overlap_points": 11412
+        }
+      },
+      "bands": {
+        "S2_RMSE_18A": {
+          "value_Aps": 0.1251407058270707,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "S2_RMSE_9A": {
+          "value_Aps": 0.20706431821451124,
+          "band_max_Aps": 0.45,
+          "pass": true
+        },
+        "S2_ESCAPE": {
+          "value": {
+            "18A": 1.0,
+            "9A": 1.0
+          },
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      },
+      "converged": true,
+      "bundle_written": true
+    }
+  },
+  "selection": {
+    "T_a0_Aps": -7.207965063704691e-08,
+    "T_a0_threshold_Aps": 0.005,
+    "cubic_equivalent": true,
+    "T_b0_Aps": 0.5094202946996352,
+    "T_b0_threshold_Aps": 0.005,
+    "linear_equivalent": false,
+    "passes": {
+      "shared_linear": false,
+      "shared_cubic": true,
+      "shared_linear_cubic": true
+    },
+    "winner": "shared_cubic",
+    "reason": "cubic boundary equivalent",
+    "notes": [
+      "T_a0 = -0.000000 A/ps < 0: the linear_cubic optimizer did not reach the nested optimum (obj(lc) must be <= its boundary in exact arithmetic); the boundary counts as equivalent"
+    ]
+  },
+  "diagnostic_4param": {
+    "date": "2026-10-02",
+    "branch": "drag_implementation",
+    "a": 6.133794091927201,
+    "b": 1.4097618831966914,
+    "e_bind_eV": {
+      "18A": 0.13178806584329222,
+      "9A": 0.19318800502207006
+    },
+    "objective_mean_Aps": 0.08911722065271882,
+    "per_case": {
+      "18A": {
+        "rmse_Aps": 0.11874410826714372,
+        "escape_fraction": 1.0
+      },
+      "9A": {
+        "rmse_Aps": 0.05949033303829391,
+        "escape_fraction": 1.0
+      }
+    },
+    "purpose": "failure localization only (drag law vs binding); never a production bundle (METHOD_B \u00a79.2)"
+  },
+  "legacy_bundle_for_comparison": {
+    "path": "data/reference/drag/shared/trajectory_matching/shared_pure_cubic/fit_parameters.json",
+    "b": 2.5153508541760052,
+    "e_bind_eV": 0.11675778353879479,
+    "objective_mean_Aps": 0.1292649398514104,
+    "note": "fit at the 14.2 A gate; recorded for the predictions on record (E_bind expected to fall, b shift small), not a gate"
+  },
+  "attribution_cubic": {
+    "control_path": "data/reference/drag/shared/trajectory_matching_srho3p5A/control_gate14p2A_shared_cubic/fit_summary.json",
+    "control": {
+      "b": 2.514385434609018,
+      "e_bind_eV": 0.11683981273855465,
+      "objective_mean_Aps": 0.12918257479557557
+    },
+    "smoothing_effect_control_minus_legacy": {
+      "db": -0.0009654195669872578,
+      "de_bind_eV": 8.202919975985878e-05
+    },
+    "gate_effect_new_cubic_minus_control": {
+      "db": -0.2843517420175372,
+      "de_bind_eV": 0.010878752991079127
+    }
+  },
+  "gate": {
+    "drag_spatial_gate": "erf_independent",
+    "drag_gate_steepness_angstrom": 3.5,
+    "potential_steepness_angstrom": 14.2
+  },
+  "reference_files": {
+    "18A": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "9A": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  }
+}

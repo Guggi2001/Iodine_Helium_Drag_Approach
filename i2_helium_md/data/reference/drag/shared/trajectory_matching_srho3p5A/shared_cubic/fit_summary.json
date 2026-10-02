@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-02",
+  "branch": "drag_implementation",
+  "family": "shared_cubic",
+  "bundle_id": "srho3p5A_shared_cubic",
+  "a": 0.0,
+  "b": 2.2300336925914808,
+  "e_bind_eV": 0.12771856572963378,
+  "objective_mean_Aps": 0.16610243994114032,
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.12501296457241684,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12501296457241684,
+      "num_overlap_points": 10229
+    },
+    "9A": {
+      "rmse_Aps": 0.20719191530986378,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.20719191530986378,
+      "num_overlap_points": 11412
+    }
+  },
+  "bands": {
+    "S2_RMSE_18A": {
+      "value_Aps": 0.12501296457241684,
+      "band_max_Aps": 0.19,
+      "pass": true
+    },
+    "S2_RMSE_9A": {
+      "value_Aps": 0.20719191530986378,
+      "band_max_Aps": 0.45,
+      "pass": true
+    },
+    "S2_ESCAPE": {
+      "value": {
+        "18A": 1.0,
+        "9A": 1.0
+      },
+      "band": 1.0,
+      "pass": true
+    },
+    "all_pass": true
+  },
+  "n_evaluations": 147,
+  "converged": true,
+  "start_minima": [
+    {
+      "a": 0.0,
+      "b": 2.2306828528837976,
+      "e_bind_eV": {
+        "18A": 0.12771111549437048,
+        "9A": 0.12771111549437048
+      },
+      "objective_Aps": 0.166102444799959
+    },
+    {
+      "a": 0.0,
+      "b": 2.231721602768008,
+      "e_bind_eV": {
+        "18A": 0.1276349604048392,
+        "9A": 0.1276349604048392
+      },
+      "objective_Aps": 0.16610270382082237
+    },
+    {
+      "a": 0.0,
+      "b": 2.2300336925914808,
+      "e_bind_eV": {
+        "18A": 0.12771856572963378,
+        "9A": 0.12771856572963378
+      },
+      "objective_Aps": 0.16610243994114032
+    }
+  ],
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157,
+    "source": "data/reference/drag/18A/linear_and_cubic/fit_parameters.json"
+  },
+  "gate": {
+    "drag_spatial_gate": "erf_independent",
+    "drag_gate_steepness_angstrom": 3.5,
+    "potential_steepness_angstrom": 14.2
+  },
+  "reference_files": {
+    "18A": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "9A": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  },
+  "n_molecules": 50,
+  "seed": 20260604,
+  "meff_amu": 202.953908,
+  "sensitivity_halfwidths": {
+    "a": 0.0,
+    "b": 0.21286685247464154,
+    "e_bind_eV": 0.012191317637828693
+  },
+  "bundle_written": true
+}

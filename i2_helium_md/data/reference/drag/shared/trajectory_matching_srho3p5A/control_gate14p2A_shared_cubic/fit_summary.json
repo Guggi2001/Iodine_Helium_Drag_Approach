@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-02",
+  "branch": "drag_implementation",
+  "family": "shared_cubic",
+  "bundle_id": null,
+  "a": 0.0,
+  "b": 2.514385434609018,
+  "e_bind_eV": 0.11683981273855465,
+  "objective_mean_Aps": 0.12918257479557557,
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.13457027109226782,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.13457027109226782,
+      "num_overlap_points": 10229
+    },
+    "9A": {
+      "rmse_Aps": 0.12379487849888332,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12379487849888332,
+      "num_overlap_points": 11412
+    }
+  },
+  "bands": {
+    "S2_RMSE_18A": {
+      "value_Aps": 0.13457027109226782,
+      "band_max_Aps": 0.19,
+      "pass": true
+    },
+    "S2_RMSE_9A": {
+      "value_Aps": 0.12379487849888332,
+      "band_max_Aps": 0.45,
+      "pass": true
+    },
+    "S2_ESCAPE": {
+      "value": {
+        "18A": 1.0,
+        "9A": 1.0
+      },
+      "band": 1.0,
+      "pass": true
+    },
+    "all_pass": true
+  },
+  "n_evaluations": 161,
+  "converged": true,
+  "start_minima": [
+    {
+      "a": 0.0,
+      "b": 2.5147972730685177,
+      "e_bind_eV": {
+        "18A": 0.11684857434287117,
+        "9A": 0.11684857434287117
+      },
+      "objective_Aps": 0.1291825821909554
+    },
+    {
+      "a": 0.0,
+      "b": 2.5144682738675175,
+      "e_bind_eV": {
+        "18A": 0.11688167799979436,
+        "9A": 0.11688167799979436
+      },
+      "objective_Aps": 0.12918274188094706
+    },
+    {
+      "a": 0.0,
+      "b": 2.514385434609018,
+      "e_bind_eV": {
+        "18A": 0.11683981273855465,
+        "9A": 0.11683981273855465
+      },
+      "objective_Aps": 0.12918257479557557
+    }
+  ],
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157,
+    "source": "data/reference/drag/18A/linear_and_cubic/fit_parameters.json"
+  },
+  "gate": {
+    "drag_spatial_gate": "density_proportional",
+    "drag_gate_steepness_angstrom": 14.2,
+    "potential_steepness_angstrom": 14.2
+  },
+  "reference_files": {
+    "18A": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+    "9A": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv"
+  },
+  "n_molecules": 50,
+  "seed": 20260604,
+  "meff_amu": 202.953908,
+  "purpose": "attribution control (user decision 2026-10-02): legacy gate on the re-smoothed (aacc71f) references; smoothing effect = control - legacy bundle, gate effect = srho3p5A shared_cubic - control. Not a bundle.",
+  "bundle_written": false
+}

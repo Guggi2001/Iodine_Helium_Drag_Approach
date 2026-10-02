@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-02",
+  "branch": "drag_implementation",
+  "a": 6.133794091927201,
+  "b": 1.4097618831966914,
+  "e_bind_eV": {
+    "18A": 0.13178806584329222,
+    "9A": 0.19318800502207006
+  },
+  "objective_mean_Aps": 0.08911722065271882,
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.11874410826714372,
+      "escape_fraction": 1.0
+    },
+    "9A": {
+      "rmse_Aps": 0.05949033303829391,
+      "escape_fraction": 1.0
+    }
+  },
+  "purpose": "failure localization only (drag law vs binding); never a production bundle (METHOD_B \u00a79.2)"
+}

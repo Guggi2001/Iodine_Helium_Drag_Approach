@@ -39,9 +39,16 @@ Modes (USER SETTINGS ``MODE``):
   ``<family>/fit_parameters.json`` (stamped ``bundle_id``, gate, source,
   ``held_out_axis``). Split ``FAMILIES`` across two processes to stay within
   the two-concurrent-runs rule.
-* ``"verdict"`` -- read the three summaries, apply the rule above, run the
-  ``diagnostic_4param`` localization if any family fails its bands, write
-  ``verdict.json``.
+* ``"control"`` -- one ``shared_cubic`` fit at the LEGACY gate (14.2 A, no
+  overrides) on the same references; writes ``control_gate14p2A_shared_cubic/
+  fit_summary.json`` only (never a loadable bundle). The committed 9 A
+  reference was re-smoothed on 2026-09-29 (aacc71f) after the legacy bundle
+  was fit, so legacy -> new mixes two changes; the control splits them:
+  smoothing effect = control - legacy, gate effect = new cubic - control
+  (user decision 2026-10-02).
+* ``"verdict"`` -- read the three summaries (and the control, if present),
+  apply the rule above, run the ``diagnostic_4param`` localization if any
+  family fails its bands, write ``verdict.json``.
 
 Usage: edit USER SETTINGS, then::
 
@@ -59,7 +66,7 @@ import time
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-MODE = "dry_run"        # "dry_run" | "fit" | "verdict"
+MODE = "dry_run"        # "dry_run" | "fit" | "control" | "verdict"
 FAMILIES = ("shared_cubic", "shared_linear_cubic", "shared_linear")
 N = 50                  # ensemble size per forward integration (Tier-0 evidence)
 SEED = 20260604         # neutral-stage seed (ion drag path is RNG-free)
@@ -118,6 +125,7 @@ LEGACY_BUNDLE = (
     / "fit_parameters.json"
 )
 ALL_FAMILIES = (SHARED_LINEAR, SHARED_CUBIC, SHARED_LINEAR_CUBIC)
+CONTROL_DIR = OUT_ROOT / "control_gate14p2A_shared_cubic"
 UNCERTAINTY_MODEL = "rmse_sensitivity_only_seed_sweep_omitted_per_s8"
 
 
@@ -221,15 +229,16 @@ def select_winner(objectives: dict[str, float], passes: dict[str, bool]) -> dict
     }
 
 
-def build_setups() -> dict:
+def build_setups(gate_overrides: dict | None = GATE_OVERRIDES) -> dict:
     setups = {}
     for case in CASES:
-        print(f"  building {case} case setup (one neutral run) at {GATE_OVERRIDES} ...")
+        print(f"  building {case} case setup (one neutral run) at "
+              f"{gate_overrides or 'the legacy gate'} ...")
         setups[case] = build_case_setup(
             case, num_molecules=N, seed=SEED,
             ion_time_ps=ION_TIME_PS, dt_ion_ps=DT_ION_PS,
             reference_filename=REFERENCE_FILENAMES[case],
-            cfg_overrides=GATE_OVERRIDES,
+            cfg_overrides=gate_overrides,
         )
         w = setups[case].window
         print(f"    reference {setups[case].reference_path}, "
@@ -265,7 +274,7 @@ def dry_run(setups, anch) -> None:
     print("  DRY_RUN: nothing written.")
 
 
-def _summary(fit, setups) -> dict:
+def _summary(fit, setups, *, control: bool = False) -> dict:
     per_case = {
         c: {"rmse_Aps": r.rmse_Aps, "escape_fraction": r.escape_fraction,
             "objective_Aps": r.objective, "num_overlap_points": r.num_overlap_points}
@@ -274,7 +283,7 @@ def _summary(fit, setups) -> dict:
     return {
         **_stamp(),
         "family": fit.variant,
-        "bundle_id": bundle_id(fit.variant),
+        "bundle_id": None if control else bundle_id(fit.variant),
         "a": fit.best.a, "b": fit.best.b,
         "e_bind_eV": fit.best.e_bind_eV[fit.cases[0]],
         "objective_mean_Aps": fit.best.objective,
@@ -333,6 +342,29 @@ def run_fits(setups, anch) -> None:
         _dump_json(summary, OUT_ROOT / family / "fit_summary.json")
 
 
+def run_control(anch) -> None:
+    """shared_cubic at the legacy 14.2 A gate on the current references
+    (attribution control; summary only, never a loadable bundle)."""
+    setups = build_setups(gate_overrides=None)
+    print("  --- control: shared_cubic at the legacy gate ---")
+    t0 = time.perf_counter()
+    fit = fit_shared_trajectory_matching(
+        setups, variant=SHARED_CUBIC, anchors=anch, maxfev_per_start=MAXFEV_PER_START,
+    )
+    best = fit.best
+    print(f"    done in {time.perf_counter() - t0:.0f} s; BEST b={best.b:.4f}, "
+          f"E_bind={best.e_bind_eV[fit.cases[0]]:.4f} eV, "
+          f"objective={best.objective:.6f} A/ps")
+    summary = _summary(fit, setups, control=True)
+    summary["purpose"] = (
+        "attribution control (user decision 2026-10-02): legacy gate on the "
+        "re-smoothed (aacc71f) references; smoothing effect = control - legacy "
+        "bundle, gate effect = srho3p5A shared_cubic - control. Not a bundle."
+    )
+    summary["bundle_written"] = False
+    _dump_json(summary, CONTROL_DIR / "fit_summary.json")
+
+
 def run_verdict() -> None:
     summaries = {f: _load_json(OUT_ROOT / f / "fit_summary.json") for f in ALL_FAMILIES}
     objectives = {f: float(s["objective_mean_Aps"]) for f, s in summaries.items()}
@@ -365,6 +397,28 @@ def run_verdict() -> None:
         _dump_json(diagnostic, OUT_ROOT / "diagnostic_4param.json")
 
     legacy = _load_json(LEGACY_BUNDLE)
+    attribution = None
+    if (CONTROL_DIR / "fit_summary.json").is_file():
+        ctrl = _load_json(CONTROL_DIR / "fit_summary.json")
+        new = summaries[SHARED_CUBIC]
+        leg_e = float(legacy["effective_binding_energy_I_ion_eV"])
+        attribution = {
+            "control_path": str(
+                (CONTROL_DIR / "fit_summary.json").relative_to(PROJECT_ROOT).as_posix()),
+            "control": {"b": ctrl["b"], "e_bind_eV": ctrl["e_bind_eV"],
+                        "objective_mean_Aps": ctrl["objective_mean_Aps"]},
+            "smoothing_effect_control_minus_legacy": {
+                "db": ctrl["b"] - float(legacy["b"]),
+                "de_bind_eV": ctrl["e_bind_eV"] - leg_e,
+            },
+            "gate_effect_new_cubic_minus_control": {
+                "db": new["b"] - ctrl["b"],
+                "de_bind_eV": new["e_bind_eV"] - ctrl["e_bind_eV"],
+            },
+        }
+        print(f"  attribution (cubic): smoothing db="
+              f"{attribution['smoothing_effect_control_minus_legacy']['db']:+.4f}, "
+              f"gate db={attribution['gate_effect_new_cubic_minus_control']['db']:+.4f}")
     verdict = {
         **_stamp(),
         "goal": "THESIS_FINAL_GOALS.md G4 (atlas §6.8 T5): Stage-2 refit at s_rho = 3.5 A",
@@ -387,6 +441,7 @@ def run_verdict() -> None:
             "note": "fit at the 14.2 A gate; recorded for the predictions on record "
                     "(E_bind expected to fall, b shift small), not a gate",
         },
+        "attribution_cubic": attribution,
         "gate": summaries[SHARED_CUBIC]["gate"],
         "reference_files": summaries[SHARED_CUBIC]["reference_files"],
     }
@@ -394,19 +449,25 @@ def run_verdict() -> None:
 
 
 def main() -> int:
-    print(f"===== Method-B Stage-2 refit at {GATE_OVERRIDES} (G4), MODE={MODE} =====")
+    gate_label = "the legacy gate (control)" if MODE == "control" else GATE_OVERRIDES
+    print(f"===== Method-B Stage-2 refit at {gate_label} (G4), MODE={MODE} =====")
     if MODE == "verdict":
         run_verdict()
         return 0
     anch = anchors()
     print(f"  anchors (18A Method-A only): a0={anch[0]:.4f}, b0={anch[1]:.4f}")
+    if MODE == "control":
+        run_control(anch)
+        return 0
     setups = build_setups()
     if MODE == "dry_run":
         dry_run(setups, anch)
     elif MODE == "fit":
         run_fits(setups, anch)
     else:
-        raise ValueError(f"MODE must be 'dry_run', 'fit' or 'verdict', got {MODE!r}")
+        raise ValueError(
+            f"MODE must be 'dry_run', 'fit', 'control' or 'verdict', got {MODE!r}"
+        )
     return 0
 
 

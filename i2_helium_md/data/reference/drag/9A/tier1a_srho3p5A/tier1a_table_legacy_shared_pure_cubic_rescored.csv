@@ -1,0 +1,5 @@
+case,variant,N,run_tag,scenario,t_star_ps,window_start_ps,window_end_ps,n_scored_R,n_scored_v2_smoothed,RMSE_R_raw_A,RMSE_v2_smoothed_Aps,v2_smoothed_mean_ratio,ledger_max_resid_eV,n_sheds,n_shell_start,n_shell_end
+9A,shared_pure_cubic,50,tier1a_fixed,fixed,,2.67,14.081,11412,11412,19.325506974901785,0.12396315636937723,1.0051366849076384,2.287922116295249e-05,0,19,19
+9A,shared_pure_cubic,50,tier1a_anchored_continuous_t0.5,anchored_discrete,0.5,2.67,14.081,11412,11412,19.308605652767096,0.12615103997575097,1.0113141614849848,2.230666633940004e-05,7,21,14
+9A,shared_pure_cubic,50,tier1a_anchored_continuous_t5.0,anchored_discrete,5.0,2.67,14.081,11412,11412,19.44939497233623,0.1323277375870517,1.0155261016922916,2.230666633940004e-05,7,21,14
+9A,shared_pure_cubic,50,tier1a_anchored_continuous_t9.0,anchored_discrete,9.0,2.67,14.081,11412,11412,19.481533033374486,0.135994747828391,1.0169635230061131,2.230666633940004e-05,7,21,14
