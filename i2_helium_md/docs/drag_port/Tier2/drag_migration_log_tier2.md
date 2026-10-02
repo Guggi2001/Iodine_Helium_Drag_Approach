@@ -13710,3 +13710,75 @@ Full record: D0 §15.8 (reads 1–6) + the §14.3 refinement note.
 - **Docs.** D0 §0 sampling row + §15.8 + §14.3 note; `CALIBRATION_MAP.md`
   production column, reclassification and update-log removal (2026-10-01,
   same thread). Production is unchanged: h405 + `raw` stand.
+
+## 2026-10-02 — G4 EXECUTED: Tier-0 Method-B Stage-2 refit at s_ρ = 3.5 Å (three families) — **winner `shared_cubic` (b 2.230, E_bind 0.1277 eV)**; Tier-1a gate fails on |v2| as worded — **DECISION NEEDED**
+
+Goal: `THESIS_FINAL_GOALS.md` G4 (G2 density width from Harms et al.
+PRB 58, 3341 (1998), drag gate `erf_independent` 3.5 Å, `potential_steepness`
+14.2 Å kept; G3 m_eff = 19 He kept). Pre-registration (bands, T_a0/T_b0,
+winner rule, predictions) committed `b729c28` before any code or run.
+
+- **Code (`ebda074`, `[PROCEED TO IMPLEMENTATION]` 2026-10-02).**
+  `build_case_setup(cfg_overrides=)` gate pass-through; escape criterion on
+  `potential_steepness` (bit-inert for the old bundle); `shared_linear`
+  variant + `shared_cubic` / `shared_linear_cubic` aliases of the
+  pure-cubic / 3-param engines; `DragCoefficients` stamps
+  `extraction_gate_steepness_angstrom` + `bundle_id` (loader + writer);
+  config guard §6.5.2 (run gate == stamp, legacy reads 14.2;
+  `allow_inconsistent_gate_pairing` hatch) + bundle-id identity;
+  `SimConfig.drag_bundle` selector over `presets.DRAG_BUNDLE_CATALOG`
+  (`build_drag_cfg` brings a stamped bundle's gate along);
+  `drag_gate_steepness` resolver moved to `config.py` (re-exported from
+  `simulation.ion`); `cfg_diff_vs_reference` tolerates the new nested
+  stamps at default and treats an unstamped legacy `drag_bundle` as a
+  label. Driver `scripts/extraction/method_b_srho3p5_refit.py`
+  (dry_run / fit / control / verdict). Tests `test_g4_srho_refit.py`; full
+  suite 3228 passed, 13 skipped.
+- **Oracle — data drift found and bisected.** The committed
+  `shared_pure_cubic` objective 0.1292649398514104 reproduces bit-exactly
+  (before and after the code change) only against the 9 Å reference as it
+  stood before `aacc71f` (2026-09-29): that commit re-smoothed
+  `9A/velocity_smoothed/cleaned_data_long.csv` (SG wl 9401 +
+  `make_smoothing_spline` λ = 5; max |Δv| 0.022 Å/ps), moving the point to
+  0.129183 (9 Å RMSE −1.6·10⁻⁴). User decision: refit on the **current**
+  reference plus a 14.2 Å `shared_cubic` control on the same reference.
+- **DRY_RUN:** bitwise deterministic, 1.28 s per joint evaluation.
+- **Fits (measured, N = 50, seed 20260604).** `shared_cubic` b 2.2300,
+  E_bind 0.1277, obj 0.166102 (RMSE 18 Å 0.125 / 9 Å 0.207, escape 1/1,
+  PASS); `shared_linear_cubic` a → 0 in all starts, b 2.2297, E_bind 0.1278,
+  obj 0.166103 (PASS); `shared_linear` a 50.05, E_bind at the 0.01 eV floor,
+  obj 0.6755 (RMSE 0.620 / 0.731, FAIL). T_a0 = −7·10⁻⁸ (cubic equivalent),
+  T_b0 = +0.509 ⇒ **winner `shared_cubic`** (G4.6: no production form
+  change). `diagnostic_4param` (localization): a 6.13, b 1.41, per-case
+  E_bind 18 Å 0.132 / 9 Å 0.193 eV, obj 0.089.
+- **Control / attribution.** Cubic at 14.2 Å on the current reference:
+  b 2.5144, E_bind 0.1168 (legacy 2.5154 / 0.11676) ⇒ smoothing effect nil;
+  gate effect Δb −0.284 (−11 %), ΔE_bind +0.0109 eV.
+- **Predictions vs measured.** "E_bind falls" **wrong** (rises +9 %); "b
+  shift small" — −11 %, 1.3 sensitivity half-widths.
+- **Tier-0 forward check** (`gen_tier0_runs.py` + `tier0_drag_comparison.py`,
+  30 ps): |v2| RMSE 9 Å 0.2072, 18 Å 0.1250 — reproduces the fit. Exports
+  `{9A,18A}/tier0_srho3p5A/md_mean_trajectory.csv`.
+- **Tier-1a re-check.** Anchor first: the legacy set regenerated in memory
+  reproduces the committed `9A/tier1a/*_mean_trajectory.csv` **bit-exactly**
+  (the stored legacy Tier-1a run dirs no longer load — stale `cfg.json`
+  fields `mass_rate_*` / `mass_relaxation_tau_ps` — so both tables are
+  scored on in-memory regenerations). |v2| RMSE fixed / t* 0.5 / 5 / 9:
+  new 0.207 / 0.211 / 0.220 / 0.222 vs legacy 0.124 / 0.126 / 0.132 / 0.136;
+  R RMSE 19.31–19.51 vs 19.31–19.48 Å; ledger residual 2.3·10⁻⁵ eV both.
+  Variable-mass increment over its fixed row +0.004 / +0.013 / +0.015 vs
+  legacy +0.002 / +0.008 / +0.012. Tables + exports `9A/tier1a_srho3p5A/`.
+- **Artifacts (`c1f9bb5`).** `shared/trajectory_matching_srho3p5A/`
+  (`{shared_linear,shared_cubic,shared_linear_cubic}/fit_parameters.json`
+  + `fit_summary.json`, `control_gate14p2A_shared_cubic/fit_summary.json`,
+  `diagnostic_4param.json`, `verdict.json`).
+
+**DECISION NEEDED (open).** The pre-registered Tier-1a gate ("no worse than
+the delivered result") fails on |v2| as worded; the loss is mostly inherited
+from the Tier-0 fit (fixed row +0.083 Å/ps), the variable-mass increment is
+comparable to legacy. (a) record as Tier-0-inherited and accept the bundle
+→ G5; (b) treat as blocking and open the 9 Å misfit / shared-binding
+tension before G5. **Production is unchanged** (h405, `shared_pure_cubic`
+at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
+`CALIBRATION_MAP.md`; `METHOD_B_trajectory_matching_extraction.md` §11;
+`THESIS_FINAL_GOALS.md` G4 status.

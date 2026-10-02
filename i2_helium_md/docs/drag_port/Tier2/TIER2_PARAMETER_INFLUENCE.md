@@ -60,7 +60,7 @@
 
 | knob | class | headline influence | production (h405) | status |
 |---|---|---|---|---|
-| drag form + b (in-band) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with E_bind), then fixed; authority 2.54–4.95 Å/ps only | owns KE scale + fragment composition; **the landed observables do NOT identify the form — cubic and quadratic systems both land in full MD (§6.6)**; the free-form linear counterfactual can clone the h405 landing but not improve KE₁ and the histogram together (§1, family CLOSED 2026-08-13) | `capped_cubic`, b = 2.5154 amu·ps/Å², pure cubic (a = 0) below v_c | TDDFT authority only over 2.54–4.95 Å/ps; landing is form-blind (measured in MD) |
+| drag form + b (in-band) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with E_bind), then fixed; authority 2.54–4.95 Å/ps only | owns KE scale + fragment composition; **the landed observables do NOT identify the form — cubic and quadratic systems both land in full MD (§6.6)**; the free-form linear counterfactual can clone the h405 landing but not improve KE₁ and the histogram together (§1, family CLOSED 2026-08-13) | `capped_cubic`, b = 2.5154 amu·ps/Å², pure cubic (a = 0) below v_c | TDDFT authority only over 2.54–4.95 Å/ps; landing is form-blind (measured in MD). **G4 refit at s_ρ = 3.5 Å MEASURED (§1.G4, 2026-10-02):** cubic wins again, b → 2.230; adoption **decision needed** (Tier-1a gate reading) |
 | v_c, p_tail (capped tail) | Free (§17: **E**) | v_c owns the whole mid-bin KE curve. At the corrected geometry the basin moved to **v_c 5.5–6.0, confirmed in MD** (the old 7.25 breaks there: trap 0.437, n₁ 0). v_c 5.25 gives the deep-KE ceiling 0.656, at the cost of midHot 1.39. p_tail is not a second lever (the Block-2 trigger never fired) (§2, §14.5) | v_c = 5.5 Å/ps, p_tail = −1 | standing h405. The cap is a **permanent** effective element: TDDFT is infeasible at production kinematics (user 2026-07-30) |
 | τ (cooling clock) | Free — fitted at G4 inside the GAH25 band [2.6, 16.5] (§17: **E**) | descent clock; closes only jointly with v_c, as a pair; race coordinate with E₀ under the gate. Corrected-geometry W₁ ordering is τ 4.4 < 4.8 < 5.2, the reverse of the twin's ranking (§3, §14.5) | 4.4 ps | standing h405; τ 4.0 untested at v_c 5.5 |
 | E₀ = E_int(0) | Free — fitted at G4 inside the RQ1 band [0.2, 0.5] eV (§17: **E**) | sets the fate-cliff position (the bare↔shell split). At the corrected geometry it is the **sharpest one-knob lever**: each +0.005 eV moves W₁ −0.02…−0.04, n₁ +0.004…+0.007 and n̄ −0.11…−0.13 He. Because n₁ and n̄ move in opposite directions they cannot both be matched, which sets the W₁ floor ≈ 0.67; bins 7–20 cannot be reached through E₀ (§4, §14.5) | 0.405 eV (`internal_energy_partition_fraction` 0.15 × 2.70 eV); every ion starts at exactly 0.405 (T6 is inert, see below) | standing h405 |
@@ -75,13 +75,13 @@
 | per-shed ε | Bounded small (NB-RQ23-1; §17: **C**) | refuted as RQ11 owner; ε ≈ 1–2 meV/shed sub-dominant compatible | 0. There is no config field: each shed drains exactly D₀ | convention |
 | shed momentum convention | convention (two-valued) | cold-shed injects ×1.611 KE over a full strip; histogram convention-blind; bare-bin KE reads the fragmentation convention | `co_moving` (`cold` kept as the diagnostic bound) | standing; RQ3-coupled |
 | birth margin | Inactive (was a pinned convention; §17: **S**) | was **the sensitive robustness lever** under `uniform_volume` (6 Å moved n₁_solv −0.171, 3.4σ; I88) | 0 Å, **inactive**: under the Boltzmann birth law the config guard refuses any non-zero margin | retired with the G2 geometry (the finc1v725-era 3 Å pin) |
-| E_bind (ion–droplet well) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with the drag pair), then fixed | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well. **KE transfer function measured (§9.2, 2026-08-10):** affine, **dKE₁/dE_bind = −0.542 (h405) / −0.549 (lin)** eV/eV — a *fixed ~45 % refund*, form- and depth-invariant; trap lever form-SPLIT (0.620 vs 0.033 /eV); whole axis worth ≤ +0.064 eV on KE₁. **MD-CONFIRMED (§9.3): −0.5308 measured, 2 % from the twin**. **MECHANISM SOLVED (§9.6, 2026-08-11): the "45 % refund" is a MASS-FRAME PARTITION, not drag** — the ion pays **98.1 %** of the well; the shortfall is 38.0 % `m(1)/m(21)` + 6.7 % cascade + **1.9 % genuine drag refund** (form-split 3.3× vs the lin arm's 6.2 %). Density-width scan **NULL** (c 0.5422 → 0.5597 over a 4.5× sharpening ⇒ +0.002 eV on KE₁). **Identifiability flag** (`CALIBRATION_MAP.md`): the Tier-0 co-extraction spread maps to Δn̄ ≈ 0.77, which is 1.3× the n̄ gate band | 0.1168 eV (the bundle well, `eb1168`) | measured (§9); KE half of the GAP **closed** (§9.2) + MD-confirmed (§9.3) + mechanism + width GAP closed (§9.6) |
+| E_bind (ion–droplet well) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with the drag pair), then fixed | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well. **KE transfer function measured (§9.2, 2026-08-10):** affine, **dKE₁/dE_bind = −0.542 (h405) / −0.549 (lin)** eV/eV — a *fixed ~45 % refund*, form- and depth-invariant; trap lever form-SPLIT (0.620 vs 0.033 /eV); whole axis worth ≤ +0.064 eV on KE₁. **MD-CONFIRMED (§9.3): −0.5308 measured, 2 % from the twin**. **MECHANISM SOLVED (§9.6, 2026-08-11): the "45 % refund" is a MASS-FRAME PARTITION, not drag** — the ion pays **98.1 %** of the well; the shortfall is 38.0 % `m(1)/m(21)` + 6.7 % cascade + **1.9 % genuine drag refund** (form-split 3.3× vs the lin arm's 6.2 %). Density-width scan **NULL** (c 0.5422 → 0.5597 over a 4.5× sharpening ⇒ +0.002 eV on KE₁). **Identifiability flag** (`CALIBRATION_MAP.md`): the Tier-0 co-extraction spread maps to Δn̄ ≈ 0.77, which is 1.3× the n̄ gate band | 0.1168 eV (the bundle well, `eb1168`) | measured (§9); KE half of the GAP **closed** (§9.2) + MD-confirmed (§9.3) + mechanism + width GAP closed (§9.6). **G4 co-fit at s_ρ = 3.5 Å: 0.1277 eV (rises +0.011, against the "falls" prediction; §1.G4)** — not adopted, decision needed |
 | droplet geometry (R × r) | controlled (Axis A G1 11-cell grid); **size externally anchored** (§15.5) | birth depth is the physics knob, R a selection knob; the landing needs the size *distribution* (pinning R̄ alone: W₁ 0.571 → 0.813); ≈ 95 % of detected-size variance geometry-inherited; deepKE crosses 1 at birth depth ≈ 11–15 Å. Re-arbitrated at the corrected geometry (G3/G4, §14.5): the landing survives, but with a W₁ floor ≈ 0.67–0.76 against finc1v725's 0.571 (wrong shape, not wrong scale) | corrected geometry: R̄ ≈ 49.9 Å, mean birth depth ≈ 34.9 Å (s1 member). Production trap 0.0795 (bound 0.0781 / marginal 0.0014), so the marginal class is empirically empty | **GAP closed** (§14); G2 adopted 2026-07-27; re-arbitration **closed** at h405 (2026-09-30) |
 | sampling laws (size + position) | legacy ports, now **the production laws** (G0-1 / G2) | provenance audited (§15). The finc1v725-era bypass (analytic ⟨N⟩ = 2000 prior + `uniform_volume`) is **no longer production**. The §15.7 forecast that the corrected ensemble would break the finc1v725 landing was resolved by re-arbitrating (v_c, τ, E₀) (§14.5) | `droplet_size_prior="legacy"`, `droplet_size_sampler_mode="raw"` (nozzle correlation at 40 bar / 14 K → ⟨N⟩ ≈ 12.8k, δ 0.625); `birth_position_law="boltzmann"` at 0.4 K with a well of 313.2 K. The 313.2 K is the DFT fit, set as a per-run override; the config default stays 573.3 K | standing; the E_solv 14 vs 30 meV pair is inert under `raw` (no pickup weighting). **raw vs `post_pickup` MEASURED at h405 (§15.8, 2026-10-02, 2 × N = 5000):** post_pickup moves n̄ +0.72 He, n₁ −0.033, W₁ +0.24, trap +0.057 and fails both gate clauses; KE₁ is almost unchanged (+0.007) |
 | T5 `initial_shell_model` | arm (§17: **S**) | birth dressing n₀ = round(n*·ρ̂(d_birth)) | `density_tied`, but **structurally inert**: ρ̂ saturates at the production birth depths, so n₀ = 21 for every ion (s1: 2000/2000 at t = 0) | carried; inert at the corrected geometry, as §17 predicted |
 | T6 `internal_energy_partition_law` | arm (§17: **S**) | onset scaled by Σ(n₀)/Σ(n*) | `sigma_proportional`, but **structurally inert**: the ratio is 1 because n₀ = 21, so E_int(0) = 0.405 eV for every ion (s1) | carried; inert at the corrected geometry |
 | `cooling_spatial_gate` | arm (§17: **E**; the alternative is unphysical) | ρ̂-scaled Newton drain: cooling switches off outside the bubble. On the staircase total-strip A/B this is the lever that opens the near-bare end; ungated cooling self-quenches the cascade (`TIER2_STAIRCASE_PROBE_FINDINGS.md`) | `density_scaled` | standing; not re-measured at the corrected geometry |
-| ρ̂ density width (`drag_gate_steepness`) | convention (§17: **C**; reuses the potential's 14.2 Å as the density width) | one shared surface for the drag gate, the cooling gate and T5. The density-width scan is **NULL at production** (+0.002 eV on KE₁ over a 4.5× sharpening, §9.6.5) | 14.2 Å, `drag_spatial_gate="density_proportional"` | measured null; RQ12 (DFT density profile) is the retirement path |
+| ρ̂ density width (`drag_gate_steepness`) | convention (§17: **C**; reuses the potential's 14.2 Å as the density width) | one shared surface for the drag gate, the cooling gate and T5. The density-width scan is **NULL at production** (+0.002 eV on KE₁ over a 4.5× sharpening, §9.6.5) | 14.2 Å, `drag_spatial_gate="density_proportional"` | measured null at production; **sourced replacement s_ρ = 3.5 Å (Harms et al. 1998, borrowed) agreed (THESIS_FINAL_GOALS G2); Tier-0 refit at 3.5 Å MEASURED (§1.G4) — production switch pending the G4 decision, then G5** |
 | Coulomb budget (per-ion KER) | Sourced scalar (§19) | **alive**: dKE₁/dbudget S_k = 0.389 eV/eV; suppression is driven by E_int. The Hatherly 1994 calibration (0.8·E_C → 2.16 / 4.32 eV channels) puts production ≈ 25 % high, but a naive uniform re-anchor to 2.16–2.26 breaks the basin | 2.70 eV/ion (`E_coulomb_scale` 1.0, R₀ 2.666 Å) | standing scalar; the channel-mixture replacement is shelved (next row) |
 | CE channel mixture + exit strip | Bounded-with-anchor (§20) | the mixture alone places KE₁ (0.920) but trap rises 0.087 → 0.465; the strip over-tolls and feeds the suppressed gate; all three kills fired | `ce_channel_mode="off"`, `exit_strip_mode="off"` | **SHELVED** 2026-07-30 (re-openable only on new external evidence) |
 | drag state coupling s(n) (R_core, ρ_shell) | Bounded geometric closure (design doc) | **MEASURED DEAD in-window (§18): gate-clipped** — no ion reaches n ≤ 8 while inside the droplet (min-n-inside ≥ 9 for 100 %, mean exit n = 19.0), so the low-n regime of s(n) is structurally unreachable; in-window s ∈ [0.85, 1.06] ≈ ρ-independent; net effect KE₁ **−0.04 (sign-inverted)**, needle SD unmoved (0.038), all SC predictions refuted | `drag_state_coupling="off"` | probe EXECUTED 2026-07-29; axis stopped (SC-P2 signature failure) |
@@ -474,6 +474,70 @@ RQ11's drag-shape axis is re-pointed at the 5–9 Å/ps mid-band
 (§6.6 pre-registered follow-up), the collaborator ask
 (sub-2.5 + production-kinematics traces). Chronology + full tables:
 `drag_migration_log_tier2.md`, `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`.
+
+### 1.G4 Tier-0 refit at the sourced density width s_ρ = 3.5 Å (MEASURED 2026-10-02; adoption DECISION NEEDED)
+
+`THESIS_FINAL_GOALS.md` G4 (= atlas §6.8 T5). Method-B Stage 2 only (joint
+18 + 9 Å, N = 50, seed 20260604, m_eff = 19 He), drag gate
+`erf_independent` at 3.5 Å, `potential_steepness` 14.2 Å unchanged.
+Pre-registration committed `b729c28` before any run; code `ebda074`;
+artifacts `c1f9bb5` under
+`data/reference/drag/shared/trajectory_matching_srho3p5A/` (`verdict.json`).
+
+**Oracle first.** The committed `shared_pure_cubic` objective
+0.1292649398514104 reproduces **bit-exactly** — but only against the 9 Å
+reference as it stood before `aacc71f` (2026-09-29). That commit
+re-smoothed `9A/velocity_smoothed/cleaned_data_long.csv` (SG + smoothing
+spline λ = 5; max |Δv| 0.022 Å/ps); on the current file the same point
+scores 0.129183 (9 Å RMSE −1.6·10⁻⁴). A data change, not code drift
+(bisected). All fits below use the **current** reference (user decision),
+with a 14.2 Å control on the same reference to split the two changes.
+
+| family | a [amu/ps] | b [amu·ps/Å²] | E_bind [eV] | obj [Å/ps] | RMSE 18 / 9 Å | bands |
+|---|---|---|---|---|---|---|
+| `shared_cubic` | 0 | **2.2300** (hw 0.213) | **0.1277** (hw 0.012) | 0.166102 | 0.125 / 0.207 | **pass** |
+| `shared_linear_cubic` | → 0 (all starts) | 2.2297 | 0.1278 | 0.166103 | 0.125 / 0.207 | pass |
+| `shared_linear` | 50.05 | 0 | 0.010 (floor) | 0.6755 | 0.620 / 0.731 | **fail** |
+| control: cubic @ 14.2 Å | 0 | 2.5144 | 0.1168 | 0.129183 | — | (not a bundle) |
+| legacy bundle @ 14.2 Å | 0 | 2.5154 | 0.11676 | 0.129265 | 0.134 / 0.124 | (old reference) |
+
+- **Selection (pre-registered rule):** T_a0 = −7·10⁻⁸ Å/ps (cubic
+  equivalent; negative = optimizer noise, the linear_cubic fit runs onto
+  its a = 0 boundary), T_b0 = +0.509 Å/ps (linear distinguishable, and it
+  fails its bands) ⇒ **winner `shared_cubic`**. G4.6: no form change for
+  production; only b and E_bind would move (through the `drag_bundle`
+  selector, id `srho3p5A_shared_cubic`).
+- **Attribution (vs the control):** smoothing effect Δb −0.001, ΔE_bind
+  +0.0001 eV (nil); **gate effect Δb −0.284 (−11 %, 1.3 half-widths),
+  ΔE_bind +0.0109 eV (+9 %)**.
+- **Predictions on record vs measured:** "E_bind falls" — **wrong**, it
+  rises; "b shift small" — it is −11 %, larger than predicted. The §9.4
+  twin reading (sharpening halves the refund ⇒ deflated E_bind) does not
+  carry over to the trajectory-level co-fit; not yet explained.
+- **Fit quality cost:** the 9 Å RMSE degrades 0.124 → 0.207 Å/ps (inside
+  the 0.45 band); 18 Å slightly improves (0.134 → 0.125). The
+  `diagnostic_4param` localization wants per-case wells 0.132 (18 Å) /
+  0.193 eV (9 Å) with a = 6.13, b = 1.41 (obj 0.089): at 3.5 Å a single
+  shared E_bind is a worse compromise between the two droplets.
+- **Tier-0 forward check** (30 ps): |v2| RMSE 9 Å 0.2072, 18 Å 0.1250 —
+  reproduces the fit. Exports `{9A,18A}/tier0_srho3p5A/`.
+- **Tier-1a re-check** (9 Å; legacy rows re-scored on an in-memory
+  regeneration that reproduces the committed `9A/tier1a/` exports
+  bit-exactly): |v2| RMSE fixed / t* 0.5 / 5 / 9 =
+  0.207 / 0.211 / 0.220 / 0.222 vs legacy 0.124 / 0.126 / 0.132 / 0.136;
+  R RMSE and ledger closure unchanged within noise. The variable-mass
+  increment over its own fixed row is +0.004 / +0.013 / +0.015 vs legacy
+  +0.002 / +0.008 / +0.012. Tables in `9A/tier1a_srho3p5A/`.
+
+> **DECISION NEEDED (open, 2026-10-02).** The pre-registered Tier-1a gate
+> ("R(t), |v(t)| and ledger closure no worse than the delivered result")
+> **fails on |v2| as literally worded**. Most of the loss is inherited
+> from the Tier-0 fit (the fixed row is already +0.083 Å/ps); the
+> variable-mass increment is comparable to legacy. Two readings:
+> **(a)** record the failure as Tier-0-inherited, accept the bundle, and
+> proceed to G5; **(b)** treat it as blocking and open the 9 Å misfit
+> (shared-binding tension) as an item before G5. Until decided, the
+> production bundle stays `shared_pure_cubic` at 14.2 Å.
 
 ## 2. Capped tail — v_c and p_tail
 
@@ -2763,7 +2827,7 @@ physics, and which are scaffolding?** Role codes:
 | **T6 `sigma_proportional`** | onset scaled by Σ(n₀)/Σ(n*) | no | **S** — same; and it silently imposes `E_int/Σ = 1.309` at every birth | same: the geometry correction, not a control cell (C1/C2 rejected 2026-07-26 — each needs the less physical arm of its pair) |
 | `cooling_spatial_gate="density_scaled"` | ρ̂-scaled Newton drain | no | **E**, but the alternative is unphysical | nothing available: `"none"` means cooling with no bath to cool into. Third leg of the same shared ρ̂ surface |
 | Boltzmann well 573.3 K | code value (legacy MATLAB); the DFT fit it cites is 26.99 meV = 313.2 K | **mismatch** (~1.3 Å in depth) | **provenance defect** | **G0 decision 2026-07-26:** Axis A L2 cells override to 313.2 K **per run**; the config default stays 573.3 K (legacy port fidelity — a default change buys nothing while the arm is unused in production). 573.3 K is a robustness check, not a cell |
-| **`potential_steepness` 14.2 Å reused as the He *density* width** | DFT fit of the **solvation potential** (legacy: `% from ernesto dft result beta = [14.3324 26.9916 34.4431]`, "from fit of solvation potential DFT result") — then reused verbatim by `rho_he_ratio` via `drag_gate_steepness` | **mismatch**: 14.2 Å ⇒ a 10–90 % interface of **25.7 Å**, vs **5.7 Å** (DFT) / **6–8 Å** (experiment) for ⁴He droplets at N = 10³–10⁴ [Harms/Toennies/Dalfovo PRB 58, 3341 (1998)] ⇒ $s_\rho \approx 3.1$–4.4 Å, a factor ≈ 4. The potential is $\rho\otimes V_\text{I–He}$ + cavity, so ≈ 14 Å is *right for U* and too wide for ρ — the defect is the **reuse**, not the value | **convention (C)**, quantitatively bounded below | **RQ12** — the DFT *density* profile from the same calculation. Instrument already exists and is bit-inert: `drag_spatial_gate="erf_independent"` + `cfg.drag_gate_steepness` (DESIGN §5.7 G3, held for exactly this) |
+| **`potential_steepness` 14.2 Å reused as the He *density* width** | DFT fit of the **solvation potential** (legacy: `% from ernesto dft result beta = [14.3324 26.9916 34.4431]`, "from fit of solvation potential DFT result") — then reused verbatim by `rho_he_ratio` via `drag_gate_steepness` | **mismatch**: 14.2 Å ⇒ a 10–90 % interface of **25.7 Å**, vs **5.7 Å** (DFT) / **6–8 Å** (experiment) for ⁴He droplets at N = 10³–10⁴ [Harms/Toennies/Dalfovo PRB 58, 3341 (1998)] ⇒ $s_\rho \approx 3.1$–4.4 Å, a factor ≈ 4. The potential is $\rho\otimes V_\text{I–He}$ + cavity, so ≈ 14 Å is *right for U* and too wide for ρ — the defect is the **reuse**, not the value | **convention (C)**, quantitatively bounded below | **RQ12** — the DFT *density* profile from the same calculation. Instrument already exists and is bit-inert: `drag_spatial_gate="erf_independent"` + `cfg.drag_gate_steepness` (DESIGN §5.7 G3, held for exactly this). **2026-10-02:** literature value s_ρ = 3.5 Å agreed (G2, role → **P**, borrowed); Tier-0 refit at 3.5 Å **measured** (§1.G4: cubic, b 2.230, E_bind 0.1277; 9 Å RMSE 0.124 → 0.207); the row retires on adoption — **decision needed** (Tier-1a gate reading) |
 | ↳ *its measured leverage* (2026-08-10/11, §9.4–§9.5) | (a) analytic: for a radial exit $\int_0^\infty\hat\rho(r-R)dr = R$, so a **saturated** drag is width-blind on total dissipation (0.0 % at R = 47.8 Å, +11 % at the 9 Å Tier-0 droplet); (b) the **E_bind transfer factor** $T = c_\text{prod}/c_\text{cal}$, measured cross-law; (c) the dynamical/cascade split of the ensemble response | (a) leaves the drag channel nearly inert on *total* dissipation; (b) $c_\text{cal} = 0.482$ under the **uncapped** Tier-0 cubic ⇒ the co-fitted $E_\text{bind}$ is inflated ≈ 2.1×, and **T > 1** (1.66–2.07 taken consistently at trajectory level): production **over**-pays. Sharpening drives T → 1 and **halves the refund** (0.518 → 0.246 at R = 9); (c) the ensemble response is **85 % dynamical / 15 % cascade** (§9.5) — so the density width *can* reach it | — | **consequence:** correcting $s_\rho$ is right physics and correctly signed for KE₁, but its **size is not yet established** (the "+0.006–0.02 eV" estimate mixed trajectory- and system-level derivatives — withdrawn). Needs: the trapping bundle split out of $c_\text{traj}$, an **ensemble** $c(s_\rho)$, then a **Tier-0 re-extraction**. Third channel, untouched: **birth dressing** ($\hat\rho(10\,\text{Å})$ 0.84 → ~1.00, $n_0 \approx 18 \to 21$), the §14.3 lever |
 | mass / binding pairing hatches | §6.5–§6.6 documented exceptions | n/a | **C** (logged per run) | — |
 | ensemble second moments | not modelled | experiment says under-dispersed | **M** | Tier 3 (discrete-emission drag is the standing candidate) |

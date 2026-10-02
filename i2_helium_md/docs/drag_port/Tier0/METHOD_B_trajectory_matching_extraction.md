@@ -811,3 +811,50 @@ New code: the single-case writer `write_per_case_form_fit_parameters` (beside th
 shared writer, whose single-case refusal is left intact) and the sibling driver
 `scripts/extraction/method_b_per_case_form.py` (reuses `form_phase_common`).
 **Presets unchanged; Tier-1 not started.**
+
+## 11. Stage-2 refit at the sourced density width s_ρ = 3.5 Å (RAN 2026-10-02; adoption DECISION NEEDED)
+
+**Why.** The drag gate used the solvation-*potential* width (14.2 Å) as the
+He *density* width (10–90 % interface 25.7 Å). The literature ⁴He droplet
+surface (Harms, Toennies, Dalfovo, PRB 58, 3341 (1998): 5.7 Å DFT / 6–8 Å
+exp.) gives s_ρ = 3.5 Å for the erf-complement profile (10–90 % = 1.81·s =
+6.3 Å). `potential_steepness` stays 14.2 Å (correct for U); m_eff stays
+19 He. Goal doc: `docs/drag_port/Tier2/THESIS_FINAL_GOALS.md` G2–G4.
+
+**Scope (pre-registered, committed `b729c28`).** Stage 2 only (joint 18 +
+9 Å, no Stage-1 held-out prediction; bundles stamp `held_out_axis: none
+(stage-2 only)`), three families on the `linear_cubic` force with a shared
+E_bind: `shared_linear` (b = 0), `shared_cubic` (a = 0, alias of the §9
+`shared_pure_cubic` engine), `shared_linear_cubic` (alias of
+`shared_3param`). Bands unchanged from §9.4 (RMSE 18 Å ≤ 0.19, 9 Å ≤ 0.45
+Å/ps, escape = 1). Nested tests T_a0 = obj(cubic) − obj(lc) ≤ 0.005,
+T_b0 = obj(linear) − obj(lc) ≤ 0.005; winner: one boundary equivalent →
+that family, neither → lc, both → cubic. Two code corrections for the
+sharp gate: the gate passes through to the extraction setup, and the escape
+criterion reads the **potential** width (an ion 7 Å outside the surface is
+past a 3.5 Å density gate but inside the well).
+
+**Reference note.** The 9 Å smoothed reference was re-smoothed on
+2026-09-29 (`aacc71f`); the §9 bundle reproduces bit-exactly only against
+the earlier file. The refit uses the current file; a 14.2 Å cubic control
+on the same file separates the two changes.
+
+**Outcome (measured).**
+
+| family | a | b | E_bind [eV] | obj [Å/ps] | RMSE 18 / 9 Å | bands |
+|---|---|---|---|---|---|---|
+| shared_cubic | 0 | 2.2300 | 0.1277 | 0.166102 | 0.125 / 0.207 | PASS |
+| shared_linear_cubic | → 0 | 2.2297 | 0.1278 | 0.166103 | 0.125 / 0.207 | PASS |
+| shared_linear | 50.05 | 0 | 0.010 (floor) | 0.6755 | 0.620 / 0.731 | FAIL |
+| control cubic @ 14.2 Å | 0 | 2.5144 | 0.1168 | 0.129183 | — | — |
+
+T_a0 = −7·10⁻⁸ (equivalent), T_b0 = +0.509 ⇒ **`shared_cubic`**. Gate
+effect (vs control): b −11 %, E_bind +9 % (the pre-registered "E_bind
+falls" prediction is refuted). The 9 Å fit degrades (RMSE 0.124 → 0.207);
+`diagnostic_4param` wants per-case wells 0.132 / 0.193 eV. Tier-0 forward
+check reproduces the fit; the Tier-1a re-check's |v2| clause fails as
+worded (inherited from Tier 0; variable-mass increment comparable to
+legacy). **Adoption is an open decision** (log entry 2026-10-02 in
+`drag_migration_log_tier2.md`; D0 §1.G4). Artifacts:
+`data/reference/drag/shared/trajectory_matching_srho3p5A/` (`verdict.json`);
+driver `scripts/extraction/method_b_srho3p5_refit.py`. **Presets unchanged.**

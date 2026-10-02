@@ -2,7 +2,10 @@
 
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
-Nothing here has been executed yet.
+
+**Status (2026-10-02):** G4 **executed** (see the G4.8 status block);
+adoption of the new bundle is an open **decision needed**. G1, G2
+(production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
 
@@ -235,6 +238,32 @@ term.
   ≈ 15 min; extraction runtime unknown until DRY_RUN (rough guess
   1–3 h for three families); Tier-0 forward check ≈ 15 min; Tier-1a
   re-check ≈ 1 h.
+
+### G4.8 Status — EXECUTED 2026-10-02 (measured; adoption DECISION NEEDED)
+
+Code `ebda074`, artifacts `c1f9bb5`; full record in
+`drag_migration_log_tier2.md` (2026-10-02 G4 entry) and D0 §1.G4.
+
+- **Oracle:** bit-exact against the pre-`aacc71f` 9 Å reference; the
+  committed reference was re-smoothed on 2026-09-29 (9 Å RMSE −1.6·10⁻⁴).
+  Refit on the current reference (user decision) + a 14.2 Å cubic
+  control: the smoothing effect is nil (Δb −0.001).
+- **Winner `shared_cubic`:** b 2.2300, E_bind 0.1277 eV (obj 0.1661; RMSE
+  18 Å 0.125 / 9 Å 0.207). `shared_linear_cubic` collapses to a = 0
+  (T_a0 ≈ 0); `shared_linear` fails its bands (T_b0 +0.509). G4.6: no
+  production form change.
+- **Predictions on record:** E_bind *rose* (+9 %, not fell); b −11 %.
+- **Tier-0 forward check:** reproduces the fit.
+- **Tier-1a re-check:** R(t) and ledger closure unchanged; the |v(t)|
+  clause **fails as worded** (0.207–0.222 vs 0.124–0.136 Å/ps), mostly
+  inherited from the Tier-0 fit (fixed row +0.083); the variable-mass
+  increment is comparable to legacy.
+
+> **DECISION NEEDED.** (a) Record the Tier-1a |v| failure as
+> Tier-0-inherited, accept `srho3p5A_shared_cubic`, proceed to G5; or
+> (b) treat it as blocking and open the 9 Å misfit (per-case wells
+> 0.132 / 0.193 eV in `diagnostic_4param`) before G5. Production stays on
+> `shared_pure_cubic` at 14.2 Å until decided.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
