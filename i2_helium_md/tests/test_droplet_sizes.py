@@ -21,7 +21,7 @@ from i2_helium_md.sampling.droplet_sizes import (
 # ---------------------------------------------------------------------------
 class TestMeanDropletSize:
     def test_matlab_formula_baseline(self):
-        """Reference operating point: p=40 mbar, T=23 K, d=5 um.
+        """Reference operating point: p=40 bar, T=23 K, d=5 um.
 
         N = 4e5 * 40^0.97 * 23^-3.88 * 5^2
         Verified against MATLAB by direct calculation.

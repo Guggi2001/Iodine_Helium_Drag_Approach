@@ -140,7 +140,7 @@ def _print_pickup_report(diag: dict) -> None:
     src = diag["source_conditions"]
     print(
         f"\nPickup-cell simulation diagnostics\n"
-        f"  source: p={src['p_source_mbar']} mbar, "
+        f"  source: p={src['p_source_mbar']} bar, "  # bar despite the key name
         f"T={src['T_source_K']} K, d={src['nozzle_diameter_um']} um\n"
         f"  E_solv = {src['E_solv_meV']} meV, "
         f"reduced sigma = {src['reduced_crosssection']}\n"

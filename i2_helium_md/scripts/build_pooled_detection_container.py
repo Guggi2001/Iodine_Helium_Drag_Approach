@@ -31,6 +31,10 @@ Invocation (``--target``; default = the §6.7 lq battery pool):
 ``detfix_h405`` = the detector-stage-fix reference battery
 (``gen_tier2_detfix_battery.py``: h405 s1–s5 + r6, t_h = 500 ps, E2 skipped,
 partner-aware Coulomb closure; N = 6000).
+``detfix_h405_postpickup`` = s1–s5 of the same battery with the
+``post_pickup`` droplet-size sampler (``gen_tier2_detfix_postpickup.py``;
+N = 5000); ``detfix_h405_s1s5`` = production s1–s5 (raw; N = 5000), the
+matching comparison arm.
 """
 
 from __future__ import annotations
@@ -64,6 +68,10 @@ from scripts.gen_tier2atlas_lqbattery import (  # noqa: E402
 from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     MEMBER_SEEDS as DETFIX_SEEDS,
     member_run_dir_name as detfix_run_dir_name,
+)
+from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
+    member_run_dir_name as postpickup_run_dir_name,
 )
 
 # ---------------------------------------------------------------------------
@@ -101,6 +109,25 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "9A_drag_shared_pure_cubic_N6000_detfix_conf270_h405pooled_th500",
         "the detector-stage-fix h405 reference battery (t_h = 500 ps, E2 "
         "skipped, partner-aware Coulomb closure)",
+    ),
+    # The droplet-size sampler A/B (gen_tier2_detfix_postpickup.py): s1-s5
+    # of the production battery re-run with droplet_size_sampler_mode=
+    # "post_pickup" (r6 excluded, see that module's POOL_MEMBERS), and the
+    # matching production s1-s5 pool so both arms plot at N = 5000.
+    "detfix_h405_postpickup": (
+        [postpickup_run_dir_name(m) for m in POSTPICKUP_POOL_MEMBERS],
+        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
+        "9A_drag_shared_pure_cubic_N5000_detfix_conf270_h405pppooled_th500",
+        "the h405 production battery (s1-s5) re-run with "
+        "droplet_size_sampler_mode='post_pickup' (single-I2 pickup "
+        "conditioning + pickup evaporation; otherwise identical pipeline)",
+    ),
+    "detfix_h405_s1s5": (
+        [detfix_run_dir_name(m) for m in POSTPICKUP_POOL_MEMBERS],
+        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
+        "9A_drag_shared_pure_cubic_N5000_detfix_conf270_h405pooled_th500",
+        "the h405 production battery, members s1-s5 only (raw sampler) — the "
+        "N = 5000 comparison arm of the post_pickup A/B",
     ),
 }
 DEFAULT_TARGET = "lq"

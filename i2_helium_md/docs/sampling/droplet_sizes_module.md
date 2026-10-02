@@ -38,7 +38,7 @@ same droplet size (2000 atoms). The full sampler is bypassed.
 
 For the **`single_pulse_droplet_distribution` preset**, the simulation sets
 `use_single_droplet_size = False`, uses the source conditions from the legacy
-MATLAB input file (`p_source = 40 mbar`, `T_source = 14 K`), and samples a
+MATLAB input file (`p_source = 40 bar`, `T_source = 14 K`), and samples a
 post-pickup droplet-size distribution.
 
 We port the sampler anyway because:
@@ -108,7 +108,7 @@ of the droplet (`σ ∝ R² ∝ N^(2/3)`), so larger droplets are preferentially
 Net effect: the **mean** post-pickup N can be larger than the raw mean.
 The **shape** of the distribution is also altered.
 
-In our smoke run with default conditions (p=40 mbar, T=14 K):
+In our smoke run with default conditions (p=40 bar, T=14 K):
 
 | Mode | Mean N |
 |---|---|

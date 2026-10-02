@@ -88,7 +88,7 @@ Mirrors the MATLAB `fprintf` style:
 
 ```
 Pickup-cell simulation diagnostics
-  source: p=25 mbar, T=15 K, d=5.0 um
+  source: p=25 bar, T=15 K, d=5.0 um
   E_solv = 14.0 meV, reduced sigma = False
   formula <N> = 6205
 
@@ -149,7 +149,7 @@ fig.savefig("thesis_3_2_reproduction.png")
 
 The defaults match Treiber's didactic script
 (``conditional_droplet_size_distribution_simplified.m``) exactly:
-``p_source = 40 mbar``, ``d = 5 μm``, ``E_solv = 30 meV``,
+``p_source = 40 bar``, ``d = 5 μm``, ``E_solv = 30 meV``,
 ``E_kin_thermal = 38.78 meV``, ``p_pickup_gas = 8.7e-5 mbar``,
 ``T_pickup_gas = 293 K``, and crucially ``n_he = 2.18e28`` (bulk, NOT
 the 0.8x droplet density used in the production sampler).

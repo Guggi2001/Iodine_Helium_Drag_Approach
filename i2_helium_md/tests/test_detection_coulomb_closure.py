@@ -23,6 +23,7 @@ from i2_helium_md.physics.coulomb_closure import (
 )
 from i2_helium_md.physics.constants import U
 from i2_helium_md.physics.interactions import ion_interaction_potential
+from i2_helium_md.sampling.ce_channels import CE_CHANNEL_Q2, E_REF_PER_ION_EV
 from i2_helium_md.simulation import detection_stage as ds
 from i2_helium_md.simulation.detection_stage import run_detection_stage
 from i2_helium_md.simulation.ion_propagation_step import (
@@ -133,6 +134,40 @@ class TestTwoBodyAsymptote:
         np.testing.assert_array_equal(a1, v1)
         np.testing.assert_array_equal(a2, v2)
 
+    def test_mixed_coupling_batch_masks_per_pair(self):
+        # The `live` mask: k = 0 rows verbatim, k > 0 rows equal to the same
+        # pair closed alone (elementwise numpy ops -> round-off level only).
+        rng = np.random.default_rng(13)
+        P = 6
+        r1, r2 = rng.normal(0, 50, (P, 3)), rng.normal(0, 50, (P, 3))
+        v1, v2 = rng.normal(0, 5, (P, 3)), rng.normal(0, 5, (P, 3))
+        m1, m2 = rng.uniform(127, 220, P), rng.uniform(127, 220, P)
+        k = np.where(np.arange(P) % 2 == 0, K_MD, 0.0)
+        a1, a2 = two_body_coulomb_asymptote(r1, v1, m1, r2, v2, m2, k)
+        dead = k == 0
+        np.testing.assert_array_equal(a1[dead], v1[dead])
+        np.testing.assert_array_equal(a2[dead], v2[dead])
+        for p in np.flatnonzero(~dead):
+            b1, b2 = two_body_coulomb_asymptote(
+                r1[[p]], v1[[p]], m1[[p]], r2[[p]], v2[[p]], m2[[p]], k[[p]])
+            np.testing.assert_allclose(a1[p], b1[0], rtol=1e-14, atol=0)
+            np.testing.assert_allclose(a2[p], b2[0], rtol=1e-14, atol=0)
+
+    def test_near_radial_orbit_is_continuous_with_the_radial_limit(self):
+        # h -> 0 must not blow up (u_hat is written with e x h, not h_hat).
+        # A transverse kick eps gives c = w|h|/alpha ~ 3e-10 here, so the
+        # asymptote may move by O(w*c) ~ 1e-8 A/ps; 1e-6 bounds that with
+        # margin while catching any 1/|h| instability (which would be O(1)).
+        r1, r2 = np.array([[10.0, 0, 0]]), np.array([[-10.0, 0, 0]])
+        v1 = np.array([[2.0, 0, 0]])
+        a1_rad, a2_rad = two_body_coulomb_asymptote(
+            r1, v1, [M1], r2, -v1, [M2], [K_MD])
+        for eps in (1e-9, 1e-12):
+            v1e = v1 + np.array([[0.0, eps, 0.0]])
+            a1, a2 = two_body_coulomb_asymptote(r1, v1e, [M1], r2, -v1e, [M2], [K_MD])
+            np.testing.assert_allclose(a1, a1_rad, rtol=0, atol=1e-6)
+            np.testing.assert_allclose(a2, a2_rad, rtol=0, atol=1e-6)
+
     def test_invalid_inputs_raise(self):
         z = np.zeros((1, 3))
         o = np.ones((1, 3))
@@ -180,6 +215,28 @@ class TestFixedCentreAsymptote:
         b1, _ = two_body_coulomb_asymptote(r1[None], v1[None], [M1], r2[None],
                                            np.zeros((1, 3)), [1e12], [K_MD])
         np.testing.assert_allclose(a, b1, rtol=1e-8)   # O(m1/m2) = 1e-10
+
+    def test_zero_coupling_rows_are_identity_in_a_mixed_batch(self):
+        rng = np.random.default_rng(17)
+        r, v, c = (rng.normal(0, 50, (4, 3)), rng.normal(0, 5, (4, 3)),
+                   rng.normal(0, 50, (4, 3)))
+        k = np.array([K_MD, 0.0, K_MD, 0.0])
+        a = fixed_centre_coulomb_asymptote(r, v, np.full(4, M1), c, k)
+        np.testing.assert_array_equal(a[k == 0], v[k == 0])
+        assert np.all(np.linalg.norm(a[k > 0], axis=1)
+                      > np.linalg.norm(v[k > 0], axis=1))
+
+    def test_invalid_inputs_raise(self):
+        z = np.zeros((1, 3))
+        o = np.ones((1, 3))
+        with pytest.raises(ValueError, match="at the centre"):
+            fixed_centre_coulomb_asymptote(o, z, [M1], o, [K_MD])
+        with pytest.raises(ValueError, match="k must be"):
+            fixed_centre_coulomb_asymptote(o, z, [M1], z, [-1.0])
+        with pytest.raises(ValueError, match="masses"):
+            fixed_centre_coulomb_asymptote(o, z, [0.0], z, [K_MD])
+        with pytest.raises(ValueError, match="shape"):
+            fixed_centre_coulomb_asymptote(np.ones(3), z, [M1], z, [K_MD])
 
 
 # ---------------------------------------------------------------------------
@@ -295,6 +352,52 @@ class TestStageClosure:
         before, after = _five_term(seed, res)
         np.testing.assert_allclose(after, before, rtol=0, atol=1e-12)
 
+    def test_retained_first_half_partner_closes_the_second_half_ion(self):
+        # The mirror branch (~f1 & f2): the free ion sits in the [N:] half,
+        # its retained partner in the [:N] half; molecule 1 stays two-body.
+        cfg = _cfg(detection_droplet_retained_policy="exclude")
+        seed = _free_pair_seed(cfg, E_int_eV=0.0)
+        # ion 0 (partner of 2): at rest at the droplet centre -> bound.
+        seed.positions_x[0, 0] = seed.positions_y[0, 0] = seed.positions_z[0, 0] = 0.0
+        seed.velocities_x[0, 0] = seed.velocities_y[0, 0] = seed.velocities_z[0, 0] = 0.0
+        seed.E_kin_eV[0, 0] = 0.0
+        res = run_detection_stage(seed, cfg)
+        assert res.state_reason[0] == "droplet_retained"
+        pos = np.stack([seed.positions_x[:, 0], seed.positions_y[:, 0],
+                        seed.positions_z[:, 0]], 1)
+        vel = np.stack([seed.velocities_x[:, 0], seed.velocities_y[:, 0],
+                        seed.velocities_z[:, 0]], 1)
+        m = seed.mass_kg / U
+        E_c = _pair_energy_eV(seed, cfg)
+        r = np.linalg.norm(pos[:2] - pos[2:], axis=1)
+        k = _eV_to_amu_ang2_ps2(E_c * r)
+        want2 = fixed_centre_coulomb_asymptote(pos[[2]], vel[[2]], m[[2]],
+                                               pos[[0]], k[[0]])
+        np.testing.assert_array_equal(_v(res)[2], want2[0])
+        a1, a3 = two_body_coulomb_asymptote(pos[[1]], vel[[1]], m[[1]],
+                                            pos[[3]], vel[[3]], m[[3]], k[[1]])
+        np.testing.assert_array_equal(_v(res)[[1, 3]], np.concatenate([a1, a3]))
+        dke = res.E_kin_detected_eV - seed.E_kin_eV[:, 0]
+        np.testing.assert_allclose(dke[2], E_c[0], rtol=1e-9)
+        assert dke[0] == 0.0 and res.E_pot_detected_eV[0] == seed.E_pot_eV[0, 0]
+        before, after = _five_term(seed, res)
+        np.testing.assert_allclose(after, before, rtol=0, atol=1e-12)
+
+    def test_ce_pair_scale_scales_the_closed_pair_energy(self):
+        # Tier-2 (C) mixture: the closure's k must carry the per-molecule CE
+        # scale s_m from the checkpoint, exactly as the MD pair force did.
+        cfg = _cfg()
+        seed = _free_pair_seed(cfg, E_int_eV=0.0)
+        s_m = np.array([0.8, 1.6])
+        seed.ce_channel = np.full(4, CE_CHANNEL_Q2, dtype=int)
+        seed.ce_E_m_eV = np.tile(s_m * E_REF_PER_ION_EV, 2)
+        res = run_detection_stage(seed, cfg)
+        E_c_unscaled = _pair_energy_eV(seed, cfg)
+        dke = res.E_kin_detected_eV - seed.E_kin_eV[:, 0]
+        np.testing.assert_allclose(dke[:2] + dke[2:], s_m * E_c_unscaled, rtol=1e-9)
+        before, after = _five_term(seed, res)
+        np.testing.assert_allclose(after, before, rtol=0, atol=1e-12)
+
     def test_both_retained_pair_is_untouched(self):
         cfg = _cfg(detection_droplet_retained_policy="exclude_all_coupled")
         seed = _free_pair_seed(cfg, E_int_eV=0.0)
@@ -303,7 +406,9 @@ class TestStageClosure:
         seed.positions_y[[1, 3], 0] = 0.0
         seed.positions_z[[1, 3], 0] = 0.0
         res = run_detection_stage(seed, cfg)
-        assert set(res.state_reason[[1, 3]]) <= ds.RETAINED_REASONS
+        # Unbound on the full-credit split (E_c(10 A) ~ 1.4 eV >> E_bind) but
+        # helium-coupled -> both marginal, i.e. D4's "trapped pair" shape.
+        assert list(res.state_reason[[1, 3]]) == [ds.RETAINED_MARGINAL_REASON] * 2
         for i in (1, 3):
             assert res.vx_detected[i] == seed.velocities_x[i, 0]
             assert res.vy_detected[i] == seed.velocities_y[i, 0]

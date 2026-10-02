@@ -520,7 +520,7 @@ def corrected_radii_A() -> tuple[np.ndarray, float, float]:
     the preset's own source conditions (G0 decision 1).
 
     Returns ``(radii, N_mean_drawn, N_mean_exact)`` so the nozzle-correlation
-    anchor (⟨N⟩ ≈ 12794 at 40 mbar / 14 K, D0 §15) is checked, not assumed.
+    anchor (⟨N⟩ ≈ 12794 at 40 bar / 14 K, D0 §15) is checked, not assumed.
     """
     cfg = RunDirectory(
         RUNS_ROOT / RUN_SELECTION[CORRECTED_DENSITY_SOURCE_CELL]

@@ -230,7 +230,7 @@ DropletSizePrior = Literal[
 # * ``post_pickup`` (default — byte-inert): the pickup + evaporation chain, i.e.
 #   the raw ln-normal biased by the geometric pickup cross-section N^(2/3). This
 #   is what legacy MATLAB production and the ``main``-branch port ran
-#   (realized N̄ ≈ 16.4k, R̄ ≈ 54 Å at 40 mbar / 14 K).
+#   (realized N̄ ≈ 16.4k, R̄ ≈ 54 Å at 40 bar / 14 K).
 # * ``raw``: the raw source-correlation ln-normal, no pickup weighting
 #   (N̄ ≈ 12.6k, R̄ ≈ 49.4 Å at the same source conditions). Identified as the
 #   parent document's own droplet ensemble: its quoted R range 34–68.3 Å matches
@@ -339,7 +339,11 @@ class SimConfig:
     # ------------------------------------------------------------------
     use_single_droplet_size: bool = True
     single_droplet_size: int = 2000     # number of He atoms per droplet
-    p_source_mbar: float = 40.0         # nozzle pressure (only for size dist)
+    # Nozzle stagnation pressure (only for the size dist). The unit is bar
+    # despite the field name: the legacy MATLAB `p_source = 40` is unitless,
+    # and the nozzle correlation <N> = 4e5 * p^0.97 * T^-3.88 * d^2 expects
+    # bar. The name stays as-is because renaming it changes cfg.json.
+    p_source_mbar: float = 40.0
     T_source_K: float = 14.0            # nozzle temperature
     # Slice T8 (plan §I.11.3): analytic droplet-size prior (the D4 family).
     # The family parameters are read only under the analytic arms

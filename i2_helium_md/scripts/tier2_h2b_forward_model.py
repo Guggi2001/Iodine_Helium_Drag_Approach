@@ -2337,7 +2337,7 @@ def _g3_corrected_master(m, force_rebuild=False):
     """Part C master draw: the G2-adopted corrected geometry.
 
     ``legacy`` + ``raw`` sizes (nozzle correlation at the preset's own
-    p = 40 mbar / T = 14 K => <N> = 12794), Boltzmann births at the
+    p = 40 bar / T = 14 K => <N> = 12794), Boltzmann births at the
     313.2 K parent well. Draw order (documented, seed G3_SEED): N raw
     ln-normal -> Boltzmann birth radii -> axis cosines. Cached to npz
     (the Boltzmann sampler loops per unique radius -- minutes at m = 20000).

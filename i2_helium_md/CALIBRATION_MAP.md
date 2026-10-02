@@ -8,239 +8,38 @@ One table mapping every model parameter to its **classification**, its
 `MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md` (pickup, evaporation,
 cooling, ladder, early window). Physics-Definition only; no code.
 
-> **Update 2026-06-17.** [IHe05] EPAPS analytic fit obtained → rows 9, 18, 20
-> tightened from order-of-magnitude prior to **pinned**: $D_0^{\mathrm{I^+}}(1)$
-> ($X_2$ 106.9 / mixture 74.4 cm⁻¹, exact $J{=}0$ ZPE) and RRK $\nu=2.42$ ps⁻¹
-> ($V''(R_e){=}748.1$ cm⁻¹/Å²). Detail + the SO-coupled $X_2/I_1/I_0$ depths in the
-> MASS doc 2026-06-17 revision. The two **Free** knobs (ladder shape, electronic
-> picture) are unchanged in count; the electronic-picture *rung scale* is now
-> numeric (mixture/$X_2=0.70$).
->
-> **Update 2026-06-17 (cont.).** Ladder shape **Form U** adopted: the discrete
-> `ladder_shape ∈ {gradual, shell_structured}` (old row 19) becomes a single
-> sigmoid with one continuous knob $\kappa$ (`ladder_steepness`), anchored at the
-> pinned rung, a sourced bulk-He floor (new row 23), and $n^*$ (row 22). The Free
-> count stays 2 ($\kappa$ + picture, co-fit). Cross-check corrected (row 21):
-> $\sum_i D_0 \neq |S_{\mathrm{I^+}}|$ — $|S|$ is collective (pair ladder cannot
-> reach 2484 cm⁻¹), an upper bound only; reachable target is the drag binding
-> 0.1168 eV. New OQ7 (the $|S|$ energy reference). Reversible.
->
-> **Update 2026-06-17 (cont. 3).** Full [GAH25] studied → confirms K2; **$E_\infty$
-> split locked**: occupancy-resolved $E_\infty(N)=-|S(N)|$ with explicit
-> electrostriction term (row 12, new 12b — the *dominant* binding per GAH25
-> geometry), resolving OQ6 (stripping cap) and the equilibrium layer of R12.
-> Ladder geometry corrected from GAH25 Table II: shell radius ~4.67 Å (not pair
-> $R_e$) → cliff **7.5×** (row 19, was 13.4×), He–He roomy not compressed.
-> Secondary: $n^*\approx20$ cross-check (row 22, OQ8); $\lambda_\text{attach}$
-> central ~0.7–1.1/ps for I⁺ (row 7); Calvo K⁺ PIMC as a $\kappa$ lead. Reversible.
->
-> **Update 2026-06-17 (cont. 2).** Early-window scalars pinned: $E_\text{avail}^
-> \text{ion}=2.70$ eV (row 15, per-ion convention; ½ of 5.40 eV pair, reversible);
-> integrated ladder $\sum_i D_0$ now numeric and **nearly $\kappa$-independent**
-> (row 21); $f_\text{int}$ self-unbound **floor $\approx0.04$–$0.10$** (row 14),
-> small ⇒ the GAH25 self-unbound onset is robust, not fine-tuned. Form U cliff
-> recentered to $n^*+\tfrac12$. The gate threshold and floor are **picture-set,
-> $\kappa$-independent** — pinnable ahead of the Tier-2 $\kappa$/picture fit.
->
-> **Update 2026-06-21 (consistency-check pass).** Four fixes, no lock/mechanism
-> change (MASS doc 2026-06-21 revision): (1) **$n^*$ leak corrected** — per-atom
-> collective binding adopts the cation $n^*{=}21$ throughout ($|S|/n^*{=}118$ cm⁻¹
-> / 170 K, was 124/179 off $n^*{=}20$); ratio-to-pair $4.7\times$ (rows 12b, 22);
-> **OQ8 raised LOW→LOW–MEDIUM** (the ambiguity had leaked into energetics, not
-> geometry only). (2) **Integrated $X_2$ band corrected to 0.25–0.28 eV** (Form U
-> pure-$\kappa$ range); the crowding-reduced value and the drag binding 0.117 eV are
-> **separate cross-checks, not band ends** (row 21). (3) **`ladder_electronic_picture`
-> gains `cooling_relaxed`** (between mix & $X_2$; row 20) — still one selection, Free
-> count unchanged. (4) **$E_\text{avail}^\text{ion}$ scenario-keyed** — 0.80 eV
-> validation ($d{=}9$ Å) / 2.70 eV production ($R_e$); the $f_\text{int}$ floor
-> triples at the validation budget (0.065→0.22 mix), self-unbound onset still robust
-> but margin $14\times{\to}4.5\times$ (rows 14, 15; A7 reworded). The soft ceiling
-> ~0.2 is **advisory, not a constraint**. Tier-1 endpoint 14 author-confirmed
-> I⁺-specific. **Item 4 provisional pending OQ2** ($KE_\text{shed}$/partition).
-> Reversible.
->
-> **Update 2026-06-21 (cont.) — Method-level consistency proof.** Audited the
-> mechanism as a closed system (MASS doc 2026-06-21 cont. revision): (1) the
-> **five-term energy invariant verified closed** under drag, pickup S1, cold-shed
-> K1, and K2 cooling — a genuine conservation law, no change. (2) **RRK $s$
-> corrected $3n-6\to3n-3$** (full $n{+}1$-atom complex; row 10): the old count went
-> $\le0$ for $n\le2$, diverging the rate at threshold and breaking the
-> no-avalanche guarantee in the small-$n$ tail — the only regime where $\{\nu,s\}$
-> are observable. $n{=}1$ is now **direct dissociation $k=\nu$**; override guarded
-> $s\ge1$. Mechanism/invariant unchanged.
->
-> **Update 2026-06-21 (cont. 2) — pickup↔gate stability + occupancy cap.**
-> Extended the Method proof to the accretion↔gate feedback loop (MASS doc cont. 2
-> revision, §6.11 stability note): (1) **loop proven stable** — the self-unbound
-> margin $G=E_\text{int}-\Sigma(n)$ is a pathwise Lyapunov function (gate always
-> crosses; pickup is stabilizing), and terminal $n$ is a stable freeze-out
-> attractor set by $\Pi=\lambda f_\text{ret}\tau$ ($>1$ shed / $<1$ freeze;
-> $\Pi\to0$ at exit ⇒ termination universal). "Equilibrium is emergent, not a
-> parameter" is now **proven**. $\Pi$ added as a derived diagnostic (row 17b;
-> Derived 5→6). (2) **Occupancy cap added** (Langmuir Form B, A12):
-> $\lambda_\text{attach}{\times}(1-n/n^*)_+^{\,p}$ closes the resting-ion
-> $n\to\infty$ gap; **inert for production** (ion exits first), rate-only so the
-> invariant and $G$-crossing are untouched. New exponent $p$ (row 7p) **default
-> tied to $\kappa$** → 0 net new free knobs. Rows 7, 17b, 7p, tally updated.
-> Reversible.
->
-> **Update 2026-06-21 (cont. 3) — integrator↔mass-jump operator split (A13).**
-> Final structural item (MASS doc cont. 3 revision): **SQ1** the velocity-dependent
-> drag freezes $\gamma(v_\text{in})$ → drag-on path is **$O(dt)$, not $O(dt^2)$**
-> (retire the BAOAB 2nd-order claim for production); accepted because it buys exact
-> dissipation bookkeeping + unconditional dissipativity, at the cost of a one-signed
-> over-braking bias (R10). **SQ2** mass jumps **must** use the momentum-conserving
-> reset $v^+=(m v^-\pm m_\text{He}u_\text{He})/(m\pm m_\text{He})$ — an **invariant
-> precondition**: $E_\text{mass\_transfer}$ is the reduced-mass defect
-> $\tfrac12\tfrac{m m_\text{He}}{m+m_\text{He}}\|v^-{-}u_\text{He}\|^2$ it produces
-> (corrected from the heavy-ion $\tfrac12 m_\text{He}v^2$, ~3% closure error at
-> $n{=}1$); He at rest. **SQ3** post-jump O-step uses $m^+$. SQ2/SQ3 unbuilt, now
-> specified. **Method proof closes conditional on the SQ2 reset.** Cross-cutting row
-> added. Reversible.
->
-> **Update 2026-07-06 — RRK-dof promotion (staircase-probe outcome).** The
-> pre-F5 staircase capability probe + s_eff mini-probe
-> (`TIER2_STAIRCASE_PROBE_PLAN.md` Addendum A; execution records in
-> `docs/drag_port/Tier2/drag_migration_log_tier2.md`) fired and resolved the
-> RRK-dof mechanism-level OQ: at the classical mode count $s=3n-3$ (=60 at
-> $n^*{=}21$) the cascade is kinetically frozen at $n\approx20$ everywhere in
-> the κ×picture×τ bands (max 1.7 sheds vs the anchored 7), while a **constant
-> $s_\text{eff}=8$ at mid-band τ lands the anchored 21→19→14 staircase in
-> magnitude and timing** (7.41 sheds → n\_end 13.59, first shed 5.42 ps vs
-> t★=5 ps, trajectory MAD 1.0 He), **picture-robust** (≤4 % magnitude spread
-> across all three pictures, cross-check 2026-07-06). **User decision
-> (2026-07-06): $s$ promoted** — row 10 reclassified **Derived → Bounded**
-> (constant effective $s_\text{eff}$, band ≈ [5, 20], landing [8, 12] at
-> mid-band τ); the classical $s=3n-3$ is demoted to the classical-limit arm
-> of a dof-convention selection (retained as diagnostic/limit; the $s\ge1$
-> guard and $n{=}1$ direct dissociation unchanged). Consequences: the A11
-> classical band $[3n{-}3,3n]$ is **superseded as the sweep band** (the
-> landing sits far *below* it — the quantum/blurred-shell down-drift A11
-> itself flagged); κ (row 19) is empirically **inverted and
-> normalisation-capped** for the stripping range (Form U floors $D_0(21)$ at
-> ≈0.53·$D_0(1)$); the picture (row 20) is **near-degenerate in shed
-> magnitude** ($x=D_0/\Sigma$ picture-invariant), sensitive only through
-> $\Sigma(21)\to t_\times$ timing, degenerate there with $f_\text{int}$.
-> Free count unchanged (κ + picture — both now known near-flat on the
-> staircase observable; the size distribution remains their arbiter);
-> Derived 6→5, Bounded +1. s↔τ are separated by first-shed timing, so the
-> 9 Å staircase (a TDDFT prior, not ground truth) co-anchors the pair —
-> the first load shed from the one-observable Tier-2 stack. Implementation
-> (selection surface + F2 campaign re-scope to an $s_\text{eff}$×τ co-fit)
-> stays behind the implementation trigger. Reversible.
->
-> **Update 2026-07-06 — cooling spatial gate arm (`cooling_spatial_gate`).** K2
-> Newton cooling ("bath dissipation") was applied **ungated everywhere**, unlike
-> drag ($\gamma\propto\rho_\text{He}$) and pickup ($\lambda\propto\rho_\text{He}$),
-> which gate off outside the bubble via the shared erf-complement surface. Added a
-> first-class interchangeable enum arm (**new row 5a**): `none` (default,
-> **byte-identical** to the locked ungated form) / `density_scaled`
-> ($\tau_\text{eff}=\tau/\rho_\text{ratio}$, reusing the **row-5** drag gate
-> steepness — one bubble boundary for all three He-mediated channels; cooling
-> switches off in vacuum). Physically motivated: the GAH25 $\tau$ was fit near the
-> droplet, but an ejected I⁺Heₙ cluster has no external bath. This is the
-> **ejection-regime total-vaporization lever** — ungated cooling self-quenches the
-> cascade at $n\sim$ few (shell-retaining), the gate opens the near-bare end the
-> experimental 43 % bare-I⁺ peak requires. Probed by the total-strip A/B capability
-> grid (`gen_tier2_staircase_probe.py`, **probe-scoped**; not yet a campaign knob).
-> Clean erf-cutoff is the first build; a residual out-of-bubble floor
-> $\rho_\text{min}$ is a **deferred OQ**. See MASS §6 K2 / §6.11,
-> DRAG_PORT_DESIGN_DECISIONS §"Cooling spatial gate",
-> `drag_migration_log_tier2.md`. Reversible.
->
-> **Update 2026-07-07 — detection time sourced (terminal-read design).** Wave 5
-> (I11) showed the gated terminal read is **flight-time dependent** (the
-> post-ejection cascade is live at any tractable fixed-dt cap), so the Tier-2
-> observable needs an explicit detection time. Design delivered
-> (`docs/drag_port/Tier2/TIER2_DETECTION_STAGE_DESIGN.md`): an event-driven
-> post-ejection continuation reads the per-ion size distribution at
-> $t_\text{detect}$ exactly (the mechanism reduces to a Markov jump chain
-> after ejection — a scheme change, not new physics). **New row 24:**
-> $t_\text{detect}=8.53$ µs $=8.53{\cdot}10^6$ ps, **Sourced** from the
-> experimental-setup publication (TOF flight to detector; user-confirmed
-> 2026-07-07). Sourced tally 8→9. Detection-time *sensitivity* is a free
-> report-side read of the stored shed events (design §3.3). Build stays
-> behind the implementation trigger. Reversible.
->
-> **NB (2026-07-07, Slice DS delivered):** the carrying config field
-> `detection_time_ps` is now live (`check_detection_config`;
-> required-when-enabled, no baked-in default — the constant stays
-> calibration data supplied per run). Row-24 value unchanged.
->
-> **Update 2026-07-09 — RQ1 adjudicated: $f_\text{int}$ → absolute
-> $E_\text{int}(0)$ (rows 14/16 swap roles).** The RQ1 deep literature run
-> (`docs/drag_port/Tier2/RESEARCH_QUESTIONS.md`, NB register + adjudication)
-> sourced the onset reservoir: dominant channels are **electronic/spin–orbit
-> relaxation** (I⁺ ³P₀ 0.799 / ³P₁ 0.879 / ¹D₂ 1.702 eV, NIST; populated at
-> KER expense in gas-phase I₂ CE, Forbes 2022 — droplet-embedded branching
-> unmeasured) and **solvation reorganization** (Na⁺ benchmark ≈0.22–0.40 eV,
-> droplet-size-independent, Albrechtsen 2025) — both **non-mechanical and
-> budget-independent**; the kinematic leak's magnitude is genuinely open
-> (both literature estimates refuted in verification). User decision: onset
-> convention retained ($t_0$ deposit, nothing subtracted from fragment
-> mechanics — now sourced, not naive); the **swept/transferred variable is
-> the absolute $E_\text{int}(0)$ [eV]** — row 16 Derived → **Bounded**
-> (band 0.2–0.5 eV, floor ≈0.22 eV), row 14 $f_\text{int}$ Bounded →
-> **Derived coordinate** ($=E_\text{int}(0)/E_\text{avail}^\text{ion}$).
-> Budget transfer holds the absolute value fixed ($f$ rescales
-> ×0.80/2.70 ≈ 0.296); row-14 scenario keying dissolves (floor identity
-> ≈$\Sigma(21)$ at both budgets); the B.1(2) production prediction inverts
-> ($t_\times$ budget-independent; production changes via the earlier
-> $t_\text{eject}$). Discriminator refined: expect VMI **fine-structure
-> satellites** (~0.8 eV down-shifted sub-population), not a smooth
-> $\propto f_\text{int}$ deficit. Resolves the *partition* half of OQ2; the
-> per-shed $KE_\text{shed}$/ε half continues as RQ2. Tally unchanged
-> (one-for-one Bounded↔Derived swap). Document-only; no code. Reversible.
->
-> **Update 2026-07-10 — RQ2/RQ3 adjudicated: ε ≈ 0 (OQ2 KE_shed half closed);
-> spec (a) inert rejected → sequential shed; RQ4 sharpened.** The joint
-> RQ2+RQ3 deep-research run + primary-source grounding
-> (`docs/drag_port/Tier2/RESEARCH_QUESTIONS.md`, RQ2+RQ3 NB register +
-> adjudication) closes the ε question and reframes the self-unbound fate.
-> **RQ2 (= OQ2 $KE_\text{shed}$/ε half):** the per-shed kinetic-energy release
-> is **small and neglected** — a shed drains exactly $D_0(n)$, the He leaving
-> translationally cold. Sourced two ways: Albrechtsen/Stapelfeldt (*Nature*
-> 623, 319 (2023), the model's foundational paper) explicitly neglects the
-> dissociation-product KER (near-threshold statistical dissociation), and
-> Klots–Hansen gives only $\varepsilon\approx cD/G\approx D/16\approx
-> 0.5$–$0.6$ meV (finite-heat-bath reduction toward 0 for the few-mode shell);
-> the feared 5–20 meV is ruled out by µs survival. Optional
-> $\varepsilon(n)=cD/G$ refinement recorded, **not adopted**. **OQ2 now fully
-> closed** (partition half by RQ1, ε half here); the drain-$D_0$ convention is
-> retained, now sourced — no row-class change. **RQ3 (findings OQ-B):** the
-> "suppressed = rides intact at $n{=}21$" convention is **not physical,
-> rejected**; an over-energized complex **sheds sequentially to
-> self-termination** over tens–hundreds of ps (Stapelfeldt MD) ≪ 8.5 µs — a
-> genuinely net-self-unbound complex ($E_\text{int}>\Sigma$, margin $G>0$)
-> totally sheds **to bare** ($G$-invariant under $\varepsilon\approx0$; the
-> bare-peak source), while the marginal class self-terminates at small $n$ on
-> the ladder bottom. **RQ4 (= OQ3 $E_\text{bind}(N)$-vs-ladder) promoted with a
-> sharpened target:** the small-$n$ tail is now a pure ladder readout, so RQ4's
-> target is the incremental-binding **ratios** $D_0(1):D_0(2):D_0(3)\approx
-> 2.2:1.5:1.3$ (decreasing-from-$n{=}1$, which the Na⁺ flat-first-shell-plateau
-> analogy does *not* supply), not merely "deep." Flat-ladder + structured
-> $p(E_0)$ vs deep-ladder + smooth $p(E_0)$ are histogram-degenerate; RQ4
-> (structure) + the production budget test (RQ7) are the two independent
-> handles. Convention-level; the implied model changes (remove spec-(a)
-> suppression → sequential-shed continuation; reshape the ladder bottom) are
-> deferred behind `[PROCEED TO IMPLEMENTATION]`. Document-only; no code.
+> **Change history.** The reasoning behind each row's class lives in its
+> source: the MASS doc revision notes, `DRAG_PORT_DESIGN_DECISIONS.md`,
+> `docs/drag_port/Tier2/RESEARCH_QUESTIONS.md` and
+> `docs/drag_port/Tier2/drag_migration_log_tier2.md`. This file's dated
+> update log (2026-06-17 … 2026-07-10) was removed on 2026-10-01 and is
+> kept in git history.
 
 ## Classification scheme
 
-- **Locked** — fixed by completed Tier 0; not re-fit downstream.
+- **Locked** — fitted to TDDFT (Tier-0 Method B, jointly), then fixed; not
+  re-fit downstream. TDDFT authority covers only the trace velocity band,
+  2.54–4.95 Å/ps. (Harmonized 2026-10-01 with D0, which used to say
+  "Derived" for the same quantities.)
 - **Sourced** — value taken from external literature / ab initio, carried with a
   prior (and its transfer caveat).
 - **Derived** — computed from other quantities; not independently fit.
 - **Bounded** — physical bounds + sweep band; reported as a range/regime, not a
   point fit.
 - **Free** — genuinely determined by fitting to data (the only true knobs).
+  In production (h405) this means fitted to the Tier-2 detected size
+  distribution + KE observables at the G4 arbitration, inside any
+  physical band the row also carries.
+- **Inactive** (added 2026-10-01) — declared and selectable in config, but
+  not read by production: either fixed into a precomputed table or switched
+  off by the selected arm. Its provenance is the value baked in, not a fit.
 
 ## Validation tiers (sequential, ordered by separability; DESIGN §6.4)
 
 - **Tier 0 (COMPLETE)** — drag form + effective binding, deterministic, fixed
   mass, scored *in-window* against the `9A`/`18A` TDDFT traces (Method B
   trajectory-matching).
-- **Tier 1 (next, ungated)** — mass scenario, deterministic, full post-transient
+- **Tier 1 (1a DELIVERED; see `drag_migration_log_tier1a.md`)** — mass scenario, deterministic, full post-transient
   trajectory + the time-resolved shell trajectory (~21→19→14 He). The
   sensitivity layer.
 - **Tier 2** — terminal I⁺Heₙ **size distribution** (+ per-fragment velocity
@@ -262,46 +61,53 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 
 ## The map
 
-| # | Domain | Parameter (units) | Role | Class | Primary anchor (Tier) | Cross-check | Flag |
-|---|---|---|---|---|---|---|---|
-| 1 | Drag | $b=2.5154$ (amu·ps/Å²) | cubic drag coefficient, $F=g\,b\,v^3$ | **Locked** | Tier 0 (9A/18A trajectory-match) | held-out cross-case shared-form (Tier 1); `power_law` $n̂{=}2.93$ recovers cubic | 9 Å transverse flag **[D]** |
-| 2 | Drag | $a=0$ (amu/ps) | linear drag coefficient (pure cubic) | **Locked** | Tier 0 (Method B drove $a\to0$) | $\gamma_0=0$ accepted; noise null | §1.2 **[D]** |
-| 3 | Drag | $E_\text{bind}=0.1168$ (eV) | effective ion binding, co-fit with drag | **Locked** (Tier-0), VMI **pending**; **identifiability flag** — its Tier-0 co-extraction spread moves $\bar n$ by 1.3× the gate band (see "Flagged identifiability item") | Tier 0 trajectory-match → Tier 2 VMI | TDDFT escape-energy sanity; integrated ladder $\sum_i D_0$ (§6.5.1) | OQ1 (electronic provenance) |
-| 4 | Drag | $v_c$ (Å/ps) | high-$v$ drag cap — `capped_cubic` tail onset (in-band $v\le v_c$ is the **byte-identical** locked pure cubic; realizes the former contingent $v_\text{ceiling}$) | **Bounded (2026-07-16, §I.10 Slice T1; was contingent R10-(b))** — band $5.3\lesssim v_c\lesssim15$ (H.4; the ≥5.3 floor protects 0.80 eV in-window byte-identity, measured max speed 5.23); Step-1c refined targets $p{=}{-}1$: 7.5 / $p{=}0$: 6.0–6.5 → **Derived** at the T4 winner | Tier 2 $(n,\langle E\rangle)$ mean-KE curve (I-D4 full-curve fit) | Slice-T1 oracles: $v_c{=}\infty$ / $v_c\ge v_\text{max}$ byte-identity vs `linear_cubic(a{=}0)`; delivered 0.80 eV bridge probe dir reproduced **byte-identically** at $v_c{=}5.3$ (both tails); Tier-0 lock untouched | R10, §I.10 |
-| 4b | Drag | $p_\text{tail}\in\{0,-1\}$ (dimensionless) | `capped_cubic` tail exponent, $\gamma_\text{tail}=b\,v_c^2(v/v_c)^{p}$ ($p{=}0$ Stokes-like linear force, $p{=}{-}1$ saturated constant force) | **Free choice (2 arms, 1 selection; config-load-restricted 2026-07-16, §I.10 Slice T1)** — $p{=}1$ (Newton tail) **excluded** (Step-1c K-P2: zero joint closures); hard cutoff **excluded as physics** (I48) | Tier 2 $(n,\langle E\rangle)$ + solvated histogram (C1/C2 form discrimination) | discrimination read (I50): $p{=}{-}1$ wins $n_1/n_2$ ratio, sags $n\ge13$ KE tail; $p{=}0$ flattest KE curve of the program | §I.10, I50 |
-| 5 | Gate | $g(\text{depth})$ (dimensionless) | drag spatial gate, G4→G2 | **Derived** (erf-tied G2 until $\rho_\text{He}$ profile exists) | confining-potential steepness (14.2 Å) | Tier-1 trajectory; promote to G4 with measured $\rho_\text{He}$ | §5 **[D]** |
-| 5a | Gate | `cooling_spatial_gate` (arm) | K2 cooling spatial gate: `none` (locked, ungated $-E_\text{int}/\tau$) / `density_scaled` ($\tau_\text{eff}{=}\tau/\rho_\text{ratio}$, off outside bubble) | **Free choice** (2 arms, 1 selection; default `none` **byte-identical**; added 2026-07-06) | Tier 2 size dist (total-strip A/B capability probe) | reuses **row-5** drag gate surface (`drag_gate_steepness`, one bubble boundary); ejection-regime total-vaporization lever (shell-retaining ↔ near-bare); $\rho_\text{min}$ floor **deferred OQ**; probe-scoped, not yet a campaign knob | MASS §6 K2/§6.11 |
-| 6 | Noise | $T_\text{eff}$, FDT amplitude | multiplicative local-FDT bath kick (N2) | **Bounded/Derived** (tied to $\gamma(v)$; $\propto\sqrt{\gamma g k_BT_\text{eff}}$) | Tier 3 (ensemble width / VMI) | strict-FDT shown dynamically null (§1.3a) | §1 **[D]** |
-| 7 | Pickup | $\lambda_\text{attach}(\rho_\text{He},n)$ (ps⁻¹) | Poisson He capture rate (density-gated, occupancy-capped) | **Sourced + Bounded** — central ~0.7–1.1/ps (GAH25 Rb⁺/Cs⁺; I⁺ is Rb⁺-like), **not** 2.0 (Na⁺ exp); ±factor-2; ×Langmuir cap $(1-n/n^*)_+^{\,p}$ (A12, 2026-06-21) | Tier 2 size dist | Tier-1 shell trajectory; 9/18 Å density contrast; cap inert for ejection | R1 (Na⁺→I⁺), R7 ($v$-dep), A12 |
-| 7p | Pickup | $p\ge0$ | occupancy-cap sharpness (Langmuir exponent, A12) | **Free (conditional)** — Phase-B default **$p=1$ fixed** (NB 2026-07-01: the $p\!\leftrightarrow\!\kappa$ tie is **inverse** — rigid shell = large $\kappa$ = smaller $p$; **NOT** $p=\kappa$; match cutoff slopes if tied); split only if size dist. demands | Tier 2 size dist | [Nat23] resting-ion saturation bounds $n^*,p$; $p\!\leftrightarrow\!\kappa$ coupling (inverse); Phase-B §3.2 | A12, OQ4/OQ8 |
-| 8 | Pickup | $\rho_\text{He}(\text{depth})$ (Å⁻³) | density profile gating capture | **Sourced** (baseline/TDDFT density) | baseline | Tier 1 | — |
-| 9 | Evap | $\nu$ (ps⁻¹) | RRK prefactor (I⁺–He stretch freq) | **Sourced (pinned 2.42, 2026-06-17)** — $\omega_e{=}80.6$ cm⁻¹ from IHe05 EPAPS $V''(R_e){=}748.1$ cm⁻¹/Å² | Tier 2 size dist | I2-notes cascade timing (OQ5); near-threshold spacing → effective $s$ | OQ5, A11 |
-| 10 | Evap | $s_\text{eff}$ (dimensionless) | RRK effective vibrational DOF | **Bounded (promoted 2026-07-06; was Derived)** — constant $s_\text{eff}$, band **≈[5, 20]** (staircase landing [8, 12] at mid-band τ; picture-robust ≤4 %); classical mode-count $s{=}3n{-}3$ (corr. 2026-06-21 from $3n-6$) demoted to the classical-limit arm of the dof-convention selection; $n{=}1$ direct dissociation $k=\nu$ and the $s\ge1$ guard unchanged | 9 Å anchored staircase (magnitude; s↔τ separated by first-shed timing; TDDFT prior) + Tier 2 size dist | classical band $[3n{-}3,3n]$ superseded (landing far below: quantum mode-freezing / blurred shell — the A11 down-drift); κ-joint resolved **weak** (κ near-flat on the staircase); small-$n$ tail still the size-dist regime | A11 (resolution NB 2026-07-06) |
-| 11 | Cooling | $\tau_\text{dissip}$ (ps) | Newton-cooling time of $E_\text{solv.struct}$ | **Bounded** (sweep $[2.6,16.5]$, externally anchored); **RQ9 reclassification pending (2026-07-16)** — the §I.8/§I.9 joint $(v_c,\tau)$ closure sits at $\tau\approx3.0$–$4.8$ ps (×0.58–0.61 of the GAH25 pin); the §I.10 pilot runs at $\tau$ 3.8–4.4; reclassify per RQ9 at the Step-2 verdict | external (GAH25 Table III / exp) + Tier 2 if sensitive | $t_\times$ vs GAH25 $t_0$; terminal-$n$ insensitivity sweep | R8 (Na⁺-only), RQ9 |
-| 12 | Cooling | $E_\infty(N)=-\|S(N)\|$ (eV) | K2 asymptote, **occupancy-resolved** | **Sourced (split, 2026-06-17)** — full-shell $\|S_{\mathrm{I^+}}\|{=}0.308$ eV [I2-notes]; GAH25 −3424/−4144 K Na⁺ fixes form+$\tau$ | equilibrium-shell binding | OQ6 resolved (fixed $E_\infty$ caps strip); shape via $\kappa$ | OQ6, OQ7 |
-| 12b | Cooling | $E_\text{elec}(N)$ (eV) | electrostriction binding (collective excess) | **Sourced/Derived** ($-(\|S(N)\|-\sum_i D_0)$; **dominant** per GAH25 geometry) | — | marginal release → bath on shed (A8); $\partial\|S\|/\partial n{\approx}118$ cm⁻¹ ($n^*{=}21$, corr. 2026-06-21; was 124 off $n^*{=}20$) ≈ $D_0(1)$ | K2, A8, OQ7, OQ8 |
-| 13 | Budget | $f_\text{ret}\in[0,1]$ (dimensionless) | S1 pickup binding-release retained fraction | **Bounded** (prior small) | Tier 2 size dist | 9/18 Å density contrast (feedback gain → density-dependence of terminal $n$) | — |
-| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | S2 onset **sweep coordinate**, $f_\text{int}=E_\text{int}(0)/E_\text{avail}^\text{ion}$ | **Derived coordinate (2026-07-09, RQ1 adjudication; was Bounded)** — the physical variable is the absolute row-16 $E_\text{int}(0)$; scenario keying dissolved (floor identity: $0.235{\cdot}0.80\approx0.065{\cdot}2.70\approx\Sigma(21)$); budget transfer holds $E_\text{int}(0)$ fixed ⇒ $f$ rescales ×0.80/2.70 | Tier 2 size dist (via row 16) | historical scenario-keyed floors (2026-06-21, superseded as primary read): 0.065 (mix)/0.09–0.10 ($X_2$) @ 2.70 eV; 0.21–0.24/0.31–0.35 @ 0.80 eV; GAH25 $t_0$ via $t_\times$ (A7) | R1 regime axis, OQ2→RQ1 (adjudicated) |
-| 15 | Early | $E_\text{avail}^\text{ion}$ (eV) | per-ion Coulomb onset budget | **Sourced/fixed, scenario-keyed (2026-06-21)** — **0.80 eV** validation (½·14.40/9, $d{=}9$ Å) / **2.70 eV** production (½·14.40/2.666, $R_e$) | fixed reference ($t^*$-window) | stamped to scenario guard (§6.5); reversible to pair (1.60/5.40) | OQ-none |
-| 16 | Early | $E_\text{int}(0)$ (eV) | initial internal energy (S2 onset, **absolute** — the physical variable) | **Bounded (2026-07-09, RQ1 adjudication; was Derived)** — sourced band **0.2–0.5 eV** (floor ≈0.22 eV solvation, Na⁺ benchmark; admissible tail ~0.8–1.0 eV full-³P deposit, discounted); **budget-independent**; deposited at $t_0$, nothing subtracted from fragment mechanics (dominant channels electronic + solvation are non-mechanical) | Tier 2 size dist | VMI discriminator: fine-structure satellites (~0.8 eV down-shift), **not** a smooth deficit; provenance in the RQ1 NB register | RQ1 (closed at convention level) |
-| 17 | Early | $t_\times$ (ps) | self-bound crossing (gate-open time) | **Derived diagnostic** | — | GAH25 $t_0$ = 5.0/6.53 ps (±factor-2, Na⁺) | §6.11 |
-| 17b | Early | $\Pi(t)=\lambda(n)f_\text{ret}\tau$ (dimensionless) | pickup↔gate order parameter (NEW 2026-06-21) | **Derived diagnostic** (§6.11) | — | $\Pi{>}1$ shed / $\Pi{<}1$ freeze; regime-axis spine; $\Pi\to0$ at exit ⇒ termination guaranteed; reconstructable post-hoc | §6.11, R1 |
-| 18 | Ladder | $D_0^{\mathrm{I^+}}(1)$: $X_2$ 106.9 / mix 74.4 cm⁻¹ | first dissociation rung (picture-dependent) | **Sourced (pinned 2026-06-17)** — IHe05 EPAPS fit, exact $J{=}0$ ZPE $G(0){=}37$ cm⁻¹ ($D_e{=}143.9$ is **not** $D_0$); $\pm3$ cm⁻¹ | external ab initio | mobility/ZEKE-validated curve; mixture/$X_2$=0.70 | OQ1 (which curve) |
-| 19 | Ladder | $\kappa$ (Form U) / `ladder_steepness` | sigmoid steepness, gradual↔cliff (1 knob) | **Free** (prior large: 7.5× radial cliff) | Tier 2 size dist (broad vs magic-peak) | $n^*{=}21$ [I2-notes]; joint w/ picture + $s$; tabulated fallback; **staircase probe 2026-07-06: inverted + normalisation-capped for 21→14** (cliff centre $n^*{+}\tfrac12$ above the stripping range; Form U floors $D_0(21)$ ≈ 0.53·$D_0(1)$) — near-flat on the staircase, size dist remains its arbiter | R3, A5, OQ4 |
-| 20 | Ladder | `ladder_electronic_picture` | statistical-mixture (default) / $X_2$-only / cooling_relaxed | **Free choice** (3 options, 1 selection; `cooling_relaxed` added 2026-06-21, between mix & $X_2$) | Tier 2 size dist | rung scale: mix 74.4 / $X_2$ 106.9 cm⁻¹ (=0.70), `cooling_relaxed` in between; $\sum_i D_0$ vs $E_\text{bind}{=}0.1168$; $S_{\mathrm{I^+}}$; **cross-check 2026-07-06: near-degenerate in shed magnitude** ($x=D_0/\Sigma$ picture-invariant, ≤4 % under reduced $s_\text{eff}$); timing-only sensitivity via $\Sigma(21)\to t_\times$, degenerate there with $f_\text{int}$ | A10, OQ1 |
-| 21 | Ladder | $\sum_i D_0^{\mathrm{I^+}}(i)$ (eV) | integrated ladder = self-bound gate threshold | **Derived** — $X_2$ **0.25–0.28** / mix 0.17–0.19 eV (Form U pure-$\kappa$ range, corr. 2026-06-21; ~11%, **nearly $\kappa$-indep**, cliff at $n^*{+}\tfrac12$) | — | drag binding 0.1168 eV + crowding-reduced value are **separate cross-checks, not band ends**; $\|S\|{=}0.308$ collective UB | A10, OQ7 |
-| 22 | Ladder | $n^*=21$ | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only; **adopt 21 for all per-atom energetics**, 2026-06-21) | external | GAH25 $R_e$-scaling → ~20 (corroborates to ±1–2); Tier-1 endpoint 14 **author-confirmed I⁺-specific** (2026-06-21); OQ8 raised LOW→LOW–MEDIUM (had leaked into energetics) | OQ4, OQ8 |
-| 23 | Ladder | $D_\text{floor}$ (cm⁻¹) | outer-shell rung floor (Form U) | **Sourced** ($\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹, 7.15 K) | external (bulk superfluid) | picture-independent; sets sigmoid lower anchor | R3 |
-| 24 | Detection | $t_\text{detect}=8.53$ µs ($8.53{\cdot}10^6$ ps) | terminal-read detection time (TOF flight to detector) — where the Tier-2 size distribution is read (`detection_time_ps`) | **Sourced (2026-07-07)** — experimental-setup publication, user-confirmed | Tier 2 size dist (the *detected* read is the arbitration observable) | log-sensitivity band = free report-side re-read of stored shed events (detection-stage design §3.3); gated reads at $s_\text{eff}\gtrsim12$ are undefined without it (I11) | — |
-| 25 | Ensemble | `birth_position_law` + `initial_position_margin_angstrom` (Å) | molecule-centre birth law: `boltzmann` (delivered thermal sampler, default) vs `uniform_volume` ($p(r)\propto r^2$ on $[0, R-m]$, hard margin — the 1D twin's L1 law; Slice T7, 2026-07-16) | law = **arm, not knob** (twin-parity/capability lever, not a physical claim — §I.11.0 NB; the physical default stays `boltzmann`, which is **center-pinned** at 0.4 K: median 1.37 Å, V0-1 — **audit 2026-07-26: that center-pin is an $R$-dependent artifact, the erf width 14.33 Å being absolute, so the allowed shell is $r\lesssim R-35$ Å at any $R$: an interior shell (med $r/R$ 0.29) at legacy production's $\bar R\approx53$ Å, a hard center-pin at $R\approx28$ Å; D0 §15.4**) — **parent-document anchor (2026-07-26): the same law is the parent model (thermal velocity + droplet solvation potential at 0.4 K, its Fig. 6.9), whose quoted mean solvation depths 29 Å @ $R{=}34$ / 40 Å @ $R{=}68.3$ our sampler reproduces to 0.34 / 0.43 Å at the DFT-fit well $\beta_2=26.99$ meV (1.35 / 1.80 Å at the as-built 573.3 K). Port-fidelity reproduction, NOT independent validation — same ansatz, HeDFT entering only as the potential shape; depths stay Derived. Open item: the 573.3 K vs 26.99 meV substitution is a ~1.3 Å systematic. Production's `uniform_volume` m = 3 gives mean depth 9.0 Å at $\bar R$ 26.6 Å where the parent law gives 25.0 Å — unreachable by any margin ($m$ would need 24.4 Å > R)**; margin = **Bounded** — firm band {3, 4.67, 6} Å (H.2b D5) | Tier 2 (T9 oracle-chain legs A′–D; per-cell margin from the Step-1c closure) | margin read only under `uniform_volume` (guard-refused otherwise); margin ≥ R fails at sampling; default byte-identical to the pre-T7 sampler (exact-draw regression) | — |
+> **Production column (re-audited 2026-10-01).** "Production (h405)" is
+> the value the production generator actually runs
+> (`scripts/gen_tier2_detfix_battery.py` → `build_cell(h405)` in
+> `gen_tier2atlas_g4finals.py` + the three pipeline keys), read off the
+> built `SimConfig` and checked against the committed run
+> `9A_drag_shared_pure_cubic_N1000_detfix_conf270_h405s1_th500`. Where a
+> row's Class/anchor text predates h405 (adopted 2026-09-30,
+> `docs/drag_port/Tier2/TIER2_DetectorStageFix.md` §5.7), the production
+> cell says so. Per-knob influence: `TIER2_PARAMETER_INFLUENCE.md` §0.
 
-| 26 | Channel | `evaporation_shed_convention` | shed velocity/momentum convention of the generative evaporation channel: `cold` (delivered momentum-conserving reset — He at lab rest, $v\to\frac{m}{m-m_\text{He}}v$, negative reduced-mass ledger; byte-inert default) vs `co_moving` (He leaves co-moving, $v$ unchanged, positive $+\tfrac12 m_\text{He}\|v\|^2$ ledger — Tier-1a's continuous-velocity path; OQ-J build 2026-07-17) | **arm, not knob** — convention pair, no continuous freedom; **working convention adjudicated `co_moving`** for the twin-parity legs (T5+; user 2026-07-17, findings §4n/I59: cold injects +0.9 eV / ×1.61 on $n_1$ KE at production kinematics; co-moving counterfactual matches the 1D twin to ≤2 %); `cold` retained as the diagnostic bound arm | Tier 2 $(n,\text{KE})$ curve (histograms are convention-blind — the jump chain reads neither $v$ nor $m$) | RQ10 brackets: cold = maximal backward kick, co-moving = $\varepsilon\to0$; the physical resolution (co-moving + thermal recoil) couples to RQ2's $\varepsilon$; every KE claim states its convention basis (leg-B pre-registration amendment) | OQ-J→RQ10 |
-
-| 27 | Ensemble | `initial_shell_model` | t = 0 shell-dressing law of the biphasic seed: `full` (delivered 21-for-all; byte-inert default) vs `density_tied` ($n_{0,i}=\operatorname{round}(n^*\cdot\hat\rho(d_{\text{birth},i}))$ through the shared erf-complement surface at `drag_gate_steepness(cfg)` — the H.2b L2 lever in MD; Slice T5, 2026-07-18) | **arm, not knob** — the tied law is parameter-free (zero new free parameters; the shell-averaged-$\hat\rho$ variant is a stated sensitivity, never a fit); a first-order occupancy statement, no shell-restructuring dynamics | Tier 2 (T9 leg B — the dressed A/B vs the 1D twin re-scored at the dressed configuration) | biphasic-only by config-load guard (`density_tied` refused outside `mass_scenario='biphasic'` — no silent inert); center-pinned births + `density_tied` ⇒ $n_0=21$ exactly (inert without the T7 position axis); dressing↔pickup re-filling is a reported twin-divergence candidate (the twin has no live Langmuir channel); E_int(0) onset NOT coupled (that is T6's p-law) | — |
-
-| 29 | Channel | `relaxation_dissipation` | E2 post-ejection dissipation arm: `zero_gamma` (delivered conservative BAOAB closure — decay 1, $dE_\text{dissip}=0$; byte-inert default) vs `landau_gated_drag` (§I.11.2 item 2, arm (c); build 2026-07-20): $\gamma=0$ for $v\le v_L$ (sub-Landau superfluid, frictionless) and the locked pure cubic $\gamma=g(\text{depth})\,b\,v^2$ for $v>v_L$, with $v_L=$ `v_limit_angstrom_per_ps` (0.4 Å/ps = 40 m/s, row-none legacy Landau cutoff) and $b$ from the production drag bundle | **arm, not knob** — parameter-free given $v_L$ + $b$ (both already fixed; $v_L$ re-pinning is a separate domain-expert calibration, shipped at the legacy 0.4 Å/ps); gate on **speed** (Landau critical velocity is mass-independent ⇒ preserves the mass-agnostic drag contract) | Tier 2 — the marginal droplet-retained class only (never the ejected read; $g\to0$ outside), required before any $N=500$ run | coulomb-only by config-load guard (`landau_gated_drag` refused under `free_flight` — no silent inert, T5/T7 convention); byte-inert default (same `_zero_gamma` object); drag $dE_\text{dissip}$ threads into `E_dissip` on top of the K2 drain ⇒ 5-term invariant closes; Heaviside strict $>$ (frictionless exactly at $v_L$) | §I.11.2 item 2 |
-| 30 | Ensemble | `droplet_size_prior` (+ `droplet_prior_mean_N` (He), `droplet_prior_delta`) | droplet-size prior of the neutral-stage seed: `legacy` (delivered boolean dispatch — fixed $N{=}2000$ or the ported pickup-cell MC; byte-inert default) vs the analytic D4 family `kornilov_lognormal` ($\ln N\sim\mathcal N(\ln\langle N\rangle-\delta^2/2,\ \delta)$) / `pickup_weighted_lognormal` ($\times N^{2/3}\equiv{+}\tfrac{2}{3}\delta^2$ ln-shift, deliberately un-re-centered — the realized-mean lift $\approx e^{2\delta^2/3}$ *is* the pickup bias), exact inverse-CDF on the twin's window $[250, 16000]$ (Slice T8, 2026-07-20) | **prior selection = arm**; $\delta$ family **Sourced** (Kornilov 2009: $\{0.40, 0.625, 0.80\}$), $\langle N\rangle=2000$ the D4 pin — swept at the re-pilot as the sensitivity family, never fit per-leg (T8-D4); **audit 2026-07-26: the pin is *inherited* from the 9 Å TDDFT droplet via the twin's Wave-10/11 family, never re-derived — the source-condition correlation (40 mbar / 14 K) gives $\langle N\rangle=12794$ (16.3k pickup-weighted), so legacy production ran at $\bar R\approx54$ Å vs the standing point's 26.6 Å; promoted to the first-class D2b variant (D0 §15.5)** | Tier 2 (T9 leg D — flip delta → kornilov $\delta{=}0.625$ vs the certified leg-C baseline, pre-registered vs the twin's `stage_legd`; carries the W9-P2 ≥ 9.6 % below-floor demand) | analytic arms refused under `use_single_droplet_size=True` and off-default family params refused under `legacy` (both-direction no-silent-inert guard); truncated mass closed-form (`analytic_prior_truncated_mass`: ≈ 0.14 % at $\delta{=}0.625$, ≈ 1.5 % at 0.80; > 5 % warns loudly); per-molecule radii flow through the delivered per-ion plumbing — no schema change; `stage_legd`'s `d_delta` oracle ≡ leg-C `c` rows bit-exact | — |
-| 28 | Ensemble | `internal_energy_partition_law` | how the S2 Coulomb onset $E_\text{int}(0)$ couples to the T5 initial-shell dressing $n_0$: `constant` (delivered onset $E_\text{int}(0)=f_\text{int}\,E_\text{avail}$; byte-inert default, $p=0$) vs `sigma_proportional` ($E_\text{int}(0)=f_\text{int}\,E_\text{avail}\,(\Sigma(n_{0})/\Sigma(n^*))^{1}$ — the H.2b D2 p-law in MD; Slice T6, 2026-07-18) | **arm, not knob** — the p-law is parameter-free ($p\in\{0,1\}$, no continuous freedom; $\Sigma$ = the same `ladder_cumsum` the §U floor / §K asymptote consume); the $p=1$ prior (§4j finding 1: $p=0$ over-suppresses) is **not** hard-wired — swept in the T9 A/B chain | Tier 2 (T9 leg C — flip $p=0\to1$ vs the certified leg-B baseline, scored on the solvated branch vs the 1D twin re-scored at $p=1$) | biphasic-only by config-load guard (`sigma_proportional` refused outside `mass_scenario='biphasic'` — no silent inert); structurally inert at $n_0=n^*$ (ratio 1 ⇒ a no-op without the T5 dressing axis); touches the $E_\text{int}(0)$ onset **only** (mass / $n_\text{shell}$ / E_pot fold are Slice T5's) | — |
+| # | Domain | Parameter (units) | Production (h405) | Role | Class | Primary anchor (Tier) | Cross-check | Flag |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Drag | $b=2.5154$ (amu·ps/Å²) | 2.5154 (`shared_pure_cubic` bundle) | cubic drag coefficient, $F=g\,b\,v^3$ | **Locked** — fitted to TDDFT (Tier-0 Method B, jointly with $a$ and $E_\text{bind}$), then fixed; authority 2.54–4.95 Å/ps only | Tier 0 (9A/18A trajectory-match) | held-out cross-case shared-form (Tier 1); `power_law` $n̂{=}2.93$ recovers cubic | 9 Å transverse flag **[D]** |
+| 2 | Drag | $a=0$ (amu/ps) | 0 (pure cubic below $v_c$) | linear drag coefficient (pure cubic) | **Locked** — fitted to TDDFT (Tier-0 Method B, jointly with $b$ and $E_\text{bind}$), then fixed | Tier 0 (Method B drove $a\to0$) | $\gamma_0=0$ accepted; noise null | §1.2 **[D]** |
+| 3 | Drag | $E_\text{bind}=0.1168$ (eV) | 0.1168 (bundle well `eb1168`) | effective ion binding, co-fit with drag | **Locked** — fitted to TDDFT (Tier-0 Method B, jointly with the drag pair $b$, $a$), then fixed; VMI **pending**; **identifiability flag** — its Tier-0 co-extraction spread moves $\bar n$ by 1.3× the gate band (see "Flagged identifiability item") | Tier 0 trajectory-match → Tier 2 VMI | TDDFT escape-energy sanity; integrated ladder $\sum_i D_0$ (§6.5.1) | OQ1 (electronic provenance) |
+| 4 | Drag | $v_c$ (Å/ps) | **5.5** (h405; the corrected-geometry basin 5.5–6.0 is confirmed in MD, G3/G4. The finc1v725 value 7.25 breaks at the corrected geometry) | high-$v$ drag cap — `capped_cubic` tail onset (in-band $v\le v_c$ is the **byte-identical** locked pure cubic; realizes the former contingent $v_\text{ceiling}$) | **Free (reclassified 2026-10-01): fitted to the Tier-2 observables at G4, v_c = 5.5**, inside the band below. History: **Bounded (2026-07-16, §I.10 Slice T1; was contingent R10-(b))** — band $5.3\lesssim v_c\lesssim15$ (H.4; the ≥5.3 floor protects 0.80 eV in-window byte-identity, measured max speed 5.23); Step-1c refined targets $p{=}{-}1$: 7.5 / $p{=}0$: 6.0–6.5 → **Derived** at the T4 winner | Tier 2 $(n,\langle E\rangle)$ mean-KE curve (I-D4 full-curve fit) | Slice-T1 oracles: $v_c{=}\infty$ / $v_c\ge v_\text{max}$ byte-identity vs `linear_cubic(a{=}0)`; delivered 0.80 eV bridge probe dir reproduced **byte-identically** at $v_c{=}5.3$ (both tails); Tier-0 lock untouched | R10, §I.10 |
+| 4b | Drag | $p_\text{tail}\in\{0,-1\}$ (dimensionless) | −1 (saturated constant-force tail) | `capped_cubic` tail exponent, $\gamma_\text{tail}=b\,v_c^2(v/v_c)^{p}$ ($p{=}0$ Stokes-like linear force, $p{=}{-}1$ saturated constant force) | **Free choice (2 arms, 1 selection; config-load-restricted 2026-07-16, §I.10 Slice T1)** — $p{=}1$ (Newton tail) **excluded** (Step-1c K-P2: zero joint closures); hard cutoff **excluded as physics** (I48) | Tier 2 $(n,\langle E\rangle)$ + solvated histogram (C1/C2 form discrimination) | discrimination read (I50): $p{=}{-}1$ wins $n_1/n_2$ ratio, sags $n\ge13$ KE tail; $p{=}0$ flattest KE curve of the program | §I.10, I50 |
+| 5 | Gate | $g(\text{depth})$ (dimensionless) | `density_proportional`, erf width 14.2 Å (`drag_gate_steepness`; the same surface is shared with rows 5a and 27; density-width scan NULL at production, D0 §9.6.5) | drag spatial gate, G4→G2 | **Derived** (erf-tied G2 until $\rho_\text{He}$ profile exists) | confining-potential steepness (14.2 Å) | Tier-1 trajectory; promote to G4 with measured $\rho_\text{He}$ | §5 **[D]** |
+| 5a | Gate | `cooling_spatial_gate` (arm) | **`density_scaled`** (not the default `none`) | K2 cooling spatial gate: `none` (locked, ungated $-E_\text{int}/\tau$) / `density_scaled` ($\tau_\text{eff}{=}\tau/\rho_\text{ratio}$, off outside bubble) | **Free choice** (2 arms, 1 selection; default `none` **byte-identical**; added 2026-07-06) | Tier 2 size dist (total-strip A/B capability probe) | reuses **row-5** drag gate surface (`drag_gate_steepness`, one bubble boundary); ejection-regime total-vaporization lever (shell-retaining ↔ near-bare); $\rho_\text{min}$ floor **deferred OQ**; probe-scoped, not yet a campaign knob | MASS §6 K2/§6.11 |
+| 6 | Noise | $T_\text{eff}$, FDT amplitude | **off** (`noise_form="none"`; Tier 3 not started) | multiplicative local-FDT bath kick (N2) | **Bounded/Derived** (tied to $\gamma(v)$; $\propto\sqrt{\gamma g k_BT_\text{eff}}$) | Tier 3 (ensemble width / VMI) | strict-FDT shown dynamically null (§1.3a) | §1 **[D]** |
+| 7 | Pickup | $\lambda_\text{attach}(\rho_\text{He},n)$ (ps⁻¹) | $\lambda_0=0.9$ ps⁻¹ (live through all of the 500 ps Stage I) | Poisson He capture rate (density-gated, occupancy-capped) | **Sourced + Bounded** — central ~0.7–1.1/ps (GAH25 Rb⁺/Cs⁺; I⁺ is Rb⁺-like), **not** 2.0 (Na⁺ exp); ±factor-2; ×Langmuir cap $(1-n/n^*)_+^{\,p}$ (A12, 2026-06-21) | Tier 2 size dist | Tier-1 shell trajectory; 9/18 Å density contrast; cap inert for ejection | R1 (Na⁺→I⁺), R7 ($v$-dep), A12 |
+| 7p | Pickup | $p\ge0$ | 1 (`pickup_occupancy_cap="langmuir"`) | occupancy-cap sharpness (Langmuir exponent, A12) | **Free (conditional)** — Phase-B default **$p=1$ fixed** (NB 2026-07-01: the $p\!\leftrightarrow\!\kappa$ tie is **inverse** — rigid shell = large $\kappa$ = smaller $p$; **NOT** $p=\kappa$; match cutoff slopes if tied); split only if size dist. demands | Tier 2 size dist | [Nat23] resting-ion saturation bounds $n^*,p$; $p\!\leftrightarrow\!\kappa$ coupling (inverse); Phase-B §3.2 | A12, OQ4/OQ8 |
+| 8 | Pickup | $\rho_\text{He}(\text{depth})$ (Å⁻³) | analytic erf-complement $\hat\rho$ (`rho_he_ratio`), width 14.2 Å. This reuses the solvation-*potential* width for the density (D0 §17, RQ12) | density profile gating capture | **Sourced** (baseline/TDDFT density) | baseline | Tier 1 | — |
+| 9 | Evap | $\nu$ (ps⁻¹) | 2.42 (`evap_rate_prefactor_per_ps`) | RRK prefactor (I⁺–He stretch freq) | **Sourced (pinned 2.42, 2026-06-17)** — $\omega_e{=}80.6$ cm⁻¹ from IHe05 EPAPS $V''(R_e){=}748.1$ cm⁻¹/Å² | Tier 2 size dist | I2-notes cascade timing (OQ5); near-threshold spacing → effective $s$ | OQ5, A11 |
+| 10 | Evap | $s_\text{eff}$ (dimensionless) | 8 (constant) | RRK effective vibrational DOF | **Bounded (promoted 2026-07-06; was Derived)** — constant $s_\text{eff}$, band **≈[5, 20]** (staircase landing [8, 12] at mid-band τ; picture-robust ≤4 %); classical mode-count $s{=}3n{-}3$ (corr. 2026-06-21 from $3n-6$) demoted to the classical-limit arm of the dof-convention selection; $n{=}1$ direct dissociation $k=\nu$ and the $s\ge1$ guard unchanged | 9 Å anchored staircase (magnitude; s↔τ separated by first-shed timing; TDDFT prior) + Tier 2 size dist | classical band $[3n{-}3,3n]$ superseded (landing far below: quantum mode-freezing / blurred shell — the A11 down-drift); κ-joint resolved **weak** (κ near-flat on the staircase); small-$n$ tail still the size-dist regime | A11 (resolution NB 2026-07-06) |
+| 11 | Cooling | $\tau_\text{dissip}$ (ps) | **4.4** (h405; inside the sweep band, ×0.67 of the GAH25 6.55 pin; corrected-geometry W₁ ordering τ 4.4 < 4.8 < 5.2, D0 §3) | Newton-cooling time of $E_\text{solv.struct}$ | **Free (reclassified 2026-10-01; this closes the RQ9-pending item): fitted to the Tier-2 observables at G4, τ = 4.4 ps**, inside the Bounded GAH25 sweep band. History: **Bounded** (sweep $[2.6,16.5]$, externally anchored); **RQ9 reclassification pending (2026-07-16)** — the §I.8/§I.9 joint $(v_c,\tau)$ closure sits at $\tau\approx3.0$–$4.8$ ps (×0.58–0.61 of the GAH25 pin); the §I.10 pilot runs at $\tau$ 3.8–4.4; reclassify per RQ9 at the Step-2 verdict | external (GAH25 Table III / exp) + Tier 2 if sensitive | $t_\times$ vs GAH25 $t_0$; terminal-$n$ insensitivity sweep | R8 (Na⁺-only), RQ9 |
+| 12 | Cooling | $E_\infty(N)=-\|S(N)\|$ (eV) | $\|S\|=0.308$ (`solv_struct_asymptote_eV`) | K2 asymptote, **occupancy-resolved** | **Sourced (split, 2026-06-17)** — full-shell $\|S_{\mathrm{I^+}}\|{=}0.308$ eV [I2-notes]; GAH25 −3424/−4144 K Na⁺ fixes form+$\tau$ | equilibrium-shell binding | OQ6 resolved (fixed $E_\infty$ caps strip); shape via $\kappa$ | OQ6, OQ7 |
+| 12b | Cooling | $E_\text{elec}(N)$ (eV) | derived from row 12 and the production ladder | electrostriction binding (collective excess) | **Sourced/Derived** ($-(\|S(N)\|-\sum_i D_0)$; **dominant** per GAH25 geometry) | — | marginal release → bath on shed (A8); $\partial\|S\|/\partial n{\approx}118$ cm⁻¹ ($n^*{=}21$, corr. 2026-06-21; was 124 off $n^*{=}20$) ≈ $D_0(1)$ | K2, A8, OQ7, OQ8 |
+| 13 | Budget | $f_\text{ret}\in[0,1]$ (dimensionless) | 0.1 (never swept; D0 GAP) | S1 pickup binding-release retained fraction | **Bounded** (prior small) | Tier 2 size dist | 9/18 Å density contrast (feedback gain → density-dependence of terminal $n$) | — |
+| 14 | Early | $f_\text{int}\in[0,1]$ (dimensionless) | 0.15 (= 0.405 / 2.70) | S2 onset **sweep coordinate**, $f_\text{int}=E_\text{int}(0)/E_\text{avail}^\text{ion}$ | **Derived coordinate (2026-07-09, RQ1 adjudication; was Bounded)** — the physical variable is the absolute row-16 $E_\text{int}(0)$; scenario keying dissolved (floor identity: $0.235{\cdot}0.80\approx0.065{\cdot}2.70\approx\Sigma(21)$); budget transfer holds $E_\text{int}(0)$ fixed ⇒ $f$ rescales ×0.80/2.70 | Tier 2 size dist (via row 16) | historical scenario-keyed floors (2026-06-21, superseded as primary read): 0.065 (mix)/0.09–0.10 ($X_2$) @ 2.70 eV; 0.21–0.24/0.31–0.35 @ 0.80 eV; GAH25 $t_0$ via $t_\times$ (A7) | R1 regime axis, OQ2→RQ1 (adjudicated) |
+| 15 | Early | $E_\text{avail}^\text{ion}$ (eV) | 2.70 (`coulomb_available_eV`; $R_0=2.666$ Å, `E_coulomb_scale` 1.0). The Hatherly 1994 0.8·E_C calibration would give 2.16 / 4.32 eV per channel, so production is ≈ 25 % high; a naive re-anchor breaks the basin (D0 §19) | per-ion Coulomb onset budget | **Sourced/fixed, scenario-keyed (2026-06-21)** — **0.80 eV** validation (½·14.40/9, $d{=}9$ Å) / **2.70 eV** production (½·14.40/2.666, $R_e$) | fixed reference ($t^*$-window) | stamped to scenario guard (§6.5); reversible to pair (1.60/5.40) | OQ-none |
+| 16 | Early | $E_\text{int}(0)$ (eV) | **0.405** (h405; inside the RQ1 band). Every ion starts at exactly 0.405 because row 28 is inert at production | initial internal energy (S2 onset, **absolute** — the physical variable) | **Free (reclassified 2026-10-01): fitted to the Tier-2 observables at G4, E_int(0) = 0.405 eV**, inside the Bounded RQ1 band below. History: **Bounded (2026-07-09, RQ1 adjudication; was Derived)** — sourced band **0.2–0.5 eV** (floor ≈0.22 eV solvation, Na⁺ benchmark; admissible tail ~0.8–1.0 eV full-³P deposit, discounted); **budget-independent**; deposited at $t_0$, nothing subtracted from fragment mechanics (dominant channels electronic + solvation are non-mechanical) | Tier 2 size dist | VMI discriminator: fine-structure satellites (~0.8 eV down-shift), **not** a smooth deficit; provenance in the RQ1 NB register | RQ1 (closed at convention level) |
+| 17 | Early | $t_\times$ (ps) | diagnostic (not set) | self-bound crossing (gate-open time) | **Derived diagnostic** | — | GAH25 $t_0$ = 5.0/6.53 ps (±factor-2, Na⁺) | §6.11 |
+| 17b | Early | $\Pi(t)=\lambda(n)f_\text{ret}\tau$ (dimensionless) | diagnostic (not set) | pickup↔gate order parameter (NEW 2026-06-21) | **Derived diagnostic** (§6.11) | — | $\Pi{>}1$ shed / $\Pi{<}1$ freeze; regime-axis spine; $\Pi\to0$ at exit ⇒ termination guaranteed; reconstructable post-hoc | §6.11, R1 |
+| 18 | Ladder | $D_0^{\mathrm{I^+}}(1)$: $X_2$ 106.9 / mix 74.4 cm⁻¹ | **163.7 cm⁻¹ (20.29 meV)**: the mixture 74.4 × 2.2 (`rq4graded` taper, rungs 1–3 × 2.2 / 1.5 / 1.3 per RQ4). The production rung is **not** the bare sourced value | first dissociation rung (picture-dependent) | **Sourced base × RQ4 taper (reclassified 2026-10-01)**. The base rung is Sourced: mixture 74.4 cm⁻¹ from IHe05. Production multiplies rungs 1–3 by 2.2 / 1.5 / 1.3, which gives D₀(1) = 163.7 cm⁻¹. The ratios are the RQ4 literature target, and the graded family was selected over floor1 on the size distribution (D0 §8, I86), so the production rung is **not purely Sourced**. History: **Sourced (pinned 2026-06-17)** — IHe05 EPAPS fit, exact $J{=}0$ ZPE $G(0){=}37$ cm⁻¹ ($D_e{=}143.9$ is **not** $D_0$); $\pm3$ cm⁻¹ | external ab initio | mobility/ZEKE-validated curve; mixture/$X_2$=0.70 | OQ1 (which curve) |
+| 19 | Ladder | $\kappa$ (Form U) / `ladder_steepness` | **not a runtime knob**: `dissociation_ladder="tabulated"` overrides it. κ = 1 enters only when the generator builds the rq4graded table (`LADDER_KAPPA_PIN`) | sigmoid steepness, gradual↔cliff (1 knob) | **Inactive (reclassified 2026-10-01)** — baked into the rq4graded table at κ = 1. History: **Free** (prior large: 7.5× radial cliff) | Tier 2 size dist (broad vs magic-peak) | $n^*{=}21$ [I2-notes]; joint w/ picture + $s$; tabulated fallback; **staircase probe 2026-07-06: inverted + normalisation-capped for 21→14** (cliff centre $n^*{+}\tfrac12$ above the stripping range; Form U floors $D_0(21)$ ≈ 0.53·$D_0(1)$) — near-flat on the staircase, size dist remains its arbiter | R3, A5, OQ4 |
+| 20 | Ladder | `ladder_electronic_picture` | **not a runtime knob**: baked into the rq4graded table at `statistical_mixture` (`LADDER_PICTURE_PIN`) | statistical-mixture (default) / $X_2$-only / cooling_relaxed | **Inactive (reclassified 2026-10-01)** — baked into the rq4graded table at `statistical_mixture`. History: **Free choice** (3 options, 1 selection; `cooling_relaxed` added 2026-06-21, between mix & $X_2$) | Tier 2 size dist | rung scale: mix 74.4 / $X_2$ 106.9 cm⁻¹ (=0.70), `cooling_relaxed` in between; $\sum_i D_0$ vs $E_\text{bind}{=}0.1168$; $S_{\mathrm{I^+}}$; **cross-check 2026-07-06: near-degenerate in shed magnitude** ($x=D_0/\Sigma$ picture-invariant, ≤4 % under reduced $s_\text{eff}$); timing-only sensitivity via $\Sigma(21)\to t_\times$, degenerate there with $f_\text{int}$ | A10, OQ1 |
+| 21 | Ladder | $\sum_i D_0^{\mathrm{I^+}}(i)$ (eV) | Σ(21) = **0.206** (the rq4graded table; above the Form-U mix band 0.17–0.19 because of the rung 1–3 taper) | integrated ladder = self-bound gate threshold | **Derived** — $X_2$ **0.25–0.28** / mix 0.17–0.19 eV (Form U pure-$\kappa$ range, corr. 2026-06-21; ~11%, **nearly $\kappa$-indep**, cliff at $n^*{+}\tfrac12$) | — | drag binding 0.1168 eV + crowding-reduced value are **separate cross-checks, not band ends**; $\|S\|{=}0.308$ collective UB | A10, OQ7 |
+| 22 | Ladder | $n^*=21$ | 21 (every ion starts at $n_0=21$ in production) | first-shell equilibrium occupancy | **Sourced** ([I2-notes] $X_2$-only; **adopt 21 for all per-atom energetics**, 2026-06-21) | external | GAH25 $R_e$-scaling → ~20 (corroborates to ±1–2); Tier-1 endpoint 14 **author-confirmed I⁺-specific** (2026-06-21); OQ8 raised LOW→LOW–MEDIUM (had leaked into energetics) | OQ4, OQ8 |
+| 23 | Ladder | $D_\text{floor}$ (cm⁻¹) | 4.97 (the table tail, rung 32) | outer-shell rung floor (Form U) | **Sourced** ($\|\mu_\text{He}^\text{bulk}\|\approx4.97$ cm⁻¹, 7.15 K) | external (bulk superfluid) | picture-independent; sets sigmoid lower anchor | R3 |
+| 24 | Detection | $t_\text{detect}=8.53$ µs ($8.53{\cdot}10^6$ ps) | 8.53 µs (`detection_time_ps` 8.53·10⁶) | terminal-read detection time (TOF flight to detector) — where the Tier-2 size distribution is read (`detection_time_ps`) | **Sourced (2026-07-07)** — experimental-setup publication, user-confirmed | Tier 2 size dist (the *detected* read is the arbitration observable) | log-sensitivity band = free report-side re-read of stored shed events (detection-stage design §3.3); gated reads at $s_\text{eff}\gtrsim12$ are undefined without it (I11) | — |
+| 25 | Ensemble | `birth_position_law` + `initial_position_margin_angstrom` (Å) | **`boltzmann`** at 0.4 K with a well of **313.2 K** (the DFT fit 26.99 meV, set as a per-run override; the config default stays 573.3 K). Margin **0, inactive**: a non-zero margin is guard-refused under `boltzmann`. Mean birth depth ≈ 34.9 Å (s1). The `uniform_volume` + 3 Å pin is finc1v725-era and retired with G2 | molecule-centre birth law: `boltzmann` (delivered thermal sampler, default) vs `uniform_volume` ($p(r)\propto r^2$ on $[0, R-m]$, hard margin — the 1D twin's L1 law; Slice T7, 2026-07-16) | law = **arm** (production `boltzmann`); margin **Inactive (reclassified 2026-10-01)** — guard-refused under `boltzmann`, so production runs 0. History: law = **arm, not knob** (twin-parity/capability lever, not a physical claim — §I.11.0 NB; the physical default stays `boltzmann`, which is **center-pinned** at 0.4 K: median 1.37 Å, V0-1 — **audit 2026-07-26: that center-pin is an $R$-dependent artifact, the erf width 14.33 Å being absolute, so the allowed shell is $r\lesssim R-35$ Å at any $R$: an interior shell (med $r/R$ 0.29) at legacy production's $\bar R\approx53$ Å, a hard center-pin at $R\approx28$ Å; D0 §15.4**) — **parent-document anchor (2026-07-26): the same law is the parent model (thermal velocity + droplet solvation potential at 0.4 K, its Fig. 6.9), whose quoted mean solvation depths 29 Å @ $R{=}34$ / 40 Å @ $R{=}68.3$ our sampler reproduces to 0.34 / 0.43 Å at the DFT-fit well $\beta_2=26.99$ meV (1.35 / 1.80 Å at the as-built 573.3 K). Port-fidelity reproduction, NOT independent validation — same ansatz, HeDFT entering only as the potential shape; depths stay Derived. Open item: the 573.3 K vs 26.99 meV substitution is a ~1.3 Å systematic. Production's `uniform_volume` m = 3 gives mean depth 9.0 Å at $\bar R$ 26.6 Å where the parent law gives 25.0 Å — unreachable by any margin ($m$ would need 24.4 Å > R)**; margin = **Bounded** — firm band {3, 4.67, 6} Å (H.2b D5) | Tier 2 (T9 oracle-chain legs A′–D; per-cell margin from the Step-1c closure) | margin read only under `uniform_volume` (guard-refused otherwise); margin ≥ R fails at sampling; default byte-identical to the pre-T7 sampler (exact-draw regression) | — |
+| 26 | Channel | `evaporation_shed_convention` | **`co_moving`** (not the default `cold`) | shed velocity/momentum convention of the generative evaporation channel: `cold` (delivered momentum-conserving reset — He at lab rest, $v\to\frac{m}{m-m_\text{He}}v$, negative reduced-mass ledger; byte-inert default) vs `co_moving` (He leaves co-moving, $v$ unchanged, positive $+\tfrac12 m_\text{He}\|v\|^2$ ledger — Tier-1a's continuous-velocity path; OQ-J build 2026-07-17) | **arm, not knob** — convention pair, no continuous freedom; **working convention adjudicated `co_moving`** for the twin-parity legs (T5+; user 2026-07-17, findings §4n/I59: cold injects +0.9 eV / ×1.61 on $n_1$ KE at production kinematics; co-moving counterfactual matches the 1D twin to ≤2 %); `cold` retained as the diagnostic bound arm | Tier 2 $(n,\text{KE})$ curve (histograms are convention-blind — the jump chain reads neither $v$ nor $m$) | RQ10 brackets: cold = maximal backward kick, co-moving = $\varepsilon\to0$; the physical resolution (co-moving + thermal recoil) couples to RQ2's $\varepsilon$; every KE claim states its convention basis (leg-B pre-registration amendment) | OQ-J→RQ10 |
+| 27 | Ensemble | `initial_shell_model` | `density_tied`, **structurally inert**: $\hat\rho$ saturates at the production birth depths, so $n_0=21$ for every ion (s1: 2000/2000) | t = 0 shell-dressing law of the biphasic seed: `full` (delivered 21-for-all; byte-inert default) vs `density_tied` ($n_{0,i}=\operatorname{round}(n^*\cdot\hat\rho(d_{\text{birth},i}))$ through the shared erf-complement surface at `drag_gate_steepness(cfg)` — the H.2b L2 lever in MD; Slice T5, 2026-07-18) | **arm, not knob** — the tied law is parameter-free (zero new free parameters; the shell-averaged-$\hat\rho$ variant is a stated sensitivity, never a fit); a first-order occupancy statement, no shell-restructuring dynamics | Tier 2 (T9 leg B — the dressed A/B vs the 1D twin re-scored at the dressed configuration) | biphasic-only by config-load guard (`density_tied` refused outside `mass_scenario='biphasic'` — no silent inert); center-pinned births + `density_tied` ⇒ $n_0=21$ exactly (inert without the T7 position axis); dressing↔pickup re-filling is a reported twin-divergence candidate (the twin has no live Langmuir channel); E_int(0) onset NOT coupled (that is T6's p-law) | — |
+| 29 | Channel | `relaxation_dissipation` | `landau_gated_drag` is set but **unread**: E2 is skipped since 2026-09-30 (`relaxation_stage_enabled=False`). $v_L$ = 58 m/s = 0.58 Å/ps (the sourced bulk value, not the 0.4 legacy value), now read only by the hard-sphere collision cutoff `E_min_eV`. Stage-I drag has no Landau gate | E2 post-ejection dissipation arm: `zero_gamma` (delivered conservative BAOAB closure — decay 1, $dE_\text{dissip}=0$; byte-inert default) vs `landau_gated_drag` (§I.11.2 item 2, arm (c); build 2026-07-20): $\gamma=0$ for $v\le v_L$ (sub-Landau superfluid, frictionless) and the locked pure cubic $\gamma=g(\text{depth})\,b\,v^2$ for $v>v_L$, with $v_L=$ `v_limit_angstrom_per_ps` (0.4 Å/ps = 40 m/s, row-none legacy Landau cutoff) and $b$ from the production drag bundle | **arm, not knob** — parameter-free given $v_L$ + $b$ (both already fixed; $v_L$ re-pinning is a separate domain-expert calibration, shipped at the legacy 0.4 Å/ps); gate on **speed** (Landau critical velocity is mass-independent ⇒ preserves the mass-agnostic drag contract) | Tier 2 — the marginal droplet-retained class only (never the ejected read; $g\to0$ outside), required before any $N=500$ run | coulomb-only by config-load guard (`landau_gated_drag` refused under `free_flight` — no silent inert, T5/T7 convention); byte-inert default (same `_zero_gamma` object); drag $dE_\text{dissip}$ threads into `E_dissip` on top of the K2 drain ⇒ 5-term invariant closes; Heaviside strict $>$ (frictionless exactly at $v_L$) | §I.11.2 item 2 |
+| 30 | Ensemble | `droplet_size_prior` (+ `droplet_prior_mean_N` (He), `droplet_prior_delta`) | **`legacy`** + `droplet_size_sampler_mode="raw"`: nozzle correlation at the preset's 40 bar / 14 K → ⟨N⟩ ≈ 12.8k, δ 0.625, R̄ ≈ 49.9 Å (s1). The ⟨N⟩ = 2000 analytic pin is finc1v725-era and retired with G2; `droplet_prior_mean_N` is unread under `legacy` | droplet-size prior of the neutral-stage seed: `legacy` (delivered boolean dispatch — fixed $N{=}2000$ or the ported pickup-cell MC; byte-inert default) vs the analytic D4 family `kornilov_lognormal` ($\ln N\sim\mathcal N(\ln\langle N\rangle-\delta^2/2,\ \delta)$) / `pickup_weighted_lognormal` ($\times N^{2/3}\equiv{+}\tfrac{2}{3}\delta^2$ ln-shift, deliberately un-re-centered — the realized-mean lift $\approx e^{2\delta^2/3}$ *is* the pickup bias), exact inverse-CDF on the twin's window $[250, 16000]$ (Slice T8, 2026-07-20) | **prior selection = arm**; $\delta$ family **Sourced** (Kornilov 2009: $\{0.40, 0.625, 0.80\}$), $\langle N\rangle=2000$ the D4 pin — swept at the re-pilot as the sensitivity family, never fit per-leg (T8-D4); **audit 2026-07-26: the pin is *inherited* from the 9 Å TDDFT droplet via the twin's Wave-10/11 family, never re-derived — the source-condition correlation (40 bar / 14 K) gives $\langle N\rangle=12794$ (16.3k pickup-weighted), so legacy production ran at $\bar R\approx54$ Å vs the standing point's 26.6 Å; promoted to the first-class D2b variant (D0 §15.5)** | Tier 2 (T9 leg D — flip delta → kornilov $\delta{=}0.625$ vs the certified leg-C baseline, pre-registered vs the twin's `stage_legd`; carries the W9-P2 ≥ 9.6 % below-floor demand) | analytic arms refused under `use_single_droplet_size=True` and off-default family params refused under `legacy` (both-direction no-silent-inert guard); truncated mass closed-form (`analytic_prior_truncated_mass`: ≈ 0.14 % at $\delta{=}0.625$, ≈ 1.5 % at 0.80; > 5 % warns loudly); per-molecule radii flow through the delivered per-ion plumbing — no schema change; `stage_legd`'s `d_delta` oracle ≡ leg-C `c` rows bit-exact | — |
+| 28 | Ensemble | `internal_energy_partition_law` | `sigma_proportional`, **structurally inert**: the ratio Σ(n₀)/Σ(n*) is 1 because $n_0=21$, so $E_\text{int}(0)=0.405$ eV for every ion | how the S2 Coulomb onset $E_\text{int}(0)$ couples to the T5 initial-shell dressing $n_0$: `constant` (delivered onset $E_\text{int}(0)=f_\text{int}\,E_\text{avail}$; byte-inert default, $p=0$) vs `sigma_proportional` ($E_\text{int}(0)=f_\text{int}\,E_\text{avail}\,(\Sigma(n_{0})/\Sigma(n^*))^{1}$ — the H.2b D2 p-law in MD; Slice T6, 2026-07-18) | **arm, not knob** — the p-law is parameter-free ($p\in\{0,1\}$, no continuous freedom; $\Sigma$ = the same `ladder_cumsum` the §U floor / §K asymptote consume); the $p=1$ prior (§4j finding 1: $p=0$ over-suppresses) is **not** hard-wired — swept in the T9 A/B chain | Tier 2 (T9 leg C — flip $p=0\to1$ vs the certified leg-B baseline, scored on the solvated branch vs the 1D twin re-scored at $p=1$) | biphasic-only by config-load guard (`sigma_proportional` refused outside `mass_scenario='biphasic'` — no silent inert); structurally inert at $n_0=n^*$ (ratio 1 ⇒ a no-op without the T5 dressing axis); touches the $E_\text{int}(0)$ onset **only** (mass / $n_\text{shell}$ / E_pot fold are Slice T5's) | — |
 
 ### Cross-cutting (not single parameters)
 
@@ -311,29 +117,67 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 | Total-stripping (Calvo24) limit | reachable far end of regime axis | secondary/sensitivity-run evaluation, not default | Tier 2 size dist (terminal $n\to$ small) | OQ6 ($E_\infty$ reach) |
 | Terminal regime ($f_\text{int},\tau$, ladder depth) | reported output, not a knob | regime determination (shell-retaining ↔ total strip) | Tier 2 size dist | R1, §6.11 |
 | Integrator↔mass-jump operator split | accuracy + conservation, not a parameter | **SQ1** drag-on path $O(dt)$ (frozen $\gamma$, exact bookkeeping + dissipativity); **SQ2** momentum reset = invariant precondition (unbuilt); **SQ3** post-jump $m^+$ in O-step (unbuilt) | implementation precondition; $dt$-convergence (over-brake bias sign) | A13 |
+| Detector-stage pipeline (handover $t_h$ + Coulomb closure) | staging convention + exact closure maths, not a fitted parameter | **adopted 2026-09-30**: Stage I runs full physics to $t_h=500$ ps, E2 is skipped (`relaxation_stage_enabled=False`), then `detection_coulomb_closure="partner_aware"` (exact two-body / fixed-centre asymptote), then the exact jump chain to $t_\text{detect}$. $t_h$ has no measurable effect (500 vs 502.84 ps: observables equal to ≤ 4·10⁻⁶) | reproduces the E2-era battery member by member within resampling noise (`TIER2_DetectorStageFix.md` §5.6–5.7) | limitations: point charges, fixed droplet, no mass change after $t_h$ |
+| Retained-ion policy | scoring convention | production `exclude_all_coupled`; the marginal class is 0.0014 at h405, so the policy question is empirically empty | pooled N = 6000 reference: trap 0.0795 (bound 0.0781 / marginal 0.0014) | D0 §14.2 |
+| CE channel mixture + exit strip | candidate replacement for row 15's scalar budget | **off** in production (`ce_channel_mode="off"`, `exit_strip_mode="off"`); **SHELVED** 2026-07-30 after all three kills fired | D0 §20 | re-openable only on new external evidence |
 
 ---
 
 ## Tally — how few true knobs remain
 
+**Production tally (reclassified 2026-10-01, h405).** This supersedes the
+historical tally below, which is kept as the record of the pre-G4 state.
+
+- **Locked (3) — fitted to TDDFT (Tier-0 Method B, jointly), then
+  fixed:** $b$ 2.5154, $a$ 0, $E_\text{bind}$ 0.1168 eV. Authority covers
+  2.54–4.95 Å/ps only.
+- **Sourced (8 + 1 composite):** $\lambda_\text{attach}$ (λ₀ 0.9),
+  $\rho_\text{He}$, $\nu$ 2.42, $E_\infty$ (|S| 0.308),
+  $E_\text{avail}^\text{ion}$ 2.70, $n^*$ 21, $D_\text{floor}$ 4.97 cm⁻¹,
+  $t_\text{detect}$ 8.53 µs. **Composite:** $D_0(1)$ = Sourced base
+  74.4 cm⁻¹ × the RQ4 taper 2.2, giving 163.7 cm⁻¹ (row 18).
+- **Derived (5):** $g(\text{depth})$, $f_\text{int}$ 0.15, $t_\times$,
+  $\sum_i D_0$ (Σ(21) 0.206 eV), $\Pi$.
+- **Bounded, pinned inside the band (3):** $s_\text{eff}$ 8, $f_\text{ret}$
+  0.1 (never swept), the occupancy exponent $p$ 1. Noise $T_\text{eff}$ is
+  off in production (Tier 3).
+- **Free — fitted to the Tier-2 observables at G4 (4 + 1 selection):**
+  $v_c$ 5.5 Å/ps, $\tau$ 4.4 ps (inside GAH25 [2.6, 16.5]),
+  $E_\text{int}(0)$ 0.405 eV (inside RQ1 [0.2, 0.5]), plus the
+  rq4graded ladder-family selection (row 18 composite). Free selection:
+  $p_\text{tail}=-1$.
+- **Inactive (3):** κ (baked in at 1), the electronic picture (baked in at
+  `statistical_mixture`), the birth margin (0, guard-refused under
+  `boltzmann`).
+- **Arms (selections, not fitted):** rows 5a, 26–30 and the cross-cutting
+  pipeline / retained-policy rows. T5/T6 (rows 27/28) are structurally
+  inert at production.
+
+**Historical tally (pre-G4; kept as record):**
+
 - **Locked (3):** $b$, $a$, $E_\text{bind}$ (Tier-0 complete).
 - **Sourced (9):** $\lambda_\text{attach}$, $\rho_\text{He}$, $\nu$, $E_\infty$,
   $E_\text{avail}^\text{ion}$, $D_0(1)$, $n^*$, $D_\text{floor}$,
   $t_\text{detect}$ (8.53 µs, added 2026-07-07).
-- **Derived (5):** $g(\text{depth})$, $E_\text{int}(0)$, $t_\times$,
+- **Derived (5):** $g(\text{depth})$, $f_\text{int}$ (Derived coordinate
+  since 2026-07-09; it swapped roles with $E_\text{int}(0)$ per rows
+  14/16), $t_\times$,
   $\sum_i D_0$, $\Pi$ (pickup↔gate order parameter, §6.11). *(Was 6 — $s$
   promoted to Bounded 2026-07-06.)*
 - **Bounded (6–7):** $\tau_\text{dissip}$ (RQ9 reclassification pending,
-  2026-07-16), $f_\text{ret}$, $f_\text{int}$,
+  2026-07-16; production 4.4 ps), $f_\text{ret}$, $E_\text{int}(0)$
+  (production 0.405 eV),
   $s_\text{eff}$ (promoted 2026-07-06, band ≈[5, 20], staircase landing
   [8, 12]), $v_c$ (the realized `capped_cubic` cap, 2026-07-16; was the
   contingent $v_\text{ceiling}$ — Derived at the §I.10 T4 winner; **the
   re-pilot + v_c sensitivity ring (§4w/I81, 2026-07-21) locate the c1
   joint-landing basin at $v_c\approx7.25$–$7.5$** at τ3.2/E₀0.27 — the
   N=500 finalist center, read on $W_1$/midHot since the N=50 χ² is
-  thin-bin-noisy),
+  thin-bin-noisy; **superseded at the corrected geometry: the basin is
+  5.5–6.0, and production runs $v_c=5.5$ at h405**),
   the birth margin $m\in\{3, 4.67, 6\}$ Å (row 25, Slice T7 2026-07-16;
-  active only under the `uniform_volume` twin-parity arm),
+  active only under the `uniform_volume` twin-parity arm — **inactive in
+  production**, which uses `boltzmann` with margin 0),
   ($T_\text{eff}$/noise). *Plus one new Free choice:* the tail exponent
   $p_\text{tail}\in\{0,-1\}$ (row 4b, discrimination via the §I.10 pilot;
   **pinned $p_\text{tail}=-1$ for the c1 finalist** — the E-2 twin scan
@@ -351,7 +195,7 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
   3rd free knob only if the size-distribution first-shell cutoff forces the
   $p\!\leftrightarrow\!\kappa$ split.
 
-**Headline:** after sourcing/derivation/bounding, the genuinely free
+**Headline (historical, pre-G4):** after sourcing/derivation/bounding, the genuinely free
 calibration collapses to **the ladder shape and the electronic picture**, both
 discriminated by one observable (the Tier-2 size distribution), with the
 early-window scalars bounded and cross-checked rather than fit. Everything else
@@ -360,6 +204,16 @@ dominant cascade-magnitude lever is now the Bounded $s_\text{eff}$, co-anchored
 with τ by the 9 Å staircase via first-shed timing — the size distribution
 arbitrates the remaining shape/picture questions plus the $s_\text{eff}$
 small-$n$ tail.)*
+
+**Production headline (2026-10-01, h405; supersedes the historical
+headline above).** The historical headline's two Free knobs (κ, picture)
+are **Inactive** in production. The production ladder is the tabulated
+`rq4graded` table (Form-U at mixture / κ = 1, rungs 1–3 × 2.2 / 1.5 /
+1.3), so the ladder shape comes from the RQ4 taper. The genuinely fitted
+set is $v_c$, τ and $E_\text{int}(0)$ (plus the selections $p_\text{tail}$
+and the ladder family), all arbitrated at G4 against the Tier-2 detected
+size distribution and KE observables. This is the same set D0 §17 marks as
+effective (**E**). Per-knob influence: `TIER2_PARAMETER_INFLUENCE.md` §0.
 
 ## Anchor coverage by tier
 
@@ -383,7 +237,7 @@ Measured by the atlas §6.5 E_bind study (twin Step 2 + MD Step 3; D0
 §9.2/§9.3). $E_\text{bind}$ is **row 3** above — classed **Locked**
 (Tier-0, co-fit with the drag pair); D0 §17 carries the same quantity as
 *Derived / P (paired)* with the note "pairing is the constraint, not the
-value". Both framings are now too weak on one axis:
+value" (D0 now reads **Locked**, harmonized 2026-10-01). Both framings are now too weak on one axis:
 
 - The measured lever is $\partial\bar n/\partial E_\text{bind} \approx
   \mathbf{-7.3\ \text{eV}^{-1}}$, agreeing across **three independent
@@ -408,7 +262,7 @@ closed — the whole well span buys $\le 0.064$ eV, §9.2). Any $\bar n$-gated
 arbitration — the G4 successor point above all — is therefore
 conditional on *which* Tier-0 well its drag partner was co-extracted
 with, not merely on the pairing being self-consistent. This does **not**
-license moving $E_\text{bind}$ (it stays Derived and joint-paired, and
+license moving $E_\text{bind}$ (it stays Locked — fitted to TDDFT jointly, then fixed — and joint-paired, and
 §9.1 bounds the physically defensible variation at $\le 0.009$ eV); it
 means an $\bar n$ verdict inside $\pm 0.4$ of a band edge should be read
 as *not resolved by this observable* until the pairing is stated.

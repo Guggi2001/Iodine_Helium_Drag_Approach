@@ -582,7 +582,7 @@ condition log-normal at ⟨N⟩ = 12794 (§15.5), which also settles that the pa
 ensemble is the raw distribution rather than the pickup-weighted one.
 
 Crucially, **correcting this introduces no new fitted number.** The nozzle
-correlation supplies ⟨N⟩ = 12794 from the preset's own 40 mbar / 14 K. The mean
+correlation supplies ⟨N⟩ = 12794 from the preset's own 40 bar / 14 K. The mean
 was never a knob; it had simply been overridden by an inherited pin.
 
 ### Why E₀ tracks the geometry — a coherence check

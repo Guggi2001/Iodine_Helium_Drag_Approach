@@ -25,8 +25,14 @@ Physics references
 * Yang et al., 10.1007/978-3-030-94896-2_1  -- He-droplet chemical potential
 
 Default source parameters reproduce the legacy `generate_droplet_sizes_simpler`
-(p=40 mbar, T=23 K, d=5 um). For other operating conditions, override via
+(p=40 bar, T=23 K, d=5 um). For other operating conditions, override via
 ``cfg.p_source_mbar`` / ``cfg.T_source_K`` or pass values to the function.
+
+Pressure unit: the source pressure is in **bar** despite the ``_mbar`` field
+and argument names. Legacy MATLAB passes a unitless ``p_source = 40`` into
+the correlation, which is calibrated for bar. The names are kept because
+renaming the config field changes ``cfg.json``. (The pickup-cell gas
+pressure ``_PICKUP_GAS_PRESSURE_MBAR`` really is in mbar.)
 """
 
 from __future__ import annotations
@@ -108,7 +114,8 @@ def mean_droplet_size(
     Parameters
     ----------
     p_source_mbar : float
-        Source pressure in mbar.
+        Source (nozzle stagnation) pressure in **bar**. The unit is bar
+        despite the argument name; see the module docstring.
     T_source_K : float
         Source temperature in Kelvin.
     nozzle_diameter_um : float, optional

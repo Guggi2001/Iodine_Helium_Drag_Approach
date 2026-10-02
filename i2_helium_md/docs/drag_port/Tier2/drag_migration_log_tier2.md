@@ -13656,3 +13656,52 @@ Full record: `TIER2_DetectorStageFix.md` (audit §2, validation §3d, design
   `v_limit_m_per_s` stays (collision cutoff). Still open from G4: D0 §17
   ledger re-issue, W₁-floor framing. E2-era atlas results stand as recorded
   (§2d of the fix doc).
+
+## 2026-10-02 — Droplet-size sampler A/B at h405 (raw vs `post_pickup`) EXECUTED; the chord → (n, KE) map found; source-pressure unit corrected (bar)
+
+Full record: D0 §15.8 (reads 1–6) + the §14.3 refinement note.
+
+- **Audit first.** Every corrected-geometry drag run (G3 ring → G4 →
+  detfix production) uses `droplet_size_prior="legacy"` +
+  `droplet_size_sampler_mode="raw"` (69 run dirs on disk; generators assert
+  it). Earlier eras used `kornilov_lognormal` (⟨N⟩ 2000) or fixed sizes. No
+  drag run ever used `post_pickup`. The G0-1 basis for `raw` is a quantile
+  match to the parent document's quoted R = 34 / 68.3 Å. Its discriminating
+  margin (≈ 8 % in R) equals the N→R convention spread (7.7 %), and legacy
+  MATLAB production itself ran `post_pickup`, so the match is circumstantial.
+- **Unit correction.** The nozzle pressure is **40 bar**, not 40 mbar.
+  Legacy MATLAB passes a unitless `p_source = 40` into a correlation
+  calibrated in bar; the Python port added the `_mbar` label. The field name
+  is kept (renaming it changes cfg.json); the comments, docstrings, the
+  diagnostics print label and the live docs now say bar. Dated records
+  (this log, the atlas plan/findings, the staircase plan) are not rewritten.
+- **A/B.** `gen_tier2_detfix_postpickup.py`: the production battery with
+  only `droplet_size_sampler_mode="post_pickup"` changed (cfg-diff oracle
+  vs each committed production cfg.json; size oracle ⟨N⟩ 16.1–17.3k).
+  Not CRN (the pickup MC consumes the RNG stream first). **r6 tripped the
+  D4 marginal-partner safeguard** — its first firing in ~90 runs: one slow
+  escaper (0.12 Å/ps, 56 Å outside, 12 He) still coupled at t_h = 500 ps
+  with an escaped partner. User decision: pool s1–s5 for both arms
+  (N = 5000). Scorer `tier2_detfix_postpickup_table.py`; production anchor
+  (s1–s5 = committed `pooled_new`, 4 dp) PASSED.
+- **Result (pp − raw):** n̄ +0.72, n₁ −0.033, W₁ +0.24, trap +0.057,
+  supp −0.059, KE₁ +0.007 eV; ⟨N⟩ +29 %, R̄ +4.5 Å. Member ranges are
+  disjoint on all of these. Both MD gate clauses fail under post_pickup,
+  so the h405 landing is conditional on the sampler choice.
+- **Mechanism (zero MD).** Binned on the emission-axis chord, the detected
+  (n, KE) is near-deterministic and identical in both arms: n = 1 ⇔ chord
+  35–39 Å; < 33 Å leaves intact at n = 21; > 65 Å mostly retained; KE
+  falls ≈ 0.03–0.04 eV/Å (capped-tail force ≈ 0.043 eV/Å). The sampler
+  only reweights the chord distribution. Hence KE₁ is geometry-invariant
+  and cannot be moved by any geometry change, only by the map (budget /
+  drag / flight mass).
+- **Artifacts.** `detfix_postpickup_table.csv`, `detfix_postpickup_chord.csv`
+  (`data/runs/h2b_forward_model/`); figures containers
+  `…N5000_detfix_conf270_h405pppooled_th500` (post_pickup) and
+  `…N5000_detfix_conf270_h405pooled_th500` (production s1–s5);
+  `build_pooled_detection_container.py` targets `detfix_h405_postpickup`
+  / `detfix_h405_s1s5`. Tests: `test_gen_tier2_detfix_postpickup.py`.
+  r6's partial run dir (no detection.npz) stays on disk.
+- **Docs.** D0 §0 sampling row + §15.8 + §14.3 note; `CALIBRATION_MAP.md`
+  production column, reclassification and update-log removal (2026-10-01,
+  same thread). Production is unchanged: h405 + `raw` stand.

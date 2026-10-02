@@ -186,7 +186,7 @@ class TestAnalyticalFormula:
         assert 0 < I < 1.0
 
     def test_thesis_T18_normal_peak(self):
-        """Regression: at T=18, p=40 mbar, normal σ peak should be near N=2500
+        """Regression: at T=18, p=40 bar, normal σ peak should be near N=2500
         (matches thesis figure 3.2)."""
         from i2_helium_md.sampling.droplet_sizes import (
             conditional_size_distributions_analytical,
