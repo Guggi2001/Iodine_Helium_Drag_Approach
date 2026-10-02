@@ -1,0 +1,301 @@
+# THESIS_FINAL_GOALS — agreed changes and tests before thesis completion
+
+Settled in the final discussion round (2026-10-02). This document holds
+only agreed goals. Results go to the migration log and D0 as usual.
+Nothing here has been executed yet.
+
+## 0. Why the whole chain is redone
+
+Three agreed changes together invalidate the current drag bundle and the
+h405 standing point:
+
+1. a sourced He **density** width, which changes the Tier-0 refit (G2);
+2. the `post_pickup` droplet-size sampler, which moves the landing (G1);
+3. the bundle change makes h405 void anyway, so the re-arbitration
+   (G5) is done once, under the new sampler.
+
+The order below keeps an attribution ledger: each step changes one thing,
+so the thesis can report the bundle effect, the sampler effect and the
+re-arbitration separately (CLAUDE.md validation hierarchy: one tier at a
+time).
+
+## G1. Production sampler → `post_pickup`
+
+- **Change.** `droplet_size_sampler_mode="post_pickup"` in production
+  (with `droplet_size_prior="legacy"`, as now).
+- **Rationale.** The experiment selects doped droplets. `post_pickup`
+  models that selection (pickup cross-section ∝ N^(2/3), exactly one
+  pickup, pickup-induced evaporation) and is the legacy MATLAB production
+  sampler. The basis for `raw` was a circumstantial quantile match whose
+  discriminating margin (≈ 8 % in R) equals the N→R convention spread.
+  Since a re-arbitration is needed anyway (G5), there is no cost argument
+  for keeping `raw`.
+- **Evidence.** D0 §15.8 reads 1–4 (A/B at h405: n̄ +0.72, n₁ −0.033,
+  W₁ +0.24, trap +0.057, supp −0.059, KE₁ +0.007 eV; h405 fails both MD
+  gate clauses under `post_pickup`); `detfix_postpickup_table.csv`;
+  log entry 2026-10-02; `CALIBRATION_MAP.md` row 30.
+- **Known risk.** The `post_pickup` r6 run tripped the D4
+  marginal-partner safeguard (one slow escaper still coupled at
+  t_h = 500 ps). Larger droplets may make this more frequent. Track D4
+  firings in every `post_pickup` battery.
+- **Cost.** Config decision only; the generator
+  `gen_tier2_detfix_postpickup.py` already exists.
+
+## G2. He density width s_ρ = 3.5 Å (density only, not the potential)
+
+- **Change.** `drag_spatial_gate="erf_independent"` +
+  `drag_gate_steepness=3.5`. `potential_steepness` stays 14.2 Å.
+- **Rationale.** 14.2 Å is the DFT fit of the solvation **potential**
+  (ρ ⊗ V_I–He + cavity) and is correct for U. Its reuse as the density
+  width gives a 10–90 % interface of 25.7 Å. Literature for ⁴He droplets
+  (N = 10³–10⁴) gives 5.7 Å (DFT) / 6–8 Å (experiment), Harms, Toennies,
+  Dalfovo, PRB 58, 3341 (1998). For the erf-complement profile the
+  10–90 % width is 1.81·s, so s = 3.5 Å ⇒ 6.3 Å, inside that range.
+  Used for both the Tier-0 refit and production.
+- **What it moves.** Every reader of `drag_gate_steepness(cfg)`; treated
+  as one coherent physical correction (all readers together, atlas §6.8
+  T3), not decomposed:
+
+  | reader | where | Tier 0 | production |
+  |---|---|---|---|
+  | drag gate | `ion.py` → `ion_propagation_step` | **yes (only reader)** | yes |
+  | pickup density gate | `ion_propagation_step.py` `rho_ratio` | no (fixed mass) | yes |
+  | Newton cooling gate | same, `cool_rho` (`density_scaled`) | no | yes |
+  | detection-stage cooling / exposure at handover | `detection_stage.py` | no | yes (≈ 0 for ejected ions) |
+  | birth dressing n₀ = round(21·ρ̂) | `ion_initial_state.py` (`density_tied`, live in production) | no | **yes** |
+
+  Unchanged: the solvation potential and well force, the neutral stage,
+  the Boltzmann birth law (`potential_steepness_molecule`), E2 (off).
+  Expected: at 3.5 Å, ρ̂ ≈ 1 deeper than ≈ 7 Å, so almost every
+  Boltzmann birth (≈ 33 Å deep) is dressed to n₀ = 21 and the dressing
+  arm becomes nearly inert (D0 §17 "inert at the parent geometry"). G5
+  step A measures the combined size.
+- **Where it bites.** A saturated drag is width-blind on total
+  dissipation at production R (0.0 %) but not at the 9 Å calibration
+  droplet (+11 %), so the effect enters mainly through the Tier-0 refit
+  (b, E_bind; E_bind currently inflated ≈ 2.1×). A new bundle changes the
+  chord → (n, KE) map, which is the only thing that can move KE₁ (D0
+  §15.8 read 6).
+- **Evidence.** D0 §17 rows "`potential_steepness` reused as the He
+  density width" and "its measured leverage"; D0 §9.4–§9.5.
+- **Cost.** Config only.
+
+## G3. Tier-0 extraction mass stays m_eff = 19 He (≈ 203 amu)
+
+- **Decision.** Keep the constant-mass extraction at m_eff = 202.954 amu.
+  No change to 21, no time-resolved extraction.
+- **Rationale (thesis statement).** The 9 Å TDDFT shell declines
+  21 → 19 (10 ps) → 14 (14 ps). In the Method-B balance
+  F_drag = m·a − F_C the constant-mass error tracks |m(t) − m_eff|/m_eff,
+  so the window-representative 19 He is the minimal difference to the
+  TDDFT run over the window (≈ 0 mid-window, ≈ ⅓ only at the ends).
+  21 He is correct only at t = 0 and would bias b upward. A time-resolved
+  m(t) extraction is not possible for both systems: no 18 Å shell-loss
+  curve is available.
+- **Evidence.** `DRAG_PORT_DESIGN_DECISIONS.md` §2.2, §6.6;
+  `TIER0_FINDINGS.md`.
+- **Cost.** None.
+
+## G4. Tier-0 refit (Stage 2, three families) and Tier-1a re-check
+
+This is atlas §6.8 **T5** (`TIER2_SENSITIVITY_ATLAS_PLAN.md`). Code
+requires the `[PROCEED TO IMPLEMENTATION]` trigger.
+
+### G4.1 Scope
+
+- **Method-B Stage 2 only** (joint fit over the 9 Å + 18 Å TDDFT traces,
+  m_eff = 19 He, s_ρ = 3.5 Å). No per-case refits, no Stage-1 held-out
+  prediction, no T6 per-case E_bind diagnostic. The bundles stamp
+  `held_out_axis: none (stage-2 only)`.
+- **Three families only** (the physically sensible ones), each fitting
+  its coefficients + a shared E_bind:
+
+  | family (new name) | force | free | fixed |
+  |---|---|---|---|
+  | `shared_linear` | F = a·v | a [amu/ps], E_bind | b = 0 |
+  | `shared_cubic` | F = b·v³ (γ = b·v²) | b [amu·ps/Å²], E_bind | a = 0 |
+  | `shared_linear_cubic` | F = a·v + b·v³ | a, b, E_bind | — |
+
+  Dimensions: a·v and b·v³ both give amu·Å/ps² (force), γ = F/v in
+  amu/ps; mass-agnostic (friction convention). All three run on the
+  existing `linear_cubic` force function with a or b pinned; the config
+  guard already accepts (a > 0, b = 0) and (a = 0, b > 0).
+- `diagnostic_4param` stays on as the automatic follow-up if a family
+  fails its bands (localizes drag vs binding).
+
+### G4.2 Pre-registered bands and selection rule (frozen before the run)
+
+- **Bands per family** (unchanged METHOD_B §9.4, first-runs rule):
+  RMSE 18 Å ≤ 0.19 Å/ps, RMSE 9 Å ≤ 0.45 Å/ps, escape fraction = 1 in
+  both cases. A family failing its bands is out.
+- **Nested-model test.** The single-term families are the boundaries of
+  `shared_linear_cubic`. With the objective in Å/ps:
+  - `T_a0`: obj(cubic) − obj(linear_cubic) ≤ 0.005 → cubic equivalent;
+  - `T_b0`: obj(linear) − obj(linear_cubic) ≤ 0.005 → linear equivalent.
+- **Winner.** Exactly one boundary equivalent → that single-term
+  family. Neither → `shared_linear_cubic`. Both → **cubic** (continuity
+  with Tier 0; the production cap is defined on cubic).
+- **Predictions on record** (frozen before the run, not gates): from D0
+  §9.4 the sharper gate moves T → 1 and roughly halves the binding
+  refund, so E_bind is expected to **fall**; b's shift is expected small.
+  Atlas T2 measured the ensemble response at h405 as null/small: this
+  refit is justified by model correctness, not as a KE₁ fix.
+
+### G4.3 Code changes
+
+1. **Gate pass-through.** `build_case_setup` gains a pass-through for
+   `drag_spatial_gate` / `drag_gate_steepness` (or a general
+   `cfg_overrides`); the driver gets them as USER SETTINGS. Default:
+   identical to today.
+2. **Escape criterion on the potential width.** `_escape_fraction` uses
+   `potential_steepness` (the well's reach), not the density width. At
+   3.5 Å the current code would count ions as escaped 7 Å outside the
+   surface, inside the 14.2 Å well. Bit-inert for the old bundle (both
+   widths 14.2), which the oracle shows.
+3. **`shared_linear` joint variant** (b = 0; bounds, unpack, prescan,
+   starts, writer), and the three families under their new names.
+   `shared_linear_cubic` keeps b ≥ 10⁻³ (the linear boundary is covered
+   by its own variant).
+4. **Bundle stamps the gate.** New bundles carry `drag_spatial_gate`,
+   `drag_gate_steepness_angstrom` (3.5), `potential_steepness_angstrom`
+   (14.2), the source (Harms et al. 1998, flagged *borrowed* per atlas
+   §6.8.2) and `held_out_axis`. `DragCoefficients` gets an optional
+   `extraction_gate_steepness_angstrom`; legacy bundles without the key
+   read as 14.2, gate tied to the potential.
+5. **Gate↔bundle guard** at config load (alongside the §6.5 mass and
+   §6.5.1 binding guards): the run's resolved `drag_gate_steepness(cfg)`
+   must equal the bundle's stamped value. Bundle dataclass + loader
+   change only; checkpoint schema untouched.
+6. **Bundle selection via config.** One `SimConfig` selector chooses
+   the drag bundle (family + density width) and resolves to its
+   directory in the presets layer, so the catalog, the production
+   generator and the scorers switch through config instead of
+   per-script constants. Legacy bundles stay selectable (old runs
+   reproduce). The frozen presets stay on the old bundle until adoption.
+7. **Downstream:** `tier0_common.CATALOG`, the production generator
+   (`gen_tier2_detfix_battery.py` / `build_cell`) and the scorers read
+   the selector. Run-dir names include the family, so new runs cannot
+   overwrite old ones.
+
+Tests: pass-through (default identical), escape uses the potential
+width, `shared_linear` variant, loader accepts the new keys, guard
+accepts matching / refuses mismatched / reads legacy as 14.2, config
+selector resolves every family.
+
+### G4.4 Storage
+
+Old reference data stays untouched. New sibling folders, named after
+the physical change:
+
+```
+data/reference/drag/shared/trajectory_matching_srho3p5A/
+    shared_linear/fit_parameters.json
+    shared_cubic/fit_parameters.json
+    shared_linear_cubic/fit_parameters.json
+    verdict.json            (bands, T_a0 / T_b0, winner)
+data/reference/drag/{9A,18A}/tier0_srho3p5A/md_mean_trajectory*.csv
+```
+
+### G4.5 Execution order
+
+1. **Oracle:** after changes 1–2, the default gate reproduces the
+   committed `shared_pure_cubic` objective (0.12926494 Å/ps at the
+   committed b, E_bind) bit-exactly — anchored on the committed artifact.
+2. Unit tests (G4.3).
+3. `DRY_RUN` at 3.5 Å: determinism + timing per joint evaluation (sets
+   the real runtime).
+4. Commit the pre-registration (G4.2), then run the three families →
+   `verdict.json`.
+5. Tier-0 forward check (`gen_tier0_runs.py` +
+   `tier0_drag_comparison.py`) with the winner; export the mean
+   trajectories to `tier0_srho3p5A/`.
+6. **Tier-1a re-check** with the winner (anchored `fixed` vs
+   `anchored_discrete` A/B, §2.9 ledger closure); gate: R(t), |v(t)| and
+   ledger closure no worse than the delivered result.
+
+### G4.6 Consequence for production (depends on the winner)
+
+Production runs `capped_cubic` {b, v_c, p_tail}, which has no linear
+term.
+
+- **cubic wins:** no form change; the new b and E_bind enter via the
+  selector.
+- **linear_cubic wins:** the capped law needs a linear term (new form /
+  enum arm, guard, twin mirror), ≈ half a day.
+- **linear wins:** nothing to cap; whether the high-velocity tail still
+  needs a cap becomes its own physics question before G5.
+
+### G4.7 Evidence and cost
+
+- **Evidence.** `METHOD_B_trajectory_matching_extraction.md` §9;
+  `TIER0_FINDINGS.md`; atlas plan §6.8.2–§6.8.4; D0 §9.4, §17;
+  `drag_migration_log_tier1a.md`.
+- **Cost.** Code + tests ≈ 4–5 h (changes 1–5 ≈ 3 h, `shared_linear`
+  ≈ 1 h, config selector + downstream ≈ 1 h); oracle + DRY_RUN
+  ≈ 15 min; extraction runtime unknown until DRY_RUN (rough guess
+  1–3 h for three families); Tier-0 forward check ≈ 15 min; Tier-1a
+  re-check ≈ 1 h.
+
+## G5. Attribution batteries, then re-arbitration under `post_pickup`
+
+Run in this order on the production pipeline (Stage I to 500 ps, E2
+off, partner-aware closure; `exclude_all_coupled`):
+
+| step | bundle | sampler | point | purpose | cost |
+|---|---|---|---|---|---|
+| A | new (G4) | `raw` | h405 | bundle effect alone (incl. on KE₁), vs the N = 6000 reference | ≈ 15 min MD (s1–s5) |
+| B | new (G4) | `post_pickup` | h405 | sampler effect under the new bundle, vs D0 §15.8 | ≈ 15 min MD |
+| C | new (G4) | `post_pickup` | re-arbitrated | new standing point | ≥ 1 day |
+
+Step C:
+
+1. **Twin ring re-validation** at the new surface first. The twin's
+   ranking authority (D0 §14.4: W₁ and midHot licensed, deepKE not) was
+   measured at the old surface.
+2. (v_c, τ, E₀) twin scan, MD finals, then a pooled N = 6000 battery as
+   the new production reference.
+3. Gate: the existing MD gate clauses (n̄, n₁) and the W₁/midHot
+   ranking; KE₁ reported, not fitted (anti-circularity, as in
+   `TIER2_MASS_SCENARIOS.md`).
+
+Each scorer CSV carries the full observable vector (incl. KE columns)
+and realized sizes.
+
+## G6. Chord-map figure at the new standing point (after G5 C)
+
+- **Change.** Re-run the `emission_chords` read
+  (`tier2_detfix_postpickup_table.py`) on the new N = 6000 battery and
+  plot the chord → (n, KE) map, overlaid on the old-bundle map
+  (`data/runs/h2b_forward_model/detfix_postpickup_chord.csv`). Panels:
+  n vs chord, KE vs chord with the n = 1 window marked, chord
+  distribution per sampler.
+- **Rationale.** The figure carries the thesis argument: geometry
+  reweights the chord distribution; only the map (drag bundle, budget,
+  flight mass) moves KE₁. The old-vs-new overlay shows the G2/G4 bundle
+  change acting on the map directly.
+- **Evidence.** D0 §15.8 reads 5–6; §14.3 refinement note.
+- **Cost.** Zero MD; scorer re-run + plot script, < 1 h.
+
+## G7. KE₁ geometry-invariance caveat (after G6)
+
+- **Change.** Thesis text only. Re-check on the G6 map that the n = 1
+  window is still narrow and the map near-deterministic; then state:
+  - "KE₁ is geometry-invariant" holds within the deterministic model;
+  - the experimental KE width at fixed n shows the real map scatters
+    (model KE₁ SD 0.038 eV at the old bundle), and with scatter a
+    chord-window selection could bias KE₁ slightly;
+  - map scatter (Tier-3 noise) is the outlook, not modelled here.
+- **Rationale.** The near-determinism is partly a consequence of the
+  missing fluctuation channel; "identical map in both arms" is expected
+  by construction (same physics parameters). The claim needs its scope.
+- **Evidence.** D0 §15.8 read 6 (caveats); CLAUDE.md Tier 3.
+- **Cost.** None beyond G6.
+
+## Thesis framing implied
+
+- Thesis table: bundle effect (A − reference), sampler effect (B − A),
+  re-arbitration (C − B).
+- The sampler is a stated modelling choice with its measured
+  sensitivity (D0 §15.8), not a validated property.
+- m_eff = 19 He is stated as the window-representative extraction mass
+  (G3).
