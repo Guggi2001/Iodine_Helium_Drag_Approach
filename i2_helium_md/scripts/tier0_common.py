@@ -35,12 +35,14 @@ from pathlib import Path
 from typing import Mapping, Optional
 
 from i2_helium_md import (
+    DRAG_BUNDLE_CATALOG,
     REFERENCE_DRAG_ROOT,
-    load_drag_coefficients,
+    load_drag_bundle,
+    resolve_drag_bundle_dir,
     single_pulse_N2000,
     single_pulse_N2000_18Angst,
 )
-from i2_helium_md.config import SimConfig
+from i2_helium_md.config import SimConfig, _UNSTAMPED_LEGACY_DRAG_BUNDLES
 from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS
 
 # The single reference mass every Method-B bundle stamps (= presets._DRAG_M_EFF_AMU).
@@ -56,22 +58,10 @@ BASE_PRESETS = {
 }
 
 # Named catalog: variant key -> bundle dir relative to data/reference/drag.
-# ``{case}`` is substituted with the run's CASE for per-case keys, which makes
-# cross-geometry application impossible by construction (the geometry guard).
-# Shared keys carry no ``{case}`` and run on either geometry.
-CATALOG: dict[str, str] = {
-    # --- shared joint-refit bundles (run on either 9A or 18A geometry) ---
-    "shared_pure_cubic": "shared/trajectory_matching/shared_pure_cubic",
-    "shared_3param": "shared/trajectory_matching/shared_3param",
-    "shared_pl": "shared/trajectory_matching/pl_shared_3param",
-    "shared_lq": "shared/trajectory_matching/lq_shared_3param",
-    "shared_lq_pq": "shared/trajectory_matching/lq_shared_pure_quadratic",
-    # --- per-case single-curve bundles (resolve against the run's CASE) ---
-    "percase_linear_cubic": "{case}/trajectory_matching",
-    "percase_pl": "{case}/trajectory_matching/pl_shared_3param",
-    "percase_lq": "{case}/trajectory_matching/lq_shared_3param",
-    "percase_lq_pq": "{case}/trajectory_matching/lq_shared_pure_quadratic",
-}
+# Single source is the package catalog (``presets.DRAG_BUNDLE_CATALOG``, the
+# ``SimConfig.drag_bundle`` selector's id space); re-exported here so every
+# script that reads ``CATALOG`` keeps working.
+CATALOG: dict[str, str] = DRAG_BUNDLE_CATALOG
 
 
 def _validate_case(case: str) -> None:
@@ -108,8 +98,7 @@ def resolve_bundle_dir(case: str, variant: str) -> Path:
         raise ValueError(
             f"VARIANT must be one of {sorted(CATALOG)}, got {variant!r}"
         )
-    rel = CATALOG[variant].format(case=case)
-    return REFERENCE_DRAG_ROOT / Path(rel)
+    return resolve_drag_bundle_dir(variant, case)
 
 
 def build_drag_cfg(
@@ -166,8 +155,12 @@ def build_drag_cfg(
         On unknown case/variant, an override key not in the form's coefficient
         set, or any downstream bundle/config validation failure.
     """
-    coeff_dir = resolve_bundle_dir(case, variant)
-    coeffs = load_drag_coefficients(coeff_dir, expected_m_eff_amu=M_EFF_AMU)
+    _validate_case(case)
+    if variant not in CATALOG:
+        raise ValueError(
+            f"VARIANT must be one of {sorted(CATALOG)}, got {variant!r}"
+        )
+    coeffs = load_drag_bundle(variant, case, expected_m_eff_amu=M_EFF_AMU)
 
     new_coefficients = dict(coeffs.coefficients)
     if coeff_overrides:
@@ -192,6 +185,17 @@ def build_drag_cfg(
         effective_binding_energy_I_ion_eV=e_bind,
     )
 
+    # The selector (G4.3 change 6): the bundle id rides on the cfg, and a bundle
+    # that stamps the gate width it was extracted under brings that gate with it
+    # (one VARIANT switches bundle + gate together; the §6.5.2 guard
+    # cross-checks). Unstamped (pre-G4) bundles leave the gate at its default.
+    gate_fields: dict[str, object] = {}
+    if coeffs.extraction_gate_steepness_angstrom is not None:
+        gate_fields = dict(
+            drag_spatial_gate="erf_independent",
+            drag_gate_steepness=coeffs.extraction_gate_steepness_angstrom,
+        )
+
     base_preset = BASE_PRESETS[case]
     cfg = base_preset(
         num_molecules=num_molecules,
@@ -200,10 +204,12 @@ def build_drag_cfg(
         seed=seed,
         drag_form=coeffs.form,
         drag_coefficients=coeffs,
+        drag_bundle=variant,
         mass_scenario="fixed",
         m_eff_amu=M_EFF_AMU,
         mass_initial_amu=M_EFF_AMU,
         binding_energy_I_ion_eV=e_bind,
+        **gate_fields,
     )
     return cfg
 
@@ -218,6 +224,21 @@ def run_dir_name(case: str, variant: str, n: int, run_tag: str = "") -> str:
     """
     suffix = f"_{run_tag}" if run_tag else ""
     return f"{case}_drag_{variant}_N{n}{suffix}"
+
+
+def reference_export_dir_name(base: str, variant: str) -> str:
+    """Export-folder name for a variant's reference series (``tier0`` / ``tier1a``).
+
+    Pre-G4 (unstamped legacy) bundles keep the committed folder ``base``;
+    a G4 bundle ``<tag>_<family>`` (e.g. ``srho3p5A_shared_cubic``) exports to
+    ``<base>_<tag>`` (e.g. ``tier0_srho3p5A``), so a new bundle can never
+    overwrite the committed legacy series.
+    """
+    if variant not in CATALOG:
+        raise ValueError(f"VARIANT must be one of {sorted(CATALOG)}, got {variant!r}")
+    if variant in _UNSTAMPED_LEGACY_DRAG_BUNDLES:
+        return base
+    return f"{base}_{variant.split('_', 1)[0]}"
 
 
 def window_source_dir(case: str) -> Path:

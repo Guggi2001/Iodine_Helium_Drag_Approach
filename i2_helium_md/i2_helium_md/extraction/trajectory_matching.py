@@ -57,12 +57,12 @@ import json
 import subprocess
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Callable, Sequence
+from typing import Callable, Mapping, Sequence
 
 import numpy as np
 from scipy.optimize import Bounds, minimize
 
-from ..config import SimConfig
+from ..config import SimConfig, drag_gate_steepness
 from ..physics.drag import (
     DragCoefficients,
     LINEAR_CUBIC,
@@ -167,6 +167,7 @@ def build_case_setup(
     ion_time_ps: float = 20.0,
     dt_ion_ps: float = 0.01,
     reference_filename: str = "cleaned_data_long.csv",
+    cfg_overrides: Mapping[str, object] | None = None,
 ) -> CaseSetup:
     """Build the per-case fit context (runs the neutral stage ONCE).
 
@@ -187,6 +188,13 @@ def build_case_setup(
     reference_filename : str
         File under ``data/reference/drag/<case>/velocity_smoothed/``; the
         extended same-smoothed reference by default.
+    cfg_overrides : mapping, optional
+        Extra ``SimConfig`` fields applied to the case preset before
+        validation and before the neutral run -- the Tier-0 refit's spatial
+        gate pass-through (``drag_spatial_gate`` / ``drag_gate_steepness``,
+        THESIS_FINAL_GOALS G4.3 change 1). ``_run_and_score`` derives every
+        candidate config from ``cfg_base``, so the overrides reach every
+        evaluation. ``None`` (default) leaves the preset unchanged.
 
     Raises
     ------
@@ -204,6 +212,20 @@ def build_case_setup(
         dt_ion=dt_ion_ps,
         seed=seed,
     )
+    if cfg_overrides:
+        cfg = replace(cfg, **dict(cfg_overrides))
+        # The preset's bundle is a placeholder: _run_and_score replaces it in
+        # every evaluation with the candidate coefficients (stamped with this
+        # same gate width). Re-stamp it so the §6.5.2 gate guard accepts
+        # cfg_base under a non-legacy gate; a0/b0 below are not fit anchors
+        # (the shared refit takes them from the 18 A Method-A bundle).
+        cfg = replace(
+            cfg,
+            drag_coefficients=replace(
+                cfg.drag_coefficients,
+                extraction_gate_steepness_angstrom=drag_gate_steepness(cfg),
+            ),
+        )
     cfg.validate()
 
     ref_path = (
@@ -233,11 +255,14 @@ def build_case_setup(
     )
 
 
-def _escape_fraction(ion: IonCheckpoint, gate_steepness_A: float) -> float:
+def _escape_fraction(ion: IonCheckpoint, well_reach_A: float) -> float:
     """Fraction of ions (all 2N) escaped at the final stored step.
 
-    Escaped: final depth ``r - R_droplet`` exceeds ``+2 * gate_steepness_A``
-    (well past the erf gate, drag off) with non-negative radial velocity.
+    Escaped: final depth ``r - R_droplet`` exceeds ``+2 * well_reach_A``
+    (past the solvation well, whose reach is ``potential_steepness``) with
+    non-negative radial velocity. The criterion is tied to the *potential*
+    width, not the density/drag-gate width: with a sharp density gate an ion
+    can sit outside the drag zone yet still inside the well (G4.3 change 2).
     A trapped ensemble (R(t) reversing inside the well) scores ~0.
     """
     px = ion.positions_x[:, -1]
@@ -250,7 +275,7 @@ def _escape_fraction(ion: IonCheckpoint, gate_steepness_A: float) -> float:
     depth = r - np.asarray(ion.droplet_radii_angstrom, dtype=float)
     with np.errstate(invalid="ignore", divide="ignore"):
         v_radial = (px * vx + py * vy + pz * vz) / r
-    escaped = (depth > 2.0 * gate_steepness_A) & (v_radial >= 0.0)
+    escaped = (depth > 2.0 * well_reach_A) & (v_radial >= 0.0)
     return float(np.mean(escaped))
 
 
@@ -294,7 +319,7 @@ def _run_and_score(
         ref_speed_Aps=setup.ref_speed_Aps,
         window=setup.window,
     )
-    escape = _escape_fraction(ion, cfg.drag_gate_steepness)
+    escape = _escape_fraction(ion, cfg.potential_steepness)
     rmse = float(comparison.rmse)
     penalty = penalty_weight_Aps * (1.0 - escape)
 
@@ -348,6 +373,7 @@ def evaluate_objective(
         extraction_mass_amu=setup.cfg_base.m_eff_amu,
         extraction_method="trajectory_matching",
         effective_binding_energy_I_ion_eV=e_bind,
+        extraction_gate_steepness_angstrom=drag_gate_steepness(setup.cfg_base),
     )
     objective, rmse, escape, penalty, n_overlap = _run_and_score(
         coeffs, e_bind, setup,
@@ -684,7 +710,20 @@ def write_fit_parameters(
 SHARED_3PARAM = "shared_3param"          # fully shared {a, b, E_bind}, a >= 0
 SHARED_PURE_CUBIC = "shared_pure_cubic"  # a == 0 fixed, fit {b, E_bind}
 DIAGNOSTIC_4PARAM = "diagnostic_4param"  # shared {a, b}, per-case E_bind
-JOINT_VARIANTS = (SHARED_3PARAM, SHARED_PURE_CUBIC, DIAGNOSTIC_4PARAM)
+# THESIS_FINAL_GOALS G4 family names (s_rho = 3.5 A refit). ``shared_linear``
+# is a new engine arm (b == 0 fixed, fit {a, E_bind}); the other two are
+# aliases that run the existing engines unchanged but stamp the new name.
+SHARED_LINEAR = "shared_linear"              # b == 0 fixed, fit {a, E_bind}
+SHARED_CUBIC = "shared_cubic"                # alias of shared_pure_cubic
+SHARED_LINEAR_CUBIC = "shared_linear_cubic"  # alias of shared_3param
+_JOINT_VARIANT_ENGINE = {
+    SHARED_CUBIC: SHARED_PURE_CUBIC,
+    SHARED_LINEAR_CUBIC: SHARED_3PARAM,
+}
+JOINT_VARIANTS = (
+    SHARED_3PARAM, SHARED_PURE_CUBIC, DIAGNOSTIC_4PARAM,
+    SHARED_LINEAR, SHARED_CUBIC, SHARED_LINEAR_CUBIC,
+)
 
 
 @dataclass(frozen=True)
@@ -720,6 +759,11 @@ class SharedTrajectoryMatchingFit:
     reference_paths: dict[str, Path]
     meff_amu: float
     anchors: tuple[float, float]        # (a0, b0), 18A Method-A bundle only
+    # Spatial-gate provenance the fit ran under (identical across cases;
+    # stamped into the bundle -- G4.3 change 4):
+    drag_spatial_gate: str
+    gate_steepness_angstrom: float      # resolved drag/density gate width
+    potential_steepness_angstrom: float  # solvation-well width
     # Uncertainty (filled by the driver script, same semantics as the
     # per-case fit; the shared refit's band is sensitivity-only -- the §8
     # seed sweep showed the HeDFT-comparison presets are seed-insensitive):
@@ -805,6 +849,12 @@ def fit_shared_trajectory_matching(
     * ``shared_3param`` -- ``(a, b, E)``, ``a`` free with **lower bound 0**
       (the §9 decision; the §9.5 guard accepts ``a = 0`` while ``b > 0``);
     * ``shared_pure_cubic`` -- ``(b, E)`` with ``a = 0`` fixed;
+    * ``shared_linear`` -- ``(a, E)`` with ``b = 0`` fixed (``a`` floored at
+      ``1e-3 * a0``: ``a = b = 0`` is not a drag law and the §3.3 guard
+      refuses it);
+    * ``shared_cubic`` / ``shared_linear_cubic`` -- aliases that run the
+      ``shared_pure_cubic`` / ``shared_3param`` engines unchanged; the fit
+      keeps the requested name (THESIS_FINAL_GOALS G4.1);
     * ``diagnostic_4param`` -- ``(a, b, E_case1, ..., E_caseK)`` in
       ``setups`` insertion order (run only if the primary fails its bands:
       localizes drag-law vs. binding generalization failure).
@@ -813,8 +863,9 @@ def fit_shared_trajectory_matching(
     ----------
     setups : dict[str, CaseSetup]
         Per-case contexts (insertion order fixes the parameter order). All
-        cases must share ``seed``, ``num_molecules``, and ``m_eff_amu``
-        (one joint provenance stamp; raises otherwise).
+        cases must share ``seed``, ``num_molecules``, ``m_eff_amu``, and the
+        spatial gate (mode, resolved width, potential width) -- one joint
+        provenance stamp; raises otherwise.
     anchors : tuple[float, float]
         Normalization anchors ``(a0, b0)``. Per §9.3 these must come from
         the **18 A Method-A bundle only** -- the 9 A Method-A artifact is
@@ -822,8 +873,8 @@ def fit_shared_trajectory_matching(
         per-case ``setup.a0/b0`` are deliberately NOT used here.
     prescan_e_bind_eV : sequence of float, optional
         Coarse shared-``E_bind`` pre-scan grid at the anchor coefficients
-        (``(a0, b0)``; ``(0, b0)`` under pure-cubic); default 8 points in
-        [0.05, 0.305] eV.
+        (``(a0, b0)``; ``(0, b0)`` under pure-cubic, ``(a0, 0)`` under
+        shared-linear); default 8 points in [0.05, 0.305] eV.
     extra_starts : bool
         Adds the two ridge-probing starts (high-binding, coefficient-tilted)
         mirroring the per-case fit's multi-start scheme.
@@ -857,21 +908,41 @@ def fit_shared_trajectory_matching(
                 "all cases must share seed, num_molecules, and m_eff_amu for "
                 f"one joint provenance stamp; {cases[0]!r} vs {case!r} differ"
             )
+    gate_stamp = {
+        case: (
+            setups[case].cfg_base.drag_spatial_gate,
+            drag_gate_steepness(setups[case].cfg_base),
+            setups[case].cfg_base.potential_steepness,
+        )
+        for case in cases
+    }
+    if len(set(gate_stamp.values())) != 1:
+        raise ValueError(
+            "all cases must share the spatial gate (mode, resolved width, "
+            f"potential width) for one joint provenance stamp; got {gate_stamp}"
+        )
+    gate_mode, gate_width_A, potential_width_A = gate_stamp[cases[0]]
     a0, b0 = (float(v) for v in anchors)
     if not (a0 > 0.0 and b0 > 0.0):
         raise ValueError(f"anchors must be positive, got {anchors!r}")
 
+    engine = _JOINT_VARIANT_ENGINE.get(variant, variant)
     e_lo_n = e_bind_min_eV / E_BIND_STATIC_EV
     e_hi_n = e_bind_max_eV / E_BIND_STATIC_EV
-    if variant == SHARED_3PARAM:
+    if engine == SHARED_3PARAM:
         # a lower bound 0 -- the §9 decision (pure-cubic point reachable).
         lower = np.array([0.0, 1.0e-3, e_lo_n])
         upper = np.array([10.0, 10.0, e_hi_n])
         scale = np.array([a0, b0, E_BIND_STATIC_EV])
-    elif variant == SHARED_PURE_CUBIC:
+    elif engine == SHARED_PURE_CUBIC:
         lower = np.array([1.0e-3, e_lo_n])
         upper = np.array([10.0, e_hi_n])
         scale = np.array([b0, E_BIND_STATIC_EV])
+    elif engine == SHARED_LINEAR:
+        # Mirror of pure-cubic with the roles of a and b swapped.
+        lower = np.array([1.0e-3, e_lo_n])
+        upper = np.array([10.0, e_hi_n])
+        scale = np.array([a0, E_BIND_STATIC_EV])
     else:  # DIAGNOSTIC_4PARAM
         k = len(cases)
         lower = np.array([0.0, 1.0e-3] + [e_lo_n] * k)
@@ -880,10 +951,12 @@ def fit_shared_trajectory_matching(
 
     def unpack(x: np.ndarray) -> tuple[float, float, dict[str, float]]:
         theta = np.asarray(x, dtype=float) * scale
-        if variant == SHARED_3PARAM:
+        if engine == SHARED_3PARAM:
             return theta[0], theta[1], {c: theta[2] for c in cases}
-        if variant == SHARED_PURE_CUBIC:
+        if engine == SHARED_PURE_CUBIC:
             return 0.0, theta[0], {c: theta[1] for c in cases}
+        if engine == SHARED_LINEAR:
+            return theta[0], 0.0, {c: theta[1] for c in cases}
         return theta[0], theta[1], dict(zip(cases, theta[2:]))
 
     n_evals = 0
@@ -900,10 +973,11 @@ def fit_shared_trajectory_matching(
     # --- shared-E_bind pre-scan at the anchor coefficients ---
     if prescan_e_bind_eV is None:
         prescan_e_bind_eV = np.linspace(0.05, 0.305, 8)
-    a_pre = 0.0 if variant == SHARED_PURE_CUBIC else a0
+    a_pre = 0.0 if engine == SHARED_PURE_CUBIC else a0
+    b_pre = 0.0 if engine == SHARED_LINEAR else b0
     prescan = [
         evaluate_joint_objective(
-            a_pre, b0, {c: float(e) for c in cases}, setups,
+            a_pre, b_pre, {c: float(e) for c in cases}, setups,
             penalty_weight_Aps=penalty_weight_Aps, run_fn=run_fn,
         )
         for e in prescan_e_bind_eV
@@ -912,12 +986,12 @@ def fit_shared_trajectory_matching(
     e_start = min(prescan, key=lambda r: r.objective).e_bind_eV[cases[0]]
     e_start_n = e_start / E_BIND_STATIC_EV
 
-    if variant == SHARED_3PARAM:
+    if engine == SHARED_3PARAM:
         x0s = [np.array([1.0, 1.0, e_start_n])]
         if extra_starts:
             x0s.append(np.array([1.0, 1.0, 0.9 * e_hi_n]))
             x0s.append(np.array([1.3, 0.7, e_start_n]))
-    elif variant == SHARED_PURE_CUBIC:
+    elif engine in (SHARED_PURE_CUBIC, SHARED_LINEAR):
         x0s = [np.array([1.0, e_start_n])]
         if extra_starts:
             x0s.append(np.array([1.0, 0.9 * e_hi_n]))
@@ -961,6 +1035,9 @@ def fit_shared_trajectory_matching(
         reference_paths={c: setups[c].reference_path for c in cases},
         meff_amu=float(first.cfg_base.m_eff_amu),
         anchors=(a0, b0),
+        drag_spatial_gate=gate_mode,
+        gate_steepness_angstrom=float(gate_width_A),
+        potential_steepness_angstrom=float(potential_width_A),
     )
 
 
@@ -1013,8 +1090,19 @@ def write_shared_fit_parameters(
     out_dir: Path,
     *,
     stage: str = "stage2_joint",
+    bundle_id: str | None = None,
+    density_width_source: str | None = None,
+    held_out_axis: str | None = None,
 ) -> Path:
     """Write a shared-form ``fit_parameters.json`` bundle (METHOD_B §9.6).
+
+    Every bundle also stamps the spatial gate it was fit under
+    (``drag_spatial_gate``, ``drag_gate_steepness_angstrom`` -- read back by
+    the loader into ``extraction_gate_steepness_angstrom`` for the §6.5.2
+    guard -- and ``potential_steepness_angstrom``; THESIS_FINAL_GOALS G4.3
+    change 4). The optional ``bundle_id`` (the catalog id, read back for the
+    selector guard), ``density_width_source`` and ``held_out_axis`` are
+    written only when given.
 
     The schema is a superset of the per-case Method-B bundle and loads
     through :func:`i2_helium_md.presets.load_drag_coefficients` unchanged
@@ -1134,7 +1222,17 @@ def write_shared_fit_parameters(
             "full_window_heldout_window_axis_forfeited": True,
             "cross_case_axis_consumed_by_joint_fit": True,
         },
+        # --- G4.3 change 4: the spatial gate the fit ran under ---
+        "drag_spatial_gate": fit.drag_spatial_gate,
+        "drag_gate_steepness_angstrom": fit.gate_steepness_angstrom,
+        "potential_steepness_angstrom": fit.potential_steepness_angstrom,
     }
+    if bundle_id is not None:
+        payload["bundle_id"] = bundle_id
+    if density_width_source is not None:
+        payload["density_width_source"] = density_width_source
+    if held_out_axis is not None:
+        payload["held_out_axis"] = held_out_axis
 
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "fit_parameters.json"
@@ -1292,6 +1390,7 @@ def evaluate_form_objective(
         extraction_mass_amu=setup.cfg_base.m_eff_amu,
         extraction_method="trajectory_matching",
         effective_binding_energy_I_ion_eV=float(e_bind_eV),
+        extraction_gate_steepness_angstrom=drag_gate_steepness(setup.cfg_base),
     )
     objective, rmse, escape, penalty, n_overlap = _run_and_score(
         coeffs, float(e_bind_eV), setup,

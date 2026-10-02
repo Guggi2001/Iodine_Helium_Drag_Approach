@@ -279,6 +279,32 @@ _KNOWN_DRAG_FORMS = (
     PURE_LINEAR,
 )
 
+# Drag-bundle selector enum (THESIS_FINAL_GOALS G4.3 change 6). The id -> directory
+# mapping lives in ``presets.DRAG_BUNDLE_CATALOG`` (the config layer does no I/O);
+# a test asserts the two key sets are identical. The unstamped legacy ids are the
+# pre-G4 bundles, which carry neither a ``bundle_id`` nor a gate stamp.
+_UNSTAMPED_LEGACY_DRAG_BUNDLES = (
+    "shared_pure_cubic",
+    "shared_3param",
+    "shared_pl",
+    "shared_lq",
+    "shared_lq_pq",
+    "percase_linear_cubic",
+    "percase_pl",
+    "percase_lq",
+    "percase_lq_pq",
+)
+_KNOWN_DRAG_BUNDLES = _UNSTAMPED_LEGACY_DRAG_BUNDLES + (
+    "srho3p5A_shared_linear",
+    "srho3p5A_shared_cubic",
+    "srho3p5A_shared_linear_cubic",
+)
+
+# The density/drag-gate width every pre-G4 (unstamped) bundle was extracted under:
+# the gate was tied to the solvation-potential width, 14.2 A (§5.5). A bundle
+# without an ``extraction_gate_steepness_angstrom`` stamp reads as this value.
+_LEGACY_EXTRACTION_GATE_STEEPNESS_ANGSTROM = 14.2
+
 
 @dataclass
 class SimConfig:
@@ -419,6 +445,10 @@ class SimConfig:
     mass_initial_amu: float = 202.953908  # amu; = m_eff_amu under `fixed` (A-ii)
     allow_inconsistent_mass_pairing: bool = False        # refuse -> warn downgrade
     allow_unvalidated_binding_pairing: bool = False      # §6.5.1 refuse -> warn downgrade
+    # Bundle selector (G4.3 change 6): the catalog id the drag_coefficients came
+    # from; resolved to a directory in presets. Default = the legacy production id.
+    drag_bundle: str = "shared_pure_cubic"
+    allow_inconsistent_gate_pairing: bool = False        # §6.5.2 refuse -> warn downgrade
     drag_low_v_floor: float = 0.0         # A/ps; inert for linear_cubic (power_law n<0 only)
 
     # -- Tier-1a anchored kinematic validation (Slice I*) --
@@ -2024,6 +2054,46 @@ def check_detection_config(cfg: "SimConfig") -> None:
         )
 
 
+def drag_gate_steepness(cfg: "SimConfig") -> float:
+    """Resolve the spatial-gate steepness for the drag branch (§5.5 collapse).
+
+    The drag gate stays G2: ``density_proportional`` (the default) collapses to
+    the erf complement (G2) -- identical to ``erf_tied`` -- and both use
+    ``cfg.potential_steepness``. ``erf_independent`` (G3) uses its own
+    ``cfg.drag_gate_steepness`` (which itself defaults to ``potential_steepness``).
+    (The Tier-2 ``cfg.helium_density_profile`` is the *pickup* occupancy gate, a
+    separate G2 surface-density quantity -- **not** a drag-gate G4 promotion; the
+    Slice-rho density gate reuses this resolver's steepness so the two share one
+    surface.) The discarded sharp boolean gate (G1) has no
+    continuous implementation in ``physics/drag.py`` and is rejected here so the
+    default preset cannot silently fall through with no gate.
+
+    Lives in the config layer (pure cfg logic) so the §6.5.2 gate-pairing guard
+    can use it; ``simulation.ion`` re-exports it for the existing importers.
+
+    Returns
+    -------
+    float
+        The resolved gate width [A].
+
+    Raises
+    ------
+    NotImplementedError
+        On ``drag_spatial_gate="sharp"`` or any unsupported gate.
+    """
+    gate = cfg.drag_spatial_gate
+    if gate in ("density_proportional", "erf_tied"):
+        return cfg.potential_steepness
+    if gate == "erf_independent":
+        return cfg.drag_gate_steepness
+    raise NotImplementedError(
+        f"drag_spatial_gate={gate!r} is not supported on the Tier-0 drag path; "
+        "use 'density_proportional' (default), 'erf_tied', or 'erf_independent'. "
+        "'sharp' (G1) is discarded -- a discontinuous force breaks the BAOAB "
+        "O-step (DRAG_PORT_DESIGN_DECISIONS.md §5.4)."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Drag config-load guard (Slice 3, DRAG_PORT_DESIGN_DECISIONS.md §3.3 + §6.5)
 # ---------------------------------------------------------------------------
@@ -2076,6 +2146,18 @@ def check_drag_config(cfg: "SimConfig") -> None:
        under ``allow_unvalidated_binding_pairing`` (used deliberately by the
        Method-B fit loop, which by construction evaluates not-yet-validated
        pairings).
+    4. **Gate <-> bundle consistency (§6.5.2, THESIS_FINAL_GOALS G4.3)** --
+       the coefficients were extracted under one density/drag-gate width, so
+       the run's resolved :func:`drag_gate_steepness` must equal the bundle's
+       ``extraction_gate_steepness_angstrom`` stamp (1e-9 A, a wiring
+       identity); an unstamped (pre-G4) bundle reads as
+       :data:`_LEGACY_EXTRACTION_GATE_STEEPNESS_ANGSTROM`. Downgrades to a
+       ``RuntimeWarning`` under ``allow_inconsistent_gate_pairing``. Then the
+       **bundle id** (no hatch -- pure wiring): a stamped ``bundle_id`` must
+       equal ``cfg.drag_bundle``; an unstamped bundle requires
+       ``cfg.drag_bundle`` to be a pre-G4 (unstamped legacy) id.
+
+    ``cfg.drag_bundle`` must always be a known catalog id (typo arm).
 
     Parameters
     ----------
@@ -2092,6 +2174,7 @@ def check_drag_config(cfg: "SimConfig") -> None:
     # Typo-recovery arm: Literal is not runtime-enforced. Runs unconditionally
     # so a typo'd drag_form fails loudly even on a non-drag config.
     _reject_unknown_enum(cfg.drag_form, _KNOWN_DRAG_FORMS, field="drag_form")
+    _reject_unknown_enum(cfg.drag_bundle, _KNOWN_DRAG_BUNDLES, field="drag_bundle")
 
     coeffs = cfg.drag_coefficients
     if coeffs is None:
@@ -2308,3 +2391,38 @@ def check_drag_config(cfg: "SimConfig") -> None:
                 binding_msg
                 + " (set allow_unvalidated_binding_pairing=True to override)"
             )
+
+    # --- 4. Gate <-> bundle consistency (§6.5.2) + bundle id ---
+    stamped_gate = coeffs.extraction_gate_steepness_angstrom
+    if stamped_gate is None:
+        stamped_gate = _LEGACY_EXTRACTION_GATE_STEEPNESS_ANGSTROM
+    run_gate = drag_gate_steepness(cfg)
+    if abs(run_gate - stamped_gate) > 1e-9:
+        gate_msg = (
+            "drag-gate <-> bundle pairing mismatch (§6.5.2): the run's resolved "
+            f"drag_gate_steepness={run_gate} A (drag_spatial_gate="
+            f"{cfg.drag_spatial_gate!r}) != the width the coefficients were "
+            f"extracted under ({stamped_gate} A"
+            + (", legacy unstamped bundle" if
+               coeffs.extraction_gate_steepness_angstrom is None else "")
+            + ")"
+        )
+        if cfg.allow_inconsistent_gate_pairing:
+            warnings.warn(gate_msg, RuntimeWarning)
+        else:
+            raise ValueError(
+                gate_msg + " (set allow_inconsistent_gate_pairing=True to override)"
+            )
+
+    if coeffs.bundle_id is not None:
+        if coeffs.bundle_id != cfg.drag_bundle:
+            raise ValueError(
+                f"drag_bundle={cfg.drag_bundle!r} does not match the coefficient "
+                f"bundle's stamped bundle_id={coeffs.bundle_id!r}"
+            )
+    elif cfg.drag_bundle not in _UNSTAMPED_LEGACY_DRAG_BUNDLES:
+        raise ValueError(
+            f"drag_bundle={cfg.drag_bundle!r} names a stamped (post-G4) bundle, "
+            "but drag_coefficients carries no bundle_id stamp -- the "
+            "coefficients did not come from that bundle"
+        )

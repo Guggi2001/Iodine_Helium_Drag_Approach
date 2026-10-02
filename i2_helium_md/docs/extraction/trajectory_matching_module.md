@@ -96,10 +96,15 @@ objective(θ) = RMSE_window( mean_ensemble |v2|^MD(θ) , |v2|^smoothed-ref )
   boundary is unambiguous even where the windowed RMSE is locally flat. An
   accepted fit must have `penalty == 0` (full escape); the writers refuse
   anything else.
-- **`_escape_fraction(ion, gate_steepness)`:** fraction of all 2N ions
-  whose final depth `r − R_droplet` exceeds `+2·gate_steepness` (well past
-  the erf gate, drag off) with non-negative radial velocity. A trapped
-  ensemble (R(t) reversing inside the well) scores ~0.
+- **`_escape_fraction(ion, well_reach)`:** fraction of all 2N ions
+  whose final depth `r − R_droplet` exceeds `+2·potential_steepness` (past
+  the solvation well; tied to the potential width, not the density/drag-gate
+  width — THESIS_FINAL_GOALS G4.3 change 2) with non-negative radial
+  velocity. A trapped ensemble (R(t) reversing inside the well) scores ~0.
+- **Gate pass-through:** `build_case_setup(..., cfg_overrides=...)` applies
+  extra `SimConfig` fields (e.g. `drag_spatial_gate="erf_independent"`,
+  `drag_gate_steepness=3.5`) before the neutral run; every candidate config
+  inherits them from `cfg_base`.
 - **Exact §6.5.1 pairing per evaluation:** each trial stamps the candidate
   `E_bind` into the coefficient bundle **and** sets
   `cfg.binding_energy_I_ion_eV` to the same value, so the config-load

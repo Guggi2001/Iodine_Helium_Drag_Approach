@@ -79,7 +79,11 @@ FORCE_FIGURE = False
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.tier0_common import run_dir_name, window_source_dir  # noqa: E402
+from scripts.tier0_common import (  # noqa: E402
+    reference_export_dir_name,
+    run_dir_name,
+    window_source_dir,
+)
 
 # --- Paths resolved from CASE + VARIANT (no hand-edited path triple) ---
 # The finished drag run to score (produced by scripts/gen_tier0_runs.py).
@@ -96,9 +100,10 @@ DRAG_COEFF_DIR = window_source_dir(CASE)
 
 # Optional: write the ensemble-mean series here (free-to-churn diagnostic; NOT
 # the committed md_mean_trajectory_N50.csv). Set to None to skip the export.
+# A G4 bundle (e.g. srho3p5A_*) exports to its own folder (tier0_srho3p5A).
 EXPORT_MEAN_SERIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "tier0"
-    / "md_mean_trajectory.csv"
+    PROJECT_ROOT / "data" / "reference" / "drag" / CASE
+    / reference_export_dir_name("tier0", VARIANT) / "md_mean_trajectory.csv"
 )
 
 # Optional figure overlays, CASE-derived. mean_velocity.csv exists for 9A only;

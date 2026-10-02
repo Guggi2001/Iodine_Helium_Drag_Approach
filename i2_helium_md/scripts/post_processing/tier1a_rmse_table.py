@@ -39,7 +39,9 @@ WINDOW_START_PS = 2.67
 PLOT_T_STAR_PS = 5.0
 
 SAVE_CSV_PATH = None  # e.g. PROJECT_ROOT / "data" / "reference" / "drag" / "9A" / "tier1a_rmse_table.csv"
-EXPORT_MEAN_SERIES_DIR = PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "tier1a"
+# Export the mean series to data/reference/drag/<CASE>/tier1a (legacy bundles)
+# or tier1a_<tag> for a G4 bundle (e.g. srho3p5A_* -> tier1a_srho3p5A).
+EXPORT_MEAN_SERIES = True
 
 SHOW_FIGURE = True
 POSITIONS_FIGURE = False
@@ -71,6 +73,12 @@ from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
     export_mean_series,
     plot_energy_analysis,
 )
+from scripts.tier0_common import reference_export_dir_name  # noqa: E402
+
+EXPORT_MEAN_SERIES_DIR = (
+    PROJECT_ROOT / "data" / "reference" / "drag" / CASE
+    / reference_export_dir_name("tier1a", VARIANT)
+) if EXPORT_MEAN_SERIES else None
 
 
 TIER1A_TABLE_COLUMNS = [

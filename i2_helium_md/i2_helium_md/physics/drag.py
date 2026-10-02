@@ -187,13 +187,24 @@ class DragCoefficients:
         ``None`` for a legacy bundle whose drag<->binding pairing was never
         jointly validated. **Provenance only** -- consumed by the config-load
         guard, never by this module.
+    extraction_gate_steepness_angstrom : float or None
+        The density/drag-gate width [A] the coefficients were extracted under
+        (THESIS_FINAL_GOALS G4.3 change 4), or ``None`` for a pre-G4 bundle,
+        which the config-load §6.5.2 guard reads as the legacy 14.2 A
+        (gate tied to the potential width). **Provenance only.**
+    bundle_id : str or None
+        The drag-bundle catalog id the coefficients were loaded from (G4.3
+        change 6), or ``None`` for an unstamped pre-G4 bundle. Cross-checked
+        against ``cfg.drag_bundle`` by the config-load guard. **Provenance
+        only.**
 
     Raises
     ------
     ValueError
         On unknown form, missing required coefficients, invalid mass model,
-        invalid extraction method, non-positive extraction mass, or
-        non-positive effective binding energy.
+        invalid extraction method, non-positive extraction mass,
+        non-positive effective binding energy, non-positive gate stamp, or
+        an empty bundle id.
     """
 
     form: str
@@ -202,6 +213,8 @@ class DragCoefficients:
     extraction_mass_amu: float
     extraction_method: str = "force_balance"
     effective_binding_energy_I_ion_eV: float | None = None
+    extraction_gate_steepness_angstrom: float | None = None
+    bundle_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.form not in _REQUIRED_COEFF_KEYS:
@@ -246,6 +259,20 @@ class DragCoefficients:
                 "parameter was never jointly calibrated with any binding "
                 "(§6.5.1), so the stamp would claim a validation that does "
                 f"not exist; got {self.effective_binding_energy_I_ion_eV!r}"
+            )
+        if self.extraction_gate_steepness_angstrom is not None and not (
+            self.extraction_gate_steepness_angstrom > 0
+        ):
+            raise ValueError(
+                f"extraction_gate_steepness_angstrom must be positive or None, "
+                f"got {self.extraction_gate_steepness_angstrom!r}"
+            )
+        if self.bundle_id is not None and not (
+            isinstance(self.bundle_id, str) and self.bundle_id
+        ):
+            raise ValueError(
+                f"bundle_id must be a non-empty string or None, got "
+                f"{self.bundle_id!r}"
             )
 
 

@@ -46,6 +46,9 @@ from typing import Optional
 import numpy as np
 
 from ..config import SimConfig
+# Re-exported: the resolver lives in the config layer (the §6.5.2 gate guard
+# reads it); existing importers keep ``simulation.ion.drag_gate_steepness``.
+from ..config import drag_gate_steepness  # noqa: F401
 from ..physics.baoab import make_ion_baoab_step
 from ..physics.constants import U
 from ..physics.drag import drag_gamma
@@ -426,33 +429,6 @@ def _check_scope_ion_driver(cfg: SimConfig) -> None:
             "(dt_fine/dt_coarse + switchtime), which is pump-probe "
             "scope and not implemented in this stage."
         )
-
-
-def drag_gate_steepness(cfg: SimConfig) -> float:
-    """Resolve the spatial-gate steepness for the drag branch (§5.5 collapse).
-
-    The drag gate stays G2: ``density_proportional`` (the default) collapses to
-    the erf complement (G2) -- identical to ``erf_tied`` -- and both use
-    ``cfg.potential_steepness``. ``erf_independent`` (G3) uses its own
-    ``cfg.drag_gate_steepness`` (which itself defaults to ``potential_steepness``).
-    (The Tier-2 ``cfg.helium_density_profile`` is the *pickup* occupancy gate, a
-    separate G2 surface-density quantity -- **not** a drag-gate G4 promotion; the
-    Slice-rho density gate reuses this resolver's steepness so the two share one
-    surface.) The discarded sharp boolean gate (G1) has no
-    continuous implementation in ``physics/drag.py`` and is rejected here so the
-    default preset cannot silently fall through with no gate.
-    """
-    gate = cfg.drag_spatial_gate
-    if gate in ("density_proportional", "erf_tied"):
-        return cfg.potential_steepness
-    if gate == "erf_independent":
-        return cfg.drag_gate_steepness
-    raise NotImplementedError(
-        f"drag_spatial_gate={gate!r} is not supported on the Tier-0 drag path; "
-        "use 'density_proportional' (default), 'erf_tied', or 'erf_independent'. "
-        "'sharp' (G1) is discarded -- a discontinuous force breaks the BAOAB "
-        "O-step (DRAG_PORT_DESIGN_DECISIONS.md §5.4)."
-    )
 
 
 def _internal_step_count_ion(cfg: SimConfig) -> int:

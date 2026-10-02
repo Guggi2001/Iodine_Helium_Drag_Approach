@@ -42,8 +42,12 @@ import re
 import typing
 from typing import Mapping, Optional, Sequence
 
-from i2_helium_md.config import LadderElectronicPicture, SimConfig
-from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS
+from i2_helium_md.config import (
+    LadderElectronicPicture,
+    SimConfig,
+    _UNSTAMPED_LEGACY_DRAG_BUNDLES,
+)
+from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS, DragCoefficients
 from i2_helium_md.physics.shell_schedule import complex_mass_amu
 
 from scripts.tier0_common import build_drag_cfg, run_dir_name
@@ -476,6 +480,14 @@ def cfg_diff_vs_reference(
             f"(the config surface lost a field?)"
         )
     fields = SimConfig.__dataclass_fields__
+    # ``drag_bundle`` (G4 selector) on a pre-G4 reference: for an UNSTAMPED
+    # legacy id the selector is only a label for the coefficients, which are
+    # diffed directly under ``drag_coefficients`` -- so it is not a separate
+    # witness and is aligned to the build. A stamped (post-G4) id stays under
+    # the strict rule below (the caller must pre-register that change).
+    if ("drag_bundle" not in ref
+            and mine.get("drag_bundle") in _UNSTAMPED_LEGACY_DRAG_BUNDLES):
+        ref["drag_bundle"] = mine["drag_bundle"]
     for key in sorted(set(mine) - set(ref)):
         # Compare in JSON-space: ``mine`` was json-round-tripped above, so a
         # tuple-typed default (the (C) fields) must be round-tripped the same
@@ -489,6 +501,31 @@ def cfg_diff_vs_reference(
                 f"against that reference."
             )
         ref[key] = default
+    # Same asymmetric rule one level down for the nested drag bundle: a
+    # ``DragCoefficients`` field added after the reference was written (the G4
+    # gate / bundle-id stamps) is tolerated only at its dataclass default --
+    # exactly what ``RunDirectory.load_cfg`` reconstructs for that run.
+    ref_dc, mine_dc = ref.get("drag_coefficients"), mine.get("drag_coefficients")
+    if isinstance(ref_dc, dict) and isinstance(mine_dc, dict):
+        dc_fields = DragCoefficients.__dataclass_fields__
+        only_in_ref_dc = sorted(set(ref_dc) - set(mine_dc))
+        if only_in_ref_dc:
+            raise AssertionError(
+                f"{tag}reference drag_coefficients has fields this build "
+                f"lacks: {only_in_ref_dc}"
+            )
+        ref_dc = dict(ref_dc)
+        for key in sorted(set(mine_dc) - set(ref_dc)):
+            default = json.loads(json.dumps(dc_fields[key].default))
+            if mine_dc[key] != default:
+                raise AssertionError(
+                    f"{tag}drag_coefficients field {key!r} is absent from the "
+                    f"reference cfg.json (which predates it) and this build "
+                    f"sets it to {mine_dc[key]!r} != default {default!r} — the "
+                    f"diff would be unverifiable against that reference."
+                )
+            ref_dc[key] = default
+        ref["drag_coefficients"] = ref_dc
     return sorted(k for k in ref if ref[k] != mine[k])
 
 
