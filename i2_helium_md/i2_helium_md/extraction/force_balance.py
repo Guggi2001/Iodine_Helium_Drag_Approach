@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter
 
 from ..physics.constants import EV, EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2, U, coulomb_energy
@@ -196,6 +197,60 @@ def savgol_speed_and_derivative(
     return v_out, dvdt
 
 
+def mad_spline_smoothing(speed_Aps: np.ndarray) -> float:
+    """MAD-based ``UnivariateSpline`` smoothing factor ``s`` [(A/ps)^2].
+
+    The June 2026 Method-A heuristic (``Drag_function/drag_function/
+    drag_calculation.py``, ``choose_spline_s``): ``s = N * sigma^2`` with
+    ``sigma = 1.4826 * MAD(diff(v))``, floored at 1e-12.
+    """
+    v = np.asarray(speed_Aps, dtype=float)
+    dv = np.diff(v)
+    sigma = 1.4826 * np.median(np.abs(dv - np.median(dv)))
+    return max(float(v.size * sigma**2), 1e-12)
+
+
+def spline_speed_and_derivative(
+    time_ps: np.ndarray,
+    speed_Aps: np.ndarray,
+    *,
+    smoothing_scale: float = 1.0,
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Cubic smoothing-spline speed and derivative (June Method-A pipeline).
+
+    Parameters
+    ----------
+    time_ps, speed_Aps : np.ndarray, shape (T,)
+        Uniform time axis [ps] and (already smoothed) speed [A/ps].
+    smoothing_scale : float
+        Multiplier on :func:`mad_spline_smoothing` (1 = the June pipeline;
+        the sensitivity rows use 0.5 / 2), > 0.
+
+    Returns
+    -------
+    speed_Aps, dvdt_Aps2 : np.ndarray, shape (T,)
+        Spline speed [A/ps] and its derivative [A/ps^2]. The spline is
+        unreliable near the ends; callers trim (June pipeline: 0.5 ps).
+    s : float
+        The smoothing factor used [(A/ps)^2].
+
+    Raises
+    ------
+    ValueError
+        On shape mismatch, non-uniform time or a non-positive scale.
+    """
+    t = np.asarray(time_ps, dtype=float)
+    v = np.asarray(speed_Aps, dtype=float)
+    if v.shape != t.shape:
+        raise ValueError(f"speed shape {v.shape} != time shape {t.shape}")
+    _uniform_dt_ps(t)
+    if smoothing_scale <= 0.0:
+        raise ValueError(f"smoothing_scale must be > 0, got {smoothing_scale}")
+    s = smoothing_scale * mad_spline_smoothing(v)
+    spline = UnivariateSpline(t, v, k=3, s=s)
+    return spline(t), spline.derivative(1)(t), s
+
+
 @dataclass(frozen=True)
 class ForceBalanceTrace:
     """Per-time-point force balance along v_hat (all forces amu·Å/ps²).
@@ -233,7 +288,7 @@ def force_balance_trace(
     binding_energy_eV: float,
     potential_steepness_A: float,
     droplet_radius_A: float,
-    gate_steepness_A: float,
+    gate_steepness_A: float | None,
     projection: str = "projected",
     interior_rho_min: float = 0.9,
 ) -> ForceBalanceTrace:
@@ -251,8 +306,9 @@ def force_balance_trace(
         Solvation well depth [eV] and width [A] (``droplet_force``).
     droplet_radius_A : float
         Droplet radius [A]; depth = ``r - droplet_radius_A``.
-    gate_steepness_A : float
-        Density-gate width ``s_rho`` [A].
+    gate_steepness_A : float or None
+        Density-gate width ``s_rho`` [A]; ``None`` = no gate (``rho_hat = 1``
+        everywhere, the June Method-A assumption of bulk He throughout).
     projection : {"projected", "scalar", "legacy_no_well"}
         ``projected``: the G4.10 balance. ``scalar``: ``cos theta -> 1``,
         well kept. ``legacy_no_well``: the old Method A, ``F_C - m dv/dt``.
@@ -303,7 +359,10 @@ def force_balance_trace(
 
     F_inertia = m * a
     F_app = F_coulomb_along - F_well_along - F_inertia
-    rho_hat = spatial_gate(depth, gate_steepness_A)
+    rho_hat = (
+        np.ones_like(depth) if gate_steepness_A is None
+        else spatial_gate(depth, gate_steepness_A)
+    )
     interior = rho_hat >= interior_rho_min
     F_bulk = np.where(interior, F_app / np.where(interior, rho_hat, 1.0), np.nan)
     return ForceBalanceTrace(

@@ -10,7 +10,9 @@ No MD, no reference files.
    drive under ``projected``, the full F_C under ``scalar``;
 4. well sign (the 114c1ca amendment): outward motion -> the well term is
    positive and *lowers* the apparent drag; ``legacy_no_well`` drops it;
-5. ``fit_drag_form`` recovers exact coefficients and fails loudly.
+5. ``fit_drag_form`` recovers exact coefficients and fails loudly;
+6. the post-hoc June-pipeline options: no density gate (bulk everywhere)
+   and the MAD-spline derivative.
 """
 
 from pathlib import Path
@@ -24,7 +26,9 @@ from i2_helium_md.extraction.force_balance import (
     balance_geometry,
     fit_drag_form,
     force_balance_trace,
+    mad_spline_smoothing,
     savgol_speed_and_derivative,
+    spline_speed_and_derivative,
 )
 from i2_helium_md.physics.constants import EV, EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2, U
 from i2_helium_md.physics.drag import spatial_gate
@@ -201,3 +205,37 @@ def test_trace_validation():
     t_bad = np.array([0.0, 0.1, 0.3, 0.4])
     with pytest.raises(ValueError, match="uniformly sampled"):
         savgol_speed_and_derivative(t_bad, np.ones(4), 0.2, smooth_speed=True)
+
+
+def test_no_gate_is_bulk_everywhere():
+    # Atom 2 at r = 40 A, outside a 28 A droplet: the 3.5 A gate gives
+    # rho_hat ~ 0, gate_steepness_A=None keeps the June bulk assumption.
+    t = np.arange(0.0, 2.0 + 5e-4, 1e-3)
+    ones, zero = np.ones_like(t), np.zeros_like(t)
+    g = balance_geometry(_trajectory(t, zero, zero, 40.0 * ones, zero, zero, 3.0 * ones))
+    tw = t[500:1500]
+    kw = dict(mass_amu=M_AMU, binding_energy_eV=E_BIND, potential_steepness_A=S_POT,
+              droplet_radius_A=R_DROP, interior_rho_min=0.0)
+    v, a = np.full(tw.shape, 3.0), np.zeros(tw.shape)
+    gated = force_balance_trace(g, tw, v, a, gate_steepness_A=S_RHO, **kw)
+    bulk = force_balance_trace(g, tw, v, a, gate_steepness_A=None, **kw)
+    assert gated.rho_hat.max() < 1e-6
+    np.testing.assert_array_equal(bulk.rho_hat, 1.0)
+    np.testing.assert_allclose(bulk.F_drag_bulk, bulk.F_drag_apparent)
+
+
+def test_spline_derivative_june_pipeline():
+    t = np.arange(0.0, 3.0 + 5e-4, 1e-3)
+    v = 3.0 + 0.2 * np.sin(t)
+    speed, dvdt, s = spline_speed_and_derivative(t, v)
+    assert s == pytest.approx(mad_spline_smoothing(v))
+    # The MAD heuristic admits residuals ~ the first-difference spread even on
+    # noise-free input; measured interior derivative error 1.2e-3 A/ps^2 (0.6 %
+    # of the 0.2 A/ps^2 amplitude) -> 5e-3 bound; speed residual measured
+    # 7.8e-4 A/ps (0.03 % of 3 A/ps) -> 1e-3 bound.
+    np.testing.assert_allclose(dvdt[500:-500], 0.2 * np.cos(t[500:-500]), atol=5e-3)
+    np.testing.assert_allclose(speed, v, atol=1e-3)
+    _, _, s2 = spline_speed_and_derivative(t, v, smoothing_scale=2.0)
+    assert s2 == pytest.approx(2.0 * s)
+    with pytest.raises(ValueError, match="smoothing_scale"):
+        spline_speed_and_derivative(t, v, smoothing_scale=0.0)
