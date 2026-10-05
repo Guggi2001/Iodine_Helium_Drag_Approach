@@ -539,7 +539,7 @@ E_bind pairing, pipeline (this commit, before any run).
   as run; its physical reading is contested and adoption is **on hold**.
   Discussion: log 2026-10-05 "G4.11 re-read". Follow-up: G4.12.
 
-### G4.12 TDDFT-tied linear + quadratic ridge vs the experiment, uncapped (DRAFT 2026-10-05 — user check pending; nothing run)
+### G4.12 TDDFT-tied linear + quadratic ridge vs the experiment, uncapped (user-checked 2026-10-05; open items (a)–(c) settled below; frozen before any run)
 
 **Why.** 18 Å fixes one number, the drag at v ≈ 3 Å/ps (§10.8; G4.10
 amendment 3). Linear (a 23.15, RMSE 0.1239) and quadratic (c 7.224,
@@ -593,17 +593,32 @@ landing selects (Φ 0.64–1.0 ⇔ Δc ≈ 2.3).
 - *Bound:* pass if v_exit,MD ≥ v_exit,atom 1. Margins are recorded;
   |margin| ≤ 0.05 Å/ps is flagged "at the bound". Also recorded:
   in-window RMSE against |v1|, |v2| and their mean.
+- *One-sided (disclosed).* The bound rejects over-dissipation only; a law
+  that is too weak also passes. Along the ridge F(4) ≈ 89.3 + 4c, so the
+  9 Å drag falls as c drops below 7.22: if the quadratic sits at atom 1,
+  every c < 7.22 passes by construction. Step 2 is then a consistency
+  check on the 9 Å reading, not a selector inside the window; the
+  selection is step 3's.
+- *Mass bias (disclosed).* The MD ion stays at m_eff = 19 He; HeDFT
+  atom 1 sheds ≈ 21 → 14 He over the window. A lighter ion decelerates
+  more slowly under the same drag, so the comparison is biased against
+  the MD (makes the bound harder to pass), not in its favour.
 
 **Step 3 — experiment, zero MD (the twin), uncapped.** Points passing
 steps 1 and 2 enter `scripts/tier2_h2b_forward_model.py` (the `linq`
 branch, no cap) at the h405 pipeline settings. Hard gate = §3.5c verbatim
 (n₁_solv ∈ [0.19, 0.30] AND n̄ ∈ [4.4, 7.1]). Reported, not gating:
 KE₁ (licensed, Step-0 ρ 0.998), Φ, midHot, deepKE (blind-spot
-disclosure), W₁, trap floor. **Open before step 3 (user):** (a) the twin
-runs the 14.2 Å surface (`STEEP_A`); use `rho_steepness = 3.5` for the
-gate or not; (b) E_bind: each ridge point's own 18 Å E_bind (TDDFT
-pairing) vs the twin's well grid; (c) the τ / E₀ grid (linscan's, or
-narrowed around h405).
+disclosure), W₁, trap floor. **Settled (user, 2026-10-05):**
+(a) gate: ridge points run with `rho_steepness = 3.5` (the width they
+were fitted under; potential stays 14.2 Å). Anchor first: h405 through
+the twin at both 14.2 and 3.5 Å, so the gate's own shift is measured
+before any ridge point is scored. (b) E_bind: each ridge point's own
+18 Å E_bind is primary (TDDFT pairing); the twin's well grid is a
+recorded sensitivity only. (c) τ / E₀: linscan's full grid, not one
+narrowed around h405 (a cubic-centred grid could fake "no point lands");
+any near-pass is refined before a fail is recorded. Execution stops
+after step 2 for a user recap before step 3.
 
 **Decision rule.** Some c > 0 passes steps 1–3 → an uncapped
 TDDFT-tied mixed law is a landing candidate; an MD battery follows under
