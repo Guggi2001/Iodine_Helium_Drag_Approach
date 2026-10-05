@@ -301,6 +301,8 @@ _KNOWN_DRAG_BUNDLES = _UNSTAMPED_LEGACY_DRAG_BUNDLES + (
     "srho3p5A18A_linear",
     "srho3p5A18A_cubic",
     "srho3p5A18A_linear_cubic",
+    "srho3p5A18A_quadratic",
+    "srho3p5A18A_linear_quadratic",
 )
 
 # The density/drag-gate width every pre-G4 (unstamped) bundle was extracted under:

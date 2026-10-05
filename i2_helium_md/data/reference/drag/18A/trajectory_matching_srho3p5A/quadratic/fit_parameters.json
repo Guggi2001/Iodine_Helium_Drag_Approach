@@ -76,5 +76,6 @@
   },
   "drag_spatial_gate": "erf_independent",
   "drag_gate_steepness_angstrom": 3.5,
-  "potential_steepness_angstrom": 14.2
+  "potential_steepness_angstrom": 14.2,
+  "bundle_id": "srho3p5A18A_quadratic"
 }

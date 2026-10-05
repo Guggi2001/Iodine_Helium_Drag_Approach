@@ -334,6 +334,10 @@ DRAG_BUNDLE_CATALOG: dict[str, str] = {
     "srho3p5A18A_linear": "18A/trajectory_matching_srho3p5A/linear",
     "srho3p5A18A_cubic": "18A/trajectory_matching_srho3p5A/cubic",
     "srho3p5A18A_linear_cubic": "18A/trajectory_matching_srho3p5A/linear_cubic",
+    # --- G4.11 18 A-only quadratic families at s_rho = 3.5 A (diagnostic;
+    # selectable for Tier-0 runs, not preset-wired) ---
+    "srho3p5A18A_quadratic": "18A/trajectory_matching_srho3p5A/quadratic",
+    "srho3p5A18A_linear_quadratic": "18A/trajectory_matching_srho3p5A/linear_quadratic",
 }
 
 _DRAG_BUNDLE_CASES = ("9A", "18A")

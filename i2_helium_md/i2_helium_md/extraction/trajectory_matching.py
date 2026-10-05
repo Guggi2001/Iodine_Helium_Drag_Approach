@@ -2027,6 +2027,7 @@ def write_per_case_form_fit_parameters(
     transverse_contaminated: bool,
     anchor_provenance: str,
     v_ref_Aps: float | None = None,
+    bundle_id: str | None = None,
 ) -> Path:
     """Write a §10.8 per-case (single-case) form ``fit_parameters.json`` bundle.
 
@@ -2073,6 +2074,9 @@ def write_per_case_form_fit_parameters(
     v_ref_Aps : float, optional
         REQUIRED for ``power_law`` -- the locked pivot speed (§10.4.1) stamped in
         the pivot block. Ignored for ``linear_quadratic``.
+    bundle_id : str, optional
+        The catalog id (read back for the selector guard); written only when
+        given, so the bundle can be selected by ``SimConfig.drag_bundle``.
 
     Raises
     ------
@@ -2188,6 +2192,8 @@ def write_per_case_form_fit_parameters(
                 "uncertainty (§10.8)"
             ),
         }
+    if bundle_id is not None:
+        payload["bundle_id"] = bundle_id
 
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "fit_parameters.json"

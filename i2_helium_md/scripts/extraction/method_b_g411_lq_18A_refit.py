@@ -72,7 +72,7 @@ from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     write_per_case_form_fit_parameters,
 )
 from i2_helium_md.physics.drag import LINEAR_QUADRATIC  # noqa: E402
-from i2_helium_md.presets import REFERENCE_DRAG_ROOT  # noqa: E402
+from i2_helium_md.presets import DRAG_BUNDLE_CATALOG, REFERENCE_DRAG_ROOT  # noqa: E402
 from scripts.extraction.form_phase_common import (  # noqa: E402
     A0,
     ANCHOR_PROVENANCE,
@@ -102,6 +102,18 @@ HELD_OUT_AXIS = "9A (G4.11 C-X: force-balance drag, no trajectory fit; G4.9)"
 # Oracle points (committed artifacts, read at run time -- never retyped).
 G49_CUBIC_SUMMARY = OUT_ROOT / "cubic" / "fit_summary.json"
 JUNE_QUADRATIC_BUNDLE = LEGACY_GATE_ROOT / LQ_SHARED_PURE_QUADRATIC / "fit_parameters.json"
+
+
+def bundle_id(family: str) -> str:
+    """Catalog id of a family's bundle (must map to ``OUT_ROOT / family``)."""
+    bid = f"srho3p5A18A_{family}"
+    if bid not in DRAG_BUNDLE_CATALOG:
+        raise ValueError(f"bundle id {bid!r} is not in DRAG_BUNDLE_CATALOG")
+    if (REFERENCE_DRAG_ROOT / DRAG_BUNDLE_CATALOG[bid]).resolve() != (
+        OUT_ROOT / family
+    ).resolve():
+        raise ValueError(f"catalog maps {bid!r} elsewhere than {OUT_ROOT / family}")
+    return bid
 
 
 def band_checks_18a(rmse_Aps: float, escape_fraction: float) -> dict:
@@ -173,6 +185,7 @@ def _summary(fit, family: str) -> dict:
         "goal": "THESIS_FINAL_GOALS.md G4.11 step 1 (18 A-only, s_rho = 3.5 A)",
         "preregistration": "THESIS_FINAL_GOALS.md G4.11, committed 10144c3 before any run",
         "family": family, "variant": fit.variant, "form": fit.form,
+        "bundle_id": bundle_id(family),
         "calibration_cases": fit.cases,
         "coefficients": dict(fit.best.coefficients),
         "e_bind_eV": fit.best.e_bind_eV[CASE],
@@ -225,7 +238,7 @@ def run_fits(families) -> None:
             print(f"      half-widths {hw}")
             write_per_case_form_fit_parameters(
                 fit, out_dir, transverse_contaminated=False,
-                anchor_provenance=ANCHOR_PROVENANCE,
+                anchor_provenance=ANCHOR_PROVENANCE, bundle_id=bundle_id(family),
             )
         summary["bundle_written"] = not trapped
         dump_json(summary, out_dir / "fit_summary.json")

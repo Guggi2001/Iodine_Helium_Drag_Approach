@@ -109,3 +109,28 @@ class TestDecisionRule:
         d = decide({"linear": True, "quadratic": True,
                     "linear_quadratic": True, "cubic": False})
         assert d["outcome"] == "open_decision"
+
+
+class TestTier0Selectable:
+    """All five 18 A-only s_rho = 3.5 A fits are Tier-0 VARIANT keys.
+
+    Reads the committed bundles; ``build_drag_cfg`` must load each one, bring
+    the 3.5 A gate it was fitted under, and pass the config guards.
+    """
+
+    @pytest.mark.parametrize("family, form", [
+        ("linear", LINEAR_CUBIC),
+        ("cubic", LINEAR_CUBIC),
+        ("linear_cubic", LINEAR_CUBIC),
+        ("quadratic", LINEAR_QUADRATIC),
+        ("linear_quadratic", LINEAR_QUADRATIC),
+    ])
+    def test_variant_builds_with_its_gate(self, family, form):
+        from scripts.tier0_common import build_drag_cfg
+
+        cfg = build_drag_cfg("18A", f"srho3p5A18A_{family}", num_molecules=2,
+                             ion_time_ps=1.0, dt_ion_ps=0.01, seed=1)
+        assert cfg.drag_bundle == f"srho3p5A18A_{family}"
+        assert cfg.drag_coefficients.form == form
+        assert cfg.drag_spatial_gate == "erf_independent"
+        assert cfg.drag_gate_steepness == 3.5

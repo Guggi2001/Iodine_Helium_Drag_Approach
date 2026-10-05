@@ -6,6 +6,7 @@
   "family": "linear_quadratic",
   "variant": "lq_shared_3param",
   "form": "linear_quadratic",
+  "bundle_id": "srho3p5A18A_linear_quadratic",
   "calibration_cases": [
     "18A"
   ],
