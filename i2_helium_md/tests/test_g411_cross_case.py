@@ -134,3 +134,13 @@ class TestTier0Selectable:
         assert cfg.drag_coefficients.form == form
         assert cfg.drag_spatial_gate == "erf_independent"
         assert cfg.drag_gate_steepness == 3.5
+
+    def test_figure_label_names_the_bundle(self):
+        from scripts.post_processing.tier0_drag_comparison import drag_bundle_label
+        from scripts.tier0_common import build_drag_cfg
+
+        cfg = build_drag_cfg("18A", "srho3p5A18A_quadratic", num_molecules=2,
+                             ion_time_ps=1.0, dt_ion_ps=0.01, seed=1)
+        label = drag_bundle_label(cfg)
+        assert label.startswith("srho3p5A18A_quadratic: linear_quadratic a=0, c=7.224")
+        assert "E_bind 0.1191 eV" in label and "gate 3.5 Å" in label

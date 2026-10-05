@@ -147,6 +147,22 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 _ORIGIN_TOL_PS = 1e-6
 
 
+def drag_bundle_label(cfg: SimConfig) -> str:
+    """One-line description of the drag law a run was simulated with.
+
+    Read from the run's own ``cfg.json`` (not the USER SETTINGS), e.g.
+    ``"srho3p5A18A_cubic: linear_cubic a=0, b=2.229 | E_bind 0.1214 eV |
+    gate 3.5 A"`` -- for figure titles, so every plot names its bundle.
+    """
+    coeffs = cfg.drag_coefficients
+    terms = ", ".join(f"{k}={v:.4g}" for k, v in coeffs.coefficients.items())
+    return (
+        f"{cfg.drag_bundle}: {coeffs.form} {terms} | "
+        f"E_bind {cfg.binding_energy_I_ion_eV:.4g} eV | "
+        f"gate {drag_gate_steepness(cfg):.3g} Å"
+    )
+
+
 def read_drag_window(coeff_dir: Path) -> tuple[float, float, float]:
     """Read ``(t_start, t_end, meff_amu)`` from ``coeff_dir/fit_parameters.json``.
 
@@ -334,6 +350,7 @@ def build_figure(
     window: tuple[float, float],
     positions_figure: bool,
     droplet_radius = None,
+    bundle_label: str | None = None,
 ):
     """Create two figures:
 
@@ -434,7 +451,11 @@ def build_figure(
     ax_v.spines["right"].set_visible(False)
 
     title = f"Tier-0 drag comparison  (r0={hedft.droplet_radius_A:.0f} A)"
+    if bundle_label:
+        title += f"\n{bundle_label}"
     fig_bottom.suptitle(title)
+    if positions_figure and bundle_label:
+        fig_top.suptitle(bundle_label)
     # layout is handled by constrained_layout=True in the subplots calls;
     # calling tight_layout() after constrained_layout can trigger a Matplotlib
     # warning about switching layout engines, so avoid it.
@@ -495,7 +516,7 @@ def plot_energy_analysis(
     ax.legend(frameon=False)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    fig.suptitle("Tier-0 per-atom kinetic energy")
+    fig.suptitle(f"Tier-0 per-atom kinetic energy\n{drag_bundle_label(cfg)}")
     return fig
 
 
@@ -599,6 +620,7 @@ def build_force_figure(ion, cfg, window, *, atom_index=1):
     ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
     ax_top.set_title(
         f"{CASE} t*-seeded -- radial-projected forces, atom {atom_index + 1}"
+        f"\n{drag_bundle_label(cfg)}"
     )
     ax_top.legend(frameon=False, ncol=2)
     ax_top.spines["top"].set_visible(False)
@@ -663,7 +685,8 @@ def main() -> int:
 
     if SHOW_FIGURE:
         import matplotlib.pyplot as plt
-        build_figure(ion, hedft, window, False, droplet_radius)
+        build_figure(ion, hedft, window, False, droplet_radius,
+                     bundle_label=drag_bundle_label(cfg))
         if ENERGY_FIGURE:
             plot_energy_analysis(ion, cfg, window)
         plt.show()
