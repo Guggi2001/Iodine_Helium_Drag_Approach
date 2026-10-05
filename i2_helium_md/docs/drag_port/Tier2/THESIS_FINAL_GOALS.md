@@ -3,9 +3,10 @@
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
-**Status (2026-10-02):** G4 **executed** (see the G4.8 status block);
-adoption of the new bundle is an open **decision needed**. G1, G2
-(production switch), G5–G7 not started.
+**Status (2026-10-05):** G4 **executed** (G4.8). The adoption decision
+is superseded by **G4.9** (18 Å-only refit; 9 Å held out as
+non-radial), agreed, not started. G1, G2 (production switch), G5–G7 not
+started.
 
 ## 0. Why the whole chain is redone
 
@@ -264,6 +265,44 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
 > (b) treat it as blocking and open the 9 Å misfit (per-case wells
 > 0.132 / 0.193 eV in `diagnostic_4param`) before G5. Production stays on
 > `shared_pure_cubic` at 14.2 Å until decided.
+
+### G4.9 18 Å-only refit (agreed 2026-10-05; supersedes the G4.8 decision)
+
+- **Why.** The 9 Å reference is non-radial: the compared ion stalls,
+  oscillates and exits sideways. A radial MD can match it only by
+  absorbing the missing dimension into the drag/binding (METHOD_B §5).
+  The 14.2 Å gate's long soft drag region could imitate the long dwell
+  time; the 3.5 Å gate cannot. 9 Å is therefore dropped from the fit.
+  The G4 Tier-1a |v| failure (scored on the same 9 Å trace) is
+  non-informative and no longer gates.
+- **Step 1 — confirm the mechanism (no new fits).** 9 Å |v| residual
+  vs time at the committed shared-cubic points (14.2 Å control: b 2.5144,
+  E_bind 0.1168; 3.5 Å G4: b 2.2300, E_bind 0.1277), plotted against
+  the reference transverse velocity. Confirmed if the extra 3.5 Å
+  residual sits in the stall / sideways phase.
+- **Step 2 — 18 Å-only Method-B fit at s_ρ = 3.5 Å.** Families
+  `shared_linear`, `shared_cubic`, `shared_linear_cubic` (same engine,
+  bounds, starts and anchors as G4; single case). Bands: 18 Å RMSE
+  ≤ 0.19 Å/ps, escape = 1. Selection: the G4.2 nested tests and winner
+  rule unchanged (T_a0, T_b0 ≤ 0.005 Å/ps). Control: `shared_cubic` at
+  14.2 Å, same reference. Oracle first: a single-case evaluation at the
+  G4 point and the control point reproduces the committed 18 Å RMSEs
+  (0.125 / 0.1346).
+- **Step 3 — 9 Å held-out prediction** of the winner, no refit: RMSE on
+  the radial early window [t*, 6 ps] and on the full window. Recorded,
+  not gating.
+- **Known costs (thesis statements).** No held-out case remains;
+  validation rests on Tier 2. 18 Å alone did not identify a power-law
+  exponent (§10.8), so the family choice is limited to the three forms
+  above by decision. The b ↔ E_bind trade-off on one curve is reported
+  via the sensitivity half-widths. m_eff = 19 He is borrowed from the
+  9 Å shell-loss curve (G3).
+- **Projection on record (not a gate).** E_bind falls toward the old
+  18 Å-only value (0.071 eV, §8); via the system slope ≈ −0.53 this
+  would raise KE₁ by ≈ +0.02–0.03 eV.
+- **Storage.** `data/reference/drag/18A/trajectory_matching_srho3p5A/`
+  `{family}/` + `verdict.json`; the step-1 table and the 9 Å prediction
+  beside it. Code requires `[PROCEED TO IMPLEMENTATION]`.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
