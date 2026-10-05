@@ -328,11 +328,17 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   forms agree there (consistency check).
 - **Balance along v̂, per time point** [amu·Å/ps²]:
 
-  $$\gamma(v)\,\hat\rho(r)\,v = F_C\cos\theta + F_\text{well}\,(\hat r\cdot\hat v) - m_\text{eff}\,\frac{d|v|}{dt}$$
+  $$\gamma(v)\,\hat\rho(r)\,v = F_C\cos\theta - \frac{dU}{dr}\,(\hat r\cdot\hat v) - m_\text{eff}\,\frac{d|v|}{dt}$$
+
+  (*Amended 2026-10-05, before any run:* the well term was written
+  `+F_well (r̂·v̂)`. `droplet_force` returns dU/dr > 0 and the force on
+  the ion is −dU/dr·r̂, inward (`physics/leapfrog.py`), so the term
+  enters with a minus sign. In the 18 Å interior it is ≈ 40 against
+  F_C cos θ ≈ 68 amu·Å/ps², so the sign is material.)
 
   - |v| and d|v|/dt from the committed smoothed reference
     (`velocity_smoothed/cleaned_data_long.csv`, same pipeline as Method B);
-    the derivative by Savitzky–Golay.
+    the derivative by Savitzky–Golay (primary window 0.5 ps).
   - F_C = k_e e²/R², with R and θ from the raw TDDFT positions; the
     velocity direction from the vector components smoothed over 0.5 ps.
   - F_well from the package `droplet_force` (no duplicate physics) at the
@@ -355,6 +361,24 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   anchored m(t) 21 → 14 He; the apparent drag at points outside the
   surface (ρ̂ < 0.1) as a direct measure of the late slowing seen in
   G4.9 step 1.
+- **Amendments (2026-10-05, before any run; user-agreed).**
+  1. Well-term sign corrected (see the balance above).
+  2. *Derivative resolution.* The committed references are already
+     order-1 SG-smoothed over 3.4 ps (18 Å) / 2.4 ps after IMF (9 Å),
+     so their derivative is a window-mean slope and the 0.25 / 0.5 /
+     1.0 ps SG sensitivity on them is near-inert. Added row (recorded,
+     not gating): |v| and d|v|/dt from the **raw** TDDFT |v₂| with SG
+     windows 0.25 / 0.5 / 1.0 ps. The committed reference stays primary.
+  3. *18 Å form identifiability.* The 18 Å interior (ρ̂ ≥ 0.9) spans
+     4.54–6.20 ps with |v| 2.95–3.02 Å/ps (2 % range): the 18 Å cubic
+     b_A is effectively F_drag/v³ at v ≈ 2.98, and the 18 Å-alone form
+     comparison cannot separate linear from cubic (stated before the
+     run). Form information comes from 9 Å (|v| 3.08–4.94) and joint.
+  4. *b_A ↔ E_bind.* In the 18 Å interior the drag is the residual of
+     two comparable terms, so b_A is linear in E_bind
+     (≈ −12.5 amu·ps/Å² per eV); the check tests the (b, E_bind) pair,
+     not b alone. Added recorded sensitivity: droplet radius ± 8 % (the
+     N → R convention spread, G1 above).
 - **Cost.** No MD. A small module under `i2_helium_md/extraction/`, a
   driver and tests, ≈ 2–3 h. Code requires `[PROCEED TO
   IMPLEMENTATION]`.
