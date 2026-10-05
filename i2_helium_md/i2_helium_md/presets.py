@@ -329,6 +329,11 @@ DRAG_BUNDLE_CATALOG: dict[str, str] = {
     "srho3p5A_shared_linear_cubic": (
         "shared/trajectory_matching_srho3p5A/shared_linear_cubic"
     ),
+    # --- G4.9 18 A-only refit at s_rho = 3.5 A (9 A held out as non-radial);
+    # calibrated on 18 A, applied to either geometry (no ``{case}``) ---
+    "srho3p5A18A_linear": "18A/trajectory_matching_srho3p5A/linear",
+    "srho3p5A18A_cubic": "18A/trajectory_matching_srho3p5A/cubic",
+    "srho3p5A18A_linear_cubic": "18A/trajectory_matching_srho3p5A/linear_cubic",
 }
 
 _DRAG_BUNDLE_CASES = ("9A", "18A")

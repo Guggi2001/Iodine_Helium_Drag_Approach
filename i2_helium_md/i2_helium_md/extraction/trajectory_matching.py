@@ -840,6 +840,7 @@ def fit_shared_trajectory_matching(
     fatol_Aps: float = 1.0e-3,
     xatol_normalized: float = 1.0e-3,
     run_fn: Callable[..., IonCheckpoint] = run_ion_propagation,
+    allow_single_case: bool = False,
 ) -> SharedTrajectoryMatchingFit:
     """Run the §9 Stage-2 joint Nelder-Mead fit across all cases in ``setups``.
 
@@ -878,6 +879,12 @@ def fit_shared_trajectory_matching(
     extra_starts : bool
         Adds the two ridge-probing starts (high-binding, coefficient-tilted)
         mirroring the per-case fit's multi-start scheme.
+    allow_single_case : bool
+        ``False`` (default) refuses fewer than two cases (the cross-case
+        fit). ``True`` accepts a single case: the equal-weight mean over one
+        case is that case's objective, so the same variants, bounds, starts
+        and anchors run on one curve (THESIS_FINAL_GOALS G4.9, the 18 A-only
+        refit with 9 A held out as non-radial).
 
     Returns
     -------
@@ -890,10 +897,11 @@ def fit_shared_trajectory_matching(
         raise ValueError(
             f"variant must be one of {JOINT_VARIANTS}, got {variant!r}"
         )
-    if len(setups) < 2:
+    if len(setups) < (1 if allow_single_case else 2):
         raise ValueError(
             f"the shared-form refit is a cross-case fit; need >= 2 cases, "
-            f"got {sorted(setups)}"
+            f"got {sorted(setups)} (pass allow_single_case=True for a "
+            "single-curve fit)"
         )
     cases = list(setups)
     first = setups[cases[0]]
@@ -1113,6 +1121,10 @@ def write_shared_fit_parameters(
     per-case windows are in ``windows``); ``reference_file`` lists both
     per-case references.
 
+    A single-case fit (``allow_single_case``, G4.9) writes the same schema;
+    its flags record that no cross-case axis was consumed and, for an 18 A-only
+    fit, that the non-radial 9 A reference is not in the objective.
+
     Both shared variants are recorded to their own directories by the driver
     (the production-candidate choice is deferred to the preset-rewiring
     decision); the 4-parameter diagnostic is refused -- it has no single
@@ -1216,11 +1228,11 @@ def write_shared_fit_parameters(
         "branch": _git_branch(repo_root),
         "flags": {
             "radial_projection_convention": True,
-            # 9A (genuinely non-radial) is INSIDE the Stage-2 joint
-            # objective -- the §3.5 accepted risk, carried by the bundle.
-            "transverse_contaminated_non_radial_reference": True,
+            # 9A (genuinely non-radial) inside the objective is the §3.5
+            # accepted risk; a single-case 18A fit (G4.9) does not carry it.
+            "transverse_contaminated_non_radial_reference": "9A" in fit.cases,
             "full_window_heldout_window_axis_forfeited": True,
-            "cross_case_axis_consumed_by_joint_fit": True,
+            "cross_case_axis_consumed_by_joint_fit": len(fit.cases) > 1,
         },
         # --- G4.3 change 4: the spatial gate the fit ran under ---
         "drag_spatial_gate": fit.drag_spatial_gate,
