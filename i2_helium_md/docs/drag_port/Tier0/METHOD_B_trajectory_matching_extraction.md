@@ -895,3 +895,12 @@ smoothing first (D0 §1.G4.10). Module
 `extraction/force_balance.py`; driver
 `scripts/extraction/method_a_force_balance_g410.py`; artifacts
 `data/reference/drag/force_balance_srho3p5A/`.
+
+*Post-hoc (same day):* with the June Method-A data handling kept (short
+references, [4.54, 8.0] / [2.67, 6.0], MAD spline, 0.5 ps trim) and only
+the physics corrected, the cubic b is 18 Å 2.449 and 9 Å 2.634 — both in
+the band; 9 Å, held out of §11.1, sits at its upper edge. The pre-registered
+gap came mostly from the long reference's end-effect at 4.54 ps. Next:
+the same two-method test for linear / quadratic / linear + quadratic
+(`THESIS_FINAL_GOALS.md` G4.11). D0 §1.G4.10-PH.
+

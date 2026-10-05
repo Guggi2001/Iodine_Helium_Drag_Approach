@@ -9,8 +9,10 @@ non-radial), **executed 2026-10-05: winner `cubic` (`srho3p5A18A_cubic`,
 b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
 (force-balance cross-check), **executed 2026-10-05: 18 Å b_A = 1.618
 outside the band [1.803, 2.654], read as INCONCLUSIVE** (references not
-derivative-grade); next: derivative-grade smoothing, then rerun (G4.10
-status).
+derivative-grade). **Post-hoc (June Method-A pipeline + corrections):
+cubic b 18 Å 2.449, 9 Å 2.634 — both inside the band**, 9 Å at the edge
+(G4.10 status). **Next decisive goal: G4.11** (the same two-method test
+for linear / quadratic / linear + quadratic), specification open.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -399,6 +401,49 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   > cases (discussion first), rerun the three forms on 9 Å, 18 Å and
   > joint, and compare form by form with trajectory matching. Adoption of
   > `srho3p5A18A_cubic` for G5 waits on it.
+
+- **Post-hoc set (2026-10-05, after the run; user-agreed).** The June
+  Method-A pipeline (short references, [4.54, 8.0] / [2.67, 6.0], MAD
+  spline, 0.5 ps trim) with only the physics corrected (projection, well,
+  F/ρ̂ at 3.5 Å): cubic b **18 Å 2.449, 9 Å 2.634 — both in the band**;
+  9 Å (held out of G4.9) at the upper edge, leaving it under + 8 % radius
+  (2.705) and the anchored mass (2.691); 18 Å robust except − 8 % radius.
+  No form information (`linear_cubic` sign-unstable). The pre-registered
+  gap came mostly from the long reference's end-effect (0.27 Å/ps at
+  4.54 ps). Reading: the size of the cubic b is supported by an
+  independent local method on both cases. D0 §1.G4.10-PH.
+
+### G4.11 Two-method test of the alternative families (goal agreed 2026-10-05; specification OPEN)
+
+- **Goal (user, decisive for the form question).** For `linear`
+  (F = a v), `quadratic` (F = c v²) and `linear_quadratic`
+  (F = a v + c v²), test whether independent force-balance extraction
+  (Method A, the G4.10-PH pipeline) and forward trajectory matching
+  (Method B, s_ρ = 3.5 Å) give agreeing parameters on 9 Å and 18 Å — as
+  G4.10-PH did for the cubic. Units: a [amu/ps], c [amu/Å]; γ = F/v in
+  amu/ps (friction convention).
+- **Why it can discriminate.** One family agreeing with itself across
+  the two methods is the self-consistency of that law between the local
+  and the integrated read. A family whose Method-A value disagrees with
+  its Method-B value (or whose 9 Å and 18 Å Method-A values disagree)
+  is not a consistent description of the TDDFT data, whatever its
+  trajectory RMSE. The cubic (G4.10-PH) is the control row.
+- **Existing machinery.** Method B: `shared_linear` and the
+  `linear_quadratic` / pure-quadratic variants with single-case support
+  (METHOD_B §10; run at 14.2 Å, joint, so far). Method A: needs v² and
+  v + v² columns in `fit_drag_form`.
+- **Open — to settle before pre-registration (discussion).**
+  1. Method-B case set: 18 Å only (G4.9 convention), or also 9 Å?
+  2. E_bind: each Method-B family fits its own; Method A uses that
+     family's E_bind (b-given-E_bind, as G4.10)?
+  3. Agreement criterion per family (band from the Method-B
+     half-widths, as G4.10?) and the decision rule: which pattern of
+     agreements selects or rejects a form.
+  4. Form information: only 9 Å has a speed range (3.40–4.61 Å/ps in
+     the June window); 18 Å (2.72–3.20) checks size only.
+- **Cost (estimate).** Method B: three single-case fits at 3.5 Å (G4.9
+  runtime scale); Method A: zero MD. Code requires
+  `[PROCEED TO IMPLEMENTATION]`.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

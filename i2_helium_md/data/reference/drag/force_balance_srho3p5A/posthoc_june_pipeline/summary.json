@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-05",
+  "status": "POST-HOC (after the pre-registered G4.10 run); band applied descriptively",
+  "goal": "THESIS_FINAL_GOALS.md G4.10 post-hoc set: June Method-A pipeline + corrections",
+  "band_G410": [
+    1.8031419828047146,
+    2.6540629185103106
+  ],
+  "pipeline": {
+    "reference": "velocity_smoothed/cleaned_data.csv",
+    "derivative": "cubic smoothing spline, MAD-based s (June)",
+    "trim_points_per_end": 500,
+    "projection": "projected",
+    "gate_steepness_A": 3.5,
+    "direction_window_ps": 0.5
+  },
+  "cases": {
+    "18A": {
+      "trusted_window_ps": [
+        5.04,
+        7.5
+      ],
+      "rho_hat_range": [
+        0.4194784456680745,
+        0.9969786452183491
+      ],
+      "spline_s": 2.180494405310909e-07
+    },
+    "9A": {
+      "trusted_window_ps": [
+        3.17,
+        5.5
+      ],
+      "rho_hat_range": [
+        0.9955175606060951,
+        0.9999999903314192
+      ],
+      "spline_s": 6.523104412912378e-05
+    }
+  },
+  "cubic_b": {
+    "primary/18A": 2.44935391516714,
+    "primary/9A": 2.634123605167779,
+    "primary/joint": 2.6069264914270693,
+    "rho_cut_0p5/18A": 2.385134165563517,
+    "rho_cut_0p5/9A": 2.634123605167779,
+    "rho_cut_0p5/joint": 2.598776515110025,
+    "rho_cut_0p9/18A": 2.2519241620285393,
+    "rho_cut_0p9/9A": 2.634123605167779,
+    "rho_cut_0p9/joint": 2.5988545402644245,
+    "ebind_minus_hw/18A": 2.549395283684229,
+    "ebind_minus_hw/9A": 2.650196747844328,
+    "ebind_minus_hw/joint": 2.6353593094853487,
+    "ebind_plus_hw/18A": 2.349312546650055,
+    "ebind_plus_hw/9A": 2.618050462491228,
+    "ebind_plus_hw/joint": 2.5784936733687887,
+    "radius_minus8pct/18A": 3.782608072252931,
+    "radius_minus8pct/9A": 2.5707155738199217,
+    "radius_minus8pct/joint": 2.74909969148164,
+    "radius_plus8pct/18A": 2.2814327948901996,
+    "radius_plus8pct/9A": 2.7049759551153247,
+    "radius_plus8pct/joint": 2.64263265896809,
+    "spline_s_x0p5/18A": 2.449354336891379,
+    "spline_s_x0p5/9A": 2.6340833254739886,
+    "spline_s_x0p5/joint": 2.6068922681219058,
+    "spline_s_x2/18A": 2.4493536735566597,
+    "spline_s_x2/9A": 2.6340879249571474,
+    "spline_s_x2/joint": 2.6068959738884243,
+    "mass_anchored_9A/9A": 2.6904570257747102,
+    "decomp_old_nowell_scalar_nogate/18A": 3.6825628345044055,
+    "decomp_old_nowell_scalar_nogate/9A": 3.5742173764136664,
+    "decomp_old_nowell_scalar_nogate/joint": 3.5901652504777095,
+    "decomp_well_scalar_nogate/18A": 2.063933923931331,
+    "decomp_well_scalar_nogate/9A": 3.245110745648228,
+    "decomp_well_scalar_nogate/joint": 3.0712478119169866,
+    "decomp_well_projected_nogate/18A": 2.055598060135473,
+    "decomp_well_projected_nogate/9A": 2.6333657647854842,
+    "decomp_well_projected_nogate/joint": 2.5483214375529153
+  },
+  "cubic_in_band_all_sensitivity_rows": {
+    "18A": false,
+    "9A": false
+  }
+}

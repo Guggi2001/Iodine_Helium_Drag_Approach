@@ -13905,3 +13905,39 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
   Adoption of `srho3p5A18A_cubic` for G5 waits on it; production
   unchanged. Docs: D0 §1.G4.10, METHOD_B §11.2, `THESIS_FINAL_GOALS.md`
   G4.10 status corrected.
+
+## 2026-10-05 — G4.10 post-hoc set: the June Method-A pipeline + corrections — **cubic b 18 Å 2.449, 9 Å 2.634, both inside the trajectory-matching band**; G4.11 (alternative families, two-method test) set as the next goal
+
+- **Why (user).** The pre-registered G4.10 run replaced the June
+  Method-A data handling (short references, windows [4.54, 8.0] /
+  [2.67, 6.0], MAD spline, 0.5 ps trim) along with the physics. This set
+  keeps the June handling, changes only the physics (projection, well,
+  F/ρ̂ at 3.5 Å). Post-hoc; reported next to, not instead of, G4.10.
+- **Code.** `force_balance.py`: `spline_speed_and_derivative` /
+  `mad_spline_smoothing` (June heuristic) and `gate_steepness_A=None`
+  (no gate); driver `scripts/extraction/method_a_force_balance_g410_posthoc.py`;
+  tests +2 (no-gate bulk, spline). Artifacts
+  `data/reference/drag/force_balance_srho3p5A/posthoc_june_pipeline/`.
+- **Anchor.** The decomposition row "no well, scalar, no gate" returns
+  the committed Method-A `linear_and_cubic` (18 Å 14.556 / 2.0534;
+  9 Å on the repo short file 24.88 / 2.085 — the June local file gave
+  36.80 / 1.387, cubic b differs by 0.012).
+- **Measured (cubic b; band [1.803, 2.654] applied descriptively).**
+  Primary 18 Å 2.449, 9 Å 2.634, joint 2.607. Rows: ρ̂ ≥ 0.5 / 0.9 18 Å
+  2.385 / 2.252; E_bind ∓ hw 18 Å 2.549 / 2.349, 9 Å 2.650 / 2.618;
+  radius ∓ 8 % 18 Å 3.783 ✗ / 2.281, 9 Å 2.571 / 2.705 ✗; spline s × 0.5 /
+  × 2 inert; 9 Å anchored m(t) 2.691 ✗. Decomposition 18 Å / 9 Å: June
+  3.68 / 3.57 → + well 2.06 / 3.25 → + projection 2.06 / 2.63 → + gate
+  2.45 / 2.63. `linear_cubic` sign-unstable (no form information).
+- **Also found.** The short and long 18 Å references differ by
+  0.27 Å/ps at 4.54 ps (3.29 vs 3.02); on the same ρ̂ ≥ 0.9 points the
+  short gives 2.25, the long 1.62 — the reference end-effect drove most
+  of the pre-registered gap.
+- **Reading.** Consistent within uncertainties; 9 Å (held out of G4.9)
+  at the band's upper edge. Supports the size of the cubic b from an
+  independent local method on both cases; the form stays a decision.
+- **Next (user).** G4.11: the same two-method test (force balance vs
+  trajectory matching) for linear / quadratic / linear + quadratic —
+  goal entry in `THESIS_FINAL_GOALS.md`, specification open
+  (discussion first). Docs: D0 §1.G4.10-PH, METHOD_B §11.2.
+

@@ -696,6 +696,67 @@ slope, not resolved dynamics; not interpreted.
 > that smoothing (discussion first), then rerun. Adoption of
 > `srho3p5A18A_cubic` for G5 waits on it. Production stays
 > `shared_pure_cubic` at 14.2 Å.
+> *(Superseded the same day by the post-hoc June-pipeline set below and
+> the G4.11 goal.)*
+
+##### 1.G4.10-PH Post-hoc: the June Method-A pipeline + the agreed corrections (MEASURED 2026-10-05; POST-HOC)
+
+**Why.** The pre-registered run replaced the June Method-A data handling
+(`Drag_function/drag_function/drag_calculation.py`) along with the
+physics. This set keeps the June handling and changes only the physics.
+It is post-hoc (decided after the G4.10 result), but the June windows,
+trim and smoothing were fixed in June 2026, not tuned here. Driver
+`scripts/extraction/method_a_force_balance_g410_posthoc.py`; artifacts
+`data/reference/drag/force_balance_srho3p5A/posthoc_june_pipeline/`
+(`fits.csv`, `summary.json`); the G4.10 band is applied descriptively.
+
+- **June handling kept:** short references `velocity_smoothed/cleaned_data.csv`
+  (18 Å order-1 SG over 3.4 ps on [4.54, 8.0]; 9 Å IMF + SG on
+  [2.67, 6.0]); cubic spline with the MAD-based s; 0.5 ps trim per end →
+  trusted 18 Å [5.04, 7.5] (ρ̂ 1.00 → 0.42 at 3.5 Å), 9 Å [3.17, 5.5]
+  (ρ̂ ≈ 1). The repo 9 Å short file gives cubic b 2.634, the June local
+  file 2.646 (the repo file is used).
+- **Physics changed:** Coulomb projected on the motion, the well
+  −dU/dr (r̂·v̂) at the G4.9 E_bind, F/ρ̂ at s_ρ = 3.5 Å.
+- **Reference note:** the short and long 18 Å references differ by
+  0.27 Å/ps at 4.54 ps (3.29 vs 3.02; same order-1 SG over different
+  spans). On the ρ̂ ≥ 0.9 points the short reference gives b 2.25, the
+  pre-registered run on the long one 1.62: the reference end-effect, not
+  the physics, drove most of the G4.10 gap.
+
+| cubic b (band [1.803, 2.654]) | 18 Å | 9 Å | joint |
+|---|---|---|---|
+| **primary** (all trusted points) | **2.449 ✓** | **2.634 ✓** | 2.607 |
+| ρ̂ ≥ 0.5 / ≥ 0.9 | 2.385 ✓ / 2.252 ✓ | 2.634 ✓ (ρ̂ ≈ 1) | 2.599 / 2.599 |
+| E_bind − / + 1 hw | 2.549 ✓ / 2.349 ✓ | 2.650 ✓ / 2.618 ✓ | 2.635 / 2.579 |
+| radius − 8 % / + 8 % | **3.783 ✗** / 2.281 ✓ | 2.571 ✓ / **2.705 ✗** | 2.749 / 2.643 |
+| spline s × 0.5 / × 2 | 2.449 / 2.449 (inert) | 2.634 / 2.634 | — |
+| 9 Å anchored m(t) 21 → 14 | — | **2.691 ✗** | — |
+| decomposition: June (no well, scalar, no gate) | 3.683 | 3.574 | 3.590 |
+| + well (scalar, no gate) | 2.064 | 3.245 | 3.071 |
+| + well + projection (no gate) | 2.056 | 2.633 | 2.548 |
+
+(June row = the committed Method-A `linear_and_cubic` (14.56, 2.05) /
+(24.88, 2.08) as linear_cubic — reproduced.)
+
+- **Reads (measured).** With the June handling and the corrections, the
+  force-balance cubic b of **both** cases lies in the trajectory-matching
+  band, including **9 Å, which the G4.9 fit never saw** (held out).
+  18 Å is robust to the ρ̂ cut, E_bind and spline s (2.25–2.55). The well
+  is the largest correction (18 Å 3.68 → 2.06); the projection matters
+  only at 9 Å (3.25 → 2.63); the gate only where ρ̂ < 1 (18 Å 2.06 → 2.45).
+- **Limits.** 9 Å sits at the band's upper edge: + 8 % radius (2.705)
+  and the anchored mass (2.691) leave it by ≤ 0.05. 18 Å − 8 % radius
+  (3.78) leaves it far: a smaller droplet puts the late trusted points
+  outside the surface, so ρ̂ → small and F/ρ̂ blows up. Only the size of b
+  is checked: `linear_cubic` flips sign between rows (18 Å primary
+  a 31.0, b −1.02; 9 Å a −24.7, b 4.11), so these windows carry no form
+  information. E_bind is borrowed from Method B (b given E_bind).
+- **Reading.** Consistent within uncertainties, 9 Å at the band edge.
+  Supports the *size* of the cubic b (2.23) from an independent local
+  method on both TDDFT cases; the form remains a decision. Next: G4.11
+  (`THESIS_FINAL_GOALS.md`) — the same two-method test for the
+  linear / quadratic / linear + quadratic families.
 
 ## 2. Capped tail — v_c and p_tail
 
