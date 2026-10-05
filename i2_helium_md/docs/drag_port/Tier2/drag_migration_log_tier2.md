@@ -13871,8 +13871,37 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
 - **Interpretation (not measured).** In the near-surface zone the 14.2 Å
   well pulls while the 3.5 Å density is still bulk; Method A sees this as a
   depth-dependent drag, Method B averages it into b.
+  **WITHDRAWN the same day** — see the correction entry below.
 - **Status.** Per pre-registration no automatic adoption. Options (D0
   §1.G4.10): (a) adopt and record the depth dependence; (b) open the
   near-surface width inconsistency before G5. Production unchanged (h405,
   `shared_pure_cubic` at 14.2 Å). Docs: D0 §1.G4.10, METHOD_B §11.2,
   `THESIS_FINAL_GOALS.md` status.
+
+## 2026-10-05 — Correction: G4.10 is **inconclusive**, not evidence for a depth-dependent drag; the intended Method-A vs Method-B comparison is not yet achieved
+
+- **What was wrong.** The G4.10 reading rested on the committed 18 Å
+  reference being flat in the interior (3.01 → 2.95 Å/ps). That reference
+  is an order-1 SG over 3.4 ps (9 Å: IMF + SG over 2.4 ps), built for
+  trajectory matching, not for differentiation; its d|v|/dt is one
+  constant. The raw |v₂| oscillates, sits 0.15–0.2 Å/ps above it in the
+  interior (3.22 / 3.15 / 3.12 vs 3.01 / 2.99 / 2.96 at 4.54–5 / 5–5.5 /
+  5.5–6.2 ps) and drops ≈ 0.3 Å/ps at 6.2–7 ps. The interior (1.66 ps) is
+  shorter than the smoothing window, so the falling drag trend can be a
+  smoothing artifact. User-caught (question on the 3.3 → 2.6 Å/ps window
+  speed).
+- **What stands.** The measured numbers (b_A 1.618, 9 Å 2.013, joint
+  1.991, all sensitivity rows); the gate is formally failed as worded. The
+  machinery (synthetic inversion exact, old Method A reproduced). The 9 Å
+  projection effect (scalar 2.83 vs projected 2.01). The structural limit:
+  at s_ρ = 3.5 Å 18 Å checks the size of b, never the form.
+- **What is withdrawn.** "Drag depends on depth; the 14.2 Å well vs 3.5 Å
+  density widths disagree near the surface" and the decision options
+  built on it.
+- **Scope gap (user).** The intended step — force-balance fits of all
+  three forms on 9 Å and 18 Å with derivative-grade smoothing, compared
+  form by form with trajectory matching — is not achieved. Next:
+  design + validate that smoothing (discussion first), then rerun.
+  Adoption of `srho3p5A18A_cubic` for G5 waits on it; production
+  unchanged. Docs: D0 §1.G4.10, METHOD_B §11.2, `THESIS_FINAL_GOALS.md`
+  G4.10 status corrected.

@@ -8,7 +8,9 @@ is superseded by **G4.9** (18 Å-only refit; 9 Å held out as
 non-radial), **executed 2026-10-05: winner `cubic` (`srho3p5A18A_cubic`,
 b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
 (force-balance cross-check), **executed 2026-10-05: 18 Å b_A = 1.618
-outside the band [1.803, 2.654] → DECISION NEEDED** (G4.10 status).
+outside the band [1.803, 2.654], read as INCONCLUSIVE** (references not
+derivative-grade); next: derivative-grade smoothing, then rerun (G4.10
+status).
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -384,16 +386,19 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   driver and tests, ≈ 2–3 h. Code requires `[PROCEED TO
   IMPLEMENTATION]`.
 
-- **Status — EXECUTED 2026-10-05 (measured; DECISION NEEDED).** 18 Å
-  cubic b_A = 1.618 → **disagrees** with the band; 9 Å 2.013 and joint
-  1.991 lie inside. In the 18 Å interior the drag falls with depth at
-  constant v (F/v³ 2.16 → 1.01; the deepest bin matches 2.23). Full record:
-  D0 §1.G4.10, log 2026-10-05 G4.10 entry, artifacts
-  `data/reference/drag/force_balance_srho3p5A/`.
+- **Status — EXECUTED 2026-10-05 (measured; INCONCLUSIVE).** 18 Å
+  cubic b_A = 1.618 fails the band as worded; 9 Å 2.013 and joint 1.991
+  lie inside. The committed references (order-1 SG over 3.4 / 2.4 ps) are
+  not derivative-grade: at 18 Å they sit 0.15–0.2 Å/ps below the
+  oscillating raw speed in the 1.66 ps interior, so no force-balance
+  coefficient is trusted yet. The first reading (depth-dependent drag)
+  is withdrawn. Full record: D0 §1.G4.10, log 2026-10-05 G4.10 entry +
+  correction, artifacts `data/reference/drag/force_balance_srho3p5A/`.
 
-  > **DECISION NEEDED.** (a) Adopt `srho3p5A18A_cubic` for G5 and record
-  > the depth-dependent near-surface drag; or (b) open the near-surface
-  > well (14.2 Å) vs density (3.5 Å) width inconsistency before G5.
+  > **NEXT.** Design and validate a derivative-grade smoothing for both
+  > cases (discussion first), rerun the three forms on 9 Å, 18 Å and
+  > joint, and compare form by form with trajectory matching. Adoption of
+  > `srho3p5A18A_cubic` for G5 waits on it.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

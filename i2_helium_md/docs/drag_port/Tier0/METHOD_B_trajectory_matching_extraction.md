@@ -885,10 +885,13 @@ Method A revived with the Coulomb force projected on the motion and the
 solvation-well term included: γρ̂v = F_C cos θ − dU/dr (r̂·v̂) − m d|v|/dt,
 point by point on the smoothed TDDFT traces, interior ρ̂ ≥ 0.9 at 3.5 Å.
 18 Å cubic b_A = 1.618, outside the pre-registered §11.1 b ± 2 half-widths
-[1.803, 2.654]; 9 Å 2.013, joint 1.991. In the 18 Å interior the drag falls
-with depth at constant v (F/v³ 2.16 → 1.01; the deepest bin matches 2.23),
-so the trajectory-matched b is a window average of a depth-dependent drag.
-Adoption of the §11.1 bundle is a decision (D0 §1.G4.10). Module
+[1.803, 2.654]; 9 Å 2.013, joint 1.991. **Inconclusive:** the committed
+references (order-1 SG over 3.4 / 2.4 ps) are not derivative-grade — at
+18 Å they sit 0.15–0.2 Å/ps below the oscillating raw speed in the
+1.66 ps interior. The method itself is validated (synthetic inversion,
+old Method A reproduced); the 9 Å projection lowers b by 29 % vs the
+scalar form. A form-by-form A-vs-B comparison needs a derivative-grade
+smoothing first (D0 §1.G4.10). Module
 `extraction/force_balance.py`; driver
 `scripts/extraction/method_a_force_balance_g410.py`; artifacts
 `data/reference/drag/force_balance_srho3p5A/`.
