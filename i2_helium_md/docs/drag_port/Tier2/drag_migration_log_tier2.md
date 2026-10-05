@@ -13981,3 +13981,48 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
   cleared on the rule; adoption is the user's decision. Docs: D0
   §1.G4.11, `THESIS_FINAL_GOALS.md` G4.11 status, METHOD_B §11.3.
 
+## 2026-10-05 — G4.11 re-read (discussion, zero new numbers): the radial 9 Å runs say the cubic **over**-dissipates; the "under-predicts" reading is atom-2-specific; G4.12 (TDDFT-tied linear + quadratic ridge, uncapped) drafted
+
+- **User's Tier-0 runs (visual, not yet quantified).** The 18 Å-only
+  bundles (`srho3p5A18A_*`, now Tier-0 selectable) run radially on 9 Å:
+  the quadratic tracks HeDFT atom 1 (less transverse); the cubic tracks
+  atom 2 (transverse, stalls, leaves late).
+- **Argument (user; agreed).** The Coulomb energy released depends only
+  on R, not on direction. A transverse ion loses more only through a
+  longer path and residence in the helium. A radial MD ion with the true
+  law should therefore leave **at least as fast as atom 1**. If it
+  matches atom 2, the law over-dissipates. In the fast 9 Å phase
+  (3.4–4.6 Å/ps) the cubic is the steepest law (cubic and quadratic cross
+  at c/b ≈ 3.24 Å/ps), so the ordering is as expected.
+- **Correction to the G4.11 wording.** "Every law under-predicts the 9 Å
+  drag" holds only for the force balance of **atom 2** in [3.2, 5.5] ps.
+  The cos θ projection removes the Coulomb push that does not change
+  the speed. It does not remove other unmodelled terms booked as drag:
+  the radial well centred on the origin for an off-axis atom, partner
+  momentum exchange, and the transverse helium path. G4.9 dropped 9 Å for
+  exactly this reason; G4.10/G4.11 brought it back through the projection.
+  (The 14.2 Å shared law was also fitted to atom 2 at 9 Å.) The G4.11 rule
+  outcome stands as run; its physical reading is contested;
+  `srho3p5A18A_cubic` adoption **on hold**.
+- **Experimental side (zero-MD arithmetic from committed numbers).** The
+  landing is set by the force on the fast class (n = 1 at ≈ 9.7 Å/ps);
+  h405 plateau b·v_c³ = 418.5 amu·Å/ps². Uncapped 18 Å-only laws:
+  Φ = F(9.7)/418.5 = linear 0.54, quadratic 1.62, cubic 4.86. The
+  quadratic needs a cap even more than h405 (and arm 2 already rejected
+  adding c·v² at fixed a). The linear is softer than every gated
+  free-form linear cell (Φ ≥ 0.64).
+- **The mixed law (user).** 18 Å fixes only F(3) ≈ 67, so
+  F = a·v + c·v² with 3a + 9c ≈ 67 fits 18 Å along a one-parameter
+  ridge (projection). There F(9.7) ≈ 217 + 65·c, and c ≈ 0.8–3 amu/Å
+  (a ≈ 13–20 amu/ps) gives Φ 0.64–1.00 — the range where linear systems
+  landed — with no cap. Arm 2 tested a different direction (c on top of
+  fixed a), so it does not exclude this. Risks: c is then chosen by the
+  experiment (the free element moves, it does not vanish); the mid-band
+  softness F(5.5) ≈ 120–165 overheated midHot in the free-form ring.
+  This is consistent with the 9 Å bound: ridge laws sit below the
+  quadratic at 9 Å speeds.
+- **Next.** `THESIS_FINAL_GOALS.md` G4.12 drafted: ridge map on 18 Å →
+  9 Å exit bound (anchored first on the user's runs) → twin, uncapped.
+  Open items for the user: twin gate width, E_bind pairing, τ/E₀ grid.
+  Code requires `[PROCEED TO IMPLEMENTATION]`.
+

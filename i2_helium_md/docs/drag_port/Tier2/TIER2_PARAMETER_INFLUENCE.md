@@ -816,6 +816,14 @@ points. A family is consistent if both pass. Drivers
 - **Consequence.** The G4.10 / G4.11 gate on adopting
   `srho3p5A18A_cubic` for G5 is cleared on the pre-registered rule; the
   adoption itself is the user's call.
+- **Contested (post-hoc, 2026-10-05; visual, to be quantified in G4.12
+  step 2).** Radial Tier-0 9 Å runs of the same 18 Å laws: the quadratic
+  tracks HeDFT atom 1 and the cubic tracks the transverse atom 2. A
+  radial ion should leave at least as fast as atom 1, so the cubic
+  over-dissipates at 9 Å speeds. The C-X "under-prediction" is a
+  statement about atom 2's force balance only. Adoption on hold; G4.12
+  tests the TDDFT-tied linear + quadratic ridge uncapped against the
+  experiment (log 2026-10-05 "G4.11 re-read").
 
 ## 2. Capped tail — v_c and p_tail
 

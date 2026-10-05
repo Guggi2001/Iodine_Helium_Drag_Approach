@@ -15,7 +15,10 @@ cubic b 18 Å 2.449, 9 Å 2.634 — both inside the band**, 9 Å at the edge
 2026-10-05: only the cubic is consistent (s_X 1.182, s_M 1.099) → cubic
 supported by the TDDFT data** (marginal: C-X at the band edge); linear and
 quadratic fail C-X. The adoption gate for `srho3p5A18A_cubic` in G5 is
-cleared on the rule; **adoption: user decision.**
+cleared on the rule, but the reading is **contested** by the user's
+Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
+caveat) — **adoption on hold. Next: G4.12** (TDDFT-tied linear +
+quadratic ridge vs the experiment, uncapped), draft, user check pending.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -524,6 +527,103 @@ E_bind pairing, pipeline (this commit, before any run).
 
   > **NEXT (user).** Adopt `srho3p5A18A_cubic` for G5 (gate cleared on
   > the rule), or not.
+
+- **Post-hoc caveat (2026-10-05, user's Tier-0 9 Å runs; visual, not yet
+  quantified).** Run radially on 9 Å with the 18 Å-only laws, the
+  quadratic tracks the less-transverse HeDFT atom (atom 1) and the cubic
+  tracks the transverse, stalling atom 2. A radial ion has no transverse
+  loss path, so with the right law it should leave at least as fast as
+  atom 1: the cubic then over-dissipates at 9 Å speeds. This contradicts
+  the C-X reading ("every law under-predicts the 9 Å drag"), which rests
+  on the force balance of **atom 2** alone. The G4.11 rule outcome stands
+  as run; its physical reading is contested and adoption is **on hold**.
+  Discussion: log 2026-10-05 "G4.11 re-read". Follow-up: G4.12.
+
+### G4.12 TDDFT-tied linear + quadratic ridge vs the experiment, uncapped (DRAFT 2026-10-05 — user check pending; nothing run)
+
+**Why.** 18 Å fixes one number, the drag at v ≈ 3 Å/ps (§10.8; G4.10
+amendment 3). Linear (a 23.15, RMSE 0.1239) and quadratic (c 7.224,
+RMSE 0.1168) both fit it; G4.11's free lq fit fell onto the quadratic
+(a 0.004). So a one-parameter ridge of mixed laws F = a·v + c·v² should
+fit 18 Å. Along it the fast-class force varies widely (projection, F(3)
+≈ 67 amu·Å/ps² held fixed): F(9.7) ≈ 217 + 65·c, i.e. Φ = F(9.7)/418.5
+≈ 0.52 (c = 0) → 1.00 (c ≈ 3.1) → 1.62 (c = 7.22). The window
+c ≈ 0.8–3 amu/Å (a ≈ 13–20 amu/ps) puts the n = 1 force inside the band
+where linear-family systems landed in MD (Φ 0.64–0.99), **without a cap**.
+The free-form arm 2 "rejects the ram term" result does not exclude this:
+it added c·v² at fixed a = 35 (raising the force everywhere), not along
+the 18 Å ridge. The free-form family closed 2026-08-13 with a free a; here
+a and c are tied to TDDFT, so this is a different question.
+
+**Form and units.** F = g(ρ̂)·(a·v + c·v²), `linear_quadratic`, no cap;
+a [amu/ps], c [amu/Å]; each term amu·Å/ps²; γ = a + c·v [amu/ps]
+(friction convention; mass-agnostic). s_ρ = 3.5 Å, U width 14.2 Å,
+m_eff = 19 He.
+
+**What is honest about it.** 18 Å permits the ridge but does not select a
+point on it; c is chosen by the experiment, as v_c is today. The free
+element moves from a cap above 5.5 Å/ps to the curve's shape over all
+speeds — kink-free, not more physical. Known risk (projection from the
+free-form ring): along the ridge F(5.5) ≈ 120–165 vs h405 418.5, the
+mid-band softness that overheated midHot (1.4–2.2) at a = 27.5.
+
+**Step 1 — map the 18 Å ridge (Tier-0 engine, 18 Å only).** For fixed
+c ∈ {0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 7.224} fit
+(a ≥ 0, E_bind) on 18 Å: same engine, N = 50, seed 20260604, 20 ps at
+0.01 ps, long reference, 3.5 Å gate. Record RMSE, a, E_bind, escape,
+F(3), F(5.5), F(9.7), Φ per point. Bands (G4.9): RMSE ≤ 0.19 Å/ps,
+escape = 1. The grid step (0.4–0.5) is finer than the band that the
+landing selects (Φ 0.64–1.0 ⇔ Δc ≈ 2.3).
+- *Oracles first:* (i) the lq form at the G4.9 linear point (a 23.154,
+  c 0, E_bind 0.11647) reproduces RMSE 0.12389 bit-exactly; (ii) at the
+  G4.11 quadratic point (a 0, c 7.2241, E_bind 0.11910) RMSE 0.11680
+  bit-exactly; (iii) the fixed-c = 0 fit returns the G4.9 linear point
+  within optimizer tolerance (|Δa| ≤ 0.2, |ΔE| ≤ 0.002 eV).
+
+**Step 2 — 9 Å exit bound (Tier-0 radial runs, recorded per point).**
+- *Anchor first:* score the user's existing 9 Å runs of the 18 Å-only
+  linear / quadratic / cubic bundles and confirm the visual reading in
+  numbers (quadratic ≈ atom 1, cubic ≈ atom 2).
+- *Atom assignment:* the "less-transverse" atom is the one with the
+  smaller mean |v_⊥|/|v| over the 9 Å window, from the raw HeDFT
+  velocities (expected atom 1; verified, not assumed).
+- *Exit speed:* mean |v| over [13.0, 14.0] ps, MD ensemble mean and each
+  HeDFT atom. If either HeDFT atom is still inside the surface there
+  (ρ̂ > 0.1), stop and return to the user before scoring.
+- *Bound:* pass if v_exit,MD ≥ v_exit,atom 1. Margins are recorded;
+  |margin| ≤ 0.05 Å/ps is flagged "at the bound". Also recorded:
+  in-window RMSE against |v1|, |v2| and their mean.
+
+**Step 3 — experiment, zero MD (the twin), uncapped.** Points passing
+steps 1 and 2 enter `scripts/tier2_h2b_forward_model.py` (the `linq`
+branch, no cap) at the h405 pipeline settings. Hard gate = §3.5c verbatim
+(n₁_solv ∈ [0.19, 0.30] AND n̄ ∈ [4.4, 7.1]). Reported, not gating:
+KE₁ (licensed, Step-0 ρ 0.998), Φ, midHot, deepKE (blind-spot
+disclosure), W₁, trap floor. **Open before step 3 (user):** (a) the twin
+runs the 14.2 Å surface (`STEEP_A`); use `rho_steepness = 3.5` for the
+gate or not; (b) E_bind: each ridge point's own 18 Å E_bind (TDDFT
+pairing) vs the twin's well grid; (c) the τ / E₀ grid (linscan's, or
+narrowed around h405).
+
+**Decision rule.** Some c > 0 passes steps 1–3 → an uncapped
+TDDFT-tied mixed law is a landing candidate; an MD battery follows under
+its own trigger (nothing adopted from the twin). No point passes →
+recorded: the TDDFT-tied ridge cannot land uncapped, and the cap stays a
+permanent effective element. Step 2 failures are reported per point;
+whether the bound gates step 3 is fixed here: **it does** (a law that
+over-dissipates the radial 9 Å ion is not carried forward).
+
+**Not in scope.** Power law; capped variants of the ridge; production
+changes; any re-reading of G4.11's frozen criteria.
+
+**Code (requires `[PROCEED TO IMPLEMENTATION]`).** A fixed-c single-case
+lq fit (a, E_bind free) in the form engine or as a driver objective; a
+G4.12 driver (oracle / ridge / bound modes); a 9 Å exit-bound scorer;
+twin stage wiring. Tests: fixed-c fit on a stub landscape; the c = 0
+seam with the linear form; exit-bound arithmetic on synthetic traces.
+
+**Cost.** Step 1 ≈ 12 single-case fits (≈ 1 h, at most two processes);
+step 2 ≈ 12 × N = 50 9 Å runs (minutes each); step 3 zero MD.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
