@@ -143,10 +143,8 @@ def _trace(s: dict, geometry, ref):
     return fb, s_used
 
 
-def main() -> None:
-    bundle = json.loads(G49_BUNDLE.read_text())
-    b49, hw_b = float(bundle["b"]), float(bundle["b_err"])
-    band = (b49 - BAND_HALF_WIDTHS * hw_b, b49 + BAND_HALF_WIDTHS * hw_b)
+def load_case_data() -> dict:
+    """``{case: (short reference, balance geometry)}`` -- the June inputs."""
     data = {}
     for case in CASES:
         traj = load_hedft_trajectory(REPO_ROOT / "data" / "reference" / f"{case}_All_Data.csv")
@@ -154,6 +152,14 @@ def main() -> None:
             DRAG_ROOT / case / "velocity_smoothed" / REFERENCE_FILENAME
         )
         data[case] = (ref, balance_geometry(traj, direction_window_ps=DIRECTION_WINDOW_PS))
+    return data
+
+
+def main() -> None:
+    bundle = json.loads(G49_BUNDLE.read_text())
+    b49, hw_b = float(bundle["b"]), float(bundle["b_err"])
+    band = (b49 - BAND_HALF_WIDTHS * hw_b, b49 + BAND_HALF_WIDTHS * hw_b)
+    data = load_case_data()
 
     rows, info = [], {}
     for name, s in _variants(bundle).items():

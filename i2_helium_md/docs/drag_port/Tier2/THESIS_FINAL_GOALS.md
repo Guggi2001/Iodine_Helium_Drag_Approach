@@ -11,9 +11,11 @@ b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
 outside the band [1.803, 2.654], read as INCONCLUSIVE** (references not
 derivative-grade). **Post-hoc (June Method-A pipeline + corrections):
 cubic b 18 Å 2.449, 9 Å 2.634 — both inside the band**, 9 Å at the edge
-(G4.10 status). **Next decisive goal: G4.11** (cross-case drag-law test
-for linear / quadratic / linear + quadratic), pre-registered, not
-started.
+(G4.10 status). **G4.11** (cross-case drag-law test), **executed
+2026-10-05: only the cubic is consistent (s_X 1.182, s_M 1.099) → cubic
+supported by the TDDFT data** (marginal: C-X at the band edge); linear and
+quadratic fail C-X. The adoption gate for `srho3p5A18A_cubic` in G5 is
+cleared on the rule; **adoption: user decision.**
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -414,7 +416,7 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   4.54 ps). Reading: the size of the cubic b is supported by an
   independent local method on both cases. D0 §1.G4.10-PH.
 
-### G4.11 Cross-case drag-law test across families (PRE-REGISTERED 2026-10-05, user-checked; not started)
+### G4.11 Cross-case drag-law test across families (PRE-REGISTERED 2026-10-05, user-checked; EXECUTED 2026-10-05 — see status at the end)
 
 **Question.** Is there one friction law F(v) that describes the TDDFT
 ion at both speed ranges — 18 Å (≈ 2.7–3.2 Å/ps) and 9 Å (≈ 3.4–4.6 Å/ps)?
@@ -508,6 +510,20 @@ two new forms; s_X / s_M on synthetic forces (exact law → 1).
 sensitivity); step 2 zero MD. Code ≈ 2 h. Requires
 `[PROCEED TO IMPLEMENTATION]`. Frozen: criteria, band, decision rule,
 E_bind pairing, pipeline (this commit, before any run).
+
+- **Status — EXECUTED 2026-10-05 (measured; rule outcome: cubic
+  supported).** Step 1: `quadratic` c 7.224, E_bind 0.1191, 18 Å RMSE
+  0.1168 (bands pass); `linear_quadratic` collapses onto it (a 0.004).
+  Step 2, primary row, s_X / s_M: linear 1.823 ✗ / 0.981, quadratic and
+  linear + quadratic 1.476 ✗ / 1.035, **cubic 1.182 ✓ / 1.099 ✓**. Only
+  the cubic is consistent. Marginal: the cubic C-X leaves the band under
+  + 8 % radius (1.214) and the 9 Å anchored m(t) (1.207); linear and
+  quadratic fail in every row. Oracles bit-exact. Full record: D0
+  §1.G4.11, log 2026-10-05 G4.11 entry, artifacts
+  `data/reference/drag/force_balance_srho3p5A/g411_cross_case/`.
+
+  > **NEXT (user).** Adopt `srho3p5A18A_cubic` for G5 (gate cleared on
+  > the rule), or not.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

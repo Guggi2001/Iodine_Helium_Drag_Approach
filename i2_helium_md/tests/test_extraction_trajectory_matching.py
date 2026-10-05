@@ -1318,3 +1318,69 @@ class TestPerCaseFormBundleWriter:
                 anchor_provenance="test",
             )
 
+
+    def test_gate_override_is_stamped_and_read_back(self, joint_grid, tmp_path):
+        # G4.11: a single-case lq fit under the 3.5 A gate override (stub
+        # landscape, no MD) carries the gate into the fit and the bundle, and
+        # the loader reads the width back for the §6.5.2 guard.
+        import json as _json
+        from dataclasses import replace as _replace
+
+        t_grid, ref_speed = joint_grid
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"), true_by_case={"18A": _LQ_TRUE},
+        )
+        setup = setups["18A"]
+        setup = _replace(setup, cfg_base=_replace(
+            setup.cfg_base, drag_spatial_gate="erf_independent",
+            drag_gate_steepness=3.5,
+        ))
+
+        def escaped_run_fn(cfg, neutral):
+            # The stub parks escaped ions 3 gate widths out; at 3.5 A that is
+            # inside the 14.2 A well reach, so move them past it.
+            ion = run_fn(cfg, neutral)
+            ion.positions_x = ion.positions_x + 3.0 * cfg.potential_steepness
+            return ion
+
+        fit = fit_form_trajectory_matching(
+            setup, variant=LQ_SHARED_3PARAM, anchors=_LQ_ANCHORS,
+            run_fn=escaped_run_fn, maxfev_per_start=200, extra_starts=False,
+            prescan_e_bind_eV=[0.15, 0.2, 0.25],
+        )
+        assert fit.drag_spatial_gate == "erf_independent"
+        assert fit.gate_steepness_angstrom == 3.5
+        assert fit.potential_steepness_angstrom == setup.cfg_base.potential_steepness
+        fit.coeff_errs = {"a": 0.1, "c": 0.1}
+        fit.e_bind_err_eV = 0.01
+        fit.uncertainty_model = "rmse_sensitivity_only_seed_sweep_omitted_per_s8"
+        out = write_per_case_form_fit_parameters(
+            fit, tmp_path, transverse_contaminated=False,
+            anchor_provenance="test constants",
+        )
+        with open(out, "r", encoding="utf-8") as fh:
+            raw = _json.load(fh)
+        assert raw["drag_spatial_gate"] == "erf_independent"
+        assert raw["drag_gate_steepness_angstrom"] == 3.5
+        assert raw["potential_steepness_angstrom"] == setup.cfg_base.potential_steepness
+        coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
+        assert coeffs.extraction_gate_steepness_angstrom == 3.5
+
+    def test_legacy_gate_stamped_by_default(self, joint_grid, tmp_path):
+        # Without an override the stamp records the legacy gate (14.2 A).
+        import json as _json
+
+        fit = self._single_case_fit(
+            joint_grid, case="18A", variant=LQ_SHARED_PURE_QUADRATIC,
+            keys=("a", "c"), true=(0.0, 11.0, 0.20), anchors=_LQ_ANCHORS,
+        )
+        out = write_per_case_form_fit_parameters(
+            fit, tmp_path, transverse_contaminated=False,
+            anchor_provenance="test constants",
+        )
+        with open(out, "r", encoding="utf-8") as fh:
+            raw = _json.load(fh)
+        cfg = SimConfig()
+        assert raw["drag_spatial_gate"] == cfg.drag_spatial_gate
+        assert raw["potential_steepness_angstrom"] == cfg.potential_steepness
+        assert raw["drag_gate_steepness_angstrom"] == fit.gate_steepness_angstrom

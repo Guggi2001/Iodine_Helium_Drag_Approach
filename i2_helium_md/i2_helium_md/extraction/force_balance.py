@@ -21,8 +21,8 @@ legacy scalar form (``cos theta = 1``, no well) books ``F_C (1 - cos theta)``
 as drag whenever the motion is not along the pair axis.
 
 Units follow the friction convention (CLAUDE.md): forces in amu·Å/ps², ``a``
-[amu/ps], ``b`` [amu·ps/Å²], ``F = a v + b v^3``; mass enters only the
-inertial term. No MD is run.
+[amu/ps], ``b`` [amu·ps/Å²], ``c`` [amu/Å], ``F = a v + b v^3`` or
+``F = a v + c v^2`` (G4.11); mass enters only the inertial term. No MD is run.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter
 
 from ..physics.constants import EV, EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2, U, coulomb_energy
-from ..physics.drag import spatial_gate
+from ..physics.drag import DragCoefficients, drag_force, spatial_gate
 from ..physics.potentials import droplet_force
 from ..postprocess.hedft_loader import HedftTrajectory
 
@@ -44,6 +44,17 @@ AMU_A_PER_PS2_PER_EV_PER_A: float = EV_PER_ANGSTROM_PER_KG_TO_A_PER_PS2 / U
 
 PROJECTIONS: tuple[str, ...] = ("projected", "scalar", "legacy_no_well")
 FORMS: tuple[str, ...] = ("linear", "cubic", "linear_cubic")
+# The G4.11 quadratic families (fit_drag_form accepts both tuples).
+QUADRATIC_FORMS: tuple[str, ...] = ("quadratic", "linear_quadratic")
+
+# Design-matrix columns per form: coefficient name -> speed power.
+_FORM_TERMS: dict[str, tuple[tuple[str, int], ...]] = {
+    "linear": (("a", 1),),
+    "cubic": (("b", 3),),
+    "linear_cubic": (("a", 1), ("b", 3)),
+    "quadratic": (("c", 2),),
+    "linear_quadratic": (("a", 1), ("c", 2)),
+}
 
 
 def _uniform_dt_ps(time_ps: np.ndarray, rtol: float = 1e-3) -> float:
@@ -385,10 +396,11 @@ def force_balance_trace(
 
 @dataclass(frozen=True)
 class DragFormFit:
-    """Least-squares fit of ``F = a v + b v^3`` (through the origin).
+    """Least-squares fit of ``F = a v + b v^3 + c v^2`` (through the origin).
 
-    ``a`` [amu/ps], ``b`` [amu·ps/A^2] (0 where the form pins it);
-    ``a_se``/``b_se`` are naive OLS standard errors -- the residuals are
+    ``a`` [amu/ps], ``b`` [amu·ps/A^2], ``c`` [amu/A] (0 where the form pins
+    it; ``b`` and ``c`` are never both free -- cubic and quadratic families);
+    ``*_se`` are naive OLS standard errors -- the residuals are
     strongly autocorrelated (dense smoothed samples), so they understate the
     real uncertainty and are recorded only for scale. ``rmse_force`` in
     amu·A/ps^2; ``v_min``/``v_max`` [A/ps] give the speed lever arm.
@@ -403,6 +415,8 @@ class DragFormFit:
     n_points: int
     v_min: float
     v_max: float
+    c: float = 0.0
+    c_se: float = 0.0
 
 
 def fit_drag_form(speed_Aps: np.ndarray, force: np.ndarray, form: str) -> DragFormFit:
@@ -413,7 +427,8 @@ def fit_drag_form(speed_Aps: np.ndarray, force: np.ndarray, form: str) -> DragFo
     speed_Aps, force : np.ndarray, shape (K,)
         Interior speeds [A/ps] and bulk drag forces [amu·A/ps^2]; non-finite
         pairs are dropped.
-    form : {"linear", "cubic", "linear_cubic"}
+    form : {"linear", "cubic", "linear_cubic", "quadratic", "linear_quadratic"}
+        ``F = a v``, ``b v^3``, ``a v + b v^3``, ``c v^2``, ``a v + c v^2``.
 
     Returns
     -------
@@ -425,16 +440,16 @@ def fit_drag_form(speed_Aps: np.ndarray, force: np.ndarray, form: str) -> DragFo
         On an unknown form, shape mismatch, or fewer finite samples than
         parameters + 1.
     """
-    if form not in FORMS:
-        raise ValueError(f"form must be one of {FORMS}, got {form!r}")
+    if form not in _FORM_TERMS:
+        raise ValueError(f"form must be one of {tuple(_FORM_TERMS)}, got {form!r}")
     v = np.asarray(speed_Aps, dtype=float)
     F = np.asarray(force, dtype=float)
     if v.shape != F.shape or v.ndim != 1:
         raise ValueError("speed and force must be 1-D arrays of equal shape")
     ok = np.isfinite(v) & np.isfinite(F)
     v, F = v[ok], F[ok]
-    columns = {"linear": [v], "cubic": [v**3], "linear_cubic": [v, v**3]}[form]
-    X = np.stack(columns, axis=1)
+    terms = _FORM_TERMS[form]
+    X = np.stack([v**power for _, power in terms], axis=1)
     k = X.shape[1]
     if v.size < k + 1:
         raise ValueError(f"need >= {k + 1} finite samples for {form}, got {v.size}")
@@ -442,20 +457,75 @@ def fit_drag_form(speed_Aps: np.ndarray, force: np.ndarray, form: str) -> DragFo
     resid = F - X @ coef
     sigma2 = float(resid @ resid) / (v.size - k)
     se = np.sqrt(np.diag(sigma2 * np.linalg.inv(X.T @ X)))
-    if form == "linear":
-        a, b, a_se, b_se = coef[0], 0.0, se[0], 0.0
-    elif form == "cubic":
-        a, b, a_se, b_se = 0.0, coef[0], 0.0, se[0]
-    else:
-        a, b, a_se, b_se = coef[0], coef[1], se[0], se[1]
+    values = {"a": 0.0, "b": 0.0, "c": 0.0}
+    errors = {"a": 0.0, "b": 0.0, "c": 0.0}
+    for (name, _), value, error in zip(terms, coef, se):
+        values[name], errors[name] = float(value), float(error)
     return DragFormFit(
         form=form,
-        a=float(a),
-        b=float(b),
-        a_se=float(a_se),
-        b_se=float(b_se),
+        a=values["a"],
+        b=values["b"],
+        c=values["c"],
+        a_se=errors["a"],
+        b_se=errors["b"],
+        c_se=errors["c"],
         rmse_force=float(np.sqrt(np.mean(resid**2))),
         n_points=int(v.size),
         v_min=float(v.min()),
         v_max=float(v.max()),
     )
+
+
+def bulk_law_force(speed_Aps: np.ndarray, coeffs: DragCoefficients) -> np.ndarray:
+    """Bulk (ungated, ``g = 1``) drag-law force ``L(v)`` [amu·A/ps^2] (G4.11).
+
+    Evaluated through :func:`i2_helium_md.physics.drag.drag_force` at
+    ``depth = -inf`` (gate exactly 1), so the law is the one the integrator
+    applies -- no second implementation of the forms. Compared against the
+    force-balance ``F_drag_bulk`` (already divided by ``rho_hat``).
+
+    Parameters
+    ----------
+    speed_Aps : np.ndarray, shape (K,)
+        Speeds [A/ps].
+    coeffs : DragCoefficients
+        A loaded trajectory-matching bundle (any realised form).
+    """
+    v = np.asarray(speed_Aps, dtype=float)
+    return drag_force(v, np.full(v.shape, -np.inf), coeffs, 1.0)
+
+
+def cross_case_scale(force: np.ndarray, law_force: np.ndarray) -> float:
+    """Least-squares scale ``s = sum(F L) / sum(L^2)`` of a law onto forces.
+
+    G4.11 C-X / C-M: ``s = 1`` means the law ``L(v)`` predicts the
+    force-balance drag ``F`` at those points (dimensionless).
+
+    Raises
+    ------
+    ValueError
+        On a shape mismatch, non-finite samples, or ``sum(L^2) == 0``.
+    """
+    F = np.asarray(force, dtype=float)
+    L = np.asarray(law_force, dtype=float)
+    if F.shape != L.shape or F.ndim != 1:
+        raise ValueError("force and law_force must be 1-D arrays of equal shape")
+    if not (np.all(np.isfinite(F)) and np.all(np.isfinite(L))):
+        raise ValueError("force and law_force must be finite")
+    norm = float(L @ L)
+    if not norm > 0.0:
+        raise ValueError("the law force vanishes at every point")
+    return float(F @ L) / norm
+
+
+def shape_residual_rms(force: np.ndarray, law_force: np.ndarray, scale: float) -> float:
+    """Relative shape misfit ``RMS((F - s L) / mean(F))`` (G4.11, recorded).
+
+    Small only if the law has the right speed dependence, not just the right
+    size: a two-coefficient law can match the scale with the wrong slope.
+    """
+    F = np.asarray(force, dtype=float)
+    L = np.asarray(law_force, dtype=float)
+    if F.shape != L.shape:
+        raise ValueError("force and law_force must have equal shape")
+    return float(np.sqrt(np.mean((F - scale * L) ** 2)) / np.mean(F))

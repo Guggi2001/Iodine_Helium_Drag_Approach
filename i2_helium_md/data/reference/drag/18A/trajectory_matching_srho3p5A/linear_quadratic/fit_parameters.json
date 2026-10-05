@@ -1,0 +1,80 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_quadratic",
+  "a": 0.0038391249301477524,
+  "c": 7.220560026505081,
+  "a_err": 0.0038391249301477524,
+  "c_err": 0.3524320965317962,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.1191111958605434,
+  "effective_binding_energy_err_eV": 0.005813760750336058,
+  "t_start": 4.54,
+  "t_end": 14.768,
+  "reference_file": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+  "calibration_case": "18A",
+  "stage": "per_case_diagnostic",
+  "variant": "lq_shared_3param",
+  "anchors": {
+    "a0": 14.555626399148123,
+    "c0": 11.016050300970692,
+    "provenance": "pre-registered \u00a710.4.1 constants (18 A-only, a convention choice): a0=14.555626399148123 from 18A/linear_and_cubic; c0=11.016050300970692 from 18A/quadratic (key 'a', Method-A quadratic export d1ca029); C0=10.36139380949775, n0=2.0557526931077588 from 18A/power (key 'gamma', legacy key, frozen evidence read once); V_REF_APS=3.0. Read off the Method-A bundles once and LOCKED in the driver USER SETTINGS -- never a runtime bundle read (the re-wired shared bundle's a0 = 0 must not condition a fit)."
+  },
+  "objective": "in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_rmse_Aps": 0.11676771049936814,
+  "escape_fraction": 1.0,
+  "num_overlap_points": 10229,
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 408,
+    "converged": true,
+    "start_minima": [
+      {
+        "coefficients": {
+          "a": 0.0038391249301477524,
+          "c": 7.220560026505081
+        },
+        "e_bind_eV": {
+          "18A": 0.1191111958605434
+        },
+        "objective_Aps": 0.11676771049936814
+      },
+      {
+        "coefficients": {
+          "a": 0.0,
+          "c": 0.011016050300970692
+        },
+        "e_bind_eV": {
+          "18A": 0.308
+        },
+        "objective_Aps": 0.611440162027489
+      },
+      {
+        "coefficients": {
+          "a": 0.01559327434091128,
+          "c": 7.201060433079024
+        },
+        "e_bind_eV": {
+          "18A": 0.11942126066062096
+        },
+        "objective_Aps": 0.1167750505500374
+      }
+    ]
+  },
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": false,
+    "full_window_heldout_window_axis_forfeited": true,
+    "per_case_calibrated_not_validated": true,
+    "cross_case_axis_not_applied": true
+  },
+  "drag_spatial_gate": "erf_independent",
+  "drag_gate_steepness_angstrom": 3.5,
+  "potential_steepness_angstrom": 14.2
+}

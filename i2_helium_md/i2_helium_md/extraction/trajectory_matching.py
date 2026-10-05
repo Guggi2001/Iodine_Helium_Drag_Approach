@@ -743,6 +743,31 @@ class JointObjectiveResult:
     per_case: dict[str, ObjectiveResult]
 
 
+def _shared_gate_stamp(setups: dict[str, CaseSetup]) -> tuple[str, float, float]:
+    """The spatial gate all cases ran under: ``(mode, width [A], U width [A])``.
+
+    Raises
+    ------
+    ValueError
+        If the cases differ in gate mode, resolved gate width, or potential
+        width (one fit carries one provenance stamp, G4.3 change 4).
+    """
+    gate_stamp = {
+        case: (
+            s.cfg_base.drag_spatial_gate,
+            float(drag_gate_steepness(s.cfg_base)),
+            float(s.cfg_base.potential_steepness),
+        )
+        for case, s in setups.items()
+    }
+    if len(set(gate_stamp.values())) != 1:
+        raise ValueError(
+            "all cases must share the spatial gate (mode, resolved width, "
+            f"potential width) for one joint provenance stamp; got {gate_stamp}"
+        )
+    return next(iter(gate_stamp.values()))
+
+
 @dataclass
 class SharedTrajectoryMatchingFit:
     """A completed §9 Stage-2 joint fit (best of all starts) for one variant."""
@@ -916,20 +941,7 @@ def fit_shared_trajectory_matching(
                 "all cases must share seed, num_molecules, and m_eff_amu for "
                 f"one joint provenance stamp; {cases[0]!r} vs {case!r} differ"
             )
-    gate_stamp = {
-        case: (
-            setups[case].cfg_base.drag_spatial_gate,
-            drag_gate_steepness(setups[case].cfg_base),
-            setups[case].cfg_base.potential_steepness,
-        )
-        for case in cases
-    }
-    if len(set(gate_stamp.values())) != 1:
-        raise ValueError(
-            "all cases must share the spatial gate (mode, resolved width, "
-            f"potential width) for one joint provenance stamp; got {gate_stamp}"
-        )
-    gate_mode, gate_width_A, potential_width_A = gate_stamp[cases[0]]
+    gate_mode, gate_width_A, potential_width_A = _shared_gate_stamp(setups)
     a0, b0 = (float(v) for v in anchors)
     if not (a0 > 0.0 and b0 > 0.0):
         raise ValueError(f"anchors must be positive, got {anchors!r}")
@@ -1093,6 +1105,19 @@ def joint_sensitivity_halfwidths(
     )
 
 
+def _gate_payload(fit) -> dict:
+    """Bundle keys for the spatial gate a fit ran under (G4.3 change 4).
+
+    ``drag_gate_steepness_angstrom`` is read back by the loader into
+    ``extraction_gate_steepness_angstrom`` for the §6.5.2 guard.
+    """
+    return {
+        "drag_spatial_gate": fit.drag_spatial_gate,
+        "drag_gate_steepness_angstrom": fit.gate_steepness_angstrom,
+        "potential_steepness_angstrom": fit.potential_steepness_angstrom,
+    }
+
+
 def write_shared_fit_parameters(
     fit: SharedTrajectoryMatchingFit,
     out_dir: Path,
@@ -1234,10 +1259,7 @@ def write_shared_fit_parameters(
             "full_window_heldout_window_axis_forfeited": True,
             "cross_case_axis_consumed_by_joint_fit": len(fit.cases) > 1,
         },
-        # --- G4.3 change 4: the spatial gate the fit ran under ---
-        "drag_spatial_gate": fit.drag_spatial_gate,
-        "drag_gate_steepness_angstrom": fit.gate_steepness_angstrom,
-        "potential_steepness_angstrom": fit.potential_steepness_angstrom,
+        **_gate_payload(fit),
     }
     if bundle_id is not None:
         payload["bundle_id"] = bundle_id
@@ -1359,6 +1381,11 @@ class SharedFormTrajectoryMatchingFit:
     reference_paths: dict[str, Path]
     meff_amu: float
     anchors: dict[str, float]           # pre-registered constants (§10.4.1)
+    # Spatial-gate provenance the fit ran under (identical across cases;
+    # stamped into both form bundles -- G4.3 change 4, G4.11):
+    drag_spatial_gate: str
+    gate_steepness_angstrom: float      # resolved drag/density gate width
+    potential_steepness_angstrom: float  # solvation-well width
     # Uncertainty (filled by the driver script; sensitivity-only per the §8
     # seed-insensitivity finding, same convention as the §9 shared fit):
     coeff_errs: dict[str, float] | None = None
@@ -1613,6 +1640,7 @@ def _fit_form_engine(
                 "all cases must share seed, num_molecules, and m_eff_amu for "
                 f"one joint provenance stamp; {cases[0]!r} vs {case!r} differ"
             )
+    gate_mode, gate_width_A, potential_width_A = _shared_gate_stamp(setups)
 
     e_lo_n = e_bind_min_eV / E_BIND_STATIC_EV
     e_hi_n = e_bind_max_eV / E_BIND_STATIC_EV
@@ -1747,6 +1775,9 @@ def _fit_form_engine(
         reference_paths={c: setups[c].reference_path for c in cases},
         meff_amu=float(first.cfg_base.m_eff_amu),
         anchors={k: float(v) for k, v in anchors.items()},
+        drag_spatial_gate=gate_mode,
+        gate_steepness_angstrom=gate_width_A,
+        potential_steepness_angstrom=potential_width_A,
     )
 
 
@@ -1967,6 +1998,7 @@ def write_shared_form_fit_parameters(
             # post-Tier-1).
             "model_selection_on_seen_data": True,
         },
+        **_gate_payload(fit),
     }
     if fit.form == POWER_LAW:
         v_ref = fit.anchors["v_ref_Aps"]
@@ -2005,7 +2037,11 @@ def write_per_case_form_fit_parameters(
     :func:`i2_helium_md.presets.load_drag_coefficients`): the form's raw
     coefficients + per-key ``<k>_err``, the Method-B provenance keys, and the
     single-case window / reference. ``power_law`` additionally stamps the pivot
-    block (``v_ref_Aps``, ``gamma_ref``) for re-derivability.
+    block (``v_ref_Aps``, ``gamma_ref``) for re-derivability. Every bundle
+    stamps the spatial gate the fit ran under (``drag_spatial_gate``,
+    ``drag_gate_steepness_angstrom``, ``potential_steepness_angstrom``;
+    G4.3 change 4, required by G4.11 so a 3.5 A-gate fit is never mistaken
+    for a 14.2 A one).
 
     These are diagnostic, **calibrated-not-validated** single-case fits: for
     these forms the §9 cross-case held-out axis is already spent, and a
@@ -2137,6 +2173,7 @@ def write_per_case_form_fit_parameters(
             "per_case_calibrated_not_validated": True,
             "cross_case_axis_not_applied": True,
         },
+        **_gate_payload(fit),
     }
     if fit.form == POWER_LAW:
         C, n = fit.best.coefficients["C"], fit.best.coefficients["n"]

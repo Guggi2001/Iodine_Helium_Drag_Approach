@@ -13941,3 +13941,43 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
   goal entry in `THESIS_FINAL_GOALS.md`, specification open
   (discussion first). Docs: D0 §1.G4.10-PH, METHOD_B §11.2.
 
+## 2026-10-05 — G4.11 EXECUTED: cross-case drag-law test — **only the cubic is consistent (s_X 1.182, s_M 1.099) → cubic supported by the TDDFT data**; linear (s_X 1.82) and quadratic / linear + quadratic (1.48) fail
+
+- **Spec.** `THESIS_FINAL_GOALS.md` G4.11, pre-registered `10144c3`
+  (criteria, ±0.19 band, decision rule, E_bind pairing, G4.10-PH
+  pipeline frozen; nothing re-tuned).
+- **Code.** `trajectory_matching.py`: form fits carry the gate
+  (`drag_spatial_gate`, width, potential width; shared
+  `_shared_gate_stamp` check) and both form writers stamp it.
+  `force_balance.py`: `fit_drag_form` gains `quadratic` /
+  `linear_quadratic` (`DragFormFit.c`, `c_se`); `bulk_law_force`
+  (ungated law via `physics.drag.drag_force`), `cross_case_scale`,
+  `shape_residual_rms`. G4.10-PH driver: `load_case_data()` factored out
+  (outputs unchanged). Drivers `method_b_g411_lq_18A_refit.py`,
+  `method_a_g411_cross_case.py`. Tests: new `test_g411_cross_case.py`
+  (exact recovery, s = 1 on the exact law, decision rule), +2 gate-stamp
+  tests; one G4.10 assertion now uses `power_law` as the unknown form.
+- **Anchors.** G4.9 cubic → 18 Å RMSE 0.10919 (3.5 Å), June quadratic →
+  0.09932 (14.2 Å), both bit-exact; all 25 committed G4.10-PH cubic b
+  reproduced bit-exactly by the scorer.
+- **Step 1 (measured).** 18 Å at 3.5 Å: `quadratic` c 7.224 ± 0.353,
+  E_bind 0.1191 ± 0.0058 eV, RMSE 0.1168, escape 1. `linear_quadratic`
+  collapses to it (a 0.004 at the bound, c 7.221, same E_bind / RMSE).
+  Bundles `18A/trajectory_matching_srho3p5A/{quadratic,linear_quadratic}/`
+  (gate-stamped, diagnostic, not preset-wired).
+- **Step 2 (measured, primary row).** s_X / s_M: linear 1.823 ✗ /
+  0.981; quadratic 1.476 ✗ / 1.035; linear + quadratic 1.476 ✗ / 1.035;
+  cubic 1.182 ✓ / 1.099 ✓. C-A 1.857 / 1.426 / — / 1.075. Shape_X 0.32 /
+  0.25 / 0.25 / 0.19.
+- **Sensitivity (recorded).** Linear and quadratic fail C-X in every row.
+  Cubic C-X 1.15–1.21: out under + 8 % radius (1.214) and 9 Å anchored
+  m(t) (1.207). s_M fails only under − 8 % radius (all families).
+- **Decision (pre-registered rule).** Only the cubic consistent → the
+  cubic form is supported by the TDDFT data. Marginal: 1.182 vs the 1.19
+  edge, two of nine rows out; s_X > 1 for every law, decreasing with
+  steepness — the 9 Å drag is at least as steep as v³ (not tested further;
+  power law out of scope).
+- **Open (user).** The gate on adopting `srho3p5A18A_cubic` for G5 is
+  cleared on the rule; adoption is the user's decision. Docs: D0
+  §1.G4.11, `THESIS_FINAL_GOALS.md` G4.11 status, METHOD_B §11.3.
+

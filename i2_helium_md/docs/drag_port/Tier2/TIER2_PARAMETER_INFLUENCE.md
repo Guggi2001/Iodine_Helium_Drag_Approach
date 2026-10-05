@@ -758,6 +758,65 @@ trim and smoothing were fixed in June 2026, not tuned here. Driver
   (`THESIS_FINAL_GOALS.md`) — the same two-method test for the
   linear / quadratic / linear + quadratic families.
 
+#### 1.G4.11 Cross-case drag-law test across families (MEASURED 2026-10-05; pre-registered `10144c3`) — **only the cubic is consistent → cubic supported by the TDDFT data** (C-X at the band edge)
+
+**Question.** Does one law F(v) fitted on 18 Å (v ≈ 3 Å/ps) predict the
+drag at 9 Å (v ≈ 3.4–4.6 Å/ps)? The 18 Å trajectory-matched law L₁₈
+(s_ρ = 3.5 Å) is scored against the G4.10-PH force-balance drag, each
+family at its own E_bind. s = Σ F·L₁₈ / Σ L₁₈²; pass |s − 1| ≤ 0.19
+(frozen; = 2·0.2127/2.2286). C-X uses the 9 Å points (main), C-M the 18 Å
+points. A family is consistent if both pass. Drivers
+`scripts/extraction/method_b_g411_lq_18A_refit.py` (step 1),
+`scripts/extraction/method_a_g411_cross_case.py` (step 2); artifacts
+`18A/trajectory_matching_srho3p5A/{quadratic,linear_quadratic}/`,
+`force_balance_srho3p5A/g411_cross_case/{scores.csv,verdict.json}`.
+
+- **Anchors.** Step 1: the G4.9 cubic point reproduces 18 Å RMSE
+  0.10919 at 3.5 Å, the June quadratic point 0.09932 at 14.2 Å (both
+  bit-exact). Step 2: the cubic bundle reproduces all 25 committed
+  G4.10-PH cubic b bit-exactly.
+- **Step 1, new 18 Å fits at 3.5 Å (measured).** `quadratic` c 7.224 ±
+  0.353 amu/Å, E_bind 0.1191 ± 0.0058 eV, RMSE 0.1168, escape 1 (bands
+  pass). `linear_quadratic` collapses onto it: a 0.004 (at the a ≥ 0
+  bound), c 7.221, E_bind 0.1191, RMSE 0.1168 — so its scores equal the
+  quadratic's. All four families fit 18 Å within 0.109–0.124 Å/ps.
+
+| family (18 Å law, E_bind) | **s_X** (9 Å) | s_M (18 Å) | C-A (FB 9 Å / 18 Å) | shape_X | consistent |
+|---|---|---|---|---|---|
+| linear (a 23.15, 0.1165) | **1.823 ✗** | 0.981 ✓ | 1.857 | 0.323 | no |
+| quadratic (c 7.224, 0.1191) | **1.476 ✗** | 1.035 ✓ | 1.426 | 0.249 | no |
+| linear + quadratic (≡ quadratic) | **1.476 ✗** | 1.035 ✓ | — | 0.249 | no |
+| **cubic** (b 2.2286, 0.1214) | **1.182 ✓** | 1.099 ✓ | 1.075 | 0.187 | **yes** |
+
+- **Sensitivity rows (recorded, not gating).** s_X ranges: linear
+  1.78–1.87, quadratic 1.44–1.52 — they fail in every row. Cubic 1.15–1.21:
+  it leaves the band under + 8 % radius (1.214) and the 9 Å anchored m(t)
+  (1.207), by ≤ 0.024. s_M passes in every row for every family except
+  − 8 % radius (1.58–1.70; the late 18 Å points fall outside the surface,
+  as in G4.10-PH). Spline s inert. The force-balance `linear_quadratic`
+  fit itself is sign-unstable (18 Å primary a 44.2, c −7.37; 9 Å a −89.3,
+  c 32.8) — no form information from force balance alone, as for
+  `linear_cubic` in G4.10-PH.
+- **Reads (measured).** All four 18 Å laws reproduce the 18 Å force
+  balance (s_M 0.98–1.10): one speed range does not separate them. Carried
+  to 9 Å, every law under-predicts the drag, and the deficit shrinks as
+  the law steepens: linear 1.82 → quadratic 1.48 → cubic 1.18. Only the
+  cubic is inside the band. C-A (no trajectory fit) shows the same order
+  (1.86 / 1.43 / 1.08).
+- **Decision rule (pre-registered).** Only the cubic consistent → the
+  cubic form is supported by the TDDFT data, not only chosen.
+- **Limits.** The cubic C-X passes at 1.182 against a band edge of 1.19
+  and fails in two of nine sensitivity rows: the support is marginal, and
+  s_X > 1 throughout means the 9 Å drag is, if anything, steeper than
+  v³ (projection, not tested: power law is out of scope). The 9 Å force
+  balance scatters about any law (shape_X ≥ 0.19). The test is a
+  cross-case ratio over 3–4.6 Å/ps; it says nothing about the capped tail
+  above 5.5 Å/ps. E_bind is borrowed from each family's own Method-B fit
+  (b given E_bind).
+- **Consequence.** The G4.10 / G4.11 gate on adopting
+  `srho3p5A18A_cubic` for G5 is cleared on the pre-registered rule; the
+  adoption itself is the user's call.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

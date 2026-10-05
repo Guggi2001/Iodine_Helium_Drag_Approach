@@ -904,3 +904,16 @@ gap came mostly from the long reference's end-effect at 4.54 ps. Next:
 the same two-method test for linear / quadratic / linear + quadratic
 (`THESIS_FINAL_GOALS.md` G4.11). D0 §1.G4.10-PH.
 
+### 11.3 Cross-case drag-law test across families (RAN 2026-10-05; G4.11)
+
+Each family's 18 Å trajectory-matched law at s_ρ = 3.5 Å (new:
+`quadratic` c 7.224, E_bind 0.1191; `linear_quadratic` collapses onto it)
+scored against the G4.10-PH force-balance drag at its own E_bind;
+s = Σ F·L₁₈ / Σ L₁₈², pass |s − 1| ≤ 0.19. On 18 Å all laws agree with
+the force balance (s_M 0.98–1.10). Carried to 9 Å: linear 1.82, quadratic
+1.48, cubic 1.18 — only the cubic passes, so by the pre-registered rule
+the cubic form is supported by the TDDFT data, not only chosen. Marginal:
+the cubic leaves the band under + 8 % radius and the anchored 9 Å mass
+(≤ 0.024). D0 §1.G4.11; artifacts
+`data/reference/drag/force_balance_srho3p5A/g411_cross_case/`.
+

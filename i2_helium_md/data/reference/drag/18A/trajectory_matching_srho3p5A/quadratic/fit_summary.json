@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G4.11 step 1 (18 A-only, s_rho = 3.5 A)",
+  "preregistration": "THESIS_FINAL_GOALS.md G4.11, committed 10144c3 before any run",
+  "family": "quadratic",
+  "variant": "lq_shared_pure_quadratic",
+  "form": "linear_quadratic",
+  "calibration_cases": [
+    "18A"
+  ],
+  "coefficients": {
+    "a": 0.0,
+    "c": 7.224086224196191
+  },
+  "e_bind_eV": 0.11905483895868207,
+  "objective_Aps": 0.1167665757346214,
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.1167665757346214,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.1167665757346214,
+      "num_overlap_points": 10229
+    }
+  },
+  "bands": {
+    "RMSE_18A": {
+      "value_Aps": 0.1167665757346214,
+      "band_max_Aps": 0.19,
+      "pass": true
+    },
+    "ESCAPE_18A": {
+      "value": 1.0,
+      "band": 1.0,
+      "pass": true
+    },
+    "all_pass": true
+  },
+  "n_evaluations": 165,
+  "converged": true,
+  "start_minima": [
+    {
+      "coefficients": {
+        "a": 0.0,
+        "c": 7.2237108805736945
+      },
+      "e_bind_eV": 0.11908880144357736,
+      "objective_Aps": 0.11676663946837937
+    },
+    {
+      "coefficients": {
+        "a": 0.0,
+        "c": 0.011016050300970692
+      },
+      "e_bind_eV": 0.2754357593536379,
+      "objective_Aps": 0.40697487131941856
+    },
+    {
+      "coefficients": {
+        "a": 0.0,
+        "c": 7.224086224196191
+      },
+      "e_bind_eV": 0.11905483895868207,
+      "objective_Aps": 0.1167665757346214
+    }
+  ],
+  "anchors": {
+    "a0": 14.555626399148123,
+    "c0": 11.016050300970692
+  },
+  "gate": {
+    "drag_spatial_gate": "erf_independent",
+    "drag_gate_steepness_angstrom": 3.5,
+    "potential_steepness_angstrom": 14.2
+  },
+  "reference_file": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+  "n_molecules": 50,
+  "seed": 20260604,
+  "meff_amu": 202.953908,
+  "held_out_axis": "9A (G4.11 C-X: force-balance drag, no trajectory fit; G4.9)",
+  "sensitivity_halfwidths": {
+    "a": 0.0,
+    "c": 0.3526042085619574,
+    "e_bind_eV": 0.005811009996792821
+  },
+  "bundle_written": true
+}

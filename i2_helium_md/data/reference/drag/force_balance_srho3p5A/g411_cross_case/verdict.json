@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G4.11 cross-case drag-law test",
+  "preregistration": "THESIS_FINAL_GOALS.md G4.11, committed 10144c3 before any run",
+  "band": 0.19,
+  "band_definition": {
+    "cubic_2hw_over_b": 0.19090909090909097,
+    "note": "frozen value 0.19 applied to every family"
+  },
+  "pipeline": "G4.10-PH (June Method-A data handling + corrections)",
+  "e_bind_pairing": "force balance for family f at f's own 18 A trajectory-fit E_bind",
+  "step1_laws": {
+    "linear": {
+      "law": "a 23.1543, b 0.0000",
+      "form": "linear_cubic",
+      "e_bind_eV": 0.11647455817722013,
+      "e_bind_err_eV": 0.005685067720554798,
+      "rmse_18A_Aps": 0.12388543124103739,
+      "bands_18A_pass": true,
+      "gate_A": 3.5
+    },
+    "quadratic": {
+      "law": "a 0.0000, c 7.2241",
+      "form": "linear_quadratic",
+      "e_bind_eV": 0.11905483895868207,
+      "e_bind_err_eV": 0.005811009996792821,
+      "rmse_18A_Aps": 0.1167665757346214,
+      "bands_18A_pass": true,
+      "gate_A": 3.5
+    },
+    "linear_quadratic": {
+      "law": "a 0.0038, c 7.2206",
+      "form": "linear_quadratic",
+      "e_bind_eV": 0.1191111958605434,
+      "e_bind_err_eV": 0.005813760750336058,
+      "rmse_18A_Aps": 0.11676771049936814,
+      "bands_18A_pass": true,
+      "gate_A": 3.5
+    },
+    "cubic": {
+      "law": "a 0.0000, b 2.2286",
+      "form": "linear_cubic",
+      "e_bind_eV": 0.12138049379722196,
+      "e_bind_err_eV": 0.005924524102007264,
+      "rmse_18A_Aps": 0.10918971039495973,
+      "bands_18A_pass": true,
+      "gate_A": 3.5
+    }
+  },
+  "primary": {
+    "linear": {
+      "s_X": 1.8225048271166773,
+      "pass_X": false,
+      "s_M": 0.9813844339920944,
+      "pass_M": true,
+      "consistent": false,
+      "C_A_ratio_9A_over_18A": 1.857075335608349,
+      "shape_X": 0.3229415348402088,
+      "shape_M": 0.12922472086371883,
+      "fb_18A": {
+        "a": 22.723236784821232,
+        "b": 0.0,
+        "c": 0.0,
+        "rmse_force": 8.716984882941253
+      },
+      "fb_9A": {
+        "a": 42.19876257827987,
+        "b": 0.0,
+        "c": 0.0,
+        "rmse_force": 52.53546681276812
+      }
+    },
+    "quadratic": {
+      "s_X": 1.4758881410139937,
+      "pass_X": false,
+      "s_M": 1.0347731632374662,
+      "pass_M": true,
+      "consistent": false,
+      "C_A_ratio_9A_over_18A": 1.4262914747386994,
+      "shape_X": 0.24879673646860934,
+      "shape_M": 0.1494312270289341,
+      "fb_18A": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 7.475290553711696,
+        "rmse_force": 9.899287957458476
+      },
+      "fb_9A": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 10.661943187953725,
+        "rmse_force": 40.35300643023834
+      }
+    },
+    "linear_quadratic": {
+      "s_X": 1.4763226438246146,
+      "pass_X": false,
+      "s_M": 1.0346931408118523,
+      "pass_M": true,
+      "consistent": false,
+      "C_A_ratio_9A_over_18A": null,
+      "shape_X": 0.2488260767306407,
+      "shape_M": 0.14935092686906531,
+      "fb_18A": {
+        "a": 44.2257773979844,
+        "b": 0.0,
+        "c": -7.369213339473012,
+        "rmse_force": 7.867321367351658
+      },
+      "fb_9A": {
+        "a": -89.3003757949453,
+        "b": 0.0,
+        "c": 32.756118791024626,
+        "rmse_force": 25.851665782905517
+      }
+    },
+    "cubic": {
+      "s_X": 1.1819620876709642,
+      "pass_X": true,
+      "s_M": 1.0990537654863026,
+      "pass_M": true,
+      "consistent": true,
+      "C_A_ratio_9A_over_18A": 1.0754360931086722,
+      "shape_X": 0.1874592692777986,
+      "shape_M": 0.17511380017788764,
+      "fb_18A": {
+        "a": 0.0,
+        "b": 2.44935391516714,
+        "c": 0.0,
+        "rmse_force": 11.409756962504298
+      },
+      "fb_9A": {
+        "a": 0.0,
+        "b": 2.634123605167779,
+        "c": 0.0,
+        "rmse_force": 30.322525487039805
+      }
+    }
+  },
+  "decision": {
+    "consistent_families": [
+      "cubic"
+    ],
+    "outcome": "cubic_supported",
+    "reading": "only the cubic consistent -> the cubic form is supported by the TDDFT data (not only chosen)"
+  },
+  "sensitivity_rows_flipping_primary_pass": {
+    "linear": {
+      "X": [],
+      "M": [
+        "radius_minus8pct"
+      ]
+    },
+    "quadratic": {
+      "X": [],
+      "M": [
+        "radius_minus8pct"
+      ]
+    },
+    "linear_quadratic": {
+      "X": [],
+      "M": [
+        "radius_minus8pct"
+      ]
+    },
+    "cubic": {
+      "X": [
+        "radius_plus8pct",
+        "mass_anchored_9A"
+      ],
+      "M": [
+        "radius_minus8pct"
+      ]
+    }
+  },
+  "sensitivity_rows": [
+    "ebind_minus_hw",
+    "ebind_plus_hw",
+    "mass_anchored_9A",
+    "primary",
+    "radius_minus8pct",
+    "radius_plus8pct",
+    "rho_cut_0p5",
+    "rho_cut_0p9",
+    "spline_s_x0p5",
+    "spline_s_x2"
+  ]
+}

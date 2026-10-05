@@ -186,7 +186,7 @@ def test_fit_drag_form_exact_and_validation():
     F_nan[:10] = np.nan
     assert fit_drag_form(v, F_nan, "cubic").n_points == 190
     with pytest.raises(ValueError, match="form must be one of"):
-        fit_drag_form(v, F, "quadratic")
+        fit_drag_form(v, F, "power_law")   # quadratic is a G4.11 form now
     with pytest.raises(ValueError, match="finite samples"):
         fit_drag_form(v[:2], F[:2], "linear_cubic")
 
