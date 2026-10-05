@@ -5,8 +5,9 @@ only agreed goals. Results go to the migration log and D0 as usual.
 
 **Status (2026-10-05):** G4 **executed** (G4.8). The adoption decision
 is superseded by **G4.9** (18 Å-only refit; 9 Å held out as
-non-radial), agreed, not started. G1, G2 (production switch), G5–G7 not
-started.
+non-radial), **executed 2026-10-05: winner `cubic` (`srho3p5A18A_cubic`,
+b 2.2286, E_bind 0.1214 eV)**; adoption for G5 open. G1, G2 (production
+switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
 
@@ -288,9 +289,13 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   14.2 Å, same reference. Oracle first: a single-case evaluation at the
   G4 point and the control point reproduces the committed 18 Å RMSEs
   (0.125 / 0.1346).
-- **Step 3 — 9 Å held-out prediction** of the winner, no refit: RMSE on
-  the radial early window [t*, 6 ps] and on the full window. Recorded,
-  not gating.
+- **Step 3 — 9 Å escape check** of the winner, no refit: the 9 Å escape
+  fraction at the 18 Å-fitted E_bind (trapping would be a real failure).
+  Recorded, not gating. *Amended 2026-10-05 before any fit result:* the
+  9 Å RMSE is not used as evidence. Step 1 showed the 9 Å ion is radial
+  only to ≈ 2 ps (< t* = 2.67 ps), so no radial early window exists, and
+  a radial model's full-window RMSE on a non-radial trace neither
+  validates nor falsifies the law. It is recorded once, descriptively.
 - **Known costs (thesis statements).** No held-out case remains;
   validation rests on Tier 2. 18 Å alone did not identify a power-law
   exponent (§10.8), so the family choice is limited to the three forms

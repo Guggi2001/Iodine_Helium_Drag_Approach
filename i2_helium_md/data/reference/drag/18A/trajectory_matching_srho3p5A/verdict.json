@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G4.9: 18 A-only refit at s_rho = 3.5 A",
+  "preregistration": "THESIS_FINAL_GOALS.md G4.9, committed fc4ece9 before any run",
+  "thresholds": {
+    "RMSE_18A_MAX_Aps": 0.19,
+    "escape_band": 1.0,
+    "T_a0_Aps": 0.005,
+    "T_b0_Aps": 0.005
+  },
+  "families": {
+    "linear": {
+      "bundle_id": "srho3p5A18A_linear",
+      "a": 23.154266562377813,
+      "b": 0.0,
+      "e_bind_eV": 0.11647455817722013,
+      "objective_Aps": 0.12388543124103739,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.12388543124103739,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.12388543124103739,
+          "num_overlap_points": 10229
+        }
+      },
+      "bands": {
+        "RMSE_18A": {
+          "value_Aps": 0.12388543124103739,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "ESCAPE_18A": {
+          "value": 1.0,
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      },
+      "converged": true,
+      "bundle_written": true
+    },
+    "cubic": {
+      "bundle_id": "srho3p5A18A_cubic",
+      "a": 0.0,
+      "b": 2.2286024506575126,
+      "e_bind_eV": 0.12138049379722196,
+      "objective_Aps": 0.10918971039495973,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.10918971039495973,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.10918971039495973,
+          "num_overlap_points": 10229
+        }
+      },
+      "bands": {
+        "RMSE_18A": {
+          "value_Aps": 0.10918971039495973,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "ESCAPE_18A": {
+          "value": 1.0,
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      },
+      "converged": true,
+      "bundle_written": true
+    },
+    "linear_cubic": {
+      "bundle_id": "srho3p5A18A_linear_cubic",
+      "a": 0.0,
+      "b": 2.2368047903026707,
+      "e_bind_eV": 0.1210149955803545,
+      "objective_Aps": 0.10919446803099278,
+      "per_case": {
+        "18A": {
+          "rmse_Aps": 0.10919446803099278,
+          "escape_fraction": 1.0,
+          "objective_Aps": 0.10919446803099278,
+          "num_overlap_points": 10229
+        }
+      },
+      "bands": {
+        "RMSE_18A": {
+          "value_Aps": 0.10919446803099278,
+          "band_max_Aps": 0.19,
+          "pass": true
+        },
+        "ESCAPE_18A": {
+          "value": 1.0,
+          "band": 1.0,
+          "pass": true
+        },
+        "all_pass": true
+      },
+      "converged": true,
+      "bundle_written": true
+    }
+  },
+  "selection": {
+    "T_a0_Aps": -4.7576360330536804e-06,
+    "T_a0_threshold_Aps": 0.005,
+    "cubic_equivalent": true,
+    "T_b0_Aps": 0.014690963210044608,
+    "T_b0_threshold_Aps": 0.005,
+    "linear_equivalent": false,
+    "passes": {
+      "shared_linear": true,
+      "shared_cubic": true,
+      "shared_linear_cubic": true
+    },
+    "winner": "shared_cubic",
+    "reason": "cubic boundary equivalent",
+    "notes": [
+      "T_a0 = -0.000005 A/ps < 0: the linear_cubic optimizer did not reach the nested optimum (obj(lc) must be <= its boundary in exact arithmetic); the boundary counts as equivalent"
+    ],
+    "winner_family": "cubic"
+  },
+  "control_14p2A": {
+    "a": 0.0,
+    "b": 3.4490284344873854,
+    "e_bind_eV": 0.07208955112833794,
+    "objective_Aps": 0.09658384701933123
+  },
+  "gate_effect_cubic_minus_control": {
+    "db": -1.2204259838298728,
+    "de_bind_eV": 0.04929094266888402
+  },
+  "check_9A_non_gating": {
+    "winner": {
+      "escape_fraction": 1.0,
+      "rmse_full_window_Aps_descriptive_only": 0.24066227395106926,
+      "window_ps": [
+        2.67,
+        14.081
+      ]
+    },
+    "control_14p2A": {
+      "escape_fraction": 1.0,
+      "rmse_full_window_Aps_descriptive_only": 0.27991143697267457,
+      "window_ps": [
+        2.67,
+        14.081
+      ]
+    }
+  },
+  "check_9A_note": "escape fraction is the check; the RMSE is descriptive only (9 A radial only to ~2 ps < t*; G4.9 amendment)"
+}

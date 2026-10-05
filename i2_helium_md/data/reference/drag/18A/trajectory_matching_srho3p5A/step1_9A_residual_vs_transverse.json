@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G4.9 step 1 (no new fits)",
+  "points": {
+    "3p5A": {
+      "a": 0.0,
+      "b": 2.2300336925914808,
+      "e_bind_eV": 0.12771856572963378
+    },
+    "14p2A": {
+      "a": 0.0,
+      "b": 2.514385434609018,
+      "e_bind_eV": 0.11683981273855465
+    }
+  },
+  "rmse_9A_Aps": {
+    "3p5A": 0.20719191530986378,
+    "14p2A": 0.12379487849888332
+  },
+  "transverse_source": "data/reference/9A_All_Data.csv (raw HeDFT, atom 2: |v_perp| = hypot(V2_x, V2_y))",
+  "transverse_fraction_min": 0.5,
+  "late_split_ps": 6.0,
+  "shares": {
+    "sum_d_Aps2": 315.0090630441945,
+    "n_samples": 11412,
+    "transverse": {
+      "share_of_extra_sq_residual": 0.8517995554140485,
+      "share_of_samples": 0.85068349106204
+    },
+    "late": {
+      "share_of_extra_sq_residual": 0.6624039573319707,
+      "share_of_samples": 0.7082018927444795
+    }
+  }
+}

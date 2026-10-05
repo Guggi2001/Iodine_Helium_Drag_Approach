@@ -13803,3 +13803,38 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
   the TDDFT window, both bundles.
 - **Docs.** D0 §9.4 CORRECTION block, §1.G4 prediction bullet, §17 leverage
   row flagged.
+
+## 2026-10-05 — G4.9 EXECUTED: 18 Å-only refit at s_ρ = 3.5 Å, 9 Å held out as non-radial — **winner `cubic` (b 2.2286, E_bind 0.1214 eV), the G4 joint law reproduced**; G4 adoption decision superseded
+
+- **Decision (user, discussion).** The 9 Å reference is non-radial; a radial
+  MD can match it only by absorbing the missing dimension into drag /
+  binding. 9 Å leaves the fit; families stay linear / cubic / linear_cubic
+  (user call; 18 Å alone cannot identify an exponent, §10.8). Goal entry
+  `THESIS_FINAL_GOALS.md` G4.9, committed `fc4ece9` before any run. Step 3
+  amended before any fit result: the 9 Å RMSE is not evidence (only the
+  escape check is kept).
+- **Code.** `fit_shared_trajectory_matching(allow_single_case=)` (default
+  refuses, unchanged); writer flags derived from the cases (two-case output
+  unchanged); catalog ids `srho3p5A18A_{linear,cubic,linear_cubic}`;
+  driver `scripts/extraction/method_b_18A_only_refit.py`; tests
+  `tests/test_g49_18a_only_refit.py`.
+- **Oracle.** Single-case evaluations reproduce the committed G4 / control
+  per-case RMSEs bit-exactly (18 Å and 9 Å, 3.5 and 14.2 Å).
+- **Step 1 (no new fits).** 9 Å atom 2 radial only to ≈ 2 ps (< t*); no
+  radial sub-window. Extra 3.5 Å squared residual: ≈ 39 % at 3.5–6.5 ps
+  (MD too slow), ≈ 61 % at 9.5–14.5 ps (MD too fast; reference keeps
+  slowing at r ≈ 40 Å, MD re-accelerates without drag).
+- **Step 2 (measured).** `cubic` b 2.2286 ± 0.213, E_bind 0.1214 ± 0.006,
+  RMSE 18 Å 0.1092; `linear_cubic` → a = 0 (T_a0 −5·10⁻⁶); `linear`
+  passes its bands (0.124) but T_b0 = +0.0147 → **winner `cubic`**.
+  Control @ 14.2 Å (18 Å only): b 3.449, E_bind 0.0721, RMSE 0.0966.
+- **Reads.** At 3.5 Å, 18 Å alone ≈ the G4 joint law (b −0.06 %, E_bind
+  −5 %). At 14.2 Å it is far from the joint law; the gate effect on 18 Å
+  alone is b −35 %, E_bind +68 %. The projection "E_bind falls toward
+  0.071 eV" is **refuted** (0.071 is a 14.2 Å value). 18 Å also fits better
+  with the soft gate (0.097 vs 0.109): the outside drag tail helps the
+  clean radial case too.
+- **Step 3.** 9 Å escape 1.0 under the winner and the control.
+- **Status.** Production unchanged (h405, `shared_pure_cubic` at 14.2 Å)
+  until the bundle is adopted for G5. Docs: D0 §1.G4.9; METHOD_B §11.1;
+  `THESIS_FINAL_GOALS.md` status.

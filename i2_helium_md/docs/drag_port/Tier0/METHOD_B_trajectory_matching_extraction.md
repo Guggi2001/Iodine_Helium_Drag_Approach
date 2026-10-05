@@ -858,3 +858,23 @@ legacy). **Adoption is an open decision** (log entry 2026-10-02 in
 `drag_migration_log_tier2.md`; D0 §1.G4). Artifacts:
 `data/reference/drag/shared/trajectory_matching_srho3p5A/` (`verdict.json`);
 driver `scripts/extraction/method_b_srho3p5_refit.py`. **Presets unchanged.**
+
+### 11.1 18 Å-only refit at s_ρ = 3.5 Å, 9 Å held out (RAN 2026-10-05; G4.9)
+
+The §5 warning taken to its conclusion: the 9 Å atom 2 is radial only to
+≈ 2 ps (before t* = 2.67 ps), so the 9 Å trace leaves the fit and is kept
+only as an escape check. Same engine (single case), anchors, N, seed and
+references as §11; families linear / cubic / linear_cubic.
+
+| fit | a | b | E_bind [eV] | RMSE 18 Å |
+|---|---|---|---|---|
+| cubic @ 3.5 Å (**winner**) | 0 | 2.2286 | 0.1214 | 0.1092 |
+| linear_cubic @ 3.5 Å | → 0 | 2.2368 | 0.1210 | 0.1092 |
+| linear @ 3.5 Å | 23.15 | 0 | 0.1165 | 0.1239 |
+| control cubic @ 14.2 Å | 0 | 3.4490 | 0.0721 | 0.0966 |
+
+At the sourced width, 18 Å alone reproduces the §11 joint law; at 14.2 Å it
+does not. 9 Å ions escape (1.0) under the winner. Artifacts
+`data/reference/drag/18A/trajectory_matching_srho3p5A/` (`verdict.json`);
+driver `scripts/extraction/method_b_18A_only_refit.py`; record in
+`drag_migration_log_tier2.md` (2026-10-05 G4.9 entry) and D0 §1.G4.9.

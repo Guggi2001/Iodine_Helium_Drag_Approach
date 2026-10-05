@@ -540,6 +540,56 @@ with a 14.2 Å control on the same reference to split the two changes.
 > proceed to G5; **(b)** treat it as blocking and open the 9 Å misfit
 > (shared-binding tension) as an item before G5. Until decided, the
 > production bundle stays `shared_pure_cubic` at 14.2 Å.
+> **SUPERSEDED 2026-10-05 by G4.9** (below): 9 Å leaves the fit.
+
+#### 1.G4.9 18 Å-only refit, 9 Å held out as non-radial (MEASURED 2026-10-05)
+
+`THESIS_FINAL_GOALS.md` G4.9 (pre-registered `fc4ece9`; step 3 amended
+before any fit result). Same engine, anchors, N = 50, seed and references
+as G4, single case. Driver `scripts/extraction/method_b_18A_only_refit.py`;
+artifacts `data/reference/drag/18A/trajectory_matching_srho3p5A/`
+(`verdict.json`). Oracle: single-case evaluations reproduce the committed
+G4 and control per-case RMSEs bit-exactly (both cases, both widths).
+
+**Step 1 — why 9 Å fails (no new fits).** The 9 Å atom 2 is radial only to
+≈ 2 ps (< t* = 2.67 ps): it swings to y ≈ −10 Å by 5 ps, then drifts in
+−x; at 14 ps it sits at (−15, −2, 37) Å moving ≈ 50° off the axis. No
+radial sub-window exists. The extra squared residual of the 3.5 Å gate
+(vs 14.2 Å, committed G4 points) has two lobes: ≈ 39 % at 3.5–6.5 ps (MD
+too slow) and ≈ 61 % at 9.5–14.5 ps (MD too fast: the reference keeps
+slowing to ≈ 2.85 Å/ps at r ≈ 40 Å, the 3.5 Å MD re-accelerates
+3.04 → 3.17 Å/ps under the partner Coulomb push with no drag left). The
+pre-specified "transverse mask" share is uninformative (85 % of samples
+are transverse-dominated). `step1_9A_residual_vs_transverse.{csv,json}`.
+
+**Step 2 — 18 Å-only fits.**
+
+| fit | a [amu/ps] | b [amu·ps/Å²] | E_bind [eV] | RMSE 18 Å [Å/ps] | bands |
+|---|---|---|---|---|---|
+| `cubic` @ 3.5 Å | 0 | **2.2286** (hw 0.213) | **0.1214** (hw 0.006) | 0.1092 | pass |
+| `linear_cubic` @ 3.5 Å | → 0 | 2.2368 | 0.1210 | 0.1092 | pass |
+| `linear` @ 3.5 Å | 23.15 (hw 1.13) | 0 | 0.1165 | 0.1239 | pass |
+| control `cubic` @ 14.2 Å | 0 | 3.4490 | 0.0721 | 0.0966 | (not a bundle) |
+
+- **Winner `cubic`** (T_a0 = −5·10⁻⁶ equivalent; T_b0 = +0.0147 > 0.005,
+  linear distinguishable though it passes its bands). Bundle id
+  `srho3p5A18A_cubic`. No production form change (G4.6).
+- **At 3.5 Å, 18 Å alone returns the G4 joint law** (b 2.2286 vs 2.2300,
+  E_bind 0.121 vs 0.128). Dropping 9 Å changes almost nothing at the
+  sourced width.
+- **At 14.2 Å it does not:** 18 Å alone gives b 3.45 / E_bind 0.072 vs the
+  joint 2.51 / 0.117. The 0.071 eV of the old per-case 18 Å fit (§8) is a
+  14.2 Å value. **Gate effect on 18 Å alone: b −35 %, E_bind +68 %** —
+  much larger than the joint fit's −11 % / +9 %.
+- **Projection on record refuted:** "E_bind falls toward 0.071 eV" — it is
+  0.121 eV (−5 % vs G4), because the fall was a 14.2 Å property. No KE₁
+  gain from this route.
+- **18 Å also prefers the soft gate:** RMSE 0.0966 (14.2 Å) vs 0.1092
+  (3.5 Å). The tail outside the surface helps the clean radial case too,
+  so the drag-tail effect is not only a 9 Å non-radial artifact.
+- **Step 3 — 9 Å escape check:** escape 1.0 under the winner (and under
+  the control). Full-window 9 Å RMSE 0.241 (winner) / 0.280 (control),
+  descriptive only.
 
 ## 2. Capped tail — v_c and p_tail
 

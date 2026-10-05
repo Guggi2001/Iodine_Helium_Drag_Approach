@@ -1,0 +1,92 @@
+{
+  "extraction_method": "trajectory_matching",
+  "form": "linear_cubic",
+  "a": 0.0,
+  "b": 2.2286024506575126,
+  "a_err": 0.0,
+  "b_err": 0.212730233926399,
+  "uncertainty_model": "rmse_sensitivity_only_seed_sweep_omitted_per_s8",
+  "meff_amu": 202.953908,
+  "extraction_mass_model": "constant",
+  "effective_binding_energy_I_ion_eV": 0.12138049379722196,
+  "effective_binding_energy_err_eV": 0.005924524102007264,
+  "t_start": 4.54,
+  "t_end": 14.768,
+  "reference_file": [
+    "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv"
+  ],
+  "calibration_cases": [
+    "18A"
+  ],
+  "stage": "single_case_18A",
+  "variant": "shared_cubic",
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157,
+    "provenance": "18A Method-A bundle only (9A Method-A artifact provenance-broken, drag_migration_log_tier0.md 2026-06-11)"
+  },
+  "objective": "equal_weight_mean_over_cases_of_in_window_rmse_mean_abs_v2_plus_escape_penalty",
+  "objective_mean_Aps": 0.10918971039495973,
+  "windows": {
+    "18A": [
+      4.54,
+      14.768
+    ]
+  },
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.10918971039495973,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.10918971039495973,
+      "num_overlap_points": 10229
+    }
+  },
+  "n_molecules_fit": 50,
+  "seed": 20260604,
+  "optimizer": {
+    "method": "nelder-mead",
+    "n_starts": 3,
+    "evals": 166,
+    "converged": true,
+    "start_minima": [
+      {
+        "a": 0.0,
+        "b": 2.2297482366639536,
+        "e_bind_eV": {
+          "18A": 0.12133933149065294
+        },
+        "objective_Aps": 0.10918979321710008
+      },
+      {
+        "a": 0.0,
+        "b": 2.2286024506575126,
+        "e_bind_eV": {
+          "18A": 0.12138049379722196
+        },
+        "objective_Aps": 0.10918971039495973
+      },
+      {
+        "a": 0.0,
+        "b": 2.2284185410549044,
+        "e_bind_eV": {
+          "18A": 0.12139300442210887
+        },
+        "objective_Aps": 0.1091897535055587
+      }
+    ]
+  },
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "flags": {
+    "radial_projection_convention": true,
+    "transverse_contaminated_non_radial_reference": false,
+    "full_window_heldout_window_axis_forfeited": true,
+    "cross_case_axis_consumed_by_joint_fit": false
+  },
+  "drag_spatial_gate": "erf_independent",
+  "drag_gate_steepness_angstrom": 3.5,
+  "potential_steepness_angstrom": 14.2,
+  "bundle_id": "srho3p5A18A_cubic",
+  "density_width_source": "Harms, Toennies, Dalfovo, PRB 58, 3341 (1998): 4He droplet 10-90 % surface width 5.7 A (DFT) / 6-8 A (exp); erf-complement 10-90 % = 1.81 s -> s = 3.5 A gives 6.3 A. Borrowed (atlas plan \u00a76.8.2).",
+  "held_out_axis": "9A (prediction only, non-gating; G4.9 step 3)"
+}

@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-05",
+  "branch": "drag_implementation",
+  "family": "linear",
+  "variant": "shared_linear",
+  "bundle_id": "srho3p5A18A_linear",
+  "calibration_cases": [
+    "18A"
+  ],
+  "a": 23.154266562377813,
+  "b": 0.0,
+  "e_bind_eV": 0.11647455817722013,
+  "objective_Aps": 0.12388543124103739,
+  "per_case": {
+    "18A": {
+      "rmse_Aps": 0.12388543124103739,
+      "escape_fraction": 1.0,
+      "objective_Aps": 0.12388543124103739,
+      "num_overlap_points": 10229
+    }
+  },
+  "bands": {
+    "RMSE_18A": {
+      "value_Aps": 0.12388543124103739,
+      "band_max_Aps": 0.19,
+      "pass": true
+    },
+    "ESCAPE_18A": {
+      "value": 1.0,
+      "band": 1.0,
+      "pass": true
+    },
+    "all_pass": true
+  },
+  "n_evaluations": 204,
+  "converged": true,
+  "start_minima": [
+    {
+      "a": 23.149512308199274,
+      "b": 0.0,
+      "e_bind_eV": 0.11649207058384672,
+      "objective_Aps": 0.1238855457662466
+    },
+    {
+      "a": 23.154266562377813,
+      "b": 0.0,
+      "e_bind_eV": 0.11647455817722013,
+      "objective_Aps": 0.12388543124103739
+    },
+    {
+      "a": 23.156257264517418,
+      "b": 0.0,
+      "e_bind_eV": 0.11648260896424797,
+      "objective_Aps": 0.12388558057937263
+    }
+  ],
+  "anchors": {
+    "a0": 14.555626399148123,
+    "b0": 2.0534044239692157
+  },
+  "gate": {
+    "drag_spatial_gate": "erf_independent",
+    "drag_gate_steepness_angstrom": 3.5,
+    "potential_steepness_angstrom": 14.2
+  },
+  "reference_file": "data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv",
+  "n_molecules": 50,
+  "seed": 20260604,
+  "meff_amu": 202.953908,
+  "sensitivity_halfwidths": {
+    "a": 1.130148725068441,
+    "b": 0.0,
+    "e_bind_eV": 0.005685067720554798
+  },
+  "bundle_written": true
+}
