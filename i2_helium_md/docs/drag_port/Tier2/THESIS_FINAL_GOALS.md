@@ -11,8 +11,9 @@ b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
 outside the band [1.803, 2.654], read as INCONCLUSIVE** (references not
 derivative-grade). **Post-hoc (June Method-A pipeline + corrections):
 cubic b 18 Å 2.449, 9 Å 2.634 — both inside the band**, 9 Å at the edge
-(G4.10 status). **Next decisive goal: G4.11** (the same two-method test
-for linear / quadratic / linear + quadratic), specification open.
+(G4.10 status). **Next decisive goal: G4.11** (cross-case drag-law test
+for linear / quadratic / linear + quadratic), pre-registered, not
+started.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -413,37 +414,100 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
   4.54 ps). Reading: the size of the cubic b is supported by an
   independent local method on both cases. D0 §1.G4.10-PH.
 
-### G4.11 Two-method test of the alternative families (goal agreed 2026-10-05; specification OPEN)
+### G4.11 Cross-case drag-law test across families (PRE-REGISTERED 2026-10-05, user-checked; not started)
 
-- **Goal (user, decisive for the form question).** For `linear`
-  (F = a v), `quadratic` (F = c v²) and `linear_quadratic`
-  (F = a v + c v²), test whether independent force-balance extraction
-  (Method A, the G4.10-PH pipeline) and forward trajectory matching
-  (Method B, s_ρ = 3.5 Å) give agreeing parameters on 9 Å and 18 Å — as
-  G4.10-PH did for the cubic. Units: a [amu/ps], c [amu/Å]; γ = F/v in
-  amu/ps (friction convention).
-- **Why it can discriminate.** One family agreeing with itself across
-  the two methods is the self-consistency of that law between the local
-  and the integrated read. A family whose Method-A value disagrees with
-  its Method-B value (or whose 9 Å and 18 Å Method-A values disagree)
-  is not a consistent description of the TDDFT data, whatever its
-  trajectory RMSE. The cubic (G4.10-PH) is the control row.
-- **Existing machinery.** Method B: `shared_linear` and the
-  `linear_quadratic` / pure-quadratic variants with single-case support
-  (METHOD_B §10; run at 14.2 Å, joint, so far). Method A: needs v² and
-  v + v² columns in `fit_drag_form`.
-- **Open — to settle before pre-registration (discussion).**
-  1. Method-B case set: 18 Å only (G4.9 convention), or also 9 Å?
-  2. E_bind: each Method-B family fits its own; Method A uses that
-     family's E_bind (b-given-E_bind, as G4.10)?
-  3. Agreement criterion per family (band from the Method-B
-     half-widths, as G4.10?) and the decision rule: which pattern of
-     agreements selects or rejects a form.
-  4. Form information: only 9 Å has a speed range (3.40–4.61 Å/ps in
-     the June window); 18 Å (2.72–3.20) checks size only.
-- **Cost (estimate).** Method B: three single-case fits at 3.5 Å (G4.9
-  runtime scale); Method A: zero MD. Code requires
-  `[PROCEED TO IMPLEMENTATION]`.
+**Question.** Is there one friction law F(v) that describes the TDDFT
+ion at both speed ranges — 18 Å (≈ 2.7–3.2 Å/ps) and 9 Å (≈ 3.4–4.6 Å/ps)?
+Families: `linear` F = a·v, `quadratic` F = c·v², `linear_quadratic`
+F = a·v + c·v², with `cubic` F = b·v³ as the control (G4.10-PH).
+Units: a [amu/ps], c [amu/Å], b [amu·ps/Å²]; each term gives
+amu·Å/ps² (force); γ = F/v [amu/ps] (friction convention).
+
+**Two extraction routes (unchanged physics: Coulomb, well −dU/dr,
+density gate s_ρ = 3.5 Å, U width 14.2 Å, m_eff = 19 He, R = 27.94 Å).**
+
+- *Trajectory matching:* simulate the radial explosion with a candidate
+  law, fit its coefficients + E_bind so the simulated |v(t)| matches the
+  TDDFT curve (18 Å only, as G4.9).
+- *Force balance:* no simulation; at each instant the drag is what
+  remains of Newton's law along the motion,
+  γρ̂v = F_C cos θ − dU/dr (r̂·v̂) − m d|v|/dt, then fit F(v). The
+  G4.10-PH pipeline (June data handling: short references,
+  [4.54, 8.0] / [2.67, 6.0] ps, MAD spline, 0.5 ps trim).
+
+**Main criterion: cross-case consistency.** A single-case trajectory
+fit matches its own curve for almost any law, and on 18 Å alone every
+family reproduces the drag size at v ≈ 3 Å/ps. A law is tested only by
+carrying it to the other speed range.
+
+- **C-X (main, cross-case):** the family's 18 Å trajectory-matched law
+  L₁₈(v), evaluated at the 9 Å force-balance points. Scale
+  s_X = Σ F₉·L₁₈(v) / Σ L₁₈(v)² (least-squares factor; s_X = 1 ⇔ the
+  18 Å law predicts the 9 Å drag). **Pass: |s_X − 1| ≤ 0.19.**
+- **C-M (secondary, cross-method):** the same scale on the 18 Å
+  force-balance points, s_M. **Pass: |s_M − 1| ≤ 0.19.**
+- **C-A (recorded, single-coefficient families only):** force balance
+  alone, 9 Å coefficient / 18 Å coefficient — cross-case with no
+  trajectory fit involved.
+- **Band 0.19:** the cubic's relative trajectory-fit uncertainty,
+  2 · 0.2127 / 2.2286 (the G4.10 band), applied to every family alike.
+- **Shape (recorded):** RMS of (F₉ − s_X·L₁₈)/⟨F₉⟩ — a two-coefficient
+  law can match the 9 Å scale with the wrong slope.
+- **E_bind pairing:** the force balance for family f uses f's own
+  18 Å trajectory-fit E_bind (b-given-E_bind, as G4.10).
+
+**Decision rule.** A family is *consistent* if C-X and C-M pass.
+Only the cubic consistent → the cubic form is supported by the TDDFT
+data (not only chosen). Several consistent → the TDDFT data do not
+discriminate those forms; the cubic stays by decision (continuity,
+production cap). Cubic not consistent → open as a decision.
+
+**Known before writing this (disclosed, not hidden).** Cubic control:
+s_X = 2.634 / 2.2286 = 1.182 (passes, near the edge), s_M = 1.099.
+Linear, from the G4.10-PH rows (force balance at the *cubic's* E_bind):
+9 Å a 41.97 vs 18 Å trajectory-fit a 23.15 → s_X ≈ 1.81. Quadratic and
+linear + quadratic at 3.5 Å: not known.
+
+**Step 1 — 18 Å trajectory-matching fits at s_ρ = 3.5 Å (new for the
+quadratic families).**
+
+- Reuse G4.9 `linear` (a 23.15, E_bind 0.1165) and `cubic` (b 2.2286,
+  E_bind 0.1214). New: `quadratic` (`lq_shared_pure_quadratic`) and
+  `linear_quadratic` (`lq_shared_3param`), 18 Å only, same engine, N = 50,
+  seed 20260604, 20 ps at 0.01 ps, §10.4.1 locked anchors (a0 14.5556,
+  c0 11.0161), sensitivity half-widths as G4.9.
+- Bands as G4.9: 18 Å RMSE ≤ 0.19 Å/ps, escape fraction = 1 (a family
+  failing them is reported, still scored).
+- **Oracle first:** (i) the G4.9 cubic point reproduces its committed
+  18 Å RMSE 0.1092 through the new driver; (ii) the June per-case
+  quadratic point (§10.8: c 11.27, E_bind 0.060) reproduces its 18 Å
+  RMSE 0.0993 at the 14.2 Å gate.
+- **Code:** a G4.11 driver with the gate pass-through, writing to
+  `data/reference/drag/18A/trajectory_matching_srho3p5A/{quadratic,linear_quadratic}/`
+  (never the 14.2 Å folders); the per-case form writer stamps the gate
+  (`drag_spatial_gate`, `drag_gate_steepness_angstrom`,
+  `potential_steepness_angstrom`), as G4.3 change 4. Diagnostic bundles,
+  not preset-wired.
+
+**Step 2 — force balance + scoring.** `fit_drag_form` gains `quadratic`
+and `linear_quadratic`; a G4.11 driver evaluates C-X / C-M / C-A per
+family on the G4.10-PH pipeline, with the G4.10-PH sensitivity rows
+(ρ̂ cut, E_bind ± hw, radius ± 8 %, spline s, 9 Å anchored m(t)) —
+recorded; the verdict is on the primary row. Artifacts
+`data/reference/drag/force_balance_srho3p5A/g411_cross_case/`
+(`verdict.json`, `scores.csv`).
+
+**Not in scope.** 9 Å trajectory fits (non-radial, G4.9); power law
+(18 Å alone rails n, §10.8); production changes.
+
+**Tests.** Writer gate stamp; single-case lq fit under the 3.5 Å gate
+override (stub landscape, no MD); `fit_drag_form` exact recovery for the
+two new forms; s_X / s_M on synthetic forces (exact law → 1).
+
+**Cost.** Step 1 ≈ two single-case fits (G4.9 scale, < 1 h incl.
+sensitivity); step 2 zero MD. Code ≈ 2 h. Requires
+`[PROCEED TO IMPLEMENTATION]`. Frozen: criteria, band, decision rule,
+E_bind pairing, pipeline (this commit, before any run).
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
