@@ -878,3 +878,17 @@ does not. 9 Å ions escape (1.0) under the winner. Artifacts
 `data/reference/drag/18A/trajectory_matching_srho3p5A/` (`verdict.json`);
 driver `scripts/extraction/method_b_18A_only_refit.py`; record in
 `drag_migration_log_tier2.md` (2026-10-05 G4.9 entry) and D0 §1.G4.9.
+
+### 11.2 Force-balance cross-check of §11.1 (RAN 2026-10-05; G4.10)
+
+Method A revived with the Coulomb force projected on the motion and the
+solvation-well term included: γρ̂v = F_C cos θ − dU/dr (r̂·v̂) − m d|v|/dt,
+point by point on the smoothed TDDFT traces, interior ρ̂ ≥ 0.9 at 3.5 Å.
+18 Å cubic b_A = 1.618, outside the pre-registered §11.1 b ± 2 half-widths
+[1.803, 2.654]; 9 Å 2.013, joint 1.991. In the 18 Å interior the drag falls
+with depth at constant v (F/v³ 2.16 → 1.01; the deepest bin matches 2.23),
+so the trajectory-matched b is a window average of a depth-dependent drag.
+Adoption of the §11.1 bundle is a decision (D0 §1.G4.10). Module
+`extraction/force_balance.py`; driver
+`scripts/extraction/method_a_force_balance_g410.py`; artifacts
+`data/reference/drag/force_balance_srho3p5A/`.

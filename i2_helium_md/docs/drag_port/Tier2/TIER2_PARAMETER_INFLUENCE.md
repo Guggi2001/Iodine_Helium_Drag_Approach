@@ -591,6 +591,81 @@ are transverse-dominated). `step1_9A_residual_vs_transverse.{csv,json}`.
   the control). Full-window 9 Å RMSE 0.241 (winner) / 0.280 (control),
   descriptive only.
 
+#### 1.G4.10 Force-balance (Method A) cross-check, cos θ-projected (MEASURED 2026-10-05; gate DISAGREES → DECISION NEEDED)
+
+`THESIS_FINAL_GOALS.md` G4.10 (pre-registered `cbefdb7`, amended `114c1ca`
+before any run: well-term sign, raw-|v₂| row, 18 Å form non-identifiable,
+radius row). Zero MD. Module `extraction/force_balance.py`, driver
+`scripts/extraction/method_a_force_balance_g410.py`, artifacts
+`data/reference/drag/force_balance_srho3p5A/` (`verdict.json`, `fits.csv`,
+`bins_1ps.csv`, `trace_{9A,18A}.csv`). Balance along v̂ of atom 2:
+γρ̂v = F_C cos θ − dU/dr (r̂·v̂) − m d|v|/dt. Primary: committed smoothed
+reference, SG order 2 / 0.5 ps derivative, m_eff, E_bind 0.1214 eV,
+U width 14.2 Å, R = 27.94 Å (N = 2000, centre at origin), s_ρ = 3.5 Å,
+interior ρ̂ ≥ 0.9.
+
+**Anchor.** The `legacy_no_well` projection with the old spline derivative
+reproduces both committed Method-A `linear_and_cubic` fits to ≤ 5·10⁻⁶
+(the old 9648.5 rounding): 18 Å on the repo reference; 9 Å **only** on the
+uncommitted `Drag_function/drag_function/cleaned_data.csv` (`cleaned_SG`),
+which differs from the repo's 9 Å `cleaned_data.csv` — this locates the
+"provenance-broken" 9 Å Method-A artifact (`drag_migration_log_tier0.md`
+2026-06-11). Synthetic radial inversion (test) returns b exactly with the
+exact derivative; the SG 0.5 ps curvature bias is −0.36 %.
+
+**Gate (pre-registered).** 18 Å cubic **b_A = 1.618** vs band
+2.2286 ± 2·0.2127 = [1.803, 2.654] → **DISAGREES**. No automatic adoption.
+
+| case set (primary) | cubic b | linear a | linear_cubic (a, b) | force RMSE lin / cub / lc | interior |v| [Å/ps] |
+|---|---|---|---|---|---|
+| 18 Å | **1.618** | 14.36 | (−263, 31.1) | 12.3 / 11.7 / 1.4 | 2.95–3.02 |
+| 9 Å | 2.013 | 32.81 | (0.90, 1.961) | 48.7 / 35.1 / 35.0 | 3.08–4.94 |
+| joint | 1.991 | 29.63 | (−2.47, 2.140) | 49.5 / 31.2 / 31.1 | 2.95–4.94 |
+
+**Why 18 Å disagrees — the drag is not a function of v in the 18 Å
+interior.** At |v| ≈ const (3.01 → 2.95) the bulk drag falls 59 → 26
+amu·Å/ps² across 4.54–6.2 ps (F/v³ by 0.5 ps bins: 2.16, 1.67, 1.24, 1.01),
+while the inward well term rises 35 → 45 and F_C falls 85 → 54. b_A is the
+window average of this trend; the **deepest bin (2.16) matches G4.9's
+2.23**. The 18 Å `linear_cubic` (−263, 31) is this time trend fitted
+through a 2 % speed range — non-identifiable, as amended. *Interpretation
+(not measured):* in the near-surface zone the 14.2 Å well already pulls
+hard while the 3.5 Å density is still bulk; the two widths disagree there,
+and Method B absorbs it through the whole-window trajectory, Method A sees
+it point by point.
+
+**Recorded sensitivities (18 Å cubic b unless stated).**
+- SG window on the committed reference 0.25 / 1.0 ps: 1.618 / 1.618
+  (inert, as amended; 9 Å ±0.0003).
+- Raw-|v₂| derivative 0.25 / 0.5 / 1.0 ps: 1.105 / 1.265 / 1.800; force
+  RMSE 106 / 63 / 24 (vs 11.7): too noisy to serve as primary.
+- Projection: scalar 1.627 (18 Å consistency, cos θ ≈ 1 ✓); **9 Å scalar
+  2.830 vs projected 2.013 (−29 %)**; legacy (no well, scalar) 3.129 /
+  9 Å 3.111.
+- E_bind ± 1 hw: 1.691 / 1.544 (slope −12.4 amu·ps/Å² per eV, amendment
+  estimate −12.5).
+- Radius −8 % / +8 %: 1.795 / 1.499 (−8 % is the closest row to the band,
+  still outside).
+- 9 Å anchored m(t) 21 → 14 He (t* 2.67 ps): 2.055 vs 2.013.
+- **Form:** 9 Å and joint prefer cubic over linear (RMSE 35.1 vs 48.7;
+  31.2 vs 49.5) and the free linear term goes to ≈ 0 — consistent with the
+  G4/G4.9 form. Caveat: the projected 9 Å samples scatter (RMSE 35 vs
+  scalar 7.6) because cos θ is resolved at 0.5 ps while |v| is smoothed
+  over 2.4 ps; the 9 Å / joint b inside the band is weak evidence.
+
+**Outside the surface (ρ̂ < 0.1).** 18 Å (8.5–14.8 ps): mean apparent drag
++6.5 amu·Å/ps² (0.16 of the G4.9 bulk cubic at that v), rising 1.5 → 13.7
+from 10–11 to 14–15 ps — the late slowing of G4.9 step 1, present on the
+clean radial case. 9 Å (10.3–14.1 ps): −7.0 (net push unexplained: well
+over-binds or non-radial). Caveat: the late m·d|v|/dt (−8.4 constant) is
+the 3.4 ps reference slope, not resolved dynamics.
+
+> **DECISION NEEDED (G4.10 disagreement).** (a) Adopt `srho3p5A18A_cubic`
+> for G5 and record G4.10 as a depth-dependent near-surface drag
+> (deepest-bin agreement, 9 Å / joint inside the band); or (b) open the
+> near-surface well-vs-density width inconsistency before G5. Production
+> stays `shared_pure_cubic` at 14.2 Å until decided.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

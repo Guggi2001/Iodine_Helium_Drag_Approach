@@ -1,0 +1,194 @@
+{
+  "date": "2026-10-05",
+  "goal": "THESIS_FINAL_GOALS.md G4.10: force-balance cross-check of the 18 A fit",
+  "preregistration": "G4.10 committed cbefdb7; amendments 114c1ca (before any run)",
+  "primary_settings": {
+    "speed_source": "reference",
+    "sg_window_ps": 0.5,
+    "projection": "projected",
+    "mass": "m_eff",
+    "m_eff_amu": 202.953908,
+    "binding_energy_eV": 0.12138049379722196,
+    "potential_steepness_A": 14.2,
+    "droplet_radius_A": 27.936098748617447,
+    "gate_steepness_A": 3.5
+  },
+  "settings_fixed": {
+    "interior_rho_min": 0.9,
+    "direction_window_ps": 0.5,
+    "sg_polyorder": 2,
+    "droplet_centre": "origin (I2 centre of mass)",
+    "t_star_9A_anchored_ps": 2.67
+  },
+  "gate": {
+    "G49_b": 2.2286024506575126,
+    "G49_b_halfwidth": 0.212730233926399,
+    "band": [
+      1.8031419828047146,
+      2.6540629185103106
+    ],
+    "b_A_18A_cubic_primary": 1.617536250800403,
+    "agree": false,
+    "consequence": "no automatic adoption; open as a decision"
+  },
+  "primary_fits": {
+    "18A/linear": {
+      "variant": "primary",
+      "case_set": "18A",
+      "form": "linear",
+      "a": 14.360905122140995,
+      "b": 0.0,
+      "a_se": 0.10135842567829575,
+      "b_se": 0.0,
+      "rmse_force": 12.324444880960279,
+      "n_points": 1660,
+      "v_min": 2.9469623965176908,
+      "v_max": 3.023423839991482
+    },
+    "18A/cubic": {
+      "variant": "primary",
+      "case_set": "18A",
+      "form": "cubic",
+      "a": 0.0,
+      "b": 1.617536250800403,
+      "a_se": 0.0,
+      "b_se": 0.010787500763312913,
+      "rmse_force": 11.69336651838305,
+      "n_points": 1660,
+      "v_min": 2.9469623965176908,
+      "v_max": 3.023423839991482
+    },
+    "18A/linear_cubic": {
+      "variant": "primary",
+      "case_set": "18A",
+      "form": "linear_cubic",
+      "a": -262.91630521519244,
+      "b": 31.106451594825028,
+      "a_se": 0.7804702343212708,
+      "b_se": 0.08754777880823883,
+      "rmse_force": 1.4032045825679273,
+      "n_points": 1660,
+      "v_min": 2.9469623965176908,
+      "v_max": 3.023423839991482
+    },
+    "9A/linear": {
+      "variant": "primary",
+      "case_set": "9A",
+      "form": "linear",
+      "a": 32.809239639435084,
+      "b": 0.0,
+      "a_se": 0.18290973187961607,
+      "b_se": 0.0,
+      "rmse_force": 48.738321535877326,
+      "n_points": 4723,
+      "v_min": 3.0835291356527947,
+      "v_max": 4.938193438949033
+    },
+    "9A/cubic": {
+      "variant": "primary",
+      "case_set": "9A",
+      "form": "cubic",
+      "a": 0.0,
+      "b": 2.0126966698613145,
+      "a_se": 0.0,
+      "b_se": 0.007799294016174034,
+      "rmse_force": 35.05641911836694,
+      "n_points": 4723,
+      "v_min": 3.0835291356527947,
+      "v_max": 4.938193438949033
+    },
+    "9A/linear_cubic": {
+      "variant": "primary",
+      "case_set": "9A",
+      "form": "linear_cubic",
+      "a": 0.8974885866488862,
+      "b": 1.9613797144835063,
+      "a_se": 0.4981957840616429,
+      "b_se": 0.029533950576913815,
+      "rmse_force": 35.04437604057459,
+      "n_points": 4723,
+      "v_min": 3.0835291356527947,
+      "v_max": 4.938193438949033
+    },
+    "joint/linear": {
+      "variant": "primary",
+      "case_set": "joint",
+      "form": "linear",
+      "a": 29.628743923713298,
+      "b": 0.0,
+      "a_se": 0.16898368867380198,
+      "b_se": 0.0,
+      "rmse_force": 49.497162166480415,
+      "n_points": 6383,
+      "v_min": 2.9469623965176908,
+      "v_max": 4.938193438949033
+    },
+    "joint/cubic": {
+      "variant": "primary",
+      "case_set": "joint",
+      "form": "cubic",
+      "a": 0.0,
+      "b": 1.9909698550911445,
+      "a_se": 0.0,
+      "b_se": 0.00674291729429055,
+      "rmse_force": 31.178274211281128,
+      "n_points": 6383,
+      "v_min": 2.9469623965176908,
+      "v_max": 4.938193438949033
+    },
+    "joint/linear_cubic": {
+      "variant": "primary",
+      "case_set": "joint",
+      "form": "linear_cubic",
+      "a": -2.472033544417806,
+      "b": 2.1397898665352,
+      "a_se": 0.3406247589047496,
+      "b_se": 0.021577816076126022,
+      "rmse_force": 31.050391679523045,
+      "n_points": 6383,
+      "v_min": 2.9469623965176908,
+      "v_max": 4.938193438949033
+    }
+  },
+  "rmse_by_form_primary": {
+    "18A": {
+      "linear": 12.324444880960279,
+      "cubic": 11.69336651838305,
+      "linear_cubic": 1.4032045825679273
+    },
+    "9A": {
+      "linear": 48.738321535877326,
+      "cubic": 35.05641911836694,
+      "linear_cubic": 35.04437604057459
+    },
+    "joint": {
+      "linear": 49.497162166480415,
+      "cubic": 31.178274211281128,
+      "linear_cubic": 31.050391679523045
+    }
+  },
+  "form_identifiable_18A": false,
+  "exterior_rho_below_0p1": {
+    "18A": {
+      "n_points": 6268,
+      "t_range_ps": [
+        8.501,
+        14.768
+      ],
+      "mean_F_drag_apparent": 6.495479871635966,
+      "mean_speed_Aps": 2.6784056447394073,
+      "mean_ratio_to_G49_bulk_cubic": 0.16042978254824852
+    },
+    "9A": {
+      "n_points": 3757,
+      "t_range_ps": [
+        10.325,
+        14.081
+      ],
+      "mean_F_drag_apparent": -7.014002648736759,
+      "mean_speed_Aps": 2.849606174754983,
+      "mean_ratio_to_G49_bulk_cubic": -0.1368826749312713
+    }
+  },
+  "anchor": "legacy_no_well + old spline derivative reproduces the committed Method-A linear_and_cubic fits (18 A repo reference; 9 A old local cleaned_data.csv) to <= 5e-6 relative (9648.5 rounding)"
+}

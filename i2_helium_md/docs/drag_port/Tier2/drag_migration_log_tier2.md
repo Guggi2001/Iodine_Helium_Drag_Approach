@@ -13838,3 +13838,41 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
 - **Status.** Production unchanged (h405, `shared_pure_cubic` at 14.2 Å)
   until the bundle is adopted for G5. Docs: D0 §1.G4.9; METHOD_B §11.1;
   `THESIS_FINAL_GOALS.md` status.
+
+## 2026-10-05 — G4.10 EXECUTED: force-balance (Method A) cross-check, cos θ-projected — **18 Å cubic b_A = 1.618, outside the pre-registered [1.803, 2.654] → DISAGREES**; adoption of `srho3p5A18A_cubic` → **DECISION NEEDED**
+
+- **Pre-registration.** `THESIS_FINAL_GOALS.md` G4.10, committed `cbefdb7`.
+  Amended `114c1ca` before any run (user-agreed): the well term is
+  −dU/dr (r̂·v̂) (spec had `+`; material, ≈ 40 vs F_C cos θ ≈ 68 in the
+  18 Å interior); raw-|v₂| derivative row added; the 18 Å form comparison
+  declared non-identifiable (|v| 2.95–3.02); radius ± 8 % row added.
+- **Code.** `i2_helium_md/extraction/force_balance.py` (geometry, SG
+  derivative, balance, form fits; reuses `coulomb_energy`, `droplet_force`,
+  `spatial_gate`); driver `scripts/extraction/method_a_force_balance_g410.py`;
+  tests `tests/test_g410_force_balance.py` (9: conversion, synthetic radial
+  inversion exact with the exact derivative / −0.36 % SG bias, projection,
+  well sign, variable mass, validation). Artifacts
+  `data/reference/drag/force_balance_srho3p5A/`.
+- **Anchor.** Old Method A (no well, scalar, spline derivative) reproduced
+  through the new code to ≤ 5·10⁻⁶ on both committed `linear_and_cubic`
+  fits. The 9 Å one only from the uncommitted
+  `Drag_function/drag_function/cleaned_data.csv`, which differs from the
+  repo's 9 Å `cleaned_data.csv`: this is the source of the 2026-06-11
+  "provenance-broken" 9 Å Method-A artifact.
+- **Measured.** Primary cubic b: 18 Å **1.618**, 9 Å 2.013, joint 1.991.
+  9 Å / joint prefer cubic over linear (free a ≈ 0). 18 Å bulk drag falls
+  59 → 26 amu·Å/ps² at |v| ≈ const across the interior (F/v³ 2.16 → 1.01
+  per 0.5 ps); the deepest bin matches G4.9's 2.23. Sensitivities: SG on
+  the reference inert; raw-|v₂| 1.11 / 1.27 / 1.80 (too noisy); scalar
+  18 Å 1.627 (consistency), 9 Å scalar 2.83 vs projected 2.01 (−29 %);
+  E_bind ± hw 1.69 / 1.54; radius ∓ 8 % 1.80 / 1.50; 9 Å anchored m(t)
+  2.06. Outside the surface: 18 Å apparent drag +6.5 (rising 1.5 → 13.7
+  late), 9 Å −7.0.
+- **Interpretation (not measured).** In the near-surface zone the 14.2 Å
+  well pulls while the 3.5 Å density is still bulk; Method A sees this as a
+  depth-dependent drag, Method B averages it into b.
+- **Status.** Per pre-registration no automatic adoption. Options (D0
+  §1.G4.10): (a) adopt and record the depth dependence; (b) open the
+  near-surface width inconsistency before G5. Production unchanged (h405,
+  `shared_pure_cubic` at 14.2 Å). Docs: D0 §1.G4.10, METHOD_B §11.2,
+  `THESIS_FINAL_GOALS.md` status.
