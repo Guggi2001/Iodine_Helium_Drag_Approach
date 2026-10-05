@@ -6,7 +6,8 @@ only agreed goals. Results go to the migration log and D0 as usual.
 **Status (2026-10-05):** G4 **executed** (G4.8). The adoption decision
 is superseded by **G4.9** (18 Å-only refit; 9 Å held out as
 non-radial), **executed 2026-10-05: winner `cubic` (`srho3p5A18A_cubic`,
-b 2.2286, E_bind 0.1214 eV)**; adoption for G5 open. G1, G2 (production
+b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
+(force-balance cross-check), agreed, not started. G1, G2 (production
 switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -308,6 +309,55 @@ Code `ebda074`, artifacts `c1f9bb5`; full record in
 - **Storage.** `data/reference/drag/18A/trajectory_matching_srho3p5A/`
   `{family}/` + `verdict.json`; the step-1 table and the 9 Å prediction
   beside it. Code requires `[PROCEED TO IMPLEMENTATION]`.
+
+### G4.10 Force-balance cross-check of the 18 Å fit (agreed 2026-10-05)
+
+- **Why.** G4.9 calibrates the drag on one curve (18 Å), with no held-out
+  case. A local force balance on the smoothed TDDFT data is an independent
+  check of b. It does not need a radial trajectory, so 9 Å can contribute
+  again and widen the speed range (≈ 2.7–4.5 Å/ps). This revives the old
+  Method A (`Drag_function/drag_function/drag_calculation.py`) with one
+  correction.
+- **Correction: project the Coulomb force onto the motion.** The old
+  scalar balance `F_drag = F_C − m·d|v|/dt` assumes F_C ∥ v. Only
+  F_C·cos θ changes the speed (θ = angle between v₂ and r₂ − r₁). At 9 Å
+  the scalar form books F_C(1 − cos θ) as drag: 15–65 % of the cubic
+  drag (b = 2.23) at 2–5 ps, 60 % at 7–8 ps, 12–18 % after 9 ps
+  (per-ps bin means; cos θ 0.23–0.83, measured from the TDDFT
+  positions and 0.5 ps-smoothed velocities). At 18 Å cos θ ≈ 1, so both
+  forms agree there (consistency check).
+- **Balance along v̂, per time point** [amu·Å/ps²]:
+
+  $$\gamma(v)\,\hat\rho(r)\,v = F_C\cos\theta + F_\text{well}\,(\hat r\cdot\hat v) - m_\text{eff}\,\frac{d|v|}{dt}$$
+
+  - |v| and d|v|/dt from the committed smoothed reference
+    (`velocity_smoothed/cleaned_data_long.csv`, same pipeline as Method B);
+    the derivative by Savitzky–Golay.
+  - F_C = k_e e²/R², with R and θ from the raw TDDFT positions; the
+    velocity direction from the vector components smoothed over 0.5 ps.
+  - F_well from the package `droplet_force` (no duplicate physics) at the
+    G4.9 E_bind = 0.1214 eV, potential width 14.2 Å, the N = 2000 droplet
+    radius of the Tier-0 setup, centred at the origin (assumption: the
+    droplet centre stays at the I₂ centre of mass).
+  - m_eff = 19 He (G3).
+  - Points: each case's Method-B window, interior only (ρ̂ ≥ 0.9 at
+    s_ρ = 3.5 Å), divided by ρ̂.
+- **Fits.** F_drag(v) = a·v, b·v³, a·v + b·v³ (mass-agnostic convention),
+  on 18 Å alone, 9 Å alone and both together.
+- **Pre-registered agreement (frozen before any run).** The 18 Å cubic
+  b_A agrees if it lies within the G4.9 b ± 2 half-widths
+  (2.2286 ± 0.426 → [1.80, 2.65] amu·ps/Å²). Agreement → adopt
+  `srho3p5A18A_cubic` for G5. Disagreement → no automatic adoption; open
+  as a decision.
+- **Recorded, not gating.** The 9 Å and joint b and best form; the scalar
+  (old) vs projected b for both cases; sensitivity of b to SG window
+  (0.25 / 0.5 / 1.0 ps), to E_bind ± its half-width, and for 9 Å to the
+  anchored m(t) 21 → 14 He; the apparent drag at points outside the
+  surface (ρ̂ < 0.1) as a direct measure of the late slowing seen in
+  G4.9 step 1.
+- **Cost.** No MD. A small module under `i2_helium_md/extraction/`, a
+  driver and tests, ≈ 2–3 h. Code requires `[PROCEED TO
+  IMPLEMENTATION]`.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
