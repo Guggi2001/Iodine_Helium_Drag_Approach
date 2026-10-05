@@ -13782,3 +13782,24 @@ tension before G5. **Production is unchanged** (h405, `shared_pure_cubic`
 at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
 `CALIBRATION_MAP.md`; `METHOD_B_trajectory_matching_extraction.md` §11;
 `THESIS_FINAL_GOALS.md` G4 status.
+
+## 2026-10-05 — Correction: the "E_bind falls" G4 prediction rested on a 9 Å *droplet* that does not exist (discussion, zero MD)
+
+- **Finding.** The D0 §9.4 refund probe (`tier2_h2b_forward_model.py`,
+  `REFUND_RADII_A`, comment "9 / 18 = the Tier-0 calibration droplets")
+  used 9 / 18 Å as droplet radii. They are the I–I start separation
+  `R0_GS_angstrom`; both Tier-0 cases use one N = 2000 droplet (R ≈ 30.1 Å),
+  ions born 4.5 / 9 Å from the centre. Superseded: `c_cal` = 0.482, the
+  "E_bind inflated ≈ 2.1×" / T = 2.04 reading, the "+11 % at the 9 Å
+  droplet" figure, and RF-P5 (mis-specified, not merely failed).
+- **G4 consequence.** The refuted prediction (≈ 0.075 eV) came from the
+  R = 9 cell. The nearest valid cell (R = 26.6) still predicts a fall
+  (≈ 0.092 eV), so geometry alone does not explain the measured rise to
+  0.1277 eV; the probe also held b fixed while Method B re-fits b + E_bind.
+- **Hypothesis (untested).** The 14.2 Å gate under-weights interior drag
+  and leaves a drag tail outside the surface; at 3.5 Å b drops (fuller
+  interior drag) and E_bind takes over the slowdown the outside tail used
+  to supply. Zero-MD check: inside / outside-surface drag work per ion over
+  the TDDFT window, both bundles.
+- **Docs.** D0 §9.4 CORRECTION block, §1.G4 prediction bullet, §17 leverage
+  row flagged.

@@ -511,9 +511,11 @@ with a 14.2 Å control on the same reference to split the two changes.
   +0.0001 eV (nil); **gate effect Δb −0.284 (−11 %, 1.3 half-widths),
   ΔE_bind +0.0109 eV (+9 %)**.
 - **Predictions on record vs measured:** "E_bind falls" — **wrong**, it
-  rises; "b shift small" — it is −11 %, larger than predicted. The §9.4
-  twin reading (sharpening halves the refund ⇒ deflated E_bind) does not
-  carry over to the trajectory-level co-fit; not yet explained.
+  rises; "b shift small" — it is −11 %, larger than predicted. The
+  prediction rested on the §9.4 probe's R = 9 Å cell, which mistook the
+  I–I start separation for a droplet radius; see the §9.4 **CORRECTION**
+  (2026-10-05) for the geometry error and the untested drag-tail
+  hypothesis for the sign.
 - **Fit quality cost:** the 9 Å RMSE degrades 0.124 → 0.207 Å/ps (inside
   the 0.45 band); 18 Å slightly improves (0.134 → 0.125). The
   `diagnostic_4param` localization wants per-case wells 0.132 (18 Å) /
@@ -1280,6 +1282,36 @@ calibration-to-production transfer error. Its size is not yet established
 deficit. Doing it properly requires a Tier-0 re-extraction under the
 corrected width, and the production-side c must first be re-measured on
 the ensemble rather than on single trajectories.
+
+> **CORRECTION (2026-10-05) — the calibration side of this probe used the
+> wrong geometry.** `REFUND_RADII_A` (`tier2_h2b_forward_model.py`) treats
+> 9 / 18 Å as "the Tier-0 calibration droplets". They are not droplet
+> radii: 9 Å / 18 Å is the initial I–I separation `R0_GS_angstrom` of the two
+> HeDFT cases. Both Tier-0 cases run in the **same** N = 2000 droplet,
+> R ≈ 30.1 Å (≈ 28 Å with the legacy 2.22·N^⅓ rule), each ion born 4.5 /
+> 9 Å from the centre (21–25 Å deep). Consequences:
+> - `c_cal = 0.482` "at R = 9" and what was derived from it (E_bind
+>   inflated ≈ 2.1×, T = 2.04, the ≈ +0.02 eV KE₁ payoff) and the "+11 % at
+>   the 9 Å Tier-0 droplet" width-blindness figure (§17) were read off a
+>   near-droplet-free toy cell. The nearest valid cell is R = 26.6
+>   (Tier-0 law: c 0.553 → 0.700 under sharpening).
+> - **RF-P5 was mis-specified**, not merely failed: the per-case split
+>   (0.154 at 9 Å / 0.071 at 18 Å) is between two birth offsets / Coulomb
+>   energies in one droplet, not two radii.
+> - The G4 prediction "E_bind falls" (`THESIS_FINAL_GOALS.md` G4.2) rested
+>   on this R = 9 cell (≈ 0.075 eV). It was **refuted** (measured 0.1277,
+>   §1.G4). The correct cell still predicts a fall (×0.79 ≈ 0.092 eV), so
+>   the geometry error does not explain the sign by itself; the probe also
+>   holds b fixed, whereas Method B re-fits b and E_bind jointly (the G4.2
+>   caveat).
+> - **Hypothesis for the sign (untested):** at 14.2 Å the gate
+>   under-weights drag inside the droplet (ρ̂ ≈ 0.84 at 10 Å depth) and
+>   leaves a drag tail outside the surface (ρ̂ ≈ 0.16 at +10 Å). At 3.5 Å
+>   b drops to compensate for the fuller interior drag (measured −11 %),
+>   and E_bind rises because it takes over the late-window slowdown the
+>   outside tail used to supply (measured +9 %). Zero-MD check: split the
+>   drag work per ion into inside / outside the surface over the TDDFT
+>   window, for both bundles.
 
 ### 9.5 Is the measured response dynamical or cascade? — DECOMPOSED (2026-08-11, zero MD, zero new integrations)
 
@@ -2828,7 +2860,7 @@ physics, and which are scaffolding?** Role codes:
 | `cooling_spatial_gate="density_scaled"` | ρ̂-scaled Newton drain | no | **E**, but the alternative is unphysical | nothing available: `"none"` means cooling with no bath to cool into. Third leg of the same shared ρ̂ surface |
 | Boltzmann well 573.3 K | code value (legacy MATLAB); the DFT fit it cites is 26.99 meV = 313.2 K | **mismatch** (~1.3 Å in depth) | **provenance defect** | **G0 decision 2026-07-26:** Axis A L2 cells override to 313.2 K **per run**; the config default stays 573.3 K (legacy port fidelity — a default change buys nothing while the arm is unused in production). 573.3 K is a robustness check, not a cell |
 | **`potential_steepness` 14.2 Å reused as the He *density* width** | DFT fit of the **solvation potential** (legacy: `% from ernesto dft result beta = [14.3324 26.9916 34.4431]`, "from fit of solvation potential DFT result") — then reused verbatim by `rho_he_ratio` via `drag_gate_steepness` | **mismatch**: 14.2 Å ⇒ a 10–90 % interface of **25.7 Å**, vs **5.7 Å** (DFT) / **6–8 Å** (experiment) for ⁴He droplets at N = 10³–10⁴ [Harms/Toennies/Dalfovo PRB 58, 3341 (1998)] ⇒ $s_\rho \approx 3.1$–4.4 Å, a factor ≈ 4. The potential is $\rho\otimes V_\text{I–He}$ + cavity, so ≈ 14 Å is *right for U* and too wide for ρ — the defect is the **reuse**, not the value | **convention (C)**, quantitatively bounded below | **RQ12** — the DFT *density* profile from the same calculation. Instrument already exists and is bit-inert: `drag_spatial_gate="erf_independent"` + `cfg.drag_gate_steepness` (DESIGN §5.7 G3, held for exactly this). **2026-10-02:** literature value s_ρ = 3.5 Å agreed (G2, role → **P**, borrowed); Tier-0 refit at 3.5 Å **measured** (§1.G4: cubic, b 2.230, E_bind 0.1277; 9 Å RMSE 0.124 → 0.207); the row retires on adoption — **decision needed** (Tier-1a gate reading) |
-| ↳ *its measured leverage* (2026-08-10/11, §9.4–§9.5) | (a) analytic: for a radial exit $\int_0^\infty\hat\rho(r-R)dr = R$, so a **saturated** drag is width-blind on total dissipation (0.0 % at R = 47.8 Å, +11 % at the 9 Å Tier-0 droplet); (b) the **E_bind transfer factor** $T = c_\text{prod}/c_\text{cal}$, measured cross-law; (c) the dynamical/cascade split of the ensemble response | (a) leaves the drag channel nearly inert on *total* dissipation; (b) $c_\text{cal} = 0.482$ under the **uncapped** Tier-0 cubic ⇒ the co-fitted $E_\text{bind}$ is inflated ≈ 2.1×, and **T > 1** (1.66–2.07 taken consistently at trajectory level): production **over**-pays. Sharpening drives T → 1 and **halves the refund** (0.518 → 0.246 at R = 9); (c) the ensemble response is **85 % dynamical / 15 % cascade** (§9.5) — so the density width *can* reach it | — | **consequence:** correcting $s_\rho$ is right physics and correctly signed for KE₁, but its **size is not yet established** (the "+0.006–0.02 eV" estimate mixed trajectory- and system-level derivatives — withdrawn). Needs: the trapping bundle split out of $c_\text{traj}$, an **ensemble** $c(s_\rho)$, then a **Tier-0 re-extraction**. Third channel, untouched: **birth dressing** ($\hat\rho(10\,\text{Å})$ 0.84 → ~1.00, $n_0 \approx 18 \to 21$), the §14.3 lever |
+| ↳ *its measured leverage* (2026-08-10/11, §9.4–§9.5) | (a) analytic: for a radial exit $\int_0^\infty\hat\rho(r-R)dr = R$, so a **saturated** drag is width-blind on total dissipation (0.0 % at R = 47.8 Å, +11 % at the 9 Å Tier-0 droplet); (b) the **E_bind transfer factor** $T = c_\text{prod}/c_\text{cal}$, measured cross-law; (c) the dynamical/cascade split of the ensemble response | (a) leaves the drag channel nearly inert on *total* dissipation; (b) $c_\text{cal} = 0.482$ under the **uncapped** Tier-0 cubic ⇒ the co-fitted $E_\text{bind}$ is inflated ≈ 2.1×, and **T > 1** (1.66–2.07 taken consistently at trajectory level): production **over**-pays. Sharpening drives T → 1 and **halves the refund** (0.518 → 0.246 at R = 9); (c) the ensemble response is **85 % dynamical / 15 % cascade** (§9.5) — so the density width *can* reach it | — | **consequence:** correcting $s_\rho$ is right physics and correctly signed for KE₁, but its **size is not yet established** (the "+0.006–0.02 eV" estimate mixed trajectory- and system-level derivatives — withdrawn). Needs: the trapping bundle split out of $c_\text{traj}$, an **ensemble** $c(s_\rho)$, then a **Tier-0 re-extraction**. Third channel, untouched: **birth dressing** ($\hat\rho(10\,\text{Å})$ 0.84 → ~1.00, $n_0 \approx 18 \to 21$), the §14.3 lever. **2026-10-05: (a)'s "+11 % at 9 Å" and (b)'s $c_\text{cal}$ / T used a 9 Å *droplet*, but 9 Å is the I–I start separation (Tier-0 droplet R ≈ 30 Å) — superseded, see the §9.4 CORRECTION; the refit's E_bind rose, not fell (§1.G4)** |
 | mass / binding pairing hatches | §6.5–§6.6 documented exceptions | n/a | **C** (logged per run) | — |
 | ensemble second moments | not modelled | experiment says under-dispersed | **M** | Tier 3 (discrete-emission drag is the standing candidate) |
 | **three-stage timescale separation** (30 ps drag-active MD → 8 ns conservative E2 → 8.53 µs free flight; **since 2026-09-30: 500 ps full-physics Stage I → closure → free flight**, the E2 middle stage retired from production — `TIER2_DetectorStageFix.md`) | staging calibrated at R ≈ 27 Å, where ejection is effectively instantaneous | **contradicted at the anchored radii**: at R ≥ 49 Å escape takes ~0.1–1 µs with He still present, and ⅓–½ of ions never leave (§14.2) | **S** — scaffolding for the wrong geometry; **no longer a blocker** | **partly retired 2026-07-27** by the second option: the µs-orbiting class *is* defined as retained (`exclude_all_coupled`), decomposed into bound (physics) and marginal (convention), so the grid is readable — §14.2. What remains open is whether the µs residence is real at all, i.e. whether cubic drag over-dissipates on 25–50 Å paths (the collaborator ask; a *geometric* retained fraction is insensitive to (v_c, b), an over-dissipation artifact is not). **The first ledger row the correction created rather than retired** |
