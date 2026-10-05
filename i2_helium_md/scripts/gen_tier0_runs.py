@@ -33,7 +33,9 @@ CASE = "9A"      # droplet geometry: "9A" or "18A"
 # geometry; per-case keys (percase_*) resolve against CASE.
 #   shared_pure_cubic  shared_3param  shared_pl  shared_lq  shared_lq_pq
 #   percase_linear_cubic  percase_pl  percase_lq  percase_lq_pq
-VARIANT = "percase_linear_cubic"
+# New extraction:
+# srho3p5A_shared_cubic     srho3p5A_shared_linear_cubic      srho3p5A_shared_linear
+VARIANT = "srho3p5A_shared_linear"
 
 N = 50            # ensemble size, e.g. 50 or 2000
 

@@ -59,7 +59,7 @@ CASE = "9A"      # droplet geometry: "9A" or "18A"
 # Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
 # VARIANT (and CASE / N / RUN_TAG) the run was generated with by
 # scripts/gen_tier0_runs.py.
-VARIANT = "percase_linear_cubic"
+VARIANT = "srho3p5A_shared_linear"
 N = 50
 RUN_TAG = ""      # set to the same marker used in gen_tier0_runs.py for a tuned run
 

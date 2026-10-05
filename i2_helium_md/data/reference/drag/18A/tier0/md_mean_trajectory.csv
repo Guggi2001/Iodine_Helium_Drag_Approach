@@ -1,4 +1,4 @@
-# Tier-0 MD ensemble-mean trajectory. run=18A_drag_tier0_N50, N=50, ion_steps=3000, window=[4.54,8.0] ps, m_eff=202.953908 amu.
+# Tier-0 MD ensemble-mean trajectory. run=18A_drag_shared_pure_cubic_N50, N=50, ion_steps=3000, window=[4.54,14.768] ps, m_eff=202.953908 amu.
 # time_ps,mean_distance_A,mean_speed_I1_Aps,mean_speed_I2_Aps
 0.000000000000000000e+00,1.799999860081050329e+01,1.399189397344162032e-04,1.399189397344162032e-04
 1.000000000000000021e-02,1.800020336178727476e+01,2.061577269002232149e-02,2.061577269002232149e-02
