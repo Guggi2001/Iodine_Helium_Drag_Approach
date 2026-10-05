@@ -14065,3 +14065,29 @@ disclosed). Full table: D0 §1.G4.12.
 - **Next (user recap).** Step 3 as frozen would take the 11 passing
   points through the twin (uncapped, 3.5 Å gate, h405 at both gates
   first, full linscan grid). Production unchanged.
+
+## 2026-10-05 — G4.12 step 3 EXECUTED (twin, zero MD): every step-2 ridge point lands uncapped (after the frozen near-pass refinement) — **rule outcome: landing candidate**; but the ridge is one KE₁ / midHot dial, dominated by h405 at matched midHot
+
+User: "run step 3 as frozen on the 11 points". Full table: D0 §1.G4.12.
+
+- **Code.** `tier2_h2b_forward_model.py`: `rho_steepness` threaded
+  through the lin/linq chord family (byte-inert default, own cache tag +
+  `s_rho` stamp); `_linsweep_scan` accepts a precomputed chord / F97 /
+  tag and an E₀-grid override (committed callers unchanged); stages
+  `g412twin` and `g412refine`. Tests `test_tier2_g412_twin.py`; twin
+  suites (90) still pass.
+- **Anchors (pass).** Landmark oracle; h405 own cell at 14.2 Å =
+  committed `atlas_ebind_twin.csv` H/eb1168 row, string-identical;
+  refinement reproduces all 2376 linscan-grid rows.
+- **Gate shift (measured).** h405 own cell, 14.2 → 3.5 Å: KE₁ 0.6236 →
+  0.6234, n̄ 4.484 → 4.326 (leaves the gate by 0.07), W₁ 0.703 → 0.632.
+  Over the refined grid h405 gates 30 → 23 cells; best KE₁ 0.725 both.
+- **Frozen grid.** 8/10 c > 0 points gate 1–2 cells; c 0 / 3.0 / 5.0
+  miss n₁ ≥ 0.19 by ≤ 0.0006 → refined per the frozen rule → all 11 gate.
+- **Reads.** c is one dial: KE₁ 0.95 → 0.31 and midHot 2.35 → 0.53 as
+  c 0 → 5. Soft midHot band at c ≈ 2–2.5 with KE₁ 0.62–0.55, below
+  h405's 0.725 at midHot 1.06; W₁ and deepKE also worse than h405 there.
+  9 Å surplus at c 2–2.5: +0.78 / +0.67 Å/ps. My pre-step-3 projection
+  of midHot (1.67 at c = 2) was wrong (measured 1.11) — retracted.
+- **Rule outcome.** Landing candidate exists (frozen rule); an MD
+  battery needs its own trigger. Nothing adopted; production unchanged.

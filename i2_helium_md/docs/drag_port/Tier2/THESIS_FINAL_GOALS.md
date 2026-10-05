@@ -20,7 +20,7 @@ Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
 caveat) — **adoption on hold. G4.12** (TDDFT-tied linear + quadratic
 ridge vs the experiment, uncapped): **steps 1–2 executed 2026-10-05** —
 the whole ridge fits 18 Å; the 9 Å exit bound passes every c ≤ 5 and
-fails only the pure quadratic. Step 3 (twin) not run; user recap pending.
+fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot; user decision pending.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -650,7 +650,16 @@ step 2 ≈ 12 × N = 50 9 Å runs (minutes each); step 3 zero MD.
   by +0.56 to +1.06 Å/ps, i.e. it under-dissipates relative to atom 1
   (one-sided bound). Full record: D0 §1.G4.12, log 2026-10-05 G4.12 entry.
 
-  > **NEXT (user).** Recap; then step 3 as frozen, or not.
+- **Status — step 3 EXECUTED 2026-10-05 (twin, measured).** Anchors
+  pass (h405 at 14.2 Å string-identical). After the frozen near-pass
+  refinement all 11 points gate → **rule outcome: landing candidate**
+  (MD battery only under its own trigger). Reads: one KE₁ / midHot dial
+  (c 0 → 5: KE₁ 0.95 → 0.31, midHot 2.35 → 0.53); soft band at c ≈ 2–2.5
+  with KE₁ 0.62–0.55 vs h405 0.725 at midHot 1.06 — h405 dominates at
+  matched midHot. Record: D0 §1.G4.12, log G4.12 step-3 entry.
+
+  > **NEXT (user).** MD battery for a ridge point (which c), or record
+  > the ridge as dominated and keep the cap.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

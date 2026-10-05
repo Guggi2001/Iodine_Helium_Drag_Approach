@@ -3714,13 +3714,21 @@ def _linsweep_chord_tag(arm, a, c, eb_tag):
 
 
 def _linsweep_chord_family(arm, a, c, eb_tag, e_bind_ev, m,
-                           force_rebuild=False):
+                           force_rebuild=False, rho_steepness=None):
     """One lin/linq chord-surface integration of the committed corrected
     master, npz-cached with (a, c, e_bind, m, seed) staleness stamps.
-    ``c`` is stamped -1.0 for the lin arm (npz cannot hold None)."""
+    ``c`` is stamped -1.0 for the lin arm (npz cannot hold None).
+
+    ``rho_steepness`` (G4.12, 2026-10-05) passes the density-gate width
+    [A] through to :func:`integrate_pairs` (drag + cooling exposure; the
+    well and the birth dressing stay on STEEP_A). ``None`` keeps the
+    committed caches and arithmetic -- byte-inert; a width gets its own
+    cache file and an ``s_rho`` stamp."""
     c_stamp = float(c) if c is not None else -1.0
+    srho_tag = ("" if rho_steepness is None
+                else "_srho" + str(float(rho_steepness)).replace(".", "p"))
     cache = (OUT / f"h2b_{arm}scan_chord_"
-                   f"{_linsweep_chord_tag(arm, a, c, eb_tag)}.npz")
+                   f"{_linsweep_chord_tag(arm, a, c, eb_tag)}{srho_tag}.npz")
     if cache.exists() and not force_rebuild:
         dat = dict(np.load(cache))
         stamps = (float(dat["a"]), float(dat["c"]), float(dat["e_bind_ev"]),
@@ -3728,6 +3736,9 @@ def _linsweep_chord_family(arm, a, c, eb_tag, e_bind_ev, m,
         if stamps != (float(a), c_stamp, float(e_bind_ev), int(m), G3_SEED):
             raise AssertionError(
                 f"stale {arm}scan chord cache {cache.name}: stamps {stamps}")
+        if rho_steepness is not None and float(dat["s_rho"]) != float(rho_steepness):
+            raise AssertionError(
+                f"stale {arm}scan chord cache {cache.name}: s_rho {dat['s_rho']}")
         return dat
     ms = _g3_corrected_master(m)
     rho = rho_he_ratio(ms["r0"] - ms["R"], steepness=STEEP_A)
@@ -3737,17 +3748,20 @@ def _linsweep_chord_family(arm, a, c, eb_tag, e_bind_ev, m,
         r0_sep=R0_SEP_PROD_A, drag_on=True, e_bind_ev=e_bind_ev,
         drag_form=arm, lin_a=float(a),
         linq_c=(float(c) if arm == "linq" else None),
+        rho_steepness=rho_steepness,
     )
     out = {"K": res["K"], "v_inf": res["v_inf"], "t_exit": res["t_exit"],
            "trapped": res["trapped"], "a": float(a), "c": c_stamp,
            "e_bind_ev": float(e_bind_ev), "m": float(m),
            "seed": float(G3_SEED)}
+    if rho_steepness is not None:
+        out["s_rho"] = float(rho_steepness)
     np.savez_compressed(cache, **out)
     return out
 
 
 def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
-                   tau_grid=None, with_tail=False):
+                   tau_grid=None, with_tail=False, e0_grid=None):
     """The nested scoring loop shared by both arms: chord families from
     ``specs`` (dicts with a/c/eb_tag/e_bind) x the §3.5c free surface,
     §3.5c hard gate verbatim, plan-§3 per-cell output columns.
@@ -3767,8 +3781,12 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
     t0 = _time.time()
     for sp in specs:
         a, c, eb_tag, e_bind = sp["a"], sp["c"], sp["eb_tag"], sp["e_bind"]
-        fam = _linsweep_chord_family(arm, a, c, eb_tag, e_bind, m,
-                                     force_rebuild)
+        # G4.12: a spec may carry a precomputed chord ("fam", the h405
+        # anchor), its own F(9.7) ("f97") and print tag ("tag").
+        tag = sp.get("tag") or _linsweep_chord_tag(arm, a, c, eb_tag)
+        fam = sp["fam"] if "fam" in sp else _linsweep_chord_family(
+            arm, a, c, eb_tag, e_bind, m, force_rebuild,
+            rho_steepness=sp.get("s_rho"))
         K655 = np.asarray(fam["K"]).reshape(-1)
         trapped = np.asarray(fam["trapped"]).reshape(-1).astype(bool)
         v_inf = np.asarray(fam["v_inf"]).reshape(-1)
@@ -3777,14 +3795,16 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
         det_yield = float(det.mean())
         if det.sum() == 0:
             raise AssertionError(
-                f"{arm} chord family {_linsweep_chord_tag(arm, a, c, eb_tag)}"
+                f"{arm} chord family {tag}"
                 ": every fragment trapped — the non-trapped read is empty")
-        f97 = linsweep_f97(a, c)
+        f97 = sp["f97"] if "f97" in sp else linsweep_f97(a, c)
         phi = f97 / PHI_DENOM
         subbare = linsweep_subbare(f97)
         base = {"arm": arm, "a": a, "c": "" if c is None else c,
                 "E_bind_tag": eb_tag, "E_bind_eV": e_bind,
                 "ebind_exception": int(eb_tag != "eb1168")}
+        if sp.get("s_rho") is not None:   # G4.12 only; committed schemas unchanged
+            base["s_rho"] = sp["s_rho"]
         chord_rows.append({
             **base, "m": m,
             "F97": round(f97, 1), "phi": round(phi, 3), "subbare": subbare,
@@ -3805,7 +3825,7 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
         fam_gated = 0
         for tau in (G3SCAN_TAU_PS if tau_grid is None else tau_grid):
             K = K655 * (TAU_PS / tau)
-            for e0 in G3SCAN_E0_GRID:
+            for e0 in (G3SCAN_E0_GRID if e0_grid is None else e0_grid):
                 n_det, sup = fate_map(ne, K, e0, 1, sig)
                 row = {
                     **base, "tau_ps": tau,
@@ -3878,9 +3898,11 @@ def _linsweep_scan(arm, specs, ens, sig, ref_ke, solv_exp, m, force_rebuild,
                          "n": n, "weight": round(w, 4),
                          "mean_KE_eV": round(k_, 4)}
                         for n, w, k_ in ke_bins)
-        print(f"[{arm}scan {_linsweep_chord_tag(arm, a, c, eb_tag):18s}] "
+        print(f"[{arm}scan {tag:18s}] "
               f"trap={trapped.mean():.3f} phi={phi:.2f} "
-              f"gated={fam_gated}/216  [{_time.time() - t0:6.0f} s]")
+              f"gated={fam_gated}/"
+              f"{len(G3SCAN_TAU_PS if tau_grid is None else tau_grid) * len(G3SCAN_E0_GRID if e0_grid is None else e0_grid)}"
+              f"  [{_time.time() - t0:6.0f} s]")
     return chord_rows, scan_rows, gated_ke_rows
 
 
@@ -4132,6 +4154,257 @@ def stage_linqscan(a_star, m=20000, force_rebuild=False):
     if gated_ke_rows:
         _write_csv_with_drift("atlas_linqsweep_gated_ke.csv", gated_ke_rows)
     _write_csv_with_drift("atlas_linqsweep_summary.csv", [summary])
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# THESIS_FINAL_GOALS G4.12 step 3 (frozen beb5440, zero MD): the TDDFT-tied
+# linear + quadratic ridge through the twin, uncapped. Points = the step-2
+# exit-bound passes (committed bound.csv); each at its own 18 A E_bind
+# (primary) and the three G3SCAN wells (sensitivity); density gate 3.5 A
+# (drag + cooling exposure; well and birth dressing on STEEP_A); the linscan
+# free surface (G3SCAN tau x E0); §3.5c hard gate verbatim. Anchor first:
+# h405 at its own cell (tau 4.4, E0 0.405) through the same scorer at 14.2 A
+# must reproduce the committed atlas_ebind_twin.csv H/eb1168 row; then h405
+# at 3.5 A measures the gate's own shift.
+# ---------------------------------------------------------------------------
+G412_S_RHO_A = 3.5
+G412_H405_CELL = (5.5, -1.0, 4.4, 0.405)   # v_c, p_tail, tau, E0
+G412_RIDGE_CSV = REPO / "data/reference/drag/18A/trajectory_matching_srho3p5A/g412_ridge/ridge.csv"
+G412_BOUND_CSV = REPO / "data/reference/drag/9A/g412_exit_bound/bound.csv"
+_G412_ANCHOR_COLS = ("trapped_frac", "suppressed_frac", "nbar_det", "n1_solv",
+                     "ratio_n1_n2", "w1_solv", "midhot_arith", "midhot_geo",
+                     "deepke", "n1_ke_eV", "ke2_eV", "above115_n1", "gate")
+
+
+def _g412_h405_chord(m, ens, s_rho):
+    """h405 capped-cubic chord at density width ``s_rho`` [A]: the committed
+    g3scan family at STEEP_A, a cached own integration otherwise."""
+    v_c, p_tail, _, _ = G412_H405_CELL
+    if s_rho is None:
+        return _g3scan_chord_family(v_c, "eb1168", E_BIND_ION_EV, m, ens)
+    cache = OUT / f"h2b_g412_h405_chord_srho{str(float(s_rho)).replace('.', 'p')}.npz"
+    if cache.exists():
+        dat = dict(np.load(cache))
+        if (float(dat["s_rho"]), int(dat["m"]), int(dat["seed"])) != (
+                float(s_rho), int(m), G3_SEED):
+            raise AssertionError(f"stale g412 h405 chord cache {cache.name}")
+        return dat
+    ms = _g3_corrected_master(m)
+    rho = rho_he_ratio(ms["r0"] - ms["R"], steepness=STEEP_A)
+    ne_mol = np.clip(np.rint(N_STAR * rho), 0, N_STAR).astype(int)
+    res = integrate_pairs(
+        ms["r0"], ms["mu"], ms["R"], complex_mass_amu(ne_mol).astype(float),
+        r0_sep=R0_SEP_PROD_A, drag_on=True, v_c=v_c, p_tail=p_tail,
+        e_bind_ev=E_BIND_ION_EV, rho_steepness=s_rho,
+    )
+    out = {"K": res["K"], "v_inf": res["v_inf"], "t_exit": res["t_exit"],
+           "trapped": res["trapped"], "s_rho": float(s_rho),
+           "m": float(m), "seed": float(G3_SEED)}
+    np.savez_compressed(cache, **out)
+    return out
+
+
+def _g412_h405_spec(m, ens, s_rho):
+    v_c = G412_H405_CELL[0]
+    return {"a": "", "c": "", "eb_tag": "eb1168", "e_bind": E_BIND_ION_EV,
+            "s_rho": STEEP_A if s_rho is None else s_rho,
+            "fam": _g412_h405_chord(m, ens, s_rho),
+            "f97": PHI_DENOM,   # the plateau b*v_c^3 above v_c: Phi = 1
+            "tag": f"h405_vc{v_c}_srho{STEEP_A if s_rho is None else s_rho}"}
+
+
+def _g412_points():
+    """Step-2 passes joined with their step-1 ridge rows (committed CSVs)."""
+    with open(G412_RIDGE_CSV, newline="", encoding="utf-8") as fh:
+        ridge = {float(r["c_amu_per_A"]): r for r in csv.DictReader(fh)}
+    with open(G412_BOUND_CSV, newline="", encoding="utf-8") as fh:
+        bound = list(csv.DictReader(fh))
+    pts = []
+    for b in bound:
+        c = float(b["c_amu_per_A"])
+        r = ridge[c]
+        if float(b["coef_c"]) != c or float(b["coef_a"]) != float(r["a_amu_per_ps"]):
+            raise AssertionError(f"bound/ridge rows disagree at c={c}")
+        pts.append({"c": c, "a": float(r["a_amu_per_ps"]),
+                    "e_bind": float(r["e_bind_eV"]),
+                    "margin": float(b["margin_Aps"]),
+                    "passes_bound": b["pass"] == "True"})
+    return pts
+
+
+def _g412_point_summary(pt, rows):
+    gated = [r for r in rows if r["gate"] == 1]
+    out = {"c": pt["c"], "a": pt["a"], "E_bind_eV": pt["e_bind"],
+           "margin_9A_Aps": pt["margin"], "phi": rows[0]["phi"],
+           "trapped_frac": rows[0]["trapped_frac"] if gated else np.nan,
+           "n_cells": len(rows), "n_gated": len(gated)}
+    if not gated:
+        out.update({k: np.nan for k in (
+            "best_KE1", "best_KE1_cell", "best_KE1_midhot", "best_KE1_w1",
+            "midhot_min", "midhot_max", "w1_min", "deepke_min")})
+        out["n_gated_tau_flagged"] = 0
+        return out
+    best = max((r for r in gated if np.isfinite(float(r["n1_ke_eV"]))),
+               key=lambda r: float(r["n1_ke_eV"]))
+    out.update({
+        "trapped_frac": best["trapped_frac"],
+        "best_KE1": best["n1_ke_eV"],
+        "best_KE1_cell": f"tau={best['tau_ps']} E0={best['E0_eV']}",
+        "best_KE1_midhot": best["midhot_geo"], "best_KE1_w1": best["w1_solv"],
+        "midhot_min": min(r["midhot_geo"] for r in gated),
+        "midhot_max": max(r["midhot_geo"] for r in gated),
+        "w1_min": min(r["w1_solv"] for r in gated),
+        "deepke_min": np.nanmin([float(r["deepke"]) for r in gated]),
+        "n_gated_tau_flagged": sum(r["tau_flag"] for r in gated),
+    })
+    return out
+
+
+def stage_g412twin(m=20000, force_rebuild=False):
+    """G4.12 step 3 (frozen beb5440): ridge points through the twin, uncapped."""
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+
+    # --- anchor: h405 own cell at both gates; 14.2 A must match committed ---
+    _, _, tau_h, e0_h = G412_H405_CELL
+    anchor_rows = []
+    for s_rho in (None, G412_S_RHO_A):
+        _, rows, _ = _linsweep_scan(
+            "h405", [_g412_h405_spec(m, ens, s_rho)], ens, sig, ref_ke,
+            solv_exp, m, force_rebuild, tau_grid=(tau_h,), e0_grid=(e0_h,))
+        anchor_rows.extend(rows)
+    with open(OUT / "atlas_ebind_twin.csv", newline="") as fh:
+        ref = next(r for r in csv.DictReader(fh)
+                   if r["arm"] == "H" and r["E_bind_tag"] == "eb1168")
+    for col in _G412_ANCHOR_COLS:
+        if str(anchor_rows[0][col]) != ref[col]:
+            raise AssertionError(
+                f"G4.12 h405 anchor FAILED at {col}: "
+                f"{anchor_rows[0][col]!r} != committed {ref[col]!r}")
+    print("[g412] h405 ANCHOR PASSED: own cell at 14.2 A reproduces the "
+          "committed atlas_ebind_twin.csv H/eb1168 row string-identically")
+    for r in anchor_rows:
+        print(f"  h405 s_rho={r['s_rho']}: n1={r['n1_solv']} nbar={r['nbar_det']} "
+              f"gate={r['gate']} KE1={r['n1_ke_eV']} midhot={r['midhot_geo']} "
+              f"W1={r['w1_solv']} deepKE={r['deepke']} trap={r['trapped_frac']}")
+
+    # --- h405 over the linscan surface at both gates (like-for-like) ---
+    h405_specs = [_g412_h405_spec(m, ens, s) for s in (None, G412_S_RHO_A)]
+    _, h405_rows, _ = _linsweep_scan("h405", h405_specs, ens, sig, ref_ke,
+                                     solv_exp, m, force_rebuild)
+
+    # --- ridge points: own E_bind (primary) and the well grid (sensitivity) ---
+    pts = [p for p in _g412_points() if p["passes_bound"]]
+    print(f"\n=== g412twin: {len(pts)} ridge points (step-2 passes) at "
+          f"s_rho = {G412_S_RHO_A} A ===")
+    prim_specs = [{"a": p["a"], "c": p["c"], "eb_tag": "ebown",
+                   "e_bind": p["e_bind"], "s_rho": G412_S_RHO_A} for p in pts]
+    chord_rows, prim_rows, gated_ke_rows = _linsweep_scan(
+        "linq", prim_specs, ens, sig, ref_ke, solv_exp, m, force_rebuild)
+    well_specs = [{"a": p["a"], "c": p["c"], "eb_tag": tag, "e_bind": e,
+                   "s_rho": G412_S_RHO_A}
+                  for p in pts for tag, e in G3SCAN_EBIND]
+    well_chords, well_rows, _ = _linsweep_scan(
+        "linq", well_specs, ens, sig, ref_ke, solv_exp, m, force_rebuild)
+
+    summary = []
+    for p in pts:
+        rows = [r for r in prim_rows if r["c"] == p["c"]]
+        s = _g412_point_summary(p, rows)
+        w = [r for r in well_rows if r["c"] == p["c"]]
+        s["n_gated_wells"] = sum(r["gate"] for r in w)
+        summary.append(s)
+    for s_rho, lab in ((STEEP_A, "h405@14.2"), (G412_S_RHO_A, "h405@3.5")):
+        rows = [r for r in h405_rows if r["s_rho"] == s_rho]
+        s = _g412_point_summary({"c": lab, "a": "", "e_bind": E_BIND_ION_EV,
+                                 "margin": np.nan}, rows)
+        s["n_gated_wells"] = ""
+        summary.append(s)
+    print("\n=== G4.12 step 3 summary (gate = §3.5c; rest reported) ===")
+    for s in summary:
+        print(f"  c={s['c']!s:<10} phi={s['phi']:.2f} margin9A={s['margin_9A_Aps']:+.2f} "
+              f"gated={s['n_gated']}/{s['n_cells']} (wells {s['n_gated_wells']}) "
+              f"bestKE1={s['best_KE1']} [{s['best_KE1_cell']}] "
+              f"midhot@best={s['best_KE1_midhot']} midhot[{s['midhot_min']}, "
+              f"{s['midhot_max']}] W1min={s['w1_min']} trap={s['trapped_frac']}")
+    _write_csv_with_drift("atlas_g412_anchor.csv", anchor_rows)
+    _write_csv_with_drift("atlas_g412_h405_surface.csv", h405_rows)
+    _write_csv_with_drift("atlas_g412_chords.csv", chord_rows + well_chords)
+    _write_csv_with_drift("atlas_g412_twin.csv", prim_rows)
+    _write_csv_with_drift("atlas_g412_twin_wells.csv", well_rows)
+    if gated_ke_rows:
+        _write_csv_with_drift("atlas_g412_gated_ke.csv", gated_ke_rows)
+    _write_csv_with_drift("atlas_g412_summary.csv", summary)
+    return summary
+
+
+# G4.12 near-pass refinement (frozen rule: "any near-pass is refined before a
+# fail is recorded"). The §3.5c gate is a thin band in (tau, E0); on the
+# linscan grid every point gates 0-2 cells and the fails miss n1 >= 0.19 by
+# ~0.001. Re-score the CACHED chords (no integration) on the lintau tau grid
+# (adds h405's own 4.4) x E0 step 0.0025; applied to every point and h405
+# alike so the refined rows stay comparable. Recorded, not a re-tune.
+G412_REFINE_TAU_PS = tuple(sorted(set(LINTAU_GRID) | set(G3SCAN_TAU_PS)))
+G412_REFINE_E0_GRID = np.round(np.arange(0.17, 0.52001, 0.0025), 4)
+
+
+def stage_g412refine(m=20000):
+    """G4.12 step 3 near-pass refinement on cached chords (zero integration)."""
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    pts = [p for p in _g412_points() if p["passes_bound"]]
+    specs = [{"a": p["a"], "c": p["c"], "eb_tag": "ebown",
+              "e_bind": p["e_bind"], "s_rho": G412_S_RHO_A} for p in pts]
+    grids = {"tau_grid": G412_REFINE_TAU_PS, "e0_grid": G412_REFINE_E0_GRID}
+    _, rows, _ = _linsweep_scan("linq", specs, ens, sig, ref_ke, solv_exp, m,
+                                False, **grids)
+    _, h_rows, _ = _linsweep_scan(
+        "h405", [_g412_h405_spec(m, ens, s) for s in (None, G412_S_RHO_A)],
+        ens, sig, ref_ke, solv_exp, m, False, **grids)
+    # Anchor: the refined grid contains the linscan grid; those rows must
+    # reproduce the committed atlas_g412_twin.csv cells exactly.
+    with open(OUT / "atlas_g412_twin.csv", newline="") as fh:
+        committed = {(r["c"], r["tau_ps"], r["E0_eV"]): r
+                     for r in csv.DictReader(fh)}
+    checked = 0
+    for r in rows:
+        key = (str(r["c"]), str(r["tau_ps"]), str(r["E0_eV"]))
+        if key in committed:
+            for col in _G412_ANCHOR_COLS:
+                if str(r[col]) != committed[key][col]:
+                    raise AssertionError(f"g412refine anchor {key} {col}: "
+                                         f"{r[col]!r} != {committed[key][col]!r}")
+            checked += 1
+    if checked != len(committed):
+        raise AssertionError(f"g412refine anchor checked {checked}/{len(committed)}")
+    print(f"[g412refine] ANCHOR PASSED: {checked} linscan-grid rows reproduce "
+          "atlas_g412_twin.csv")
+    summary = []
+    for p in pts:
+        summary.append(_g412_point_summary(
+            p, [r for r in rows if r["c"] == p["c"]]))
+    for s_rho, lab in ((STEEP_A, "h405@14.2"), (G412_S_RHO_A, "h405@3.5")):
+        summary.append(_g412_point_summary(
+            {"c": lab, "a": "", "e_bind": E_BIND_ION_EV, "margin": np.nan},
+            [r for r in h_rows if r["s_rho"] == s_rho]))
+    print("\n=== G4.12 step 3 refined (tau x E0 0.0025) ===")
+    for s in summary:
+        print(f"  c={s['c']!s:<10} phi={s['phi']:.2f} margin9A={s['margin_9A_Aps']:+.2f} "
+              f"gated={s['n_gated']}/{s['n_cells']} bestKE1={s['best_KE1']} "
+              f"[{s['best_KE1_cell']}] midhot@best={s['best_KE1_midhot']} "
+              f"midhot[{s['midhot_min']}, {s['midhot_max']}] "
+              f"W1@best={s['best_KE1_w1']} W1min={s['w1_min']} "
+              f"deepKEmin={s['deepke_min']} tauflag={s['n_gated_tau_flagged']}")
+    _write_csv_with_drift("atlas_g412_refine.csv", [r for r in rows + h_rows
+                                                    if r["gate"] == 1])
+    _write_csv_with_drift("atlas_g412_refine_summary.csv", summary)
     return summary
 
 
@@ -4930,6 +5203,10 @@ def main():
                 "`... linqscan 40.0`")
         stage_linqscan(args[0],
                        force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "g412twin":
+        stage_g412twin(force_rebuild="--force-rebuild" in sys.argv[2:])
+    elif mode == "g412refine":
+        stage_g412refine()
     elif mode == "ebindscan":
         stage_ebindscan(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "refundscan":

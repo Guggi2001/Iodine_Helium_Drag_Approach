@@ -827,7 +827,7 @@ points. A family is consistent if both pass. Drivers
   step 2** (§1.G4.12): quadratic RMSE vs |v1| 0.274 / |v2| 0.992, cubic
   0.938 / 0.520; cubic exit 3.23 vs atom 1 4.24 Å/ps.
 
-#### 1.G4.12 TDDFT-tied linear + quadratic ridge, steps 1–2 (MEASURED 2026-10-05; frozen `beb5440`) — **the whole ridge fits 18 Å; every point with c ≤ 5 passes the 9 Å exit bound, only the pure quadratic fails**; step 3 (twin) not run
+#### 1.G4.12 TDDFT-tied linear + quadratic ridge, steps 1–3 (MEASURED 2026-10-05; frozen `beb5440`) — **the whole ridge fits 18 Å; c ≤ 5 passes the 9 Å exit bound; every passing point lands in the twin uncapped, but each sits on a KE₁ / midHot trade-off line dominated by h405**
 
 **Question.** 18 Å fixes only F(v ≈ 3). Along the one-parameter ridge
 F = a·v + c·v² (a [amu/ps], c [amu/Å]; s_ρ = 3.5 Å, m_eff = 19 He), which
@@ -883,9 +883,61 @@ Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
   (projection). The points that
   track atom 1 most closely (c ≈ 5–7, RMSE vs |v1| 0.27) have Φ 1.3–1.6,
   above the landing band.
-- **Consequence.** All 11 points with c ≤ 5 go to step 3 per the frozen
-  rule. Step 3 (twin, uncapped, 3.5 Å gate, h405 two-gate anchor) is
-  **not run**: stopped for the user recap.
+- **Step 3 (twin, zero MD; `tier2_h2b_forward_model.py g412twin` /
+  `g412refine`; `data/runs/h2b_forward_model/atlas_g412_*.csv`).** The 11
+  step-2 passes, uncapped linq chords at the 3.5 Å density gate (drag +
+  cooling exposure; well and birth dressing on 14.2 Å), own 18 Å E_bind,
+  §3.5c hard gate verbatim.
+  - *Anchors.* Landmark oracle passes; h405 at its own cell (τ 4.4,
+    E₀ 0.405) at 14.2 Å reproduces the committed `atlas_ebind_twin.csv`
+    H/eb1168 row string-identically. **Gate shift (measured):** at 3.5 Å
+    the same cell keeps KE₁ (0.6234 vs 0.6236) but n̄ falls 4.484 →
+    4.326, just under the 4.4 edge; W₁ 0.703 → 0.632, deepKE 0.84 →
+    0.68. Over the grid h405 still gates at 3.5 Å.
+  - *Frozen linscan grid (τ 6 × E₀ 36).* 8 of the 10 c > 0 points gate
+    1–2 cells; c = 0, 3.0, 5.0 gate none, each missing n₁ ≥ 0.19 by
+    ≤ 0.0006 (E₀-step granularity). Well grid: every point gates at
+    ≥ 1 well.
+  - *Near-pass refinement (frozen rule; cached chords, τ 11 × E₀ step
+    0.0025; anchor: all 2376 linscan rows reproduced).* **All 11 points
+    gate** (2–18 cells each); h405 gates 30 (14.2 Å) / 23 (3.5 Å).
+
+| c | Φ | 9 Å margin | gated | best KE₁ | midHot at best | W₁ min | deepKE min |
+|---|---|---|---|---|---|---|---|
+| 0 | 0.54 | +1.27 | 6 | 0.952 | 2.35 | 0.680 | 4.51 |
+| 0.4 | 0.60 | +1.16 | 9 | 0.872 | 2.02 | 0.654 | 3.22 |
+| 0.8 | 0.66 | +1.06 | 16 | 0.806 | 1.70 | 0.611 | 2.08 |
+| 1.2 | 0.72 | +0.96 | 16 | 0.732 | 1.49 | 0.607 | 1.67 |
+| 1.6 | 0.78 | +0.87 | 17 | 0.665 | 1.32 | 0.601 | 1.36 |
+| 2.0 | 0.84 | +0.78 | 18 | 0.618 | 1.11 | 0.616 | 1.00 |
+| 2.5 | 0.91 | +0.67 | 15 | 0.553 | 0.97 | 0.636 | 0.80 |
+| 3.0 | 0.99 | +0.56 | 13 | 0.488 | 0.84 | 0.701 | 0.66 |
+| 3.5 | 1.06 | +0.46 | 9 | 0.440 | 0.75 | 0.730 | 0.60 |
+| 4.0 | 1.14 | +0.37 | 5 | 0.392 | 0.67 | 0.770 | 0.55 |
+| 5.0 | 1.29 | +0.20 | 2 | 0.310 | 0.53 | 0.892 | 0.46 |
+| h405 @ 14.2 Å | 1.00 | — | 30 | 0.725 | 1.08 | 0.450 | 0.58 |
+| h405 @ 3.5 Å | 1.00 | — | 23 | 0.725 | 1.06 | 0.556 | 0.54 |
+
+  (Refined grid; KE₁ = twin n = 1 KE [eV], licensed ranking, levels ~2 %
+  cold; midHot geometric, soft band 0.85–1.15; zero τ-flags.)
+- **Step-3 reads (measured, twin level).** c is a single dial: as it
+  rises, KE₁ falls (0.95 → 0.31), midHot falls (2.35 → 0.53), deepKE
+  falls, the 9 Å surplus shrinks — and W₁ is best near c 1.2–2.0. The
+  soft midHot band is reached at c ≈ 2–2.5 (KE₁ 0.62–0.55). **At matched
+  midHot h405 is ahead on every reported axis** (c 2.0 vs h405 @ 3.5 Å:
+  KE₁ 0.618 vs 0.725, W₁ 0.616 vs 0.556, deepKE 1.00 vs 0.54), and every
+  ridge point with KE₁ ≥ h405's has midHot ≥ 1.49. The pure-linear family
+  showed the same KE₁/midHot dial (§ free-form linear sweep); the
+  TDDFT-tied ridge does not escape it. No point is close to atom 1 at
+  9 Å and in the soft band at once (c 2–2.5: +0.78 / +0.67 Å/ps).
+- **Correction to the chat-level projection made before step 3** (γ(7)
+  → midHot via the linear rows): it put c = 2 at midHot ≈ 1.67; measured
+  1.11. KE₁ was close (0.65 projected, 0.62 measured). The mid band
+  responds more to c than the single-speed mapping assumed.
+- **Decision rule (frozen).** Some c > 0 passes steps 1–3 → the
+  uncapped TDDFT-tied mixed law is a **landing candidate**; an MD
+  battery follows only under its own trigger; nothing adopted. Twin
+  dominance by h405 and the 9 Å surplus are recorded, not gating.
 
 ## 2. Capped tail — v_c and p_tail
 
