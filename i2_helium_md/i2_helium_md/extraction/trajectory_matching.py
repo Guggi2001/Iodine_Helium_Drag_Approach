@@ -1296,12 +1296,17 @@ def write_shared_fit_parameters(
 LQ_SHARED_3PARAM = "lq_shared_3param"                # {a, c, E}, a >= 0
 LQ_SHARED_PURE_QUADRATIC = "lq_shared_pure_quadratic"  # a == 0, fit {c, E}
 PL_SHARED_3PARAM = "pl_shared_3param"                # {C, n, E}, n in bounds
-FORM_VARIANTS = (LQ_SHARED_3PARAM, LQ_SHARED_PURE_QUADRATIC, PL_SHARED_3PARAM)
+# G4.12 ridge map: c fixed at the anchor ``c_fixed`` (>= 0), fit {a, E}, a >= 0.
+LQ_FIXED_C = "lq_fixed_c"
+FORM_VARIANTS = (
+    LQ_SHARED_3PARAM, LQ_SHARED_PURE_QUADRATIC, PL_SHARED_3PARAM, LQ_FIXED_C,
+)
 
 _VARIANT_FORM = {
     LQ_SHARED_3PARAM: LINEAR_QUADRATIC,
     LQ_SHARED_PURE_QUADRATIC: LINEAR_QUADRATIC,
     PL_SHARED_3PARAM: POWER_LAW,
+    LQ_FIXED_C: LINEAR_QUADRATIC,
 }
 
 # Anchor keys required per family (pre-registered constants from the driver's
@@ -1311,7 +1316,11 @@ _VARIANT_ANCHOR_KEYS = {
     LQ_SHARED_3PARAM: ("a0", "c0"),
     LQ_SHARED_PURE_QUADRATIC: ("a0", "c0"),
     PL_SHARED_3PARAM: ("C0", "n0", "v_ref_Aps"),
+    LQ_FIXED_C: ("a0", "c_fixed"),
 }
+# Anchor keys that are fixed model values, not normalization scales: they may
+# be zero (the c = 0 seam with the linear law), only never negative.
+_FIXED_VALUE_ANCHOR_KEYS = frozenset({"c_fixed"})
 
 
 def _pivot_to_C(gamma_ref: float, n: float, v_ref_Aps: float) -> float:
@@ -1493,7 +1502,16 @@ def _check_form_anchors(variant: str, anchors: dict[str, float]) -> None:
             f"{missing} (pre-registered §10.4.1 constants -- never a runtime "
             f"bundle read)"
         )
-    nonpositive = {k: anchors[k] for k in required if not (anchors[k] > 0.0)}
+    negative = {
+        k: anchors[k] for k in required
+        if k in _FIXED_VALUE_ANCHOR_KEYS and not (anchors[k] >= 0.0)
+    }
+    if negative:
+        raise ValueError(f"fixed-value anchors must be >= 0, got {negative}")
+    nonpositive = {
+        k: anchors[k] for k in required
+        if k not in _FIXED_VALUE_ANCHOR_KEYS and not (anchors[k] > 0.0)
+    }
     if nonpositive:
         raise ValueError(
             f"form-phase anchors must be positive, got {nonpositive} (the "
@@ -1528,6 +1546,9 @@ def fit_shared_form_trajectory_matching(
       **0** (pure-quadratic point reachable; §10.3 guard arm);
     * ``lq_shared_pure_quadratic`` -- ``(c/c0, E/0.308)`` with ``a = 0``
       fixed;
+    * ``lq_fixed_c`` -- ``(a/a0, E/0.308)`` with ``c = c_fixed`` fixed
+      (anchors ``{a0, c_fixed}``, ``c_fixed >= 0``; ``a`` lower bound 0) --
+      one point of the G4.12 18 A ridge;
     * ``pl_shared_3param`` -- ``(gamma_ref/gamma_ref0, n, E/0.308)`` in the
       §10.4.1 PIVOT parameterization (``gamma_ref0 = C0*v_ref**(n0-1)``
       computed from the anchors); ``n`` direct-bounded by ``n_bounds``
@@ -1668,6 +1689,17 @@ def _fit_form_engine(
             return {"a": 0.0, "c": float(theta[0])}, float(theta[1])
 
         anchor_coeffs = {"a": 0.0, "c": c0}
+    elif variant == LQ_FIXED_C:
+        a0, c_fixed = anchors["a0"], float(anchors["c_fixed"])
+        scale = np.array([a0, E_BIND_STATIC_EV])
+        lower = np.array([0.0, e_lo_n])   # a >= 0 (the pure-quadratic end)
+        upper = np.array([10.0, e_hi_n])
+
+        def unpack(x: np.ndarray) -> tuple[dict[str, float], float]:
+            theta = np.asarray(x, dtype=float) * scale
+            return {"a": float(theta[0]), "c": c_fixed}, float(theta[1])
+
+        anchor_coeffs = {"a": a0, "c": c_fixed}
     else:  # PL_SHARED_3PARAM -- pivot parameterization (§10.4.1)
         C0, n0, v_ref = anchors["C0"], anchors["n0"], anchors["v_ref_Aps"]
         n_lo, n_hi = (float(v) for v in n_bounds)
@@ -1729,7 +1761,7 @@ def _fit_form_engine(
         if extra_starts:
             x0s.append(np.array([1.0, 1.0, 0.9 * e_hi_n]))
             x0s.append(np.array([1.3, 0.7, e_start_n]))
-    elif variant == LQ_SHARED_PURE_QUADRATIC:
+    elif variant in (LQ_SHARED_PURE_QUADRATIC, LQ_FIXED_C):
         x0s = [np.array([1.0, e_start_n])]
         if extra_starts:
             x0s.append(np.array([1.0, 0.9 * e_hi_n]))

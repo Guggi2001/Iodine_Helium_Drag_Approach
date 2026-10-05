@@ -17,8 +17,10 @@ supported by the TDDFT data** (marginal: C-X at the band edge); linear and
 quadratic fail C-X. The adoption gate for `srho3p5A18A_cubic` in G5 is
 cleared on the rule, but the reading is **contested** by the user's
 Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
-caveat) — **adoption on hold. Next: G4.12** (TDDFT-tied linear +
-quadratic ridge vs the experiment, uncapped), draft, user check pending.
+caveat) — **adoption on hold. G4.12** (TDDFT-tied linear + quadratic
+ridge vs the experiment, uncapped): **steps 1–2 executed 2026-10-05** —
+the whole ridge fits 18 Å; the 9 Å exit bound passes every c ≤ 5 and
+fails only the pure quadratic. Step 3 (twin) not run; user recap pending.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -639,6 +641,16 @@ seam with the linear form; exit-bound arithmetic on synthetic traces.
 
 **Cost.** Step 1 ≈ 12 single-case fits (≈ 1 h, at most two processes);
 step 2 ≈ 12 × N = 50 9 Å runs (minutes each); step 3 zero MD.
+
+- **Status — steps 1–2 EXECUTED 2026-10-05 (measured).** Oracles pass
+  (bit-exact; c = 0 seam exact). Step 1: all 12 points pass the bands,
+  RMSE 0.117–0.124; window c 0.8–3 → Φ 0.66–0.99. Step 2: atom 1 is the
+  less-transverse atom; margin vs atom 1 +1.27 (c 0) → +0.20 (c 5) →
+  −0.14 (c 7.224, quadratic): 11 of 12 pass. Caveat: the window passes
+  by +0.56 to +1.06 Å/ps, i.e. it under-dissipates relative to atom 1
+  (one-sided bound). Full record: D0 §1.G4.12, log 2026-10-05 G4.12 entry.
+
+  > **NEXT (user).** Recap; then step 3 as frozen, or not.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

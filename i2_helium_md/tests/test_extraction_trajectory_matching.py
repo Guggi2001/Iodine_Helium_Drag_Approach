@@ -21,6 +21,7 @@ from i2_helium_md.extraction.trajectory_matching import (
     CaseSetup,
     DIAGNOSTIC_4PARAM,
     E_BIND_STATIC_EV,
+    LQ_FIXED_C,
     LQ_SHARED_3PARAM,
     LQ_SHARED_PURE_QUADRATIC,
     PL_SHARED_3PARAM,
@@ -866,6 +867,51 @@ class TestFormFit:
         assert fit.best.coefficients["c"] == pytest.approx(true[1], rel=0.01)
         e_values = set(fit.best.e_bind_eV.values())
         assert e_values.pop() == pytest.approx(true[2], abs=0.005)
+
+    def test_lq_fixed_c_holds_c_and_recovers_a_and_e(self, joint_grid):
+        # G4.12 ridge point: c is pinned at the anchor, {a, E} are fitted.
+        # Stub optimum at the pinned c, so the true (a, E) is recoverable.
+        t_grid, ref_speed = joint_grid
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"), true_by_case={"18A": _LQ_TRUE},
+        )
+        fit = fit_form_trajectory_matching(
+            setups["18A"], variant=LQ_FIXED_C,
+            anchors={"a0": 5.0, "c_fixed": _LQ_TRUE[1]},
+            run_fn=run_fn, maxfev_per_start=400, extra_starts=False,
+            prescan_e_bind_eV=np.linspace(0.05, 0.305, 8),
+        )
+        assert fit.form == "linear_quadratic"
+        assert fit.best.coefficients["c"] == _LQ_TRUE[1]  # fixed, not fitted
+        assert fit.best.coefficients["a"] == pytest.approx(_LQ_TRUE[0], rel=0.01)
+        assert fit.best.e_bind_eV["18A"] == pytest.approx(_LQ_TRUE[2], abs=0.005)
+
+    def test_lq_fixed_c_zero_is_the_linear_seam(self, joint_grid):
+        # c_fixed = 0 is allowed (the linear end) and stays exactly 0.
+        t_grid, ref_speed = joint_grid
+        true = (4.0, 0.0, 0.20)
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"), true_by_case={"18A": true},
+        )
+        fit = fit_form_trajectory_matching(
+            setups["18A"], variant=LQ_FIXED_C,
+            anchors={"a0": 5.0, "c_fixed": 0.0},
+            run_fn=run_fn, maxfev_per_start=400, extra_starts=False,
+            prescan_e_bind_eV=np.linspace(0.05, 0.305, 8),
+        )
+        assert fit.best.coefficients["c"] == 0.0
+        assert fit.best.coefficients["a"] == pytest.approx(true[0], rel=0.01)
+
+    def test_lq_fixed_c_rejects_negative_c(self, joint_grid):
+        t_grid, ref_speed = joint_grid
+        setups, run_fn = _form_joint_setups(
+            t_grid, ref_speed, keys=("a", "c"), true_by_case={"18A": _LQ_TRUE},
+        )
+        with pytest.raises(ValueError, match=">= 0"):
+            fit_form_trajectory_matching(
+                setups["18A"], variant=LQ_FIXED_C,
+                anchors={"a0": 5.0, "c_fixed": -0.1}, run_fn=run_fn,
+            )
 
     def test_pl_shared_3param_recovers_true_through_pivot(self, joint_grid):
         t_grid, ref_speed = joint_grid

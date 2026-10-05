@@ -823,7 +823,69 @@ points. A family is consistent if both pass. Drivers
   over-dissipates at 9 Å speeds. The C-X "under-prediction" is a
   statement about atom 2's force balance only. Adoption on hold; G4.12
   tests the TDDFT-tied linear + quadratic ridge uncapped against the
-  experiment (log 2026-10-05 "G4.11 re-read").
+  experiment (log 2026-10-05 "G4.11 re-read"). **Quantified in G4.12
+  step 2** (§1.G4.12): quadratic RMSE vs |v1| 0.274 / |v2| 0.992, cubic
+  0.938 / 0.520; cubic exit 3.23 vs atom 1 4.24 Å/ps.
+
+#### 1.G4.12 TDDFT-tied linear + quadratic ridge, steps 1–2 (MEASURED 2026-10-05; frozen `beb5440`) — **the whole ridge fits 18 Å; every point with c ≤ 5 passes the 9 Å exit bound, only the pure quadratic fails**; step 3 (twin) not run
+
+**Question.** 18 Å fixes only F(v ≈ 3). Along the one-parameter ridge
+F = a·v + c·v² (a [amu/ps], c [amu/Å]; s_ρ = 3.5 Å, m_eff = 19 He), which
+points fit 18 Å, and which do not over-dissipate the radial 9 Å ion?
+Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
+`lq_fixed_c` variant of the form engine); artifacts
+`18A/trajectory_matching_srho3p5A/g412_ridge/{c*.json,ridge.csv}`,
+`9A/g412_exit_bound/{c*.json,bound.csv,bound_anchor.csv}`.
+
+- **Anchors.** Step 1: the lq form reproduces the G4.9 linear RMSE
+  0.12389 and the G4.11 quadratic RMSE 0.11677 bit-exactly; the c = 0 fit
+  returns the G4.9 linear point (|Δa| < 10⁻⁴, |ΔE| < 10⁻⁵). Step 2: the
+  scorer's mean series equals the user's cubic export exactly; the ridge
+  ends c = 0 / 7.224 reproduce the user's linear / quadratic runs
+  (v_exit 5.502 / 4.095).
+- **Atom assignment (measured).** Mean |v_⊥|/|v| over [2.67, 14.08] ps:
+  atom 1 0.294, atom 2 0.639 → atom 1 is the less-transverse atom (but not
+  radial: ≈ 17° off). Both atoms are outside the surface in the exit
+  window (ρ̂ ≤ 6·10⁻⁵). v_exit [13, 14] ps: atom 1 4.237, atom 2 2.752 Å/ps.
+
+| c | a | E_bind | 18 Å RMSE | F(5.5) | F(9.7) | Φ | v_exit 9 Å | margin vs atom 1 | RMSE vs \|v1\| |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 23.15 | 0.1165 | 0.1239 | 127 | 225 | 0.54 | 5.50 | +1.27 ✓ | 1.18 |
+| 0.4 | 21.87 | 0.1167 | 0.1235 | 132 | 250 | 0.60 | 5.40 | +1.16 ✓ | 1.08 |
+| 0.8 | 20.58 | 0.1169 | 0.1232 | 137 | 275 | 0.66 | 5.29 | +1.06 ✓ | 0.98 |
+| 1.2 | 19.29 | 0.1171 | 0.1228 | 142 | 300 | 0.72 | 5.20 | +0.96 ✓ | 0.89 |
+| 1.6 | 18.01 | 0.1173 | 0.1224 | 147 | 325 | 0.78 | 5.10 | +0.87 ✓ | 0.81 |
+| 2.0 | 16.72 | 0.1175 | 0.1220 | 152 | 350 | 0.84 | 5.01 | +0.78 ✓ | 0.72 |
+| 2.5 | 15.11 | 0.1177 | 0.1216 | 159 | 382 | 0.91 | 4.90 | +0.67 ✓ | 0.63 |
+| 3.0 | 13.50 | 0.1180 | 0.1211 | 165 | 413 | 0.99 | 4.80 | +0.56 ✓ | 0.54 |
+| 3.5 | 11.89 | 0.1182 | 0.1206 | 171 | 445 | 1.06 | 4.70 | +0.47 ✓ | 0.45 |
+| 4.0 | 10.27 | 0.1184 | 0.1201 | 178 | 476 | 1.14 | 4.61 | +0.37 ✓ | 0.38 |
+| 5.0 | 7.03 | 0.1189 | 0.1191 | 190 | 539 | 1.29 | 4.43 | +0.20 ✓ | 0.27 |
+| 7.224 | 0 | 0.1191 | 0.1168 | 219 | 680 | 1.62 | 4.10 | −0.14 ✗ | 0.28 |
+
+(F in amu·Å/ps², Φ = F(9.7)/418.5, speeds Å/ps.)
+
+- **Reads (measured).** Step 1: every point passes the G4.9 bands; RMSE
+  moves only 0.117–0.124 along the ridge (weak preference for the
+  quadratic end), E_bind 0.1165–0.1191. 18 Å does not select c, as
+  expected. Step 2: the bound cuts between c = 5 and 7.224 (linear
+  interpolation of the margin: c ≈ 6.3, projection). The draft's
+  "every c < 7.22 passes by construction" premise was wrong in detail —
+  the quadratic itself sits 0.14 below atom 1, not on it — but the
+  conclusion holds for the window c ≈ 0.8–3: all pass, by +0.56 to
+  +1.06 Å/ps.
+- **Limits.** The bound is one-sided (G4.12 step 2): it does not flag
+  the window's large surplus. In the window the radial ion leaves 0.56–
+  1.06 Å/ps faster than atom 1, with RMSE vs |v1| 0.54–0.98 — these laws
+  under-dissipate relative to the least-transverse TDDFT atom. Atom 1 is
+  17° off radial (cos ≈ 0.96, a few % of speed at most), and removing the
+  fixed-mass bias would make the MD ion faster still, widening the gap
+  (projection). The points that
+  track atom 1 most closely (c ≈ 5–7, RMSE vs |v1| 0.27) have Φ 1.3–1.6,
+  above the landing band.
+- **Consequence.** All 11 points with c ≤ 5 go to step 3 per the frozen
+  rule. Step 3 (twin, uncapped, 3.5 Å gate, h405 two-gate anchor) is
+  **not run**: stopped for the user recap.
 
 ## 2. Capped tail — v_c and p_tail
 

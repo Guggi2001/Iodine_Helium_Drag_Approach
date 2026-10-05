@@ -14026,3 +14026,42 @@ at 14.2 Å, `raw`) until decided. Docs: D0 §0 rows + §1.G4 + §17 row;
   Open items for the user: twin gate width, E_bind pairing, τ/E₀ grid.
   Code requires `[PROCEED TO IMPLEMENTATION]`.
 
+
+## 2026-10-05 — G4.12 steps 1–2 EXECUTED: the TDDFT-tied linear + quadratic ridge fits 18 Å everywhere; the 9 Å exit bound passes every c ≤ 5 and fails only the pure quadratic — step 3 (twin) **not run**, stopped for the user recap
+
+Frozen `beb5440` (user-checked: gate 3.5 Å + h405 two-gate anchor, own
+E_bind primary, full linscan grid; bound one-sided and mass bias
+disclosed). Full table: D0 §1.G4.12.
+
+- **Code.** `lq_fixed_c` variant in the form engine (c fixed ≥ 0, fit
+  a ≥ 0 and E_bind); driver `scripts/extraction/method_b_g412_ridge.py`
+  (oracle / ridge / assemble / anchor / bound / bound_assemble). Tests:
+  fixed-c stub recovery, c = 0 seam, negative c refused; exit-bound
+  arithmetic on synthetic traces. Full suite 3309 passed, 7 skipped.
+- **Oracles (all pass).** lq at the G4.9 linear point 0.12389 and at the
+  G4.11 quadratic point 0.11677, bit-exact; c = 0 fit = G4.9 linear point
+  (|Δa| < 10⁻⁴). Scorer series = user's cubic export (max diff 0).
+- **Step 1 (measured).** 12 fixed-c fits, c 0 → 7.224: a 23.15 → 0,
+  E_bind 0.1165 → 0.1191, RMSE 0.1239 → 0.1168, all bands pass. Φ 0.54 →
+  1.62; the window c 0.8–3 gives Φ 0.66–0.99, F(5.5) 137–165.
+- **Step 2 anchor (measured; quantifies the G4.11 re-read).** On the
+  user's 9 Å runs: quadratic RMSE vs |v1| 0.274, vs |v2| 0.992; cubic
+  0.938 / 0.520. Atom 1 is the less-transverse atom (|v_⊥|/|v| 0.29 vs
+  0.64). Exit [13, 14] ps: atom 1 4.237, atom 2 2.752; quadratic 4.095
+  (−0.14, fails), cubic 3.232 (−1.00, fails), linear 5.502.
+- **Step 2 (measured).** Margin vs atom 1 falls monotonically with c:
+  +1.27 (c 0) → +0.20 (c 5) → −0.14 (c 7.224). 11 of 12 pass; crossing
+  ≈ c 6.3 (interpolation, projection). Window c 0.8–3 passes by
+  +0.56 to +1.06 Å/ps.
+- **Reads.** The bound, as frozen, removes only the quadratic end. The
+  draft premise "the quadratic sits at atom 1" is off by −0.14 Å/ps; the
+  conclusion for the window is unchanged. The one-sided bound hides that
+  window points exit 0.6–1.1 Å/ps faster than atom 1 (RMSE vs |v1|
+  0.54–0.98): relative to the least-transverse TDDFT atom they
+  under-dissipate. The points closest to atom 1 (c ≈ 5–7) have Φ 1.3–1.6.
+  So far no ridge point is both close to atom 1 at 9 Å and inside the
+  landing band — a tension to discuss before step 3, not a gate under the
+  frozen rule.
+- **Next (user recap).** Step 3 as frozen would take the 11 passing
+  points through the twin (uncapped, 3.5 Å gate, h405 at both gates
+  first, full linscan grid). Production unchanged.
