@@ -23,6 +23,16 @@ Modes (USER SETTINGS ``MODE``; argv override ``python ... ridge 0 0.4``):
   9 A Tier-0 run (N = 50, 30 ps, the user's gen_tier0_runs settings), then the
   exit-bound score -> ``bound.csv``.
 
+G4.14 Step 0a (frozen 7726e43): the same steps 1-2, unchanged, for the fine
+points ``G414_C_FINE``. The G4.12 artifacts are never rewritten.
+
+* ``"oracle414"`` -- the c = 2.0 fixed-c fit rerun in memory reproduces the
+  committed ``c2p000.json`` (a, E_bind, RMSE) bit-exactly. Writes nothing.
+* ``"ridge414"`` -- fixed-c fits for ``G414_C_FINE`` (or argv); refuses to
+  overwrite an existing point JSON.
+* ``"bound414"`` -- the 9 A exit bound for ``G414_C_FINE`` (or argv).
+* ``"assemble414"`` -- the four points (bands + bound) -> ``ridge_g414.csv``.
+
 Usage: edit USER SETTINGS, then::
 
     python scripts/extraction/method_b_g412_ridge.py
@@ -44,6 +54,9 @@ MODE = "oracle"   # "oracle" | "ridge" | "assemble" | "anchor" | "bound"
 
 # Pre-registered ridge grid [amu/A] (G4.12 step 1; FIXED).
 C_GRID = (0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 7.224)
+# G4.14 Step 0a fine points around c = 2.0 [amu/A] (frozen 7726e43).
+G414_C_FINE = (1.8, 1.9, 2.1, 2.2)
+G414_ORACLE_C = 2.0
 
 # --- Pre-registered bands / constants (FIXED; do not re-tune) -----------------
 RMSE_18A_MAX_APS = 0.19            # G4.9 band; escape fraction must be 1.0
@@ -189,7 +202,13 @@ def run_oracle() -> None:
     print("  ORACLE PASS: (i) and (ii) bit-exact.")
 
 
-def _point_record(fit, c: float) -> dict:
+_G412_STAMP = ("THESIS_FINAL_GOALS.md G4.12 step 1 (18 A ridge, s_rho = 3.5 A)",
+               "THESIS_FINAL_GOALS.md G4.12, frozen beb5440 before any run")
+_G414_STAMP = ("THESIS_FINAL_GOALS.md G4.14 Step 0a (fine 18 A ridge points, s_rho = 3.5 A)",
+               "THESIS_FINAL_GOALS.md G4.14, frozen 7726e43 before any run")
+
+
+def _point_record(fit, c: float, goal_stamp=_G412_STAMP) -> dict:
     b = fit.best
     a = b.coefficients["a"]
     r = b.per_case[CASE]
@@ -197,8 +216,8 @@ def _point_record(fit, c: float) -> dict:
               for v in FORCE_PROBE_SPEEDS_APS}
     return {
         **stamp(),
-        "goal": "THESIS_FINAL_GOALS.md G4.12 step 1 (18 A ridge, s_rho = 3.5 A)",
-        "preregistration": "THESIS_FINAL_GOALS.md G4.12, frozen beb5440 before any run",
+        "goal": goal_stamp[0],
+        "preregistration": goal_stamp[1],
         "variant": fit.variant, "form": fit.form,
         "c_amu_per_A": c, "a_amu_per_ps": a, "e_bind_eV": b.e_bind_eV[CASE],
         "rmse_18A_Aps": r.rmse_Aps, "escape_fraction": r.escape_fraction,
@@ -217,22 +236,45 @@ def _point_record(fit, c: float) -> dict:
     }
 
 
+def _fit_point(setup, c: float, goal_stamp=_G412_STAMP) -> dict:
+    t0 = time.perf_counter()
+    fit = fit_form_trajectory_matching(
+        setup, variant=LQ_FIXED_C,
+        anchors={"a0": A0_FIXED_C, "c_fixed": float(c)},
+        maxfev_per_start=MAXFEV_PER_START,
+    )
+    if fit.gate_steepness_angstrom != GATE_WIDTH_A:
+        raise AssertionError(f"fit ran at gate {fit.gate_steepness_angstrom} A")
+    rec = _point_record(fit, float(c), goal_stamp)
+    print(f"    c={c:.3f}: {time.perf_counter() - t0:.0f} s, a={rec['a_amu_per_ps']:.3f}, "
+          f"E={rec['e_bind_eV']:.4f}, rmse={rec['rmse_18A_Aps']:.4f}, "
+          f"Phi={rec['Phi']:.3f}", flush=True)
+    return rec
+
+
 def run_ridge(c_values) -> None:
     setup = _setup()
     for c in c_values:
-        t0 = time.perf_counter()
-        fit = fit_form_trajectory_matching(
-            setup, variant=LQ_FIXED_C,
-            anchors={"a0": A0_FIXED_C, "c_fixed": float(c)},
-            maxfev_per_start=MAXFEV_PER_START,
-        )
-        if fit.gate_steepness_angstrom != GATE_WIDTH_A:
-            raise AssertionError(f"fit ran at gate {fit.gate_steepness_angstrom} A")
-        rec = _point_record(fit, float(c))
-        print(f"    c={c:.3f}: {time.perf_counter() - t0:.0f} s, a={rec['a_amu_per_ps']:.3f}, "
-              f"E={rec['e_bind_eV']:.4f}, rmse={rec['rmse_18A_Aps']:.4f}, "
-              f"Phi={rec['Phi']:.3f}", flush=True)
-        dump_json(rec, RIDGE_DIR / f"{point_label(float(c))}.json")
+        dump_json(_fit_point(setup, float(c)), RIDGE_DIR / f"{point_label(float(c))}.json")
+
+
+def run_oracle414() -> None:
+    """G4.14 Step-0a oracle: the c = 2.0 refit equals the committed point."""
+    committed = load_json(RIDGE_DIR / f"{point_label(G414_ORACLE_C)}.json")
+    rec = _fit_point(_setup(), G414_ORACLE_C)
+    for k in ("a_amu_per_ps", "e_bind_eV", "rmse_18A_Aps"):
+        _check(f"G4.14 oracle c={G414_ORACLE_C} {k}", rec[k], committed[k])
+    print("  ORACLE PASS: the c = 2.0 refit reproduces c2p000.json bit-exactly.")
+
+
+def run_ridge414(c_values) -> None:
+    paths = {c: RIDGE_DIR / f"{point_label(float(c))}.json" for c in c_values}
+    existing = [p.name for p in paths.values() if p.exists()]
+    if existing:
+        raise FileExistsError(f"refusing to overwrite committed ridge points {existing}")
+    setup = _setup()
+    for c, path in paths.items():
+        dump_json(_fit_point(setup, float(c), _G414_STAMP), path)
 
 
 RIDGE_COLUMNS = ("c_amu_per_A", "a_amu_per_ps", "e_bind_eV", "rmse_18A_Aps",
@@ -240,8 +282,8 @@ RIDGE_COLUMNS = ("c_amu_per_A", "a_amu_per_ps", "e_bind_eV", "rmse_18A_Aps",
                  "converged", "n_evaluations")
 
 
-def load_ridge() -> list[dict]:
-    recs = [load_json(RIDGE_DIR / f"{point_label(c)}.json") for c in C_GRID]
+def load_ridge(c_values=C_GRID) -> list[dict]:
+    recs = [load_json(RIDGE_DIR / f"{point_label(c)}.json") for c in c_values]
     return sorted(recs, key=lambda r: r["c_amu_per_A"])
 
 
@@ -393,7 +435,7 @@ def _run_point(c: float, a: float, e_bind: float) -> Path:
 
 def run_bound(c_values) -> None:
     hedft, window = load_hedft_trajectory(HEDFT_9A_PATH), _window_9a()
-    recs = {r["c_amu_per_A"]: r for r in load_ridge()}
+    recs = {r["c_amu_per_A"]: r for r in load_ridge(c_values)}
     rows = []
     for c in c_values:
         r = recs[float(c)]
@@ -415,6 +457,32 @@ def run_bound_assemble() -> None:
     _write_rows(rows, BOUND_DIR / "bound.csv")
 
 
+G414_RIDGE_CSV = RIDGE_DIR / "ridge_g414.csv"
+G414_COLUMNS = RIDGE_COLUMNS + ("margin_Aps", "bound_pass", "at_bound", "passes_all")
+
+
+def run_assemble414() -> None:
+    """G4.14 Step 0a: the fine points with their bands and 9 A bound."""
+    rows = []
+    for r in load_ridge(G414_C_FINE):
+        b = load_json(BOUND_DIR / f"{point_label(r['c_amu_per_A'])}.json")
+        if b["coef_c"] != r["c_amu_per_A"] or b["coef_a"] != r["a_amu_per_ps"]:
+            raise AssertionError(f"bound/ridge disagree at c={r['c_amu_per_A']}")
+        rows.append({**{k: r[k] for k in RIDGE_COLUMNS},
+                     "margin_Aps": b["margin_Aps"], "bound_pass": b["pass"],
+                     "at_bound": b["at_bound"],
+                     "passes_all": bool(r["bands_pass"] and b["pass"])})
+    with open(G414_RIDGE_CSV, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=G414_COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
+    for r in rows:
+        print(f"   c={r['c_amu_per_A']}: a={r['a_amu_per_ps']:.4f} E={r['e_bind_eV']:.5f} "
+              f"rmse={r['rmse_18A_Aps']:.4f} bands={r['bands_pass']} "
+              f"margin9A={r['margin_Aps']:+.3f} -> passes_all={r['passes_all']}")
+    print(f"  wrote {len(rows)} rows -> {G414_RIDGE_CSV.relative_to(PROJECT_ROOT).as_posix()}")
+
+
 def main(mode: str = MODE, c_values=C_GRID) -> int:
     print(f"===== G4.12 ridge / exit bound, MODE={mode} =====")
     if mode == "oracle":
@@ -429,6 +497,14 @@ def main(mode: str = MODE, c_values=C_GRID) -> int:
         run_bound(c_values)
     elif mode == "bound_assemble":
         run_bound_assemble()
+    elif mode == "oracle414":
+        run_oracle414()
+    elif mode == "ridge414":
+        run_ridge414(c_values)
+    elif mode == "bound414":
+        run_bound(c_values)
+    elif mode == "assemble414":
+        run_assemble414()
     else:
         raise ValueError(f"unknown MODE {mode!r}")
     return 0
@@ -436,5 +512,6 @@ def main(mode: str = MODE, c_values=C_GRID) -> int:
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    raise SystemExit(main(args[0] if args else MODE,
-                          tuple(float(x) for x in args[1:]) or C_GRID))
+    mode = args[0] if args else MODE
+    default_c = G414_C_FINE if mode.endswith("414") else C_GRID
+    raise SystemExit(main(mode, tuple(float(x) for x in args[1:]) or default_c))

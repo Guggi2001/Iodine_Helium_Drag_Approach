@@ -4407,6 +4407,229 @@ def stage_g412refine(m=20000):
     _write_csv_with_drift("atlas_g412_refine_summary.csv", summary)
     return summary
 
+# ---------------------------------------------------------------------------
+# THESIS_FINAL_GOALS G4.14 Step 0 (frozen 7726e43, zero MD): the calibrated
+# twin along tau. Ridge points: the cached G4.12 points c in G414_CACHED_C
+# plus the Step-0a fine points (ridge_g414.csv, bands + 9 A bound passed);
+# own E_bind, density gate 3.5 A, uncapped; tau 3.6-7.2 step 0.1 x the
+# refine E0 grid (step 0.0025). The measured c = 2.0 twin -> MD offsets
+# (committed g413_transfer.csv, read never retyped) place E0 at predicted MD
+# nbar 3.85 / 4.05 along tau; the predicted MD KE1 / midHot there feed the
+# frozen midHot filter (a c enters MD iff predicted midHot is in band at some
+# tau in 4.8-6.6). n1 and W1 are carried flagged: the offsets do not place
+# them (n1 decides the gate; W1 is MD-only).
+# ---------------------------------------------------------------------------
+G414_CACHED_C = (1.2, 1.6, 2.0, 2.5)
+G414_RIDGE_CSV = (REPO / "data/reference/drag/18A/trajectory_matching_srho3p5A/"
+                  "g412_ridge/ridge_g414.csv")
+G414_TRANSFER_CSV = OUT / "g413_transfer.csv"
+G414_TAU_PS = tuple(float(t) for t in np.round(np.arange(3.6, 7.2001, 0.1), 1))
+G414_E0_GRID = G412_REFINE_E0_GRID
+G414_NBAR_TARGETS = (3.85, 4.05)       # predicted MD nbar
+G414_MIDHOT_BAND = (0.85, 1.15)
+G414_FILTER_TAU = (4.8, 6.6)           # [ps], closed
+#: twin column -> (offset column in g413_transfer.csv, kind, MD label)
+G414_OFFSETS = {"nbar_det": ("d_nbar_det", "diff", "nbar"),
+                "n1_ke_eV": ("d_KE1_mean", "diff", "KE1"),
+                "midhot_geo": ("r_midHot", "ratio", "midHot"),
+                "n1_solv": ("d_n1_solv", "diff", "n1"),
+                "w1_solv": ("d_w1_solv", "diff", "W1")}
+G414_LINE_OBS = ("nbar_det", "n1_solv", "w1_solv", "midhot_geo", "n1_ke_eV",
+                 "ke2_eV", "deepke", "trapped_frac", "suppressed_frac")
+
+
+def g414_e0_at_nbar(e0, nbar, target):
+    """E0 [eV] where the twin nbar(E0) first crosses ``target`` going up in E0.
+
+    ``e0`` strictly ascending, ``nbar`` the twin nbar at each (NaN rows must
+    be dropped by the caller). Linear interpolation inside the first
+    bracketing pair with nbar[i] >= target >= nbar[i+1] (nbar falls with
+    E0). Returns ``(e0_star, i_lo)``; ``(nan, -1)`` if no pair brackets.
+    """
+    e0 = np.asarray(e0, dtype=float)
+    nb = np.asarray(nbar, dtype=float)
+    if not np.all(np.isfinite(nb)):
+        raise ValueError("nbar must be finite (drop unscoreable rows first)")
+    if e0.size >= 2 and np.any(np.diff(e0) <= 0):
+        raise ValueError("e0 must be strictly ascending")
+    for i in range(e0.size - 1):
+        if nb[i] >= target >= nb[i + 1] and nb[i] != nb[i + 1]:
+            f = (nb[i] - target) / (nb[i] - nb[i + 1])
+            return float(e0[i] + f * (e0[i + 1] - e0[i])), i
+    return float("nan"), -1
+
+
+def g414_interp_at(e0, y, e0_star, i_lo):
+    """Linear interpolation of ``y`` between rows ``i_lo``, ``i_lo + 1`` at
+    ``e0_star``; NaN if ``i_lo < 0`` or either endpoint is NaN."""
+    if i_lo < 0:
+        return float("nan")
+    y0, y1 = float(y[i_lo]), float(y[i_lo + 1])
+    if not (np.isfinite(y0) and np.isfinite(y1)):
+        return float("nan")
+    e_lo, e_hi = float(e0[i_lo]), float(e0[i_lo + 1])
+    return y0 + (e0_star - e_lo) / (e_hi - e_lo) * (y1 - y0)
+
+
+def g414_md_prediction(twin_value, offset, kind):
+    """Twin value -> predicted MD value with a measured offset."""
+    return twin_value * offset if kind == "ratio" else twin_value + offset
+
+
+def g414_midhot_filter(line_rows, band=G414_MIDHOT_BAND, tau_range=G414_FILTER_TAU):
+    """Frozen Step-0 filter: True iff some line row with tau in ``tau_range``
+    (closed) has a finite predicted MD midHot inside ``band`` (closed)."""
+    for r in line_rows:
+        m = float(r["md_pred_midHot"])
+        if (tau_range[0] <= float(r["tau_ps"]) <= tau_range[1]
+                and np.isfinite(m) and band[0] <= m <= band[1]):
+            return True
+    return False
+
+
+def _g414_offsets():
+    """Committed G4.13 offsets (mean row) + the 16 per-cell rows."""
+    with open(G414_TRANSFER_CSV, newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    cells = [r for r in rows if r["cell"].startswith("t")]
+    mean = next(r for r in rows if r["cell"] == "offset_mean")
+    out = {}
+    for tw_col, (off_col, kind, _) in G414_OFFSETS.items():
+        v = float(mean[off_col])
+        re = float(np.mean([float(c[off_col]) for c in cells]))
+        if abs(re - v) > 1e-12:
+            raise AssertionError(f"g414 offset {off_col}: {v!r} != re-derived {re!r}")
+        out[tw_col] = (v, kind)
+    return out, cells
+
+
+def _g414_points():
+    """Cached G4.12 points + the Step-0a fine points that passed it."""
+    pts = [p for p in _g412_points() if p["c"] in G414_CACHED_C]
+    if len(pts) != len(G414_CACHED_C) or not all(p["passes_bound"] for p in pts):
+        raise AssertionError(f"g414: cached points {[p['c'] for p in pts]}")
+    if not G414_RIDGE_CSV.exists():
+        raise FileNotFoundError(f"{G414_RIDGE_CSV} missing: run G4.14 Step 0a first")
+    with open(G414_RIDGE_CSV, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r["passes_all"] != "True":
+                print(f"[g414] fine point c={r['c_amu_per_A']} fails Step 0a "
+                      f"(bands {r['bands_pass']}, 9 A {r['bound_pass']}): not carried")
+                continue
+            pts.append({"c": float(r["c_amu_per_A"]), "a": float(r["a_amu_per_ps"]),
+                        "e_bind": float(r["e_bind_eV"]), "margin": float(r["margin_Aps"]),
+                        "passes_bound": True})
+    return sorted(pts, key=lambda p: p["c"])
+
+
+def _g414_line_row(p, tau, target, d_nbar, offsets, e0, trow):
+    nb = np.array([float(r["nbar_det"]) for r in trow])
+    fin = np.isfinite(nb)
+    e0f = e0[fin]
+    e_star, i_lo = g414_e0_at_nbar(e0f, nb[fin], target - d_nbar)
+    row = {"c": p["c"], "a": p["a"], "E_bind_eV": p["e_bind"], "tau_ps": tau,
+           "nbar_target_md": target,
+           "E0_eV": round(e_star, 5) if np.isfinite(e_star) else np.nan,
+           "E0_lo": e0f[i_lo] if i_lo >= 0 else np.nan,
+           "E0_hi": e0f[i_lo + 1] if i_lo >= 0 else np.nan}
+    for obs in G414_LINE_OBS:
+        y = np.array([float(r[obs]) for r in trow])[fin]
+        v = g414_interp_at(e0f, y, e_star, i_lo)
+        row[f"twin_{obs}"] = round(v, 4) if np.isfinite(v) else np.nan
+    for tw_col, (off, kind) in offsets.items():
+        v = g414_md_prediction(row[f"twin_{tw_col}"], off, kind)
+        row[f"md_pred_{G414_OFFSETS[tw_col][2]}"] = round(v, 4) if np.isfinite(v) else np.nan
+    row["md_pred_n1_placeable"] = 0
+    row["md_pred_W1_placeable"] = 0
+    row["tau_in_filter_range"] = int(G414_FILTER_TAU[0] <= tau <= G414_FILTER_TAU[1])
+    mh = row["md_pred_midHot"]
+    row["midhot_in_band"] = int(bool(
+        np.isfinite(mh) and G414_MIDHOT_BAND[0] <= mh <= G414_MIDHOT_BAND[1]))
+    return row
+
+
+def stage_g414twin(m=20000):
+    """G4.14 Step 0 (frozen 7726e43): calibrated twin line along tau."""
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    offsets, transfer_cells = _g414_offsets()
+    pts = _g414_points()
+    print(f"\n=== g414twin: c = {[p['c'] for p in pts]} x {len(G414_TAU_PS)} tau x "
+          f"{len(G414_E0_GRID)} E0 at s_rho = {G412_S_RHO_A} A ===")
+    specs = [{"a": p["a"], "c": p["c"], "eb_tag": "ebown", "e_bind": p["e_bind"],
+              "s_rho": G412_S_RHO_A} for p in pts]
+    chord_rows, rows, _ = _linsweep_scan("linq", specs, ens, sig, ref_ke, solv_exp,
+                                         m, False, tau_grid=G414_TAU_PS,
+                                         e0_grid=G414_E0_GRID)
+
+    # --- anchors: committed G4.12 twin / refine rows, the G4.13 transfer twin ---
+    by_key = {(str(r["c"]), str(r["tau_ps"]), str(r["E0_eV"])): r for r in rows}
+    checked = 0
+    for name in ("atlas_g412_twin.csv", "atlas_g412_refine.csv"):
+        with open(OUT / name, newline="") as fh:
+            for ref in csv.DictReader(fh):
+                key = (ref["c"], ref["tau_ps"], ref["E0_eV"])
+                if ref.get("arm") != "linq" or key not in by_key:
+                    continue
+                for col in _G412_ANCHOR_COLS:
+                    if str(by_key[key][col]) != ref[col]:
+                        raise AssertionError(f"g414 anchor {name} {key} {col}: "
+                                             f"{by_key[key][col]!r} != {ref[col]!r}")
+                checked += 1
+    if checked == 0:
+        raise AssertionError("g414 anchor checked no committed G4.12 row")
+    print(f"[g414] ANCHOR PASSED: {checked} rows reproduce atlas_g412_twin/refine.csv")
+    for tc in transfer_cells:
+        r = by_key[("2.0", str(float(tc["tau_ps"])), str(float(tc["E0_eV"])))]
+        for tw_col in G414_OFFSETS:
+            if round(float(r[tw_col]), 4) != round(float(tc[f"twin_{tw_col}"]), 4):
+                raise AssertionError(f"g414 transfer anchor {tc['cell']} {tw_col}: "
+                                     f"{r[tw_col]!r} != {tc['twin_' + tw_col]!r}")
+    print(f"[g414] TRANSFER ANCHOR PASSED: {len(transfer_cells)} G4.13 cells' twin "
+          "values reproduced; offsets = committed means")
+
+    # --- the line: E0 at the predicted-MD nbar targets along tau ---
+    d_nbar = offsets["nbar_det"][0]
+    line_rows, filter_rows = [], []
+    for p in pts:
+        lrows = []
+        for tau in G414_TAU_PS:
+            trow = sorted((r for r in rows if r["c"] == p["c"] and r["tau_ps"] == tau),
+                          key=lambda r: float(r["E0_eV"]))
+            e0 = np.array([float(r["E0_eV"]) for r in trow])
+            for target in G414_NBAR_TARGETS:
+                lrows.append(_g414_line_row(p, tau, target, d_nbar, offsets, e0, trow))
+        line_rows.extend(lrows)
+        rng = [r for r in lrows
+               if r["tau_in_filter_range"] and np.isfinite(r["md_pred_midHot"])]
+        mh = [r["md_pred_midHot"] for r in rng]
+        ke = [r["md_pred_KE1"] for r in rng if np.isfinite(r["md_pred_KE1"])]
+        filter_rows.append({
+            "c": p["c"], "a": p["a"], "E_bind_eV": p["e_bind"],
+            "margin_9A_Aps": p["margin"],
+            "n_line_rows_in_range": len(rng),
+            "md_pred_midHot_min": round(min(mh), 4) if mh else np.nan,
+            "md_pred_midHot_max": round(max(mh), 4) if mh else np.nan,
+            "md_pred_KE1_min": round(min(ke), 4) if ke else np.nan,
+            "md_pred_KE1_max": round(max(ke), 4) if ke else np.nan,
+            "n_rows_midhot_in_band": sum(r["midhot_in_band"] for r in rng),
+            "passes_midhot_filter": int(g414_midhot_filter(lrows)),
+            "offsets_measured_at_c": 2.0,
+        })
+    print("\n=== G4.14 Step 0: midHot filter (predicted MD, tau 4.8-6.6) ===")
+    for f in filter_rows:
+        print(f"  c={f['c']:<4} midHot[{f['md_pred_midHot_min']}, {f['md_pred_midHot_max']}] "
+              f"KE1[{f['md_pred_KE1_min']}, {f['md_pred_KE1_max']}] "
+              f"in-band rows {f['n_rows_midhot_in_band']}/{f['n_line_rows_in_range']} "
+              f"-> MD {'YES' if f['passes_midhot_filter'] else 'no'}")
+    _write_csv_with_drift("atlas_g414_chords.csv", chord_rows)
+    _write_csv_with_drift("atlas_g414_twin_line.csv", line_rows)
+    _write_csv_with_drift("atlas_g414_filter.csv", filter_rows)
+    return filter_rows
+
 
 # ---------------------------------------------------------------------------
 # Atlas §6.5 Step 2 — the E_bind twin scan (zero MD, designed 2026-08-10)
@@ -5207,6 +5430,8 @@ def main():
         stage_g412twin(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "g412refine":
         stage_g412refine()
+    elif mode == "g414twin":
+        stage_g414twin()
     elif mode == "ebindscan":
         stage_ebindscan(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "refundscan":
