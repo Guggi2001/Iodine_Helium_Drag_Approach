@@ -207,3 +207,21 @@ def test_drop_ion_npz_only_after_scored_detection(tmp_path, monkeypatch):
     assert (tmp_path / ION_DROPPED_MARKER).exists()
     assert _run_is_complete(tmp_path)
     drop_ion_npz(tmp_path)                       # idempotent
+
+
+def test_band_columns_sum_to_w1_and_vanish_on_identity():
+    """Histogram bands: shares sum to the production W1; masses sum to 1."""
+    from i2_helium_md.postprocess.tier2_confirmation import wasserstein_between
+    from scripts.post_processing.tier2_g414_table import band_columns
+
+    rng = np.random.default_rng(3)
+    sim_n, ref_n = np.arange(1, 25), np.arange(1, 31)
+    sim_f = rng.random(sim_n.size); sim_f /= sim_f.sum()
+    ref_f = rng.random(ref_n.size); ref_f /= ref_f.sum()
+    cols = band_columns(sim_n, sim_f, ref_n, ref_f)
+    w1_sum = sum(v for k, v in cols.items() if k.startswith("w1_"))
+    assert w1_sum == pytest.approx(wasserstein_between(sim_n, sim_f, ref_n, ref_f), abs=1e-12)
+    assert sum(v for k, v in cols.items() if k.startswith("mass_")) == pytest.approx(1.0)
+    assert set(cols) >= {"mass_n1", "mass_n2_3", "mass_n15plus", "w1_n10_14"}
+    same = band_columns(ref_n, ref_f, ref_n, ref_f)
+    assert all(v == pytest.approx(0.0, abs=1e-15) for k, v in same.items() if k.startswith("w1_"))

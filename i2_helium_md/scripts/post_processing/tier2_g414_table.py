@@ -73,6 +73,10 @@ MIDHOT_BAND = (0.85, 1.15)
 NBAR_MATCH = 3.89
 SELECT_TAU_STEP_PS = 0.01
 MERGE_PS = 0.2
+#: Solvated size-histogram bands (user, 2026-10-06): per band the renormalised
+#: mass and its share of W1 = sum_n |CDF_sim(n) - CDF_exp(n)|. Reported, not
+#: gating; the shares sum to w1_solv.
+HIST_BANDS = ((1, 1), (2, 3), (4, 6), (7, 9), (10, 14), (15, None))
 
 
 # =============================================================================
@@ -202,6 +206,38 @@ def select_candidates(curve: list[dict]) -> list[dict]:
     return [{**ke, "role": "KE"}, {**w, "role": "W"}]
 
 
+def _band_tag(lo: int, hi: Optional[int]) -> str:
+    if hi is None:
+        return f"n{lo}plus"
+    return f"n{lo}" if lo == hi else f"n{lo}_{hi}"
+
+
+def band_columns(sim_n, sim_f, ref_n, ref_f) -> dict[str, float]:
+    """Per-band histogram mass and W1 share on integer support n >= 1.
+
+    ``sim_n``/``ref_n``: integer cluster sizes; ``sim_f``/``ref_f``: solvated
+    fractions (each sums to 1). Returns ``mass_<band>`` (sim mass) and
+    ``w1_<band>`` (sum of |dCDF| over the band); the w1 shares sum to the W1
+    distance on unit-spaced support.
+    """
+    n_max = int(max(np.max(sim_n), np.max(ref_n)))
+
+    def on_grid(n, f):
+        out = np.zeros(n_max)
+        np.add.at(out, np.asarray(n, int) - 1, np.asarray(f, float))
+        return out
+
+    sim, ref = on_grid(sim_n, sim_f), on_grid(ref_n, ref_f)
+    dcdf = np.abs(np.cumsum(sim) - np.cumsum(ref))
+    cols: dict[str, float] = {}
+    for lo, hi in HIST_BANDS:
+        sl = slice(lo - 1, n_max if hi is None else hi)
+        tag = _band_tag(lo, hi)
+        cols[f"mass_{tag}"] = float(sim[sl].sum())
+        cols[f"w1_{tag}"] = float(dcdf[sl].sum())
+    return cols
+
+
 def e0_385_interp(line_rows: list[dict], c: float):
     """tau -> Step-0 E0 at predicted MD nbar 3.85 (linear in tau)."""
     pts = sorted((float(r["tau_ps"]), float(r["E0_eV"])) for r in line_rows
@@ -233,11 +269,11 @@ def main() -> int:
     from i2_helium_md.postprocess.abundance_loader import load_he_abundance_reference
     from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference
     from i2_helium_md.postprocess.tier2_confirmation import (
-        pool_confirmation_reads, read_confirmation_detection,
+        pool_confirmation_reads, read_confirmation_detection, solvated_renormalized,
     )
     from i2_helium_md.simulation.detection_stage import load_detection_result
     from i2_helium_md.simulation.run_directory import RunDirectory
-    from scripts.gen_tier2_detfix_battery import member_run_dir_name
+    from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS, member_run_dir_name
     from scripts.gen_tier2_g413_ridge_battery import (
         H405_GATE_LABEL, STAGE_A_MEMBER, STAGE_B_MEMBERS, run_dir_for as g413_run_dir_for,
     )
@@ -261,22 +297,40 @@ def main() -> int:
         return read_confirmation_detection(load_detection_result(rd / "detection.npz"),
                                            label=label)
 
+    exp_n, exp_f = solvated_renormalized(ab.n, ab.ion_fraction, n_min=1)
+
+    def scored(label, member, pipeline, seed, rd_read) -> dict[str, Any]:
+        """The production observable vector + the histogram band columns."""
+        sn, sf = solvated_renormalized(rd_read.n_values, rd_read.fraction, n_min=1)
+        return {**_row(label, member, pipeline, seed, rd_read, ab, ked),
+                **band_columns(sn, sf, exp_n, exp_f)}
+
     # 1. anchors
     rows: list[dict[str, Any]] = []
     h405_s1 = RUNS_ROOT / member_run_dir_name("s1")
     cfg = RunDirectory(h405_s1).load_cfg()
-    anchor = _row("h405_s1", "s1", _pipeline(cfg), cfg.seed, read(h405_s1, "h405_s1"), ab, ked)
+    anchor = scored("h405_s1", "s1", _pipeline(cfg), cfg.seed, read(h405_s1, "h405_s1"))
     _check_4dp("[anchor] h405 detfix s1", anchor, _csv_row(DETFIX_TABLE_CSV, "s1_new"),
                ANCHOR_COLS)
     g35_dir = g413_run_dir_for(H405_GATE_LABEL, STAGE_A_MEMBER)
     g35_reads = [read(g35_dir, "h405g35_s1")]
     c35 = RunDirectory(g35_dir).load_cfg()
-    g35 = _row("h405g35_s1", "s1", _pipeline(c35), c35.seed, g35_reads[0], ab, ked)
+    g35 = scored("h405g35_s1", "s1", _pipeline(c35), c35.seed, g35_reads[0])
     _check_4dp("[anchor] h405g35 s1", g35, _csv_row(G413_TABLE_CSV, "h405g35_s1"), ANCHOR_COLS)
     print("ANCHORS PASSED: h405 s1 = s1_new; h405g35 s1 = committed g413 row (4 dp)")
+    # The 14.2 A reference re-pooled from its six run dirs (for the band
+    # columns); anchored on the committed pooled_new6000 row (4 dp).
     ref6000 = _csv_row(DETFIX_TABLE_CSV, "pooled_new6000")
+    h405_reads = [read(RUNS_ROOT / member_run_dir_name(m), f"h405_{m}") for m in MEMBER_SEEDS]
+    pooled142 = scored("h405_pooled6000", "pooled6000", "skip+closure:partner_aware", "-",
+                       pool_confirmation_reads(h405_reads, label="h405_pooled6000"))
+    _check_4dp("[anchor] h405 pooled_new6000", pooled142, ref6000, ANCHOR_COLS)
+    print("ANCHOR PASSED: h405 re-pooled from run dirs = committed pooled_new6000 (4 dp)")
+    exp_row = {"label": "experiment", "kind": "experiment",
+               **band_columns(exp_n, exp_f, exp_n, exp_f)}
+    rows.append(exp_row)
     rows.append({**anchor, "kind": "ref"})
-    rows.append({**{k: ref6000[k] for k in ref6000}, "kind": "ref_pooled_14p2"})
+    rows.append({**pooled142, "kind": "ref_pooled_14p2"})
     rows.append({**g35, "kind": "ref_member_3p5"})
 
     # 2. h405g35 pool
@@ -287,11 +341,10 @@ def main() -> int:
             c_ = RunDirectory(d).load_cfg()
             r_ = read(d, f"h405g35_{m}")
             g35_reads.append(r_)
-            rows.append({**_row(f"h405g35_{m}", m, _pipeline(c_), c_.seed, r_, ab, ked),
+            rows.append({**scored(f"h405g35_{m}", m, _pipeline(c_), c_.seed, r_),
                          "kind": "ref_member_3p5"})
-        g35_pooled = _row("h405g35_pooled6000", "pooled6000", "skip+closure:partner_aware",
-                          "-", pool_confirmation_reads(g35_reads, label="h405g35_pooled6000"),
-                          ab, ked)
+        g35_pooled = scored("h405g35_pooled6000", "pooled6000", "skip+closure:partner_aware",
+                            "-", pool_confirmation_reads(g35_reads, label="h405g35_pooled6000"))
         rows.append({**g35_pooled, "kind": "ref_pooled_3p5"})
         print(f"h405g35 pooled N=6000: n1 {g35_pooled['n1_solv']:.4f} nbar "
               f"{g35_pooled['nbar_det']:.3f} KE1 {g35_pooled['KE1_mean']:.4f} "
@@ -311,7 +364,7 @@ def main() -> int:
         c_ = RunDirectory(rd).load_cfg()
         if _pipeline(c_) != "skip+closure:partner_aware" or c_.seed != cell.seed:
             raise AssertionError(f"[{cell.label}] pipeline/seed mismatch")
-        r = _row(cell.label, "g414", _pipeline(c_), c_.seed, read(rd, cell.label), ab, ked)
+        r = scored(cell.label, "g414", _pipeline(c_), c_.seed, read(rd, cell.label))
         e385 = e0_385_interp(line_rows, cell.c)
         r.update({"kind": "step1", "c": cell.c, "tau_ps": cell.tau_ps, "E0_eV": cell.e0_eV,
                   "nbar_target": cell.nbar_target,
