@@ -366,6 +366,12 @@ def main() -> int:
                     res["fit"], sa_tau, sa_de)
                 fr["oos_stageA_s1_mean_resid"] = float(np.mean(sa_res))
                 fr["oos_stageA_s1_sd_resid"] = float(np.std(sa_res, ddof=1))
+                # Only Stage-A cells inside the sampled dE band are a clean
+                # out-of-sample read; outside it the fit extrapolates (dE^2).
+                inb = (sa_de >= de.min()) & (sa_de <= de.max())
+                fr["oos_inband_n"] = int(inb.sum())
+                fr["oos_inband_mean_resid"] = (float(np.mean(sa_res[inb]))
+                                               if inb.any() else float("nan"))
             fit_rows.append(fr)
         status = c_status(statuses)
         print(f"fit c={c}: order {order}, status {status} "
