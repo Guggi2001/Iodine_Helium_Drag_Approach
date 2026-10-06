@@ -27,7 +27,7 @@ import sys
 # USER SETTINGS
 # =============================================================================
 
-CASE = "9A"      # droplet geometry: "9A" or "18A"
+CASE = "18A"      # droplet geometry: "9A" or "18A"
 
 # Drag law: a key of scripts.tier0_common.CATALOG. Shared keys run on either
 # geometry; per-case keys (percase_*) resolve against CASE.
@@ -38,7 +38,8 @@ CASE = "9A"      # droplet geometry: "9A" or "18A"
 # 18 A-only at s_rho = 3.5 A (G4.9 / G4.11; run with CASE = "18A"):
 # srho3p5A18A_linear  srho3p5A18A_cubic  srho3p5A18A_linear_cubic
 # srho3p5A18A_quadratic  srho3p5A18A_linear_quadratic
-VARIANT = "srho3p5A_shared_linear"
+
+VARIANT = "srho3p5A18A_cubic"
 
 N = 50            # ensemble size, e.g. 50 or 2000
 

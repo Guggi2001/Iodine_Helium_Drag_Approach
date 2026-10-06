@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-06",
+  "branch": "drag_implementation",
+  "goal": "D0 \u00a71.G4.14 fixed-well Tier-0 check (thesis discussion 2026-10-06)",
+  "form": "linear_quadratic",
+  "variant": "lq_fixed_c_fixed_well",
+  "c_amu_per_A": 2.0,
+  "e_bind_eV": 0.08,
+  "a_amu_per_ps": 22.758263072599558,
+  "rmse_18A_Aps": 0.15911245638858912,
+  "escape_fraction": 1.0,
+  "objective_Aps": 0.15911245638858912,
+  "F_3": 86.27478921779867,
+  "F_5p5": 185.6704468992976,
+  "F_9p7": 408.9351518042157,
+  "Phi": 0.9771449266528451,
+  "bands_pass": true,
+  "n_evaluations": 11,
+  "converged": true,
+  "a_bounds": [
+    0.0,
+    60.0
+  ],
+  "xatol_a": 0.01
+}

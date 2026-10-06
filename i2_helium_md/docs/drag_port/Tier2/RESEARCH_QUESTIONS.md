@@ -1309,6 +1309,71 @@ that decides between "narrow E₀ + faster ejection" (Wave-10 landing) and
   reading (unverified): Q3 may already saturate at 300 mW, so ~20 %
   would be the ceiling at 600 mW. Discussion: `THESIS_DISCUSSION.md`
   §3–§4.
+- **NB (2026-10-06, thesis discussion — DECISION (user): n = 0 is
+  excluded from the model comparison on physical grounds, not only by
+  convention.)** Three independent arguments, the first two measured on
+  committed reference data (zero MD; session-local reads, not committed
+  as scripts):
+  (1) *Kinematic ceiling.* The production channel gives ≤ 2.71 eV per
+  fragment ballistically (zero drag); the paper's gas calibration gives
+  Q = 2 → 2.16 eV, Q = 3 → 4.32 eV. Bare meanKE 3.706 eV (mode
+  4.758 eV) is unreachable from the modelled channel under any drag
+  law. The n0 spectrum is flat over ≈ 1.5–6 eV and ends at the 6.125 eV
+  grid edge with signal still ≈ 8 % per 0.5 eV, so the mean may be
+  truncation-biased low.
+  (2) *Opposite power response.* `IHe_KED_crosscheck_300mW.csv`: bare
+  3.471 (300 mW) vs 3.706 eV (600 mW), −6.3 % (z ≈ −6); n = 1 identical
+  (1.302 / 1.302); n = 2–17 shift +2 … +8 % the other way, inside the
+  correlated condition band. Bare responds to intensity unlike every
+  solvated fragment → a different production mix.
+  (3) *Gas-phase spectral identity.* `paper_v4` radial VMI profiles
+  (raw projections, not inverted — shape comparison only), I⁺ droplet
+  vs I⁺ gas measurement at the same power and image center: shape
+  overlap Σmin(p_drop, p_gas) = **0.975 at 600 mW** (43567 / 43568; mean
+  speed 1283 / 1242 m/s) and 0.86 at 160 mW (43554 / 43555; the droplet
+  profile carries an extra fast tail). At high power the bare I⁺ from
+  the droplet beam is spectrally indistinguishable from I⁺ of free I₂.
+  *Reading (hypothesis; acquisition details of the gas measurement not
+  known to the user; **amended same day, see below**):* bare I⁺ comes
+  from a channel the model does not contain — fragments that never
+  interact with He: gas-phase I₂ in the interaction region (effusive
+  from the pickup cell) and/or droplet-borne fragments leaving without
+  He contact (candidate (c), e.g. the outward fragment of a near-surface
+  molecule). *Consequences:* (i) the model's suppressed
+  class (measured G4.14 read: every member an intact n = 21 complex at
+  1.0–1.25 eV, the fastest exiters) is not the experimental bare
+  channel; it need **not** be the largest bin, and
+  emptying it into small n is not an artificial removal of real bare
+  ions; (ii) the solvated-branch scoring (n ≥ 1 renormalized) is the
+  physically correct target; (iii) "higher-order processes are a
+  minority in the histogram" and the 3.7 eV bare peak no longer
+  conflict — the fast Q = 3 component sits in the gas-like bare
+  population. The decisive experimental test (bare rate with droplet
+  beam on vs off at the same pickup pressure) is not available.
+  **Amendment (2026-10-06, twin read — corrects an overstatement in the
+  first version of this NB).** The first version read bare as "mostly
+  gas-phase background, carrying no information on the in-droplet
+  dynamics". The same-molecule twin data contradict the "mostly
+  background" part: among detected I⁺ partners of I⁺He (follow-up (2)
+  above, 33 / 14 / 30 % → renormalized 0.43 bare / 0.18 n = 1 / 0.39
+  n > 1), **43 % are bare** — covariance-true same-event pairs (I₂⁺
+  multi-molecule gauge 2–4 %), i.e. **droplet-borne bare twins of
+  solvated ions**. Model, same construction (measured, anchored 4 dp on
+  `g414_table.csv`; session-local read): lq A5 pool 0.08 / 0.20 / 0.73,
+  h405 3.5 Å 0.18 / 0.17 / 0.66, h405 14.2 Å 0.18 / 0.17 / 0.66; model
+  twins are fully independent (corr(n, n_partner) = 0.00 ± 0.02, the
+  partner distribution flat in the own n), so the model already carries
+  maximal twin-to-twin randomness from geometry — the n = 1 share
+  matches; the gap is the bare share. Standing reading: a substantial
+  part of bare is the **no-He-contact twin of a solvated fragment**
+  (near-surface births: one fragment exits immediately with near-gas
+  KE, the other crosses the droplet), which the model cannot produce
+  (all production births are deep — T5 inert). The exclusion decision
+  stands (the channel is not modelled, so n ≥ 1 scoring is correct),
+  but bare is **not** information-free: its twin share is a
+  birth-position signature (open lead: chord read, 2026-10-06).
+  Covariance condition 1.47×10¹⁴ W/cm² (150 mW) vs the 600 mW KED
+  reference — qualitative comparison.
 
 ### RQ9 — Physicality of the fitted cooling time τ ≈ 4.1 ps vs the GAH25 pin (opened 2026-07-15, Addendum I Step 1b; parked by user decision same day)
 

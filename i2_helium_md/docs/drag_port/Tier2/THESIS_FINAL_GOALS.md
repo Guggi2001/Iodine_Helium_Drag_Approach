@@ -36,9 +36,13 @@ log (`drag_migration_log_tier2.md`).
    (c 2.0, τ 6.4): **loses on KE** (KE₁ 0.617 vs 0.640 / 0.643; χ² 507
    vs 456 / 636). Nothing adopted.
 
-**Next:** the thesis-choice discussion — read **G4.14 "Recap for the
-thesis-choice discussion"** (KE table, strengths, caveats, draft claim,
-open points a–d). G1, G2 (production switch), G5–G7 not started.
+8. **Thesis discussion (2026-10-06):** lq vs capped compared; n = 0
+   excluded on physical grounds; the n ≥ 16 limit explained (escape
+   cliff, TDDFT-pinned). See G4.14 "Discussion outcome".
+
+**Next:** open points (a)–(c) of the G4.14 recap (lq co-equal or
+recommended; c window; optional c = 1.8 pool). G1, G2 (production
+switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
@@ -1002,8 +1006,50 @@ pooled run at the KE-best c 1.8 cell (τ ≈ 5.9, fitted KE₁ 0.632)?
 (d) Histogram (from the shape discussion): question n* = 21 and the top
 ladder rungs first? Re-include the bare fraction n = 0 (experiment 0.435
 vs model ≈ 0.19; the solvated read excludes it by design, RQ8)?
+**Bare part settled 2026-10-06 (user): n = 0 stays excluded, now on
+physical grounds** (kinematic ceiling, opposite power response,
+gas-phase spectral identity — `RESEARCH_QUESTIONS.md` RQ8 NB
+2026-10-06); the model's bare class need not be the largest bin.
 Session-local analyses (shape scan of all 200 runs, W₁ band split) were
 not committed as scripts; their numbers are in D0 §1.G4.14.
+
+**Discussion outcome (2026-10-06).** Numbers, anchors and provenance:
+D0 §1.G4.14; log 2026-10-06; RQ8 NB 2026-10-06.
+
+*1. lq vs capped cubic.*
+- Same KE₁ lever in both laws: lowering E₀ (raising τ) moves fast
+  suppressed ions (intact n = 21) into n = 1–3. The capped law gains
+  more KE₁ that way (0.76 at τ 6.4) but mid-n KE falls out of band
+  (midHot 0.81); lq keeps midHot ≈ 1. Both lose the n ≥ 10 tail.
+- lq advantage: no cap, literature τ, consistent KE curve over n.
+  Not a higher KE₁. KE₂/KE₁ ≈ 0.85 for every law vs 0.54 measured:
+  the n = 1 deficit is not a drag question.
+- n = 0 stays excluded (user decision): bare KE 3.7 eV exceeds the
+  model ceiling 2.7 eV, shifts with laser power unlike n ≥ 1, and
+  matches the gas-phase I⁺ spectrum. Part of bare is the no-He-contact
+  twin of a solvated fragment (covariance), a channel not in the model.
+
+*2. Why no n ≥ 16.*
+- Pickup keeps n = 21 inside; E_int at exit = E₀·exp(−X/τ); after exit
+  one He is shed per ≈ 9 meV. High n needs a cold exit, i.e. long
+  exposure, i.e. a slow ion. High-n ions are marginal escapers (exit
+  KE ≈ 0.05 eV); beyond X/τ ≈ 2 ions are retained. This caps n ≈ 15
+  and makes the deep bins slow. Same ceiling for h405 and lq.
+- Not levers: drag law, birth geometry / chord, `post_pickup` sampler
+  (map reweighting only); twins already independent.
+- Escape well: lowering E_bind alone (drag fixed) brings deep-bin KE to
+  experiment (0.98 at 0.048 eV) but n ≥ 15 only to 0.007 (exp 0.057).
+  Tier-0-consistent (18 Å refit) a shallower well forces stronger drag
+  (0.080 eV: a +36 %; 0.048 eV fails the band) and the gain vanishes.
+  TDDFT pins the escape cost.
+- Per-ion E₀ spread would decouple cooling from slowing (projection);
+  not adopted — single E₀ kept.
+- Measured gap: KE width at fixed n ≈ 8× narrower than experiment.
+
+*Thesis statement.* The model reproduces the solvated histogram to
+n ≈ 15 and the n = 2–8 KE curve. The tail ends because cooling and
+slowing share one channel (residence in He) and TDDFT fixes the escape
+cost. Outlook: per-ion energy scatter or residence-independent cooling.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 

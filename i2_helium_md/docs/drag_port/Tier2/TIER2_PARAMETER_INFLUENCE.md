@@ -1047,6 +1047,114 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   243–320 (h405 members 236–347 at 14.2 Å, 300–470 at 3.5 Å), partly at
   n̄ ≈ 4.05; at matched n̄ 3.89 the pooled KE₁ is 0.617 (A5). χ² grows
   with N (sim-error term): compare pooled with pooled only.
+- **Bare class and the shared n = 0 → small-n lever (measured,
+  2026-10-06 discussion; per-ion read of the 24 c = 2.0 Step-1 runs and
+  the 6 h405g35 members, anchored: supp and KE₁ reproduce
+  `g414_table.csv` to 4 dp; session-local script).** (i) Every
+  suppressed (bin-0) ion is an **intact n = 21 complex**, KE 1.0–1.25 eV,
+  all above the mean KE₁ — the fastest exiters, which leave the dense He
+  before cooling opens the gate. (ii) Along the c = 2.0 τ line (E₀
+  0.49 → 0.30) supp falls 0.30 → 0.03 while KE₁ rises 0.50 → 0.65, the
+  bare-class KE 1.00 → 1.22 and KE n 2–3 0.44 → 0.51: the bare/open
+  boundary moves up the speed distribution and the converts land at
+  n = 1–3 with their speed. This, not a lighter flight mass, is the
+  τ-line KE₁ mechanism. (iii) Ram braking is a separate measured effect:
+  at equal supp ≈ 0.19 the lq bare class is 0.2 eV slower than h405's
+  (1.05 vs 1.25) and n = 1 0.09 eV slower. (iv) **The capped law has the
+  same route** (committed `atlas_ke_lown_scan.csv`, v_c 5.5, single
+  seed, 14.2 Å): h405 τ 4.4 supp 0.18 KE₁ 0.64 → f2 τ 5.2 / E₀ 0.34 supp
+  0.07 KE₁ 0.72 (W₁ 0.92, n₁ 0.187) → d030 τ 6.4 / E₀ 0.30 supp 0.03
+  KE₁ 0.76 (midHot 0.81, W₁ 1.17). Emptying n = 0 buys KE₁ under both
+  laws and costs the large-n tail under both; the capped law buys more
+  KE₁, lq keeps mid-n KE matched (midHot ≈ 1 vs 0.81 at τ 6.4). (v)
+  KE₂/KE₁ ≈ 0.83–0.87 for every law and corner vs experiment 0.54: no
+  drag / τ / E₀ setting reproduces the steep n = 1 → 2 drop — the n = 1
+  deficit is a channel question (RQ8), not a drag or boundary one. n = 0
+  exclusion from scoring: physically justified (RQ8 NB 2026-10-06).
+- **Why no n ≥ 16 — the escape cliff (measured, 2026-10-06; per-ion
+  reads of h405g35 s1 and g413 t64e310 s1 trajectories, anchored:
+  retained / suppressed counts = detection scoring; session-local
+  scripts).** (i) Inside the droplet pickup pins n = 21 while K2 drains
+  E_int: E_int at exit = E₀·exp(−X/τ) per ion (ratio 0.98), X = ∫ρ̂ dt
+  to exit. (ii) Shedding happens in the surface region and just after
+  exit (handover n ≈ final n); final n follows from E_int at exit
+  through the rung chain (≈ 9.2 meV per He, flat n 4–16). (iii) High n
+  needs low exit E_int (n ≥ 13: 26–33 meV) = long exposure = slow:
+  exit KE 0.05 eV for n ≥ 13. Ions with more exposure are **retained**
+  (intact n = 21, E_int = 0, KE 0). Escaper exposure ceiling X/τ ≈ 2.09
+  (h405) / 1.78 (lq): lq drags ~25 % longer but cools 45 % slower (τ 6.4
+  vs 4.4). (iv) Chord map (anchor: committed
+  `detfix_postpickup_chord.csv` reproduced bin-exact): near-deterministic,
+  chord → n up / KE down; scored chords end ≈ 80 Å at n ≈ 11–13, KE
+  0.04–0.08 eV; beyond retained. Birth geometry only reweights along the
+  map — it cannot make high-n ions fast. **High n and slow high-n are
+  one selection: high-n ions are marginal escapers.**
+- **Twin independence (measured, 2026-10-06; partner i ↔ i + N;
+  anchored 4 dp on `g414_table.csv`).** corr(n, n_partner) = 0.00 ±
+  0.02 in lq A5, h405 3.5 Å and h405 14.2 Å pools; partner of n = 1
+  among detected: bare / n = 1 / n > 1 = 0.08 / 0.20 / 0.73 (lq), 0.18 /
+  0.17 / 0.66 (h405) vs experiment 0.43 / 0.18 / 0.39 (covariance,
+  150 mW). Geometry already gives maximal twin randomness; the gap is
+  the bare share (RQ8 NB amendment 2026-10-06).
+- **KE width at fixed n (measured).** IQR/median of KE at n = 1–4:
+  experiment (3-D curves) 0.82 / 0.71 / 0.71 / 0.69, model (lq A5;
+  h405 alike) 0.11 / 0.09 / 0.09 / 0.09 — the model's map is ≈ 8× too
+  narrow; medians at n = 2–4 match. (Curve-file moments run 5–25 % above
+  the committed reference means — IQR used.)
+- **Onset-energy spread (PROJECTION, zero MD, frozen trajectories;
+  reduced model anchored: suppressed/open class 96–98 %, final n ±1 for
+  94 %).** A cold minority (10–20 % at ½ E₀) populates n ≥ 15 (0.025 →
+  0.05) and raises deep-bin KE (to 1.4–2.8× experiment — overshoot),
+  but breaks the n̄ gate (5.3–6.4); a symmetric log-normal spread at
+  fixed n̄ widens KE at fixed n to experiment-like IQR (σ 0.4–0.6: 0.56
+  –0.75) but parks the hot side suppressed (supp 0.5–0.8) and lowers KE₁
+  (0.63 → 0.41–0.50). Decoupling works; the shape is unsourced. **Not
+  pursued (user, 2026-10-06): a single E₀ is kept.**
+- **Surface-well depth E_bind at FIXED drag fixes both (measured on committed ring
+  runs — the well alone varied, not Tier-0-consistent; see the next bullet; W₁ reproduces committed `atlas_ke_lown_scan.csv` exactly; old
+  pipeline, capped law v_c 5.5, τ 4.8, E₀ 0.35–0.37, N = 500, single
+  seed).** E_bind 0.154 / 0.117 / 0.048 eV: trap 0.115 / 0.085 / 0.026,
+  n ≥ 15 0.000 / 0.011 / **0.046** (exp 0.057), max n 14 / 17 / 19,
+  KE n 10–14 / exp 0.49 / 0.52–0.61 / **0.83**, KE₁ 0.70 / 0.69–0.75 /
+  0.76, W₁ 0.986 / 0.83–0.95 / **0.667**. A shallower well frees the
+  cold full-shell retained ions and lets marginal escapers out faster —
+  the escape cliff is the high-n lever. `post_pickup` sampler (G1,
+  production pipeline, pooled s1–s5): n ≥ 15 0.0085 → 0.0095, trap 0.078
+  → 0.135, W₁ 0.765 → 1.005 — not a tail lever.
+- **Tier-0-consistent shallow well does NOT help (measured, 2026-10-06;
+  user trigger `[PROCEED TO IMPLEMENTATION]`).** 18 Å refit of a at c 2.0
+  and fixed E_bind (`method_b_g415_fixed_well.py`; oracle: committed
+  E_bind reproduces c2p000.json, |da| 0.001, |dRMSE| 1e-8):
+  E_bind 0.080 eV → a 22.76 (+36 %), RMSE 0.159 (band pass); 0.0482 eV
+  → a 28.02, RMSE 0.226 (**band FAIL**). MD of the A5 cell at the 0.080
+  well (`gen_tier2_g415_well.py`, seed s1, paired with
+  `g414c200t64confs1`; scorer `tier2_g415_table.py`, anchor 4 dp;
+  `g415_table.csv`): E₀ 0.3155 / 0.3255 vs A5 s1 — trap 0.068 / 0.067
+  vs 0.041, n ≥ 15 0.0006 / 0.000 vs 0.0011, max n 15 / 14 vs 16, KE
+  n 10–14 / ref 0.59 / 0.49 vs 0.61, KE₁ 0.570 / 0.534 vs 0.621,
+  midHot 0.874 / 0.814 vs 0.992, n̄ 4.20 / 3.85, W₁ 1.07 / 1.02 vs
+  1.11, χ²_med 164 / 153 vs 316. **Reading:** the 18 Å trace pins the
+  *total* escape cost — a shallower well is compensated by stronger drag
+  (well and drag are degenerate along the trace), so the escape cliff
+  does not move and trapping even rises. The ring's tail gain came from
+  varying the well alone. Within TDDFT-consistent laws the high-n
+  ceiling stands; the remaining levers (per-ion energy scatter, cooling
+  not tied to residence) are mass-model physics, outside this program's
+  thesis scope.
+- **Well-only arm at the A5 cell (measured, informative, NOT
+  Tier-0-consistent; user request 2026-10-06; A5 law a 16.72 / c 2.0
+  kept, only E_bind lowered; seed s1, rows `well_only_informative` in
+  `g415_table.csv`).** E_bind 0.1175 / 0.080 / 0.0482 eV: trap 0.041 /
+  0.025 / 0.016, KE n 10–14 / ref **0.61 / 0.77 / 0.98**, deepKE 0.55 /
+  0.69 / 0.74, KE₁ 0.621 / 0.639 / 0.656, midHot 0.99 / 1.07 / 1.13,
+  W₁ 1.11 / 1.00 / 0.93, n̄ 3.86 / 3.99 / 4.06, n ≥ 15 0.0011 / 0.0017
+  / **0.0071** (exp 0.057), max n 16 / 16 / 17, χ²_med 316 / 294 / 399.
+  **Reading:** the well alone fixes the *slowness* of the deep bins
+  (KE n 10–14 reaches experiment at 0.048 eV) and lowers trapping, but
+  at τ 6.4 barely moves the n ≥ 15 *abundance* — the ring's 0.046
+  (e0482) came at τ 4.8 (faster cooling). Abundance needs the escape
+  cost lowered AND enough cooling per exposure; speed needs only the
+  former. Both require leaving the 18 Å band (previous bullet).
 
 ## 2. Capped tail — v_c and p_tail
 

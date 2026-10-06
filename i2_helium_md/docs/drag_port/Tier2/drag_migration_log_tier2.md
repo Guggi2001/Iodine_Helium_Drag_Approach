@@ -14164,3 +14164,58 @@ same 3.5 Å gate (507 vs 636); KE₁ −0.026 eV (≈ 2 % of the experimental
 caveats, a draft thesis claim and open points (a)–(d):
 `THESIS_FINAL_GOALS.md` G4.14 "Recap for the thesis-choice discussion";
 D0 §1.G4.14 and the §17 cap row updated.
+
+## 2026-10-06 — Thesis discussion: n = 0 excluded on physical grounds (user decision); bare class = intact n = 21 fast exiters; the n = 0 → small-n KE₁ lever is shared by both laws
+
+Discussion with zero-MD reads (no new runs; session-local scripts).
+(1) Per-ion read of the G4.14 c = 2.0 τ line and h405g35 (anchored on
+`g414_table.csv`, 4 dp): every suppressed ion is an intact n = 21
+complex at 1.0–1.25 eV; emptying that class into n = 1–3 is the τ-line
+KE₁ mechanism (supp 0.30 → 0.03, KE₁ 0.50 → 0.65). The capped law has
+the same route (`atlas_ke_lown_scan.csv`: v_c 5.5, τ 6.4, E₀ 0.30 →
+supp 0.03, KE₁ 0.76, midHot 0.81, W₁ 1.17); KE₂/KE₁ ≈ 0.85 for every
+law vs experiment 0.54. Record: D0 §1.G4.14. (2) Bare I⁺ provenance:
+kinematic ceiling 2.71 eV vs bare 3.706 eV; bare KE shifts −6.3 % from
+600 to 300 mW while n = 1 is unchanged; droplet-beam I⁺ VMI overlaps
+gas-phase I⁺ at 0.975 (600 mW). **Decision (user): n = 0 is excluded
+from the model comparison on physical grounds**; the model's bare
+class need not be the largest bin. Record: `RESEARCH_QUESTIONS.md` RQ8
+NB 2026-10-06; G4.14 recap point (d) bare part settled.
+
+## 2026-10-06 — Discussion reads: high-n tail is set by the escape well (E_bind), not drag / E₀ shape / geometry
+
+Zero-MD reads on existing artifacts (session-local scripts; anchors
+recorded in D0 §1.G4.14). High-n ions are marginal escapers (exit KE
+0.05 eV after exposure X/τ ≈ 2); more exposure → retained intact
+n = 21. Model twins are independent (corr 0.00); KE width at fixed n is
+≈ 8× narrower than experiment. An onset-energy spread decouples cooling
+from slowness (projection) but needs an unsourced shape — **not pursued
+(user: keep a single E₀)**. The committed ring runs at E_bind 0.154 /
+0.117 / 0.048 eV show the shallow well raising n ≥ 15 to 0.046 (exp
+0.057), deep-bin KE to 0.83 of experiment and W₁ to 0.667. RQ8 NB
+amended (bare partly droplet-borne twins). **Next (user trigger
+`[PROCEED TO IMPLEMENTATION]`):** lq c = 2.0 18 Å refit at fixed shallow
+E_bind (Tier-0 acceptance), then MD of the A5 cell. Record: D0
+§1.G4.14.
+
+## 2026-10-06 — Fixed-well check (user trigger `[PROCEED TO IMPLEMENTATION]`): Tier-0-consistent shallow well does not raise the high-n tail — **decision: no lever; the ceiling stands**
+
+18 Å refit of the lq c = 2.0 point at fixed E_bind
+(`scripts/extraction/method_b_g415_fixed_well.py`, oracle passed;
+`g415_fixed_well/c2p000_e0p0800.json` pass, `…e0p0482.json` band fail),
+then two MD runs of the A5 cell at the 0.080 eV well
+(`scripts/gen_tier2_g415_well.py`, seed s1; scorer
+`scripts/post_processing/tier2_g415_table.py`, anchor on the A5 s1 row;
+`data/runs/h2b_forward_model/g415_table.csv`). The refit raises a by
+36 %, trapping rises (0.041 → 0.068), n ≥ 15 does not move, deep-bin KE
+and KE₁ fall. The TDDFT trace pins the total escape cost (well + drag
+degenerate). Record: D0 §1.G4.14.
+
+## 2026-10-06 — Well-only informative arm (user request): shallow well alone fixes deep-bin speed, not n ≥ 15 abundance at τ 6.4
+
+A5 law kept (a 16.72, c 2.0), only E_bind lowered (0.080 / 0.0482 eV;
+not Tier-0-consistent), seed s1 (`gen_tier2_g415_well.py --well-only`;
+ion.npz dropped; rows `well_only_informative` in `g415_table.csv`).
+KE n 10–14 / ref 0.61 → 0.77 → 0.98, trap 0.041 → 0.016, KE₁ 0.621 →
+0.656, W₁ 1.11 → 0.93; n ≥ 15 0.0011 → 0.0071 (exp 0.057), midHot →
+1.13. Record: D0 §1.G4.14.
