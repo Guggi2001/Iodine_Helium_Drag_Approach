@@ -195,15 +195,25 @@ def build(cell: Cell) -> SimConfig:
     return cfg
 
 
-EXPECTED_DIFF_KEYS = _LAW_KEYS | {_TAU_KEY, _E0_KEY, "seed"}
+def expected_diff_keys(cell: Cell) -> frozenset[str]:
+    """Frozen diff vs the h405 detfix s1 member: law keys + seed, plus tau / E0
+    whenever the cell's value differs from h405's (tau 4.4 is h405's own)."""
+    base = build_member(REFERENCE_MEMBER)
+    keys = set(_LAW_KEYS) | {"seed"}
+    if float(cell.tau_ps) != float(getattr(base, _TAU_KEY)):
+        keys.add(_TAU_KEY)
+    if float(cell.e0_eV) / BUDGET_EV != float(getattr(base, _E0_KEY)):
+        keys.add(_E0_KEY)
+    return frozenset(keys)
 
 
 def verify_cell(cell: Cell) -> list[str]:
     """Oracle 1: diff vs the h405 detfix s1 member is exactly the frozen set."""
     diff = sorted(cfg_field_diff(build_member(REFERENCE_MEMBER), build(cell)))
-    if set(diff) != EXPECTED_DIFF_KEYS:
+    want = expected_diff_keys(cell)
+    if set(diff) != want:
         raise AssertionError(f"[{cell.label}] cfg diff vs h405 {REFERENCE_MEMBER} is "
-                             f"{diff}; pre-registered {sorted(EXPECTED_DIFF_KEYS)}")
+                             f"{diff}; pre-registered {sorted(want)}")
     return diff
 
 

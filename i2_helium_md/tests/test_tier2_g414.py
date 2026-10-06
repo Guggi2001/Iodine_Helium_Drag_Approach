@@ -171,3 +171,14 @@ def test_candidates_merge_within_0p2():
              {"tau_ps": 5.15, "feasible": 1, "pred_KE1_mean": 0.5, "pred_w1_solv": 0.8}]
     out = select_candidates(curve)
     assert len(out) == 1 and out[0]["role"] == "KE+W" and out[0]["tau_ps"] == 5.0
+
+
+def test_expected_diff_keys_tau_at_h405_own():
+    """tau 4.4 is h405's own cooling tau: the tau key must NOT be in the diff."""
+    from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _LAW_KEYS, _TAU_KEY
+    from scripts.gen_tier2_g414_tauline import Cell, expected_diff_keys
+
+    own = expected_diff_keys(Cell("x", 2.0, 4.4, 3.85, 0.45, SEED_BASE))
+    other = expected_diff_keys(Cell("y", 2.0, 4.8, 3.85, 0.40, SEED_BASE))
+    assert own == _LAW_KEYS | {"seed", _E0_KEY}
+    assert other == _LAW_KEYS | {"seed", _E0_KEY, _TAU_KEY}
