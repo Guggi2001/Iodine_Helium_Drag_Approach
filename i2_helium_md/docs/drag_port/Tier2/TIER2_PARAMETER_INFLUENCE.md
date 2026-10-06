@@ -939,7 +939,7 @@ Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
   battery follows only under its own trigger; nothing adopted. Twin
   dominance by h405 and the 9 Å surplus are recorded, not gating.
 
-#### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **decision: dominated** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse)
+#### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **dominated at the selected cell only** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse); law-level verdict open (G4.14)
 
 Production pipeline (Stage I 500 ps, E2 off, partner-aware closure,
 N = 1000/member), law a 16.717 / c 2.0 / E_bind 0.11748 / gate 3.5 Å,
@@ -973,6 +973,14 @@ no cap. Generator `scripts/gen_tier2_g413_ridge_battery.py`, scorer
 - **Decision (frozen).** *Dominated* — the TDDFT-tied uncapped ridge does
   not reproduce the production landing at its best Stage-A cell; the
   cap stays as the effective element. Nothing adopted.
+- **Correction (2026-10-06, user-caught).** The verdict is about
+  t64e310, not the law. Stage A could not resolve the landing: one seed,
+  E₀ step 0.01, τ step 0.4–0.8, while n₁'s seed sd (0.010) equals the
+  gate margin and the gated E₀ band moves −0.07 eV per ps of τ. Measured
+  transfer for this law (16 cells): KE₁ MD − twin +0.020 ± 0.001,
+  midHot × 0.945 ± 0.014, n̄ −0.37 ± 0.035, n₁ −0.011 ± 0.014, W₁
+  +0.31 ± 0.06; seed sd (6 seeds) KE₁ 0.002, midHot 0.003, n̄ 0.07,
+  n₁ 0.010, W₁ 0.036. "The cap stays" withdrawn; G4.14 (fine τ line).
 
 ## 2. Capped tail — v_c and p_tail
 

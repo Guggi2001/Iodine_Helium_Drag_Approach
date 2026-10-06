@@ -20,7 +20,7 @@ Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
 caveat) — **adoption on hold. G4.12** (TDDFT-tied linear + quadratic
 ridge vs the experiment, uncapped): **steps 1–2 executed 2026-10-05** —
 the whole ridge fits 18 Å; the 9 Å exit bound passes every c ≤ 5 and
-fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot. **G4.13** (MD battery, c = 2.0, executed 2026-10-06): **dominated** — pooled n₁ 0.186 misses the gate, KE₁ ties h405, W₁ 1.10 vs 0.755; the cap stays.
+fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot. **G4.13** (MD battery, c = 2.0, executed 2026-10-06): dominated **at the selected cell t64e310 only** (pooled n₁ 0.186 misses the gate, KE₁ ties h405, W₁ 1.10 vs 0.755); the grid could not resolve the landing (correction, user-caught). **Next: G4.14** fine τ-line sweep, draft under discussion.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -726,11 +726,66 @@ production changes.
 **Cost.** ≈ 3 min per N = 1000 member (detfix precedent) → Stage A
 ≈ 30 min, Stage B ≈ 10 min. Code: generator + scorer (+ tests).
 
-- **Status — EXECUTED 2026-10-06 (measured): decision *dominated*.**
-  Stage A: 7/16 cells gate (all midHot in band); selected t64e310.
-  Stage B pooled N = 6000: n₁ 0.186 (gate ✗), KE₁ 0.638 (h405 0.640),
-  midHot 1.032, W₁ 1.100 (h405 0.755), χ² 558 (456). The cap stays.
-  Record: D0 §1.G4.13, log 2026-10-06 G4.13 entry. Attribution batteries, then re-arbitration under `post_pickup`
+- **Status — EXECUTED 2026-10-06 (measured): decision *dominated* at
+  the selected cell t64e310 only.** Stage A: 7/16 cells gate (all
+  midHot in band); selected t64e310. Stage B pooled N = 6000: n₁ 0.186
+  (gate ✗), KE₁ 0.638 (h405 0.640), midHot 1.032, W₁ 1.100 (h405
+  0.755), χ² 558 (456). Record: D0 §1.G4.13, log 2026-10-06 G4.13 entry.
+- **Correction (2026-10-06, user-caught).** The verdict does not extend
+  to the law. Stage A selected on one seed with E₀ step 0.01 and τ step
+  0.4–0.8, while the seed sd of n₁ (0.010, Stage B) equals the whole
+  gate margin and the gated E₀ band moves −0.07 eV per ps of τ: the grid
+  could not resolve the landing. "The cap stays" is withdrawn as a
+  conclusion; the law-level question moves to G4.14.
+
+### G4.14 Fine τ-line sweep for ridge-law landings (DRAFT 2026-10-06 — agreed in outline, under discussion; nothing run)
+
+**Why.** G4.13 resolved neither the gate (n₁ seed noise ≈ margin) nor τ,
+the dominant histogram lever (W₁ jumps +0.13–0.17 between τ 5.6 and 6.4
+on seed s1, unresolved; h405's own τ 4.4 never sampled). Measured
+transfer for the c = 2.0 law (16 Stage-A cells vs twin at the same cell;
+seed sd from the 6 Stage-B seeds):
+
+| | MD − twin | seed sd (N = 1000) | placeable from the twin? |
+|---|---|---|---|
+| KE₁ | +0.020 ± 0.001 | 0.002 | yes |
+| midHot | × 0.945 ± 0.014 | 0.003 | yes |
+| n̄ | −0.37 ± 0.035 | 0.07 | yes (E₀: −0.25 per 0.01 eV) |
+| n₁ | −0.011 ± 0.014 | 0.010 | no — decides the gate |
+| W₁ | +0.31 ± 0.06 | 0.036 | no — set by τ, MD only |
+
+**Design (τ is the primary axis; E₀ is slaved to the gate along it).**
+
+1. **Step 0 — calibrated twin, zero MD.** c ∈ {1.2, 1.6, 2.0, 2.5}
+   (cached chords; τ is an exact rescale K → K·6.55/τ, so free) ×
+   τ 3.6–7.2 step 0.1 × E₀ step 0.0025, with the offsets above. Output
+   per c: the gate ridge E₀*(τ) and predicted MD KE₁ / midHot / n̄ along
+   it. The offsets are measured at c = 2.0 only; other c need one MD
+   anchor each in step 1.
+2. **Step 1 — MD fine τ line (fitted, not replicated).** c = 2.0:
+   τ 3.6–6.4 step 0.2 (15 τ) × two E₀ bracketing E₀*(τ), one shared seed
+   (CRN) → 30 runs (≈ 70 min). n₁, n̄, W₁, KE₁ are fitted as smooth
+   surfaces in (τ, E₀) across all runs, so the seed noise averages over
+   the grid instead of per-cell replicates; a second seed (s2) follows
+   if the fit residuals exceed the gate margin. Other c: τ step 0.4,
+   only where step 0 puts their front (plus the anchor cell).
+3. **Step 2 — confirmation.** The fitted best τ on the ridge, per c
+   that lands, at 6 seeds → pooled N = 6000 vs `pooled_new6000`.
+
+**Landing / ranking (to freeze).** Landing ⇔ pooled hard gate passes
+with an n₁ margin ≥ one pooled seed sd. Ranking vs h405 on KE₁, W₁,
+midHot — separate from landing.
+
+**Prediction (to freeze before MD).** W₁ falls as τ falls; gated
+landings exist along the ridge; W₁ ≤ 0.80 needs τ ≲ 4.4, where KE₁ at
+c = 2.0 drops to ≈ 0.53, so lower c is needed to recover KE₁ — the
+(c, τ) trade the line measures.
+
+**Open for discussion (user).** c set; the selection / landing margin;
+the fit model (and its residual criterion); seeds in step 1; whether
+deepKE / χ² enter the ranking.
+
+## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
 Run in this order on the production pipeline (Stage I to 500 ps, E2
 off, partner-aware closure; `exclude_all_coupled`):

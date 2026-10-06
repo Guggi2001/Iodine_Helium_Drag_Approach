@@ -14108,3 +14108,18 @@ Full record: D0 §1.G4.13.
   size histogram (n₁, W₁, χ²). Single-seed selection over-read s1's n₁.
   The thesis statement G4.12 allowed: the TDDFT-tied uncapped law does not
   land at its best cell; the cap stays. Production unchanged.
+
+## 2026-10-06 — Correction: G4.13 "dominated" holds for t64e310 only; G4.14 (fine τ-line sweep) drafted
+
+User-caught: Stage B ran before the grid could resolve the landing.
+Stage A selected on one seed at E₀ step 0.01 and τ step 0.4–0.8; the six
+Stage-B seeds give n₁ sd 0.010 (= the gate margin), and the gated E₀
+band moves −0.07 eV per ps of τ. Zero-MD read of the committed runs:
+for this law MD − twin is tight for KE₁ (+0.020 ± 0.001), midHot
+(× 0.945), n̄ (−0.37 ± 0.035) but not n₁ (−0.011 ± 0.014) or W₁
+(+0.31 ± 0.06). "The cap stays" is withdrawn. G4.14 drafted in
+`THESIS_FINAL_GOALS.md`: τ as the primary axis (twin step 0.1, free; MD
+τ step 0.2 at c = 2.0 with E₀ slaved to the gate, fitted surfaces instead
+of per-cell replicates), then 6-seed confirmation. Under discussion;
+nothing run. Also repaired: the `## G5` heading lost in the G4.13
+pre-registration edit (4e0908c).
