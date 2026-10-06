@@ -182,3 +182,28 @@ def test_expected_diff_keys_tau_at_h405_own():
     other = expected_diff_keys(Cell("y", 2.0, 4.8, 3.85, 0.40, SEED_BASE))
     assert own == _LAW_KEYS | {"seed", _E0_KEY}
     assert other == _LAW_KEYS | {"seed", _E0_KEY, _TAU_KEY}
+
+
+def test_drop_ion_npz_only_after_scored_detection(tmp_path, monkeypatch):
+    """Disk rule: ion.npz goes only when detection.npz has scored ions."""
+    import types
+
+    import i2_helium_md.simulation.detection_stage as ds
+    from scripts.gen_tier2_g414_tauline import (
+        ION_DROPPED_MARKER, _run_is_complete, drop_ion_npz,
+    )
+
+    for name in ("cfg.json", "neutral.npz", "detection.npz", "ion.npz"):
+        (tmp_path / name).write_bytes(b"x")
+    mask = {"m": np.array([False, False])}
+    monkeypatch.setattr(ds, "load_detection_result",
+                        lambda p: types.SimpleNamespace(detected_mask=mask["m"]))
+    with pytest.raises(AssertionError):
+        drop_ion_npz(tmp_path)
+    assert (tmp_path / "ion.npz").exists()
+    mask["m"] = np.array([True, False])
+    drop_ion_npz(tmp_path)
+    assert not (tmp_path / "ion.npz").exists()
+    assert (tmp_path / ION_DROPPED_MARKER).exists()
+    assert _run_is_complete(tmp_path)
+    drop_ion_npz(tmp_path)                       # idempotent

@@ -96,7 +96,12 @@ REFERENCE_MEMBER = "s1"          # the diff oracle's h405 detfix member
 
 MAX_CONCURRENCY = 2
 SKIP_COMPLETED_RUNS = True
-_REQUIRED_ARTIFACTS = ("cfg.json", "neutral.npz", "ion.npz", "detection.npz")
+# Disk (user decision 2026-10-06, T: full): the scorer reads only cfg.json +
+# detection.npz, so each Step-1 run's 361 MB ion.npz is deleted once
+# detection.npz reloads with scored ions; ION_DROPPED_MARKER records it.
+DROP_ION_NPZ = True
+ION_DROPPED_MARKER = "ion_npz_dropped.json"
+_REQUIRED_ARTIFACTS = ("cfg.json", "neutral.npz", "detection.npz")
 
 
 class Cell(NamedTuple):
@@ -218,7 +223,27 @@ def verify_cell(cell: Cell) -> list[str]:
 
 
 def _run_is_complete(run_dir: Path) -> bool:
-    return all((run_dir / n).exists() for n in _REQUIRED_ARTIFACTS)
+    return (all((run_dir / n).exists() for n in _REQUIRED_ARTIFACTS)
+            and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
+
+
+def drop_ion_npz(run_dir: Path) -> None:
+    """Delete ``ion.npz`` after checking ``detection.npz`` reloads with scored
+    ions; writes :data:`ION_DROPPED_MARKER` first. No-op if already dropped."""
+    from i2_helium_md.simulation.detection_stage import load_detection_result
+
+    ion_path = run_dir / "ion.npz"
+    if not ion_path.exists():
+        return
+    det = load_detection_result(run_dir / "detection.npz")
+    n_scored = int(np.asarray(det.detected_mask).sum())
+    if n_scored <= 0:
+        raise AssertionError(f"{run_dir.name}: detection.npz has no scored ions; ion.npz kept")
+    (run_dir / ION_DROPPED_MARKER).write_text(json.dumps(
+        {"ion_npz_bytes": ion_path.stat().st_size, "detection_scored": n_scored,
+         "reason": "G4.14 Step 1: disk (T: full); scorer reads cfg.json + detection.npz"},
+        indent=2), encoding="utf-8")
+    ion_path.unlink()
 
 
 def run_cell(cell: Cell) -> str:
@@ -227,6 +252,8 @@ def run_cell(cell: Cell) -> str:
     steps, stride = verify_handover_alignment(cfg)
     run_dir = run_dir_for(cell)
     if SKIP_COMPLETED_RUNS and _run_is_complete(run_dir):
+        if DROP_ION_NPZ:
+            drop_ion_npz(run_dir)
         print(f"[{cell.label}] skip (complete) -> {run_dir.name}", flush=True)
         return cell.label
     run = RunDirectory(run_dir)
@@ -240,6 +267,9 @@ def run_cell(cell: Cell) -> str:
     if not math.isclose(t_last, cfg.ion_simulation_time - 0.005, abs_tol=1e-9):
         raise AssertionError(f"[{cell.label}] last stored column at {t_last} ps")
     det = run_detection_stage(ion, cfg, save_path=run.root / "detection.npz")
+    del ion, neutral
+    if DROP_ION_NPZ:
+        drop_ion_npz(run_dir)
     print(f"[{cell.label}] done: scored {int(det.detected_mask.sum())}/"
           f"{det.detected_mask.size}", flush=True)
     return cell.label
