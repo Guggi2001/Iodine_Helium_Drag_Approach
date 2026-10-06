@@ -46,7 +46,11 @@ log (`drag_migration_log_tier2.md`).
    land at n = 2–4 by pickup; KE₁ 0.49 (lq) / 0.87 (h405) vs exp median
    1.13 — the mixture cannot supply fast n = 1 ions. See G8.
 
-**Next:** user decision on the bare/intact mixture (screen negative). G4.14 recap points (a)–(c) parked. G1, G2 (production
+   **Decision (user, 2026-10-06):** mixture not pursued; the n = 1 KE
+   deficit goes to the thesis outlook (levers exhausted inside the
+   model; see G8 status).
+
+**Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked. G1, G2 (production
 switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
@@ -1163,6 +1167,19 @@ committed rows (h405 s1 = `s1_new`; lq A5 s1 member = its
   toward experiment. The KE gain is a property of the cap (lq's ram drag
   takes it back). A bare/intact mixture cannot supply the fast n = 1
   ions; mixture design: user decision. Record: D0 §1.G8.
+- **Decision (user, 2026-10-06): not pursued; the n = 1 KE deficit goes
+  to the outlook.** Tested inside the model and ruled out as the n = 1
+  lever: drag-law shape (capped, lq; G4.12–G4.14), the in-surface τ / E₀
+  freedom (§3.5g, τ lines), a uniform flight-mass change (midHot,
+  `TIER2_MASS_SCENARIOS` §5), exit stripping and the (C) channel mixture,
+  velocity-dependent sticking (§13.4), birth geometry (reweights the map
+  only), the escape well (Tier-0-pinned, G4.15), and a bare start (G8).
+  The graded partial strip (Route A, §12) rests on the cap-only §4
+  identity and has no early-shedding mechanism. Remaining candidates are
+  outside this model: the source channel (the experimental n = 1 KE is a
+  two-population mean, a fast tail plus a core; KE₂/KE₁ 0.54 vs ≈ 0.85
+  for every model variant; RQ8 / RQ1), map scatter (KE width ≈ 8× too
+  narrow, Tier-3 noise), and a sourced I⁺–He binding (M1).
 
 ## Thesis framing implied
 

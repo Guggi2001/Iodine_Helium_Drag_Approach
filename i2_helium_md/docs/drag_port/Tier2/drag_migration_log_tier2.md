@@ -14236,3 +14236,11 @@ n = 2–3, n₁ share 0.15 / 0.20, retained 0.15 / 0.12 (lq / h405). KE₁
 0.491 (lq, below intact 0.621) / 0.865 (h405, above intact 0.644; exp
 median 1.128); h405 bare overshoots n = 2–4; KE₂/KE₁ 0.87–0.90. Only the
 KE width moves toward experiment. Record: D0 §1.G8.
+
+## 2026-10-06 — Decision (user): bare/intact mixture not pursued; n = 1 KE deficit → thesis outlook
+
+After G8 and the `TIER2_MASS_SCENARIOS` scope correction (§4 / §4.1
+cap-only). In-model levers for the fast n = 1 ions are exhausted (list
+in THESIS_FINAL_GOALS G8). Outlook candidates: source channel (two-
+population experimental n = 1 KE; KE₂/KE₁ 0.54; RQ8 / RQ1), map scatter
+(Tier-3 noise), sourced I⁺–He D₀ (M1). Production unchanged.
