@@ -27,13 +27,16 @@ log (`drag_migration_log_tier2.md`).
    ties h405 on KE₁ (0.638 vs 0.640), W₁ 1.10 vs 0.755. **"Dominated"
    holds for that cell only** — the grid could not resolve the landing
    (user-caught correction).
-7. **G4.14** (fine τ-line sweep, τ the primary axis): **DRAFT, under
-   discussion, nothing run.** Inputs committed:
-   `data/runs/h2b_forward_model/g413_transfer.csv` (twin → MD offsets,
-   seed spread). Requires `[PROCEED TO IMPLEMENTATION]` for its code.
+7. **G4.14** (fine τ-line sweep, τ the primary axis): **FROZEN
+   2026-10-06, nothing run.** Fine c points {1.8, 1.9, 2.1, 2.2} plus the
+   cached ridge in the twin; MD only where the predicted midHot is in band;
+   independent seeds per run (s1 is a high seed for this law); KE₁ ranked
+   at matched n̄; pooled h405g35 (3.5 Å) added as a second reference.
+   Requires `[PROCEED TO IMPLEMENTATION]` for its code.
 
-**Next:** discuss the G4.14 open points (c set, landing margin, fit model,
-seeds, ranking axes). G1, G2 (production switch), G5–G7 not started.
+**Next:** `[PROCEED TO IMPLEMENTATION]` for G4.14 → Step 0a + Step 0
+(zero MD), then a user recap before any MD. G1, G2 (production switch),
+G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
@@ -751,7 +754,7 @@ production changes.
   could not resolve the landing. "The cap stays" is withdrawn as a
   conclusion; the law-level question moves to G4.14.
 
-### G4.14 Fine τ-line sweep for ridge-law landings (DRAFT 2026-10-06 — agreed in outline, under discussion; nothing run)
+### G4.14 Fine τ-line sweep for ridge-law landings (FROZEN 2026-10-06, user-agreed; nothing run; code requires `[PROCEED TO IMPLEMENTATION]`)
 
 **Why.** G4.13 resolved neither the gate (n₁ seed noise ≈ margin) nor τ,
 the dominant histogram lever (W₁ jumps +0.13–0.17 between τ 5.6 and 6.4
@@ -770,36 +773,140 @@ seed sd from the 6 Stage-B seeds):
 (Committed: `data/runs/h2b_forward_model/g413_transfer.csv`, from
 `tier2_g413_table.py --transfer`; anchored on `atlas_g412_twin.csv`.)
 
-**Design (τ is the primary axis; E₀ is slaved to the gate along it).**
+**Design inputs settled in discussion (2026-10-06; read from committed
+CSVs — measured unless marked).**
+- *s1 is a high seed for this law.* t64e310: s1 n₁ 0.204, the other five
+  0.177–0.190 (mean 0.183, sd 0.005). Every transfer offset above is
+  s1-only, and CRN makes the whole Stage-A surface share s1's draw: grid
+  averaging under one shared seed does **not** remove it. (h405: s1 only
+  +0.0035 above its pool — the bias is law-specific.) *Projection:* if
+  the s1 bias is surface-wide, MD − twin n₁ ≈ −0.03; the twin's n₁
+  ceiling inside the MD n̄ gate is 0.20–0.22 at every c 0.8–2.5,
+  τ 4–6.4 (`atlas_g412_twin/refine.csv`), so the MD ceiling would sit at
+  ≈ 0.17–0.19 — possibly no landing with margin at any τ.
+- *The n₁ offset is structured:* within each τ, d(n₁) runs ≈ 0 → −0.03
+  as E₀ rises (MD n₁ saturates; τ 4.8: 0.193 / 0.193 / 0.181 / 0.188).
+- *W₁ is not monotone in τ:* gated MD W₁ 0.87–0.93 over τ 4.8–5.6, 1.10
+  at 6.4; the twin minimum is at τ 5.2–5.6 and rises again at 4.4.
+- *Like-for-like partner:* the 3.5 Å gate alone moves h405's W₁ 0.80 →
+  0.866 (s1, `h405g35`) — the ridge's plateau. G2 moves production to
+  3.5 Å, so pooled h405g35 is a required reference.
+- *KE₁ is n̄-dependent:* at τ 6.4, dKE₁/dn̄ ≈ 0.11; the t64e310 "tie"
+  (0.638) sat at n̄ 4.085 vs h405 3.890. *Projection:* ≈ 0.62 at h405's
+  n̄. KE₁ is therefore ranked at matched n̄.
+- *midHot bounds c:* twin midHot × 0.945 ≈ 1.23 (c 1.6), 1.07 (c 2.0),
+  0.92 (c 2.5).
 
-1. **Step 0 — calibrated twin, zero MD.** c ∈ {1.2, 1.6, 2.0, 2.5}
-   (cached chords; τ is an exact rescale K → K·6.55/τ, so free) ×
-   τ 3.6–7.2 step 0.1 × E₀ step 0.0025, with the offsets above. Output
-   per c: the gate ridge E₀*(τ) and predicted MD KE₁ / midHot / n̄ along
-   it. The offsets are measured at c = 2.0 only; other c need one MD
-   anchor each in step 1.
-2. **Step 1 — MD fine τ line (fitted, not replicated).** c = 2.0:
-   τ 3.6–6.4 step 0.2 (15 τ) × two E₀ bracketing E₀*(τ), one shared seed
-   (CRN) → 30 runs (≈ 70 min). n₁, n̄, W₁, KE₁ are fitted as smooth
-   surfaces in (τ, E₀) across all runs, so the seed noise averages over
-   the grid instead of per-cell replicates; a second seed (s2) follows
-   if the fit residuals exceed the gate margin. Other c: τ step 0.4,
-   only where step 0 puts their front (plus the anchor cell).
-3. **Step 2 — confirmation.** The fitted best τ on the ridge, per c
-   that lands, at 6 seeds → pooled N = 6000 vs `pooled_new6000`.
+**Design (τ is the primary axis; E₀ is slaved to target n̄ along it).**
 
-**Landing / ranking (to freeze).** Landing ⇔ pooled hard gate passes
-with an n₁ margin ≥ one pooled seed sd. Ranking vs h405 on KE₁, W₁,
-midHot — separate from landing.
+0. **Step 0a — four fine ridge points (Tier-0, zero MD).**
+   c ∈ {1.8, 1.9, 2.1, 2.2} (user, 2026-10-06: a finer set around 2.0
+   to check whether anything better comes up) through G4.12 steps 1–2
+   unchanged: `scripts/extraction/method_b_g412_ridge.py`, fixed-c 18 Å
+   fit (a ≥ 0, E_bind free; N = 50, seed 20260604, 20 ps at 0.01 ps,
+   3.5 Å gate), bands RMSE ≤ 0.19 Å/ps and escape = 1, then the 9 Å exit
+   bound (gates, as in G4.12). Output `g412_ridge/c1p800.json` …
+   `c2p200.json` in the committed format. *Oracle first:* the c = 2.0 fit
+   rerun reproduces the committed `c2p000.json` (a, E_bind, RMSE)
+   bit-exactly.
+1. **Step 0 — calibrated twin (zero MD).** c ∈ {1.2, 1.6, 1.8, 1.9, 2.0,
+   2.1, 2.2, 2.5} (cached chords + the four new; τ is an exact rescale
+   K → K·6.55/τ) × τ 3.6–7.2 step 0.1 × E₀ step 0.0025, uncapped, own
+   E_bind, `rho_steepness` 3.5. Output per c: E₀ at predicted MD n̄ 3.85
+   and 4.05 along τ (n̄ offset −0.37), and predicted MD KE₁ (+0.020),
+   midHot (× 0.945), n₁ (twin − 0.011, flagged *gate-undecided*).
+   *Oracles:* twin rows at shared grid points reproduce
+   `atlas_g412_twin.csv` / `atlas_g412_refine.csv`; the offsets
+   recomputed reproduce `g413_transfer.csv`.
+   **midHot filter (frozen):** a c enters MD only if its predicted MD
+   midHot is in [0.85, 1.15] at some τ in 4.8–6.6 on its n̄ targets.
+   Offsets are measured at c = 2.0 only; Step 1 measures them per c.
+   **Stop after Step 0 for a user recap** (filter outcome, MD run list).
+2. **Reference — pooled h405g35 (MD, 5 runs).** h405's cell with the
+   3.5 Å density gate (the G4.13 `h405g35` definition) at s2–s5
+   (20260731–34) and r6 (20260729), pooled with the committed s1 member →
+   N = 6000. *Anchor:* the s1 run dir rescored reproduces its committed
+   `g413_table.csv` row (4 dp). Runs before Step 1.
+3. **Step 1 — MD τ lines (fitted, independent seeds).** Production
+   pipeline exactly as G4.13 (`build_cell(h405)`, Stage I 500 ps, E2 off,
+   partner-aware closure, N = 1000 per run, ≤ 2 concurrent; only drag
+   law, well, gate, τ, E₀, seed move).
+   - c = 2.0: τ ∈ {4.0, 4.4} ∪ {4.8, 5.0, …, 6.6} (12 τ) × two E₀ (Step-0
+     targets n̄ 3.85 / 4.05) → 24 runs.
+   - Every other c passing the filter: τ ∈ {4.8, 5.2, 5.6, 6.0, 6.4} ×
+     the same two targets → 10 runs each.
+   - **Seeds:** one fresh seed per run, consecutive from 20261101 in
+     generator order (disjoint from production 20260729–34), recorded per
+     run. No CRN: the noise is independent across cells, so it averages
+     in the fit, s1's bias stays out, and the Step-2 production seeds
+     stay unused for selection (no winner's curse).
+   - The 16 Stage-A s1 cells are an out-of-sample check only (the c = 2.0
+     fit's mean residual on them estimates s1's offset); never fit data.
+4. **Fit model (frozen).** Per c and observable (n₁, n̄, KE₁, W₁, midHot,
+   χ², deepKE, trap), least squares in τ and ΔE = E₀ − E₀,3.85(τ): cubic
+   in τ (quadratic for 10-run c) + ΔE + τ·ΔE; n₁ additionally + ΔE²
+   (the saturation above). **Residual criterion:** residual sd ≤ 1.5 ×
+   per-member seed sd (n₁ 0.015, n̄ 0.105, KE₁ 0.003, W₁ 0.054, midHot
+   0.0045). Fail with residuals showing no τ structure → a second
+   independent-seed set at the same cells (refit on both); fail with τ
+   structure → one more τ order, once; still failing → recorded
+   *unresolved* for that c, no Step 2.
+5. **Step 2 — confirmation (production seeds).** Per c, on the fitted
+   surface, the feasible set is: predicted n₁ ≥ 0.200, n̄ ∈ [3.83, 4.31],
+   midHot ∈ [0.85, 1.15]. If it is non-empty, two points: τ_KE (max KE₁
+   at n̄ 3.89) and τ_W (min W₁), merged if ≤ 0.2 ps apart; E₀ placed by
+   the fit at n̄ 3.89. Each runs at s1–s5 + r6 → pooled N = 6000. Empty
+   feasible set → recorded "no landing at c", no Step 2.
 
-**Prediction (to freeze before MD).** W₁ falls as τ falls; gated
-landings exist along the ridge; W₁ ≤ 0.80 needs τ ≲ 4.4, where KE₁ at
-c = 2.0 drops to ≈ 0.53, so lower c is needed to recover KE₁ — the
-(c, τ) trade the line measures.
+**Landing (frozen, pooled N = 6000).** n₁ ≥ 0.200 (gate 0.19 + one
+per-member seed sd ≈ 2.5 pooled SE) AND n̄ ∈ [3.83, 4.31].
 
-**Open for discussion (user).** c set; the selection / landing margin;
-the fit model (and its residual criterion); seeds in step 1; whether
-deepKE / χ² enter the ranking.
+**Ranking (frozen; separate from landing), against both references
+reported separately:** `pooled_new6000` (14.2 Å; n̄ 3.890, KE₁ 0.640,
+W₁ 0.755) and pooled h405g35 (3.5 Å). Axes: KE₁ at n̄ 3.89 (pooled KE₁
+shifted by the fitted local dKE₁/dn̄ — disclosed), W₁, midHot in band.
+*Beats the reference* ⇔ landing AND KE₁ ≥ ref AND W₁ ≤ ref + pooled SE
+(0.036/√6 ≈ 0.015) AND midHot ∈ [0.85, 1.15]. Otherwise the fitted KE₁
+vs W₁ trade-off curve along τ per c is the recorded result. deepKE, χ²,
+trap: reported, not ranked. Nothing adopted in either case (adoption is
+a separate user decision); production unchanged.
+
+**Prediction (frozen before MD; projections).** MD n₁'s gate ceiling
+rises with τ; if the s1 bias is surface-wide, c = 2.0 has no landing
+with margin below τ ≈ 6. KE₁ at n̄ 3.89 ≈ 0.62 at τ 6.4. W₁ is minimal
+(≈ 0.87) near τ 5–5.6, not at low τ. Against h405g35 the ridge ties W₁
+near τ 5 but loses ≈ 0.05 KE₁; against `pooled_new6000` it is dominated.
+The fine c points move along the same KE₁ / midHot dial: c ≤ 1.8 gains
+KE₁ but leaves the midHot band at its upper edge (≈ 1.15).
+
+**Oracles before any MD.** (i) Ridge coefficients and E_bind read from
+the committed JSONs, never retyped; (ii) each cfg diffs against the h405
+detfix member in exactly {drag law, a, c, E_bind, gate, τ, E₀, seed} —
+any other key aborts; (iii) handover alignment as the production
+generator; (iv) scorer anchor: h405 s1 rescored = committed `s1_new`
+(4 dp).
+
+**Execution order.** Step 0a → Step 0 → user recap → h405g35 pool →
+Step 1 → fit + residual check (+ second seed set if triggered) → Step 2
+→ D0 §1.G4.14 first, then log and status.
+
+**Not in scope.** c outside 1.2–2.5 in MD; capped ridge variants; 18 Å /
+Tier-0 changes beyond the four Step-0a fits; production changes.
+
+**Code (requires `[PROCEED TO IMPLEMENTATION]`).** Step-0a reuse of
+`method_b_g412_ridge.py` for the new c (+ chords); Step-0 twin sweep
+with offsets; the G4.14 generator (seed block, n̄-targeted E₀, h405g35
+pool) on `gen_tier2_g413_ridge_battery.py`; the surface fitter +
+residual criterion + selection on `tier2_g413_table.py` (scorer CSVs
+carry the full vector). Tests: seed-block assignment and disjointness;
+n̄-target E₀ inversion on a stub twin; the fitter recovering a synthetic
+surface within noise, and the residual criterion firing on a stub with
+a missing τ term; the feasible-set selection on a synthetic surface.
+
+**Cost.** Step 0a ≈ 4 fits + 4 9 Å bounds (≈ 30 min); Step 0 zero MD;
+h405g35 5 runs (≈ 15 min); Step 1 24 + 10 per further c (≈ 3 min per run,
+two concurrent → ≈ 45 min at c = 2.0); Step 2 6 runs per point
+(≈ 10 min each).
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
