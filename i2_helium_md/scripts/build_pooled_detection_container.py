@@ -27,6 +27,7 @@ Invocation (``--target``; default = the §6.7 lq battery pool):
 
     python scripts/build_pooled_detection_container.py
     python scripts/build_pooled_detection_container.py --target detfix_h405
+    python scripts/build_pooled_detection_container.py --target g414_c200t64
 
 ``detfix_h405`` = the detector-stage-fix reference battery
 (``gen_tier2_detfix_battery.py``: h405 s1–s5 + r6, t_h = 500 ps, E2 skipped,
@@ -72,6 +73,10 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
     member_run_dir_name as postpickup_run_dir_name,
+)
+from scripts.gen_tier2_g414_tauline import (  # noqa: E402
+    confirm_cells as g414_confirm_cells,
+    run_dir_for as g414_run_dir_for,
 )
 
 # ---------------------------------------------------------------------------
@@ -128,6 +133,17 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "9A_drag_shared_pure_cubic_N5000_detfix_conf270_h405pooled_th500",
         "the h405 production battery, members s1-s5 only (raw sampler) — the "
         "N = 5000 comparison arm of the post_pickup A/B",
+    ),
+    # THESIS_FINAL_GOALS G4.14 amendment A5: the KE-led pooled confirmation
+    # of the c = 2.0 ridge law at tau 6.4 ps, E0 0.3155 eV (s1-s5 + r6).
+    "g414_c200t64": (
+        [g414_run_dir_for(c).name for c in g414_confirm_cells()],
+        [c.seed for c in g414_confirm_cells()],
+        "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g414c200t64pooled_th500",
+        "the G4.14 A5 confirmation: linear+quadratic ridge law c = 2.0 amu/A "
+        "(a 16.717 amu/ps, E_bind 0.11748 eV, 3.5 A density gate, uncapped), "
+        "tau 6.4 ps, E0 0.3155 eV; production pipeline (t_h = 500 ps, E2 "
+        "skipped, partner-aware Coulomb closure)",
     ),
 }
 DEFAULT_TARGET = "lq"
