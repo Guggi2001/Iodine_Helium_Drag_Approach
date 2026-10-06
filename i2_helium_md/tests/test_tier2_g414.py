@@ -225,3 +225,26 @@ def test_band_columns_sum_to_w1_and_vanish_on_identity():
     assert set(cols) >= {"mass_n1", "mass_n2_3", "mass_n15plus", "w1_n10_14"}
     same = band_columns(ref_n, ref_f, ref_n, ref_f)
     assert all(v == pytest.approx(0.0, abs=1e-15) for k, v in same.items() if k.startswith("w1_"))
+
+
+def test_monotone_violations_counts_only_significant_rises():
+    from scripts.post_processing.tier2_g414_table import monotone_violations
+
+    n = np.arange(0, 18)
+    f = 0.5 ** (n + 1); f /= f.sum()
+    assert monotone_violations(n, f, 100000) == 0
+    g = f.copy(); g[5] = g[4] * 1.5; g /= g.sum()          # big rise 4 -> 5
+    assert monotone_violations(n, g, 100000) == 1
+    assert monotone_violations(n, g, 10) == 0               # same rise, pure noise at N=10
+
+
+def test_ke_led_verdict():
+    from scripts.post_processing.tier2_g414_table import ke_led_verdict
+
+    ref = {"chi2_med": 600.0, "KE1_mean": 0.643}
+    row = {"nbar_det": 3.9, "midHot": 1.0, "chi2_med": 550.0, "KE1_mean": 0.6415}
+    assert ke_led_verdict(row, ref, 0)["verdict"] == "matches_or_beats_on_KE"
+    assert ke_led_verdict({**row, "KE1_mean": 0.62}, ref, 0)["verdict"] == "loses_on_KE"
+    assert ke_led_verdict({**row, "chi2_med": 700.0}, ref, 0)["verdict"] == "loses_on_KE"
+    assert ke_led_verdict(row, ref, 1)["verdict"] == "criterion_fail"
+    assert ke_led_verdict({**row, "nbar_det": 4.4}, ref, 0)["verdict"] == "criterion_fail"

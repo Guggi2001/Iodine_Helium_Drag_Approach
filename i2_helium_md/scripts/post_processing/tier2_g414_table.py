@@ -14,8 +14,10 @@ Order (oracles first; any failure stops before a new number):
 3. **Step 1 rows** — every planned run (``gen_tier2_g414_tauline.plan``).
 4. **Fit** (per c, once all its planned runs exist) — least squares in
    tau and dE = (E0 - E0_3.85(tau)) / 0.01 eV, E0_3.85 from the committed
-   Step-0 line: cubic in tau (quadratic for the 10-run c) + dE + tau*dE;
-   n1 additionally + dE^2. **Residual criterion:** residual sd (ddof = n - p)
+   Step-0 line: cubic in tau (quadratic for the 10-run c) + dE + tau*dE
+   (amendment A1, 2026-10-06: the frozen extra n1 dE^2 term is dropped --
+   with two E0 levels per tau it is not identifiable and swung n1 between
+   the levels). **Residual criterion:** residual sd (ddof = n - p)
    <= 1.5 x per-member seed sd (committed ``g413_transfer.csv`` row
    ``seed_std_t64e310``) for n1, nbar, KE1, W1, midHot. A failing
    observable with tau structure (nested F-test for one more tau order,
@@ -30,10 +32,16 @@ Order (oracles first; any failure stops before a new number):
    (n̄ = 3.89 lies in [3.83, 4.31] by construction). tau_KE = max KE1,
    tau_W = min W1, merged (to tau_KE) if <= 0.2 ps apart -> Step-2
    candidates. Step 2 itself is NOT run from here.
+6. **KE-led confirmation** (amendment A5, 2026-10-06) — when its six
+   members exist: c = 2.0, tau 6.4 pooled N = 6000 (s1-s5 + r6). Criterion:
+   n̄ in [3.83, 4.31], solvated histogram monotone within 2 sigma
+   (n = 1..17), midHot in [0.85, 1.15]; ranked on KE vs each pooled
+   reference: chi2_med <= ref AND KE1 >= ref - 0.002. W1 / bands reported.
+   -> ``g414_confirm.csv``.
 
 Outputs (committed; every column) in ``data/runs/h2b_forward_model/``:
 ``g414_table.csv``, ``g414_fit.csv``, ``g414_tradeoff.csv``,
-``g414_candidates.csv``.
+``g414_candidates.csv``, ``g414_confirm.csv``.
 
     python scripts/post_processing/tier2_g414_table.py
 """
@@ -77,6 +85,12 @@ MERGE_PS = 0.2
 #: mass and its share of W1 = sum_n |CDF_sim(n) - CDF_exp(n)|. Reported, not
 #: gating; the shares sum to w1_solv.
 HIST_BANDS = ((1, 1), (2, 3), (4, 6), (7, 9), (10, 14), (15, None))
+#: Amendment A1 (2026-10-06): no dE^2 term in the n1 model.
+N1_WITH_DE2 = False
+#: Amendment A5 (2026-10-06): KE-led criterion for the pooled confirmation.
+MONO_N_MAX = 17
+MONO_SIGMA = 2.0
+KE1_TOL = 0.002
 
 
 # =============================================================================
@@ -238,6 +252,35 @@ def band_columns(sim_n, sim_f, ref_n, ref_f) -> dict[str, float]:
     return cols
 
 
+def monotone_violations(n_values, fraction, num_scored: int,
+                        n_max: int = MONO_N_MAX, n_sigma: float = MONO_SIGMA) -> int:
+    """Rises f(n+1) > f(n) over n = 1..n_max that exceed ``n_sigma`` Poisson
+    sigma of the two bins' counts (fractions of the full detected ensemble)."""
+    f = np.zeros(n_max + 1)
+    for n, x in zip(n_values, fraction):
+        if 0 <= n <= n_max:
+            f[int(n)] += x
+    cnt = f * num_scored
+    rise = np.diff(f)[1:]                                 # f[n+1] - f[n], n = 1..n_max-1
+    sig = np.sqrt(cnt[1:-1] + cnt[2:]) / num_scored
+    return int(np.sum(rise > n_sigma * sig))
+
+
+def ke_led_verdict(row: dict, ref: dict, n_mono_viol: int) -> dict[str, Any]:
+    """Amendment-A5 verdict of a pooled row against one pooled reference."""
+    crit = {
+        "nbar_in_band": NBAR_LANDING[0] <= float(row["nbar_det"]) <= NBAR_LANDING[1],
+        "monotone_2sig": n_mono_viol == 0,
+        "midhot_in_band": MIDHOT_BAND[0] <= float(row["midHot"]) <= MIDHOT_BAND[1],
+    }
+    ke = {"chi2_le_ref": float(row["chi2_med"]) <= float(ref["chi2_med"]),
+          "ke1_ge_ref_minus_tol": float(row["KE1_mean"]) >= float(ref["KE1_mean"]) - KE1_TOL}
+    passes = all(crit.values())
+    verdict = ("criterion_fail" if not passes else
+               "matches_or_beats_on_KE" if all(ke.values()) else "loses_on_KE")
+    return {**{k: int(v) for k, v in {**crit, **ke}.items()}, "verdict": verdict}
+
+
 def e0_385_interp(line_rows: list[dict], c: float):
     """tau -> Step-0 E0 at predicted MD nbar 3.85 (linear in tau)."""
     pts = sorted((float(r["tau_ps"]), float(r["E0_eV"])) for r in line_rows
@@ -397,7 +440,7 @@ def main() -> int:
         e385 = e0_385_interp(line_rows, c)
         for obs in FIT_OBS + REPORT_OBS:
             y = np.array([float(r[obs]) for r in runs])
-            de2 = obs == "n1_solv"
+            de2 = N1_WITH_DE2 and obs == "n1_solv"
             if obs in FIT_OBS:
                 res = fit_observable(tau, de, y, order, de2, seed_sd[obs])
                 statuses.append(res["status"])
@@ -441,6 +484,52 @@ def main() -> int:
         cand_rows.extend({**r, "c": c} for r in cands)
         print(f"  c={c}: {sum(r['feasible'] for r in curve)}/{len(curve)} feasible tau; "
               f"candidates {[(r['role'], r['tau_ps'], round(r['E0_eV'], 4)) for r in cands]}")
+
+    # 6. KE-led confirmation (amendment A5)
+    from scripts.gen_tier2_g414_tauline import confirm_cells
+    conf = confirm_cells()
+    conf_dirs = [run_dir_for(cl) for cl in conf]
+    if all((d / "detection.npz").exists() for d in conf_dirs):
+        conf_reads = []
+        for cl, d in zip(conf, conf_dirs):
+            c_ = RunDirectory(d).load_cfg()
+            if c_.seed != cl.seed or _pipeline(c_) != "skip+closure:partner_aware":
+                raise AssertionError(f"[{cl.label}] seed/pipeline mismatch")
+            r_ = read(d, cl.label)
+            conf_reads.append(r_)
+            rows.append({**scored(cl.label, cl.label[-2:], _pipeline(c_), c_.seed, r_),
+                         "kind": "confirm_member", "c": cl.c, "tau_ps": cl.tau_ps,
+                         "E0_eV": cl.e0_eV,
+                         "mono_viol_2sig": monotone_violations(r_.n_values, r_.fraction,
+                                                               r_.num_scored)})
+        pr = pool_confirmation_reads(conf_reads, label="c200t64_pooled6000")
+        pooled = scored("c200t64_pooled6000", "pooled6000", "skip+closure:partner_aware",
+                        "-", pr)
+        mv = monotone_violations(pr.n_values, pr.fraction, pr.num_scored)
+        rows.append({**pooled, "kind": "confirm_pooled", "mono_viol_2sig": mv})
+        out = []
+        for name, ref in (("h405_14p2_pooled", pooled142), ("h405_3p5_pooled", g35_pooled)):
+            if ref is None:
+                continue
+            v = ke_led_verdict(pooled, ref, mv)
+            out.append({"reference": name, **v, "mono_viol_2sig": mv,
+                        **{f"conf_{k}": pooled[k] for k in (
+                            "nbar_det", "n1_solv", "KE1_mean", "KE2_mean", "midHot",
+                            "deepKE", "chi2_med", "w1_solv", "md_gate",
+                            "mass_n10_14", "mass_n15plus")},
+                        **{f"ref_{k}": ref[k] for k in (
+                            "nbar_det", "n1_solv", "KE1_mean", "KE2_mean", "midHot",
+                            "deepKE", "chi2_med", "w1_solv", "mass_n10_14",
+                            "mass_n15plus")}})
+            print(f"KE-led confirmation vs {name}: {v['verdict']} (chi2 "
+                  f"{pooled['chi2_med']:.0f} vs {float(ref['chi2_med']):.0f}, KE1 "
+                  f"{pooled['KE1_mean']:.4f} vs {float(ref['KE1_mean']):.4f}, nbar "
+                  f"{pooled['nbar_det']:.3f}, midHot {pooled['midHot']:.3f}, "
+                  f"mono viol {mv}, W1 {pooled['w1_solv']:.3f})")
+        _write(out, out_dir / "g414_confirm.csv")
+    else:
+        print(f"KE-led confirmation: {sum((d / 'detection.npz').exists() for d in conf_dirs)}"
+              f"/{len(conf_dirs)} members run")
 
     _write(rows, out_dir / "g414_table.csv")
     if fit_rows:

@@ -92,6 +92,13 @@ PRIMARY_TAU_PS = (4.0, 4.4) + tuple(float(t) for t in np.round(np.arange(4.8, 6.
 OTHER_TAU_PS = (4.8, 5.2, 5.6, 6.0, 6.4)
 NBAR_TARGETS = (3.85, 4.05)
 SEED_BASE = 20261101
+# Amendment A5 (2026-10-06): one KE-led pooled confirmation at the production
+# seeds; E0 = the fitted nbar = 3.89 point of the committed trade-off curve.
+CONFIRM_C = 2.0
+CONFIRM_TAU_PS = 6.4
+CONFIRM_NBAR = 3.89
+CONFIRM_E0_EV_4DP = 0.3155            # frozen in G4.14 A5; read value must match
+TRADEOFF_CSV = TWIN_DIR / "g414_tradeoff.csv"
 REFERENCE_MEMBER = "s1"          # the diff oracle's h405 detfix member
 
 MAX_CONCURRENCY = 2
@@ -165,6 +172,20 @@ def load_plan() -> list[Cell]:
     return plan_cells(line_rows, filter_rows)
 
 
+def confirm_cells() -> list[Cell]:
+    """The A5 confirmation: one cell per production member (s1-s5 + r6)."""
+    with open(TRADEOFF_CSV, newline="", encoding="utf-8") as fh:
+        row = next(r for r in csv.DictReader(fh)
+                   if float(r["c"]) == CONFIRM_C and float(r["tau_ps"]) == CONFIRM_TAU_PS)
+    e0 = float(row["E0_eV"])
+    if round(e0, 4) != CONFIRM_E0_EV_4DP or abs(float(row["pred_nbar_det"]) - CONFIRM_NBAR) > 1e-9:
+        raise AssertionError(f"confirmation E0 {e0!r} / nbar {row['pred_nbar_det']} "
+                             f"!= frozen {CONFIRM_E0_EV_4DP} / {CONFIRM_NBAR}")
+    tag = cell_label(CONFIRM_C, CONFIRM_TAU_PS, CONFIRM_NBAR).split("n")[0]
+    return [Cell(f"{tag}conf{m}", CONFIRM_C, CONFIRM_TAU_PS, CONFIRM_NBAR, e0, seed)
+            for m, seed in MEMBER_SEEDS.items()]
+
+
 def ridge_point(c: float) -> dict:
     """A committed ridge point (read, never retyped); must pass its bands."""
     path = RIDGE_DIR / f"c{c:.3f}".replace(".", "p")
@@ -204,7 +225,9 @@ def expected_diff_keys(cell: Cell) -> frozenset[str]:
     """Frozen diff vs the h405 detfix s1 member: law keys + seed, plus tau / E0
     whenever the cell's value differs from h405's (tau 4.4 is h405's own)."""
     base = build_member(REFERENCE_MEMBER)
-    keys = set(_LAW_KEYS) | {"seed"}
+    keys = set(_LAW_KEYS)
+    if int(cell.seed) != int(base.seed):
+        keys.add("seed")
     if float(cell.tau_ps) != float(getattr(base, _TAU_KEY)):
         keys.add(_TAU_KEY)
     if float(cell.e0_eV) / BUDGET_EV != float(getattr(base, _E0_KEY)):
@@ -283,6 +306,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("cells", nargs="*", help="subset of Step-1 labels")
     parser.add_argument("--h405g35", action="store_true", help="the reference pool")
+    parser.add_argument("--confirm", action="store_true", help="A5 pooled confirmation")
     parser.add_argument("--concurrency", type=int, default=MAX_CONCURRENCY)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -292,7 +316,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(f"[{H405_GATE_LABEL}/{m}] guards PASSED: diff "
                   f"{g413_verify_cell(H405_GATE_LABEL, m)}", flush=True)
     else:
-        plan = load_plan()
+        plan = confirm_cells() if args.confirm else load_plan()
         unknown = sorted(set(args.cells) - {c.label for c in plan})
         if unknown:
             raise SystemExit(f"unknown cell(s) {unknown}")
@@ -307,8 +331,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             steps, stride = verify_handover_alignment(build(cell))
             print(f"[{cell.label}] E0 {cell.e0_eV} seed {cell.seed}: guards PASSED "
                   f"(diff {len(diff)} keys; {steps} steps, stride {stride})", flush=True)
-        print(f"{len(jobs)} Step-1 runs planned (seeds {jobs[0].seed}-{jobs[-1].seed})",
-              flush=True)
+        print(f"{len(jobs)} {'confirmation' if args.confirm else 'Step-1'} runs planned "
+              f"(seeds {[j.seed for j in jobs]})", flush=True)
     if args.dry_run:
         return 0
     workers = max(1, min(args.concurrency, MAX_CONCURRENCY, len(jobs)))

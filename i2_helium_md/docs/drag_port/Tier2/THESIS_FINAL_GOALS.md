@@ -27,16 +27,16 @@ log (`drag_migration_log_tier2.md`).
    ties h405 on KE₁ (0.638 vs 0.640), W₁ 1.10 vs 0.755. **"Dominated"
    holds for that cell only** — the grid could not resolve the landing
    (user-caught correction).
-7. **G4.14** (fine τ-line sweep, τ the primary axis): **FROZEN
-   2026-10-06, nothing run.** Fine c points {1.8, 1.9, 2.1, 2.2} plus the
-   cached ridge in the twin; MD only where the predicted midHot is in band;
-   independent seeds per run (s1 is a high seed for this law); KE₁ ranked
-   at matched n̄; pooled h405g35 (3.5 Å) added as a second reference.
-   Requires `[PROCEED TO IMPLEMENTATION]` for its code.
+7. **G4.14** (fine τ-line sweep, τ the primary axis): **Steps 0a–1
+   EXECUTED 2026-10-06** (74 MD runs, independent seeds). No c / τ / E₀
+   beats h405 on the frozen ranking; τ trades the histogram's large-n tail
+   against KE₁ at every c. The size-histogram misfit is spread, not
+   location (no n ≥ 17; n₁ low): a mass-model question, not a drag / τ / E₀
+   one. Amendments A1–A5; A5 = KE-led criterion + one pooled confirmation
+   (c 2.0, τ 6.4).
 
-**Next:** `[PROCEED TO IMPLEMENTATION]` for G4.14 → Step 0a + Step 0
-(zero MD), then a user recap before any MD. G1, G2 (production switch),
-G5–G7 not started.
+**Next:** the A5 confirmation verdict, then D0 §1.G4.14 and the log. G1,
+G2 (production switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
@@ -907,6 +907,45 @@ a missing τ term; the feasible-set selection on a synthetic surface.
 h405g35 5 runs (≈ 15 min); Step 1 24 + 10 per further c (≈ 3 min per run,
 two concurrent → ≈ 45 min at c = 2.0); Step 2 6 runs per point
 (≈ 10 min each).
+
+- **Status — Steps 0a, 0, h405g35 pool, Step 1 EXECUTED 2026-10-06
+  (measured).** Step 0a: c 1.8/1.9/2.1/2.2 pass (RMSE 0.1219–0.1222, 9 Å
+  margins +0.82 → +0.73); oracle bit-exact. Step 0: anchors pass; midHot
+  filter keeps c 1.8–2.5, drops 1.2/1.6 → 74 Step-1 runs. h405g35 pooled
+  N = 6000: n₁ 0.207, n̄ 3.857, KE₁ 0.643, W₁ 0.818, χ² 636. Step 1: all
+  74 runs; no c beats h405 on the frozen ranking (best W₁ 0.831 at c 1.8
+  τ 4.9 with KE₁ 0.577; best KE₁ 0.632 at W₁ 1.05). D0 §1.G4.14 record follows the A5 verdict.
+
+**Amendments (2026-10-06, user-agreed after Step 1; frozen before the
+confirmation MD).**
+- *A1 — n₁ fit model.* The extra ΔE² term is dropped: with two E₀ per τ
+  it is not identifiable (design condition 118–294 vs 6–9 without it;
+  residual sd unchanged) and swung n₁ between the levels (c 1.9: 0.117 →
+  0.250; c 2.2: −0.22 → 0.28). All c refitted without it.
+- *A2 — c = 2.2.* Trips the second-seed rule (W₁ resid 0.0576 > 0.0545,
+  no τ structure); recorded as triggered and **skipped** (dominated on
+  both axes).
+- *A3 — histogram bands* (reported, not gating): per-band solvated mass
+  and W₁ share for n 1 / 2–3 / 4–6 / 7–9 / 10–14 / ≥ 15 in every scorer row.
+- *A4 — disk.* Step-1 runs drop `ion.npz` after `detection.npz` verifies
+  (T: full; the scorer reads cfg + detection only).
+- *A5 — KE-led criterion + one pooled confirmation.* Reason (discussion
+  2026-10-06): n₁ / n₁/n₂ are de-emphasised; 93/95 ridge runs are already
+  monotone within noise, and the high-τ ridge cells match h405's per-member
+  KE. **Criterion (pooled N = 6000):** n̄ ∈ [3.83, 4.31]; solvated
+  histogram monotone within 2σ Poisson over n = 1…17; midHot ∈ [0.85, 1.15].
+  **Ranked on KE** against each pooled reference separately (h405 14.2 Å
+  `pooled_new6000`: χ² 456, KE₁ 0.640; h405g35 3.5 Å: χ² 636, KE₁ 0.643):
+  *matches or beats on KE* ⇔ criterion passes AND χ²_med ≤ ref AND
+  KE₁ ≥ ref − 0.002. W₁, bands, n₁ gate reported, not ranked. **Cell:**
+  c = 2.0, τ 6.4, E₀ 0.3155 eV (fitted n̄ = 3.89 point of the committed
+  trade-off curve, read at build time), production seeds s1–s5 + r6.
+  **Prediction (fitted, frozen):** KE₁ ≈ 0.616, midHot ≈ 0.99, n₁ ≈ 0.203,
+  W₁ ≈ 1.10; single-run-level χ² ≈ 281 → pooled ≈ 420–470 (h405's pooled /
+  member-mean ratio 1.5–1.66). Expected verdict: **loses on KE** against
+  both references through KE₁ (−0.024 / −0.027), while χ² is expected to
+  beat the 3.5 Å reference and roughly tie the 14.2 Å one. Nothing is
+  adopted in any case.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
