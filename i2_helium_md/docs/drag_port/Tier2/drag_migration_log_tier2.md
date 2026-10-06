@@ -14154,3 +14154,13 @@ before the confirmation MD. Full record: D0 §1.G4.14.
   420–470). vs h405 14.2 Å: χ² 507 > 456, KE₁ −0.023 → loses on KE. vs
   h405 3.5 Å: χ² 507 < 636 but KE₁ −0.026 → loses on KE. Nothing adopted;
   production unchanged (h405, capped_cubic v_c 5.5).
+
+## 2026-10-06 — Handoff: G4.14 recap for the thesis-choice discussion recorded
+
+Discussion only (no new MD). The lq ridge (c 2.0, τ 6.4, uncapped)
+matches h405 on the n = 2–8 KE (midHot 0.995) and beats it on χ² at the
+same 3.5 Å gate (507 vs 636); KE₁ −0.026 eV (≈ 2 % of the experimental
+1.302 eV; all laws at about half — M1); W₁ 1.10 vs 0.82. Strengths,
+caveats, a draft thesis claim and open points (a)–(d):
+`THESIS_FINAL_GOALS.md` G4.14 "Recap for the thesis-choice discussion";
+D0 §1.G4.14 and the §17 cap row updated.

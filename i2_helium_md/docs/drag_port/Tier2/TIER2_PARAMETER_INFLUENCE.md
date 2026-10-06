@@ -1032,7 +1032,21 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   KE₁ 0.6172, W₁ 1.097, χ² 507, n ≥ 15 mass 0.0006. **Loses on KE** vs
   both references: KE₁ −0.023 (14.2 Å) / −0.026 (3.5 Å); χ² beats 3.5 Å
   (636) but not 14.2 Å (456). Prediction held (KE₁ 0.616, W₁ 1.10; χ²
-  above the 420–470 projection).
+  above the 420–470 projection). Pooled figures container:
+  `data/runs/9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g414c200t64pooled_th500`
+  (`build_pooled_detection_container.py --target g414_c200t64`).
+- **KE against experiment (measured; context for the KE₁ gap).** Experiment
+  (`ihe_ked`) mean KE: n = 1 1.302 ± 0.071 eV (sys), n = 2 0.706 eV. Every
+  law sits at about half of the experimental KE₁ (ridge 0.617, h405 0.640 /
+  0.643 eV), so the ridge − h405 gap is ≈ 2 % of the experimental value; the
+  common deficit is the flight-mass question (`TIER2_MASS_SCENARIOS.md` M1),
+  not a drag-law property. midHot (n 2–8, sim/exp): ridge 0.995, h405
+  0.981 (3.5 Å) / 0.948 (14.2 Å).
+- **Per-member KE (measured, N = 1000 single runs vs single members).**
+  High-τ ridge cells (c 1.8–2.0, τ 6.0–6.6) reach KE₁ 0.62–0.65 and χ²
+  243–320 (h405 members 236–347 at 14.2 Å, 300–470 at 3.5 Å), partly at
+  n̄ ≈ 4.05; at matched n̄ 3.89 the pooled KE₁ is 0.617 (A5). χ² grows
+  with N (sim-error term): compare pooled with pooled only.
 
 ## 2. Capped tail — v_c and p_tail
 
@@ -3333,7 +3347,7 @@ physics, and which are scaffolding?** Role codes:
 | element | provenance | external constraint? | role | what would retire / confirm it |
 |---|---|---|---|---|
 | in-band drag form + b | Tier-0 Method-B on 9/18 Å TDDFT | **yes**, 2.54–4.95 Å/ps only | **P** (band-limited) | extended TDDFT (collaborator ask). Note §1: the Tier-2 landing is form-blind — it is *not* evidence |
-| capped tail v_c, p_tail | fit to experiment above the TDDFT band | no | **E** | TDDFT at production kinematics; the "S-shape" framing (§6.1) says a cap is a stand-in, not a law. **Retirement attempt in progress (2026-10-05/06):** an uncapped TDDFT-tied law F = a·v + c·v² on the 18 Å ridge — every point fits 18 Å, c ≤ 5 passes the 9 Å exit bound, all land in the twin (§1.G4.12); MD at c = 2.0 ties h405 on KE₁ but its one escalated cell misses the n₁ gate with W₁ +0.34 (§1.G4.13, verdict scoped to that cell). Open: the fine τ-line sweep `THESIS_FINAL_GOALS.md` G4.14 |
+| capped tail v_c, p_tail | fit to experiment above the TDDFT band | no | **E** | TDDFT at production kinematics; the "S-shape" framing (§6.1) says a cap is a stand-in, not a law. **Retirement attempt in progress (2026-10-05/06):** an uncapped TDDFT-tied law F = a·v + c·v² on the 18 Å ridge — every point fits 18 Å, c ≤ 5 passes the 9 Å exit bound, all land in the twin (§1.G4.12); MD at c = 2.0 ties h405 on KE₁ but its one escalated cell misses the n₁ gate with W₁ +0.34 (§1.G4.13, verdict scoped to that cell). **G4.14 (measured, §1.G4.14):** the fine τ lines over c 1.8–2.5 find no cell that beats h405; the pooled KE-led confirmation (c 2.0, τ 6.4, uncapped) matches h405 on the n = 2–8 KE (midHot 0.995) and beats it on χ² at the same 3.5 Å gate (507 vs 636), with KE₁ −0.026 and W₁ 1.10 vs 0.82. The cap is *replaceable on the KE side* by a physical, kink-free law at the sourced τ (6.4 vs GAH25 6.55), at the cost of the size-histogram tail; c (1.8–2.5) is then the experiment-chosen element instead of v_c. Retirement = a thesis-framing decision (`THESIS_FINAL_GOALS.md` G4.14 recap) |
 | τ cooling clock | arbitration basin §4w | no | **E** | a physical cooling model for the bubble |
 | E₀ = E_int(0) | solvation-scale bracket + arbitration | weak (bracket only) | **E** | Axis B curve + an independent onset argument |
 | κ, picture | Form-U parametrisation | no | **E** (both near-dead levers) | superseded by the tabulated `rq4graded` ladder |

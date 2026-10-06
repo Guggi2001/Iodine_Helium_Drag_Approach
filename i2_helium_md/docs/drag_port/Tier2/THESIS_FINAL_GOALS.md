@@ -36,9 +36,9 @@ log (`drag_migration_log_tier2.md`).
    (c 2.0, τ 6.4): **loses on KE** (KE₁ 0.617 vs 0.640 / 0.643; χ² 507
    vs 456 / 636). Nothing adopted.
 
-**Next:** open — the histogram shape points at the mass model (ladder /
-n* / E_int spread), not at drag / τ / E₀; to be discussed. G1, G2
-(production switch), G5–G7 not started.
+**Next:** the thesis-choice discussion — read **G4.14 "Recap for the
+thesis-choice discussion"** (KE table, strengths, caveats, draft claim,
+open points a–d). G1, G2 (production switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
@@ -948,6 +948,62 @@ confirmation MD).**
   both references through KE₁ (−0.024 / −0.027), while χ² is expected to
   beat the 3.5 Å reference and roughly tie the 14.2 Å one. Nothing is
   adopted in any case.
+
+- **Status — A5 EXECUTED 2026-10-06 (measured): loses on KE** (as
+  predicted). Pooled c 2.0 / τ 6.4: n̄ 3.886, n₁ 0.204, monotone, midHot
+  0.995, KE₁ 0.617, χ² 507, W₁ 1.097. Record: D0 §1.G4.14; pooled figures
+  container `…_N6000_detfix_conf270_g414c200t64pooled_th500`.
+
+**Recap for the thesis-choice discussion (2026-10-06; entry point for the
+next chat).** The question: what the uncapped linear + quadratic (lq)
+ridge achieved against the capped production law h405, its strengths and
+weaknesses, and how the thesis presents it. Nothing is decided yet.
+
+*KE side (measured, pooled N = 6000).*
+
+| | lq c 2.0 τ 6.4 | h405 3.5 Å | h405 14.2 Å | experiment |
+|---|---|---|---|---|
+| midHot (n 2–8 KE, sim/exp) | 0.995 | 0.981 | 0.948 | 1 |
+| χ²_med (KE curve) | 507 | 636 | 456 | — |
+| KE₁ [eV] | 0.617 | 0.643 | 0.640 | 1.302 ± 0.071 |
+| KE₂ [eV] | 0.526 | 0.557 | 0.550 | 0.706 |
+| W₁ (size histogram) | 1.097 | 0.818 | 0.755 | 0 |
+
+*Strengths (argued in discussion).* (1) Standard drag decomposition:
+viscous a·v + ram c·v², units balanced, friction convention unchanged.
+(2) TDDFT-tied: a and E_bind fitted on 18 Å for every c (RMSE
+0.117–0.124); c ≤ 5 passes the 9 Å exit bound. (3) Retires the effective
+v_c cap (D0 §17 class **E**): smooth, kink-free at every speed. (4) The
+KE-best cell needs τ ≈ 6.4 ps, essentially the sourced GAH25 6.55 ps
+(h405: 4.4 ps). (5) KE: n = 2–8 matched (midHot 0.995); χ² better than
+h405 at the same 3.5 Å gate (production moves to 3.5 Å under G2). The
+KE₁ gap (−0.026 eV) is ≈ 2 % of the experimental value; every law sits at
+about half of experiment — the flight-mass question (M1), not drag.
+
+*Weaknesses / caveats.* (1) c is not fixed by TDDFT (18 Å pins only
+F(v ≈ 3 Å/ps)); experiment chooses c via midHot (window ≈ 1.8–2.5): one
+free element (v_c) traded for another (c), with a physical shape. (2)
+Size histogram worse (W₁ 1.10 vs 0.82): good KE needs high τ, which
+empties the n ≥ 10 tail; the common misfit (no n ≥ 17, n₁ low) is a
+mass-model issue shared with h405, but h405 compromises better. (3) The
+9 Å bound is one-sided: the lq law dissipates less than HeDFT atom 1
+(margin ≈ +0.7 Å/ps). (4) Landing marginal (n₁ 0.204 vs 0.200).
+
+*Candidate thesis claim (draft, not agreed).* "An uncapped, TDDFT-tied
+linear + quadratic drag law reproduces the measured I⁺(He)ₙ KE
+observables at the level of the effective capped law, at the literature
+cooling time; it removes the cap's arbitrary kink but does not improve
+the size distribution, whose remaining misfit lies in the mass model."
+
+*Open for the discussion.* (a) lq as co-equal physical alternative next
+to h405, or the recommended law (→ G5 attribution on it)? (b) Report c
+as the midHot window 1.8–2.5 with c = 2.0 representative? (c) Optional
+pooled run at the KE-best c 1.8 cell (τ ≈ 5.9, fitted KE₁ 0.632)?
+(d) Histogram (from the shape discussion): question n* = 21 and the top
+ladder rungs first? Re-include the bare fraction n = 0 (experiment 0.435
+vs model ≈ 0.19; the solvated read excludes it by design, RQ8)?
+Session-local analyses (shape scan of all 200 runs, W₁ band split) were
+not committed as scripts; their numbers are in D0 §1.G4.14.
 
 ## G5. Attribution batteries, then re-arbitration under `post_pickup`
 
