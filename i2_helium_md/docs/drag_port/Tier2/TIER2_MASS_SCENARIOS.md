@@ -42,6 +42,14 @@ reproducible from cached chord families with zero new MD.
 >
 > **§14 records three withdrawn claims from this session — read it before
 > reusing any number here.**
+>
+> **SCOPE CORRECTION (2026-10-06, G8 measured): §4 / §4.1 hold only under
+> the capped law.** Exit-energy mass-invariance is a property of a
+> velocity-independent drag force (h405 above v_c), not of drag in
+> general. Under the uncapped lq law (F = a·v + c·v²) a lighter flight
+> loses *more* energy: a bare start gives KE₁ 0.491 vs 0.621 intact
+> (h405: 0.865 vs 0.644). "The KE₁ deficit is the flight mass" holds for
+> h405 only. See §14 item 4.
 
 ---
 
@@ -149,6 +157,17 @@ the committed chord npz before reading the m(1) leg):
 **Exit energy invariant to 0.09 %; drag loss invariant to 0.06 %.**
 Confirmed as analytic, not coincidental.
 
+> **Scope (correction 2026-10-06).** The invariance is analytic *for the
+> cap only*. The drag **force** is mass-agnostic for every law (friction
+> convention), but the energy lost per path is dE/dx = −F(v), and at fixed
+> E a lighter ion is faster (v = √(2E/m)). Mass drops out only if F does
+> not depend on v — h405 above v_c (p_tail = −1). Below v_c the cubic, and
+> any v-dependent law, is not invariant: the lq ram term gives
+> dE/dx = −2c·E/m (energy e-folding length m/2c: 32 Å bare, 53 Å at
+> n = 21, c = 2.0 amu/Å), so a lighter ion loses more. Measured (G8, MD,
+> seed s1, D0 §1.G8): bare start KE₁ 0.491 vs intact 0.621 under lq;
+> 0.865 vs 0.644 under h405.
+
 ### The law
 
 $$\boxed{\;KE_1 \;=\; E_\text{exit}\cdot\frac{m(1)}{m(n_\text{flight})}
@@ -171,7 +190,11 @@ $$\boxed{\;KE_1 \;=\; E_\text{exit} \;-\; \tfrac12\,\Delta m\,v_\text{shed}^2
 
 It is algebraically the *same* identity — substituting
 `v = √(2E_exit/m_flight)` turns one into the other — but expressed in the
-variable that actually matters physically. **The entire KE₁ question is one
+variable that actually matters physically. **Cap-only (correction
+2026-10-06):** it inherits §4's premise that the drag work is
+mass-invariant, which holds only for a velocity-independent force (h405
+above v_c). Under lq it fails in sign: a lighter flight lowers KE₁ (G8;
+§4 scope note). **The entire KE₁ question is one
 number: the speed at which the helium departs.**
 
 | when the Δm = 80.05 amu leaves | v_shed [Å/ps] | cost [eV] | KE₁ [eV] | status |
@@ -791,10 +814,21 @@ matters more than either error.
    is only 4.0× and the deep bins reach 7.7 atoms, not 17 (§10.3).
 3. **"Dynamic range a factor two too weak" — WITHDRAWN** (§8): an artifact
    of including the n = 0 bin.
+4. **§4 / §4.1 generalised beyond the cap — SCOPE CORRECTED
+   (2026-10-06).** The mass-invariance of the exit energy was measured on
+   h405 and is analytic only for a velocity-independent force; it was
+   later carried over to the uncapped lq law as "bare flight gives
+   KE₁ ≈ 1.0 eV". The G8 bare-start screen (MD, D0 §1.G8) measured the
+   opposite sign under lq (KE₁ 0.491 bare vs 0.621 intact) and a smaller
+   gain under h405 (0.865, not ≈ 1.0: pickup during flight, capture
+   momentum, and the sub-v_c cubic). The same screen also corrected the
+   pickup projection: bare ions span all chords (exposure 2.6 → 8 ps),
+   not only the fastest-exit class's 2.65 ps, so they land at n = 2–4,
+   not n ≈ 1–2.
 
-What survives all three: the governing identity (§1), the mass-invariance
-measurement (§4), the KE-vs-n table (§5), and the §3.5g negative (§2) —
-none of which came from an imported number.
+What survives all four: the governing identity (§1), the mass-invariance
+measurement (§4, **for the cap**), the KE-vs-n table (§5), and the §3.5g
+negative (§2) — none of which came from an imported number.
 
 **Standing lesson:** every one of these came from reasoning by plausible
 scaling instead of reading the model's own numbers. Envelope calculations
