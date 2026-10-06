@@ -20,7 +20,7 @@ Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
 caveat) — **adoption on hold. G4.12** (TDDFT-tied linear + quadratic
 ridge vs the experiment, uncapped): **steps 1–2 executed 2026-10-05** —
 the whole ridge fits 18 Å; the 9 Å exit bound passes every c ≤ 5 and
-fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot; user decision pending.
+fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot. **G4.13** (MD battery, c = 2.0, executed 2026-10-06): **dominated** — pooled n₁ 0.186 misses the gate, KE₁ ties h405, W₁ 1.10 vs 0.755; the cap stays.
 G1, G2 (production switch), G5–G7 not started.
 
 ## 0. Why the whole chain is redone
@@ -724,7 +724,13 @@ generator; (iv) scorer anchor: h405 detfix s1 rescored = committed
 production changes.
 
 **Cost.** ≈ 3 min per N = 1000 member (detfix precedent) → Stage A
-≈ 30 min, Stage B ≈ 10 min. Code: generator + scorer (+ tests). Attribution batteries, then re-arbitration under `post_pickup`
+≈ 30 min, Stage B ≈ 10 min. Code: generator + scorer (+ tests).
+
+- **Status — EXECUTED 2026-10-06 (measured): decision *dominated*.**
+  Stage A: 7/16 cells gate (all midHot in band); selected t64e310.
+  Stage B pooled N = 6000: n₁ 0.186 (gate ✗), KE₁ 0.638 (h405 0.640),
+  midHot 1.032, W₁ 1.100 (h405 0.755), χ² 558 (456). The cap stays.
+  Record: D0 §1.G4.13, log 2026-10-06 G4.13 entry. Attribution batteries, then re-arbitration under `post_pickup`
 
 Run in this order on the production pipeline (Stage I to 500 ps, E2
 off, partner-aware closure; `exclude_all_coupled`):

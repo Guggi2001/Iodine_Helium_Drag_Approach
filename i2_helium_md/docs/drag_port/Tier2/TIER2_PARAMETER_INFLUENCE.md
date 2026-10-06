@@ -939,6 +939,41 @@ Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
   battery follows only under its own trigger; nothing adopted. Twin
   dominance by h405 and the 9 Å surplus are recorded, not gating.
 
+#### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **decision: dominated** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse)
+
+Production pipeline (Stage I 500 ps, E2 off, partner-aware closure,
+N = 1000/member), law a 16.717 / c 2.0 / E_bind 0.11748 / gate 3.5 Å,
+no cap. Generator `scripts/gen_tier2_g413_ridge_battery.py`, scorer
+`scripts/post_processing/tier2_g413_table.py`; artifacts
+`data/runs/h2b_forward_model/g413_{table,verdict}.csv`.
+
+- **Anchors.** Every cfg diffs against the h405 detfix member of its
+  seed in exactly the pre-registered keys; the h405 s1 run rescored =
+  committed `s1_new` (4 dp).
+- **Stage A (seed s1, CRN with h405 s1; measured).** 7/16 cells pass the
+  MD gate, all with midHot in band (1.04–1.11). KE₁ 0.548–0.639 (h405 s1
+  0.644), W₁ 0.88–1.10 (h405 0.80), χ² 400–645 (h405 236), trap
+  0.037–0.042 (h405 0.087). Frozen selection → t64e310 (τ 6.4, E₀ 0.31;
+  KE₁ 0.639). Gate shift on h405 (h405g35, 3.5 Å, same seed): KE₁
+  0.645, n̄ 3.811, n₁ 0.214, W₁ 0.866, χ² 300 — gated.
+- **Stage B (t64e310, s1–s5 + r6, pooled N = 6000; measured).**
+
+| | gate | n₁ | n̄ | KE₁ | midHot | W₁ | deepKE | χ² | trap |
+|---|---|---|---|---|---|---|---|---|---|
+| t64e310 pooled | ✗ | **0.186** | 4.085 | 0.638 | 1.032 | 1.100 | 0.542 | 558 | 0.036 |
+| h405 `pooled_new6000` | ✓ | 0.209 | 3.890 | 0.640 | 0.948 | 0.755 | 0.571 | 456 | 0.080 |
+
+  Per member n₁ 0.177–0.204: only s1 gates (5/6 miss n₁ ≥ 0.19).
+- **Reads (measured).** KE₁ ties h405 (−0.002), above the twin
+  prediction (0.54–0.61; twin was ≈ 3 % cold here). midHot sits in the
+  band. The cost is the histogram: n₁ below the gate, W₁ +0.34, χ² +100.
+  The ridge law traps half as many ions (0.036 vs 0.080). The single-seed
+  selection picked a cell whose s1 n₁ (0.204) was the high end of its
+  seed spread (winner's curse, disclosed).
+- **Decision (frozen).** *Dominated* — the TDDFT-tied uncapped ridge does
+  not reproduce the production landing at its best Stage-A cell; the
+  cap stays as the effective element. Nothing adopted.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

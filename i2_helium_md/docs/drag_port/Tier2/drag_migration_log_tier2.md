@@ -14091,3 +14091,20 @@ User: "run step 3 as frozen on the 11 points". Full table: D0 §1.G4.12.
   of midHot (1.67 at c = 2) was wrong (measured 1.11) — retracted.
 - **Rule outcome.** Landing candidate exists (frozen rule); an MD
   battery needs its own trigger. Nothing adopted; production unchanged.
+
+## 2026-10-06 — G4.13 EXECUTED (MD, production pipeline): c = 2.0 ridge law, uncapped — **decision: dominated** (pooled N = 6000 n₁ 0.186 misses the gate; KE₁ 0.638 ties h405 0.640; W₁ 1.10 vs 0.755)
+
+User: "extensive MD battery for c = 2.0 around a suitable parameter grid"
+(read as c = 2.0; c = 20 is not on the ridge). Pre-registered `4e0908c`.
+Full record: D0 §1.G4.13.
+
+- **Stage A** (16 τ × E₀ cells + h405 at the 3.5 Å gate, seed s1, CRN):
+  7 cells gate, all midHot in band; KE₁ ≤ 0.639 vs h405 0.644; W₁ 0.88–1.10
+  vs 0.80. Selected t64e310. h405 with the 3.5 Å gate stays gated
+  (KE₁ 0.645, W₁ 0.866).
+- **Stage B** (t64e310 × 6 seeds): pooled n₁ 0.186 (gate ✗; 5/6 members
+  miss), n̄ 4.085, KE₁ 0.638, midHot 1.032, W₁ 1.100, χ² 558, trap 0.036.
+- **Reads.** The ridge law matches h405 on KE₁ and midHot but not on the
+  size histogram (n₁, W₁, χ²). Single-seed selection over-read s1's n₁.
+  The thesis statement G4.12 allowed: the TDDFT-tied uncapped law does not
+  land at its best cell; the cap stays. Production unchanged.
