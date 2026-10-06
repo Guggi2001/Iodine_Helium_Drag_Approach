@@ -18,6 +18,13 @@ Outputs (committed; every column): ``data/runs/h2b_forward_model/
 g413_table.csv`` (one row per run + pooled) and ``g413_verdict.csv``.
 
     python scripts/post_processing/tier2_g413_table.py
+    python scripts/post_processing/tier2_g413_table.py --transfer
+
+``--transfer`` (G4.14 input, zero MD): per Stage-A cell, MD (committed
+``g413_table.csv``) minus the twin at the same (tau, E0) (cached chords, same
+scorer as ``g412twin``), plus the seed spread of the six t64e310 members ->
+``g413_transfer.csv``. Anchor: every twin cell on the frozen G4.12 grid must
+equal its committed ``atlas_g412_twin.csv`` row (4 dp).
 """
 
 from __future__ import annotations
@@ -195,5 +202,71 @@ def main() -> int:
     return 0
 
 
+TRANSFER_CSV = OUT_DIR / "g413_transfer.csv"
+TRANSFER_OBS = (("n1_solv", "n1_solv", "diff"), ("nbar_det", "nbar_det", "diff"),
+                ("KE1_mean", "n1_ke_eV", "diff"), ("midHot", "midhot_geo", "ratio"),
+                ("w1_solv", "w1_solv", "diff"))
+SPREAD_COLS = ("n1_solv", "nbar_det", "KE1_mean", "midHot", "w1_solv",
+               "chi2_med", "deepKE", "trap")
+
+
+def transfer() -> int:
+    """G4.14 input: twin -> MD offsets for the c = 2.0 law + seed spread."""
+    import numpy as np
+    import scripts.tier2_h2b_forward_model as T
+
+    with open(TABLE_CSV, newline="", encoding="utf-8") as fh:
+        table = list(csv.DictReader(fh))
+    with open(OUT_DIR / "atlas_g412_twin.csv", newline="", encoding="utf-8") as fh:
+        frozen = {(r["c"], r["tau_ps"], r["E0_eV"]): r for r in csv.DictReader(fh)}
+    m = 20000
+    ref_ke = T.g3_ref_mean_ke()
+    solv_exp, _ = T.load_experiment()
+    sig = T._g3_md_rung_tables()["rq4graded"]
+    ens = T._g3_corrected_ensemble(m, ref_ke, solv_exp)
+    p = {q["c"]: q for q in T._g412_points()}[2.0]
+    spec = {"a": p["a"], "c": 2.0, "eb_tag": "ebown", "e_bind": p["e_bind"],
+            "s_rho": T.G412_S_RHO_A}
+    rows, anchored = [], 0
+    for r in table:
+        if r["stage"] != "A" or not r["label"].startswith("t"):
+            continue
+        tau, e0 = float(r["tau_ps"]), float(r["E0_eV"])
+        _, tw, _ = T._linsweep_scan("linq", [spec], ens, sig, ref_ke, solv_exp,
+                                    m, False, tau_grid=(tau,), e0_grid=(e0,))
+        w = tw[0]
+        key = ("2.0", str(tau), str(e0))
+        if key in frozen:
+            _check_4dp(f"[transfer anchor {r['cell']}]", w, frozen[key],
+                       ("n1_solv", "nbar_det", "n1_ke_eV", "midhot_geo", "w1_solv"))
+            anchored += 1
+        row = {"cell": r["cell"], "tau_ps": tau, "E0_eV": e0}
+        for md_k, tw_k, kind in TRANSFER_OBS:
+            md, tv = float(r[md_k]), float(w[tw_k])
+            row[f"md_{md_k}"], row[f"twin_{tw_k}"] = md, tv
+            row[f"{'r' if kind == 'ratio' else 'd'}_{md_k}"] = md / tv if kind == "ratio" else md - tv
+        rows.append(row)
+    if anchored == 0:
+        raise AssertionError("transfer anchor checked nothing")
+    print(f"TRANSFER ANCHOR PASSED: {anchored} twin cells = committed atlas_g412_twin.csv")
+    off_keys = [k for k in rows[0] if k.startswith(("d_", "r_"))]
+    for stat, fn in (("mean", np.mean), ("std", lambda x: np.std(x, ddof=1))):
+        rows.append({"cell": f"offset_{stat}",
+                     **{k: float(fn([q[k] for q in rows[:len(rows) - (stat == 'std')]]))
+                        for k in off_keys}})
+    members = [r for r in table if r["cell"] == "t64e310" and r["stage"] in ("A", "B")]
+    if len(members) != 6:
+        raise AssertionError(f"expected 6 t64e310 members, got {len(members)}")
+    for stat, fn in (("mean", np.mean), ("std", lambda x: np.std(x, ddof=1))):
+        rows.append({"cell": f"seed_{stat}_t64e310",
+                     **{f"seed_{k}": float(fn([float(q[k]) for q in members]))
+                        for k in SPREAD_COLS}})
+    _write(rows, TRANSFER_CSV)
+    for r in rows[-4:]:
+        print("  " + ", ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}"
+                               for k, v in r.items()))
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(transfer() if "--transfer" in sys.argv[1:] else main())

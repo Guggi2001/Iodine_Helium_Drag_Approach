@@ -47,8 +47,11 @@ Repo root:
   E_int(0) provenance, per-shed ε, suppressed fate/bare peak, ladder bottom,
   µs-flight channels, s_eff cross-check) — entry document of the
   literature-research / cross-validation phase (active since 2026-07-09)
-- `TIER2_SENSITIVITY_ATLAS_PLAN.md` — **current goal document** (designed
-  2026-07-23): the sensitivity-atlas study program
+- `THESIS_FINAL_GOALS.md` — **current goal document** (since 2026-10-02):
+  agreed changes and tests before thesis completion; its top status block
+  is the entry point
+- `TIER2_SENSITIVITY_ATLAS_PLAN.md` — the sensitivity-atlas study program
+  (goal document 2026-07-23 → 2026-10-02)
 - `TIER2_PARAMETER_INFLUENCE.md` — compact per-knob influence reference
   (atlas D0; living doc — its GAP markers are the atlas targets; §17 is
   the physical-sensibility ledger: physics / convention / effective /
@@ -73,11 +76,13 @@ Tier status: see the Validation hierarchy section below. **Live
 status, every result and all open gates:** `drag_migration_log_tier2.md`
 (chronology), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (results),
 `TIER2_PARAMETER_INFLUENCE.md` (per-knob influence),
-`TIER2_SENSITIVITY_ATLAS_PLAN.md` (goal document),
+`THESIS_FINAL_GOALS.md` (goal document),
 `TIER2_MASS_SCENARIOS.md` (open investigation). Verify against the log
 before relying on anything summarised here.
 
-**Current arm: `TIER2_MASS_SCENARIOS.md`** — the flight mass, not the
+**Current arm: `THESIS_FINAL_GOALS.md` G4.x** (Tier-0 refit at s_ρ = 3.5 Å
+and the drag-law questions it opened; status block at the top of the
+file). `TIER2_MASS_SCENARIOS.md` — the flight mass, not the
 drag, carries the KE₁ deficit; **M1 (a sourced I⁺–He D₀) gates it.** The
 free-form linear counterfactual (`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`)
 is **closed** as of 2026-08-13; its open gates, and the standing G4 /

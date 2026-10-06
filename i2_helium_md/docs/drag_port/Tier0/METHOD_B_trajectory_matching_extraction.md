@@ -917,3 +917,25 @@ the cubic leaves the band under + 8 % radius and the anchored 9 Å mass
 (≤ 0.024). D0 §1.G4.11; artifacts
 `data/reference/drag/force_balance_srho3p5A/g411_cross_case/`.
 
+
+Contested post hoc (2026-10-05): radial Tier-0 9 Å runs of the same laws
+put the quadratic on HeDFT atom 1 (RMSE 0.27) and the cubic on the
+transverse atom 2 (0.52); the C-X reading rests on atom 2's force
+balance. Quantified in §11.4.
+
+### 11.4 The 18 Å linear + quadratic ridge (RAN 2026-10-05; G4.12 steps 1–2)
+
+18 Å fixes one number, F(v ≈ 3). Fixed-c fits of F = a·v + c·v²
+(variant `lq_fixed_c`: c pinned ≥ 0, a ≥ 0 and E_bind free; same engine,
+N = 50, seed 20260604, 20 ps at 0.01 ps, long reference, s_ρ = 3.5 Å)
+at c ∈ {0 … 7.224}: every point passes the G4.9 bands, RMSE 0.124 (c 0)
+→ 0.117 (c 7.224), a 23.15 → 0, E_bind 0.1165 → 0.1191 eV. 18 Å does not
+select c. Oracles: the lq form reproduces the G4.9 linear and G4.11
+quadratic RMSEs bit-exactly; the c = 0 fit is the G4.9 linear point.
+9 Å exit bound (radial Tier-0, N = 50, 30 ps; v_exit over [13, 14] ps vs
+the less-transverse HeDFT atom 1, 4.237 Å/ps): margin +1.27 (c 0) →
++0.20 (c 5) → −0.14 (c 7.224). Atom 1 |v_⊥|/|v| 0.29, atom 2 0.64.
+Driver `scripts/extraction/method_b_g412_ridge.py`; artifacts
+`data/reference/drag/18A/trajectory_matching_srho3p5A/g412_ridge/`,
+`data/reference/drag/9A/g412_exit_bound/`. Downstream (twin, MD) in D0
+§1.G4.12–§1.G4.13 and `THESIS_FINAL_GOALS.md` G4.12–G4.14.

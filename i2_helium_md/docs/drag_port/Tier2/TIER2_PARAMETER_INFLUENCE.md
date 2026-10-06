@@ -3281,7 +3281,7 @@ physics, and which are scaffolding?** Role codes:
 | element | provenance | external constraint? | role | what would retire / confirm it |
 |---|---|---|---|---|
 | in-band drag form + b | Tier-0 Method-B on 9/18 Å TDDFT | **yes**, 2.54–4.95 Å/ps only | **P** (band-limited) | extended TDDFT (collaborator ask). Note §1: the Tier-2 landing is form-blind — it is *not* evidence |
-| capped tail v_c, p_tail | fit to experiment above the TDDFT band | no | **E** | TDDFT at production kinematics; the "S-shape" framing (§6.1) says a cap is a stand-in, not a law |
+| capped tail v_c, p_tail | fit to experiment above the TDDFT band | no | **E** | TDDFT at production kinematics; the "S-shape" framing (§6.1) says a cap is a stand-in, not a law. **Retirement attempt in progress (2026-10-05/06):** an uncapped TDDFT-tied law F = a·v + c·v² on the 18 Å ridge — every point fits 18 Å, c ≤ 5 passes the 9 Å exit bound, all land in the twin (§1.G4.12); MD at c = 2.0 ties h405 on KE₁ but its one escalated cell misses the n₁ gate with W₁ +0.34 (§1.G4.13, verdict scoped to that cell). Open: the fine τ-line sweep `THESIS_FINAL_GOALS.md` G4.14 |
 | τ cooling clock | arbitration basin §4w | no | **E** | a physical cooling model for the bubble |
 | E₀ = E_int(0) | solvation-scale bracket + arbitration | weak (bracket only) | **E** | Axis B curve + an independent onset argument |
 | κ, picture | Form-U parametrisation | no | **E** (both near-dead levers) | superseded by the tabulated `rq4graded` ladder |

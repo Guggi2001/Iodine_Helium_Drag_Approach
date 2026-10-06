@@ -3,25 +3,38 @@
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
-**Status (2026-10-05):** G4 **executed** (G4.8). The adoption decision
-is superseded by **G4.9** (18 Å-only refit; 9 Å held out as
-non-radial), **executed 2026-10-05: winner `cubic` (`srho3p5A18A_cubic`,
-b 2.2286, E_bind 0.1214 eV)**; adoption for G5 is gated by **G4.10**
-(force-balance cross-check), **executed 2026-10-05: 18 Å b_A = 1.618
-outside the band [1.803, 2.654], read as INCONCLUSIVE** (references not
-derivative-grade). **Post-hoc (June Method-A pipeline + corrections):
-cubic b 18 Å 2.449, 9 Å 2.634 — both inside the band**, 9 Å at the edge
-(G4.10 status). **G4.11** (cross-case drag-law test), **executed
-2026-10-05: only the cubic is consistent (s_X 1.182, s_M 1.099) → cubic
-supported by the TDDFT data** (marginal: C-X at the band edge); linear and
-quadratic fail C-X. The adoption gate for `srho3p5A18A_cubic` in G5 is
-cleared on the rule, but the reading is **contested** by the user's
-Tier-0 9 Å runs (cubic over-dissipates the radial ion; G4.11 post-hoc
-caveat) — **adoption on hold. G4.12** (TDDFT-tied linear + quadratic
-ridge vs the experiment, uncapped): **steps 1–2 executed 2026-10-05** —
-the whole ridge fits 18 Å; the 9 Å exit bound passes every c ≤ 5 and
-fails only the pure quadratic. Step 3 (twin): all 11 land after the frozen refinement (landing candidate), but h405 dominates at matched midHot. **G4.13** (MD battery, c = 2.0, executed 2026-10-06): dominated **at the selected cell t64e310 only** (pooled n₁ 0.186 misses the gate, KE₁ ties h405, W₁ 1.10 vs 0.755); the grid could not resolve the landing (correction, user-caught). **Next: G4.14** fine τ-line sweep, draft under discussion.
-G1, G2 (production switch), G5–G7 not started.
+**Status (2026-10-06)** — entry point for a new chat; details in each
+section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE.md`) and the
+log (`drag_migration_log_tier2.md`).
+
+1. **G4 / G4.8** (Stage-2 refit at s_ρ = 3.5 Å) executed; adoption
+   superseded by G4.9.
+2. **G4.9** (18 Å-only refit, 9 Å held out): winner `cubic`
+   (`srho3p5A18A_cubic`, b 2.2286, E_bind 0.1214 eV).
+3. **G4.10** (force balance): 18 Å b_A 1.618 outside [1.803, 2.654] —
+   inconclusive (references not derivative-grade); post-hoc June
+   pipeline: cubic b 18 Å 2.449 / 9 Å 2.634, both in band.
+4. **G4.11** (cross-case drag-law test): only the cubic consistent
+   (s_X 1.182, s_M 1.099). **Contested** by the radial 9 Å runs: the cubic
+   over-dissipates (tracks transverse atom 2). **Adoption of
+   `srho3p5A18A_cubic` on hold.**
+5. **G4.12** (TDDFT-tied ridge F = a·v + c·v², uncapped): steps 1–3 done.
+   Every ridge point fits 18 Å; the 9 Å exit bound fails only the pure
+   quadratic; all 11 passing points land in the twin (after the frozen
+   near-pass refinement), on one KE₁ / midHot dial.
+6. **G4.13** (MD, production pipeline, c = 2.0): 7/16 Stage-A cells gate
+   on one seed; the escalated cell t64e310 (N = 6000) misses n₁ (0.186),
+   ties h405 on KE₁ (0.638 vs 0.640), W₁ 1.10 vs 0.755. **"Dominated"
+   holds for that cell only** — the grid could not resolve the landing
+   (user-caught correction).
+7. **G4.14** (fine τ-line sweep, τ the primary axis): **DRAFT, under
+   discussion, nothing run.** Inputs committed:
+   `data/runs/h2b_forward_model/g413_transfer.csv` (twin → MD offsets,
+   seed spread). Requires `[PROCEED TO IMPLEMENTATION]` for its code.
+
+**Next:** discuss the G4.14 open points (c set, landing margin, fit model,
+seeds, ranking axes). G1, G2 (production switch), G5–G7 not started.
+Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
 
@@ -753,6 +766,9 @@ seed sd from the 6 Stage-B seeds):
 | n̄ | −0.37 ± 0.035 | 0.07 | yes (E₀: −0.25 per 0.01 eV) |
 | n₁ | −0.011 ± 0.014 | 0.010 | no — decides the gate |
 | W₁ | +0.31 ± 0.06 | 0.036 | no — set by τ, MD only |
+
+(Committed: `data/runs/h2b_forward_model/g413_transfer.csv`, from
+`tier2_g413_table.py --transfer`; anchored on `atlas_g412_twin.csv`.)
 
 **Design (τ is the primary axis; E₀ is slaved to the gate along it).**
 
