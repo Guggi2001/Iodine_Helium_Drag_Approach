@@ -658,10 +658,73 @@ step 2 ≈ 12 × N = 50 9 Å runs (minutes each); step 3 zero MD.
   with KE₁ 0.62–0.55 vs h405 0.725 at midHot 1.06 — h405 dominates at
   matched midHot. Record: D0 §1.G4.12, log G4.12 step-3 entry.
 
-  > **NEXT (user).** MD battery for a ridge point (which c), or record
-  > the ridge as dominated and keep the cap.
+  > **NEXT (user, 2026-10-06).** MD battery at c = 2.0 → G4.13.
 
-## G5. Attribution batteries, then re-arbitration under `post_pickup`
+### G4.13 MD battery for the G4.12 ridge point c = 2.0, uncapped (PRE-REGISTERED 2026-10-06, user trigger "extensive MD battery for c = 2.0 around a suitable parameter grid"; frozen before any MD)
+
+**Why c = 2.0.** The one ridge point whose twin midHot sits in the soft
+band (1.11) on the refined surface (G4.12 step 3). The law:
+F = g(ρ̂)·(a·v + c·v²), a 16.717 amu/ps, c 2.0 amu/Å, own 18 Å E_bind
+0.11748 eV (`g412_ridge/c2p000.json`, values read at build time, never
+retyped), density gate `erf_independent` 3.5 Å, no cap. Units as G4.12.
+
+**Pipeline = production** (`gen_tier2_detfix_battery.py`): h405's frozen
+cell (`build_cell(h405)`), Stage I to 500 ps, E2 off, partner-aware
+closure, N = 1000 per member, max two concurrent. Only the drag law, the
+well and τ / E₀ move. Bundle `srho3p5A18A_linear_quadratic` with
+{a, c, E_bind} overridden (its stamped gate 3.5 Å comes with it).
+
+**Stage A — grid ring (seed 20260730 = h405 detfix s1, CRN).** Four τ
+arms × an E₀ ladder of four, placed on the twin's gated ridge with the
+measured twin→MD transfer (Block-0 n̄ model a 0.581 / b −0.238, resid
+sd 0.29; MD n₁ ≈ 0.01–0.015 below twin → ladders lean to higher E₀):
+
+| τ [ps] | E₀ [eV] |
+|---|---|
+| 4.8 | 0.39, 0.40, 0.41, 0.42 |
+| 5.2 | 0.36, 0.37, 0.38, 0.39 |
+| 5.6 | 0.335, 0.345, 0.355, 0.365 |
+| 6.4 | 0.30, 0.31, 0.32, 0.33 |
+
+Plus **h405g35**: h405's own cell with the 3.5 Å density gate (the only
+change), same seed — the MD gate shift on the incumbent. 17 runs. The
+14.2 Å partner is the committed `detfix_battery_table.csv` row `s1_new`
+(anchored: its run dir rescored must reproduce it, 4 dp).
+
+**MD hard gate (unchanged, §3.5d):** n₁_solv ∈ [0.19, 0.30] AND
+n̄ ∈ [3.77, 4.37]. Reported, not gating: KE₁ (mean/median), KE₂, midHot,
+deepKE, W₁, χ²_med, trap (bound / marginal), S — full vector (scorer
+CSVs carry every column).
+
+**Stage B — battery (selection frozen here).** Among Stage-A gated
+cells: midHot ∈ [0.85, 1.15] and maximal KE₁_mean; none in band → the
+gated cell with midHot nearest the band; ties → lower W₁. No gated cell
+→ stop, record, no Stage B. The selected cell runs at the remaining
+production seeds (s2–s5 20260731–34, r6 20260729) → pooled N = 6000
+with the Stage-A s1 member, scored against the production reference row
+`pooled_new6000` (nbar 3.890, n₁ 0.2093, W₁ 0.7551, midHot 0.948,
+deepKE 0.571, χ² 456, KE₁ 0.640).
+
+**Decision rule (Stage B pooled).** *Matches or beats h405* ⇔ pooled
+gate passes AND KE₁_mean ≥ 0.640 AND midHot ∈ [0.85, 1.15]. Otherwise
+*dominated*: recorded, the cap stays as the effective element; nothing
+is adopted in either case (adoption is a separate user decision).
+**Twin prediction (disclosed):** at the ridge cells twin KE₁ 0.53–0.60
+(twin ~1–2 % cold) → MD KE₁ ≈ 0.54–0.61 → *dominated*.
+
+**Oracles before any MD.** (i) the c = 2.0 coefficients and E_bind
+read from the committed ridge JSON; (ii) each cell's cfg diffs against
+the h405 detfix member of the same seed in exactly the pre-registered
+key set (drag law, well, gate, τ, E₀ — set fixed at the dry run, any
+other key aborts); (iii) handover alignment as the production
+generator; (iv) scorer anchor: h405 detfix s1 rescored = committed
+`s1_new` row (4 dp).
+
+**Not in scope.** Other c; capped variants; 18 Å / Tier-0 changes;
+production changes.
+
+**Cost.** ≈ 3 min per N = 1000 member (detfix precedent) → Stage A
+≈ 30 min, Stage B ≈ 10 min. Code: generator + scorer (+ tests). Attribution batteries, then re-arbitration under `post_pickup`
 
 Run in this order on the production pipeline (Stage I to 500 ps, E2
 off, partner-aware closure; `exclude_all_coupled`):
