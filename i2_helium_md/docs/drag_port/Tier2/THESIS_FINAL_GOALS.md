@@ -40,8 +40,13 @@ log (`drag_migration_log_tier2.md`).
    excluded on physical grounds; the n ≥ 16 limit explained (escape
    cliff, TDDFT-pinned). See G4.14 "Discussion outcome".
 
-**Next:** open points (a)–(c) of the G4.14 recap (lq co-equal or
-recommended; c window; optional c = 1.8 pool). G1, G2 (production
+9. **G8 bare-start screen** (2026-10-06): fragments born with no He
+   shell (n₀ = 0, E_int(0) = 0), lq A5 cell and h405, one run each —
+   what leaves the droplet, at which n and KE. **Executed:** bare ions
+   land at n = 2–4 by pickup; KE₁ 0.49 (lq) / 0.87 (h405) vs exp median
+   1.13 — the mixture cannot supply fast n = 1 ions. See G8.
+
+**Next:** user decision on the bare/intact mixture (screen negative). G4.14 recap points (a)–(c) parked. G1, G2 (production
 switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
@@ -1105,6 +1110,59 @@ and realized sizes.
   by construction (same physics parameters). The claim needs its scope.
 - **Evidence.** D0 §15.8 read 6 (caveats); CLAUDE.md Tier 3.
 - **Cost.** None beyond G6.
+
+## G8. Bare-start channel screen (agreed 2026-10-06; frozen before any run)
+
+**Question.** If some fragments start with no He shell, which of them
+leave the droplet, at which n, and with what KE? This is a screen for a
+later P1/P2 mixture (bare class + intact class) that could supply the
+missing fast low-n ions. It is a modelling assumption here; the physical
+origin is decided later.
+
+**Bare class (Case 1, user decision).** n₀ = 0 for every fragment, both
+fragments of every pair (P1). E_int(0) = 0: the T6 `sigma_proportional`
+law gives (Σ(0)/Σ(21)) = 0 (no shell, no reservoir). Pickup adds
+f_ret·D₀ ≈ 1–2 meV per He, below D₀(1) = 20.3 meV, so final n ≈ number of
+pickups (sourced λ₀ = 0.9/ps). Case 2 (bare ion keeps E₀) is not run.
+
+**Runs (2, MD).** Production pipeline unchanged (Stage I 500 ps, E2 off,
+partner-aware closure), N = 1000, seed s1 (the parent's neutral stage,
+so births are identical to the parent run). Parents:
+- lq: the A5 cell (c 2.0, τ 6.4, E₀ 0.3155, 3.5 Å gate), s1 member;
+- h405: production detfix s1 (14.2 Å gate).
+Each cfg diffs from its parent in exactly `initial_shell_model`
+(`density_tied` → `bare`). The parents already run T5 `density_tied` +
+T6 `sigma_proportional`, both inert for them (n₀ = 21 at production
+depths); found at the dry-run oracle, before any MD.
+
+**Code (`[PROCEED TO IMPLEMENTATION]` given 2026-10-06).**
+`initial_shell_model = "bare"` (biphasic-only; requires
+`sigma_proportional`, so the deposit cannot silently stay on a bare
+ion); generator `scripts/gen_tier2_bare_screen.py`; scorer
+`scripts/post_processing/tier2_bare_screen_table.py`. Before `ion.npz`
+is dropped, a small per-ion summary is saved (n at handover, pickup
+exposure ∫ρ̂ dt, exit time, max E_int).
+
+**Readout (reported; no weight scan, no pass/fail rule).** Per law:
+fates (scored / retained / suppressed); detected histogram (n = 0 share,
+solvated n ≥ 1, share at n ≥ 4, bands); KE per n (mean, median, IQR,
+count) beside the experiment (mean, median) and the same-law intact
+reference (lq A5 pool; `pooled_new6000`); n vs exposure. The user judges
+from the tables whether the mixture is worth a design (P1 fit, then P2).
+
+**Anchors.** The scorer rescoring the two parent runs reproduces their
+committed rows (h405 s1 = `s1_new`; lq A5 s1 member = its
+`g414_table.csv` row, 4 dp).
+
+- **Status — EXECUTED 2026-10-06 (measured; anchors pass).** Bare ions
+  never evaporate (E_int ≤ 7 meV); n = pickup count, peaking at n = 2–3
+  (n₁ share 0.15 lq / 0.20 h405; 35–45 % at n ≥ 4; max n 11–12).
+  KE₁: lq 0.491 (below intact 0.621), h405 0.865 (above intact 0.644,
+  below the experimental median 1.128); h405 bare overshoots n = 2–4;
+  KE₂/KE₁ 0.87–0.90 (exp 0.54). Only the KE width at fixed n moves
+  toward experiment. The KE gain is a property of the cap (lq's ram drag
+  takes it back). A bare/intact mixture cannot supply the fast n = 1
+  ions; mixture design: user decision. Record: D0 §1.G8.
 
 ## Thesis framing implied
 

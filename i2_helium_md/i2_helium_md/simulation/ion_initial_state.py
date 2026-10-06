@@ -220,6 +220,16 @@ def build_initial_ion_state(
                 )
             )
             mass_kg_initial = complex_mass_amu(n0_initial) * U
+        elif (
+            cfg.mass_scenario == "biphasic"
+            and cfg.initial_shell_model == "bare"
+        ):
+            # THESIS_FINAL_GOALS G8: born with no shell, n_0 = 0 for every
+            # ion (bare I+ mass); dressed only by the live pickup channel. The
+            # guard pairs it with the T6 sigma_proportional law, so the onset
+            # below is Sigma(0)/Sigma(n*) = 0 -> E_int(0) = 0.
+            n0_initial = np.zeros(two_N)
+            mass_kg_initial = complex_mass_amu(n0_initial) * U
         else:
             n0_initial = ANCHOR_N_START
             mass_kg_initial = np.full(
@@ -329,7 +339,8 @@ def build_initial_ion_state(
         # Slice T5: the fold is seeded at the ion's actual t0 shell --
         # n0_initial is the scalar ANCHOR_N_START under the `full` arm
         # (byte-identical to the delivered call) or the per-ion dressed
-        # array under `density_tied` (e_bind_pair_eV is vectorised).
+        # array under `density_tied` / all-zero under `bare` (e_bind_pair_eV
+        # is vectorised).
         E_pot_eV[:, 0] += e_bind_pair_eV(
             n0_initial,
             picture=cfg.ladder_electronic_picture,

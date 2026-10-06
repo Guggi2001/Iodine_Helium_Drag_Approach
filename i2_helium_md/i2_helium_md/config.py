@@ -187,7 +187,12 @@ EvaporationShedConvention = Literal["cold", "co_moving"]
 # (check_initial_shell_config). A first-order occupancy statement, not
 # shell-restructuring dynamics — under-dressed ions may re-fill via the live
 # pickup channel (a reported twin-divergence candidate, plan §T5 boundary).
-InitialShellModel = Literal["full", "density_tied"]
+# ``bare`` (THESIS_FINAL_GOALS G8, the bare-start screen): n_0 = 0 for every
+# ion -- born with no shell, dressed only by the live pickup channel. Requires
+# the T6 ``sigma_proportional`` law, which then gives E_int(0) = 0 (no shell,
+# no reservoir); the guard refuses ``constant`` so the onset cannot silently
+# stay on a bare ion.
+InitialShellModel = Literal["full", "density_tied", "bare"]
 
 # Slice T6 (Tier-2 plan §I.11; the D2 p-law): how the S2 Coulomb onset E_int(0)
 # couples to the T5 initial-shell dressing. ``constant`` (byte-inert default,
@@ -569,9 +574,10 @@ class SimConfig:
     # -- Tier-2 Slice T5 initial-shell dressing (plan §I.11; H.3b revived) --
     # "full" = delivered 21-for-all (byte-inert default); "density_tied" =
     # per-ion n_0 = round(n* * rho_hat(d_birth)) through the shared
-    # erf-complement surface (see InitialShellModel above). Biphasic-only
-    # (check_initial_shell_config); no preset or generator selects the arm —
-    # the T5+/leg-B legs stamp it explicitly (the T7 precedent).
+    # erf-complement surface (see InitialShellModel above); "bare" = n_0 = 0
+    # for every ion (G8 screen; needs the T6 sigma_proportional law).
+    # Biphasic-only (check_initial_shell_config); no preset selects either
+    # non-default arm — the generators stamp it explicitly (the T7 precedent).
     initial_shell_model: InitialShellModel = "full"
 
     # -- Tier-2 Slice T6 E_int(0)-dressing coupling (plan §I.11; the D2 p-law) --
@@ -1198,7 +1204,7 @@ def check_evaporation_config(cfg: "SimConfig") -> None:
 # ---------------------------------------------------------------------------
 # Tier-2 Slice T5 initial-shell-model config-load guard (plan §I.11)
 # ---------------------------------------------------------------------------
-_KNOWN_INITIAL_SHELL_MODELS = ("full", "density_tied")
+_KNOWN_INITIAL_SHELL_MODELS = ("full", "density_tied", "bare")
 
 
 def check_initial_shell_config(cfg: "SimConfig") -> None:
@@ -1211,7 +1217,12 @@ def check_initial_shell_config(cfg: "SimConfig") -> None:
        the biphasic column-0 seed (per-ion ``n_0`` / mass / E_pot binding
        fold), so under any other ``mass_scenario`` the advertised arm would
        be silently inert — refused loudly instead (the T7/F3
-       no-silent-inert convention).
+       no-silent-inert convention). The same holds for ``bare``.
+    3. ``bare`` requires ``internal_energy_partition_law='sigma_proportional'``:
+       a bare ion has no shell to hold the S2 onset, and the T6 p-law gives
+       ``Sigma(0)/Sigma(n*) = 0`` -> ``E_int(0) = 0``. Under ``constant`` the
+       full onset would stay on the bare ion (THESIS_FINAL_GOALS G8 "Case 2",
+       deliberately not offered).
 
     ``density_tied`` under center-pinned births (``single_initial_position=
     True``) is deliberately **legal**: the arm is then *physically* inert
@@ -1222,22 +1233,35 @@ def check_initial_shell_config(cfg: "SimConfig") -> None:
     Raises
     ------
     ValueError
-        On an unknown ``initial_shell_model``, or ``density_tied`` outside
-        ``mass_scenario='biphasic'``.
+        On an unknown ``initial_shell_model``, ``density_tied`` / ``bare``
+        outside ``mass_scenario='biphasic'``, or ``bare`` without the
+        ``sigma_proportional`` onset law.
     """
     _reject_unknown_enum(
         cfg.initial_shell_model,
         _KNOWN_INITIAL_SHELL_MODELS,
         field="initial_shell_model",
     )
+    for trigger in ("density_tied", "bare"):
+        _require_pairing(
+            field="initial_shell_model", value=cfg.initial_shell_model,
+            trigger=trigger, dep_field="mass_scenario",
+            dep_value="biphasic", actual=cfg.mass_scenario,
+            reason=(
+                "the dressing law is read only by the biphasic column-0 seed "
+                "(per-ion n_0 / mass / E_pot binding fold), so it would be "
+                "silently inert otherwise (keep the 'full' default there)"
+            ),
+        )
     _require_pairing(
         field="initial_shell_model", value=cfg.initial_shell_model,
-        trigger="density_tied", dep_field="mass_scenario",
-        dep_value="biphasic", actual=cfg.mass_scenario,
+        trigger="bare", dep_field="internal_energy_partition_law",
+        dep_value="sigma_proportional",
+        actual=cfg.internal_energy_partition_law,
         reason=(
-            "the dressing law is read only by the biphasic column-0 seed "
-            "(per-ion n_0 / mass / E_pot binding fold), so it would be "
-            "silently inert otherwise (keep the 'full' default there)"
+            "a bare ion has no shell to hold the S2 onset; the T6 p-law gives "
+            "E_int(0) = 0 at n_0 = 0, while 'constant' would keep the full "
+            "onset on it"
         ),
     )
 

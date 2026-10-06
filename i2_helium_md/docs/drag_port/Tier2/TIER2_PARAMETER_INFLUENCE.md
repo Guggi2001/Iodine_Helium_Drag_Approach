@@ -1156,6 +1156,59 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   cost lowered AND enough cooling per exposure; speed needs only the
   former. Both require leaving the 18 Å band (previous bullet).
 
+#### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
+
+Fragments born with no shell (`initial_shell_model = "bare"`: n₀ = 0,
+E_int(0) = 0 via the T6 `sigma_proportional` law; both fragments of a
+pair, P1). One run per law, N = 1000, seed s1, production pipeline; each
+cfg differs from its parent only in `initial_shell_model` (same births:
+neutral stage bit-identical to the parent). Generator
+`scripts/gen_tier2_bare_screen.py`, scorer
+`scripts/post_processing/tier2_bare_screen_table.py` (anchors: both
+parents rescored = committed `c200t64confs1` / `s1_new`, 4 dp);
+`data/runs/h2b_forward_model/g8_bare_{table,by_n}.csv`. Parents: lq A5
+cell (3.5 Å) and h405 detfix s1 (14.2 Å).
+
+| | lq intact | lq bare | h405 intact | h405 bare | experiment |
+|---|---|---|---|---|---|
+| scored / retained | 0.959 / 0.041 | 0.851 / 0.149 | 0.913 / 0.086 | 0.882 / 0.118 | — |
+| n = 0 of scored | 0.067 | 0.052 | 0.203 | 0.085 | (excluded) |
+| n₁ (solvated) | 0.220 | 0.145 | 0.213 | 0.201 | 0.310 |
+| n ≥ 4 (solvated) | 0.475 | 0.452 | 0.528 | 0.351 | — |
+| max n | 16 | 11 | 17 | 12 | > 20 |
+| KE₁ mean [eV] | 0.621 | **0.491** | 0.644 | **0.865** | 1.302 (median 1.128) |
+| KE₂ / KE₃ / KE₄ | 0.53 / 0.45 / 0.40 | 0.43 / 0.38 / 0.31 | 0.55 / 0.47 / 0.40 | 0.78 / 0.64 / 0.48 | 0.71 / 0.50 / 0.39 |
+| KE₂/KE₁ | 0.85 | 0.87 | 0.85 | 0.90 | 0.54 |
+| KE IQR/median, n = 1 | 0.11 | 0.55 | 0.09 | 0.50 | 0.82 |
+| midHot | 0.99 | 0.72 | 0.94 | 1.01 | 1 |
+
+- **No evaporation, pure pickup (as projected).** Final n = n at handover
+  for every bare ion; E_int stays 2–7 meV (< D₀(1) 20.3 meV). n follows
+  exposure: ∫ρ̂ dt 2.6–3.2 ps at n ≤ 1 → 6–8 ps at n 9–12 (λ₀ 0.9/ps).
+  The bare class **peaks at n = 2–3**, not n = 1 (n₁ share 0.15–0.20 of
+  solvated, below the intact class and experiment); 35–45 % lands at
+  n ≥ 4.
+- **KE depends on the law (measured).** h405 bare is faster at every
+  n ≤ 4 (KE₁ +34 %); lq bare is *slower* at every n (KE₁ −21 %). Reading
+  (interpretation, consistent with the exit-energy invariance measured
+  under the cap, `TIER2_MASS_SCENARIOS.md` §4): above v_c the capped force is
+  speed-independent, so drag work is path-only and a lighter flight
+  keeps its exit energy; the lq force rises with v, so the lighter
+  (faster) bare ion pays more ram drag. The bare-start KE gain is a
+  property of the cap, not of the bare start.
+- **Against the targets.** Even a pure bare population reaches only
+  KE₁ 0.865 (h405), below the experimental median 1.128, while it
+  overshoots n = 2–4 (+10–30 %); KE₂/KE₁ stays 0.87–0.90 (exp 0.54).
+  The only target that moves toward experiment is the KE width at fixed
+  n (IQR/median 0.50–0.60 vs intact 0.09–0.11, exp 0.71–0.82). Bare
+  ions are also retained more (0.12–0.15 vs 0.04–0.09).
+- **Reading.** By the screen's own question (user, 2026-10-06: too
+  much in the middle, KE does not fit → stop): lq — KE goes the wrong
+  way; h405 — the boost is too small for n = 1, too large for n = 2–4,
+  and the class lands in the middle. A bare/intact mixture cannot
+  supply the fast n = 1 ions. Mixture design (P1 fit, P2): user
+  decision pending.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

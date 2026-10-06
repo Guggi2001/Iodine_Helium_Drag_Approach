@@ -296,6 +296,70 @@ class TestDressedSeed:
 
 
 # ===========================================================================
+# The bare arm (THESIS_FINAL_GOALS G8): n_0 = 0, E_int(0) = 0
+# ===========================================================================
+class TestBareArm:
+    def test_bare_requires_biphasic(self):
+        cfg = SimConfig(initial_shell_model="bare",
+                        internal_energy_partition_law="sigma_proportional")
+        with pytest.raises(ValueError, match="biphasic"):
+            check_initial_shell_config(cfg)
+
+    def test_bare_requires_sigma_proportional(self, small_neutral_run):
+        # Case 2 (the bare ion keeps the full onset) is refused loudly.
+        cfg, _ = small_neutral_run
+        bad = _biphasic_cfg(cfg, initial_shell_model="bare")
+        with pytest.raises(ValueError, match="sigma_proportional"):
+            bad.validate()
+
+    def test_bare_validates_and_roundtrips(self, tmp_path, small_neutral_run):
+        cfg, _ = small_neutral_run
+        bare = _biphasic_cfg(cfg, initial_shell_model="bare",
+                             internal_energy_partition_law="sigma_proportional")
+        bare.validate()
+        run = RunDirectory(tmp_path / "9A_drag_tier2probe_shell_bare")
+        run.save_cfg(bare)
+        assert run.load_cfg().initial_shell_model == "bare"
+
+    def test_bare_seed_hand_oracle(self, small_neutral_run):
+        # n_0 = 0, bare I+ mass, no binding fold, no onset: every ion.
+        cfg, neutral = small_neutral_run
+        bare_cfg = _biphasic_cfg(cfg, initial_shell_model="bare",
+                                 internal_energy_partition_law="sigma_proportional")
+        ion = build_initial_ion_state(bare_cfg, neutral, num_steps_ion=5)
+        np.testing.assert_array_equal(ion.n_shell[:, 0], 0.0)
+        np.testing.assert_allclose(ion.mass_kg, complex_mass_amu(0) * U)
+        np.testing.assert_allclose(ion.mass_history_kg[:, 0], ion.mass_kg)
+        np.testing.assert_array_equal(ion.E_int_eV[:, 0], 0.0)
+        fixed_cfg = replace(
+            bare_cfg,
+            mass_scenario="fixed",
+            initial_shell_model="full",
+            internal_energy_partition_law="constant",
+            internal_energy_partition_fraction=None,
+            internal_energy_retained_fraction=None,
+            pickup_rate_coefficient=0.0,
+            allow_inconsistent_mass_pairing=False,
+        )
+        ion_fixed = build_initial_ion_state(fixed_cfg, neutral, num_steps_ion=5)
+        # Sigma(0) = 0: the t0 E_pot carries no binding fold.
+        np.testing.assert_allclose(ion.E_pot_eV[:, 0], ion_fixed.E_pot_eV[:, 0],
+                                   rtol=0, atol=1e-12)
+
+    def test_sigma_proportional_inert_on_full_arm(self, small_neutral_run):
+        # The G8 parents run `full` + `constant`; the bare cfg differs only in
+        # the two keys. Under `full` the p-law factor is Sigma(21)/Sigma(21)
+        # = 1, so switching the law alone leaves the intact seed unchanged.
+        cfg, neutral = small_neutral_run
+        a = build_initial_ion_state(_biphasic_cfg(cfg), neutral, num_steps_ion=5)
+        b = build_initial_ion_state(
+            _biphasic_cfg(cfg, internal_energy_partition_law="sigma_proportional"),
+            neutral, num_steps_ion=5)
+        np.testing.assert_array_equal(a.E_int_eV[:, 0], b.E_int_eV[:, 0])
+        np.testing.assert_array_equal(a.mass_kg, b.mass_kg)
+
+
+# ===========================================================================
 # build_biphasic_cfg pass-through (scripts/tier2_common.py)
 # ===========================================================================
 class TestBuildBiphasicCfgPassThrough:

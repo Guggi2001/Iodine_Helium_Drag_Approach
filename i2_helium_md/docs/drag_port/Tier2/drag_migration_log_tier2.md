@@ -14219,3 +14219,20 @@ ion.npz dropped; rows `well_only_informative` in `g415_table.csv`).
 KE n 10–14 / ref 0.61 → 0.77 → 0.98, trap 0.041 → 0.016, KE₁ 0.621 →
 0.656, W₁ 1.11 → 0.93; n ≥ 15 0.0011 → 0.0071 (exp 0.057), midHot →
 1.13. Record: D0 §1.G4.14.
+
+## 2026-10-06 — G8 bare-start screen (user trigger `[PROCEED TO IMPLEMENTATION]`): bare-born ions land at n = 2–4 by pickup; KE boost only under the cap and too small for n = 1
+
+New arm `initial_shell_model = "bare"` (n₀ = 0; guard requires the T6
+`sigma_proportional` law → E_int(0) = 0; tests in
+`tests/test_initial_shell_model.py`). Two MD runs (lq A5 cell, h405
+detfix s1; seed s1, N = 1000, production pipeline; cfg diff vs parent =
+`initial_shell_model` only — the parents already run `density_tied` +
+`sigma_proportional`, found at the dry-run oracle; neutral bit-identical
+to the parent). Generator `scripts/gen_tier2_bare_screen.py`, scorer
+`scripts/post_processing/tier2_bare_screen_table.py` (both parent anchors
+pass, 4 dp); `g8_bare_{table,by_n}.csv`; ion.npz dropped after a per-ion
+`bare_summary.npz`. Bare class: pure pickup (no evaporation), peaks at
+n = 2–3, n₁ share 0.15 / 0.20, retained 0.15 / 0.12 (lq / h405). KE₁
+0.491 (lq, below intact 0.621) / 0.865 (h405, above intact 0.644; exp
+median 1.128); h405 bare overshoots n = 2–4; KE₂/KE₁ 0.87–0.90. Only the
+KE width moves toward experiment. Record: D0 §1.G8.
