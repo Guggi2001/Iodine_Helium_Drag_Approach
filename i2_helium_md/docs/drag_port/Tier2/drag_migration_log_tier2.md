@@ -14123,3 +14123,34 @@ for this law MD − twin is tight for KE₁ (+0.020 ± 0.001), midHot
 of per-cell replicates), then 6-seed confirmation. Under discussion;
 nothing run. Also repaired: the `## G5` heading lost in the G4.13
 pre-registration edit (4e0908c).
+
+## 2026-10-06 — G4.14 EXECUTED (Steps 0a–1, 74 MD runs, independent seeds; A5 pooled confirmation): no ridge cell beats h405; the size-histogram misfit is spread, not location — **A5 verdict: loses on KE** (c 2.0, τ 6.4: KE₁ 0.617 vs 0.640 / 0.643)
+
+Frozen `7726e43`; code `5bd2f9f`; amendments A1–A5 frozen `12908a1`
+before the confirmation MD. Full record: D0 §1.G4.14.
+
+- **Step 0a / 0.** Fine points c 1.8 / 1.9 / 2.1 / 2.2 pass 18 Å and the
+  9 Å bound (oracle c = 2.0 bit-exact); twin anchors pass; midHot filter
+  keeps c 1.8–2.5 → 74 Step-1 runs. h405g35 pooled N = 6000 (3.5 Å
+  reference): KE₁ 0.643, W₁ 0.818, χ² 636.
+- **Disk incident.** T: filled at run 15 (two τ 5.8 runs failed, OSError
+  28); generator stopped, partial dirs removed, `ion.npz` dropped after
+  verified detection (A4, user decision); restart clean, 74/74.
+- **Step 1.** Every c trades the large-n tail (W₁) against KE₁ along τ;
+  best W₁ 0.831 (c 1.8, τ 4.9, KE₁ 0.577), best KE₁ 0.632 (W₁ 1.05); n₁
+  ≤ 0.212 on every curve (landing marginal). c 2.2 tripped the
+  second-seed rule (skipped, A2).
+- **Fit-model defect (A1).** The frozen n₁ ΔE² term was not identifiable
+  with two E₀ per τ and swung n₁ between the levels (c 1.9 0.117–0.250);
+  dropped and all c refitted (user-agreed).
+- **Histogram (discussion, measured over all 200 runs on disk).** Monotone
+  decrease is generic; the misfit is spread: too few n = 1, too many
+  n = 3–12, nothing above n ≈ 17 (n* = 21 cap + weak top rungs). E₀ only
+  shifts the distribution. → a mass-model question (ladder / n* / E_int
+  spread), not drag / τ / E₀.
+- **A5 confirmation (c 2.0, τ 6.4, E₀ 0.3155, s1–s5 + r6, pooled
+  N = 6000).** n̄ 3.886, n₁ 0.204 (gated), monotone (0 violations), midHot
+  0.995, KE₁ 0.6172 (pred 0.616), W₁ 1.097 (pred 1.10), χ² 507 (pred
+  420–470). vs h405 14.2 Å: χ² 507 > 456, KE₁ −0.023 → loses on KE. vs
+  h405 3.5 Å: χ² 507 < 636 but KE₁ −0.026 → loses on KE. Nothing adopted;
+  production unchanged (h405, capped_cubic v_c 5.5).

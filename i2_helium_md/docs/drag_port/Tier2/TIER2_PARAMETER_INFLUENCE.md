@@ -982,6 +982,58 @@ no cap. Generator `scripts/gen_tier2_g413_ridge_battery.py`, scorer
   +0.31 ± 0.06; seed sd (6 seeds) KE₁ 0.002, midHot 0.003, n̄ 0.07,
   n₁ 0.010, W₁ 0.036. "The cap stays" withdrawn; G4.14 (fine τ line).
 
+#### 1.G4.14 Fine τ lines for the ridge law, c 1.8–2.5 (MEASURED 2026-10-06; frozen `7726e43`, amendments A1–A5 `12908a1`) — **no c / τ / E₀ beats h405; τ trades the histogram tail against KE₁ at every c**
+
+Production pipeline, N = 1000 per run, **independent seeds** (20261101–74,
+no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
+`scripts/post_processing/tier2_g414_table.py`; artifacts
+`data/runs/h2b_forward_model/{atlas_g414_*,g414_*}.csv`.
+
+- **Step 0a (Tier-0).** c 1.8 / 1.9 / 2.1 / 2.2 fit 18 Å (RMSE
+  0.1219–0.1222) and pass the 9 Å exit bound (+0.82 → +0.73, monotone in
+  c between the G4.12 points); c = 2.0 refit bit-exact.
+- **Step 0 (twin).** midHot filter (predicted MD midHot in band for some
+  τ 4.8–6.6) keeps c 1.8–2.5, drops 1.2 (1.33–1.40) and 1.6 (1.16–1.22).
+- **Reference added.** h405 with the 3.5 Å gate, pooled N = 6000: n₁ 0.207,
+  n̄ 3.857, KE₁ 0.643, W₁ 0.818, χ² 636 — the 3.5 Å gate alone costs h405
+  +0.06 W₁ (14.2 Å: 0.755) at equal KE₁.
+- **Step 1 (74 runs; fit amended A1: no n₁ ΔE² term).** Fitted, at
+  n̄ = 3.89 inside the feasible window (n₁ ≥ 0.200, midHot in band):
+
+| c | best W₁ (τ; KE₁) | best KE₁ (τ; W₁) | n₁ max on curve |
+|---|---|---|---|
+| 1.8 | 0.831 (4.91; 0.577) | 0.632 (5.90; 1.046) | 0.204 |
+| 1.9 | 0.867 (5.07; 0.574) | 0.612 (6.05; 1.023) | 0.207 |
+| 2.0 | 0.904 (5.25; 0.564) | 0.620 (6.49; 1.117) | 0.208 |
+| 2.1 | 0.872 (5.07; 0.545) | 0.613 (6.40; 1.137) | 0.212 |
+| 2.2 | — second-seed rule tripped (W₁), skipped (A2) | | |
+| 2.5 | 0.999 (6.10; 0.536) | 0.543 (6.40; 1.049) | 0.203 |
+
+- **Reads (measured).** (i) Every c shows the same τ trade: low τ keeps
+  the large-n tail (W₁ down) but costs KE₁; high τ recovers KE₁ but empties
+  n ≥ 10. (ii) Landing is marginal everywhere (n₁ ≤ 0.212 vs 0.200).
+  (iii) s1 is a high seed for this law (+0.014 n₁ on in-band Stage-A
+  cells vs the independent-seed surface). (iv) On KE alone the high-τ cells
+  (c 1.8–2.0, τ 6.0–6.6) match h405 per member: KE₁ 0.62–0.65, χ² 243–320
+  (h405 members 236–347 at 14.2 Å, 300–470 at 3.5 Å).
+- **Histogram shape (measured, all 200 runs on disk).** Monotone
+  decrease is generic (93/95 ridge runs within 2σ; h405 pooled strictly
+  decreasing n = 0…17). The misfit is **spread, not location**: model /
+  experiment (solvated) 0.67 at n = 1, 1.2–1.35 at n = 3–12, 0.42 / 0.09 /
+  0.05 at n = 15 / 16 / 17, zero beyond. E₀ shifts the distribution (n̄
+  −0.7 to −1.1 per +0.03 eV, tail shrinks, n₁/n₂ stays 1.3–1.5 vs 2.18) and
+  cannot create mass above n ≈ 17: first-shell cap n* = 21 plus weak top
+  rungs (8.6 → 6.0 meV for n 19–21) strip the top; deep bottom rungs
+  (20.3 / 13.8 / 12.0 meV) pile ions at n 2–4. The size histogram's shape
+  is a mass-model (ladder / n* / E_int spread) question, not a drag, τ or
+  E₀ one.
+- **A5 pooled confirmation (c 2.0, τ 6.4, E₀ 0.3155; s1–s5 + r6,
+  N = 6000; measured).** n̄ 3.886, n₁ 0.204, monotone, midHot 0.995,
+  KE₁ 0.6172, W₁ 1.097, χ² 507, n ≥ 15 mass 0.0006. **Loses on KE** vs
+  both references: KE₁ −0.023 (14.2 Å) / −0.026 (3.5 Å); χ² beats 3.5 Å
+  (636) but not 14.2 Å (456). Prediction held (KE₁ 0.616, W₁ 1.10; χ²
+  above the 420–470 projection).
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

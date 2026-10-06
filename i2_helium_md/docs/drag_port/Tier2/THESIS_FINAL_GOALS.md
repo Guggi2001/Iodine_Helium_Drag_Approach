@@ -33,10 +33,12 @@ log (`drag_migration_log_tier2.md`).
    against KE₁ at every c. The size-histogram misfit is spread, not
    location (no n ≥ 17; n₁ low): a mass-model question, not a drag / τ / E₀
    one. Amendments A1–A5; A5 = KE-led criterion + one pooled confirmation
-   (c 2.0, τ 6.4).
+   (c 2.0, τ 6.4): **loses on KE** (KE₁ 0.617 vs 0.640 / 0.643; χ² 507
+   vs 456 / 636). Nothing adopted.
 
-**Next:** the A5 confirmation verdict, then D0 §1.G4.14 and the log. G1,
-G2 (production switch), G5–G7 not started.
+**Next:** open — the histogram shape points at the mass model (ladder /
+n* / E_int spread), not at drag / τ / E₀; to be discussed. G1, G2
+(production switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
 ## 0. Why the whole chain is redone
@@ -914,7 +916,7 @@ two concurrent → ≈ 45 min at c = 2.0); Step 2 6 runs per point
   filter keeps c 1.8–2.5, drops 1.2/1.6 → 74 Step-1 runs. h405g35 pooled
   N = 6000: n₁ 0.207, n̄ 3.857, KE₁ 0.643, W₁ 0.818, χ² 636. Step 1: all
   74 runs; no c beats h405 on the frozen ranking (best W₁ 0.831 at c 1.8
-  τ 4.9 with KE₁ 0.577; best KE₁ 0.632 at W₁ 1.05). D0 §1.G4.14 record follows the A5 verdict.
+  τ 4.9 with KE₁ 0.577; best KE₁ 0.632 at W₁ 1.05). Record: D0 §1.G4.14.
 
 **Amendments (2026-10-06, user-agreed after Step 1; frozen before the
 confirmation MD).**
