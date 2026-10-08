@@ -28,6 +28,8 @@ Invocation (``--target``; default = the §6.7 lq battery pool):
     python scripts/build_pooled_detection_container.py
     python scripts/build_pooled_detection_container.py --target detfix_h405
     python scripts/build_pooled_detection_container.py --target g414_c200t64
+    python scripts/build_pooled_detection_container.py --target g415_wo080
+    python scripts/build_pooled_detection_container.py --target g415_wo048
 
 ``detfix_h405`` = the detector-stage-fix reference battery
 (``gen_tier2_detfix_battery.py``: h405 s1–s5 + r6, t_h = 500 ps, E2 skipped,
@@ -77,6 +79,12 @@ from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
 from scripts.gen_tier2_g414_tauline import (  # noqa: E402
     confirm_cells as g414_confirm_cells,
     run_dir_for as g414_run_dir_for,
+)
+from scripts.gen_tier2_g415_well import (  # noqa: E402
+    MEMBER_SEEDS as G415_SEEDS,
+    POOL_MEMBERS as G415_POOL_MEMBERS,
+    WELL_ONLY_EV as G415_WELL_ONLY_EV,
+    run_dir_for as g415_run_dir_for,
 )
 
 # ---------------------------------------------------------------------------
@@ -145,6 +153,21 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "tau 6.4 ps, E0 0.3155 eV; production pipeline (t_h = 500 ps, E2 "
         "skipped, partner-aware Coulomb closure)",
     ),
+    # Well-only arm of the A5 cell (gen_tier2_g415_well.py --well-only;
+    # D0 §1.G4.14): the A5 law with ONLY E_bind lowered — informative, not
+    # Tier-0-consistent. s1-s5 + r6 per well.
+    **{
+        f"g415_{lab}": (
+            [g415_run_dir_for(lab, m).name for m in G415_POOL_MEMBERS],
+            [G415_SEEDS[m] for m in G415_POOL_MEMBERS],
+            f"9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g415{lab}pooled_th500",
+            f"the G4.14 A5 cell (lq c = 2.0, a 16.717 amu/ps, tau 6.4 ps, E0 0.3155 eV) "
+            f"with only the escape well lowered to E_bind {ev} eV (well-only arm, not "
+            "Tier-0-consistent); production pipeline (t_h = 500 ps, E2 skipped, "
+            "partner-aware Coulomb closure)",
+        )
+        for lab, ev in G415_WELL_ONLY_EV.items()
+    },
 }
 DEFAULT_TARGET = "lq"
 

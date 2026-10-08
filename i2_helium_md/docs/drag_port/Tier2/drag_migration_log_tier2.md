@@ -14276,3 +14276,26 @@ a gap); final n and KE both track X, so high n sits on the slowest ions
 Ladder: no fix (D0 §1.G9b); outlook = sourced D₀(n) and n* (RQ4 / M1).
 Tail: n and KE both set by exposure; outlook = a mechanism decoupling n
 from exposure. G9 cold-population follow-up not pursued.
+
+## 2026-10-08 — Thesis discussion §7: high-n tail = ceiling + gap; outlook collision shot noise (Tier 3)
+
+`THESIS_DISCUSSION.md` §7 (commit 79f6ed0): the tail needs a higher
+escaper exposure ceiling (X/τ ≈ 2.7–3 for n ≈ 20, estimate) and a blurred
+escape threshold (gap X/τ 1.86–5); droplet-breakup well weakening
+rejected (production droplets N̄ 12.8k survive the 3–5 eV deposit; the
+well is local). Pointer in `THESIS_FINAL_GOALS.md` status item 11.
+
+## 2026-10-08 — Well-only arm pooled at N = 6000 (user trigger `[PROCEED TO IMPLEMENTATION]`; for visual inspection)
+
+A5 lq cell (c 2.0, a 16.717, τ 6.4, E₀ 0.3155) with only E_bind lowered
+to 0.080 / 0.0482 eV (not Tier-0-consistent), s2–s5 + r6 added to the
+committed s1 members (`gen_tier2_g415_well.py --well-only --members`;
+guards per member: cfg diff vs the same-seed A5 member = well stamp only,
+a / c identical, production seed, handover alignment; s1 cfg rebuilt =
+committed; ion.npz dropped). Pools via `build_pooled_detection_container.py
+--target g415_wo080 / g415_wo048` (builder oracle OK). Scorer
+`tier2_g415_table.py` extended (anchor `c200t64confs1` 4 dp PASS; existing
+5 rows byte-identical). Pooled vs A5 pool: n ≥ 15 0.0006 → 0.0025 /
+0.0062, max n 17, KE n 10–14 / ref 0.76 / 0.93, trap 0.035 → 0.022 /
+0.013, W₁ 1.097 → 1.016 / 0.950, KE₁ 0.637 / 0.653, midHot 1.068 / 1.130.
+s1 reading confirmed. Record: D0 §1.G4.14 (well-only bullet).

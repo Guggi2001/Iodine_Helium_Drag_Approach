@@ -1155,6 +1155,17 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   (e0482) came at τ 4.8 (faster cooling). Abundance needs the escape
   cost lowered AND enough cooling per exposure; speed needs only the
   former. Both require leaving the 18 Å band (previous bullet).
+  **Pooled N = 6000 (measured 2026-10-08; s1–s5 + r6, production seeds;
+  rows `g415wo080pooled` / `g415wo048pooled` in `g415_table.csv`; figure
+  containers `…_N6000_detfix_conf270_g415wo0{80,48}pooled_th500`)** vs the
+  A5 pool (E_bind 0.1175): E_bind 0.080 / 0.0482 — trap 0.035 → 0.022 /
+  0.013, n ≥ 15 0.0006 → 0.0025 / **0.0062** (member range 0.0033–0.0092),
+  max n 17 / 17, KE n 10–14 / ref 0.76 / **0.93**, deepKE 0.49 → 0.60 /
+  0.74, KE₁ 0.617 → 0.637 / 0.653, midHot 0.995 → 1.068 / 1.130, W₁ 1.097
+  → 1.016 / 0.950, n̄ 3.886 → 3.983 / 4.049, n₁ 0.204 → 0.202 / 0.201,
+  χ²_med 507 → 646 / 614. The s1 reading holds pooled: the well fixes the
+  deep-bin speed, while the n ≥ 15 share stays ≈ 9× below experiment and
+  max n stays 17 (the ceiling is X/τ, not the well, at τ 6.4).
 
 #### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
 

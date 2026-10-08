@@ -31,7 +31,10 @@ from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_g414_tauline import confirm_cells, run_dir_for as a5_run_dir_for  # noqa: E402
-from scripts.gen_tier2_g415_well import E0_EV, MEMBER, WELL_ONLY_EV, run_dir_for, well_point  # noqa: E402
+from scripts.build_pooled_detection_container import TARGETS  # noqa: E402
+from scripts.gen_tier2_g415_well import (  # noqa: E402
+    E0_EV, MEMBER, POOL_MEMBERS, WELL_ONLY_EV, run_dir_for, well_point,
+)
 from scripts.post_processing.tier2_detfix_battery_table import (  # noqa: E402
     _check_4dp, _csv_row, _pipeline, _row,
 )
@@ -63,12 +66,12 @@ def main() -> int:
     ked = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
     exp_n, exp_f = solvated_renormalized(ab.n, ab.ion_fraction, n_min=1)
 
-    def scored(label: str, run_dir: Path) -> dict:
+    def scored(label: str, run_dir: Path, member: str = MEMBER) -> dict:
         cfg = RunDirectory(run_dir).load_cfg()
         read = read_confirmation_detection(load_detection_result(run_dir / "detection.npz"),
                                            label=label)
         sn, sf = solvated_renormalized(read.n_values, read.fraction, n_min=1)
-        return {**_row(label, MEMBER, _pipeline(cfg), cfg.seed, read, ab, ked),
+        return {**_row(label, member, _pipeline(cfg), cfg.seed, read, ab, ked),
                 **band_columns(sn, sf, exp_n, exp_f), **tail_columns(read, ked),
                 "e_bind_eV": float(cfg.binding_energy_I_ion_eV),
                 "a_amu_per_ps": float(cfg.drag_coefficients.coefficients["a"]),
@@ -88,6 +91,18 @@ def main() -> int:
         if (run_dir_for(label) / "detection.npz").exists():
             rows.append({**scored(f"g415{label}{MEMBER}", run_dir_for(label)),
                          "arm": "well_only_informative"})
+    # Well-only pool (2026-10-08): the other production members, then the
+    # pooled N = 6000 container (build_pooled_detection_container.py).
+    for label in WELL_ONLY_EV:
+        for member in POOL_MEMBERS:
+            if member == MEMBER or not (run_dir_for(label, member) / "detection.npz").exists():
+                continue
+            rows.append({**scored(f"g415{label}{member}", run_dir_for(label, member), member),
+                         "arm": "well_only_informative"})
+        pooled_dir = RUNS_ROOT / TARGETS[f"g415_{label}"][2]
+        if (pooled_dir / "detection.npz").exists():
+            rows.append({**scored(f"g415{label}pooled", pooled_dir, "pooled"),
+                         "arm": "well_only_informative_pooled"})
     rows[0]["arm"] = "a5_anchor"
     cols = ("label", "arm", "e_bind_eV", "a_amu_per_ps", "E0_eV", "nbar_det", "n1_solv", "w1_solv",
             "midHot", "chi2_med", "KE1_mean", "supp", "trap", "mass_n10_14",
