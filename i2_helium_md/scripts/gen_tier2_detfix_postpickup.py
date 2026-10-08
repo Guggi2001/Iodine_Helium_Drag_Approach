@@ -52,6 +52,7 @@ ions (the scorer reads cfg.json + neutral.npz + detection.npz)::
     python scripts/gen_tier2_detfix_postpickup.py --cell lq          # A: s1-s5
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1     # B1: E0 column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1tau  # B1': tau column, s1
+    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1c    # B1c: ridge c column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 at B2_E0_EV / B2_TAU_PS
 
 Pools: ``--target g5_lq_s1s5`` (raw A5 arm, N = 5000), ``g5_lqpp`` (A) and,
@@ -64,6 +65,7 @@ Max two concurrent MD runs (``--concurrency`` is capped at 2).
 from __future__ import annotations
 
 import argparse
+import csv
 import dataclasses
 import math
 import os
@@ -96,8 +98,8 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 )
 from scripts.gen_tier2_g413_ridge_battery import LQ_BUNDLE, _E0_KEY, _TAU_KEY  # noqa: E402
 from scripts.gen_tier2_g414_tauline import (  # noqa: E402
-    ION_DROPPED_MARKER, build as a5_build, confirm_cells as a5_confirm_cells,
-    drop_ion_npz, run_dir_for as a5_run_dir_for,
+    ION_DROPPED_MARKER, LINE_CSV, Cell, build as a5_build,
+    confirm_cells as a5_confirm_cells, drop_ion_npz, run_dir_for as a5_run_dir_for,
 )
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV, CASE, N, VARIANT  # noqa: E402
 from scripts.tier0_common import run_dir_name  # noqa: E402
@@ -139,6 +141,17 @@ B1_MEMBER = "s1"
 # dnbar/dtau ~ -1.6 /ps at fixed E0 -> tau ~ 6.85 ps for -0.7 (beyond the
 # swept 4.0-6.6 ps). The A run at s1 is the tau = 6.4 point.
 B1_TAU_PS = (6.8, 7.2, 7.6)
+# B1c (user, 2026-10-08): tau and E0 both trade KE (D0 §15.9: they change the
+# chord -> (n, KE) map); the drag does too, in the other direction. Lower c
+# on the TDDFT ridge raises KE at matched nbar (atlas_g414_filter.csv), so
+# post_pickup + E0 re-placement + lower c may hold both. Per c: the ridge
+# point (committed g412_ridge JSON), tau 6.4, E0 = the committed twin line's
+# nbar 3.89 value (interpolated in nbar from 3.85 / 4.05 at tau 6.4) plus the
+# post_pickup E0 shift measured in B1 (s1: 0.3155 -> 0.3368 eV for nbar 3.87).
+B1C_C = (1.6, 1.8)
+B1C_TAU_PS = 6.4
+B1C_NBAR = 3.89
+PP_E0_SHIFT_EV = 0.0213
 #: B2 E0 [eV] / tau [ps]: set (user) from B1 / B1' before ``--b2``; None =
 #: the A5 cell's own value.
 B2_E0_EV: Optional[float] = None
@@ -215,61 +228,88 @@ def a5_member_cell(member: str):
     return next(c for c in a5_confirm_cells() if c.label.endswith(f"conf{member}"))
 
 
+#: Drag-law keys a ridge-point change moves (c, its ridge a and E_bind).
+LAW_DIFF_KEYS = frozenset({"drag_coefficients", "binding_energy_I_ion_eV"})
+
+
+def b1c_e0(c: float) -> float:
+    """E0 [eV] for the B1c cell at ridge c: the committed twin line
+    (atlas_g414_twin_line.csv, tau B1C_TAU_PS) linearly interpolated in nbar
+    to B1C_NBAR, plus PP_E0_SHIFT_EV; rounded to 4 dp. Raises if the line
+    rows are missing."""
+    with open(LINE_CSV, newline="", encoding="utf-8") as fh:
+        pts = sorted((float(r["nbar_target_md"]), float(r["E0_eV"]))
+                     for r in csv.DictReader(fh)
+                     if float(r["c"]) == c and float(r["tau_ps"]) == B1C_TAU_PS)
+    if len(pts) != 2:
+        raise AssertionError(f"twin line: {len(pts)} rows at c {c}, tau {B1C_TAU_PS}")
+    (n0, e0), (n1, e1) = pts
+    return round(e0 + (B1C_NBAR - n0) / (n1 - n0) * (e1 - e0) + PP_E0_SHIFT_EV, 4)
+
+
 def lq_label(member: str, e0_eV: Optional[float] = None,
-             tau_ps: Optional[float] = None) -> str:
+             tau_ps: Optional[float] = None, c: Optional[float] = None) -> str:
     """e.g. ``g5lqpps1`` (A5 cell), ``g5lqppe3455s1`` (E0 0.3455 eV),
-    ``g5lqppt68s1`` (tau 6.8 ps)."""
+    ``g5lqppt68s1`` (tau 6.8 ps), ``g5lqppc160e3297s1`` (ridge c 1.6)."""
     if member not in MEMBER_SEEDS:
         raise KeyError(f"unknown member {member!r}")
-    tag = ("" if e0_eV is None else f"e{round(e0_eV * 1e4):04d}") + (
+    tag = ("" if c is None else f"c{round(c * 100):03d}") + (
+        "" if e0_eV is None else f"e{round(e0_eV * 1e4):04d}") + (
         "" if tau_ps is None else f"t{round(tau_ps * 10):d}")
     return f"g5lqpp{tag}{member}"
 
 
 def lq_run_dir(member: str, e0_eV: Optional[float] = None,
-               tau_ps: Optional[float] = None) -> Path:
+               tau_ps: Optional[float] = None, c: Optional[float] = None) -> Path:
     name = run_dir_name(CASE, LQ_BUNDLE, N,
-                        run_tag=f"detfix_conf270_{lq_label(member, e0_eV, tau_ps)}_th500")
+                        run_tag=f"detfix_conf270_{lq_label(member, e0_eV, tau_ps, c)}_th500")
     return PROJECT_ROOT / "data" / "runs" / name
 
 
 def build_lq_member(member: str, e0_eV: Optional[float] = None,
-                    tau_ps: Optional[float] = None) -> SimConfig:
-    """The A5 member cfg with the sampler flipped and, optionally, E0 [eV]
-    and / or the cooling time tau [ps] re-placed."""
+                    tau_ps: Optional[float] = None, c: Optional[float] = None) -> SimConfig:
+    """The A5 member cfg with the sampler flipped and, optionally, E0 [eV],
+    the cooling time tau [ps] and / or the ridge point c [amu/Å] (with its
+    committed a and E_bind) re-placed."""
+    cell = a5_member_cell(member)
+    if c is not None:
+        cell = Cell(cell.label, c, cell.tau_ps, cell.nbar_target, cell.e0_eV, cell.seed)
     repl: dict = {"droplet_size_sampler_mode": SAMPLER_MODE}
     if e0_eV is not None:
         repl[_E0_KEY] = float(e0_eV) / BUDGET_EV
     if tau_ps is not None:
         repl[_TAU_KEY] = float(tau_ps)
-    cfg = dataclasses.replace(a5_build(a5_member_cell(member)), **repl)
+    cfg = dataclasses.replace(a5_build(cell), **repl)
     cfg.validate()
     return cfg
 
 
 def verify_lq_member(member: str, e0_eV: Optional[float] = None,
-                     tau_ps: Optional[float] = None) -> list[str]:
+                     tau_ps: Optional[float] = None, c: Optional[float] = None) -> list[str]:
     """Oracle 1 (lq): the cfg differs from the committed A5 member's cfg.json
-    in exactly the sampler (+ E0 / tau when re-placed). Returns the diff keys."""
-    cfg = build_lq_member(member, e0_eV, tau_ps)
+    in exactly the sampler (+ E0 / tau / ridge law when re-placed). Returns
+    the diff keys."""
+    cfg = build_lq_member(member, e0_eV, tau_ps, c)
     ref = a5_run_dir_for(a5_member_cell(member)) / "cfg.json"
     diff = cfg_diff_vs_reference(cfg, ref, context=f"lq post_pickup {member}")
     want = (set(AB_DIFF_KEYS) | ({_E0_KEY} if e0_eV is not None else set())
-            | ({_TAU_KEY} if tau_ps is not None else set()))
+            | ({_TAU_KEY} if tau_ps is not None else set())
+            | (set(LAW_DIFF_KEYS) if c is not None else set()))
     if set(diff) != want:
-        raise AssertionError(f"[{lq_label(member, e0_eV, tau_ps)}] cfg vs A5 differs in "
+        raise AssertionError(f"[{lq_label(member, e0_eV, tau_ps, c)}] cfg vs A5 differs in "
                              f"{sorted(diff)}; pre-registered exactly {sorted(want)}.")
     return diff
 
 
-def run_lq(job: tuple[str, Optional[float], Optional[float]]) -> str:
-    """lq A5 post_pickup member: guard, neutral -> ion -> detection, drop ion.npz."""
-    member, e0_eV, tau_ps = job
-    label = lq_label(member, e0_eV, tau_ps)
-    verify_lq_member(member, e0_eV, tau_ps)
-    cfg = build_lq_member(member, e0_eV, tau_ps)
+def run_lq(job: tuple) -> str:
+    """lq A5 post_pickup member: guard, neutral -> ion -> detection, drop ion.npz.
+    ``job`` = (member, e0_eV, tau_ps[, c])."""
+    member, e0_eV, tau_ps, c = (*job, None)[:4]
+    label = lq_label(member, e0_eV, tau_ps, c)
+    verify_lq_member(member, e0_eV, tau_ps, c)
+    cfg = build_lq_member(member, e0_eV, tau_ps, c)
     steps, stride = verify_handover_alignment(cfg)
-    run_dir = lq_run_dir(member, e0_eV, tau_ps)
+    run_dir = lq_run_dir(member, e0_eV, tau_ps, c)
     done = (all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
             and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
     if SKIP_COMPLETED_RUNS and done:
@@ -342,10 +382,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--b1", action="store_true", help="lq: the B1 E0 column at s1")
     group.add_argument("--b1tau", action="store_true", help="lq: the B1' tau column at s1")
+    group.add_argument("--b1c", action="store_true",
+                       help="lq: the B1c ridge-c column at s1 (E0 re-placed per c)")
     group.add_argument("--b2", action="store_true", help="lq: s1-s5 at B2_E0_EV / B2_TAU_PS")
     args = parser.parse_args(argv)
-    if args.cell == "h405" and (args.b1 or args.b1tau or args.b2):
-        raise SystemExit("--b1 / --b1tau / --b2 apply to --cell lq only")
+    if args.cell == "h405" and (args.b1 or args.b1tau or args.b1c or args.b2):
+        raise SystemExit("--b1 / --b1tau / --b1c / --b2 apply to --cell lq only")
 
     if args.cell == "h405":
         members = _select(args.labels)
@@ -365,6 +407,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.b1:
             jobs = [(m, e0, None) for m in _select(args.labels, (B1_MEMBER,))
                     for e0 in B1_E0_EV]
+        elif args.b1c:
+            jobs = [(m, b1c_e0(c), None, c) for m in _select(args.labels, (B1_MEMBER,))
+                    for c in B1C_C]
         elif args.b1tau:
             jobs = [(m, None, t) for m in _select(args.labels, (B1_MEMBER,))
                     for t in B1_TAU_PS]

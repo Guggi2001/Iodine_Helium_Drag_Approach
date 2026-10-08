@@ -11,6 +11,7 @@ Rows:
   ``pooled_lqpp_5000``, ``delta_lqpp_minus_raw``;
 * B1 — ``g5lqppe####s1`` per E0 of the column present (the A s1 row is the
   E0 = 0.3155 point); B1' — ``g5lqppt##s1`` per tau (A s1 = tau 6.4);
+  B1c — ``g5lqppc###e####s1`` per ridge c (E0 re-placed per c);
 * B2 — members, ``pooled_lqppb2_5000`` and ``delta_lqppb2_minus_raw`` once
   ``B2_E0_EV`` / ``B2_TAU_PS`` is set and all five members exist;
 * h405 contrast — ``h405_pooled_raw5000`` / ``h405_pooled_pp5000`` copied
@@ -61,8 +62,8 @@ from i2_helium_md.simulation.detection_stage import load_detection_result  # noq
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_E0_EV, B2_TAU_PS, POOL_MEMBERS, a5_member_cell,
-    lq_label, lq_run_dir,
+    B1C_C, B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_E0_EV, B2_TAU_PS, LAW_DIFF_KEYS, POOL_MEMBERS,
+    a5_member_cell, b1c_e0, lq_label, lq_run_dir,
 )
 from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY  # noqa: E402
 from scripts.gen_tier2_g414_tauline import run_dir_for as a5_run_dir_for  # noqa: E402
@@ -105,17 +106,20 @@ def _a5_dir(member: str) -> Path:
     return a5_run_dir_for(a5_member_cell(member))
 
 
-def _check_arm(member: str, e0_eV: Optional[float], tau_ps: Optional[float]) -> None:
-    """Oracle 2: the pp run's cfg vs its A5 member's — sampler (+ E0 / tau) only."""
+def _check_arm(member: str, e0_eV: Optional[float], tau_ps: Optional[float],
+               c: Optional[float] = None) -> None:
+    """Oracle 2: the pp run's cfg vs its A5 member's — sampler (+ E0 / tau /
+    ridge law) only."""
     cfg_raw = RunDirectory(_a5_dir(member)).load_cfg()
-    cfg_pp = RunDirectory(lq_run_dir(member, e0_eV, tau_ps)).load_cfg()
+    cfg_pp = RunDirectory(lq_run_dir(member, e0_eV, tau_ps, c)).load_cfg()
     diff = sorted(f.name for f in dataclasses.fields(cfg_raw)
                   if getattr(cfg_raw, f.name) != getattr(cfg_pp, f.name))
     want = sorted({"droplet_size_sampler_mode"} | ({_E0_KEY} if e0_eV is not None else set())
-                  | ({_TAU_KEY} if tau_ps is not None else set()))
+                  | ({_TAU_KEY} if tau_ps is not None else set())
+                  | (set(LAW_DIFF_KEYS) if c is not None else set()))
     modes = (cfg_raw.droplet_size_sampler_mode, cfg_pp.droplet_size_sampler_mode)
     if diff != want or modes != ("raw", "post_pickup"):
-        raise OracleFailure(f"[{lq_label(member, e0_eV, tau_ps)}] cfg diff {diff} / "
+        raise OracleFailure(f"[{lq_label(member, e0_eV, tau_ps, c)}] cfg diff {diff} / "
                             f"modes {modes}")
 
 
@@ -131,6 +135,7 @@ def main() -> int:
         row = _row(label, member, cfg.droplet_size_sampler_mode, cfg.seed, read, ab, ked)
         row["E0_eV"] = float(getattr(cfg, _E0_KEY) * cfg.coulomb_available_eV)
         row["tau_ps"] = float(getattr(cfg, _TAU_KEY))
+        row["c_amu_per_A"] = float(cfg.drag_coefficients.coefficients["c"])
         row.update(size_columns([run_dir]))
         return row, read
 
@@ -173,15 +178,16 @@ def main() -> int:
     rows.append(raw_pool)
     chord: list[dict[str, Any]] = chord_rows("lq_raw", raw_dirs)
 
-    def arm(tag: str, e0: Optional[float], tau: Optional[float], members) -> None:
+    def arm(tag: str, e0: Optional[float], tau: Optional[float], members,
+            c: Optional[float] = None) -> None:
         reads, dirs = [], []
         for m in members:
-            rd = lq_run_dir(m, e0, tau)
+            rd = lq_run_dir(m, e0, tau, c)
             if not (rd / "detection.npz").exists():
-                missing.append(lq_label(m, e0, tau))
+                missing.append(lq_label(m, e0, tau, c))
                 continue
-            _check_arm(m, e0, tau)
-            row, read = scored(lq_label(m, e0, tau), m, rd)
+            _check_arm(m, e0, tau, c)
+            row, read = scored(lq_label(m, e0, tau, c), m, rd)
             rows.append(row)
             reads.append(read)
             dirs.append(rd)
@@ -212,6 +218,8 @@ def main() -> int:
         arm("lqppb1", e0, None, (B1_MEMBER,))
     for tau in B1_TAU_PS:                                     # B1' (tau column)
         arm("lqppb1tau", None, tau, (B1_MEMBER,))
+    for c in B1C_C:                                           # B1c (ridge c column)
+        arm("lqppb1c", b1c_e0(c), None, (B1_MEMBER,), c)
     if B2_E0_EV is not None or B2_TAU_PS is not None:        # B2
         arm("lqppb2", B2_E0_EV, B2_TAU_PS, POOL_MEMBERS)
 
@@ -224,7 +232,7 @@ def main() -> int:
 
     keys = list(dict.fromkeys(k for r in rows for k in r))
     rows = [{k: r.get(k, "") for k in keys} for r in rows]
-    show = ("label", "pipeline", "E0_eV", "tau_ps", "num_scored", "trap", "trap_marg", "supp",
+    show = ("label", "pipeline", "c_amu_per_A", "E0_eV", "tau_ps", "num_scored", "trap", "trap_marg", "supp",
             "nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE", "chi2_med",
             "KE1_mean", "S", "N_mean")
     show = tuple(c for c in show if c in keys)
