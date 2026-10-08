@@ -3594,6 +3594,39 @@ chord map; `emission_chords` in the same scorer); figures containers
 `…N5000_detfix_conf270_h405pppooled_th500` (post_pickup) and
 `…N5000_detfix_conf270_h405pooled_th500` (production s1–s5, raw).
 
+### 15.9 raw vs `post_pickup` on the lq A5 cell, and what restores n̄ (MEASURED 2026-10-08; THESIS_FINAL_GOALS G5)
+
+Same flip on the thesis production law (lq c 2.0, a 16.717, E_bind 0.1175,
+3.5 Å gate, τ 6.4, E₀ 0.3155); production pipeline, seeds s1–s5 + r6, no
+D4 firing (r6 included, unlike h405).
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | trap | S | ⟨N⟩ |
+|---|---|---|---|---|---|---|---|---|---|
+| raw (A5) | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.035 | 1.958 | 12.9k |
+| post_pickup | 4.581 | 0.163 | 1.091 | 1.003 | 0.618 | 0.535 | 0.067 | 1.928 | 16.7k |
+| Δ | **+0.695** | −0.041 | −0.007 | +0.008 | +0.001 | +0.043 | +0.032 | −0.030 | +3.8k |
+
+- **The n̄ shift is law-independent** (h405 +0.717, §15.8); for lq
+  **nothing else moves** — W₁, midHot, KE₁, S flat (h405: W₁ +0.24). The
+  larger droplets add He, they do not slow the ions.
+- **The shift sits in n ≤ 1.** Experiment / raw / post_pickup: n = 1 share
+  of n ≥ 1 = 0.310 / 0.192 / 0.156; mean over n ≥ 2 = 6.64 / 6.31 / 6.17.
+  Above n = 1 both samplers sit comparably below the experiment; the n̄
+  gap is the n = 1 deficit (outlook, G8), which post_pickup widens.
+- **Evaporation knobs cannot restore n̄ without KE loss** (s1, N = 1000):
+  E₀ 0.3355 / 0.3455 / 0.3555 → n̄ 3.91 / 3.60 / 3.34, midHot 0.87 / 0.82
+  / 0.78, KE₁ 0.55 / 0.52 / 0.49 (dn̄/dE₀ ≈ −31 /eV); τ 6.8 / 7.2 / 7.6
+  → n̄ 4.05 / 3.59 / 3.20, midHot 0.89 / 0.79 / 0.70, KE₁ 0.59 / 0.55 /
+  0.52 (dn̄/dτ ≈ −1.1 /ps). At matched n̄ ≈ 3.87 both land at midHot
+  ≈ 0.85–0.87. Reading: extra evaporation moves slow heavy clusters into
+  the low-n bins. Untested pickup-side lever: λ₀ (0.9, sourced 0.7–1.1).
+
+Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (full vector,
+sizes, E₀/τ columns) + `g5_postpickup_chord.csv`; generator
+`gen_tier2_detfix_postpickup.py --cell lq`; figures container
+`…N6000_detfix_conf270_g5lqpppooled_th500` (pairs with
+`…N6000_detfix_conf270_g414c200t64pooled_th500`).
+
 ## 16. Quiet / structural surfaces (for completeness)
 
 - **s_eff (RRK dof, Bounded):** a *rate*, not an amount (I13);
