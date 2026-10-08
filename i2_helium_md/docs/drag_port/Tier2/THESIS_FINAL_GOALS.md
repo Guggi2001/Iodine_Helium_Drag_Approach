@@ -70,6 +70,13 @@ log (`drag_migration_log_tier2.md`).
     shot noise (Tier 3), the same missing ingredient as the narrow KE
     width at fixed n.
 
+12. **Shallow well + drag retune (2026-10-08, measured, pooled N = 6000;
+    not Tier-0-consistent):** E_bind 0.0482 eV with a 19.5 (c 2.0) at
+    midHot ≈ 1 — n ≥ 15 0.0053 (A5 0.0006), max n 18, W₁ 0.905 (A5
+    1.097), KE₁ 0.597 (A5 0.617). Thesis framing (user): A5 pool =
+    TDDFT-based result, 0.0482 / a 19.5 = effective improvement for higher
+    fragments. Table and caveats: `THESIS_DISCUSSION.md` §8; D0 §1.G4.14.
+
 **Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
 started. G4.14 recap points (a)–(c) parked. G1, G2 (production
 switch), G5–G7 not started.
