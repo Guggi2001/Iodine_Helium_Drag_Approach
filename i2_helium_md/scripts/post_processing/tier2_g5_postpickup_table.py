@@ -192,6 +192,22 @@ def main() -> int:
             chord.extend(chord_rows(tag, dirs))
 
     arm("lqpp", None, None, POOL_MEMBERS)                    # A
+    # A at N = 6000 (s1-s5 + r6, user 2026-10-08) vs the committed A5 pool.
+    r6_dir = lq_run_dir("r6")
+    if (r6_dir / "detection.npz").exists():
+        _check_arm("r6", None, None)
+        rows.append(a5_reads["r6"][0])
+        r6_row, r6_read = scored(lq_label("r6"), "r6", r6_dir)
+        rows.append(r6_row)
+        pp_reads = [r for r in (scored(lq_label(m), m, lq_run_dir(m))[1]
+                                for m in POOL_MEMBERS)] + [r6_read]
+        a5_6000 = pooled("pooled_lqraw_6000", "raw", [r for _, r in a5_reads.values()],
+                         [_a5_dir(m) for m in MEMBER_SEEDS])
+        pp_6000 = pooled("pooled_lqpp_6000", "post_pickup", pp_reads,
+                         [lq_run_dir(m) for m in MEMBER_SEEDS])
+        rows += [a5_6000, pp_6000, delta("delta_lqpp_minus_raw_6000", pp_6000, a5_6000)]
+    else:
+        missing.append(lq_label("r6"))
     for e0 in B1_E0_EV:                                       # B1 (E0 column)
         arm("lqppb1", e0, None, (B1_MEMBER,))
     for tau in B1_TAU_PS:                                     # B1' (tau column)

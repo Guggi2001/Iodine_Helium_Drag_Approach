@@ -180,6 +180,16 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "G5 step A: the A5 cell (s1-s5) re-run with droplet_size_sampler_mode="
         "'post_pickup'; otherwise identical (E0 0.3155 eV)",
     ),
+    # The same arm at all six production members (user, 2026-10-08): pairs
+    # with the committed A5 N = 6000 pool (g414_c200t64) for plotting.
+    "g5_lqpp6000": (
+        [g5_lq_run_dir(m).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g5lqpppooled_th500",
+        "G5 step A at N = 6000: the A5 cell (s1-s5 + r6) with droplet_size_sampler_mode="
+        "'post_pickup'; otherwise identical (lq c 2.0, a 16.717, E_bind 0.11748 eV, "
+        "3.5 A gate, tau 6.4 ps, E0 0.3155 eV); production pipeline",
+    ),
     **({} if G5_B2_E0_EV is None and G5_B2_TAU_PS is None else {"g5_lqppb2": (
         [g5_lq_run_dir(m, G5_B2_E0_EV, G5_B2_TAU_PS).name for m in POSTPICKUP_POOL_MEMBERS],
         [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
