@@ -78,8 +78,10 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 )
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     B2_E0_EV as G5_B2_E0_EV,
+    B2_TAU_PS as G5_B2_TAU_PS,
     POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
     a5_member_cell as g5_a5_member_cell,
+    lq_label as g5_lq_label,
     lq_run_dir as g5_lq_run_dir,
     member_run_dir_name as postpickup_run_dir_name,
 )
@@ -178,13 +180,14 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "G5 step A: the A5 cell (s1-s5) re-run with droplet_size_sampler_mode="
         "'post_pickup'; otherwise identical (E0 0.3155 eV)",
     ),
-    **({} if G5_B2_E0_EV is None else {"g5_lqppb2": (
-        [g5_lq_run_dir(m, G5_B2_E0_EV).name for m in POSTPICKUP_POOL_MEMBERS],
+    **({} if G5_B2_E0_EV is None and G5_B2_TAU_PS is None else {"g5_lqppb2": (
+        [g5_lq_run_dir(m, G5_B2_E0_EV, G5_B2_TAU_PS).name for m in POSTPICKUP_POOL_MEMBERS],
         [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
-        f"9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_g5lqppe"
-        f"{round(G5_B2_E0_EV * 1e4):04d}pooled_th500",
+        "9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_"
+        f"{g5_lq_label('s1', G5_B2_E0_EV, G5_B2_TAU_PS).removesuffix('s1')}pooled_th500",
         f"G5 step B2 (thesis production under the physical sampler): the A5 cell "
-        f"with 'post_pickup' and E0 re-placed to {G5_B2_E0_EV} eV (s1-s5)",
+        f"with 'post_pickup', E0 {G5_B2_E0_EV or 'A5'} eV, tau {G5_B2_TAU_PS or 'A5'} ps "
+        "(s1-s5)",
     )}),
     # Well-only arm of the A5 cell (gen_tier2_g415_well.py --well-only;
     # D0 §1.G4.14): the A5 law with ONLY E_bind lowered — informative, not

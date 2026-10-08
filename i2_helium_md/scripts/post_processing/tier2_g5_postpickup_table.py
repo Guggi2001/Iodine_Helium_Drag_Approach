@@ -10,9 +10,9 @@ Rows:
 * A — ``{m}_lqraw`` / ``g5lqpp{m}`` per member, ``pooled_lqraw_5000``,
   ``pooled_lqpp_5000``, ``delta_lqpp_minus_raw``;
 * B1 — ``g5lqppe####s1`` per E0 of the column present (the A s1 row is the
-  E0 = 0.3155 point);
+  E0 = 0.3155 point); B1' — ``g5lqppt##s1`` per tau (A s1 = tau 6.4);
 * B2 — members, ``pooled_lqppb2_5000`` and ``delta_lqppb2_minus_raw`` once
-  ``B2_E0_EV`` is set and all five members exist;
+  ``B2_E0_EV`` / ``B2_TAU_PS`` is set and all five members exist;
 * h405 contrast — ``h405_pooled_raw5000`` / ``h405_pooled_pp5000`` copied
   from ``detfix_postpickup_table.csv`` (the h405 A/B scorer's output).
 
@@ -25,8 +25,8 @@ Oracles (failure stops before a new number):
 1. **A5 anchor** — the six committed A5 members re-pooled here equal the
    committed ``c200t64_pooled6000`` row of ``g414_table.csv`` (4 dp).
 2. **Arm identity** — each lq post_pickup cfg differs from its A5 member's in
-   exactly ``droplet_size_sampler_mode`` (raw → post_pickup), plus the E0 key
-   for B1/B2 runs.
+   exactly ``droplet_size_sampler_mode`` (raw → post_pickup), plus the E0 /
+   tau key when re-placed.
 
 Output (commit with ``git add -f``; every column):
 ``data/runs/h2b_forward_model/g5_postpickup_table.csv`` and
@@ -61,9 +61,10 @@ from i2_helium_md.simulation.detection_stage import load_detection_result  # noq
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B1_E0_EV, B1_MEMBER, B2_E0_EV, POOL_MEMBERS, a5_member_cell, lq_label, lq_run_dir,
+    B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_E0_EV, B2_TAU_PS, POOL_MEMBERS, a5_member_cell,
+    lq_label, lq_run_dir,
 )
-from scripts.gen_tier2_g413_ridge_battery import _E0_KEY  # noqa: E402
+from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY  # noqa: E402
 from scripts.gen_tier2_g414_tauline import run_dir_for as a5_run_dir_for  # noqa: E402
 from scripts.post_processing.tier2_detfix_battery_table import (  # noqa: E402
     OracleFailure,
@@ -104,16 +105,18 @@ def _a5_dir(member: str) -> Path:
     return a5_run_dir_for(a5_member_cell(member))
 
 
-def _check_arm(member: str, e0_eV: Optional[float]) -> None:
-    """Oracle 2: the pp run's cfg vs its A5 member's — sampler (+ E0) only."""
+def _check_arm(member: str, e0_eV: Optional[float], tau_ps: Optional[float]) -> None:
+    """Oracle 2: the pp run's cfg vs its A5 member's — sampler (+ E0 / tau) only."""
     cfg_raw = RunDirectory(_a5_dir(member)).load_cfg()
-    cfg_pp = RunDirectory(lq_run_dir(member, e0_eV)).load_cfg()
+    cfg_pp = RunDirectory(lq_run_dir(member, e0_eV, tau_ps)).load_cfg()
     diff = sorted(f.name for f in dataclasses.fields(cfg_raw)
                   if getattr(cfg_raw, f.name) != getattr(cfg_pp, f.name))
-    want = sorted({"droplet_size_sampler_mode"} | ({_E0_KEY} if e0_eV is not None else set()))
+    want = sorted({"droplet_size_sampler_mode"} | ({_E0_KEY} if e0_eV is not None else set())
+                  | ({_TAU_KEY} if tau_ps is not None else set()))
     modes = (cfg_raw.droplet_size_sampler_mode, cfg_pp.droplet_size_sampler_mode)
     if diff != want or modes != ("raw", "post_pickup"):
-        raise OracleFailure(f"[{lq_label(member, e0_eV)}] cfg diff {diff} / modes {modes}")
+        raise OracleFailure(f"[{lq_label(member, e0_eV, tau_ps)}] cfg diff {diff} / "
+                            f"modes {modes}")
 
 
 def main() -> int:
@@ -127,13 +130,16 @@ def main() -> int:
                                            label=label)
         row = _row(label, member, cfg.droplet_size_sampler_mode, cfg.seed, read, ab, ked)
         row["E0_eV"] = float(getattr(cfg, _E0_KEY) * cfg.coulomb_available_eV)
+        row["tau_ps"] = float(getattr(cfg, _TAU_KEY))
         row.update(size_columns([run_dir]))
         return row, read
 
-    def pooled(label: str, mode: str, reads, run_dirs, e0) -> dict[str, Any]:
+    def pooled(label: str, mode: str, reads, run_dirs) -> dict[str, Any]:
+        cfg = RunDirectory(run_dirs[0]).load_cfg()
         row = _row(label, "pooled5000", mode, "-",
                    pool_confirmation_reads(reads, label=label), ab, ked)
-        row["E0_eV"] = e0
+        row["E0_eV"] = float(getattr(cfg, _E0_KEY) * cfg.coulomb_available_eV)
+        row["tau_ps"] = float(getattr(cfg, _TAU_KEY))
         row.update(size_columns(run_dirs))
         return row
 
@@ -162,36 +168,36 @@ def main() -> int:
     raw_dirs = [_a5_dir(m) for m in POOL_MEMBERS]
     for m in POOL_MEMBERS:
         rows.append(a5_reads[m][0])
-    a5_e0 = rows[0]["E0_eV"]
     raw_pool = pooled("pooled_lqraw_5000", "raw", [a5_reads[m][1] for m in POOL_MEMBERS],
-                      raw_dirs, a5_e0)
+                      raw_dirs)
     rows.append(raw_pool)
     chord: list[dict[str, Any]] = chord_rows("lq_raw", raw_dirs)
 
-    def arm(tag: str, e0: Optional[float], members) -> None:
+    def arm(tag: str, e0: Optional[float], tau: Optional[float], members) -> None:
         reads, dirs = [], []
         for m in members:
-            rd = lq_run_dir(m, e0)
+            rd = lq_run_dir(m, e0, tau)
             if not (rd / "detection.npz").exists():
-                missing.append(lq_label(m, e0))
+                missing.append(lq_label(m, e0, tau))
                 continue
-            _check_arm(m, e0)
-            row, read = scored(lq_label(m, e0), m, rd)
+            _check_arm(m, e0, tau)
+            row, read = scored(lq_label(m, e0, tau), m, rd)
             rows.append(row)
             reads.append(read)
             dirs.append(rd)
         if len(reads) == len(POOL_MEMBERS) and tuple(members) == POOL_MEMBERS:
-            pool = pooled(f"pooled_{tag}_5000", "post_pickup", reads, dirs,
-                          a5_e0 if e0 is None else e0)
+            pool = pooled(f"pooled_{tag}_5000", "post_pickup", reads, dirs)
             rows.append(pool)
             rows.append(delta(f"delta_{tag}_minus_raw", pool, raw_pool))
             chord.extend(chord_rows(tag, dirs))
 
-    arm("lqpp", None, POOL_MEMBERS)                          # A
-    for e0 in B1_E0_EV:                                       # B1
-        arm("lqppb1", e0, (B1_MEMBER,))
-    if B2_E0_EV is not None:                                  # B2
-        arm("lqppb2", B2_E0_EV, POOL_MEMBERS)
+    arm("lqpp", None, None, POOL_MEMBERS)                    # A
+    for e0 in B1_E0_EV:                                       # B1 (E0 column)
+        arm("lqppb1", e0, None, (B1_MEMBER,))
+    for tau in B1_TAU_PS:                                     # B1' (tau column)
+        arm("lqppb1tau", None, tau, (B1_MEMBER,))
+    if B2_E0_EV is not None or B2_TAU_PS is not None:        # B2
+        arm("lqppb2", B2_E0_EV, B2_TAU_PS, POOL_MEMBERS)
 
     if H405_AB_CSV.exists():                                  # h405 contrast
         for src, label in H405_ROWS.items():
@@ -202,7 +208,7 @@ def main() -> int:
 
     keys = list(dict.fromkeys(k for r in rows for k in r))
     rows = [{k: r.get(k, "") for k in keys} for r in rows]
-    show = ("label", "pipeline", "E0_eV", "num_scored", "trap", "trap_marg", "supp",
+    show = ("label", "pipeline", "E0_eV", "tau_ps", "num_scored", "trap", "trap_marg", "supp",
             "nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE", "chi2_med",
             "KE1_mean", "S", "N_mean")
     show = tuple(c for c in show if c in keys)

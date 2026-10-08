@@ -24,7 +24,9 @@ from scripts.gen_tier2_detfix_battery import (
 from scripts.gen_tier2_detfix_postpickup import (
     AB_DIFF_KEYS,
     B1_E0_EV,
+    B1_TAU_PS,
     B2_E0_EV,
+    B2_TAU_PS,
     POOL_MEMBERS,
     POSTPICKUP_MEAN_BAND,
     a5_member_cell,
@@ -38,7 +40,7 @@ from scripts.gen_tier2_detfix_postpickup import (
     verify_member_vs_production,
     verify_postpickup_sizes,
 )
-from scripts.gen_tier2_g413_ridge_battery import _E0_KEY
+from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY
 from scripts.gen_tier2_g414_tauline import build as a5_build
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV
 from scripts.gen_tier2atlas_linclone import cfg_field_diff
@@ -145,9 +147,21 @@ def test_lq_pooled_targets_pair_the_same_members():
 
 
 def test_b2_refused_until_e0_chosen():
-    if B2_E0_EV is not None:
-        pytest.skip("B2_E0_EV already set")
+    if B2_E0_EV is not None or B2_TAU_PS is not None:
+        pytest.skip("B2 already chosen")
     with pytest.raises(SystemExit):
         postpickup_main(["--cell", "lq", "--b2", "--dry-run"])
     with pytest.raises(SystemExit):
         postpickup_main(["--b1", "--dry-run"])   # h405 has no E0 column
+
+
+def test_lq_tau_column_replaces_only_tau():
+    """B1': the cooling time is the only physics knob moved (E0 stays A5)."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        pp = build_lq_member("s1", None, B1_TAU_PS[0])
+        a5 = a5_build(a5_member_cell("s1"))
+    assert cfg_field_diff(pp, a5) == sorted(AB_DIFF_KEYS | {_TAU_KEY})
+    assert getattr(pp, _TAU_KEY) == B1_TAU_PS[0]
+    assert lq_label("s1", None, 6.8) == "g5lqppt68s1"
+    assert lq_run_dir("s1", None, 6.8) != lq_run_dir("s1")

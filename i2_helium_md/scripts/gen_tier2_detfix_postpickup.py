@@ -43,18 +43,19 @@ Pool afterwards (figures containers, N = 5000 each, s1–s5; see
 same flip on the thesis production law — the committed G4.14 A5 member
 (``gen_tier2_g414_tauline.confirm_cells``: lq c 2.0, a 16.717, E_bind 0.1175,
 3.5 Å gate, τ 6.4, E₀ 0.3155) with ``droplet_size_sampler_mode="post_pickup"``
-and, for B1/B2, E₀ re-placed. Oracle 1 then diffs against the committed A5
-member's ``cfg.json`` (exactly the sampler, plus E₀ when re-placed); oracles 2
+and, for B1/B1'/B2, E₀ or τ re-placed. Oracle 1 then diffs against the committed A5
+member's ``cfg.json`` (exactly the sampler, plus E₀ / τ when re-placed); oracles 2
 and 3 are unchanged. ion.npz is dropped once detection.npz reloads with scored
 ions (the scorer reads cfg.json + neutral.npz + detection.npz)::
 
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --dry-run
     python scripts/gen_tier2_detfix_postpickup.py --cell lq          # A: s1-s5
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1     # B1: E0 column, s1
-    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 at B2_E0_EV
+    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1tau  # B1': tau column, s1
+    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 at B2_E0_EV / B2_TAU_PS
 
 Pools: ``--target g5_lq_s1s5`` (raw A5 arm, N = 5000), ``g5_lqpp`` (A) and,
-once :data:`B2_E0_EV` is set, ``g5_lqppb2``. Scorer:
+once :data:`B2_E0_EV` / :data:`B2_TAU_PS` is set, ``g5_lqppb2``. Scorer:
 ``scripts/post_processing/tier2_g5_postpickup_table.py``.
 
 Max two concurrent MD runs (``--concurrency`` is capped at 2).
@@ -93,7 +94,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     MAX_BYTES_ION, MEMBER_SEEDS, T_HANDOVER_PS, build_member,
     member_run_dir_name as production_run_dir_name, verify_handover_alignment,
 )
-from scripts.gen_tier2_g413_ridge_battery import LQ_BUNDLE, _E0_KEY  # noqa: E402
+from scripts.gen_tier2_g413_ridge_battery import LQ_BUNDLE, _E0_KEY, _TAU_KEY  # noqa: E402
 from scripts.gen_tier2_g414_tauline import (  # noqa: E402
     ION_DROPPED_MARKER, build as a5_build, confirm_cells as a5_confirm_cells,
     drop_ion_npz, run_dir_for as a5_run_dir_for,
@@ -132,8 +133,16 @@ POOL_MEMBERS = ("s1", "s2", "s3", "s4", "s5")
 # +0.03 eV ~ -0.75); the A run at s1 is the column's E0 = 0.3155 point.
 B1_E0_EV = (0.3355, 0.3455, 0.3555)
 B1_MEMBER = "s1"
-#: B2 E0 [eV]: set (user) from the B1 column before ``--b2``; None = not chosen.
+# B1' (user, 2026-10-08): E0 re-placement trades KE (E0 is taken from the
+# Coulomb budget), so nbar is restored with the cooling time instead: tau
+# column at s1, A5 E0. Estimate from the committed g414_tradeoff line:
+# dnbar/dtau ~ -1.6 /ps at fixed E0 -> tau ~ 6.85 ps for -0.7 (beyond the
+# swept 4.0-6.6 ps). The A run at s1 is the tau = 6.4 point.
+B1_TAU_PS = (6.8, 7.2, 7.6)
+#: B2 E0 [eV] / tau [ps]: set (user) from B1 / B1' before ``--b2``; None =
+#: the A5 cell's own value.
 B2_E0_EV: Optional[float] = None
+B2_TAU_PS: Optional[float] = None
 LQ_DROP_REASON = ("G5 lq post_pickup: disk (T: full); scorer reads cfg.json + "
                   "neutral.npz + detection.npz")
 
@@ -206,51 +215,61 @@ def a5_member_cell(member: str):
     return next(c for c in a5_confirm_cells() if c.label.endswith(f"conf{member}"))
 
 
-def lq_label(member: str, e0_eV: Optional[float] = None) -> str:
-    """e.g. ``g5lqpps1`` (A5 E0) or ``g5lqppe3455s1`` (E0 0.3455 eV)."""
+def lq_label(member: str, e0_eV: Optional[float] = None,
+             tau_ps: Optional[float] = None) -> str:
+    """e.g. ``g5lqpps1`` (A5 cell), ``g5lqppe3455s1`` (E0 0.3455 eV),
+    ``g5lqppt68s1`` (tau 6.8 ps)."""
     if member not in MEMBER_SEEDS:
         raise KeyError(f"unknown member {member!r}")
-    tag = "" if e0_eV is None else f"e{round(e0_eV * 1e4):04d}"
+    tag = ("" if e0_eV is None else f"e{round(e0_eV * 1e4):04d}") + (
+        "" if tau_ps is None else f"t{round(tau_ps * 10):d}")
     return f"g5lqpp{tag}{member}"
 
 
-def lq_run_dir(member: str, e0_eV: Optional[float] = None) -> Path:
+def lq_run_dir(member: str, e0_eV: Optional[float] = None,
+               tau_ps: Optional[float] = None) -> Path:
     name = run_dir_name(CASE, LQ_BUNDLE, N,
-                        run_tag=f"detfix_conf270_{lq_label(member, e0_eV)}_th500")
+                        run_tag=f"detfix_conf270_{lq_label(member, e0_eV, tau_ps)}_th500")
     return PROJECT_ROOT / "data" / "runs" / name
 
 
-def build_lq_member(member: str, e0_eV: Optional[float] = None) -> SimConfig:
-    """The A5 member cfg with the sampler flipped and, optionally, E0 [eV]."""
+def build_lq_member(member: str, e0_eV: Optional[float] = None,
+                    tau_ps: Optional[float] = None) -> SimConfig:
+    """The A5 member cfg with the sampler flipped and, optionally, E0 [eV]
+    and / or the cooling time tau [ps] re-placed."""
     repl: dict = {"droplet_size_sampler_mode": SAMPLER_MODE}
     if e0_eV is not None:
         repl[_E0_KEY] = float(e0_eV) / BUDGET_EV
+    if tau_ps is not None:
+        repl[_TAU_KEY] = float(tau_ps)
     cfg = dataclasses.replace(a5_build(a5_member_cell(member)), **repl)
     cfg.validate()
     return cfg
 
 
-def verify_lq_member(member: str, e0_eV: Optional[float] = None) -> list[str]:
+def verify_lq_member(member: str, e0_eV: Optional[float] = None,
+                     tau_ps: Optional[float] = None) -> list[str]:
     """Oracle 1 (lq): the cfg differs from the committed A5 member's cfg.json
-    in exactly the sampler (+ E0 when re-placed). Returns the diff keys."""
-    cfg = build_lq_member(member, e0_eV)
+    in exactly the sampler (+ E0 / tau when re-placed). Returns the diff keys."""
+    cfg = build_lq_member(member, e0_eV, tau_ps)
     ref = a5_run_dir_for(a5_member_cell(member)) / "cfg.json"
     diff = cfg_diff_vs_reference(cfg, ref, context=f"lq post_pickup {member}")
-    want = set(AB_DIFF_KEYS) | ({_E0_KEY} if e0_eV is not None else set())
+    want = (set(AB_DIFF_KEYS) | ({_E0_KEY} if e0_eV is not None else set())
+            | ({_TAU_KEY} if tau_ps is not None else set()))
     if set(diff) != want:
-        raise AssertionError(f"[{lq_label(member, e0_eV)}] cfg vs A5 differs in "
+        raise AssertionError(f"[{lq_label(member, e0_eV, tau_ps)}] cfg vs A5 differs in "
                              f"{sorted(diff)}; pre-registered exactly {sorted(want)}.")
     return diff
 
 
-def run_lq(job: tuple[str, Optional[float]]) -> str:
+def run_lq(job: tuple[str, Optional[float], Optional[float]]) -> str:
     """lq A5 post_pickup member: guard, neutral -> ion -> detection, drop ion.npz."""
-    member, e0_eV = job
-    label = lq_label(member, e0_eV)
-    verify_lq_member(member, e0_eV)
-    cfg = build_lq_member(member, e0_eV)
+    member, e0_eV, tau_ps = job
+    label = lq_label(member, e0_eV, tau_ps)
+    verify_lq_member(member, e0_eV, tau_ps)
+    cfg = build_lq_member(member, e0_eV, tau_ps)
     steps, stride = verify_handover_alignment(cfg)
-    run_dir = lq_run_dir(member, e0_eV)
+    run_dir = lq_run_dir(member, e0_eV, tau_ps)
     done = (all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
             and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
     if SKIP_COMPLETED_RUNS and done:
@@ -260,8 +279,8 @@ def run_lq(job: tuple[str, Optional[float]]) -> str:
     run = RunDirectory(run_dir)
     run.save_cfg(cfg)
     print(f"[{label}] seed={cfg.seed} E0 {getattr(cfg, _E0_KEY) * BUDGET_EV:.4f} eV "
-          f"sampler={SAMPLER_MODE} ion {steps} steps (stride {stride}) -> {run_dir.name}",
-          flush=True)
+          f"tau {getattr(cfg, _TAU_KEY)} ps sampler={SAMPLER_MODE} ion {steps} steps "
+          f"(stride {stride}) -> {run_dir.name}", flush=True)
     neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
     ion = run_ion_propagation(cfg, neutral, run_dir=run, verbose=False,
                               max_bytes=MAX_BYTES_ION)
@@ -322,10 +341,11 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="h405 (the 2026-10-02 A/B) or the lq A5 thesis cell (G5)")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--b1", action="store_true", help="lq: the B1 E0 column at s1")
-    group.add_argument("--b2", action="store_true", help="lq: s1-s5 at B2_E0_EV")
+    group.add_argument("--b1tau", action="store_true", help="lq: the B1' tau column at s1")
+    group.add_argument("--b2", action="store_true", help="lq: s1-s5 at B2_E0_EV / B2_TAU_PS")
     args = parser.parse_args(argv)
-    if args.cell == "h405" and (args.b1 or args.b2):
-        raise SystemExit("--b1 / --b2 apply to --cell lq only")
+    if args.cell == "h405" and (args.b1 or args.b1tau or args.b2):
+        raise SystemExit("--b1 / --b1tau / --b2 apply to --cell lq only")
 
     if args.cell == "h405":
         members = _select(args.labels)
@@ -340,22 +360,27 @@ def main(argv: Optional[list[str]] = None) -> int:
                   flush=True)
         fn, jobs = run_one, members
     else:
-        if args.b2 and B2_E0_EV is None:
-            raise SystemExit("B2_E0_EV is not set: choose it from the B1 column first")
+        if args.b2 and B2_E0_EV is None and B2_TAU_PS is None:
+            raise SystemExit("B2_E0_EV / B2_TAU_PS not set: choose from B1 / B1' first")
         if args.b1:
-            jobs = [(m, e0) for m in _select(args.labels, (B1_MEMBER,)) for e0 in B1_E0_EV]
+            jobs = [(m, e0, None) for m in _select(args.labels, (B1_MEMBER,))
+                    for e0 in B1_E0_EV]
+        elif args.b1tau:
+            jobs = [(m, None, t) for m in _select(args.labels, (B1_MEMBER,))
+                    for t in B1_TAU_PS]
+        elif args.b2:
+            jobs = [(m, B2_E0_EV, B2_TAU_PS) for m in _select(args.labels, POOL_MEMBERS)]
         else:
-            e0 = B2_E0_EV if args.b2 else None
-            jobs = [(m, e0) for m in _select(args.labels, POOL_MEMBERS)]
-        for member, e0 in jobs:
-            diff = verify_lq_member(member, e0)
-            cfg = build_lq_member(member, e0)
+            jobs = [(m, None, None) for m in _select(args.labels, POOL_MEMBERS)]
+        for job in jobs:
+            diff = verify_lq_member(*job)
+            cfg = build_lq_member(*job)
             steps, stride = verify_handover_alignment(cfg)
             mean_N = verify_postpickup_sizes(cfg)
-            print(f"[{lq_label(member, e0)}] guards PASSED: seed {cfg.seed}, E0 "
-                  f"{getattr(cfg, _E0_KEY) * BUDGET_EV:.4f} eV, diff vs A5 {diff}, "
-                  f"{steps} steps, stride {stride}, post_pickup <N> {mean_N:.0f} -> "
-                  f"{lq_run_dir(member, e0).name}", flush=True)
+            print(f"[{lq_label(*job)}] guards PASSED: seed {cfg.seed}, E0 "
+                  f"{getattr(cfg, _E0_KEY) * BUDGET_EV:.4f} eV, tau {getattr(cfg, _TAU_KEY)} ps, "
+                  f"diff vs A5 {diff}, {steps} steps, stride {stride}, post_pickup <N> "
+                  f"{mean_N:.0f} -> {lq_run_dir(*job).name}", flush=True)
         fn = run_lq
     if args.dry_run:
         return 0
