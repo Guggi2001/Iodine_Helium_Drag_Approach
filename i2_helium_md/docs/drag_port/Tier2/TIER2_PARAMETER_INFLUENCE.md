@@ -1209,6 +1209,48 @@ cell (3.5 Å) and h405 detfix s1 (14.2 Å).
   supply the fast n = 1 ions. Mixture design (P1 fit, P2): user
   decision pending.
 
+#### 1.G9 Cold-onset minority ≤ 0.05 eV below E₀ (MEASURED 2026-10-08; THESIS_FINAL_GOALS G9) — **no tail: n ≥ 15 stays ≈ 0.001–0.002; the tail needs E₀ ≲ 0.18 eV, not a small spread**
+
+lq A5 law (c 2.0, τ 6.4, 3.5 Å), seed s1 E₀ columns (step 0.0125 eV;
+each cfg = A5 s1 except E₀; k = 0 is the committed member), production
+pipeline, N = 1000. Generator `scripts/gen_tier2_g9_cold_onset.py`,
+scorer `scripts/post_processing/tier2_g9_cold_onset_table.py` (anchors:
+the A5 s1 column and the mask-path pure mixture both = committed
+`c200t64confs1`, 4 dp; n̄ monotone across the grid);
+`g9_columns.csv`, `g9_mixtures.csv`.
+
+| E₀ [eV] | n̄ | n₁ | mass n 10–14 | n ≥ 15 | max n | trap | supp | KE n 10–14 / exp | KE₁ | midHot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.2655 | 5.86 | 0.007 | 0.117 | 0.003 | 17 | 0.046 | 0.000 | 0.93 | 0.827 | 1.41 |
+| 0.2780 | 5.33 | 0.036 | 0.104 | 0.003 | 16 | 0.044 | 0.000 | 0.84 | 0.774 | 1.29 |
+| 0.2905 | 4.83 | 0.095 | 0.087 | 0.002 | 17 | 0.043 | 0.004 | 0.77 | 0.716 | 1.18 |
+| 0.3030 | 4.33 | 0.162 | 0.073 | 0.002 | 16 | 0.040 | 0.024 | 0.63 | 0.666 | 1.08 |
+| 0.3155 (A5 s1) | 3.86 | 0.220 | 0.066 | 0.001 | 16 | 0.041 | 0.067 | 0.61 | 0.621 | 0.99 |
+| 0.3280 | 3.42 | 0.246 | 0.063 | 0.001 | 16 | 0.040 | 0.145 | 0.54 | 0.572 | 0.92 |
+| 0.3405 | 3.05 | 0.242 | 0.064 | 0.001 | 16 | 0.039 | 0.227 | 0.53 | 0.531 | 0.85 |
+
+- **Columns (whole ensemble shifted).** −0.05 eV moves the distribution
+  up by +2 (n̄ 3.86 → 5.86) and fills n 10–14 (0.066 → 0.117), but
+  n ≥ 15 stays at 0.001–0.003 and max n at 16–17; trapping is flat
+  (0.04). Colder ions at a given n are faster: KE n 10–14 / exp 0.61 →
+  0.93. KE₁ rises (0.62 → 0.83) as the suppressed class empties.
+- **Mixtures (main E₀ re-placed to expected n̄ 3.89; assignment rng
+  20261008).** Point at −0.05 (P), w 0–0.45: n ≥ 15 0.0011 → 0.0018,
+  W₁ 1.102 → 1.09–1.13, deepKE 0.55 → 0.55–0.59, KE₁ 0.623 → 0.585,
+  midHot 1.00 → 1.05 (main E₀ 0.315 → 0.339). Uniform over [−0.05, 0]
+  (U), w 0–0.5: n ≥ 15 ≤ 0.0017, W₁ 1.084–1.099, deepKE 0.54–0.57,
+  KE₁ 0.623 → 0.605. Best marked rows (P w 0.05; U w 0.15) differ from
+  w = 0 by less than the W₁ seed sd (0.036). The KE width at n = 1 does
+  not widen (IQR/median ≈ 0.1 in every column).
+- **Why (reading, from the escape-cliff record above).** High n needs
+  exit E_int ≈ 26–33 meV (n ≥ 13), and lq escapers have exposure
+  X/τ ≤ 1.78, so E_int,exit ≥ E₀·e^(−1.78) = 0.17·E₀. n ≥ 13 for an
+  escaper therefore needs E₀ ≲ 0.18 eV; at E₀ ≥ 0.2655 the floor is
+  ≥ 45 meV, so cold ions stop at n ≈ 10–14. A tail needs a distinct
+  cold population (≥ 0.13 eV below the main), the regime of the
+  earlier ½ E₀ projection (which broke n̄ without re-placement), not a
+  small spread.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

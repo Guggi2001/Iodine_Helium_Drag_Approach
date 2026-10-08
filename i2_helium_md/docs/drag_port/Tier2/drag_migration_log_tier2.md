@@ -14244,3 +14244,17 @@ cap-only). In-model levers for the fast n = 1 ions are exhausted (list
 in THESIS_FINAL_GOALS G8). Outlook candidates: source channel (two-
 population experimental n = 1 KE; KE₂/KE₁ 0.54; RQ8 / RQ1), map scatter
 (Tier-3 noise), sourced I⁺–He D₀ (M1). Production unchanged.
+
+## 2026-10-08 — G9 cold-onset minority screen (user trigger `[PROCEED TO IMPLEMENTATION]`): a ≤ 0.05 eV spread below E₀ gives no high-n tail
+
+Six seed-s1 E₀ columns at the lq A5 cell (0.2655–0.3405 eV, step 0.0125;
+cfg = A5 s1 except E₀; `scripts/gen_tier2_g9_cold_onset.py`, ion.npz
+dropped), mixtures by exact pooling with the main E₀ re-placed to n̄ 3.89
+(`scripts/post_processing/tier2_g9_cold_onset_table.py`; tests
+`tests/test_g9_cold_onset_mixture.py`; anchors: A5 s1 column and the
+mask-path pure mixture = committed `c200t64confs1`, 4 dp;
+`g9_columns.csv`, `g9_mixtures.csv`). n ≥ 15 ≤ 0.0018 for both shapes and
+w ≤ 0.5; W₁ / deepKE within seed noise; KE₁ falls to 0.585 (P) / 0.605
+(U). Whole ensemble at −0.05 eV: n̄ 5.86, n ≥ 15 0.003. Reading: the lq
+exposure ceiling puts exit E_int ≥ 0.17·E₀, so the tail needs
+E₀ ≲ 0.18 eV. Record: D0 §1.G9.

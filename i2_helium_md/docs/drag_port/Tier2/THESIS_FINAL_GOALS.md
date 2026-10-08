@@ -50,7 +50,15 @@ log (`drag_migration_log_tier2.md`).
    deficit goes to the thesis outlook (levers exhausted inside the
    model; see G8 status).
 
-**Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked. G1, G2 (production
+10. **G9 cold-onset minority screen** (2026-10-08, frozen; awaits
+    `[PROCEED TO IMPLEMENTATION]`): lq A5 cell, a fraction w up to
+    0.05 eV below the main E₀ (point / uniform), main E₀ re-placed to
+    n̄ 3.89; 6 seed-s1 columns, mixtures by exact pooling.
+    **Executed:** no tail (n ≥ 15 ≤ 0.002); the tail needs cold ions at
+    E₀ ≲ 0.18 eV. See G9.
+
+**Next:** user discussion on G9 (stop, or a distinct cold population). G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
+started. G4.14 recap points (a)–(c) parked. G1, G2 (production
 switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).
 
@@ -1180,6 +1188,79 @@ committed rows (h405 s1 = `s1_new`; lq A5 s1 member = its
   two-population mean, a fast tail plus a core; KE₂/KE₁ 0.54 vs ≈ 0.85
   for every model variant; RQ8 / RQ1), map scatter (KE width ≈ 8× too
   narrow, Tier-3 noise), and a sourced I⁺–He binding (M1).
+
+## G9. Cold-onset minority screen at the lq A5 cell (agreed 2026-10-08; frozen before any run)
+
+**Question.** Does a small onset-energy spread below E₀ (most ions at
+the main E₀, a fraction w colder by ≤ 0.05 eV) extend the high-n tail
+without breaking n̄ / KE₁ / midHot? The earlier two-E₀ projection (D0
+§1.G4.14, "Onset-energy spread": 10–20 % at ½ E₀ ≈ −0.16 eV) reached
+n ≥ 15 but broke n̄ (5.3–6.4) and overshot deep-bin KE, because each
+cold ion jumped ≈ 6 rungs and the main E₀ was not re-placed. Modelling
+assumption; physical origin decided later.
+
+**Projection (frozen, rule of thumb).** Δn ≈ ΔE₀·e^(−X/τ)/9.2 meV:
+−0.05 eV → +3 rungs on short chords, +2 typical, +0.7 deep. n̄ shift
+≈ +1.25·w (point mass at −0.05) / ≈ +0.6·w (uniform), so the main E₀
+moves up by ≈ 0.05·w to hold n̄. Expected: n ≥ 15 rises, deep-bin KE
+rises, KE width at fixed n widens, KE₁ ≈ unchanged; no mass above
+n ≈ 17–18 (weak top rungs, n* = 21).
+
+**Columns (MD; seed s1 = the A5 s1 births, CRN).** The A5 law (c 2.0,
+a / E_bind from the committed ridge JSON, 3.5 Å gate, τ 6.4, uncapped),
+production pipeline, N = 1000, E₀ grid step 0.0125 eV:
+0.2655, 0.2780, 0.2905, 0.3030, **0.3155 (= committed A5 s1)**, 0.3280,
+0.3405 → **6 new runs**. Each cfg diffs from the A5 s1 cfg in exactly
+`internal_energy_partition_fraction` (= E₀ / 2.70). The committed G4.13
+s1 cells at E₀ 0.300 / 0.310 / 0.320 / 0.330 are a cross-check only
+(n̄ monotone across the merged grid within seed noise), never mixture
+columns.
+
+**Mixture (zero MD, exact pooling).** Ions are independent apart from
+their Coulomb partner, and the columns share births. A molecule's two
+fragments are assigned to one column (P1). The assignment uses a
+dedicated `np.random.default_rng(20261008)` permutation, not the
+simulation RNG. The mixed ensemble is the masked reads
+(`include_mask`) of the columns pooled.
+- **Main peak:** a blend of two adjacent columns (width ≤ 0.0125 eV),
+  with the blend fraction set so that the expected n̄ (weighted column
+  histograms) = **3.89** (user: re-place the main E₀).
+- **Shape P (point):** fraction w at main − 0.05 eV (the same blend
+  shifted down 4 grid steps).
+- **Shape U (uniform):** fraction w uniform over [main − 0.05, main]:
+  trapezoid over the 5 shifted nodes (1/8, 1/4, 1/4, 1/4, 1/8).
+- w ∈ {0, 0.05, …, 0.50}; w = 0 is the single-E₀ reference at n̄ 3.89.
+
+**Readout per (shape, w)** (reported; best rows marked, nothing
+adopted): realised n̄, n₁, n ≥ 15 share, max n, histogram bands, W₁,
+deepKE, KE n 10–14 / experiment, KE₁, KE₂/KE₁, midHot, KE IQR/median
+at n = 1–4, trap. Marked: min W₁ and max n ≥ 15 among rows with midHot
+∈ [0.85, 1.15] and KE₁ ≥ (w = 0 row) − 0.01. Against the A5 s1 member,
+the A5 pool and experiment.
+
+**Anchors.** The A5 s1 column rescored = committed `c200t64confs1`
+(4 dp). The w = 0 mixture at main = 0.3155 alone reproduces that row
+exactly.
+
+**Code (requires `[PROCEED TO IMPLEMENTATION]`).** Generator
+`scripts/gen_tier2_g9_cold_onset.py` (column cfgs from the A5 s1 build,
+diff oracle, `ion.npz` dropped after detection verifies); scorer
+`scripts/post_processing/tier2_g9_cold_onset_table.py` (the mixture
+builder + readout; CSVs force-added). Tests: assignment partitions the
+molecules with both fragments in one column; trapezoid / blend weights
+sum to 1; a stub mixture's expected n̄ = the weighted column mean.
+
+**Cost.** 6 runs, ≤ 2 concurrent; scorer zero MD. Then a user
+discussion on how to continue (pooled seeds, shape, physical origin).
+
+- **Status — EXECUTED 2026-10-08 (measured; anchors pass).** No tail:
+  n ≥ 15 stays 0.0011–0.0018 for every shape and w (exp 0.057); W₁ and
+  deepKE move within seed noise; KE₁ falls (P 0.623 → 0.585, U → 0.605)
+  because the main E₀ must rise. Even the whole ensemble at −0.05 eV
+  (E₀ 0.2655) gives n ≥ 15 only 0.003 (n̄ 5.86). Reading: an escaper's
+  exit E_int ≥ 0.17·E₀ (lq exposure ceiling), so n ≥ 13 needs
+  E₀ ≲ 0.18 eV — a distinct cold population, not a small spread.
+  Record: D0 §1.G9.
 
 ## Thesis framing implied
 
