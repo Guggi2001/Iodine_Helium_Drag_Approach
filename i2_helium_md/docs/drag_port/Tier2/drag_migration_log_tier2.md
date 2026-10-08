@@ -14313,3 +14313,13 @@ equal midHot and χ²: n ≥ 15 0.0045 / 0.0062 (×4–6), max n 18, KE n 10–1
 / ref 0.75 / 0.72, trap 0.023 / 0.025, W₁ 0.86 / 0.88 (A5 1.11); cost
 KE₁ −0.02 to −0.035, supp +0.03. c vs a unresolved on one seed. Record:
 D0 §1.G4.14 (well-only bullet). Not Tier-0-consistent.
+
+## 2026-10-08 — Drag-sweep cells pooled at N = 6000 (user request; for visual inspection)
+
+c 2.3 / a 19.5 on the 0.0482 well, s2–s5 + r6 added (guards per member,
+ion.npz dropped); pools `g415_wo048c230` / `g415_wo048a195` (builder
+oracle OK); scorer rows appended, all earlier rows unchanged. Pooled:
+midHot 0.990 / 0.997, n ≥ 15 0.0059 / 0.0053 (A5 0.0006), max n 18,
+W₁ 0.879 / 0.905 (A5 1.097), trap 0.019 / 0.023, KE₁ 0.584 / 0.597 (A5
+0.617), χ²_med 557 / 581 (A5 507). c ≈ a on the tail; c ahead on W₁,
+a on KE₁. Record: D0 §1.G4.14.

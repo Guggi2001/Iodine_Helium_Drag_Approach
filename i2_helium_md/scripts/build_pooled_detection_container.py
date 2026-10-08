@@ -30,6 +30,8 @@ Invocation (``--target``; default = the §6.7 lq battery pool):
     python scripts/build_pooled_detection_container.py --target g414_c200t64
     python scripts/build_pooled_detection_container.py --target g415_wo080
     python scripts/build_pooled_detection_container.py --target g415_wo048
+    python scripts/build_pooled_detection_container.py --target g415_wo048c230
+    python scripts/build_pooled_detection_container.py --target g415_wo048a195
 
 ``detfix_h405`` = the detector-stage-fix reference battery
 (``gen_tier2_detfix_battery.py``: h405 s1–s5 + r6, t_h = 500 ps, E2 skipped,
@@ -81,6 +83,7 @@ from scripts.gen_tier2_g414_tauline import (  # noqa: E402
     run_dir_for as g414_run_dir_for,
 )
 from scripts.gen_tier2_g415_well import (  # noqa: E402
+    DRAG_SWEEP as G415_DRAG_SWEEP,
     MEMBER_SEEDS as G415_SEEDS,
     POOL_MEMBERS as G415_POOL_MEMBERS,
     WELL_ONLY_EV as G415_WELL_ONLY_EV,
@@ -167,6 +170,21 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
             "partner-aware Coulomb closure)",
         )
         for lab, ev in G415_WELL_ONLY_EV.items()
+    },
+    # Drag sweep on the 0.0482 well (gen_tier2_g415_well.py --drag-sweep):
+    # c 2.3 (A5 a) / a 19.5 (c 2.0) at twin midHot ~1, E0 re-placed to hold
+    # nbar (atlas_g415_summary.csv). s1-s5 + r6 per cell.
+    **{
+        f"g415_{lab}": (
+            [g415_run_dir_for(lab, m).name for m in G415_POOL_MEMBERS],
+            [G415_SEEDS[m] for m in G415_POOL_MEMBERS],
+            f"9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g415{lab}pooled_th500",
+            f"well-only drag sweep {lab}: lq a = {'A5 (16.717)' if sp['a'] is None else sp['a']} "
+            f"amu/ps, c = {sp['c']} amu/A, E_bind 0.0482 eV, tau 6.4 ps, E0 from the "
+            "twin's nbar-matched point (atlas_g415_summary.csv); not Tier-0-consistent; "
+            "production pipeline (t_h = 500 ps, E2 skipped, partner-aware Coulomb closure)",
+        )
+        for lab, sp in G415_DRAG_SWEEP.items()
     },
 }
 DEFAULT_TARGET = "lq"

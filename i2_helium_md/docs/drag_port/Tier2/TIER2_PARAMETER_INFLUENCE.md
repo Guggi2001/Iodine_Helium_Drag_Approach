@@ -1180,7 +1180,16 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   / 0.66 vs 0.55, trap 0.023 / 0.025 vs 0.041, W₁ 0.861 / 0.880 vs 1.107,
   n₁ 0.223 / 0.219; cost KE₁ 0.586 / 0.598 vs 0.621, supp 0.099 / 0.095
   vs 0.067. c vs a is not resolved on one seed (the wo048 member spread
-  of n ≥ 15 is 0.003–0.009).
+  of n ≥ 15 is 0.003–0.009). **Pooled N = 6000 (s1–s5 + r6; rows
+  `g415wo048c230pooled` / `g415wo048a195pooled`; containers
+  `…_N6000_detfix_conf270_g415wo048{c230,a195}pooled_th500`)** vs the A5
+  pool: midHot 0.990 / 0.997 (0.995), n ≥ 15 0.0059 / 0.0053 (0.0006),
+  max n 18 / 18, KE n 10–14 / ref 0.77 / 0.73, deepKE 0.61 / 0.58 (0.49),
+  trap 0.019 / 0.023 (0.035), W₁ 0.879 / 0.905 (1.097; h405 0.755),
+  n₁ 0.209 / 0.207 (0.204), n̄ 4.01 / 4.01 (3.89), KE₁ 0.584 / 0.597
+  (0.617), supp 0.095 / 0.090 (0.067), χ²_med 557 / 581 (507). c and a
+  tie on the tail; c is ahead on W₁ / deep KE / trap, a by 0.013 eV on
+  KE₁. Tail ≈ 10× below experiment.
 
 #### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
 

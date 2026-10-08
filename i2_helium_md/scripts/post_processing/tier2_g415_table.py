@@ -109,6 +109,10 @@ def main() -> int:
             if (run_dir_for(label, member) / "detection.npz").exists():
                 rows.append({**scored(f"g415{label}{member}", run_dir_for(label, member), member),
                              "arm": "well_only_drag_sweep"})
+        pooled_dir = RUNS_ROOT / TARGETS[f"g415_{label}"][2]
+        if (pooled_dir / "detection.npz").exists():
+            rows.append({**scored(f"g415{label}pooled", pooled_dir, "pooled"),
+                         "arm": "well_only_drag_sweep_pooled"})
     rows[0]["arm"] = "a5_anchor"
     cols = ("label", "arm", "e_bind_eV", "a_amu_per_ps", "E0_eV", "nbar_det", "n1_solv", "w1_solv",
             "midHot", "chi2_med", "KE1_mean", "supp", "trap", "mass_n10_14",
