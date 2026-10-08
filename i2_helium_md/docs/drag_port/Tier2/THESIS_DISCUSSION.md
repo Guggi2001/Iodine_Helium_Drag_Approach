@@ -203,4 +203,104 @@ Recorded so the discussion chapter can name them as future work:
 - per-n Q = 3 share from I²⁺ covariance per I⁺Heₙ row at 150 and 300 mW;
 - interpretation of the 300/600 mW KED cross-check as a Q = 3 test;
 - an arbitration objective that moves n = 1 from gate clause to held-out
-  prediction (relevant to the planned re-arbitration).
+  prediction (relevant to the planned re-arbitration);
+- the high-n tail as a Tier-3 (fluctuation) problem, §7.
+
+## 7. The high-n tail: a ceiling and a gap (DISCUSSION, added 2026-10-08)
+
+No runs were made for this section. Sources: D0 §1.G4.14 (escape cliff,
+well arms), §1.G9, §1.G9b; `THESIS_FINAL_GOALS.md` status item 11;
+`data/reference/integrated_i_he_abundance.csv`;
+`data/runs/h2b_forward_model/g9_columns.csv`, `g415_table.csv`,
+`detfix_postpickup_table.csv`.
+
+### 7.1 What the experiment shows (MEASURED, reference CSV)
+
+Share of solvated ions (n ≥ 1):
+
+| n | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+|---|---|---|---|---|---|---|---|---|
+| share | 0.020 | 0.019 | 0.016 | 0.014 | 0.009 | 0.007 | 0.006 | 0.005 |
+
+- n 15–16 = 0.031, n 17–20 = 0.026 (n ≥ 15 = 0.057). The mass window ends
+  at n = 20; "max n > 20" means only that the window ends there.
+- Smooth decay, ≈ × 0.8 per step, with one step at 16 → 17 (× 0.60) — a
+  candidate ladder edge (weaker binding above n ≈ 16), an input for M1.
+- **No pile-up toward n = 20–21.**
+- KE at high n is low but not near zero (n = 15: 0.075 eV; model 0.019).
+
+### 7.2 Why the model stops at n ≈ 16–19 (MEASURED mechanism, estimated extrapolation)
+
+- Inside the droplet pickup holds n = 21; the shell cools as
+  E_int,exit = E₀·e^(−X/τ), X = ∫ρ̂ dt; after exit about one He is shed per
+  ≈ 9 meV. Final n and KE are both functions of X: high n = cold exit =
+  long exposure = slow ion (D0 §1.G9b).
+- Measured escaper ceilings: X/τ ≈ 1.86 (lq A5) and 2.09 (h405);
+  n ≥ 15 sits at X/τ ≈ 1.73 (E_exit ≈ 55 meV). Max n 16–17.
+- Extrapolation (estimate, from E_exit = E₀·e^(−X/τ) and ≈ 9 meV per
+  rung): n ≈ 17 needs X/τ ≈ 2.0, n ≈ 20 needs X/τ ≈ 2.7–3.0
+  (E_exit ≈ 15–20 meV). The ceiling must rise ≈ 1.5× in X/τ.
+- Levers that raise the ceiling, all measured:
+  - faster cooling τ (lq would need τ ≈ 4.3 ps; inside the Bounded band
+    [2.6, 16.5]) — trades the tail against KE₁ and n₁ (G4.14);
+  - cheaper escape for slow ions (shallow well): well-only h405-type ring
+    at τ 4.8 reaches n ≥ 15 = 0.046, max n 19; well-only lq A5 at τ 6.4
+    reaches 0.007, max n 17. The 18 Å trace pins only the total escape
+    cost, so a Tier-0-consistent shallower well is compensated by
+    stronger drag and the gain vanishes (G4.15);
+  - colder start E₀ — fills n 10–14 to experiment, not n ≥ 15 (G9).
+- These get the model to n ≈ 19 at best. They do not give the shape.
+
+### 7.3 The gap is the real obstacle (MEASURED gap, argued consequence)
+
+- The model's exposure distribution has a **gap**: escapers end at
+  X/τ ≤ 1.86, retained ions sit at X/τ ≥ 5 (cold, intact n = 21), nothing
+  in between (D0 §1.G9b).
+- Releasing the retained class does not fit: it would pile up at
+  n ≈ 20–21, and its size (trap 0.041 lq / 0.087 h405) exceeds the
+  experimental n 17–20 total (0.026). The data show a falling top end.
+- The experiment instead needs a **continuum** of exit exposures over
+  X/τ ≈ 2–3.5. A static well with deterministic dynamics makes a cliff by
+  construction: at the surface an ion either has the KE to leave or never
+  leaves. A smooth tail needs the escape threshold blurred.
+
+### 7.4 Missing ingredient: collision shot noise (OUTLOOK, Tier 3)
+
+- The drag law is the mean of discrete He collisions. Replacing the
+  hard-sphere model by continuous drag removed the fluctuation channel
+  (CLAUDE.md: "loss of the Langevin fluctuation channel").
+- The relevant noise is collision shot noise at 2–10 Å/ps, not thermal
+  noise (k_B T at 0.37 K is negligible against a ≈ 0.1 eV well). Its size
+  follows from the collision kinematics (effective temperature of order
+  m_He·v²), so it is tied to the drag and adds no free parameter.
+- Order of magnitude (estimate): each collision removes ≈ 4–6 % of the
+  ion's energy (mass ratio), so ≈ 20–40 collisions to stop; relative
+  energy straggling ≈ 1/√30 ≈ 0.2.
+- Near the threshold this gives a continuum of surface dwell times, hence
+  exit exposures, hence a smooth n tail. The same noise widens KE at fixed
+  n — the model is ≈ 8× too narrow there (IQR/median 0.09–0.11 vs
+  0.71–0.82). Whether shot noise alone reaches the experimental width is
+  open; the straggling estimate suggests it covers part of it.
+- **Thesis statement (draft).** The size histogram is reproduced to
+  n ≈ 15 and the n = 2–8 KE curve is matched. The tail beyond n ≈ 16 needs
+  two things: a higher exposure ceiling for escapers (reachable within the
+  model, at a KE₁ / Tier-0 cost) and fluctuations at the escape threshold
+  (absent by construction in a mean-field drag model). The n ≥ 17 tail and
+  the too-narrow KE width at fixed n are the same missing ingredient:
+  Tier-3 noise.
+
+### 7.5 Considered and rejected in this discussion
+
+- **Droplet breakup weakening E_bind late** (rejected 2026-10-08). The
+  deposit (≈ 3–5 eV per molecule) is below the binding of a typical
+  production droplet (N̄ 12.8k, ≈ 8 eV; `detfix_postpickup_table.csv`), so
+  droplets shrink rather than break. The well is local (1/r⁴), so
+  shrinking changes it by ≈ 0.004 eV (50 → 35 Å, continuum estimate), and
+  the retained ions sit in the large (long-chord) droplets that survive.
+- **Stronger cooling only for long-residence ions.** No physical basis
+  found; dropped.
+- **Per-ion E₀ / f_int scatter and the Q = 3 channel** — tried
+  (G4.14 projection, G9, D0 §20); see `THESIS_FINAL_GOALS.md` status 9–11.
+- **Spin-orbit-state-dependent ladder.** Ruled out on energy: a fast
+  escaper leaves with E_int ≈ 0.19 eV and would need ≈ 30 meV per He to
+  stay at n ≥ 15, about three times the ladder.

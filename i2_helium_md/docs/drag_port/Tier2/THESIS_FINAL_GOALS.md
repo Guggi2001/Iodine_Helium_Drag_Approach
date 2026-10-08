@@ -64,6 +64,11 @@ log (`drag_migration_log_tier2.md`).
     both set by exposure, so no in-model knob gives fast high-n ions;
     outlook = a mechanism setting n independently of exposure (per-ion
     energy scatter, residence-independent cooling).
+    **Discussion (2026-10-08):** `THESIS_DISCUSSION.md` §7 — the tail
+    needs a higher escaper exposure ceiling *and* a blurred escape
+    threshold (the model has a gap at X/τ 1.86–5); outlook = collision
+    shot noise (Tier 3), the same missing ingredient as the narrow KE
+    width at fixed n.
 
 **Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
 started. G4.14 recap points (a)–(c) parked. G1, G2 (production
