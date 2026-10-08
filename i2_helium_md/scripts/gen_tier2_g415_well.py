@@ -38,6 +38,7 @@ g415_wo080`` / ``g415_wo048``).
 from __future__ import annotations
 
 import argparse
+import csv
 import dataclasses
 import json
 import math
@@ -87,6 +88,14 @@ E0_EV = {"w080e3155": None, "w080e3255": 0.3255}   # None = the A5 cell's own E0
 # a, c) with ONLY E_bind lowered -- NOT Tier-0-consistent (the 18 A refit
 # moves a); A5 E0. ion.npz dropped after detection verifies (disk).
 WELL_ONLY_EV = {"wo080": 0.080, "wo048": 0.0482}
+# Drag sweep on the 0.0482 well (user, 2026-10-08): the two twin points at
+# predicted MD midHot ~ 1 (``tier2_h2b_forward_model.py g415twin``) -- the
+# ram term raised (c 2.3, A5 a) and the raised-a contrast (a 19.5, c 2.0);
+# E0 = the twin's nbar-matched value, read from atlas_g415_summary.csv at
+# build time (never retyped). Not Tier-0-consistent; ion.npz dropped.
+DRAG_SWEEP = {"wo048c230": {"a": None, "c": 2.3}, "wo048a195": {"a": 19.5, "c": 2.0}}
+DRAG_SWEEP_E_BIND_EV = 0.0482
+TWIN_SUMMARY_CSV = PROJECT_ROOT / "data/runs/h2b_forward_model/atlas_g415_summary.csv"
 MAX_CONCURRENCY = 2
 
 
@@ -96,6 +105,21 @@ def well_point() -> dict:
     if rec["c_amu_per_A"] != 2.0 or not rec["bands_pass"]:
         raise AssertionError(f"{WELL_JSON.name} is not a passing c = 2.0 point")
     return {"a": float(rec["a_amu_per_ps"]), "c": 2.0, "e_bind_eV": float(rec["e_bind_eV"])}
+
+
+def sweep_point(label: str) -> dict:
+    """(a, c, E_bind, E0) of a drag-sweep label; E0 from the twin summary."""
+    spec = DRAG_SWEEP[label]
+    a = ridge_point(2.0)["a"] if spec["a"] is None else float(spec["a"])
+    with open(TWIN_SUMMARY_CSV, newline="", encoding="utf-8") as fh:
+        rows = [r for r in csv.DictReader(fh)
+                if r["at"] == "nbar_matched" and float(r["c"]) == spec["c"]
+                and abs(float(r["a"]) - a) < 1e-9
+                and float(r["E_bind_eV"]) == DRAG_SWEEP_E_BIND_EV]
+    if len(rows) != 1:
+        raise AssertionError(f"[{label}] {len(rows)} twin summary rows for a {a}, c {spec['c']}")
+    return {"a": a, "c": spec["c"], "e_bind_eV": DRAG_SWEEP_E_BIND_EV,
+            "E0_eV": float(rows[0]["E0_eV"])}
 
 
 def a5_cell(member: str = MEMBER) -> Cell:
@@ -108,6 +132,8 @@ def build(label: str, member: str = MEMBER) -> SimConfig:
     base = a5_build(a5_cell(member))
     if label in WELL_ONLY_EV:
         wp = {**ridge_point(2.0), "e_bind_eV": WELL_ONLY_EV[label]}
+    elif label in DRAG_SWEEP:
+        wp = sweep_point(label)
     else:
         wp = well_point()
     drag = build_drag_cfg(
@@ -118,8 +144,9 @@ def build(label: str, member: str = MEMBER) -> SimConfig:
     repl = {k: getattr(drag, k) for k in DRAG_FIELDS}
     if repl["drag_gate_steepness"] != S_RHO_A:
         raise AssertionError(f"bundle gate {repl['drag_gate_steepness']} != {S_RHO_A}")
-    if E0_EV.get(label) is not None:
-        repl[_E0_KEY] = float(E0_EV[label]) / BUDGET_EV
+    e0 = wp["E0_eV"] if label in DRAG_SWEEP else E0_EV.get(label)
+    if e0 is not None:
+        repl[_E0_KEY] = float(e0) / BUDGET_EV
     cfg = dataclasses.replace(base, **repl)
     cfg.validate()
     return cfg
@@ -132,7 +159,7 @@ def verify(label: str, member: str = MEMBER) -> list[str]:
     cfg = build(label, member)
     diff = sorted(cfg_field_diff(base, cfg))
     want = {"drag_coefficients", "binding_energy_I_ion_eV"} | (
-        {_E0_KEY} if E0_EV.get(label) is not None else set())
+        {_E0_KEY} if (E0_EV.get(label) is not None or label in DRAG_SWEEP) else set())
     if set(diff) != want:
         raise AssertionError(f"[{label}{member}] cfg diff vs A5 {member}: {diff}; "
                              f"expected {sorted(want)}")
@@ -168,7 +195,7 @@ def run_one(label: str, member: str = MEMBER) -> str:
     n_scored = int(det.detected_mask.sum())
     print(f"[{tag}] done: scored {n_scored}/{det.detected_mask.size}", flush=True)
     del ion, neutral
-    if label in WELL_ONLY_EV and n_scored > 0:
+    if (label in WELL_ONLY_EV or label in DRAG_SWEEP) and n_scored > 0:
         ion_path = run.root / "ion.npz"
         (run.root / ION_DROPPED_MARKER).write_text(json.dumps(
             {"ion_npz_bytes": ion_path.stat().st_size, "detection_scored": n_scored,
@@ -182,14 +209,22 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--well-only", action="store_true", help="the informative well-only arm")
+    parser.add_argument("--drag-sweep", action="store_true",
+                        help="the 0.0482-well drag sweep (c 2.3 / a 19.5 at twin midHot ~1)")
     parser.add_argument("--members", nargs="+", default=[MEMBER], choices=POOL_MEMBERS,
                         help="production members to run (default s1; the pool: s1 s2 s3 s4 s5 r6)")
     args = parser.parse_args(argv)
-    labels = list(WELL_ONLY_EV) if args.well_only else list(E0_EV)
+    labels = (list(DRAG_SWEEP) if args.drag_sweep
+              else list(WELL_ONLY_EV) if args.well_only else list(E0_EV))
     jobs = [(lab, m) for lab in labels for m in args.members]
-    wp = ridge_point(2.0) if args.well_only else well_point()
-    print(f"law: a {wp['a']!r} amu/ps, c {wp['c']}; E_bind "
-          f"{list(WELL_ONLY_EV.values()) if args.well_only else wp['e_bind_eV']} eV", flush=True)
+    if args.drag_sweep:
+        for lab in labels:
+            print(f"[{lab}] law: {sweep_point(lab)}", flush=True)
+    else:
+        wp = ridge_point(2.0) if args.well_only else well_point()
+        print(f"law: a {wp['a']!r} amu/ps, c {wp['c']}; E_bind "
+              f"{list(WELL_ONLY_EV.values()) if args.well_only else wp['e_bind_eV']} eV",
+              flush=True)
     for label, member in jobs:
         diff = verify(label, member)
         steps, stride = verify_handover_alignment(build(label, member))

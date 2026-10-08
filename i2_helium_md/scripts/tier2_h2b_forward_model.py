@@ -4632,6 +4632,136 @@ def stage_g414twin(m=20000):
 
 
 # ---------------------------------------------------------------------------
+# Well-only drag sweep (user, 2026-10-08; zero MD): at the shallow well
+# E_bind 0.0482 eV the A5 lq law (c 2.0, tau 6.4) lands midHot 1.13 in MD
+# (g415wo048pooled). Raise c (the ram term: n = 2-8 fly near the a/c = 8.4
+# A/ps crossover) to bring midHot to ~1 while leaving the slow ions (tail,
+# trapping; linear-dominated) alone; one raised-a contrast. Not
+# Tier-0-consistent (the well-only arm). The twin is licensed for midHot and
+# W1 (D0 §14.4), not for the tail / deep KE -- MD decides those.
+#
+# Anchors: (i) the A5 chord (own well) and (ii) the committed eb0482 chord
+# reproduce their atlas_g412_twin / atlas_g412_twin_wells rows at tau 6.4;
+# (iii) the twin -> MD transfer at THIS well is measured on the pooled
+# g415wo048 MD row (g415_table.csv, read never retyped) at E0 0.3155.
+# ---------------------------------------------------------------------------
+G415_E_BIND_EV = 0.0482
+G415_TAU_PS = 6.4
+G415_E0_A5 = 0.3155
+G415_E0_GRID = np.array(sorted(set(G412_REFINE_E0_GRID.tolist()) | {G415_E0_A5}))
+G415_C_SWEEP = (2.0, 2.2, 2.3, 2.4, 2.6)         # at the A5 a
+G415_A_CONTRAST = (18.5, 19.5, 20.5, 22.5)         # at c = 2.0
+G415_MD_TABLE = OUT / "g415_table.csv"
+G415_MD_POOLED_LABEL = "g415wo048pooled"
+#: twin column -> (MD column in g415_table.csv, kind)
+G415_TRANSFER = {"nbar_det": ("nbar_det", "diff"), "n1_solv": ("n1_solv", "diff"),
+                 "w1_solv": ("w1_solv", "diff"), "midhot_geo": ("midHot", "ratio"),
+                 "n1_ke_eV": ("KE1_mean", "diff")}
+
+
+def g415_transfer(twin_row, md_row):
+    """MD - twin (diff) or MD / twin (ratio) per G415_TRANSFER column."""
+    out = {}
+    for tw, (md, kind) in G415_TRANSFER.items():
+        t, m_ = float(twin_row[tw]), float(md_row[md])
+        out[tw] = (m_ / t if kind == "ratio" else m_ - t, kind)
+    return out
+
+
+def stage_g415twin(m=20000):
+    """Well-only c sweep (+ a contrast) at E_bind 0.0482, tau 6.4 (zero MD)."""
+    ref_ke = g3_ref_mean_ke()
+    solv_exp, _ = load_experiment()
+    sig = _g3_md_rung_tables()["rq4graded"]
+    ens = _g3_corrected_ensemble(m, ref_ke, solv_exp)
+    _g3_corrected_row_oracle(ens)
+    a5 = next(p for p in _g412_points() if p["c"] == 2.0)
+    specs = [{"a": a5["a"], "c": 2.0, "eb_tag": "ebown", "e_bind": a5["e_bind"],
+              "s_rho": G412_S_RHO_A}]
+    specs += [{"a": a5["a"], "c": c, "eb_tag": "eb0482", "e_bind": G415_E_BIND_EV,
+               "s_rho": G412_S_RHO_A} for c in G415_C_SWEEP]
+    specs += [{"a": a, "c": 2.0, "eb_tag": "eb0482", "e_bind": G415_E_BIND_EV,
+               "s_rho": G412_S_RHO_A} for a in G415_A_CONTRAST]
+    print(f"\n=== g415twin: {len(specs)} chords at tau {G415_TAU_PS}, "
+          f"{G415_E0_GRID.size} E0 ===")
+    chord_rows, rows, _ = _linsweep_scan("linq", specs, ens, sig, ref_ke, solv_exp,
+                                         m, False, tau_grid=(G415_TAU_PS,),
+                                         e0_grid=G415_E0_GRID)
+
+    # --- anchors (i)-(ii): committed twin rows at tau 6.4 ---
+    def key(r):
+        return (str(r["a"]), str(r["c"]), str(r["E_bind_tag"]), str(r["tau_ps"]),
+                str(r["E0_eV"]))
+    by_key = {key(r): r for r in rows}
+    checked = {"ebown": 0, "eb0482": 0}
+    for name in ("atlas_g412_twin.csv", "atlas_g412_twin_wells.csv"):
+        with open(OUT / name, newline="") as fh:
+            for ref in csv.DictReader(fh):
+                if ref.get("arm") != "linq" or key(ref) not in by_key:
+                    continue
+                for col in _G412_ANCHOR_COLS:
+                    if str(by_key[key(ref)][col]) != ref[col]:
+                        raise AssertionError(f"g415 anchor {name} {key(ref)} {col}: "
+                                             f"{by_key[key(ref)][col]!r} != {ref[col]!r}")
+                checked[ref["E_bind_tag"]] += 1
+    if min(checked.values()) == 0:
+        raise AssertionError(f"g415 anchor incomplete: {checked}")
+    print(f"[g415] ANCHOR PASSED: committed rows reproduced {checked}")
+
+    # --- anchor (iii): transfer at this well from the pooled MD row ---
+    with open(G415_MD_TABLE, newline="", encoding="utf-8") as fh:
+        md = next(r for r in csv.DictReader(fh) if r["label"] == G415_MD_POOLED_LABEL)
+    if (round(float(md["e_bind_eV"]), 4) != G415_E_BIND_EV
+            or round(float(md["E0_eV"]), 4) != G415_E0_A5):
+        raise AssertionError(f"g415 MD row {G415_MD_POOLED_LABEL} is not the "
+                             f"{G415_E_BIND_EV} eV / E0 {G415_E0_A5} cell")
+
+    def cell(a, c, eb, e0):
+        return next(r for r in rows if r["a"] == a and r["c"] == c
+                    and r["E_bind_tag"] == eb and r["E0_eV"] == e0)
+    base = cell(a5["a"], 2.0, "eb0482", G415_E0_A5)
+    xfer = g415_transfer(base, md)
+    print("[g415] transfer at E_bind 0.0482 (MD pooled vs twin, E0 0.3155): " + ", ".join(
+        f"{k} {'x' if kd == 'ratio' else '+'}{v:.4f}" for k, (v, kd) in xfer.items()))
+
+    # --- per variant: at E0 0.3155 and at the E0 holding the base twin nbar ---
+    summary = []
+    nbar_target = float(base["nbar_det"])
+    for sp in specs[1:]:
+        vr = sorted((r for r in rows if r["a"] == sp["a"] and r["c"] == sp["c"]
+                     and r["E_bind_tag"] == "eb0482"), key=lambda r: float(r["E0_eV"]))
+        e0 = np.array([float(r["E0_eV"]) for r in vr])
+        nb = np.array([float(r["nbar_det"]) for r in vr])
+        fin = np.isfinite(nb)
+        e_star, i_lo = g414_e0_at_nbar(e0[fin], nb[fin], nbar_target)
+        for where, e0_use in (("E0_A5", G415_E0_A5), ("nbar_matched", e_star)):
+            out = {"a": sp["a"], "c": sp["c"], "E_bind_eV": G415_E_BIND_EV,
+                   "tau_ps": G415_TAU_PS, "at": where,
+                   "E0_eV": round(float(e0_use), 5) if np.isfinite(e0_use) else np.nan,
+                   "phi": vr[0]["phi"], "trapped_frac": vr[0]["trapped_frac"]}
+            for tw, (off, kind) in xfer.items():
+                if where == "E0_A5":
+                    v = float(cell(sp["a"], sp["c"], "eb0482", G415_E0_A5)[tw])
+                else:
+                    y = np.array([float(r[tw]) for r in vr])[fin]
+                    v = g414_interp_at(e0[fin], y, e_star, i_lo)
+                out[f"twin_{tw}"] = round(v, 4) if np.isfinite(v) else np.nan
+                p_ = g414_md_prediction(v, off, kind)
+                out[f"md_pred_{G415_TRANSFER[tw][0]}"] = round(p_, 4) if np.isfinite(p_) else np.nan
+            summary.append(out)
+    print("\n=== g415twin: predicted MD (transfer at this well) ===")
+    for s in summary:
+        print(f"  a {s['a']:.3f} c {s['c']} [{s['at']:>12}] E0 {s['E0_eV']}  "
+              f"midHot {s['md_pred_midHot']}  KE1 {s['md_pred_KE1_mean']}  "
+              f"n1 {s['md_pred_n1_solv']}  nbar {s['md_pred_nbar_det']}  "
+              f"W1 {s['md_pred_w1_solv']}  trap(twin) {s['trapped_frac']}")
+    _write_csv_with_drift("atlas_g415_chords.csv", chord_rows)
+    _write_csv_with_drift("atlas_g415_twin.csv", rows)
+    _write_csv_with_drift("atlas_g415_summary.csv", summary)
+    return summary
+
+
+# ---------------------------------------------------------------------------
 # Atlas §6.5 Step 2 — the E_bind twin scan (zero MD, designed 2026-08-10)
 #
 # Physics. The droplet exit well and the He density gate are the SAME erf at
@@ -5432,6 +5562,8 @@ def main():
         stage_g412refine()
     elif mode == "g414twin":
         stage_g414twin()
+    elif mode == "g415twin":
+        stage_g415twin()
     elif mode == "ebindscan":
         stage_ebindscan(force_rebuild="--force-rebuild" in sys.argv[2:])
     elif mode == "refundscan":

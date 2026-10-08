@@ -1166,6 +1166,21 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   χ²_med 507 → 646 / 614. The s1 reading holds pooled: the well fixes the
   deep-bin speed, while the n ≥ 15 share stays ≈ 9× below experiment and
   max n stays 17 (the ceiling is X/τ, not the well, at τ 6.4).
+  **Drag sweep on the 0.0482 well (2026-10-08; twin `g415twin` →
+  `atlas_g415_{twin,summary}.csv`, anchors: committed ebown / eb0482
+  rows at τ 6.4 reproduced, transfer measured on `g415wo048pooled`:
+  midHot × 0.943, KE₁ + 0.020, n̄ − 0.29; MD seed s1, rows
+  `g415wo048c230s1` / `g415wo048a195s1`).** Twin at n̄-matched E₀: midHot
+  ≈ 1 at c ≈ 2.3 (A5 a) or a ≈ 19.5 (c 2.0); at matched midHot raising a
+  costs ≈ 0.01 eV less KE₁, raising c traps slightly less. MD (s1, E₀
+  0.3235 / 0.3216) hits the twin (midHot 0.988 / 0.996 vs 0.988 / 0.998;
+  KE₁ 0.586 / 0.598 vs 0.585 / 0.597). Against A5 s1 at the same midHot
+  (0.99) and χ²_med (319 / 322 vs 316): n ≥ 15 0.0045 / 0.0062 vs 0.0011,
+  max n 18 / 18 vs 16, KE n 10–14 / ref 0.75 / 0.72 vs 0.61, deepKE 0.71
+  / 0.66 vs 0.55, trap 0.023 / 0.025 vs 0.041, W₁ 0.861 / 0.880 vs 1.107,
+  n₁ 0.223 / 0.219; cost KE₁ 0.586 / 0.598 vs 0.621, supp 0.099 / 0.095
+  vs 0.067. c vs a is not resolved on one seed (the wo048 member spread
+  of n ≥ 15 is 0.003–0.009).
 
 #### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
 

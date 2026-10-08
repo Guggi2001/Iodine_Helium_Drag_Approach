@@ -33,7 +33,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_g414_tauline import confirm_cells, run_dir_for as a5_run_dir_for  # noqa: E402
 from scripts.build_pooled_detection_container import TARGETS  # noqa: E402
 from scripts.gen_tier2_g415_well import (  # noqa: E402
-    E0_EV, MEMBER, POOL_MEMBERS, WELL_ONLY_EV, run_dir_for, well_point,
+    DRAG_SWEEP, E0_EV, MEMBER, POOL_MEMBERS, WELL_ONLY_EV, run_dir_for, well_point,
 )
 from scripts.post_processing.tier2_detfix_battery_table import (  # noqa: E402
     _check_4dp, _csv_row, _pipeline, _row,
@@ -103,6 +103,12 @@ def main() -> int:
         if (pooled_dir / "detection.npz").exists():
             rows.append({**scored(f"g415{label}pooled", pooled_dir, "pooled"),
                          "arm": "well_only_informative_pooled"})
+    # Drag sweep on the 0.0482 well (2026-10-08): c 2.3 / a 19.5 at twin midHot ~1.
+    for label in DRAG_SWEEP:
+        for member in POOL_MEMBERS:
+            if (run_dir_for(label, member) / "detection.npz").exists():
+                rows.append({**scored(f"g415{label}{member}", run_dir_for(label, member), member),
+                             "arm": "well_only_drag_sweep"})
     rows[0]["arm"] = "a5_anchor"
     cols = ("label", "arm", "e_bind_eV", "a_amu_per_ps", "E0_eV", "nbar_det", "n1_solv", "w1_solv",
             "midHot", "chi2_med", "KE1_mean", "supp", "trap", "mass_n10_14",

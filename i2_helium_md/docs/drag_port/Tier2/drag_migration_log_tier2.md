@@ -14299,3 +14299,17 @@ committed; ion.npz dropped). Pools via `build_pooled_detection_container.py
 0.0062, max n 17, KE n 10–14 / ref 0.76 / 0.93, trap 0.035 → 0.022 /
 0.013, W₁ 1.097 → 1.016 / 0.950, KE₁ 0.637 / 0.653, midHot 1.068 / 1.130.
 s1 reading confirmed. Record: D0 §1.G4.14 (well-only bullet).
+
+## 2026-10-08 — Drag sweep on the 0.0482 well (user trigger `[PROCEED TO IMPLEMENTATION]`): midHot ≈ 1 keeps the tail gain
+
+Twin stage `g415twin` (`tier2_h2b_forward_model.py`; c 2.0–2.6 at A5 a,
+a 18.5–22.5 at c 2.0; τ 6.4; anchors: committed ebown / eb0482 rows at
+τ 6.4 reproduced; transfer measured on `g415wo048pooled`) placed midHot
+≈ 1 at c 2.3 / a 19.5 (E₀ re-placed to hold n̄). MD s1
+(`gen_tier2_g415_well.py --drag-sweep`, E₀ read from
+`atlas_g415_summary.csv`; guards: diff vs A5 s1 = drag / well / E₀ only)
+hit the twin (midHot 0.988 / 0.996, KE₁ 0.586 / 0.598). Against A5 s1 at
+equal midHot and χ²: n ≥ 15 0.0045 / 0.0062 (×4–6), max n 18, KE n 10–14
+/ ref 0.75 / 0.72, trap 0.023 / 0.025, W₁ 0.86 / 0.88 (A5 1.11); cost
+KE₁ −0.02 to −0.035, supp +0.03. c vs a unresolved on one seed. Record:
+D0 §1.G4.14 (well-only bullet). Not Tier-0-consistent.
