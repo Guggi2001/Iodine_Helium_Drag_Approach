@@ -3620,12 +3620,32 @@ D4 firing (r6 included, unlike h405).
   0.52 (dn̄/dτ ≈ −1.1 /ps). At matched n̄ ≈ 3.87 both land at midHot
   ≈ 0.85–0.87. Reading: extra evaporation moves slow heavy clusters into
   the low-n bins. Untested pickup-side lever: λ₀ (0.9, sourced 0.7–1.1).
+- **The chord map is sampler-invariant** (`g5_postpickup_chord.csv`: per
+  chord bin n and KE identical); post_pickup only moves ions from short
+  chords (n = 1 window 33–37 Å) to long ones. E₀ / τ change the map
+  (fewer He per chord, slower ions per n); the drag changes it the other
+  way (KE per chord).
+- **The drag holds both (B1c → B2).** Lower c on the TDDFT ridge (committed
+  g412 points, 18 Å-passing) + E₀ re-placed per c (twin line at n̄ 3.89 +
+  0.0213 eV post_pickup shift). s1: c 1.8 (E₀ 0.3331) midHot 0.925; c 1.6
+  (E₀ 0.3297) midHot 0.994. Pooled N = 6000 at c 1.6 (a 18.007, E_bind
+  0.11727, τ 6.4, post_pickup):
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | trap | S |
+|---|---|---|---|---|---|---|---|---|
+| A5 raw (c 2.0) | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.035 | 1.958 |
+| post_pickup, c 1.6 | 3.903 | 0.211 | **0.967** | 1.002 | 0.609 | 0.477 | 0.049 | **1.705** |
+
+  Every observable at or better than A5; W₁ −0.13, S −0.25. The selected
+  c depends on the droplet description (identifiability, G5): the ridge
+  freedom TDDFT leaves open absorbs the droplet-size change.
 
 Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (full vector,
-sizes, E₀/τ columns) + `g5_postpickup_chord.csv`; generator
-`gen_tier2_detfix_postpickup.py --cell lq`; figures container
-`…N6000_detfix_conf270_g5lqpppooled_th500` (pairs with
-`…N6000_detfix_conf270_g414c200t64pooled_th500`).
+sizes, c/E₀/τ columns) + `g5_postpickup_chord.csv`; generator
+`gen_tier2_detfix_postpickup.py --cell lq` (`--b1`, `--b1tau`, `--b1c`,
+`--b2`); figures containers `…N6000_detfix_conf270_g5lqpppooled_th500`
+(unchanged parameters) and `…N6000_detfix_conf270_g5lqppc160e3297pooled_th500`
+(c 1.6), both pairing with `…N6000_detfix_conf270_g414c200t64pooled_th500`.
 
 ## 16. Quiet / structural surfaces (for completeness)
 
