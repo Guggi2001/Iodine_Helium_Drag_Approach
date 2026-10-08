@@ -57,7 +57,15 @@ log (`drag_migration_log_tier2.md`).
     **Executed:** no tail (n ≥ 15 ≤ 0.002); the tail needs cold ions at
     E₀ ≲ 0.18 eV. See G9.
 
-**Next:** user discussion on G9 (stop, or a distinct cold population). G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
+11. **Decision (user, 2026-10-08): ladder and high-n tail → outlook.**
+    Ladder: no fix (edge width inert; n* beyond 21 ± 1–2 not
+    defensible; D0 §1.G9b); outlook = sourced I⁺Heₙ D₀(n) and n*
+    (RQ4 / M1) — the bottom taper is data-derived. Tail: n and KE are
+    both set by exposure, so no in-model knob gives fast high-n ions;
+    outlook = a mechanism setting n independently of exposure (per-ion
+    energy scatter, residence-independent cooling).
+
+**Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
 started. G4.14 recap points (a)–(c) parked. G1, G2 (production
 switch), G5–G7 not started.
 Production unchanged (h405, `capped_cubic` v_c 5.5).

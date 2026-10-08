@@ -14270,3 +14270,9 @@ n* 22 / 23 / 24 — n ≥ 15 0.0012 / 0.0022 / 0.0047 (exp 0.057), n = 0
 a gap); final n and KE both track X, so high n sits on the slowest ions
 (KE n ≥ 15 0.019 eV vs exp 0.075). Session-local scripts; record D0
 §1.G9b.
+
+## 2026-10-08 — Decision (user): ladder and high-n tail → thesis outlook
+
+Ladder: no fix (D0 §1.G9b); outlook = sourced D₀(n) and n* (RQ4 / M1).
+Tail: n and KE both set by exposure; outlook = a mechanism decoupling n
+from exposure. G9 cold-population follow-up not pursued.
