@@ -11,7 +11,7 @@ generator's ``POOL_MEMBERS``).
 Pure scorer — runs no MD and writes only the CSV below. Observable vector =
 the detfix battery scorer's ``_row`` (``observable_columns`` + ``lowke_columns``
 + ``md_gate`` + ``S``), extended by the realized droplet-size ensemble (read
-from each member's ``ion.npz`` radii; N = (R / 2.2173)³, the propagation-path
+from each member's ``neutral.npz`` radii; N = (R / 2.2173)³, the propagation-path
 bulk convention, D0 §15.3).
 
 Order of operations (oracle first; failure stops before a new number):
@@ -99,13 +99,15 @@ R_PER_N_CUBE_ROOT = 2.2173
 def size_columns(run_dirs: list[Path]) -> dict[str, float]:
     """Realized droplet-size ensemble of the given runs' molecules.
 
-    Reads ``droplet_radii_angstrom`` (one radius per molecule) from each
-    ``ion.npz``. Returns mean / median N [He atoms] and mean / q05 / q95 R [Å].
+    Reads ``droplet_radii`` [Å] (one per fragment) from each ``neutral.npz``
+    (identical to ``ion.npz``'s ``droplet_radii_angstrom``; neutral.npz
+    survives the ion.npz drop). Returns mean / median N [He atoms] and
+    mean / q05 / q95 R [Å].
     """
     radii = []
     for run_dir in run_dirs:
-        with np.load(run_dir / "ion.npz", allow_pickle=False) as z:
-            radii.append(np.asarray(z["droplet_radii_angstrom"], dtype=float))
+        with np.load(run_dir / "neutral.npz", allow_pickle=False) as z:
+            radii.append(np.asarray(z["droplet_radii"], dtype=float))
     R = np.concatenate(radii)
     N = (R / R_PER_N_CUBE_ROOT) ** 3
     q05, q95 = np.quantile(R, [0.05, 0.95])
@@ -117,15 +119,16 @@ def emission_chords(run_dir: Path) -> np.ndarray:
     """Straight-line path [Å] from each fragment's birth point to the droplet
     surface along the Coulomb-explosion axis (partner -> fragment).
 
-    Uses the first stored ion-stage column; fragment ``i`` pairs with
-    ``i ± num_molecules``. Chord = -p·ê + sqrt((p·ê)² - |p|² + R²) for birth
-    position p, unit axis ê, droplet radius R. Ignores deflection and the
-    soft erf edge of the density gate. Shape (2 * num_molecules,).
+    Uses the last stored neutral-stage column (= the first ion-stage column,
+    bit-identical); fragment ``i`` pairs with ``i ± num_molecules``.
+    Chord = -p·ê + sqrt((p·ê)² - |p|² + R²) for birth position p, unit axis
+    ê, droplet radius R. Ignores deflection and the soft erf edge of the
+    density gate. Shape (2 * num_molecules,).
     """
-    with np.load(run_dir / "ion.npz", allow_pickle=False) as z:
-        R = np.asarray(z["droplet_radii_angstrom"], dtype=float)
-        P = np.stack([z[k][:, 0] for k in ("positions_x", "positions_y",
-                                           "positions_z")], axis=1)
+    with np.load(run_dir / "neutral.npz", allow_pickle=False) as z:
+        R = np.asarray(z["droplet_radii"], dtype=float)
+        P = np.stack([z[k][:, -1] for k in ("positions_x", "positions_y",
+                                            "positions_z")], axis=1)
     n_mol = R.size // 2
     partner = np.r_[np.arange(n_mol, 2 * n_mol), np.arange(n_mol)]
     axis = P - P[partner]

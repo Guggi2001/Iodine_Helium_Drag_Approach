@@ -250,9 +250,12 @@ def _run_is_complete(run_dir: Path) -> bool:
             and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
 
 
-def drop_ion_npz(run_dir: Path) -> None:
+def drop_ion_npz(run_dir: Path,
+                 reason: str = "G4.14 Step 1: disk (T: full); scorer reads cfg.json + detection.npz",
+                 ) -> None:
     """Delete ``ion.npz`` after checking ``detection.npz`` reloads with scored
-    ions; writes :data:`ION_DROPPED_MARKER` first. No-op if already dropped."""
+    ions; writes :data:`ION_DROPPED_MARKER` (with ``reason``) first. No-op if
+    already dropped."""
     from i2_helium_md.simulation.detection_stage import load_detection_result
 
     ion_path = run_dir / "ion.npz"
@@ -264,8 +267,7 @@ def drop_ion_npz(run_dir: Path) -> None:
         raise AssertionError(f"{run_dir.name}: detection.npz has no scored ions; ion.npz kept")
     (run_dir / ION_DROPPED_MARKER).write_text(json.dumps(
         {"ion_npz_bytes": ion_path.stat().st_size, "detection_scored": n_scored,
-         "reason": "G4.14 Step 1: disk (T: full); scorer reads cfg.json + detection.npz"},
-        indent=2), encoding="utf-8")
+         "reason": reason}, indent=2), encoding="utf-8")
     ion_path.unlink()
 
 

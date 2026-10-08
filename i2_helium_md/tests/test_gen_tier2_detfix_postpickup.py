@@ -1,5 +1,5 @@
-"""Focused tests for the droplet-size sampler A/B generator at h405
-(``gen_tier2_detfix_postpickup.py``).
+"""Focused tests for the droplet-size sampler A/B generator at h405 and on the
+lq A5 cell, G5 (``gen_tier2_detfix_postpickup.py``).
 
 Config-construction and guard tests only — no run, no trajectory. They lock
 the design: the A/B flips exactly ``droplet_size_sampler_mode`` relative to
@@ -23,14 +23,24 @@ from scripts.gen_tier2_detfix_battery import (
 )
 from scripts.gen_tier2_detfix_postpickup import (
     AB_DIFF_KEYS,
+    B1_E0_EV,
+    B2_E0_EV,
     POOL_MEMBERS,
     POSTPICKUP_MEAN_BAND,
+    a5_member_cell,
+    build_lq_member,
     build_postpickup_member,
+    lq_label,
+    lq_run_dir,
+    main as postpickup_main,
     member_run_dir_name,
     production_run_dir,
     verify_member_vs_production,
     verify_postpickup_sizes,
 )
+from scripts.gen_tier2_g413_ridge_battery import _E0_KEY
+from scripts.gen_tier2_g414_tauline import build as a5_build
+from scripts.gen_tier2atlas_g4finals import BUDGET_EV
 from scripts.gen_tier2atlas_linclone import cfg_field_diff
 from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes
 
@@ -98,3 +108,46 @@ def test_committed_production_cfg_oracle(member):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         assert set(verify_member_vs_production(member)) == AB_DIFF_KEYS
+
+
+# --- G5: the lq A5 cell (``--cell lq``) -------------------------------------
+
+def _build_lq(member, e0=None):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        return build_lq_member(member, e0), a5_build(a5_member_cell(member))
+
+
+@pytest.mark.parametrize("e0", [None, B1_E0_EV[1]])
+def test_lq_flips_sampler_and_only_replaced_e0(e0):
+    pp, a5 = _build_lq("s1", e0)
+    want = sorted(AB_DIFF_KEYS | ({_E0_KEY} if e0 is not None else set()))
+    assert cfg_field_diff(pp, a5) == want
+    assert pp.seed == MEMBER_SEEDS["s1"]
+    if e0 is not None:
+        assert getattr(pp, _E0_KEY) * BUDGET_EV == pytest.approx(e0, abs=1e-12)
+
+
+def test_lq_labels_and_run_dirs_are_distinct():
+    names = {lq_run_dir(m, e0).name for m in POOL_MEMBERS for e0 in (None, *B1_E0_EV)}
+    assert len(names) == len(POOL_MEMBERS) * (1 + len(B1_E0_EV))
+    assert lq_label("s1") == "g5lqpps1"
+    assert lq_label("s1", 0.3455) == "g5lqppe3455s1"
+    assert all("srho3p5A18A_linear_quadratic" in n for n in names)
+
+
+def test_lq_pooled_targets_pair_the_same_members():
+    pp_members, pp_seeds, pp_container, _ = TARGETS["g5_lqpp"]
+    _, raw_seeds, raw_container, _ = TARGETS["g5_lq_s1s5"]
+    assert pp_members == [lq_run_dir(m).name for m in POOL_MEMBERS]
+    assert pp_seeds == raw_seeds == [MEMBER_SEEDS[m] for m in POOL_MEMBERS]
+    assert len({pp_container, raw_container, TARGETS["g414_c200t64"][2]}) == 3
+
+
+def test_b2_refused_until_e0_chosen():
+    if B2_E0_EV is not None:
+        pytest.skip("B2_E0_EV already set")
+    with pytest.raises(SystemExit):
+        postpickup_main(["--cell", "lq", "--b2", "--dry-run"])
+    with pytest.raises(SystemExit):
+        postpickup_main(["--b1", "--dry-run"])   # h405 has no E0 column

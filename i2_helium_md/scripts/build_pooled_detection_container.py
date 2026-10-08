@@ -28,6 +28,8 @@ Invocation (``--target``; default = the §6.7 lq battery pool):
     python scripts/build_pooled_detection_container.py
     python scripts/build_pooled_detection_container.py --target detfix_h405
     python scripts/build_pooled_detection_container.py --target g414_c200t64
+    python scripts/build_pooled_detection_container.py --target g5_lq_s1s5
+    python scripts/build_pooled_detection_container.py --target g5_lqpp
     python scripts/build_pooled_detection_container.py --target g415_wo080
     python scripts/build_pooled_detection_container.py --target g415_wo048
     python scripts/build_pooled_detection_container.py --target g415_wo048c230
@@ -75,7 +77,10 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     member_run_dir_name as detfix_run_dir_name,
 )
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    B2_E0_EV as G5_B2_E0_EV,
     POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
+    a5_member_cell as g5_a5_member_cell,
+    lq_run_dir as g5_lq_run_dir,
     member_run_dir_name as postpickup_run_dir_name,
 )
 from scripts.gen_tier2_g414_tauline import (  # noqa: E402
@@ -156,6 +161,31 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "tau 6.4 ps, E0 0.3155 eV; production pipeline (t_h = 500 ps, E2 "
         "skipped, partner-aware Coulomb closure)",
     ),
+    # THESIS_FINAL_GOALS G5: the droplet-size sampler A/B on the lq A5 cell
+    # (gen_tier2_detfix_postpickup.py --cell lq), s1-s5 per arm (N = 5000).
+    "g5_lq_s1s5": (
+        [g414_run_dir_for(g5_a5_member_cell(m)).name for m in POSTPICKUP_POOL_MEMBERS],
+        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
+        "9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_g414c200t64s1s5pooled_th500",
+        "the G4.14 A5 cell (lq c = 2.0, a 16.717 amu/ps, E_bind 0.11748 eV, tau 6.4 ps, "
+        "E0 0.3155 eV), members s1-s5 only (raw sampler) — the N = 5000 comparison "
+        "arm of the G5 post_pickup A/B",
+    ),
+    "g5_lqpp": (
+        [g5_lq_run_dir(m).name for m in POSTPICKUP_POOL_MEMBERS],
+        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
+        "9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_g5lqpppooled_th500",
+        "G5 step A: the A5 cell (s1-s5) re-run with droplet_size_sampler_mode="
+        "'post_pickup'; otherwise identical (E0 0.3155 eV)",
+    ),
+    **({} if G5_B2_E0_EV is None else {"g5_lqppb2": (
+        [g5_lq_run_dir(m, G5_B2_E0_EV).name for m in POSTPICKUP_POOL_MEMBERS],
+        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
+        f"9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_g5lqppe"
+        f"{round(G5_B2_E0_EV * 1e4):04d}pooled_th500",
+        f"G5 step B2 (thesis production under the physical sampler): the A5 cell "
+        f"with 'post_pickup' and E0 re-placed to {G5_B2_E0_EV} eV (s1-s5)",
+    )}),
     # Well-only arm of the A5 cell (gen_tier2_g415_well.py --well-only;
     # D0 §1.G4.14): the A5 law with ONLY E_bind lowered — informative, not
     # Tier-0-consistent. s1-s5 + r6 per well.
