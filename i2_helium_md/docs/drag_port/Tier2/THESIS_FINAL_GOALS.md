@@ -75,7 +75,9 @@ log (`drag_migration_log_tier2.md`).
     midHot ≈ 1 — n ≥ 15 0.0053 (A5 0.0006), max n 18, W₁ 0.905 (A5
     1.097), KE₁ 0.597 (A5 0.617). Thesis framing (user): A5 pool =
     TDDFT-based result, 0.0482 / a 19.5 = effective improvement for higher
-    fragments. Table and caveats: G10 below; D0 §1.G4.14.
+    fragments, departing from the 18 Å trace (Tier-0 RMSE 0.557 vs A5
+    0.122; no a rescues E_bind 0.0482, best 0.226 > 0.19). Table and
+    caveats: G10 below; D0 §1.G4.14.
 
 **Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
 started. G4.14 recap points (a)–(c) parked. G1, G2 (production
@@ -1353,10 +1355,49 @@ each). "—" = not read for that pool.
   model.** It is **not Tier-0-consistent**: a is raised and the well is
   lowered independently of the 18 Å trace, and the Tier-0 refit at
   E_bind 0.0482 eV fails the 18 Å band (a 28.0, RMSE 0.226 > 0.19;
-  D0 §1.G4.14). The defensible statement is that the 18 Å trace fixes
-  only the *total* escape cost, so the split between well depth and drag
-  is not determined by TDDFT, and the experiment prefers a shallower well
-  with a matching drag. State both the gain and the Tier-0 departure.
+  D0 §1.G4.14). **Thesis statement (user, 2026-10-08):** the 0.0482 /
+  a 19.5 cell is an effective model that improves the higher fragments,
+  at the price of departing from the 18 Å TDDFT trace (G10.5). Do not
+  claim that the well / drag split is free at this depth: G10.5 shows the
+  trace excludes it.
+
+### G10.5 Tier-0 check: the high-tail fix cannot match the 18 Å trace (MEASURED 2026-10-08, zero MD)
+
+Each law scored on the 18 Å Tier-0 trace with the Tier-0 engine
+(`evaluate_form_objective`; N = 50, seed 20260604, 20 ps at 0.01 ps,
+3.5 Å gate; RMSE of |v₂| over the 4.5–14.8 ps window; band RMSE ≤
+0.19 Å/ps and escape = 1). Anchors: the committed A5 point (`c2p000.json`)
+and the committed 0.0482 refit (`c2p000_e0p0482.json`) reproduce their
+stored RMSE exactly. Session-local evaluator (scratchpad), no files
+written.
+
+| law | a [amu/ps] | c [amu/Å] | E_bind [eV] | RMSE [Å/ps] | band | bias MD − TDDFT [Å/ps], 3–6 / 6–10 / 10–14 / 14–14.8 ps |
+|---|---|---|---|---|---|---|
+| A5 (TDDFT-tied) | 16.72 | 2.0 | 0.1175 | **0.122** | pass | +0.21 / −0.09 / 0.00 / +0.16 |
+| well-only, A5 law | 16.72 | 2.0 | 0.0482 | 0.719 | fail | +0.42 / +0.45 / +0.89 / +1.13 |
+| G10 c 2.3 | 16.72 | 2.3 | 0.0482 | **0.661** | fail | +0.38 / +0.38 / +0.82 / +1.06 |
+| **G10 a 19.5** | 19.5 | 2.0 | 0.0482 | **0.557** | fail | +0.30 / +0.27 / +0.70 / +0.95 |
+| best a at c 2.0 (committed refit) | 28.02 | 2.0 | 0.0482 | 0.226 | fail | −0.04 / −0.24 / +0.14 / +0.39 |
+| best a at c 2.3 (1-D refit) | 27.14 | 2.3 | 0.0482 | 0.227 | fail | −0.04 / −0.24 / +0.14 / +0.39 |
+| refit at 0.080 (c 2.0, for reference) | 22.76 | 2.0 | 0.080 | 0.159 | pass | — |
+
+- **The G10 cells fail the band by ≈ 3×** (RMSE 0.56–0.66 vs 0.19; A5
+  0.12). The ion is too fast throughout the window, and the excess grows
+  to ≈ +1 Å/ps by 14 ps: without the deep well the TDDFT ion is not slowed
+  enough near the surface.
+- **No a rescues E_bind 0.0482.** The best a (≈ 27–28, c 2.0 or 2.3)
+  still fails (0.226). Its residual has a fixed shape: too slow at
+  6–10 ps (stronger drag), too fast at 10–15 ps (missing well toll). The
+  18 Å trace therefore sees the well itself in its late window, not only
+  the total escape cost.
+- **Scope of the well / drag degeneracy.** Stronger drag compensates a
+  shallower well within the band down to ≈ 0.080 eV (refit RMSE 0.159);
+  at 0.0482 eV the split is excluded by the trace. The band edge lies
+  between 0.048 and 0.080 eV (not searched).
+- **Consequence.** The higher-fragment improvement of G10.2 cannot be
+  obtained from a TDDFT-consistent escape well at this depth. It is
+  reported as an effective model with a measured Tier-0 departure
+  (RMSE 0.557 for a 19.5 vs 0.122 for A5).
 
 ## Thesis framing implied
 

@@ -14323,3 +14323,14 @@ midHot 0.990 / 0.997, n ≥ 15 0.0059 / 0.0053 (A5 0.0006), max n 18,
 W₁ 0.879 / 0.905 (A5 1.097), trap 0.019 / 0.023, KE₁ 0.584 / 0.597 (A5
 0.617), χ²_med 557 / 581 (A5 507). c ≈ a on the tail; c ahead on W₁,
 a on KE₁. Record: D0 §1.G4.14.
+
+## 2026-10-08 — Tier-0 check of the G10 cells: the high-tail fix departs from the 18 Å trace
+
+Zero-MD scoring of fixed laws with the Tier-0 engine (session-local
+evaluator; anchors: committed A5 and 0.0482-refit RMSE reproduced).
+G10 c 2.3 / a 19.5 at E_bind 0.0482: RMSE 0.661 / 0.557 (band 0.19, A5
+0.122); best a at 0.0482 fails for c 2.0 and 2.3 (0.226 / 0.227). The
+well / drag degeneracy holds only to ≈ 0.080 eV. Thesis framing (user):
+the 0.0482 / a 19.5 cell is an effective model that improves the higher
+fragments at the price of departing from the 18 Å TDDFT trace. Record:
+THESIS_FINAL_GOALS G10.5; D0 §1.G4.14.

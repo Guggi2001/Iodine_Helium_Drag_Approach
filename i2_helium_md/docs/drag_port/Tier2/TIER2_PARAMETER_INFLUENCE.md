@@ -1190,6 +1190,12 @@ no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
   (0.617), supp 0.095 / 0.090 (0.067), χ²_med 557 / 581 (507). c and a
   tie on the tail; c is ahead on W₁ / deep KE / trap, a by 0.013 eV on
   KE₁. Tail ≈ 10× below experiment.
+  **Tier-0 check (2026-10-08, zero MD; THESIS_FINAL_GOALS G10.5):** on the
+  18 Å trace the G10 cells score RMSE 0.661 (c 2.3) / 0.557 (a 19.5), band
+  0.19 (A5 0.122; anchors reproduce committed RMSE); the best a at 0.0482
+  fails at c 2.0 and 2.3 (0.226 / 0.227: too slow 6–10 ps, too fast
+  10–15 ps). The well / drag degeneracy holds to ≈ 0.080 eV only; 0.0482
+  is excluded by the trace.
 
 #### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
 
