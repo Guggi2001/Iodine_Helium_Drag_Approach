@@ -79,10 +79,15 @@ log (`drag_migration_log_tier2.md`).
     0.122; no a rescues E_bind 0.0482, best 0.226 > 0.19). Table and
     caveats: G10 below; D0 §1.G4.14.
 
-**Next:** G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not started. G4.14 recap points (a)–(c) parked; G1, G2, G5–G7 not
-started. G4.14 recap points (a)–(c) parked. G1, G2 (production
-switch), G5–G7 not started.
-Production unchanged (h405, `capped_cubic` v_c 5.5).
+**Next:** G5 (replaced 2026-10-08): `post_pickup` for the lq A5 law
+(steps A, B1, B2); then G6–G7. G4.14 recap point (a) settled by the
+decision below; (b)–(c) parked.
+**Thesis production law (user, 2026-10-08): linear + quadratic, the A5
+cell** (c 2.0, a 16.717, E_bind 0.1175, 3.5 Å gate, τ 6.4, E₀ 0.3155;
+reference `g414c200t64pooled`). h405 (`capped_cubic` v_c 5.5) is the
+contrast law for the identifiability argument (G5). The generator
+`gen_tier2_detfix_battery.py` still builds h405; the repo default is not
+switched.
 
 ## 0. Why the whole chain is redone
 
@@ -1090,32 +1095,58 @@ n ≈ 15 and the n = 2–8 KE curve. The tail ends because cooling and
 slowing share one channel (residence in He) and TDDFT fixes the escape
 cost. Outlook: per-ion energy scatter or residence-independent cooling.
 
-## G5. Attribution batteries, then re-arbitration under `post_pickup`
+## G5. `post_pickup` for the thesis production law (lq A5); h405 as the identifiability contrast (REPLACED 2026-10-08, user)
 
-Run in this order on the production pipeline (Stage I to 500 ps, E2
-off, partner-aware closure; `exclude_all_coupled`):
+**Decision (user, 2026-10-08): the linear + quadratic law is production
+for the thesis** — the A5 cell: lq ridge c 2.0 amu/Å, a 16.717 amu/ps,
+E_bind 0.1175 eV (18 Å fit, 3.5 Å density gate, uncapped), τ 6.4 ps,
+E₀ 0.3155 eV; pooled reference `g414c200t64pooled` (N = 6000).
+`post_pickup` is the physically motivated sampler (G1). h405
+(`capped_cubic` v_c 5.5) is kept as the contrast law, not re-arbitrated.
+The previous G5 (attribution A/B on the G4 bundle, then a ≥ 1-day
+re-arbitration of h405) is superseded.
 
-| step | bundle | sampler | point | purpose | cost |
-|---|---|---|---|---|---|
-| A | new (G4) | `raw` | h405 | bundle effect alone (incl. on KE₁), vs the N = 6000 reference | ≈ 15 min MD (s1–s5) |
-| B | new (G4) | `post_pickup` | h405 | sampler effect under the new bundle, vs D0 §15.8 | ≈ 15 min MD |
-| C | new (G4) | `post_pickup` | re-arbitrated | new standing point | ≥ 1 day |
+**Plan** (production pipeline: Stage I to 500 ps, E2 off, partner-aware
+closure; seeds s1–s5 — r6 excluded as in the existing h405 `post_pickup`
+pool, where it tripped the D4 marginal-partner safeguard; N = 1000 per
+member, ≤ 2 concurrent, ion.npz dropped after detection verifies):
 
-Step C:
+| step | cell | sampler | runs | purpose |
+|---|---|---|---|---|
+| A | lq A5, unchanged | `post_pickup` | 5 (s1–s5) | sampler effect on lq, directly comparable to h405's (D0 §15.8) |
+| B1 | lq A5, E₀ column | `post_pickup` | ≈ 3 (s1) | place E₀ to restore n̄ ≈ 3.89 (projection from the h405 A/B: ≈ +0.03 eV); MD scan as in G9, not the twin (validated on the raw ensemble only) |
+| B2 | lq A5 at the chosen E₀ | `post_pickup` | 5 (s1–s5) | the thesis production result under the physical sampler; pooled N = 5000 |
+| — | h405 | `raw` / `post_pickup` | 0 | already pooled: `h405pooled` (s1–s5), `h405pppooled` (s1–s5), `h405g35` (3.5 Å gate) |
 
-1. **Twin ring re-validation** at the new surface first. The twin's
-   ranking authority (D0 §14.4: W₁ and midHot licensed, deepKE not) was
-   measured at the old surface.
-2. (v_c, τ, E₀) twin scan, MD finals, then a pooled N = 6000 battery as
-   the new production reference.
-3. Gate: the existing MD gate clauses (n̄, n₁) and the W₁/midHot
-   ranking; KE₁ reported, not fitted (anti-circularity, as in
-   `TIER2_MASS_SCENARIOS.md`).
+- **Comparison set.** lq raw (A5 pool) vs lq `post_pickup` (A, B2) vs
+  h405 raw / `post_pickup`: full observable vector, realized droplet
+  sizes, D4 firings tracked per run (G1 known risk).
+- **Gate.** Existing MD clauses (n̄ ∈ [3.83, 4.31], n₁) reported; KE₁
+  reported, not fitted.
+- **Not in scope.** τ or drag re-tuning under `post_pickup` (only E₀
+  re-placed); the G10 effective cell under `post_pickup`.
 
-Each scorer CSV carries the full observable vector (incl. KE columns)
-and realized sizes.
+**h405 for the thesis: identifiability argument.** TDDFT (18 Å) fixes
+F(v ≈ 3 Å/ps) and, below ≈ 0.08 eV, the well / drag split (G10.5) — not
+the high-speed shape: a whole ridge F = a·v + c·v² passes the trace
+(G4.12). The experiment selects c on the ridge (midHot window
+c ≈ 1.8–2.5), and a differently shaped law (capped cubic, v_c 5.5)
+lands comparably (KE₁ 0.640 vs 0.617, midHot 0.948 vs 0.995, W₁ 0.755
+vs 1.097). KE₁ sits at ≈ half the experimental value for every law — a
+mass-model question, not drag. Conclusion: neither TDDFT nor the detected
+I⁺(He)ₙ data identify a unique drag function in He nanodroplets.
+Caveat: h405 is not a controlled A/B partner — it also differs in density
+gate (14.2 vs 3.5 Å), τ (4.4 vs 6.4 ps) and Tier-0 status (bundle fitted
+at the old gate); `h405g35` (3.5 Å gate: W₁ 0.818, KE₁ 0.643) is the
+closer like-for-like comparison.
 
-## G6. Chord-map figure at the new standing point (after G5 C)
+**Code (requires `[PROCEED TO IMPLEMENTATION]`).** An lq A5 cell option in
+`gen_tier2_detfix_postpickup.py` (+ E₀ column), pool targets and scorer
+rows (full vector, realized sizes, D4 firings).
+
+**Cost.** ≈ 13 runs, < 1 h MD.
+
+## G6. Chord-map figure at the new standing point (after G5 B2)
 
 - **Change.** Re-run the `emission_chords` read
   (`tier2_detfix_postpickup_table.py`) on the new N = 6000 battery and

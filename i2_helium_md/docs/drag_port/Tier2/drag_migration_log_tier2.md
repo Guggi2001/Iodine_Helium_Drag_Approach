@@ -14334,3 +14334,13 @@ well / drag degeneracy holds only to ≈ 0.080 eV. Thesis framing (user):
 the 0.0482 / a 19.5 cell is an effective model that improves the higher
 fragments at the price of departing from the 18 Å TDDFT trace. Record:
 THESIS_FINAL_GOALS G10.5; D0 §1.G4.14.
+
+## 2026-10-08 — Decision (user): linear + quadratic A5 is the thesis production law; G5 replaced
+
+Thesis production = lq A5 cell (c 2.0, a 16.717, E_bind 0.1175, 3.5 Å
+gate, τ 6.4, E₀ 0.3155; reference `g414c200t64pooled`). h405 kept as the
+contrast law for the identifiability argument. THESIS_FINAL_GOALS G5
+replaced: `post_pickup` for lq A5 (A: sampler swap s1–s5; B1: E₀ column
+to restore n̄; B2: pooled at the chosen E₀); h405 reuses its existing
+raw / post_pickup / h405g35 pools. Code awaits `[PROCEED TO
+IMPLEMENTATION]`. The production generator default (h405) is not switched.
