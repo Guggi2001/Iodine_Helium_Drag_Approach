@@ -1251,6 +1251,52 @@ the A5 s1 column and the mask-path pure mixture both = committed
   earlier ½ E₀ projection (which broke n̄ without re-placement), not a
   small spread.
 
+#### 1.G9b Ladder top and n* on frozen trajectories (ZERO-MD REPLAY, anchored, 2026-10-08) — **n ≥ 15 ≤ 0.005 for every variant at matched n̄; high n stays on slow ions**
+
+Replay of the internal-energy / shell channel only (K2 cooling, K1 RRK,
+S1 pickup with Langmuir cap n*, event-driven RRK to the detector; the
+package's own functions) on the frozen trajectories of the six
+G4.13 t64e310 members (lq c 2.0, τ 6.4, E₀ 0.310, 3.5 Å; N = 6000);
+retention and KE frozen. Session-local scratchpad scripts
+(`ladder_replay.py`, `matched_nbar.py`, `exposure_dist.py`).
+**Anchors:** the builder reproduces the production rung table exactly
+(Form U κ = 1 × taper 2.2 / 1.5 / 1.3); the production ladder replayed
+= MD pool (n̄ 4.079 vs 4.085, n₁ 0.186 vs 0.186 = committed, n 10–14
+0.071 vs 0.073, n ≥ 15 0.0005 vs 0.0006, n = 0 0.0431 vs 0.0431;
+per-ion |Δn| ≤ 1 for 94.5 %); E₀ transfer onto the e310 trajectories
+= the own-trajectory replay and MD at E₀ 0.300 / 0.320 (s1; n̄ within
+0.02, n = 0 exact).
+
+Each variant at E₀ re-matched to n̄ ≈ 4.08 (two secant steps):
+
+| ladder | Σ(n*) [meV] | E₀ [eV] | n₁ | n 10–14 | n ≥ 15 | max n | n = 0 |
+|---|---|---|---|---|---|---|---|
+| production (κ 1, n* 21) | 206.3 | 0.310 | 0.186 | 0.071 | 0.0005 | 16 | 0.043 |
+| sharp edge (κ 20), n* 21 | 212.2 | 0.321 | 0.190 | 0.075 | 0.0006 | 16 | 0.051 |
+| κ 1, n* 22 | 215.5 | 0.329 | 0.195 | 0.085 | 0.0012 | 17 | 0.066 |
+| sharp, n* 22 | 221.4 | 0.341 | 0.193 | 0.089 | 0.0014 | 17 | 0.078 |
+| κ 1, n* 23 | 224.7 | 0.349 | 0.199 | 0.098 | 0.0022 | 17 | 0.096 |
+| sharp, n* 23 | 230.6 | 0.360 | 0.202 | 0.102 | 0.0027 | 17 | 0.103 |
+| κ 1, n* 24 | 234.0 | 0.370 | 0.207 | 0.110 | 0.0047 | 17 | 0.124 |
+| experiment | | | 0.310 | 0.116 | 0.057 | > 17 | (excluded) |
+
+- **The edge width is not a lever** (sharp edge: n ≥ 15 unchanged).
+  **n* is a weak one:** n* 24 gives n ≥ 15 ×9 (still 12× short),
+  n 10–14 reaches experiment, n₁ +0.02, but the suppressed (n = 0)
+  class triples because E₀ must rise to hold n̄. Max n stays 17.
+- **Why (measured on the same trajectories).** Escapers' exposure
+  X/τ ≤ 1.86; retained ions sit at X/τ ≥ 5 (at 150 ps) — a gap, no
+  intermediate class. Fraction of escapers with X/τ ≥ 1.0 / 1.2 / 1.4 /
+  1.6 / 1.7: 0.146 / 0.070 / 0.033 / 0.011 / 0.004. Final n tracks X
+  (n 1–3: X/τ 0.54; 7–9: 1.02; 10–12: 1.35; 13–14: 1.62; ≥ 15: 1.73),
+  and so does KE (0.56 / 0.22 / 0.10 / 0.042 / 0.019 eV; experiment n 13
+  / 15: 0.096 / 0.075 eV). A ladder change only re-labels which X
+  ends at which n; it cannot change the X → KE map, so any ladder puts
+  high n on the slowest, near-trapped ions — about 4× slower than the
+  experiment's high-n ions. The experiment's fast high-n ions need n set
+  by something other than exposure (per-ion energy, or cooling not tied
+  to residence), not a ladder change.
+
 ## 2. Capped tail — v_c and p_tail
 
 | | |

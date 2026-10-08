@@ -14258,3 +14258,15 @@ w ≤ 0.5; W₁ / deepKE within seed noise; KE₁ falls to 0.585 (P) / 0.605
 (U). Whole ensemble at −0.05 eV: n̄ 5.86, n ≥ 15 0.003. Reading: the lq
 exposure ceiling puts exit E_int ≥ 0.17·E₀, so the tail needs
 E₀ ≲ 0.18 eV. Record: D0 §1.G9.
+
+## 2026-10-08 — Zero-MD ladder replay (user request): ladder top / n* cannot make the high-n tail; high n stays on slow ions
+
+Internal-energy / shell channel replayed on the frozen t64e310 trajectories
+(N = 6000; package physics functions; anchors: production table rebuilt
+exactly, production replay = MD pool, E₀ transfer = own-trajectory replay
+and MD at 0.300 / 0.320). At matched n̄ ≈ 4.08: sharp edge — no change;
+n* 22 / 23 / 24 — n ≥ 15 0.0012 / 0.0022 / 0.0047 (exp 0.057), n = 0
+0.066 / 0.096 / 0.124, max n 17. Escapers have X/τ ≤ 1.86 (retained ≥ 5,
+a gap); final n and KE both track X, so high n sits on the slowest ions
+(KE n ≥ 15 0.019 eV vs exp 0.075). Session-local scripts; record D0
+§1.G9b.
