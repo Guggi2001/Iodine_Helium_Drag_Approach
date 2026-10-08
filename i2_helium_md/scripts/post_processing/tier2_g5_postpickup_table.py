@@ -13,7 +13,7 @@ Rows:
   E0 = 0.3155 point); B1' — ``g5lqppt##s1`` per tau (A s1 = tau 6.4);
   B1c — ``g5lqppc###e####s1`` per ridge c (E0 re-placed per c);
 * B2 — members, ``pooled_lqppb2_5000`` and ``delta_lqppb2_minus_raw`` once
-  ``B2_E0_EV`` / ``B2_TAU_PS`` is set and all five members exist;
+  the B2 cell is set and all six members exist (N = 6000, vs the A5 pool);
 * h405 contrast — ``h405_pooled_raw5000`` / ``h405_pooled_pp5000`` copied
   from ``detfix_postpickup_table.csv`` (the h405 A/B scorer's output).
 
@@ -62,7 +62,7 @@ from i2_helium_md.simulation.detection_stage import load_detection_result  # noq
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B1C_C, B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_E0_EV, B2_TAU_PS, LAW_DIFF_KEYS, POOL_MEMBERS,
+    B1C_C, B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_C, B2_E0_EV, B2_TAU_PS, LAW_DIFF_KEYS, POOL_MEMBERS,
     a5_member_cell, b1c_e0, lq_label, lq_run_dir,
 )
 from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY  # noqa: E402
@@ -177,6 +177,9 @@ def main() -> int:
                       raw_dirs)
     rows.append(raw_pool)
     chord: list[dict[str, Any]] = chord_rows("lq_raw", raw_dirs)
+    a5_6000 = pooled("pooled_lqraw_6000", "raw", [r for _, r in a5_reads.values()],
+                     [_a5_dir(m) for m in MEMBER_SEEDS])
+    raw_ref = {len(POOL_MEMBERS): raw_pool, len(MEMBER_SEEDS): a5_6000}
 
     def arm(tag: str, e0: Optional[float], tau: Optional[float], members,
             c: Optional[float] = None) -> None:
@@ -191,10 +194,11 @@ def main() -> int:
             rows.append(row)
             reads.append(read)
             dirs.append(rd)
-        if len(reads) == len(POOL_MEMBERS) and tuple(members) == POOL_MEMBERS:
-            pool = pooled(f"pooled_{tag}_5000", "post_pickup", reads, dirs)
+        if len(members) in raw_ref and len(reads) == len(members):
+            size = 1000 * len(members)
+            pool = pooled(f"pooled_{tag}_{size}", "post_pickup", reads, dirs)
             rows.append(pool)
-            rows.append(delta(f"delta_{tag}_minus_raw", pool, raw_pool))
+            rows.append(delta(f"delta_{tag}_minus_raw_{size}", pool, raw_ref[len(members)]))
             chord.extend(chord_rows(tag, dirs))
 
     arm("lqpp", None, None, POOL_MEMBERS)                    # A
@@ -207,8 +211,6 @@ def main() -> int:
         rows.append(r6_row)
         pp_reads = [r for r in (scored(lq_label(m), m, lq_run_dir(m))[1]
                                 for m in POOL_MEMBERS)] + [r6_read]
-        a5_6000 = pooled("pooled_lqraw_6000", "raw", [r for _, r in a5_reads.values()],
-                         [_a5_dir(m) for m in MEMBER_SEEDS])
         pp_6000 = pooled("pooled_lqpp_6000", "post_pickup", pp_reads,
                          [lq_run_dir(m) for m in MEMBER_SEEDS])
         rows += [a5_6000, pp_6000, delta("delta_lqpp_minus_raw_6000", pp_6000, a5_6000)]
@@ -220,8 +222,8 @@ def main() -> int:
         arm("lqppb1tau", None, tau, (B1_MEMBER,))
     for c in B1C_C:                                           # B1c (ridge c column)
         arm("lqppb1c", b1c_e0(c), None, (B1_MEMBER,), c)
-    if B2_E0_EV is not None or B2_TAU_PS is not None:        # B2
-        arm("lqppb2", B2_E0_EV, B2_TAU_PS, POOL_MEMBERS)
+    if B2_E0_EV is not None or B2_TAU_PS is not None or B2_C is not None:   # B2
+        arm("lqppb2", B2_E0_EV, B2_TAU_PS, tuple(MEMBER_SEEDS), B2_C)
 
     if H405_AB_CSV.exists():                                  # h405 contrast
         for src, label in H405_ROWS.items():

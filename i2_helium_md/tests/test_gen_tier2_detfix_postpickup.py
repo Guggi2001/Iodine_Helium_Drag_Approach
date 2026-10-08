@@ -148,7 +148,7 @@ def test_lq_pooled_targets_pair_the_same_members():
 
 def test_b2_refused_until_e0_chosen():
     if B2_E0_EV is not None or B2_TAU_PS is not None:
-        pytest.skip("B2 already chosen")
+        pytest.skip("B2 already chosen")  # chosen 2026-10-08: c 1.6 cell
     with pytest.raises(SystemExit):
         postpickup_main(["--cell", "lq", "--b2", "--dry-run"])
     with pytest.raises(SystemExit):

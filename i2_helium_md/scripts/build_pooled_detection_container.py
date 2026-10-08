@@ -77,6 +77,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     member_run_dir_name as detfix_run_dir_name,
 )
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    B2_C as G5_B2_C,
     B2_E0_EV as G5_B2_E0_EV,
     B2_TAU_PS as G5_B2_TAU_PS,
     POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
@@ -190,14 +191,17 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "'post_pickup'; otherwise identical (lq c 2.0, a 16.717, E_bind 0.11748 eV, "
         "3.5 A gate, tau 6.4 ps, E0 0.3155 eV); production pipeline",
     ),
-    **({} if G5_B2_E0_EV is None and G5_B2_TAU_PS is None else {"g5_lqppb2": (
-        [g5_lq_run_dir(m, G5_B2_E0_EV, G5_B2_TAU_PS).name for m in POSTPICKUP_POOL_MEMBERS],
-        [DETFIX_SEEDS[m] for m in POSTPICKUP_POOL_MEMBERS],
-        "9A_drag_srho3p5A18A_linear_quadratic_N5000_detfix_conf270_"
-        f"{g5_lq_label('s1', G5_B2_E0_EV, G5_B2_TAU_PS).removesuffix('s1')}pooled_th500",
+    **({} if G5_B2_E0_EV is None and G5_B2_TAU_PS is None and G5_B2_C is None
+       else {"g5_lqppb2": (
+        [g5_lq_run_dir(m, G5_B2_E0_EV, G5_B2_TAU_PS, G5_B2_C).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_"
+        f"{g5_lq_label('s1', G5_B2_E0_EV, G5_B2_TAU_PS, G5_B2_C).removesuffix('s1')}"
+        "pooled_th500",
         f"G5 step B2 (thesis production under the physical sampler): the A5 cell "
-        f"with 'post_pickup', E0 {G5_B2_E0_EV or 'A5'} eV, tau {G5_B2_TAU_PS or 'A5'} ps "
-        "(s1-s5)",
+        f"with 'post_pickup', ridge c {G5_B2_C or 'A5 (2.0)'} amu/A (its committed a, "
+        f"E_bind), E0 {G5_B2_E0_EV or 'A5'} eV, tau {G5_B2_TAU_PS or 'A5'} ps "
+        "(s1-s5 + r6); production pipeline",
     )}),
     # Well-only arm of the A5 cell (gen_tier2_g415_well.py --well-only;
     # D0 §1.G4.14): the A5 law with ONLY E_bind lowered — informative, not

@@ -53,10 +53,10 @@ ions (the scorer reads cfg.json + neutral.npz + detection.npz)::
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1     # B1: E0 column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1tau  # B1': tau column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1c    # B1c: ridge c column, s1
-    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 at B2_E0_EV / B2_TAU_PS
+    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 + r6 at the B2 cell
 
 Pools: ``--target g5_lq_s1s5`` (raw A5 arm, N = 5000), ``g5_lqpp`` (A) and,
-once :data:`B2_E0_EV` / :data:`B2_TAU_PS` is set, ``g5_lqppb2``. Scorer:
+once the B2 cell is set, ``g5_lqppb2`` (N = 6000). Scorer:
 ``scripts/post_processing/tier2_g5_postpickup_table.py``.
 
 Max two concurrent MD runs (``--concurrency`` is capped at 2).
@@ -154,7 +154,10 @@ B1C_NBAR = 3.89
 PP_E0_SHIFT_EV = 0.0213
 #: B2 E0 [eV] / tau [ps]: set (user) from B1 / B1' before ``--b2``; None =
 #: the A5 cell's own value.
-B2_E0_EV: Optional[float] = None
+# B2 (user, 2026-10-08): the B1c c = 1.6 cell (s1: nbar 3.94, midHot 0.994,
+# W1 0.93, S 1.67) at all six production members, pooled N = 6000.
+B2_C: Optional[float] = 1.6
+B2_E0_EV: Optional[float] = 0.3297     # = b1c_e0(1.6); checked in main
 B2_TAU_PS: Optional[float] = None
 LQ_DROP_REASON = ("G5 lq post_pickup: disk (T: full); scorer reads cfg.json + "
                   "neutral.npz + detection.npz")
@@ -384,7 +387,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     group.add_argument("--b1tau", action="store_true", help="lq: the B1' tau column at s1")
     group.add_argument("--b1c", action="store_true",
                        help="lq: the B1c ridge-c column at s1 (E0 re-placed per c)")
-    group.add_argument("--b2", action="store_true", help="lq: s1-s5 at B2_E0_EV / B2_TAU_PS")
+    group.add_argument("--b2", action="store_true",
+                       help="lq: s1-s5 + r6 at the B2 cell (B2_C / B2_E0_EV / B2_TAU_PS)")
     args = parser.parse_args(argv)
     if args.cell == "h405" and (args.b1 or args.b1tau or args.b1c or args.b2):
         raise SystemExit("--b1 / --b1tau / --b1c / --b2 apply to --cell lq only")
@@ -402,8 +406,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                   flush=True)
         fn, jobs = run_one, members
     else:
-        if args.b2 and B2_E0_EV is None and B2_TAU_PS is None:
-            raise SystemExit("B2_E0_EV / B2_TAU_PS not set: choose from B1 / B1' first")
+        if args.b2 and B2_E0_EV is None and B2_TAU_PS is None and B2_C is None:
+            raise SystemExit("B2 cell not set: choose from B1 / B1' / B1c first")
+        if args.b2 and B2_C is not None and B2_E0_EV != b1c_e0(B2_C):
+            raise SystemExit(f"B2_E0_EV {B2_E0_EV} != b1c_e0({B2_C}) = {b1c_e0(B2_C)}")
         if args.b1:
             jobs = [(m, e0, None) for m in _select(args.labels, (B1_MEMBER,))
                     for e0 in B1_E0_EV]
@@ -414,7 +420,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             jobs = [(m, None, t) for m in _select(args.labels, (B1_MEMBER,))
                     for t in B1_TAU_PS]
         elif args.b2:
-            jobs = [(m, B2_E0_EV, B2_TAU_PS) for m in _select(args.labels, POOL_MEMBERS)]
+            jobs = [(m, B2_E0_EV, B2_TAU_PS, B2_C)
+                    for m in _select(args.labels, tuple(MEMBER_SEEDS))]
         else:
             jobs = [(m, None, None) for m in _select(args.labels, POOL_MEMBERS)]
         for job in jobs:
