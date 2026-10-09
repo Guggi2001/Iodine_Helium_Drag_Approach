@@ -1633,6 +1633,15 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   escape 1, 9 Å margin +0.823 / +0.739): both stay Tier-0-consistent at
   m = 21 → **step 4 (re-landing / re-pool) dropped** (user request: keep
   the pools); B3 unaffected (already not Tier-0-consistent). D0 §1.G4.12.
+- **Status — step 3 EXECUTED 2026-10-09** (`scripts/post_processing/
+  tier0_thesis_figure.py` → `data/figures/thesis_tier0/tier0_B2_A5_h405
+  .{png,pdf}` + series / scores CSV; figure not committed). B2 / A5
+  (production coefficients, m = 21, 3.5 Å gate) and h405 (capped cubic,
+  bundle m = 19, 14.2 Å gate); anchors bit-exact (B2 / A5 check JSONs,
+  h405 bundle per_case RMSE). 18 Å RMSE 0.118 / 0.118 / 0.134 (all
+  pass). **9 Å exit margin +0.82 / +0.74 / −1.21 Å/ps: h405 fails** — it
+  over-dissipates and tracks the transverse atom 2 (same reading as the
+  cubic in G4.11); the lq laws under-dissipate vs atom 1 (one-sided bound).
 
 **Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
 section: drafted here or written directly into the thesis?
