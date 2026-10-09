@@ -77,7 +77,11 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     member_run_dir_name as detfix_run_dir_name,
 )
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    B1W_C as G5_B1W_C,
+    B1W_E_BIND_EV as G5_B1W_E_BIND_EV,
     B2_C as G5_B2_C,
+    B3_A as G5_B3_A,
+    b1w_e0 as g5_b1w_e0,
     B2_E0_EV as G5_B2_E0_EV,
     B2_TAU_PS as G5_B2_TAU_PS,
     POOL_MEMBERS as POSTPICKUP_POOL_MEMBERS,
@@ -203,6 +207,21 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         f"E_bind), E0 {G5_B2_E0_EV or 'A5'} eV, tau {G5_B2_TAU_PS or 'A5'} ps "
         "(s1-s5 + r6); production pipeline",
     )}),
+    # G5 B3 (user, 2026-10-09): the G10 high-tail recipe on the B2 cell --
+    # post_pickup, c 1.6, E_bind 0.0482 eV, a 19.8, E0 holding the B2 nbar;
+    # effective model, not Tier-0-consistent (G10.5). s1-s5 + r6.
+    "g5_lqppb3": (
+        [g5_lq_run_dir(m, g5_b1w_e0(G5_B3_A), None, G5_B1W_C, G5_B3_A,
+                       G5_B1W_E_BIND_EV).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_"
+        f"{g5_lq_label('s1', g5_b1w_e0(G5_B3_A), None, G5_B1W_C, G5_B3_A, G5_B1W_E_BIND_EV).removesuffix('s1')}"
+        "pooled_th500",
+        f"G5 step B3: the B2 cell (post_pickup, lq c {G5_B1W_C}) with the shallow escape "
+        f"well E_bind {G5_B1W_E_BIND_EV} eV and a raised to {G5_B3_A} amu/ps, E0 "
+        f"{g5_b1w_e0(G5_B3_A)} eV, tau 6.4 ps (s1-s5 + r6); effective model, not "
+        "Tier-0-consistent; production pipeline",
+    ),
     # Well-only arm of the A5 cell (gen_tier2_g415_well.py --well-only;
     # D0 §1.G4.14): the A5 law with ONLY E_bind lowered — informative, not
     # Tier-0-consistent. s1-s5 + r6 per well.

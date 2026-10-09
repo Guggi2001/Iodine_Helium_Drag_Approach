@@ -54,6 +54,7 @@ ions (the scorer reads cfg.json + neutral.npz + detection.npz)::
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1tau  # B1': tau column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1c    # B1c: ridge c column, s1
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b1w    # B1w: 0.0482 well, a column, s1
+    python scripts/gen_tier2_detfix_postpickup.py --cell lq --b3     # B3: s1-s5 + r6 at a = B3_A
     python scripts/gen_tier2_detfix_postpickup.py --cell lq --b2     # B2: s1-s5 + r6 at the B2 cell
 
 Pools: ``--target g5_lq_s1s5`` (raw A5 arm, N = 5000), ``g5_lqpp`` (A) and,
@@ -172,6 +173,9 @@ B1W_E_BIND_EV = 0.0482
 B1W_A = (19.8, 20.8, 21.8)
 B1W_WELL_E0_EV = 0.0053
 B1W_DE0_DA = 0.002185
+#: B3 (user, 2026-10-09): the B1w a 19.8 cell (s1: midHot 1.004, n >= 15
+#: 0.0085, W1 0.767) at all six production members, pooled N = 6000.
+B3_A = 19.8
 LQ_DROP_REASON = ("G5 lq post_pickup: disk (T: full); scorer reads cfg.json + "
                   "neutral.npz + detection.npz")
 
@@ -434,11 +438,13 @@ def main(argv: Optional[list[str]] = None) -> int:
                        help="lq: the B1c ridge-c column at s1 (E0 re-placed per c)")
     group.add_argument("--b1w", action="store_true",
                        help="lq: the B1w shallow-well a column at s1 (c 1.6, E_bind 0.0482)")
+    group.add_argument("--b3", action="store_true",
+                       help="lq: s1-s5 + r6 at the B3 cell (B1w, a = B3_A)")
     group.add_argument("--b2", action="store_true",
                        help="lq: s1-s5 + r6 at the B2 cell (B2_C / B2_E0_EV / B2_TAU_PS)")
     args = parser.parse_args(argv)
-    if args.cell == "h405" and (args.b1 or args.b1tau or args.b1c or args.b1w or args.b2):
-        raise SystemExit("--b1 / --b1tau / --b1c / --b1w / --b2 apply to --cell lq only")
+    if args.cell == "h405" and (args.b1 or args.b1tau or args.b1c or args.b1w or args.b2 or args.b3):
+        raise SystemExit("--b1 / --b1tau / --b1c / --b1w / --b2 / --b3 apply to --cell lq only")
 
     if args.cell == "h405":
         members = _select(args.labels)
@@ -460,6 +466,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.b1:
             jobs = [(m, e0, None) for m in _select(args.labels, (B1_MEMBER,))
                     for e0 in B1_E0_EV]
+        elif args.b3:
+            jobs = [(m, b1w_e0(B3_A), None, B1W_C, B3_A, B1W_E_BIND_EV)
+                    for m in _select(args.labels, tuple(MEMBER_SEEDS))]
         elif args.b1w:
             jobs = [(m, b1w_e0(a), None, B1W_C, a, B1W_E_BIND_EV)
                     for m in _select(args.labels, (B1_MEMBER,)) for a in B1W_A]

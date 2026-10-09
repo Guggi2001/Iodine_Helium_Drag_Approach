@@ -64,7 +64,7 @@ from i2_helium_md.simulation.detection_stage import load_detection_result  # noq
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B1C_C, B1W_A, B1W_C, B1W_E_BIND_EV, B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_C, B2_E0_EV, B2_TAU_PS, LAW_DIFF_KEYS, POOL_MEMBERS,
+    B1C_C, B1W_A, B1W_C, B3_A, B1W_E_BIND_EV, B1_E0_EV, B1_MEMBER, B1_TAU_PS, B2_C, B2_E0_EV, B2_TAU_PS, LAW_DIFF_KEYS, POOL_MEMBERS,
     a5_member_cell, b1c_e0, b1w_e0, lq_label, lq_run_dir,
 )
 from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY  # noqa: E402
@@ -241,6 +241,8 @@ def main() -> int:
         arm("lqppb1c", b1c_e0(c), None, (B1_MEMBER,), c)
     for a in B1W_A:                                           # B1w (0.0482 well, a column)
         arm("lqppb1w", b1w_e0(a), None, (B1_MEMBER,), B1W_C, a, B1W_E_BIND_EV)
+    arm("lqppb3", b1w_e0(B3_A), None, tuple(MEMBER_SEEDS), B1W_C, B3_A,   # B3
+        B1W_E_BIND_EV)
     if B2_E0_EV is not None or B2_TAU_PS is not None or B2_C is not None:   # B2
         arm("lqppb2", B2_E0_EV, B2_TAU_PS, tuple(MEMBER_SEEDS), B2_C)
 
