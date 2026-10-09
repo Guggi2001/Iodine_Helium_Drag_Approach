@@ -3639,13 +3639,28 @@ D4 firing (r6 included, unlike h405).
   Every observable at or better than A5; W₁ −0.13, S −0.25. The selected
   c depends on the droplet description (identifiability, G5): the ridge
   freedom TDDFT leaves open absorbs the droplet-size change.
+- **G10 high-tail recipe on this cell (B1w → B3; effective, not
+  Tier-0-consistent, G10.5).** E_bind 0.0482 eV, a scanned at s1 (19.8 /
+  20.8 / 21.8 → midHot 1.004 / 0.956 / 0.911; E₀ = B2 E₀ + 0.0053 +
+  0.002185·(a − 18.007)). Pooled N = 6000 at a 19.8, E₀ 0.3389:
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | KE n10–14/exp | n ≥ 15 | max n | trap | supp | S | χ²_med |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A5 raw | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.60 | 0.0006 | 16 | 0.035 | 0.067 | 1.958 | 507 |
+| B2 (c 1.6) | 3.903 | 0.211 | 0.967 | 1.002 | 0.609 | 0.477 | 0.64 | 0.0008 | 17 | 0.049 | 0.111 | 1.705 | 527 |
+| B3 (+ 0.0482, a 19.8) | 3.956 | 0.211 | **0.795** | 1.016 | 0.590 | **0.601** | **0.77** | **0.0075** | 18 | 0.028 | 0.151 | **1.505** | 674 |
+
+  vs B2: n ≥ 15 ×9, W₁ −0.17, deep bins faster, trapping halved; costs
+  KE₁ −0.019 eV, χ²_med +28 %, suppressed +0.04 (G10 raw: χ² +15 %,
+  supp +0.02). midHot 1.016 (s1 read 1.004; members 1.004–1.025).
 
 Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (full vector,
 sizes, c/E₀/τ columns) + `g5_postpickup_chord.csv`; generator
 `gen_tier2_detfix_postpickup.py --cell lq` (`--b1`, `--b1tau`, `--b1c`,
 `--b2`); figures containers `…N6000_detfix_conf270_g5lqpppooled_th500`
 (unchanged parameters) and `…N6000_detfix_conf270_g5lqppc160e3297pooled_th500`
-(c 1.6), both pairing with `…N6000_detfix_conf270_g414c200t64pooled_th500`.
+(c 1.6) and `…N6000_detfix_conf270_g5lqppc160a198w0482e3389pooled_th500`
+(B3), all pairing with `…N6000_detfix_conf270_g414c200t64pooled_th500`.
 
 ## 16. Quiet / structural surfaces (for completeness)
 
