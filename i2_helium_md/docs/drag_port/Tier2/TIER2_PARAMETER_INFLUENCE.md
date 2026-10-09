@@ -949,6 +949,10 @@ Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
   **Committed B2 / A5 coefficients re-scored unchanged at m = 21 pass
   both:** RMSE 0.1182 / 0.1178, escape 1, margin +0.823 / +0.739 —
   B2 / A5 stay Tier-0-consistent at m = 21; no re-landing needed.
+  **h405 on the same 9 Å bound (G11.4 step 3, measured):** margin
+  −1.21 Å/ps (fail; 18 Å RMSE 0.134 passes) — the capped cubic
+  over-dissipates the radial 9 Å ion and tracks the transverse atom 2.
+  The contrast law is 18 Å-consistent but not 9 Å-consistent.
 
 #### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **dominated at the selected cell only** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse); law-level verdict open (G4.14)
 
