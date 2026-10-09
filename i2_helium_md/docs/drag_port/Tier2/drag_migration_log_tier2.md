@@ -14358,3 +14358,12 @@ midHot ≈ 0.85. Ridge c 1.6 (committed `g412_ridge/c1p600.json`, 18 Å RMSE
 Tier-0-consistent, G10.5). Comparison table vs A5 / h405 / G10:
 THESIS_FINAL_GOALS G5 Outcome (`g5_winners_table.csv`, all rows anchored
 4 dp); D0 §15.9. Generator default (h405) not switched.
+
+## 2026-10-09 — Discussion (user): thesis reframed; Tier-0 mass → m_eff = 21 He; plan G11
+
+THESIS_FINAL_GOALS G11: storyline "TDDFT constrains (ridge), the
+experiment selects (c, E₀)"; Tier-0 extraction mass 21 He (18 Å shell
+stays at 21; supersedes G3's 9 Å-motivated 19 He) → ridge refit, B2/B3
+re-landing, Tier-1a at 9 Å (fixed 21 vs anchored shedding); Tier 1 not
+void (G8 bare start acts outside the TDDFT-supported shedding). Nothing
+run; code awaits `[PROCEED TO IMPLEMENTATION]`.

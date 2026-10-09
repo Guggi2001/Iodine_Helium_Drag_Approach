@@ -88,8 +88,16 @@ log (`drag_migration_log_tier2.md`).
     observable and improves W₁ / S. The G10 recipe on top (E_bind 0.0482,
     a 19.8) gives the effective high-tail variant. Comparison table: G5.
 
-**Next:** G6–G7 at the new production law. G4.14 recap point (a) settled
-by the decision below; (b)–(c) parked.
+14. **G11 (agreed 2026-10-09, nothing run):** thesis reframed as
+    "TDDFT constrains (a ridge), the experiment selects (c, E₀)"; Tier-0
+    extraction mass → m_eff = 21 He (18 Å shell mass; supersedes G3);
+    Tier 1 kept as the fixed-mass consistency check (not void; G8 is a
+    different question).
+
+**Next:** G11.4 — Tier-0 ridge refit at m = 21 (+ 9 Å bound) → Tier-0
+figure → B2 / B3 re-landing and re-pool → Tier-1a at 9 Å → G6–G7 +
+storyline. G4.14 recap point (a) settled by the decision below; (b)–(c)
+parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
 E_bind 0.11727, 3.5 Å gate, τ 6.4, E₀ 0.3297; reference
@@ -179,6 +187,9 @@ time).
 - **Cost.** Config only.
 
 ## G3. Tier-0 extraction mass stays m_eff = 19 He (≈ 203 amu)
+
+> **Superseded 2026-10-09 (user): m_eff = 21 He — see G11.2.** The text
+> below is kept as the record of the earlier decision.
 
 - **Decision.** Keep the constant-mass extraction at m_eff = 202.954 amu.
   No change to 21, no time-resolved extraction.
@@ -1524,11 +1535,99 @@ written.
   reported as an effective model with a measured Tier-0 departure
   (RMSE 0.557 for a 19.5 vs 0.122 for A5).
 
+## G11. Thesis reframing, Tier-0 mass m_eff = 21 He, and the remaining plan (agreed 2026-10-09; nothing run)
+
+### G11.1 Reframed storyline — "TDDFT constrains, the experiment selects"
+
+| tier | old framing | new framing |
+|---|---|---|
+| Tier 0 | fit a drag law to the 9 and 18 Å TDDFT trajectories | the 18 Å trace pins F near v ≈ 3 Å/ps and the well / drag split at low E (G10.5), not the high-speed shape: the output is a **one-parameter ridge** F = a·v + c·v² (G4.12), not a point. 9 Å = validity check only (exit bound; non-radial, transverse motion). The cross-case cubic preference (G4.11) is contested by the radial 9 Å runs → caveat, not a foundation |
+| Tier 1 | does variable mass matter? (it did not) | consistency check of the Tier-0 fixed-mass extraction against production's variable mass (G11.3) |
+| Tier 2 | sweep v_c, E₀, τ until the experiment matches | two knobs only: **c on the ridge** and **E₀**; τ 6.4 ≈ the sourced 6.55 ps, droplet ensemble physical (`post_pickup`, G1/G5). The experiment selects c, and the selected c depends on the droplet description (raw → 2.0, `post_pickup` → 1.6). With h405 (differently shaped law, comparable landing) this is the identifiability result: neither TDDFT nor the detected I⁺(He)ₙ data pin a unique drag function |
+| effective | — | B3: a shallow well buys the high tail at the price of departing from the TDDFT trace (G10.5); kept as an explicit departure |
+| outlook | — | n₁ share and KE₁, the n ≥ 15 deficit, the KE width at fixed n — all outside the deterministic model (source channel, Tier-3 collision noise, sourced I⁺–He D₀ / M1) |
+
+Fewer tuned knobs than before; the non-uniqueness is a result, not a
+weakness.
+
+### G11.2 Tier-0 extraction mass → m_eff = 21 He (user decision 2026-10-09; supersedes G3)
+
+- **Decision.** Tier-0 extraction at m_eff = 21 He (I + 21 He ≈ 210.96
+  amu) instead of 19 He (202.954 amu).
+- **Rationale.** G3's argument was a 9 Å argument (window-representative
+  mass over the 9 Å shell decline 21 → 19 → 14; "no 18 Å loss curve").
+  Tier 0 is now 18 Å-only (G4.9), and in the 18 Å TDDFT run the shell
+  stays at 21 throughout — 21 is the actual mass there; 19 was an
+  effective choice. Expected effect small but not zero.
+- **Consequences.**
+  1. **Ridge refit.** In F_drag = F_C − m·dv/dt a heavier ion with the
+     same observed deceleration needs more drag: a and E_bind per c rise
+     by a few %. Refit the full ridge grid (c 0–7.2 as G4.12) at 18 Å,
+     3.5 Å gate, plus the 9 Å exit bound. Tier-0 engine only, no battery
+     MD. The m = 19 fits stay committed as the record.
+  2. **B2 / B3 re-landing.** Both were built on the m = 19 ridge; ≈ 4 %
+     more drag lowers midHot slightly. One s1 run at the refit c 1.6
+     point (E₀ unchanged); a short c re-scan only if midHot moves (the
+     landing may slide toward c ≈ 1.5); re-pool N = 6000. B3 likewise (a
+     re-scanned at the 0.0482 well).
+  3. **Mass-pairing defence simplifies** (CLAUDE.md §6.5–6.7: constant-mass
+     coefficients under variable-mass production). The current defence
+     is "m ≈ 19 He = m_eff mid-window"; at m_eff = 21 He the fit mass
+     equals production's n₀ = 21 start exactly at birth.
+  4. **9 Å exit bound at m = 21 is slightly less strict** (a heavier ion
+     decelerates less under the same drag and escapes more easily). Run
+     at 21 for consistency; state the direction in the thesis.
+  5. **Code.** `M_EFF_AMU` (202.954) is stamped into every bundle and
+     checked exactly by the loader (`tier0_common.py`,
+     `presets._DRAG_M_EFF_AMU`). Make the extraction mass a parameter of
+     the refit and write the m = 21 bundles to a new directory — nothing
+     committed is overwritten. Requires `[PROCEED TO IMPLEMENTATION]`.
+
+### G11.3 Tier 1 is not void (relation to the bare-start result G8)
+
+- **Tier-1a** asks whether the TDDFT-window kinematics (first ~15–30 ps)
+  change when the ion sheds 21 → 19 → 14 He instead of carrying a fixed
+  mass: a ~25 % change *inside* the range TDDFT shows. With
+  continuous-velocity shedding the answer was no
+  (`drag_migration_log_tier1a.md`, Slice C).
+- **G8 (bare start)** changes the initial condition far *outside* that
+  range — n₀ = 0 (127 vs ~211 amu), no E_int reservoir, no evaporation —
+  and acts at the detector (~500 ps) through pickup statistics and a
+  lighter ion.
+- **No contradiction; both belong in the thesis.** Within the
+  TDDFT-supported shedding the fixed-mass extraction is adequate
+  (validates Tier 0 → Tier 2); the initial shell state, which TDDFT does
+  not constrain, is a strong lever on the observables (model scope; feeds
+  the n = 1 outlook).
+- **Redo required.** The old Tier-1a used the old law and the 14.2 Å
+  gate. At m_eff = 21 the question sharpens: at 18 Å the shell is
+  constant (nothing to test); at 9 Å it is exactly "does ignoring the
+  21 → 14 shedding change the trajectory" — fixed 21 vs anchored
+  continuous-velocity shedding, at the B2 law (open: also A5 as a ridge
+  contrast). Deterministic, cheap.
+
+### G11.4 Plan (order)
+
+| # | step | MD | depends on |
+|---|---|---|---|
+| 1 | G3 rewritten to m_eff = 21 He (done here: G11.2) | — | — |
+| 2 | Tier-0 ridge refit at m = 21 + 9 Å exit bound | none (Tier-0 engine) | 1 |
+| 3 | Tier-0 figure: 18 Å trace with the m = 21 ridge points c 1.6 / 2.0 + h405; 9 Å check | none | 2 |
+| 4 | B2 re-landing at the m = 21 c 1.6 point (s1; c re-scan only if needed), re-pool N = 6000; B3 likewise; update the G5 comparison table | ~1–2 h | 2 |
+| 5 | Tier-1a at 9 Å: fixed 21 vs anchored continuous shedding, at the B2 law | tiny | 2 |
+| 6 | G6 chord map, G7 caveat, one-page storyline section (`THESIS_DISCUSSION.md`) per G11.1 | none | 4 |
+
+Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
+`[PROCEED TO IMPLEMENTATION]`.
+
+**Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
+section: drafted here or written directly into the thesis?
+
 ## Thesis framing implied
 
 - Thesis table: bundle effect (A − reference), sampler effect (B − A),
   re-arbitration (C − B).
 - The sampler is a stated modelling choice with its measured
   sensitivity (D0 §15.8), not a validated property.
-- m_eff = 19 He is stated as the window-representative extraction mass
-  (G3).
+- m_eff = 21 He (the 18 Å shell mass) is the Tier-0 extraction mass
+  (G11.2; supersedes the G3 window-representative 19 He).
