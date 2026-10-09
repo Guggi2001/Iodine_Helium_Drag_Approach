@@ -216,14 +216,17 @@ def build_case_setup(
         cfg = replace(cfg, **dict(cfg_overrides))
         # The preset's bundle is a placeholder: _run_and_score replaces it in
         # every evaluation with the candidate coefficients (stamped with this
-        # same gate width). Re-stamp it so the §6.5.2 gate guard accepts
-        # cfg_base under a non-legacy gate; a0/b0 below are not fit anchors
-        # (the shared refit takes them from the 18 A Method-A bundle).
+        # same gate width and cfg_base.m_eff_amu). Re-stamp it so the §6.5.2
+        # gate guard and the §6.5 mass guard accept cfg_base under a
+        # non-legacy gate / extraction mass (THESIS_FINAL_GOALS G11.2);
+        # a0/b0 below are not fit anchors (the shared refit takes them from
+        # the 18 A Method-A bundle).
         cfg = replace(
             cfg,
             drag_coefficients=replace(
                 cfg.drag_coefficients,
                 extraction_gate_steepness_angstrom=drag_gate_steepness(cfg),
+                extraction_mass_amu=cfg.m_eff_amu,
             ),
         )
     cfg.validate()

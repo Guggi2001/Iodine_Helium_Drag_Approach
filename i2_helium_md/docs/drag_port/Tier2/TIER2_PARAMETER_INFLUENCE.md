@@ -938,6 +938,17 @@ Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
   uncapped TDDFT-tied mixed law is a **landing candidate**; an MD
   battery follows only under its own trigger; nothing adopted. Twin
   dominance by h405 and the 9 Å surplus are recorded, not gating.
+- **Extraction mass m = 19 → 21 He (G11.4 step 2, MEASURED 2026-10-09;
+  `g11_ridge_m21/ridge_m21.csv`).** Same steps 1–2 at m = I⁺ + 21 He
+  (210.9546 amu, production m(n)). The ridge is mass-robust: a per c
+  **falls** 1.4–2.3 % (c 1.6: 18.007 → 17.757; c 2.0: 16.717 → 16.480),
+  E_bind +0.0004 eV, RMSE 0.113–0.119 (all bands pass); 9 Å margins
+  shrink 0.00–0.04 Å/ps, cut unchanged (c ≤ 5 pass, 7.224 −0.130). Sign
+  is opposite to the G11.2 projection: a heavier ion also gains less
+  speed from the Coulomb push, so less drag matches the same trace.
+  **Committed B2 / A5 coefficients re-scored unchanged at m = 21 pass
+  both:** RMSE 0.1182 / 0.1178, escape 1, margin +0.823 / +0.739 —
+  B2 / A5 stay Tier-0-consistent at m = 21; no re-landing needed.
 
 #### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **dominated at the selected cell only** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse); law-level verdict open (G4.14)
 

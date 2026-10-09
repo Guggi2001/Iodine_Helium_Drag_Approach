@@ -111,6 +111,7 @@ def build_drag_cfg(
     seed: int,
     coeff_overrides: Optional[Mapping[str, float]] = None,
     e_bind_override: Optional[float] = None,
+    m_eff_amu: Optional[float] = None,
 ) -> SimConfig:
     """Build a deterministic Tier-0 drag ``SimConfig`` from a committed bundle.
 
@@ -143,6 +144,15 @@ def build_drag_cfg(
         ``effective_binding_energy_I_ion_eV`` so the section-6.5.1 pairing
         identity stays exact and ``validate()`` passes with no escape hatch.
         Default ``None`` = use the bundle's stamped binding.
+    m_eff_amu : float or None
+        Optional fixed ion mass [amu] (THESIS_FINAL_GOALS G11.2: the Tier-0
+        extraction mass as a parameter). The cfg's ``m_eff_amu`` /
+        ``mass_initial_amu`` and the coefficients' ``extraction_mass_amu``
+        stamp are all set to it. Allowed only when ``coeff_overrides`` covers
+        every coefficient of the form and ``e_bind_override`` is given -- the
+        committed bundle (fitted at :data:`M_EFF_AMU`) is then only the form
+        carrier, never relabelled to a mass it was not fitted at. Default
+        ``None`` = :data:`M_EFF_AMU`.
 
     Returns
     -------
@@ -179,10 +189,23 @@ def build_drag_cfg(
         else coeffs.effective_binding_energy_I_ion_eV
     )
 
+    mass_amu = M_EFF_AMU
+    if m_eff_amu is not None:
+        missing = sorted(set(_REQUIRED_COEFF_KEYS[coeffs.form]) - set(coeff_overrides or {}))
+        if missing or e_bind_override is None:
+            raise ValueError(
+                f"m_eff_amu={m_eff_amu!r} requires overriding every coefficient "
+                f"and E_bind (missing coefficients {missing}, e_bind_override "
+                f"{e_bind_override!r}): the committed bundle was fitted at "
+                f"{M_EFF_AMU} amu and must not be relabelled"
+            )
+        mass_amu = float(m_eff_amu)
+
     coeffs = replace(
         coeffs,
         coefficients=new_coefficients,
         effective_binding_energy_I_ion_eV=e_bind,
+        extraction_mass_amu=mass_amu,
     )
 
     # The selector (G4.3 change 6): the bundle id rides on the cfg, and a bundle
@@ -206,8 +229,8 @@ def build_drag_cfg(
         drag_coefficients=coeffs,
         drag_bundle=variant,
         mass_scenario="fixed",
-        m_eff_amu=M_EFF_AMU,
-        mass_initial_amu=M_EFF_AMU,
+        m_eff_amu=mass_amu,
+        mass_initial_amu=mass_amu,
         binding_energy_I_ion_eV=e_bind,
         **gate_fields,
     )

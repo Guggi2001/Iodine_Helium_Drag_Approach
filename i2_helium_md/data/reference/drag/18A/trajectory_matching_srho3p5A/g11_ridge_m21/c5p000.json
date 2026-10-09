@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-09",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G11.4 step 2 (18 A ridge at m = I+ + 21 He, s_rho = 3.5 A)",
+  "preregistration": "THESIS_FINAL_GOALS.md G11.2 / G11.4, agreed 2026-10-09 before any run",
+  "variant": "lq_fixed_c",
+  "form": "linear_quadratic",
+  "c_amu_per_A": 5.0,
+  "a_amu_per_ps": 6.894787702792097,
+  "e_bind_eV": 0.11924729589291379,
+  "rmse_18A_Aps": 0.11481322860591917,
+  "escape_fraction": 1.0,
+  "objective_Aps": 0.11481322860591917,
+  "F_3": 65.68436310837629,
+  "F_5p5": 189.17133236535653,
+  "F_9p7": 537.3294407170833,
+  "Phi": 1.283941315930904,
+  "bands_pass": true,
+  "n_evaluations": 164,
+  "converged": true,
+  "start_minima": [
+    {
+      "a": 6.894787702792097,
+      "e_bind_eV": 0.11924729589291379,
+      "objective_Aps": 0.11481322860591917
+    },
+    {
+      "a": 0.0,
+      "e_bind_eV": 0.15841868511200027,
+      "objective_Aps": 0.15432970278618766
+    },
+    {
+      "a": 6.898447280620938,
+      "e_bind_eV": 0.11924165691983223,
+      "objective_Aps": 0.11481323495902661
+    }
+  ],
+  "anchors": {
+    "a0": 14.5556,
+    "c_fixed": 5.0
+  },
+  "gate": {
+    "drag_spatial_gate": "erf_independent",
+    "drag_gate_steepness_angstrom": 3.5,
+    "potential_steepness_angstrom": 14.2
+  },
+  "n_molecules": 50,
+  "seed": 20260604,
+  "meff_amu": 210.95460000000003
+}

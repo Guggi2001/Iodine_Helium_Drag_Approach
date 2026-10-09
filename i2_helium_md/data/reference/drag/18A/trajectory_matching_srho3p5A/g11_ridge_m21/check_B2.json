@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-09",
+  "branch": "drag_implementation",
+  "goal": "THESIS_FINAL_GOALS.md G11.4 step 2 (18 A ridge at m = I+ + 21 He, s_rho = 3.5 A)",
+  "preregistration": "THESIS_FINAL_GOALS.md G11.2 / G11.4, agreed 2026-10-09 before any run",
+  "label": "B2",
+  "source": "g412_ridge/c1p600.json (m = 19 fit)",
+  "c_amu_per_A": 1.6,
+  "a_amu_per_ps": 18.007189923460135,
+  "e_bind_eV": 0.11727328616561973,
+  "rmse_18A_Aps": 0.11823246486094262,
+  "escape_fraction": 1.0,
+  "rmse_18A_Aps_m19": 0.12242305302667027,
+  "bands_pass": true,
+  "meff_amu": 210.95460000000003
+}

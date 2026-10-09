@@ -33,6 +33,20 @@ points ``G414_C_FINE``. The G4.12 artifacts are never rewritten.
 * ``"bound414"`` -- the 9 A exit bound for ``G414_C_FINE`` (or argv).
 * ``"assemble414"`` -- the four points (bands + bound) -> ``ridge_g414.csv``.
 
+G11.4 step 2 (THESIS_FINAL_GOALS G11.2, agreed 2026-10-09): steps 1-2 again at
+the 18 A shell mass m = I+ + 21 He (production ``m(n)`` convention,
+``G11_M_EFF_AMU``), written to ``G11_RIDGE_DIR`` / ``G11_BOUND_DIR``; the m = 19
+artifacts stay the record and are never rewritten.
+
+* ``"oracle_m21"`` -- the mass-parameter path run at m = 19 reproduces the
+  committed c = 1.6 point's 18 A RMSE bit-exactly. Writes nothing.
+* ``"check_m21"`` -- the committed production points (``G11_CHECK_POINTS``:
+  B2, A5) re-scored unchanged on 18 A at m = 21 (bands; no refit).
+* ``"ridge_m21"`` -- fixed-c fits at m = 21 for ``C_GRID`` (or argv).
+* ``"bound_m21"`` -- the 9 A exit bound at m = 21 for argv labels (floats =
+  refit ridge points, names = check points; default all).
+* ``"assemble_m21"`` -- ridge + checks + bound -> ``ridge_m21.csv``.
+
 Usage: edit USER SETTINGS, then::
 
     python scripts/extraction/method_b_g412_ridge.py
@@ -92,6 +106,7 @@ from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     evaluate_form_objective,
     fit_form_trajectory_matching,
 )
+from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU  # noqa: E402
 from i2_helium_md.physics.drag import LINEAR_QUADRATIC  # noqa: E402
 from i2_helium_md.physics.helium_density import rho_he_ratio  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
@@ -116,6 +131,17 @@ G411_QUADRATIC_SUMMARY = TM_ROOT / "quadratic" / "fit_summary.json"
 HEDFT_9A_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
 RUNS_ROOT = PROJECT_ROOT / "data" / "runs"
 GATE_WIDTH_A = float(GATE_OVERRIDES["drag_gate_steepness"])
+
+# G11.2: extraction mass = I+ + 21 He under the production m(n) convention
+# (constants.py), so the fit mass equals production's n0 = 21 start exactly.
+G11_N_HE = 21
+G11_M_EFF_AMU = MASS_I_ION_AMU + G11_N_HE * MASS_HE_AMU   # 210.9546 amu
+G11_RIDGE_DIR = TM_ROOT / "g11_ridge_m21"
+G11_BOUND_DIR = REFERENCE_DRAG_ROOT / "9A" / "g11_exit_bound_m21"
+G11_RIDGE_CSV = G11_RIDGE_DIR / "ridge_m21.csv"
+# Committed production points re-scored unchanged at m = 21 (label -> m = 19
+# ridge point; THESIS_FINAL_GOALS G5 Outcome: B2 = c 1.6, A5 = c 2.0).
+G11_CHECK_POINTS = {"B2": 1.6, "A5": 2.0}
 
 
 # =============================================================================
@@ -172,13 +198,21 @@ def exit_bound(v_exit_md: float, v_exit_atom1: float) -> dict:
 # =============================================================================
 # Step 1: the 18 A ridge
 # =============================================================================
-def _setup():
-    print(f"  building {CASE} case setup (one neutral run) at the 3.5 A gate ...")
-    return build_case_setup(
+def _setup(mass_amu: float | None = None):
+    """18 A case setup at the 3.5 A gate; ``mass_amu`` = fixed ion mass (None: preset m = 19)."""
+    overrides = dict(GATE_OVERRIDES)
+    if mass_amu is not None:
+        overrides.update(m_eff_amu=float(mass_amu), mass_initial_amu=float(mass_amu))
+    print(f"  building {CASE} case setup (one neutral run) at the 3.5 A gate, "
+          f"m = {mass_amu or 'preset'} amu ...")
+    setup = build_case_setup(
         CASE, num_molecules=N, seed=SEED, ion_time_ps=ION_TIME_PS,
         dt_ion_ps=DT_ION_PS, reference_filename=REFERENCE_FILENAME,
-        cfg_overrides=GATE_OVERRIDES,
+        cfg_overrides=overrides,
     )
+    if mass_amu is not None and setup.cfg_base.m_eff_amu != float(mass_amu):
+        raise AssertionError(f"setup mass {setup.cfg_base.m_eff_amu} != {mass_amu}")
+    return setup
 
 
 def _check(label: str, got: float, committed: float) -> None:
@@ -363,6 +397,7 @@ def score_run(run_dir: Path, hedft, window_9a) -> dict:
         "run": run_dir.name, "bundle": cfg.drag_bundle, "form": coeffs.form,
         **{f"coef_{k}": float(v) for k, v in coeffs.coefficients.items()},
         "e_bind_eV": float(cfg.binding_energy_I_ion_eV),
+        "m_eff_amu": float(cfg.m_eff_amu),
         "droplet_radius_A": radius,
         "less_transverse_atom": less_transverse,
         "transverse_frac_atom1": atoms[1]["mean_transverse_fraction"],
@@ -414,7 +449,8 @@ def run_anchor() -> None:
     _write_rows(rows, BOUND_DIR / "bound_anchor.csv")
 
 
-def _run_point(c: float, a: float, e_bind: float) -> Path:
+def _run_point(c: float, a: float, e_bind: float, *, mass_amu: float | None = None,
+               tag: str | None = None) -> Path:
     from scripts.tier0_common import build_drag_cfg, run_dir_name
     from i2_helium_md.simulation.ion import run_ion_propagation
     from i2_helium_md.simulation.neutral import run_neutral_propagation
@@ -423,9 +459,10 @@ def _run_point(c: float, a: float, e_bind: float) -> Path:
     cfg = build_drag_cfg("9A", BOUND_VARIANT, num_molecules=BOUND_N,
                          ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS,
                          seed=SEED, coeff_overrides={"a": a, "c": c},
-                         e_bind_override=e_bind)
+                         e_bind_override=e_bind, m_eff_amu=mass_amu)
     cfg.validate()
-    run_dir = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N, f"g412{point_label(c)}")
+    run_dir = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N,
+                                       tag or f"g412{point_label(c)}")
     run = RunDirectory(run_dir)
     run.save_cfg(cfg)
     neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
@@ -483,6 +520,125 @@ def run_assemble414() -> None:
     print(f"  wrote {len(rows)} rows -> {G414_RIDGE_CSV.relative_to(PROJECT_ROOT).as_posix()}")
 
 
+# =============================================================================
+# G11.4 step 2: the ridge and the 9 A bound at m = I+ + 21 He
+# =============================================================================
+_G11_STAMP = ("THESIS_FINAL_GOALS.md G11.4 step 2 (18 A ridge at m = I+ + 21 He, s_rho = 3.5 A)",
+              "THESIS_FINAL_GOALS.md G11.2 / G11.4, agreed 2026-10-09 before any run")
+
+
+def _committed_point(c: float) -> dict:
+    """The committed m = 19 ridge point at ``c`` (G4.12 / G4.14)."""
+    return load_json(RIDGE_DIR / f"{point_label(float(c))}.json")
+
+
+def run_oracle_m21() -> None:
+    """The mass-parameter path at m = 19 reproduces the committed c = 1.6 point."""
+    ref = _committed_point(1.6)
+    setup = _setup(ref["meff_amu"])
+    r = evaluate_form_objective(LINEAR_QUADRATIC, {"a": ref["a_amu_per_ps"], "c": 1.6},
+                                ref["e_bind_eV"], setup)
+    _check("G11 oracle c=1.6 at m=19 via the mass path", r.rmse_Aps, ref["rmse_18A_Aps"])
+    print("  ORACLE PASS: the mass-parameter path is the identity at m = 19.")
+
+
+def run_check_m21(labels=tuple(G11_CHECK_POINTS)) -> None:
+    """Committed production points, coefficients unchanged, re-scored at m = 21."""
+    setup = _setup(G11_M_EFF_AMU)
+    for label in labels:
+        ref = _committed_point(G11_CHECK_POINTS[label])
+        a, c, e = ref["a_amu_per_ps"], ref["c_amu_per_A"], ref["e_bind_eV"]
+        r = evaluate_form_objective(LINEAR_QUADRATIC, {"a": a, "c": c}, e, setup)
+        rec = {
+            **stamp(), "goal": _G11_STAMP[0], "preregistration": _G11_STAMP[1],
+            "label": label, "source": f"g412_ridge/{point_label(c)}.json (m = 19 fit)",
+            "c_amu_per_A": c, "a_amu_per_ps": a, "e_bind_eV": e,
+            "rmse_18A_Aps": r.rmse_Aps, "escape_fraction": r.escape_fraction,
+            "rmse_18A_Aps_m19": ref["rmse_18A_Aps"],
+            "bands_pass": bool(r.rmse_Aps <= RMSE_18A_MAX_APS and r.escape_fraction == 1.0),
+            "meff_amu": float(setup.cfg_base.m_eff_amu),
+        }
+        print(f"    {label} (c={c}, a={a:.4f}, E={e:.5f}) at m=21: rmse {r.rmse_Aps:.4f} "
+              f"(m=19 {ref['rmse_18A_Aps']:.4f}), escape {r.escape_fraction} -> "
+              f"bands {'PASS' if rec['bands_pass'] else 'FAIL'}", flush=True)
+        dump_json(rec, G11_RIDGE_DIR / f"check_{label}.json")
+
+
+def run_ridge_m21(c_values) -> None:
+    paths = {c: G11_RIDGE_DIR / f"{point_label(float(c))}.json" for c in c_values}
+    existing = [p.name for p in paths.values() if p.exists()]
+    if existing:
+        raise FileExistsError(f"refusing to overwrite m = 21 ridge points {existing}")
+    setup = _setup(G11_M_EFF_AMU)
+    for c, path in paths.items():
+        dump_json(_fit_point(setup, float(c), _G11_STAMP), path)
+
+
+def _g11_point(label: str) -> dict:
+    """A G11 point record by label: a float string = refit ridge point, else a check."""
+    if label in G11_CHECK_POINTS:
+        return load_json(G11_RIDGE_DIR / f"check_{label}.json")
+    return load_json(G11_RIDGE_DIR / f"{point_label(float(label))}.json")
+
+
+def run_bound_m21(labels) -> None:
+    hedft, window = load_hedft_trajectory(HEDFT_9A_PATH), _window_9a()
+    for label in labels:
+        r = _g11_point(label)
+        name = label if label in G11_CHECK_POINTS else point_label(float(label))
+        t0 = time.perf_counter()
+        run_dir = _run_point(r["c_amu_per_A"], r["a_amu_per_ps"], r["e_bind_eV"],
+                             mass_amu=G11_M_EFF_AMU, tag=f"g11m21{name}")
+        row = {"label": name, "c_amu_per_A": r["c_amu_per_A"],
+               **score_run(run_dir, hedft, window)}
+        if row["m_eff_amu"] != G11_M_EFF_AMU:
+            raise AssertionError(f"{name}: 9 A run at m = {row['m_eff_amu']}")
+        print(f"    {name}: {time.perf_counter() - t0:.0f} s", flush=True)
+        _print_rows([row])
+        dump_json({**stamp(), **row}, G11_BOUND_DIR / f"{name}.json")
+
+
+G11_COLUMNS = ("label", "c_amu_per_A", "a_amu_per_ps", "e_bind_eV", "rmse_18A_Aps",
+               "escape_fraction", "bands_pass", "a_m19", "e_bind_eV_m19", "rmse_18A_Aps_m19",
+               "margin_Aps", "margin_Aps_m19", "bound_pass", "at_bound", "passes_all")
+
+
+def run_assemble_m21() -> None:
+    """Refit ridge + unchanged checks, each with its m = 19 counterpart and 9 A bound."""
+    rows = []
+    labels = [f"{c:g}" for c in C_GRID] + list(G11_CHECK_POINTS)
+    for label in labels:
+        r = _g11_point(label)
+        name = label if label in G11_CHECK_POINTS else point_label(float(label))
+        ref = _committed_point(r["c_amu_per_A"])
+        b = load_json(G11_BOUND_DIR / f"{name}.json")
+        b19 = load_json(BOUND_DIR / f"{point_label(r['c_amu_per_A'])}.json")
+        if b["coef_a"] != r["a_amu_per_ps"] or b["e_bind_eV"] != r["e_bind_eV"]:
+            raise AssertionError(f"bound/ridge disagree at {name}")
+        rows.append({
+            "label": name, "c_amu_per_A": r["c_amu_per_A"],
+            "a_amu_per_ps": r["a_amu_per_ps"], "e_bind_eV": r["e_bind_eV"],
+            "rmse_18A_Aps": r["rmse_18A_Aps"], "escape_fraction": r["escape_fraction"],
+            "bands_pass": r["bands_pass"],
+            "a_m19": ref["a_amu_per_ps"], "e_bind_eV_m19": ref["e_bind_eV"],
+            "rmse_18A_Aps_m19": ref["rmse_18A_Aps"],
+            "margin_Aps": b["margin_Aps"], "margin_Aps_m19": b19["margin_Aps"],
+            "bound_pass": b["pass"], "at_bound": b["at_bound"],
+            "passes_all": bool(r["bands_pass"] and b["pass"]),
+        })
+    with open(G11_RIDGE_CSV, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=G11_COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
+    for r in rows:
+        print(f"   {r['label']}: c={r['c_amu_per_A']} a={r['a_amu_per_ps']:.4f} "
+              f"(m19 {r['a_m19']:.4f}) E={r['e_bind_eV']:.5f} (m19 {r['e_bind_eV_m19']:.5f}) "
+              f"rmse={r['rmse_18A_Aps']:.4f} bands={r['bands_pass']} "
+              f"margin9A={r['margin_Aps']:+.3f} (m19 {r['margin_Aps_m19']:+.3f}) "
+              f"-> passes_all={r['passes_all']}")
+    print(f"  wrote {len(rows)} rows -> {G11_RIDGE_CSV.relative_to(PROJECT_ROOT).as_posix()}")
+
+
 def main(mode: str = MODE, c_values=C_GRID) -> int:
     print(f"===== G4.12 ridge / exit bound, MODE={mode} =====")
     if mode == "oracle":
@@ -505,6 +661,16 @@ def main(mode: str = MODE, c_values=C_GRID) -> int:
         run_bound(c_values)
     elif mode == "assemble414":
         run_assemble414()
+    elif mode == "oracle_m21":
+        run_oracle_m21()
+    elif mode == "check_m21":
+        run_check_m21()
+    elif mode == "ridge_m21":
+        run_ridge_m21(c_values)
+    elif mode == "bound_m21":
+        run_bound_m21(c_values)
+    elif mode == "assemble_m21":
+        run_assemble_m21()
     else:
         raise ValueError(f"unknown MODE {mode!r}")
     return 0
@@ -513,5 +679,8 @@ def main(mode: str = MODE, c_values=C_GRID) -> int:
 if __name__ == "__main__":
     args = sys.argv[1:]
     mode = args[0] if args else MODE
+    if mode == "bound_m21":   # labels: floats = refit ridge points, names = checks
+        labels = tuple(args[1:]) or (*G11_CHECK_POINTS, *(f"{c:g}" for c in C_GRID))
+        raise SystemExit(main(mode, labels))
     default_c = G414_C_FINE if mode.endswith("414") else C_GRID
     raise SystemExit(main(mode, tuple(float(x) for x in args[1:]) or default_c))

@@ -14367,3 +14367,20 @@ stays at 21; supersedes G3's 9 Å-motivated 19 He) → ridge refit, B2/B3
 re-landing, Tier-1a at 9 Å (fixed 21 vs anchored shedding); Tier 1 not
 void (G8 bare start acts outside the TDDFT-supported shedding). Nothing
 run; code awaits `[PROCEED TO IMPLEMENTATION]`.
+
+## 2026-10-09 — G11.4 step 2 executed: ridge refit at m = 21 He; B2 / A5 stay Tier-0-consistent
+
+User trigger `[PROCEED TO IMPLEMENTATION]`. Extraction mass as a parameter
+(`build_case_setup` re-stamps the placeholder's extraction mass;
+`build_drag_cfg(m_eff_amu=)`, only with every coefficient + E_bind
+overridden); `method_b_g412_ridge.py` modes `oracle_m21` / `check_m21` /
+`ridge_m21` / `bound_m21` / `assemble_m21`. m = I⁺ + 21 He = 210.9546 amu
+(production m(n)). Oracle: mass path at m = 19 reproduces c1p600 RMSE
+bit-exactly. All 12 ridge points pass 18 Å (RMSE 0.113–0.119); a per c
+falls 1.4–2.3 %, E_bind +0.0004 eV; 9 Å cut unchanged (c ≤ 5 pass, 7.224
+−0.130), margins −0.00–0.04 Å/ps (G11.2 projected the opposite sign).
+B2 / A5 re-scored with unchanged coefficients at m = 21: RMSE 0.1182 /
+0.1178, escape 1, 9 Å margin +0.823 / +0.739 → both pass; G11.4 step 4
+(re-landing, re-pool) dropped. Record:
+`18A/trajectory_matching_srho3p5A/g11_ridge_m21/ridge_m21.csv`,
+`9A/g11_exit_bound_m21/`; D0 §1.G4.12; THESIS_FINAL_GOALS G11.4 status.

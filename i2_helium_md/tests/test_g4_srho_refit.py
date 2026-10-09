@@ -123,6 +123,23 @@ class TestGatePassThrough:
                 assert a == b, f.name
         assert compared >= 2
 
+    def test_mass_override_restamps_placeholder_and_keeps_neutral(self):
+        """G11.2: an m_eff override validates (placeholder re-stamped) and is ion-stage only."""
+        m21 = 126.90 + 21 * 4.0026
+        gated = build_case_setup(
+            "9A", num_molecules=2, ion_time_ps=20.0, cfg_overrides=_GATE_3P5,
+        )
+        heavy = build_case_setup(
+            "9A", num_molecules=2, ion_time_ps=20.0,
+            cfg_overrides={**_GATE_3P5, "m_eff_amu": m21, "mass_initial_amu": m21},
+        )
+        assert heavy.cfg_base.m_eff_amu == m21
+        assert heavy.cfg_base.drag_coefficients.extraction_mass_amu == m21
+        # Default mass: the restamp is the identity on the placeholder.
+        assert (gated.cfg_base.drag_coefficients.extraction_mass_amu
+                == gated.cfg_base.m_eff_amu)
+        np.testing.assert_array_equal(gated.neutral.positions_x, heavy.neutral.positions_x)
+
 
 # ---------------------------------------------------------------------------
 # 2. Escape criterion on the potential width

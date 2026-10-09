@@ -94,9 +94,9 @@ log (`drag_migration_log_tier2.md`).
     Tier 1 kept as the fixed-mass consistency check (not void; G8 is a
     different question).
 
-**Next:** G11.4 — Tier-0 ridge refit at m = 21 (+ 9 Å bound) → Tier-0
-figure → B2 / B3 re-landing and re-pool → Tier-1a at 9 Å → G6–G7 +
-storyline. G4.14 recap point (a) settled by the decision below; (b)–(c)
+**Next:** G11.4 — ~~Tier-0 ridge refit at m = 21 (+ 9 Å bound)~~ (done
+2026-10-09: B2 / A5 pass unchanged, re-landing dropped) → Tier-0
+figure → Tier-1a at 9 Å → G6–G7 + storyline. G4.14 recap point (a) settled by the decision below; (b)–(c)
 parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
@@ -1619,6 +1619,20 @@ weakness.
 
 Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
 `[PROCEED TO IMPLEMENTATION]`.
+
+- **Status — step 2 EXECUTED 2026-10-09** (`method_b_g412_ridge.py`
+  modes `*_m21`; m = I⁺ + 21 He = 210.9546 amu, production m(n);
+  `g11_ridge_m21/ridge_m21.csv`, `9A/g11_exit_bound_m21/`; m = 19
+  artifacts untouched; oracle: mass path at m = 19 bit-exact). All 12
+  ridge points pass 18 Å (RMSE 0.113–0.119); 9 Å cut unchanged (c ≤ 5
+  pass, 7.224 fails, −0.130). a per c **falls** 1.4–2.3 % (c 1.6
+  17.757, c 2.0 16.480), E_bind +0.0004 eV — G11.2 consequence 1 and 4
+  had the sign wrong: the heavier ion also gains less Coulomb speed, so
+  less drag fits, and the 9 Å margin shrinks 0.00–0.04 Å/ps.
+  **B2 / A5 re-scored unchanged at m = 21 pass** (RMSE 0.1182 / 0.1178,
+  escape 1, 9 Å margin +0.823 / +0.739): both stay Tier-0-consistent at
+  m = 21 → **step 4 (re-landing / re-pool) dropped** (user request: keep
+  the pools); B3 unaffected (already not Tier-0-consistent). D0 §1.G4.12.
 
 **Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
 section: drafted here or written directly into the thesis?
