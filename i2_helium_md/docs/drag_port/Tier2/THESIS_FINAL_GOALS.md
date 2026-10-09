@@ -1642,6 +1642,11 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   pass). **9 Å exit margin +0.82 / +0.74 / −1.21 Å/ps: h405 fails** — it
   over-dissipates and tracks the transverse atom 2 (same reading as the
   cubic in G4.11); the lq laws under-dissipate vs atom 1 (one-sided bound).
+  **Revised (user, 2026-10-09):** A5 replaced by B3 in the figure
+  (`tier0_B2_B3_h405.*`; B3 at m = 21: 18 Å RMSE 0.580 (fails, G10.5),
+  9 Å margin +1.23); raw TDDFT |v1|, |v2| behind panel (a). Thesis Tier-0
+  trace + R(t) figure stays `tier0_drag_comparison.py`, now set to B2 at
+  m = 21 (`gen_tier0_runs.py` RUN_TAG `B2m21`; gate RMSE 0.1182, = check).
 
 **Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
 section: drafted here or written directly into the thesis?
