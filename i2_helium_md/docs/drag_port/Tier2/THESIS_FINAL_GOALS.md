@@ -3,7 +3,7 @@
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
-**Status (2026-10-06)** — entry point for a new chat; details in each
+**Status (2026-10-09)** — entry point for a new chat; details in each
 section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE.md`) and the
 log (`drag_migration_log_tier2.md`).
 
@@ -79,15 +79,28 @@ log (`drag_migration_log_tier2.md`).
     0.122; no a rescues E_bind 0.0482, best 0.226 > 0.19). Table and
     caveats: G10 below; D0 §1.G4.14.
 
-**Next:** G5 (replaced 2026-10-08): `post_pickup` for the lq A5 law
-(steps A, B1, B2); then G6–G7. G4.14 recap point (a) settled by the
-decision below; (b)–(c) parked.
-**Thesis production law (user, 2026-10-08): linear + quadratic, the A5
-cell** (c 2.0, a 16.717, E_bind 0.1175, 3.5 Å gate, τ 6.4, E₀ 0.3155;
-reference `g414c200t64pooled`). h405 (`capped_cubic` v_c 5.5) is the
-contrast law for the identifiability argument (G5). The generator
-`gen_tier2_detfix_battery.py` still builds h405; the repo default is not
-switched.
+13. **G5 executed (2026-10-08/09, pooled N = 6000):** `post_pickup`
+    (realistic droplets, ⟨N⟩ 16.7k vs 12.9k) on lq A5 raises n̄ by +0.70
+    and leaves KE / shape flat (the chord → (n, KE) map is
+    sampler-invariant; the n̄ gap is the n = 1 deficit). E₀ or τ restore
+    n̄ only at midHot ≈ 0.85; **the drag does it:** ridge c 1.6 (a 18.007,
+    E_bind 0.1173, still TDDFT-tied) + E₀ 0.3297 holds A5 on every
+    observable and improves W₁ / S. The G10 recipe on top (E_bind 0.0482,
+    a 19.8) gives the effective high-tail variant. Comparison table: G5.
+
+**Next:** G6–G7 at the new production law. G4.14 recap point (a) settled
+by the decision below; (b)–(c) parked.
+**Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
+B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
+E_bind 0.11727, 3.5 Å gate, τ 6.4, E₀ 0.3297; reference
+`…N6000_detfix_conf270_g5lqppc160e3297pooled_th500`). **Effective
+high-tail variant: B3** — B2 with E_bind 0.0482 eV, a 19.8, E₀ 0.3389
+(`…g5lqppc160a198w0482e3389pooled_th500`); not Tier-0-consistent (G10.5).
+A5 (raw sampler, c 2.0) = the previous production law; h405
+(`capped_cubic` v_c 5.5) = the contrast law for the identifiability
+argument. Generator: `gen_tier2_detfix_postpickup.py --cell lq --b2` /
+`--b3`; `gen_tier2_detfix_battery.py` still builds h405 (repo default not
+switched).
 
 ## 0. Why the whole chain is redone
 
@@ -1095,7 +1108,7 @@ n ≈ 15 and the n = 2–8 KE curve. The tail ends because cooling and
 slowing share one channel (residence in He) and TDDFT fixes the escape
 cost. Outlook: per-ion energy scatter or residence-independent cooling.
 
-## G5. `post_pickup` for the thesis production law (lq A5); h405 as the identifiability contrast (REPLACED 2026-10-08, user)
+## G5. `post_pickup` for the thesis production law; h405 as the identifiability contrast (REPLACED 2026-10-08, user; EXECUTED 2026-10-09 — production law B2, effective variant B3)
 
 **Decision (user, 2026-10-08): the linear + quadratic law is production
 for the thesis** — the A5 cell: lq ridge c 2.0 amu/Å, a 16.717 amu/ps,
@@ -1124,7 +1137,86 @@ member, ≤ 2 concurrent, ion.npz dropped after detection verifies):
 - **Gate.** Existing MD clauses (n̄ ∈ [3.83, 4.31], n₁) reported; KE₁
   reported, not fitted.
 - **Not in scope.** τ or drag re-tuning under `post_pickup` (only E₀
-  re-placed); the G10 effective cell under `post_pickup`.
+  re-placed); the G10 effective cell under `post_pickup`. *(Both lifted
+  by the user during execution — see the outcome.)*
+
+### G5 Outcome (EXECUTED 2026-10-08/09; pooled N = 6000; D0 §15.9)
+
+**Decisions (user, 2026-10-09).** Thesis production law = **B2**
+(`post_pickup`, lq ridge c 1.6); effective high-tail variant = **B3**
+(B2 + shallow well). Both replace A5 / G10 in those roles.
+
+What was run (production pipeline, s1–s5 + r6, no D4 firing anywhere):
+
+| step | cell | result |
+|---|---|---|
+| A | A5, `post_pickup`, unchanged | n̄ +0.70, n₁ −0.04; W₁, midHot, KE₁, S flat |
+| B1 | A5 + E₀ 0.3355 / 0.3455 / 0.3555 (s1) | n̄ restored at E₀ ≈ 0.337 but midHot ≈ 0.87, KE₁ 0.55 |
+| B1′ | A5 + τ 6.8 / 7.2 / 7.6 (s1) | n̄ restored at τ ≈ 6.96 but midHot ≈ 0.85 |
+| B1c | ridge c 1.6 / 1.8 + E₀ re-placed (s1) | c 1.6: n̄ 3.94, midHot 0.994 — holds both |
+| **B2** | c 1.6, E₀ 0.3297, N = 6000 | **production** (table below) |
+| B1w | B2 + E_bind 0.0482, a 19.8 / 20.8 / 21.8 (s1) | a 19.8: midHot 1.004, n ≥ 15 ×7 |
+| **B3** | B2 + E_bind 0.0482, a 19.8, E₀ 0.3389, N = 6000 | **effective high-tail variant** |
+
+**Why the drag and not E₀ / τ.** The chord → (n, KE) map is identical for
+both samplers; the larger droplets only move ions from short chords (the
+n = 1 window, 33–37 Å) to long ones. E₀ and τ change the map by extra
+evaporation, which drops slow, heavy clusters into the low-n bins (KE per
+n falls). The drag changes the map in KE directly: lower c (the ridge
+freedom TDDFT leaves open) restores midHot at re-placed E₀. **c 1.6 is a
+committed TDDFT ridge point** (`g412_ridge/c1p600.json`: 18 Å RMSE
+0.1224 Å/ps vs band 0.19, escape 1, 9 Å exit margin 0.866 Å/ps; same as
+A5 at F(3 Å/ps), 7 % lower at 9.7 Å/ps); all six B2 cfgs carry its a, c,
+E_bind and the 3.5 Å gate bit-for-bit.
+
+**Comparison (pooled; one read path, `tier2_g5_winners_table.py`; every
+row anchored on its committed pooled row, 4 dp).**
+
+| quantity | A5 (raw, c 2.0) | h405 (raw) | h405 (`post_pickup`, N = 5000) | G10 eff. (raw, 0.0482 / a 19.5) | A5 `post_pickup` unchanged | **B2 production** | **B3 effective** | experiment |
+|---|---|---|---|---|---|---|---|---|
+| sampler | raw | raw | post_pickup | raw | post_pickup | post_pickup | post_pickup | — |
+| drag | lq c 2.0, a 16.72 | capped cubic b 2.515, v_c 5.5 | capped cubic b 2.515, v_c 5.5 | lq c 2.0, a 19.5 | lq c 2.0, a 16.72 | lq c 1.6, a 18.01 | lq c 1.6, a 19.8 | — |
+| E_bind [eV] | 0.1175 | 0.1168 | 0.1168 | 0.0482 | 0.1175 | 0.1173 | 0.0482 | — |
+| E₀ [eV] / τ [ps] | 0.3155 / 6.4 | 0.405 / 4.4 | 0.405 / 4.4 | 0.3216 / 6.4 | 0.3155 / 6.4 | 0.3297 / 6.4 | 0.3389 / 6.4 | — |
+| density gate [Å] | 3.5 | 14.2 | 14.2 | 3.5 | 3.5 | 3.5 | 3.5 | — |
+| Tier-0 (18 Å) | ✓ | old gate | old gate | ✗ (G10.5) | ✓ | ✓ | ✗ (G10.5) | — |
+| n̄ (MD gate 3.83–4.31) | 3.886 | 3.890 | 4.594 | 4.009 | 4.581 | 3.903 | 3.956 | — |
+| n₁ (solvated) | 0.204 | 0.209 | 0.177 | 0.207 | 0.163 | **0.211** | **0.211** | 0.310 |
+| W₁ (size histogram) | 1.097 | **0.755** | 1.005 | 0.905 | 1.090 | 0.967 | 0.795 | 0 |
+| midHot (n 2–8 KE) | 0.995 | 0.948 | 0.968 | 0.997 | 1.003 | **1.002** | 1.016 | 1 |
+| KE₁ mean [eV] | 0.617 | 0.640 | **0.647** | 0.597 | 0.618 | 0.609 | 0.590 | 1.302 |
+| KE₂ mean [eV] | 0.526 | 0.550 | **0.555** | 0.511 | 0.528 | 0.521 | 0.509 | 0.706 |
+| deepKE (n 10–17) | 0.492 | 0.571 | 0.535 | 0.577 | 0.535 | 0.477 | **0.601** | 1 |
+| KE n 10–14 / exp | 0.598 | 0.586 | 0.611 | 0.733 | 0.624 | 0.642 | **0.772** | 1 |
+| n ≥ 15 (solvated) | 0.0006 | 0.0086 | **0.0095** | 0.0053 | 0.0012 | 0.0008 | 0.0075 | 0.057 |
+| max n | 16 | 17 | 18 | 18 | 16 | 17 | 18 | ≥ 20 |
+| trapped | 0.035 | 0.080 | 0.135 | 0.023 | 0.067 | 0.049 | 0.028 | — |
+| suppressed | 0.067 | 0.192 | 0.135 | 0.090 | 0.038 | 0.111 | 0.151 | — |
+| S | 1.958 | 1.705 | 1.991 | 1.605 | 1.928 | 1.705 | **1.505** | — |
+| χ²_med (KE curve) | 507 | **456** | 572 | 581 | 511 | 527 | 674 | — |
+
+Bold = best model value in the row (closest to experiment; S and χ²
+lowest); n̄, trapped and suppressed carry no target. Experiment row from the references
+(`ihe_ked`, abundance; solvated renormalization).
+
+**Reading.**
+- **B2 vs A5:** realistic droplets at no cost — n̄, n₁, midHot held; W₁
+  −0.13 and S −0.25 better; KE₁ −0.008 eV. Both TDDFT-tied.
+- **B3 vs B2:** n ≥ 15 ×9, max n 18, deep bins faster (0.77 of
+  experiment), trapping halved, W₁ −0.17; costs KE₁ −0.019 eV, χ²_med
+  +28 %, suppressed +0.04. Effective model (same framing as G10.4).
+- **vs h405:** h405 still has the best size histogram (W₁ 0.755) and KE
+  curve (χ² 456), at midHot 0.948 and with twice the trapping; B3
+  matches its tail (n ≥ 15 0.0075 vs 0.0086) at midHot ≈ 1.
+- **Still open (outlook):** n₁ ≈ 0.21 vs 0.31 and KE₁ ≈ half the
+  experiment for every law (G8 / status 9–11); n ≥ 15 ≈ 8× below
+  experiment even for B3 (status 11, `THESIS_DISCUSSION.md` §7).
+
+Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (all steps,
+per member), `g5_winners_table.csv` (this table, full vector),
+`g5_postpickup_chord.csv`; generator `gen_tier2_detfix_postpickup.py
+--cell lq` (`--b1`, `--b1tau`, `--b1c`, `--b1w`, `--b2`, `--b3`); pool
+targets `g5_lqpp6000`, `g5_lqppb2`, `g5_lqppb3`.
 
 **h405 for the thesis: identifiability argument.** TDDFT (18 Å) fixes
 F(v ≈ 3 Å/ps) and, below ≈ 0.08 eV, the well / drag split (G10.5) — not
@@ -1135,6 +1227,8 @@ lands comparably (KE₁ 0.640 vs 0.617, midHot 0.948 vs 0.995, W₁ 0.755
 vs 1.097). KE₁ sits at ≈ half the experimental value for every law — a
 mass-model question, not drag. Conclusion: neither TDDFT nor the detected
 I⁺(He)ₙ data identify a unique drag function in He nanodroplets.
+G5 adds a second instance: the c the experiment selects on the ridge
+depends on the droplet description (raw → c 2.0, `post_pickup` → c 1.6).
 Caveat: h405 is not a controlled A/B partner — it also differs in density
 gate (14.2 vs 3.5 Å), τ (4.4 vs 6.4 ps) and Tier-0 status (bundle fitted
 at the old gate); `h405g35` (3.5 Å gate: W₁ 0.818, KE₁ 0.643) is the

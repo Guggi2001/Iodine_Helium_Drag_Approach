@@ -14344,3 +14344,17 @@ replaced: `post_pickup` for lq A5 (A: sampler swap s1–s5; B1: E₀ column
 to restore n̄; B2: pooled at the chosen E₀); h405 reuses its existing
 raw / post_pickup / h405g35 pools. Code awaits `[PROCEED TO
 IMPLEMENTATION]`. The production generator default (h405) is not switched.
+
+## 2026-10-09 — G5 executed; decision (user): B2 (`post_pickup`, ridge c 1.6) is the thesis production law, B3 the effective high-tail variant
+
+`gen_tier2_detfix_postpickup.py --cell lq` (user trigger
+`[PROCEED TO IMPLEMENTATION]` 2026-10-08), production pipeline, pooled
+N = 6000, no D4 firing. A: `post_pickup` on A5 raises n̄ +0.70, KE/shape
+flat (chord map sampler-invariant). E₀ (B1) or τ (B1′) restore n̄ only at
+midHot ≈ 0.85. Ridge c 1.6 (committed `g412_ridge/c1p600.json`, 18 Å RMSE
+0.1224, still TDDFT-tied) + E₀ 0.3297 (B2): n̄ 3.903, n₁ 0.211, midHot
+1.002, KE₁ 0.609, W₁ 0.967, S 1.705. B3 = B2 + E_bind 0.0482, a 19.8, E₀
+0.3389: n ≥ 15 0.0075, W₁ 0.795, S 1.505; KE₁ 0.590, χ²_med 674 (not
+Tier-0-consistent, G10.5). Comparison table vs A5 / h405 / G10:
+THESIS_FINAL_GOALS G5 Outcome (`g5_winners_table.csv`, all rows anchored
+4 dp); D0 §15.9. Generator default (h405) not switched.
