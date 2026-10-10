@@ -113,13 +113,19 @@ def test_m_eff_override_at_reference_mass_is_identity():
             == build_drag_cfg("9A", _LQ, **kw))
 
 
-@pytest.mark.parametrize("kw", [
-    dict(coeff_overrides={"a": 18.0}, e_bind_override=0.117),        # c not overridden
-    dict(coeff_overrides={"a": 18.0, "c": 1.6}),                      # E_bind not overridden
-])
-def test_m_eff_override_refuses_to_relabel_committed_bundle(kw):
-    with pytest.raises(ValueError, match="must not be relabelled"):
-        build_drag_cfg("9A", _LQ, m_eff_amu=_M21_AMU, **kw, **_BUILD_KW)
+def test_m_eff_override_without_coeff_overrides_runs_committed_law():
+    """The committed bundle law at m = 21: coefficients verbatim, run cfg restamped."""
+    plain = build_drag_cfg("18A", _LQ, **_BUILD_KW)
+    heavy = build_drag_cfg("18A", _LQ, m_eff_amu=_M21_AMU, **_BUILD_KW)
+    assert heavy.drag_coefficients.coefficients == plain.drag_coefficients.coefficients
+    assert heavy.binding_energy_I_ion_eV == plain.binding_energy_I_ion_eV
+    assert heavy.m_eff_amu == heavy.drag_coefficients.extraction_mass_amu == _M21_AMU
+    heavy.validate()
+
+
+def test_m_eff_override_must_be_positive():
+    with pytest.raises(ValueError, match="must be positive"):
+        build_drag_cfg("9A", _LQ, m_eff_amu=0.0, **_BUILD_KW)
 
 
 def test_unknown_override_key_for_form_raises():

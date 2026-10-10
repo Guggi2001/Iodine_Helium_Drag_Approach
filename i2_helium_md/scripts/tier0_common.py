@@ -147,12 +147,12 @@ def build_drag_cfg(
     m_eff_amu : float or None
         Optional fixed ion mass [amu] (THESIS_FINAL_GOALS G11.2: the Tier-0
         extraction mass as a parameter). The cfg's ``m_eff_amu`` /
-        ``mass_initial_amu`` and the coefficients' ``extraction_mass_amu``
-        stamp are all set to it. Allowed only when ``coeff_overrides`` covers
-        every coefficient of the form and ``e_bind_override`` is given -- the
-        committed bundle (fitted at :data:`M_EFF_AMU`) is then only the form
-        carrier, never relabelled to a mass it was not fitted at. Default
-        ``None`` = :data:`M_EFF_AMU`.
+        ``mass_initial_amu`` and the run cfg's ``extraction_mass_amu`` stamp
+        are all set to it (the §6.5 fixed-mass guard needs the pair equal).
+        The bundle file is not touched: its ``meff_amu`` stays the mass it was
+        fitted at (:data:`M_EFF_AMU`), so a run at another mass is a
+        cross-mass evaluation of that law, recorded in the run's cfg.json.
+        Default ``None`` = :data:`M_EFF_AMU`.
 
     Returns
     -------
@@ -189,17 +189,9 @@ def build_drag_cfg(
         else coeffs.effective_binding_energy_I_ion_eV
     )
 
-    mass_amu = M_EFF_AMU
-    if m_eff_amu is not None:
-        missing = sorted(set(_REQUIRED_COEFF_KEYS[coeffs.form]) - set(coeff_overrides or {}))
-        if missing or e_bind_override is None:
-            raise ValueError(
-                f"m_eff_amu={m_eff_amu!r} requires overriding every coefficient "
-                f"and E_bind (missing coefficients {missing}, e_bind_override "
-                f"{e_bind_override!r}): the committed bundle was fitted at "
-                f"{M_EFF_AMU} amu and must not be relabelled"
-            )
-        mass_amu = float(m_eff_amu)
+    mass_amu = M_EFF_AMU if m_eff_amu is None else float(m_eff_amu)
+    if not mass_amu > 0.0:
+        raise ValueError(f"m_eff_amu must be positive, got {m_eff_amu!r}")
 
     coeffs = replace(
         coeffs,

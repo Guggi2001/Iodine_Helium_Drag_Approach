@@ -14384,3 +14384,17 @@ B2 / A5 re-scored with unchanged coefficients at m = 21: RMSE 0.1182 /
 (re-landing, re-pool) dropped. Record:
 `18A/trajectory_matching_srho3p5A/g11_ridge_m21/ridge_m21.csv`,
 `9A/g11_exit_bound_m21/`; D0 §1.G4.12; THESIS_FINAL_GOALS G11.4 status.
+
+## 2026-10-10 — lq bundle now carries B2 (user)
+
+`18A/trajectory_matching_srho3p5A/linear_quadratic/fit_parameters.json`
+(catalog `srho3p5A18A_linear_quadratic`) overwritten with B2 (a 18.0072,
+c 1.6, E_bind 0.11727, RMSE 0.1224; from `g412_ridge/c1p600.json`);
+`meff_amu` stays 202.954 (B2's fit mass; loader + production generators
+check it). G4.11 free fit preserved in `fit_summary.json` and git
+(`abe477c`); re-running `method_a_g411_cross_case.py` would now read B2 for
+the lq family. Tier-2 production unaffected (every lq generator overrides
+a, c, E_bind). `build_drag_cfg(m_eff_amu=)` no longer requires full
+overrides: runs a bundle law at another fixed mass (run cfg restamped,
+bundle untouched). Tier-0 at m = 21 = `gen_tier0_runs.py`
+`M_EFF_AMU_OVERRIDE` (gate RMSE 0.1182, = G11 check).
