@@ -47,9 +47,11 @@ Repo root:
   E_int(0) provenance, per-shed ε, suppressed fate/bare peak, ladder bottom,
   µs-flight channels, s_eff cross-check) — entry document of the
   literature-research / cross-validation phase (active since 2026-07-09)
-- `THESIS_FINAL_GOALS.md` — **current goal document** (since 2026-10-02):
-  agreed changes and tests before thesis completion; its top status block
-  is the entry point
+- `THESIS_FINAL_GOALS.md` — goal document 2026-10-02 → **completed
+  2026-10-13**: agreed changes and tests before thesis completion; its top
+  status block is the entry point
+- `THESIS_DISCUSSION.md` — thesis-writing source (storyline §0, chord map
+  + G7 caveat §1, sampler §2, mass influence §8, discussion / outlook)
 - `TIER2_SENSITIVITY_ATLAS_PLAN.md` — the sensitivity-atlas study program
   (goal document 2026-07-23 → 2026-10-02)
 - `TIER2_PARAMETER_INFLUENCE.md` — compact per-knob influence reference
@@ -80,9 +82,10 @@ status, every result and all open gates:** `drag_migration_log_tier2.md`
 `TIER2_MASS_SCENARIOS.md` (open investigation). Verify against the log
 before relying on anything summarised here.
 
-**Current arm: `THESIS_FINAL_GOALS.md` G4.x** (Tier-0 refit at s_ρ = 3.5 Å
-and the drag-law questions it opened; status block at the top of the
-file). `TIER2_MASS_SCENARIOS.md` — the flight mass, not the
+**Current arm: thesis writing** (since 2026-10-13; `THESIS_FINAL_GOALS.md`
+completed, source = `THESIS_DISCUSSION.md`). Thesis production law **B2**
+(`post_pickup`, lq ridge c 1.6; `gen_tier2_detfix_postpickup.py --b2`),
+effective variant B3, h405 = contrast law (G5 Outcome). `TIER2_MASS_SCENARIOS.md` — the flight mass, not the
 drag, carries the KE₁ deficit; **M1 (a sourced I⁺–He D₀) gates it.** The
 free-form linear counterfactual (`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`)
 is **closed** as of 2026-08-13; its open gates, and the standing G4 /

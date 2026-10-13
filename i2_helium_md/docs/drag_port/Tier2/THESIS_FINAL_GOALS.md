@@ -3,7 +3,7 @@
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
-**Status (2026-10-13)** — entry point for a new chat; details in each
+**Status (2026-10-13; COMPLETED)** — entry point for a new chat; details in each
 section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE.md`) and the
 log (`drag_migration_log_tier2.md`).
 
@@ -114,9 +114,14 @@ log (`drag_migration_log_tier2.md`).
 18. **G7 executed (2026-10-13):** caveat in `THESIS_DISCUSSION.md` §1.1;
     KE width ≈ 8× too narrow (IQR / median) at n = 1–4. See G7 status.
 
-**Next:** G11.4 complete (steps 2–3, 6 done; 4–5 dropped). Remaining
-work is thesis writing from `THESIS_DISCUSSION.md`. G4.14 recap point (a) settled by the decision below; (b)–(c)
-parked.
+**COMPLETED (user, 2026-10-13).** All goals executed, dropped or moved
+to the outlook; no open gate. G11.4 complete (steps 2–3, 6 done; 4–5
+dropped). G4.14 recap: (a) settled by the decision below; (b)–(c) moot
+after G5 (the experiment selected c 1.6 under `post_pickup`; c 1.8 was
+scanned in B1c); (d) bare part settled, ladder → outlook (status 11).
+G4.8 "decision needed" superseded by G4.9. Remaining work is thesis
+writing from `THESIS_DISCUSSION.md` (§0 storyline, §1 chord map + G7
+caveat, §2 sampler, §8 mass influence, §3–7 discussion / outlook).
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
 E_bind 0.11727, 3.5 Å gate, τ 6.4, E₀ 0.3297; reference

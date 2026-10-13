@@ -14450,3 +14450,10 @@ checked exactly); B2's conversion cross-checked against per-ion data.
 Panel (b) marks suppressed ions at their intact-complex KE
 (fragmentation open, RQ3). No number changed; THESIS_DISCUSSION §1
 wording updated.
+
+## 2026-10-13 — THESIS_FINAL_GOALS completed (user)
+
+All goals executed, dropped or moved to the outlook; no open gate.
+G4.14 recap (b)–(c) moot after G5; G4.8 decision superseded by G4.9.
+Current arm: thesis writing from THESIS_DISCUSSION.md. CLAUDE.md
+pointers updated (current arm, production law B2).
