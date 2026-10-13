@@ -3,7 +3,7 @@
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
-**Status (2026-10-09)** — entry point for a new chat; details in each
+**Status (2026-10-13)** — entry point for a new chat; details in each
 section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE.md`) and the
 log (`drag_migration_log_tier2.md`).
 
@@ -101,8 +101,15 @@ log (`drag_migration_log_tier2.md`).
     m = 21) and `tier0_thesis_figure.py` (B2 / B3 / h405). The lq bundle
     `srho3p5A18A_linear_quadratic` now carries B2. Records: G11.4 status.
 
-**Next:** G11.4 — Tier-1a at 9 Å → G6–G7 + storyline (steps 2–3 done,
-step 4 dropped; see G11.4 status). G4.14 recap point (a) settled by the decision below; (b)–(c)
+16. **Tier 1 retired (user, 2026-10-13):** no Tier-1a redo (G11.4 step 5
+    dropped); the old Tier-1a results are dropped from the thesis. The
+    mass question moves from the validation chapter to the discussion
+    (mass-influence section, compiled from existing results, zero MD;
+    the bare start = outlook). See G11.3 / G11.5.
+
+**Next:** G11.4 step 6 — G6–G7 (G6 deferred by the user) + storyline;
+mass-influence discussion section per G11.5 (steps 2–3 done, steps 4–5
+dropped; see G11.4 status). G4.14 recap point (a) settled by the decision below; (b)–(c)
 parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
@@ -1611,6 +1618,15 @@ weakness.
   21 → 14 shedding change the trajectory" — fixed 21 vs anchored
   continuous-velocity shedding, at the B2 law (open: also A5 as a ridge
   contrast). Deterministic, cheap.
+- **Superseded (user, 2026-10-13): Tier 1 retired.** Tier-1a existed to
+  show that the assumed mass does not matter for the 9 Å extraction
+  (shedding 21 → 14 at known times). Since G4.9 the extraction is 18 Å
+  only, where the shell stays at 21 He, so m = 21 is the actual mass, not
+  an assumption; 9 Å is a one-sided exit bound (margin +0.82 Å/ps), not a
+  fit target. Nothing is left for Tier 1 to validate. The old Tier-1a
+  results (old law, 14.2 Å gate) are dropped from the thesis (the later
+  ridge / gate changes leave them without meaning). The mass question
+  moves to the discussion: G11.5.
 
 ### G11.4 Plan (order)
 
@@ -1620,8 +1636,8 @@ weakness.
 | 2 | Tier-0 ridge refit at m = 21 + 9 Å exit bound — **done 2026-10-09** | none (Tier-0 engine) | 1 |
 | 3 | Tier-0 figure: 18 Å trace with the m = 21 ridge points c 1.6 / 2.0 + h405; 9 Å check — **done 2026-10-09/10** (B2 / B3 / h405) | none | 2 |
 | 4 | ~~B2 re-landing at the m = 21 c 1.6 point (s1; c re-scan only if needed), re-pool N = 6000; B3 likewise; update the G5 comparison table~~ — **dropped** (B2 / A5 pass at m = 21 unchanged) | ~1–2 h | 2 |
-| 5 | Tier-1a at 9 Å: fixed 21 vs anchored continuous shedding, at the B2 law | tiny | 2 |
-| 6 | G6 chord map, G7 caveat, one-page storyline section (`THESIS_DISCUSSION.md`) per G11.1 | none | 4 |
+| 5 | ~~Tier-1a at 9 Å: fixed 21 vs anchored continuous shedding, at the B2 law~~ — **dropped** (Tier 1 retired, G11.3; mass question → discussion, G11.5) | — | 2 |
+| 6 | G6 chord map, G7 caveat, one-page storyline section (`THESIS_DISCUSSION.md`) per G11.1; mass-influence discussion section per G11.5 | none | 4 |
 
 Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
 `[PROCEED TO IMPLEMENTATION]`.
@@ -1661,8 +1677,45 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   (`data/figures/thesis_tier0/`) are not committed — regenerate with
   `tier0_thesis_figure.py` / `gen_tier0_runs.py` + `tier0_drag_comparison.py`.
 
-**Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
-section: drafted here or written directly into the thesis?
+**Open question (user).** Storyline section: drafted here or written
+directly into the thesis? (Tier-1a scope: moot, step 5 dropped.)
+
+### G11.5 Mass influence — discussion section, not validation (agreed 2026-10-13; zero MD)
+
+Placed in the thesis discussion (after the Tier-2 results), not in the
+validation-strategy chapter: with an 18 Å-only extraction at the true
+shell mass there is nothing mass-related left to validate; what remains
+is model scope. Compiled from existing results only (option (a)).
+
+| level | question | result (existing) | source |
+|---|---|---|---|
+| extraction | sensitivity of the fitted law to the fit mass | 19 → 21 He: a −1.4 to −2.3 % per c, E_bind +0.0004 eV, 9 Å margin −0.00 to −0.04 Å/ps; B2 / A5 pass unchanged | G11.4 step 2, D0 §1.G4.12 |
+| transfer | fixed-mass law under production's variable mass | exact at birth (n₀ = 21 = fit mass); afterwards rests on the mass-agnostic force law (γ never takes m) — **stated assumption**: the drag force does not depend on the shell size n, untestable with the TDDFT references (no small-n trace) | G11.2 (3), CLAUDE.md friction convention |
+| initial shell (outlook) | ions born bare (n₀ = 0) | see below | G8, D0 §1.G8 |
+
+**Bare start — outlook, defined.** The drag law is extracted for one
+complex only, I⁺ + 21 He (the 18 Å shell). G8 applies that law unchanged
+to ions born bare (n₀ = 0, E_int(0) = 0). Measured (N = 1000, s1, lq A5
+cell = the ridge point next to B2; h405 as contrast):
+- bare ions do not evaporate; n = pickup count (peak n = 2–3);
+- KE₁: lq 0.491 eV, below the intact 0.621 and far below the
+  experimental median 1.128; the lighter ion's larger Coulomb speed is
+  taken back by the ridge law's v² (ram) term;
+- h405 (capped high-speed drag) keeps the gain (KE₁ 0.865) — so the
+  bare-start KE₁ is set by the high-speed drag, but even the capped law
+  stays below the experiment.
+
+Reading for the thesis: a bare start, run with a drag law fitted for the
+21-He complex, does not produce the fast n = 1 ions. This is
+**consistent with** the 21-He law over-dissipating on an ion it was not
+extracted for (a bare I⁺ has a different solvation structure / bubble),
+**not shown**: G8 cannot separate the drag from pickup and the lighter
+flight mass, and no TDDFT reference for a bare / small-n ion exists.
+Outlook: a drag law for small n (TDDFT for I⁺Heₙ, n ≪ 21) before a
+bare / partly-solvated source channel can be tested; ties to the n = 1
+outlook (G8 decision, RQ1 / RQ8, M1).
+
+The old Tier-1a results (`drag_migration_log_tier1a.md`) are not used.
 
 ## Thesis framing implied
 

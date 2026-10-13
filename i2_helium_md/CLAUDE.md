@@ -219,8 +219,12 @@ before introducing the next unknown:
 
 - **Tier 0 — COMPLETE.** Drag form, deterministic, fixed mass, in-window TDDFT
   traces. Locked: `shared_pure_cubic` (18 Å clean pass, 9 Å non-radial flag).
-- **Tier 1a — DELIVERED.** Anchored kinematic mass-dynamics validation.
-  The shell schedule `n(t)` is *anchored* to the 9 Å TDDFT loss curve
+- **Tier 1a — RETIRED (user, 2026-10-13; historical).** With the 18 Å-only
+  extraction at the true shell mass (21 He) nothing is left to validate; its
+  results are not used in the thesis, the mass question is a discussion
+  section (`THESIS_FINAL_GOALS.md` G11.3 / G11.5). The variable-mass
+  integrator it built (SQ1–SQ3) stays in production. Original scope:
+  anchored kinematic mass-dynamics validation. The shell schedule `n(t)` is *anchored* to the 9 Å TDDFT loss curve
   (~21→19→14 He), not generated; the run is a controlled `fixed` vs
   `anchored_discrete` A/B that tests whether drag + variable mass reproduce `R(t)`,
   `|v(t)|` and whether the four-term §2.9 ledger closes. **OQ-independent** —

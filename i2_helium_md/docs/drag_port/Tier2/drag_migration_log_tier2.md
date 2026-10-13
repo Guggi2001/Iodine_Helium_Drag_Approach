@@ -14398,3 +14398,17 @@ a, c, E_bind). `build_drag_cfg(m_eff_amu=)` no longer requires full
 overrides: runs a bundle law at another fixed mass (run cfg restamped,
 bundle untouched). Tier-0 at m = 21 = `gen_tier0_runs.py`
 `M_EFF_AMU_OVERRIDE` (gate RMSE 0.1182, = G11 check).
+
+## 2026-10-13 — Decision (user): Tier 1 retired; mass influence → discussion section
+
+Tier-1a existed to justify the assumed mass in the 9 Å extraction
+(shedding 21 → 14). Since G4.9 the extraction is 18 Å only (shell
+constant at 21 He = the G11.2 fit mass), and 9 Å is a one-sided exit
+bound: nothing left for Tier 1 to validate. G11.4 step 5 (Tier-1a redo)
+dropped; no code. The old Tier-1a results are dropped from the thesis.
+The mass question becomes a discussion section compiled from existing
+results (THESIS_FINAL_GOALS G11.5; zero MD): extraction-mass sensitivity
+(G11.4 step 2), the transfer assumption (drag independent of n, untested),
+and the bare start (G8) as outlook — with a law extracted only for
+I⁺ + 21 He, bare ions do not reach the fast n = 1 KE; consistent with
+over-dissipation outside the law's domain, not shown. G6 deferred (user).
