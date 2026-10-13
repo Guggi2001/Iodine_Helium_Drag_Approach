@@ -88,15 +88,21 @@ log (`drag_migration_log_tier2.md`).
     observable and improves W₁ / S. The G10 recipe on top (E_bind 0.0482,
     a 19.8) gives the effective high-tail variant. Comparison table: G5.
 
-14. **G11 (agreed 2026-10-09, nothing run):** thesis reframed as
+14. **G11 (agreed 2026-10-09):** thesis reframed as
     "TDDFT constrains (a ridge), the experiment selects (c, E₀)"; Tier-0
     extraction mass → m_eff = 21 He (18 Å shell mass; supersedes G3);
     Tier 1 kept as the fixed-mass consistency check (not void; G8 is a
     different question).
 
-**Next:** G11.4 — ~~Tier-0 ridge refit at m = 21 (+ 9 Å bound)~~ (done
-2026-10-09: B2 / A5 pass unchanged, re-landing dropped) → Tier-0
-figure → Tier-1a at 9 Å → G6–G7 + storyline. G4.14 recap point (a) settled by the decision below; (b)–(c)
+15. **G11.4 steps 2–3 executed (2026-10-09/10):** Tier-0 ridge refit at
+    m = I⁺ + 21 He + 9 Å exit bound — B2 / A5 pass unchanged (step 4
+    re-landing dropped); h405 fails the 9 Å bound (−1.21 Å/ps). Tier-0
+    figures: `tier0_drag_comparison.py` (thesis trace + R(t), B2 at
+    m = 21) and `tier0_thesis_figure.py` (B2 / B3 / h405). The lq bundle
+    `srho3p5A18A_linear_quadratic` now carries B2. Records: G11.4 status.
+
+**Next:** G11.4 — Tier-1a at 9 Å → G6–G7 + storyline (steps 2–3 done,
+step 4 dropped; see G11.4 status). G4.14 recap point (a) settled by the decision below; (b)–(c)
 parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
@@ -1611,9 +1617,9 @@ weakness.
 | # | step | MD | depends on |
 |---|---|---|---|
 | 1 | G3 rewritten to m_eff = 21 He (done here: G11.2) | — | — |
-| 2 | Tier-0 ridge refit at m = 21 + 9 Å exit bound | none (Tier-0 engine) | 1 |
-| 3 | Tier-0 figure: 18 Å trace with the m = 21 ridge points c 1.6 / 2.0 + h405; 9 Å check | none | 2 |
-| 4 | B2 re-landing at the m = 21 c 1.6 point (s1; c re-scan only if needed), re-pool N = 6000; B3 likewise; update the G5 comparison table | ~1–2 h | 2 |
+| 2 | Tier-0 ridge refit at m = 21 + 9 Å exit bound — **done 2026-10-09** | none (Tier-0 engine) | 1 |
+| 3 | Tier-0 figure: 18 Å trace with the m = 21 ridge points c 1.6 / 2.0 + h405; 9 Å check — **done 2026-10-09/10** (B2 / B3 / h405) | none | 2 |
+| 4 | ~~B2 re-landing at the m = 21 c 1.6 point (s1; c re-scan only if needed), re-pool N = 6000; B3 likewise; update the G5 comparison table~~ — **dropped** (B2 / A5 pass at m = 21 unchanged) | ~1–2 h | 2 |
 | 5 | Tier-1a at 9 Å: fixed 21 vs anchored continuous shedding, at the B2 law | tiny | 2 |
 | 6 | G6 chord map, G7 caveat, one-page storyline section (`THESIS_DISCUSSION.md`) per G11.1 | none | 4 |
 
@@ -1647,6 +1653,13 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   9 Å margin +1.23); raw TDDFT |v1|, |v2| behind panel (a). Thesis Tier-0
   trace + R(t) figure stays `tier0_drag_comparison.py`, now set to B2 at
   m = 21 (`gen_tier0_runs.py` RUN_TAG `B2m21`; gate RMSE 0.1182, = check).
+- **Where the results live (committed):** ridge + B2 / A5 checks
+  `data/reference/drag/18A/trajectory_matching_srho3p5A/g11_ridge_m21/`
+  (`ridge_m21.csv` = summary table; `c*.json`, `check_B2/A5.json`); 9 Å
+  bound `data/reference/drag/9A/g11_exit_bound_m21/`; m = 19 record
+  unchanged in `g412_ridge/` + `9A/g412_exit_bound/`. Figures
+  (`data/figures/thesis_tier0/`) are not committed — regenerate with
+  `tier0_thesis_figure.py` / `gen_tier0_runs.py` + `tier0_drag_comparison.py`.
 
 **Open questions (user).** Tier-1a scope: B2 only, or B2 + A5? Storyline
 section: drafted here or written directly into the thesis?
