@@ -12,8 +12,57 @@ Sources read: D0 `TIER2_PARAMETER_INFLUENCE.md` §14.3 (2026-10-02 note),
 `detfix_postpickup_chord.csv`; `TIER2_DetectorStageFix.md` §5.7;
 `CALIBRATION_MAP.md` row 30; `RESEARCH_QUESTIONS.md` (NBs of 2026-07-29);
 `data/reference/README.md`, `ihe_ked/README.md`, `paper_cov/README.md`.
+Later additions: §0 storyline and §8 mass influence (2026-10-13, from
+`THESIS_FINAL_GOALS.md` G5 / G11); §1 is to be refreshed by G6 (chord map
+at B2) and G7 (KE₁ geometry-invariance caveat).
 
 ---
+
+## 0. Storyline — "TDDFT constrains, the experiment selects" (G11.1; added 2026-10-13)
+
+Spine of the thesis argument; numbers from `THESIS_FINAL_GOALS.md` G5
+Outcome and G11.4 status. Tier 1 does not appear (retired, G11.3).
+
+1. **Tier 0 — TDDFT constrains a ridge, not a law.** The 18 Å TDDFT
+   trace, at the true shell mass m = I⁺ + 21 He (the shell stays at 21
+   throughout), pins the drag force near v ≈ 3 Å/ps and the well / drag
+   split at low energy (E_bind ≈ 0.117 eV), not the high-speed shape. The
+   output is a one-parameter family F = a·v + c·v²: all 12 ridge points
+   c 0–7.2 amu/Å pass 18 Å (RMSE 0.113–0.119 Å/ps, band 0.19). The 9 Å
+   case (non-radial, transverse motion) is a one-sided exit bound only:
+   it cuts c > 5 (c 7.2 fails). The cross-case cubic preference (G4.11)
+   is contested by the radial 9 Å runs → caveat, not a foundation.
+2. **Tier 2 — the experiment selects two knobs.** Only c on the ridge
+   and E₀; τ = 6.4 ps ≈ the sourced 6.55 ps; physical droplet ensemble
+   (`post_pickup`, §2). Production law **B2**: c 1.6, a 18.01 amu/ps,
+   E_bind 0.1173 eV, E₀ 0.3297 eV (pooled N = 6000): n̄ 3.90 (gate
+   3.83–4.31), midHot 1.002, W₁ 0.967, n₁ 0.211 (exp 0.310), KE₁ 0.609 eV
+   (exp 1.302). B2 stays Tier-0-consistent at m = 21 (RMSE 0.118, 9 Å
+   margin +0.82 Å/ps).
+3. **Identifiability — the non-uniqueness is a result.** (a) The c the
+   experiment selects depends on the droplet description (raw → 2.0,
+   `post_pickup` → 1.6). (b) A differently shaped law, h405 (capped
+   cubic, v_c 5.5), lands comparably (W₁ 0.755, KE₁ 0.640, midHot 0.948)
+   but fails the 9 Å bound (−1.21 Å/ps). Neither TDDFT nor the detected
+   I⁺(He)ₙ data identify a unique drag function in He nanodroplets.
+   Caveat: h405 is not a controlled A/B partner (gate 14.2 Å, τ 4.4 ps,
+   bundle fitted at the old gate).
+4. **Effective variant B3 — an explicit departure.** A shallow well
+   (E_bind 0.0482 eV, a 19.8, E₀ 0.3389) buys the high tail (n ≥ 15
+   0.0075 vs B2 0.0008, deep-bin KE 0.77 of experiment, W₁ 0.795) at the
+   price of leaving the TDDFT trace (18 Å RMSE 0.58 > 0.19). Presented as
+   effective, not TDDFT-based.
+5. **Geometry only reweights; the map sets KE** (§1; G6 figure, G7
+   caveat). KE₁ is geometry-invariant within the deterministic model.
+6. **Mass** (§8): the extraction mass is no longer an assumption; the
+   transfer to small n is.
+7. **Outlook — outside the deterministic model.** n₁ share and KE₁ (≈ half
+   the experiment for every law; §3, §5, G8), the n ≥ 15 deficit (§7),
+   the KE width at fixed n (Tier-3 collision noise), a sourced I⁺–He D₀
+   (M1), a drag law for small n (§8).
+
+Fewer tuned knobs than in the earlier sweeps (v_c, E₀, τ); the
+non-uniqueness is reported as a finding.
 
 ## 1. The chord → (n, KE) map (MEASURED, D0 §15.8 reads 5–6)
 
@@ -54,24 +103,29 @@ Sources read: D0 `TIER2_PARAMETER_INFLUENCE.md` §14.3 (2026-10-02 note),
 - Caveats: the chord ignores deflection (partner Coulomb, drag) and the soft
   erf edge; the arms are not CRN, so the agreement is ensemble-level.
 
-## 2. Size sampler: `raw` vs `post_pickup` (MEASURED, D0 §15.8 reads 1–4)
+## 2. Size sampler: `post_pickup` is production (MEASURED, D0 §15.8–15.9; updated 2026-10-13)
 
-- Production (h405, N = 6000 pool) uses `raw`, the plain source log-normal
-  at 40 bar / 14 K. Thesis Ch. 3 describes the pickup-conditioned ensemble
-  (`post_pickup`), which legacy MATLAB production used.
-- `post_pickup` − `raw` (pooled N = 5000 each): ⟨N⟩ +29 %, R̄ +4.5 Å,
-  n̄ +0.72, n₁ −0.033, W₁ +0.24, trap +0.057, supp −0.059, KE₁ +0.007 eV.
-  Both gate clauses fail under `post_pickup`.
-- Discussion points:
-  - The standing point is **conditional on the sampler**. `post_pickup` is
-    not ruled out; it would need its own (v_c, τ, E₀) arbitration
-    (projection: ≈ +0.03 eV in E₀ to recover the n̄ shift, untested).
-  - The thesis headline claims (KE₁ deficit, chord-map argument) are
-    sampler-invariant.
-  - Ch. 3 and production must agree: either `raw` stated as a modelling
-    assumption with §15.8 as its measured sensitivity, or `post_pickup` at
-    the planned re-arbitration. The user intends to redo the arbitration
-    with further improvements; the sampler choice belongs to that redo.
+- **Production uses `post_pickup`** (user decision 2026-10-09, G5): the
+  pickup-conditioned droplet ensemble, as described in thesis Ch. 3 and
+  as used by legacy MATLAB production. The thesis production law B2 was
+  arbitrated under it (lq ridge c 1.6, E₀ 0.3297 eV; pooled N = 6000).
+  `raw` (the plain source log-normal at 40 bar / 14 K) was the sampler of
+  the earlier standing points (h405, A5) and is kept only as the measured
+  sensitivity. Ch. 3 and production now agree.
+- **Sampler effect** (`post_pickup` − `raw`, same law, nothing re-tuned):
+  - h405 (pooled N = 5000 each): ⟨N⟩ +29 %, R̄ +4.5 Å, n̄ +0.72, n₁ −0.033,
+    W₁ +0.24, trap +0.057, supp −0.059, KE₁ +0.007 eV;
+  - lq A5 (G5 step A): n̄ +0.70, n₁ −0.04; W₁, midHot, KE₁, S flat.
+  The larger droplets only move ions from short chords (the n = 1 window)
+  to long ones; the chord → (n, KE) map is sampler-invariant (§1).
+- **Re-arbitration under `post_pickup`** (G5): E₀ or τ alone restore n̄
+  only at midHot ≈ 0.85; lowering c on the TDDFT ridge (2.0 → 1.6) with
+  E₀ re-placed holds every observable of A5 and improves W₁ (−0.13) and
+  S (−0.25). The selected c therefore depends on the droplet description
+  (raw → 2.0, `post_pickup` → 1.6) — part of the identifiability result
+  (§0).
+- The thesis headline claims (KE₁ deficit, chord-map argument) are
+  sampler-invariant.
 
 ## 3. Q = 2 / Q = 3 channel mixture as an explanation of KE₁ (DISCUSSION ONLY)
 
@@ -304,3 +358,34 @@ Share of solvated ions (n ≥ 1):
 - **Spin-orbit-state-dependent ladder.** Ruled out on energy: a fast
   escaper leaves with E_int ≈ 0.19 eV and would need ≈ 30 meV per He to
   stay at n ≥ 15, about three times the ladder.
+
+## 8. Mass influence (DISCUSSION; added 2026-10-13, `THESIS_FINAL_GOALS.md` G11.5; zero MD)
+
+Discussion, not validation: with the 18 Å-only extraction at the true
+shell mass nothing mass-related is left to validate (Tier 1 retired,
+G11.3); what remains is model scope.
+
+| level | question | result (MEASURED) | source |
+|---|---|---|---|
+| extraction | sensitivity of the fitted law to the fit mass | 19 → 21 He: a −1.4 to −2.3 % per c, E_bind +0.0004 eV, 9 Å margin −0.00 to −0.04 Å/ps; B2 / A5 pass unchanged | G11.4 step 2, D0 §1.G4.12 |
+| transfer | fixed-mass law under production's variable mass | exact at birth (n₀ = 21 = fit mass); afterwards rests on the mass-agnostic force law — **stated assumption:** the drag force does not depend on the shell size n (untestable: no small-n TDDFT trace) | G11.2 (3) |
+| initial shell | ions born bare (n₀ = 0) | below (outlook) | G8, D0 §1.G8 |
+
+**Bare start (OUTLOOK).** The drag law is extracted for one complex
+only, I⁺ + 21 He. G8 applies it unchanged to ions born bare (n₀ = 0,
+E_int(0) = 0; N = 1000, s1; lq A5 cell = the ridge point next to B2,
+h405 as contrast):
+- bare ions do not evaporate; n = pickup count (peak n = 2–3);
+- KE₁: lq 0.491 eV, below the intact 0.621 and far below the
+  experimental median 1.128 — the lighter ion's larger Coulomb speed is
+  taken back by the ridge law's v² term;
+- h405 (capped high-speed drag) keeps the gain (KE₁ 0.865), still below
+  the experiment.
+
+Reading: with a law extracted for the 21-He complex, a bare start cannot
+supply the fast n = 1 ions. This is **consistent with** the law
+over-dissipating on an ion it was not extracted for (a bare I⁺ has a
+different solvation structure), **not shown**: G8 cannot separate the
+drag from pickup and the lighter flight mass. Outlook: a drag law for
+small n (TDDFT for I⁺Heₙ, n ≪ 21) before a bare / partly-solvated source
+channel can be tested; ties to the n = 1 outlook (§3, §5; RQ1 / RQ8, M1).
