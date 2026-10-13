@@ -107,9 +107,12 @@ log (`drag_migration_log_tier2.md`).
     (mass-influence section, compiled from existing results, zero MD;
     the bare start = outlook). See G11.3 / G11.5.
 
-**Next:** G11.4 step 6 — G6–G7 (G6 deferred by the user) + storyline;
-mass-influence discussion section per G11.5 (steps 2–3 done, steps 4–5
-dropped; see G11.4 status). G4.14 recap point (a) settled by the decision below; (b)–(c)
+17. **G6 executed (2026-10-13, zero MD):** chord map at B2 with the h405
+    map overlaid; storyline (§0), mass influence (§8) and the refreshed
+    chord map (§1) are in `THESIS_DISCUSSION.md`. See G6 status.
+
+**Next:** G7 caveat (numbers ready in G6 status / `g6_chord_stats.csv`;
+text only). Steps 2–3 and 6 (storyline, G6) done, steps 4–5 dropped. G4.14 recap point (a) settled by the decision below; (b)–(c)
 parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
@@ -1278,6 +1281,18 @@ rows (full vector, realized sizes, D4 firings).
   change acting on the map directly.
 - **Evidence.** D0 §15.8 reads 5–6; §14.3 refinement note.
 - **Cost.** Zero MD; scorer re-run + plot script, < 1 h.
+- **Status — EXECUTED 2026-10-13 (zero MD).** The B2 chord read already
+  existed (`g5_postpickup_chord.csv`, arm `lqppb2`; the new script anchors
+  on it to 4 dp). `scripts/post_processing/tier2_g6_chord_map.py` →
+  `data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed) +
+  `data/runs/h2b_forward_model/g6_chord_stats.csv`. Old bundle = h405
+  `post_pickup`, binned only (run dirs no longer on disk). B2 n = 1 window
+  34.5–39.9 Å (h405 ≈ 35–39 Å), KE₁ 0.609 (h405 bin 0.67); the bundle
+  change acts on the long-chord branch (60 Å: KE 0.26 vs 0.10 eV, n 6.9
+  vs 10.3). B2 and A5 `post_pickup` chords bit-identical (law does not
+  enter the chord distribution). G7 numbers: KE₁ SD 0.038 eV = window ×
+  slope (0.036), residual at fixed chord 0.012; exp σ(KE₁) 0.70 eV.
+  Text: `THESIS_DISCUSSION.md` §1.
 
 ## G7. KE₁ geometry-invariance caveat (after G6)
 

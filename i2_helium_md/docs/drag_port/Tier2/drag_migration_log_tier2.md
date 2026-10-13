@@ -14412,3 +14412,17 @@ results (THESIS_FINAL_GOALS G11.5; zero MD): extraction-mass sensitivity
 and the bare start (G8) as outlook — with a law extracted only for
 I⁺ + 21 He, bare ions do not reach the fast n = 1 KE; consistent with
 over-dissipation outside the law's domain, not shown. G6 deferred (user).
+
+## 2026-10-13 — G6 executed: chord map at B2 (zero MD)
+
+`scripts/post_processing/tier2_g6_chord_map.py` (per-ion B2 pool, s1–s5 +
+r6; anchors on the committed `lqppb2` rows of `g5_postpickup_chord.csv`,
+4 dp; h405 `post_pickup` overlaid from `detfix_postpickup_chord.csv`,
+binned — its run dirs are gone). B2 n = 1 window 34.5–39.9 Å (q05–q95),
+KE₁ 0.609; old and new bundle share the strip step and window, differ on
+the long-chord branch (60 Å: KE 0.26 vs 0.10 eV, mean n 6.9 vs 10.3). B2
+and A5 `post_pickup` chords bit-identical. KE₁ SD 0.038 = window × slope
+(−0.021 eV/Å → 0.036); residual 0.012; exp σ(KE₁) 0.70. Record:
+`data/runs/h2b_forward_model/g6_chord_stats.csv`; figure
+`data/figures/thesis_tier2/` (not committed); text THESIS_DISCUSSION §1;
+storyline item 5 now points there.

@@ -64,23 +64,36 @@ Outcome and G11.4 status. Tier 1 does not appear (retired, G11.3).
 Fewer tuned knobs than in the earlier sweeps (v_c, E₀, τ); the
 non-uniqueness is reported as a finding.
 
-## 1. The chord → (n, KE) map (MEASURED, D0 §15.8 reads 5–6)
+## 1. The chord → (n, KE) map (MEASURED; refreshed at B2 by G6, 2026-10-13)
+
+Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
+`data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed): (a) n
+vs chord, (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments)
+with the old-bundle map (h405 `post_pickup`, binned) overlaid, (c) chord
+distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
+`lqppb2`; the script anchors on it to 4 dp), `detfix_postpickup_chord.csv`
+(h405), `g6_chord_stats.csv` (n = 1 window, KE₁ spread).
 
 - The detected (n, KE) is a near-deterministic function of the
   **emission-axis chord**: the straight path from the birth point along the
-  explosion axis (partner → fragment) to the droplet surface. The map is the
-  same under the `raw` and `post_pickup` size samplers (bin by bin within
-  ≈ 0.01 eV and 0.1 in n).
-- Structure of the map (`detfix_postpickup_chord.csv`):
-  - chord < 33 Å: exits intact at n = 21 (supp class; matched on fraction
-    only, per-ion identity with the scorer's suppressed class unchecked);
-  - 35–39 Å: n = 1 (KE 0.61–0.67 eV);
-  - beyond 39 Å: n rises again (2 → 14) — **re-pickup after stripping**,
-    not partial evaporation; stripping itself is a step 21 → 1 within
-    ≈ 33–37 Å;
-  - > 65 Å: mostly retained.
-  - KE falls ≈ 0.03–0.04 eV per Å of chord, consistent with the capped-tail
-    force b·v_c³ ≈ 0.043 eV/Å.
+  explosion axis (partner → fragment) to the droplet surface. The map does
+  not depend on the size sampler (h405: `raw` vs `post_pickup` bin by bin
+  within ≈ 0.01 eV and 0.1 in n; A5 likewise, G5 step A).
+- Structure of the B2 map:
+  - chord < 33 Å: exits intact at n = 21 (supp class);
+  - 33–35 Å: the strip step 21 → 1 (mixed bin: n = 1 share 0.42, mean KE
+    0.90 eV);
+  - **n = 1 window 34.5–39.9 Å** (q05–q95 of the n = 1 ions, median
+    37.2 Å, width 5.3 Å); KE₁ 0.609 eV;
+  - beyond ≈ 40 Å: n rises again (2 → 13) — **re-pickup after
+    stripping**, not partial evaporation;
+  - > 80 Å: mostly retained (0.89).
+- **Old vs new bundle** (h405 → B2, panels a–b): the strip step and the
+  n = 1 window sit at the same chord (h405 window ≈ 35–39 Å) with nearly
+  the same KE₁ (0.67 vs 0.63 eV in the 35–37 Å bin); the bundle change acts
+  on the long-chord branch: under B2 KE falls more slowly with chord
+  (60 Å: 0.26 vs 0.10 eV) and re-pickup is slower (mean n at 60 Å: 6.9 vs
+  10.3).
 - **Correction to a tempting reading:** the ion does not "choose the
   closest path to exit". The I–I axis at ionization fixes the direction and
   the partner's Coulomb push drives the fragment along it; the relevant
@@ -88,20 +101,26 @@ non-uniqueness is reported as a finding.
   surface. This is why radial birth depth is the weaker proxy.
 - **Consequences.**
   - Geometry (droplet size, sampler, birth depth) only reweights the chord
-    distribution; (v_c, τ, E₀, ladder) set the map. The histogram is the
-    chord distribution pushed through one map.
+    distribution (panel c: B2 and A5 `post_pickup` have bit-identical
+    chords — the law does not enter; `post_pickup` shifts weight from
+    < 40 Å to long chords); drag, τ, E₀ and the ladder set the map. The
+    histogram is the chord distribution pushed through one map.
   - **No geometry change can move KE₁.** The n = 1 window position on the
     chord axis fixes KE₁; only the map can move it: Coulomb budget, drag,
     or flight mass (`TIER2_MASS_SCENARIOS.md`, M1 gate).
-  - The n = 1 KE width in the model (SD 0.038, the "needle") is the window
-    width × the KE slope. The experimental width needs scatter in the map
-    itself (Tier-3 noise or a channel mixture), not geometry.
-  - Projection (not measured): on the current map KE ≈ 1.0 eV sits at a
-    chord of ≈ 33–35 Å, where n ≈ 18. The 0.36 eV deficit is equivalent to
-    stripping completing ≈ 3–5 Å of chord too late, or to KE falling too
-    steeply along the chord.
+  - The n = 1 KE width in the model (SD 0.038 eV, the "needle") is the
+    window width × the KE slope: slope −0.021 eV/Å × chord SD gives
+    0.036 eV; the residual at fixed chord is 0.012 eV. The experimental
+    σ(KE₁) is 0.70 eV — the width needs scatter in the map itself (Tier-3
+    noise or a channel mixture), not geometry (G7).
+  - Projection (not measured): on the B2 map KE ≈ 1.0 eV sits at a chord of
+    ≈ 32–34 Å, inside the strip step where most ions still exit at n = 21.
+    The ≈ 0.5–0.7 eV deficit (exp KE₁ median 1.13 / mean 1.30 eV) is
+    equivalent to stripping completing ≈ 3–5 Å of chord earlier, or to KE
+    falling less steeply along the chord.
 - Caveats: the chord ignores deflection (partner Coulomb, drag) and the soft
-  erf edge; the arms are not CRN, so the agreement is ensemble-level.
+  erf edge; h405 is binned only (its run directories are no longer on
+  disk); the arms are not CRN, so the old-vs-new agreement is ensemble-level.
 
 ## 2. Size sampler: `post_pickup` is production (MEASURED, D0 §15.8–15.9; updated 2026-10-13)
 
