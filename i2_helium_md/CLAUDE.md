@@ -36,8 +36,8 @@ Repo root:
 - `SLICE{1..4}_GOALS_*.md` — per-slice goal docs
 
 `docs/drag_port/Tier1/`:
-- `drag_migration_log_tier1a.md` — Tier-1a decision + delivery history (delivered)
-- `TIER1A_IMPLEMENTATION_PLAN.md` — Tier-1a build plan (anchored kinematic mass-dynamics validation; delivered)
+- `drag_migration_log_tier1a.md` — Tier-1a decision + delivery history (delivered; Tier 1 retired 2026-10-13, historical)
+- `TIER1A_IMPLEMENTATION_PLAN.md` — Tier-1a build plan (anchored kinematic mass-dynamics validation; delivered; historical)
 
 `docs/drag_port/Tier2/` (current phase — the active goal documents):
 - `drag_migration_log_tier2.md` — Tier-2 decision + delivery log
@@ -68,24 +68,35 @@ Repo root:
 - `PHYSICS_BASELINE.md` — MD baseline
 
 Compact state — **pointers only; results and history do not belong here.**
-Production law `shared_pure_cubic` (`γ = g·b·v²`), both presets wired to the
-shared bundle; the production arbitration adds the `capped_cubic` tail.
-Standing point `h405` (G4 successor closed 2026-09-30; was `finc1v725`).
-**Production pipeline** (since 2026-09-30): Stage I to 500 ps, E2 skipped,
-partner-aware Coulomb closure — generator `gen_tier2_detfix_battery.py`;
-reference = pooled N = 6000 h405 battery (`TIER2_DetectorStageFix.md` §5.7).
+**Final thesis production law: B2** (user, 2026-10-09) — `post_pickup`
+droplet sampler, uncapped TDDFT-tied ridge `linear_quadratic`
+F = a·v + c·v² at c 1.6 (bundle `srho3p5A18A_linear_quadratic`, which
+carries B2), 3.5 Å density gate, τ 6.4 ps, E₀ 0.3297 eV; generator
+`gen_tier2_detfix_postpickup.py --cell lq --b2`; reference = pooled
+N = 6000 B2 battery (`…g5lqppc160e3297pooled_th500`; THESIS_FINAL_GOALS
+G5 Outcome). Effective high-tail variant B3 (`--b3`; not
+Tier-0-consistent). h405 (`shared_pure_cubic` + `capped_cubic` tail
+v_c 5.5, 14.2 Å gate, `raw` sampler; standing point 2026-09-30 → 10-08)
+is the **contrast law** for the identifiability argument only.
+Repo defaults are **not** switched: the presets stay wired to the
+`shared_pure_cubic` bundle and `gen_tier2_detfix_battery.py` still builds
+h405 — B2 runs go through the post-pickup generator.
+**Production pipeline** (since 2026-09-30, unchanged for B2): Stage I to
+500 ps, E2 skipped, partner-aware Coulomb closure
+(`TIER2_DetectorStageFix.md` §5.7).
 Tier status: see the Validation hierarchy section below. **Live
 status, every result and all open gates:** `drag_migration_log_tier2.md`
 (chronology), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (results),
 `TIER2_PARAMETER_INFLUENCE.md` (per-knob influence),
-`THESIS_FINAL_GOALS.md` (goal document),
+`THESIS_FINAL_GOALS.md` (goal document, completed),
 `TIER2_MASS_SCENARIOS.md` (open investigation). Verify against the log
 before relying on anything summarised here.
 
 **Current arm: thesis writing** (since 2026-10-13; `THESIS_FINAL_GOALS.md`
 completed, source = `THESIS_DISCUSSION.md`). Thesis production law **B2**
 (`post_pickup`, lq ridge c 1.6; `gen_tier2_detfix_postpickup.py --b2`),
-effective variant B3, h405 = contrast law (G5 Outcome). `TIER2_MASS_SCENARIOS.md` — the flight mass, not the
+effective variant B3, h405 = contrast law (G5 Outcome).
+`TIER2_MASS_SCENARIOS.md` — the flight mass, not the
 drag, carries the KE₁ deficit; **M1 (a sourced I⁺–He D₀) gates it.** The
 free-form linear counterfactual (`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`)
 is **closed** as of 2026-08-13; its open gates, and the standing G4 /
@@ -221,7 +232,12 @@ Parameters are entangled; validate in tier order, fixing each tier's winner
 before introducing the next unknown:
 
 - **Tier 0 — COMPLETE.** Drag form, deterministic, fixed mass, in-window TDDFT
-  traces. Locked: `shared_pure_cubic` (18 Å clean pass, 9 Å non-radial flag).
+  traces. Thesis result (G4.9–G4.12, G11): an 18 Å-only extraction at
+  m = I⁺ + 21 He and the 3.5 Å gate pins a one-parameter **ridge**
+  F = a·v + c·v² (every c 0–7.2 passes 18 Å), not a unique law; 9 Å is a
+  one-sided exit bound (c ≤ 5 pass). B2 (c 1.6) is a ridge point and passes
+  both. The earlier lock `shared_pure_cubic` (14.2 Å gate) is historical
+  and survives only as h405's base.
 - **Tier 1a — RETIRED (user, 2026-10-13; historical).** With the 18 Å-only
   extraction at the true shell mass (21 He) nothing is left to validate; its
   results are not used in the thesis, the mass question is a discussion
@@ -237,15 +253,16 @@ before introducing the next unknown:
   diagnostic bound. The predictive shell-timing variant ("1b") is **rejected**
   (TDDFT is not ground truth — experiment arbitrates at Tier 2). Plan + slices:
   `TIER1A_IMPLEMENTATION_PLAN.md`.
-- **Tier 2 — ACTIVE, optimization stage (build A–F complete, F5 reconciled
-  2026-07-22). Terminal I⁺(He)ₙ size distribution** vs. experimental detector
+- **Tier 2 — COMPLETE for the thesis (build A–F complete, F5 reconciled
+  2026-07-22; final production law B2, 2026-10-09). Terminal I⁺(He)ₙ size distribution** vs. experimental detector
   data — the only observable that separates the mass scenarios *and* arbitrates
   the two genuinely-free knobs (ladder shape + electronic picture). The biphasic
   *generative* mechanism (Poisson pickup + energy-gated RRK evaporation +
   `E_int` reservoir + Newton cooling, **5-term** invariant; schema **v7**,
-  `E_int` field) is built and arbitrated: standing point h405, pooled
-  N = 6000 battery reference, histogram-level landing seed-robust. In-tier
-  optimization targets: RQ11 (deep-bin KE slope), RQ3, RQ5, the margin pin.
+  `E_int` field) is built and arbitrated: production law B2 (`post_pickup`,
+  ridge c 1.6), pooled N = 6000 battery reference; the experiment selects
+  c and E₀ on the TDDFT ridge. Remaining misfits (n₁ / KE₁, n ≥ 15 tail,
+  KE width at fixed n) are thesis outlook (`THESIS_DISCUSSION.md`).
   Plan + slices: `TIER2_IMPLEMENTATION_PLAN.md`; F5 reconciliation entry in
   `drag_migration_log_tier2.md`.
 - **Tier 3 — next (open, not started). Ensemble second moments** (noise) vs.
@@ -254,10 +271,13 @@ before introducing the next unknown:
 
 A `mass_scenario`↔`drag_coefficients` consistency guard is enforced at config-load
 (§6.5): constant-mass coefficients are self-consistent only with
-`mass_scenario=fixed`. Both the Tier-1a `anchored_discrete` run and the Tier-2
-`biphasic` production run trip this guard structurally and run under
-`allow_inconsistent_mass_pairing=True`, defended by the §6.6 mid-window argument
-(`m≈19 He = m_eff` mid-window; the `n=21`/`n=14` ends sit in the §6.7 free-zone).
+`mass_scenario=fixed`. The Tier-2 `biphasic` production run (B2) trips this
+guard structurally and runs under `allow_inconsistent_mass_pairing=True`
+(as did the historical Tier-1a `anchored_discrete` run). The bundle stamp
+stays `meff` = 19 He (202.954 amu; loader + generators check it); the
+defence is the §6.6 mid-window argument, now backed by G11.4: B2 passes
+Tier 0 unchanged at the 18 Å shell mass m = 21 He (= production's n₀ at
+birth), so the fit is insensitive to the 19 ↔ 21 choice.
 Histogram comparisons (Tier 2/3) default to the Wasserstein metric.
 Current tier status: `drag_migration_log_tier2.md` (active) /
 `drag_migration_log_tier1a.md` / `TIER0_FINDINGS.md`.
@@ -377,8 +397,9 @@ effects are entangled. Validate in this order:
 For deterministic tests, disable stochastic features (collisions off, mass
 attachment off, fixed initial state, fixed molecule count, few timesteps, fixed
 droplet radius, fixed seed). For the drag-model port the deterministic
-configuration is the Tier-0 setup: `mass_scenario=fixed` at `m_eff`, noise zero,
-`linear_cubic` drag. The seven-step order maps onto the tier hierarchy:
+configuration is the Tier-0 setup: `mass_scenario=fixed` at `m_eff` (thesis
+Tier 0: m = I⁺ + 21 He), noise zero, `linear_quadratic` drag at the B2 ridge
+point. The seven-step order maps onto the tier hierarchy:
 formula/shape/one-step/multi-step are Tier 0–1; energy bookkeeping closes the
 §2.9 invariant; statistical comparison is Tier 2–3. For stochastic tests, prefer
 distribution and moment checks over exact trajectory matching unless RNG identity
