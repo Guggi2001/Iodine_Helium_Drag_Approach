@@ -12,7 +12,7 @@ Sources read: D0 `TIER2_PARAMETER_INFLUENCE.md` §14.3 (2026-10-02 note),
 `detfix_postpickup_chord.csv`; `TIER2_DetectorStageFix.md` §5.7;
 `CALIBRATION_MAP.md` row 30; `RESEARCH_QUESTIONS.md` (NBs of 2026-07-29);
 `data/reference/README.md`, `ihe_ked/README.md`, `paper_cov/README.md`.
-Later additions: §0 storyline and §8 mass influence (2026-10-13, from
+Later additions: §0 storyline, §8 mass influence and §9 Coulomb budget (2026-10-13, from
 `THESIS_FINAL_GOALS.md` G5 / G11); §1 is to be refreshed by G6 (chord map
 at B2) and G7 (KE₁ geometry-invariance caveat).
 
@@ -59,7 +59,9 @@ Outcome and G11.4 status. Tier 1 does not appear (retired, G11.3).
 7. **Outlook — outside the deterministic model.** n₁ share and KE₁ (≈ half
    the experiment for every law; §3, §5, G8), the n ≥ 15 deficit (§7),
    the KE width at fixed n (Tier-3 collision noise), a sourced I⁺–He D₀
-   (M1), a drag law for small n (§8).
+   (M1), a drag law for small n (§8), the calibrated Coulomb budget with
+   the Q = 2 / Q = 3 mixture (§9; production runs E_C, ≈ 25 % above the
+   source's 0.8·E_C — the generous bound for KE₁).
 
 Fewer tuned knobs than in the earlier sweeps (v_c, E₀, τ); the
 non-uniqueness is reported as a finding.
@@ -460,3 +462,54 @@ different solvation structure), **not shown**: G8 cannot separate the
 drag from pickup and the lighter flight mass. Outlook: a drag law for
 small n (TDDFT for I⁺Heₙ, n ≪ 21) before a bare / partly-solvated source
 channel can be tested; ties to the n = 1 outlook (§3, §5; RQ1 / RQ8, M1).
+
+## 9. Coulomb budget: production at E_C, the source calibration at 0.8·E_C (DISCUSSION; added 2026-10-13; zero MD)
+
+Sources: D0 `TIER2_PARAMETER_INFLUENCE.md` §19; `CALIBRATION_MAP.md`
+row 15; `RESEARCH_QUESTIONS.md` RQ7 / RQ8 NBs 2026-07-29; log 2026-07-29.
+
+**What production uses (MEASURED, cfg.json).** Every Tier-2 production
+run (h405, A5, B2, B3) runs `E_coulomb_scale` = 1.0 at R₀ = 2.666 Å: the
+point-charge Coulomb energy, 2.70 eV per I⁺ fragment for the Q = 2
+channel. It is set explicitly by `tier2_common.py`; the legacy
+droplet-distribution preset's 0.8 is deliberately not inherited.
+
+**The source calibration (SOURCED).** Hatherly et al., J. Phys. B 27
+(1994) 2993 (doi:10.1088/0953-4075/27/14/032), gas-phase I₂ in intense
+fields: channel KERs are a channel-independent fraction of the
+point-charge E_C (0.75·E_C at 90 fs, 0.65·E_C at 200 fs), because
+ionization is sequential during the separation (stretched states). Not
+helium screening. The legacy `E_coulomb_scale = 0.8` (gas and droplet
+presets) is this calibration; it gives 2.16 eV (Q = 2) / 4.32 eV (Q = 3)
+per fragment, in line with the measured gas-phase peaks 2.26 / 4.11 eV
+(`vmi_iplus_gas.csv`, ≈ 5 %). Against it the production budget is
+**≈ 25 % high**.
+
+**What changing it does (MEASURED, D0 §19 probe 2026-07-29; at the h405
+pins, E₀ pinned, N = 1000, CRN-paired — not re-measured at B2).**
+- KE₁ responds at S_k = dKE₁/dbudget = 0.389 eV/eV: budget 2.26 / 2.70 /
+  4.11 eV → KE₁ 0.486 / 0.637 / 1.200 eV.
+- A uniform re-anchor to the calibrated ≈ 2.2 eV breaks the landing:
+  n̄ 5.33, n₁ 0.126, trapping doubled (0.179), W₁ 1.365 — a full
+  re-arbitration (E₀, c) would be needed.
+- A single budget cannot widen the KE at fixed n (KE₁ SD 0.034–0.047):
+  the needle (§1.1) is not a budget effect.
+
+**Why production stays at 1.0 (decision state).** The re-anchor was left
+as a user adjudication in 2026-07 and never taken; the thesis keeps 1.0.
+Arguments for the thesis text:
+1. **It is the generous bound for KE₁.** With ≈ 25 % more Coulomb energy
+   than the source calibration, the model still reaches only about half
+   the experimental KE₁ (0.609 vs 1.302 eV at B2). With the calibrated
+   budget the deficit would grow (projection from S_k: ≈ −0.17 eV at
+   2.26 eV). The KE₁ deficit is therefore not a too-small Coulomb budget.
+2. **Re-anchoring is not a one-knob change**: it moves the whole landing
+   and would re-open the (c, E₀) arbitration of G5.
+3. **Caveat to state:** the production budget is a known overestimate
+   relative to the source's own calibration; the selected (c, E₀) are
+   conditional on it, as they are on the sampler (§2).
+
+**Outlook.** The calibrated budget belongs together with the Q = 2 /
+Q = 3 channel mixture (§3): the 0.8·E_C calibration sets both channel
+energies (2.16 / 4.32 eV), and a re-arbitration at the calibrated budget
+is only meaningful with both channels present.
