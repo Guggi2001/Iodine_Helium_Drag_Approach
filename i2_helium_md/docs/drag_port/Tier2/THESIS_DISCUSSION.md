@@ -67,8 +67,8 @@ non-uniqueness is reported as a finding.
 ## 1. The chord → (n, KE) map (MEASURED; refreshed at B2 by G6, 2026-10-13)
 
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
-`data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed): (a) n
-vs chord, (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments)
+`data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed): (a) scored n
+vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments)
 with the old-bundle map (h405 `post_pickup`, binned) overlaid, (c) chord
 distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
 `lqppb2`; the script anchors on it to 4 dp), `detfix_postpickup_chord.csv`
@@ -80,15 +80,21 @@ distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
   not depend on the size sampler (h405: `raw` vs `post_pickup` bin by bin
   within ≈ 0.01 eV and 0.1 in n; A5 likewise, G5 step A).
 - Structure of the B2 map:
-  - chord < 33 Å: exits intact at n = 21 (supp class);
-  - 33–35 Å: the strip step 21 → 1 (mixed bin: n = 1 share 0.42, mean KE
-    0.90 eV);
+  - chord < 34 Å: the **suppressed** class (11 % of scored ions) — the
+    complex is ejected net-self-unbound (E_int > Σ(n)) with its full shell.
+    The code carries it at n_detected = 21; the scorer counts it as
+    **n = 0** (bare candidate, RQ3; excluded from the solvated read, RQ8),
+    and the figure follows the scorer. Physically such a complex
+    fragments; how (and so its final KE) is open, so panel (b) shows the
+    intact-complex KE;
+  - 33–35 Å: the edge between suppressed and n = 1 (mixed bin: n = 1
+    share 0.42, mean KE 0.90 eV);
   - **n = 1 window 34.5–39.9 Å** (q05–q95 of the n = 1 ions, median
     37.2 Å, width 5.3 Å); KE₁ 0.609 eV;
   - beyond ≈ 40 Å: n rises again (2 → 13) — **re-pickup after
     stripping**, not partial evaporation;
   - > 80 Å: mostly retained (0.89).
-- **Old vs new bundle** (h405 → B2, panels a–b): the strip step and the
+- **Old vs new bundle** (h405 → B2, panels a–b): the suppressed / n = 1 edge and the
   n = 1 window sit at the same chord (h405 window ≈ 35–39 Å) with nearly
   the same KE₁ (0.67 vs 0.63 eV in the 35–37 Å bin); the bundle change acts
   on the long-chord branch: under B2 KE falls more slowly with chord
@@ -113,7 +119,8 @@ distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
     the map itself (Tier-3 noise or a channel mixture), not geometry. Scope
     of the claim: G7 caveat below.
   - Projection (not measured): on the B2 map KE ≈ 1.0 eV sits at a chord of
-    ≈ 32–34 Å, inside the strip step where most ions still exit at n = 21.
+    ≈ 32–34 Å, at the suppressed / n = 1 edge where most ions are still
+    suppressed.
     The ≈ 0.5–0.7 eV deficit (exp KE₁ median 1.13 / mean 1.30 eV) is
     equivalent to stripping completing ≈ 3–5 Å of chord earlier, or to KE
     falling less steeply along the chord.

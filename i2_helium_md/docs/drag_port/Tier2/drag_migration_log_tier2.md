@@ -14438,3 +14438,15 @@ only, so relative width only) → ≈ 8× (`g7_ke_width.csv`, added to
 at n = 1 is ≈ 18× because the model median is half the experiment's.
 Window-selection bias under scatter: projection ≤ ≈ 0.06 eV. G11.4
 complete.
+
+## 2026-10-13 — G6 figure: suppressed ions plotted at n = 0 (user)
+
+Panel (a) of `g6_chord_map` now follows the scorer convention
+(`tier2_confirmation`: suppressed → bin 0, bare candidate) instead of
+the raw n_detected = 21. B2: scored n = 21 ≡ suppressed (1261 ions, all
+chord < 34.2 Å; checked in the script). h405 binned mean n converted in
+bins < 35 Å where the committed row holds only n = 1 / 21 (identity
+checked exactly); B2's conversion cross-checked against per-ion data.
+Panel (b) marks suppressed ions at their intact-complex KE
+(fragmentation open, RQ3). No number changed; THESIS_DISCUSSION §1
+wording updated.

@@ -6,8 +6,16 @@ map (h405, capped cubic v_c 5.5, 14.2 A gate, ``post_pickup``; binned only --
 its run directories are no longer on disk) overlaid from the committed
 ``detfix_postpickup_chord.csv``:
 
-(a) detected n vs emission-axis chord [A] (per-ion scatter + binned mean n);
-(b) detected KE [eV] vs chord, n = 1 ions highlighted, the B2 n = 1 window
+(a) scored n vs emission-axis chord [A] (per-ion scatter + binned mean n),
+    in the scorer's convention: ``suppressed`` ions (ejected net-self-unbound
+    complexes, raw ``n_detected`` = 21) count as n = 0, the bare-candidate
+    class (``tier2_confirmation``: bin 0; excluded from the solvated read,
+    RQ8). The committed binned CSVs carry the raw n = 21; their mean n is
+    converted where the bin holds only n = 1 and n = 21 ions (checked
+    exactly; chord < 35 A), elsewhere no suppressed ion occurs (B2 checked
+    per ion; h405 assumed, its runs are gone);
+(b) detected KE [eV] vs chord, n = 1 ions highlighted, suppressed ions
+    marked (KE of the intact complex -- their fragmentation is open, RQ3), the B2 n = 1 window
     (chord q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median
     as horizontal lines;
 (c) chord distribution per sampler (raw: A5; ``post_pickup``: B2, whose
@@ -91,6 +99,9 @@ STATS_CSV = RUNS_ROOT / "h2b_forward_model" / "g6_chord_stats.csv"
 WIDTH_CSV = RUNS_ROOT / "h2b_forward_model" / "g7_ke_width.csv"
 KED_CURVE_TEMPLATE = IHE_KED_REFERENCE_CSV.parent / "IHe_KED_curves_n{n}.csv"
 WIDTH_N = (1, 2, 3, 4)
+SUPPRESSED = "suppressed"
+N_START = 21                        # intact shell size of a suppressed ion
+SUPP_MAX_CHORD_A = 35.0             # bins entirely below this may hold suppressed ions
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 STYLE = {"B2": dict(color="#1f77b4", ls="-"),
          "h405": dict(color="#d62728", ls="-."),
@@ -102,8 +113,9 @@ def _b2_dirs() -> list[Path]:
 
 
 def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
-    """Pooled per-ion chord [A], detected n, scored mask, detected KE [eV]."""
-    c, n, ok, ke = [], [], [], []
+    """Pooled per-ion chord [A], detected n, scored mask, detected KE [eV],
+    suppressed mask, and the scorer's n (suppressed -> 0)."""
+    c, n, ok, ke, sup = [], [], [], [], []
     for rd in run_dirs:
         if not (rd / "detection.npz").exists():
             raise FileNotFoundError(f"missing detection.npz in {rd}")
@@ -112,8 +124,30 @@ def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
         n.append(det.n_detected)
         ok.append(det.detected_mask)
         ke.append(det.E_kin_detected_eV)
-    return {"chord": np.concatenate(c), "n": np.concatenate(n),
-            "scored": np.concatenate(ok).astype(bool), "ke": np.concatenate(ke)}
+        sup.append(np.asarray(det.state_reason).astype(str) == SUPPRESSED)
+    d = {"chord": np.concatenate(c), "n": np.concatenate(n),
+         "scored": np.concatenate(ok).astype(bool), "ke": np.concatenate(ke),
+         "supp": np.concatenate(sup)}
+    d["n_scorer"] = np.where(d["supp"], 0.0, d["n"])
+    return d
+
+
+def _binned_n_scorer(rows: list[dict[str, str]]) -> tuple[np.ndarray, np.ndarray]:
+    """Binned mean n in the scorer's convention from a committed chord CSV.
+
+    Bins below ``SUPP_MAX_CHORD_A`` must hold only n = 1 and n = N_START
+    ions (mean_n = f1 + N_START (1 - f1), checked to 1e-9); their n = 21
+    ions are the suppressed class -> mean = f1. Other bins pass unchanged.
+    """
+    x, y = _binned(rows, "mean_n")
+    _, f1 = _binned(rows, "n1_frac")
+    hi = np.array([float(r["chord_hi_A"]) for r in rows if r["mean_n"] != ""])
+    out = y.copy()
+    low = hi <= SUPP_MAX_CHORD_A
+    if not np.allclose(y[low], f1[low] + N_START * (1 - f1[low]), atol=1e-9, rtol=0):
+        raise RuntimeError("short-chord bin holds n other than 1 / 21: cannot convert")
+    out[low] = f1[low]
+    return x, out
 
 
 def _read_chord_csv(path: Path, arm: str) -> list[dict[str, str]]:
@@ -212,9 +246,20 @@ def main() -> int:
     b2 = _per_ion(b2_dirs)
     a5_raw = _per_ion([a5_run_dir_for(a5_member_cell(m)) for m in MEMBER_SEEDS])
     a5_pp = _per_ion([lq_run_dir(m) for m in MEMBER_SEEDS])
+    s_all = b2["scored"]
+    if not (np.array_equal(b2["supp"] & s_all, s_all & (b2["n"] == N_START))
+            and b2["chord"][b2["supp"]].max() < SUPP_MAX_CHORD_A):
+        raise RuntimeError("B2: scored n = 21 is not exactly the suppressed class "
+                           "below the conversion edge")
     b2_rows = _read_chord_csv(G5_CHORD_CSV, "lqppb2")
     h405_rows = _read_chord_csv(H405_CHORD_CSV, "pp")
     ked = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
+    xb, yb = _binned_n_scorer(b2_rows)          # cross-check vs per-ion B2
+    edges_csv = [float(r["chord_lo_A"]) for r in b2_rows] + [float(b2_rows[-1]["chord_hi_A"])]
+    for (lo_e, hi_e), v in zip(zip(edges_csv[:-1], edges_csv[1:]), yb):
+        sel = s_all & (b2["chord"] >= lo_e) & (b2["chord"] < hi_e)
+        if round(float(b2["n_scorer"][sel].mean()), 4) != round(float(v), 4):
+            raise RuntimeError(f"binned scorer-n conversion off in bin {lo_e}")
 
     stats = _g7_stats(b2)
     stats["exp_KE1_sigma_eV"] = _exp_ke1(ked)[2]
@@ -242,6 +287,7 @@ def main() -> int:
     if idx.size > SCATTER_MAX:
         idx = np.sort(rng.choice(idx, SCATTER_MAX, replace=False))
     is1 = b2["n"][idx] == 1
+    isS = b2["supp"][idx]
     lo, hi = CHORD_RANGE_A
     win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
 
@@ -249,17 +295,25 @@ def main() -> int:
 
     for ax in (axn, axk):
         ax.axvspan(*win, color="0.92", zorder=0, label="B2 n = 1 window (q05–q95)")
-    axn.scatter(b2["chord"][idx], b2["n"][idx] + rng.uniform(-0.25, 0.25, idx.size),
+    jit = rng.uniform(-0.25, 0.25, idx.size)
+    axn.scatter(b2["chord"][idx][~isS], b2["n_scorer"][idx][~isS] + jit[~isS],
                 s=3, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
+    axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=3,
+                alpha=0.35, color="0.35", lw=0, rasterized=True,
+                label="B2 suppressed → n = 0 (bare candidate)")
     for label, rows in (("B2", b2_rows), ("h405", h405_rows)):
-        x, y = _binned(rows, "mean_n")
+        x, y = _binned_n_scorer(rows)
         axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[label],
                  label=f"{label} binned mean n")
-    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.5, 22), xlabel="emission-axis chord [Å]",
-            ylabel="detected n", title="(a) chord → n")
-    axn.legend(fontsize=8, loc="upper right")
+    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel="emission-axis chord [Å]",
+            ylabel="scored n", title="(a) chord → n")
+    axn.legend(fontsize=8, loc="upper left")
 
-    axk.scatter(b2["chord"][idx][~is1], b2["ke"][idx][~is1], s=3, alpha=0.2,
+    axk.scatter(b2["chord"][idx][isS], b2["ke"][idx][isS], s=3, alpha=0.35,
+                color="0.35", lw=0, rasterized=True,
+                label="B2 suppressed (intact-complex KE)")
+    rest = ~is1 & ~isS
+    axk.scatter(b2["chord"][idx][rest], b2["ke"][idx][rest], s=3, alpha=0.2,
                 color=STYLE["B2"]["color"], lw=0, rasterized=True, label="B2 ions, n ≥ 2")
     axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=4, alpha=0.6,
                 color="#ff7f0e", lw=0, rasterized=True, label="B2 ions, n = 1")
