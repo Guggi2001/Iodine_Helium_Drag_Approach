@@ -27,7 +27,7 @@ import sys
 # USER SETTINGS
 # =============================================================================
 
-CASE = "18A"      # droplet geometry: "9A" or "18A"
+CASE = "9A"      # droplet geometry: "9A" or "18A"
 
 # Drag law: a key of scripts.tier0_common.CATALOG. Shared keys run on either
 # geometry; per-case keys (percase_*) resolve against CASE.
@@ -39,7 +39,7 @@ CASE = "18A"      # droplet geometry: "9A" or "18A"
 # srho3p5A18A_linear  srho3p5A18A_cubic  srho3p5A18A_linear_cubic
 # srho3p5A18A_quadratic  srho3p5A18A_linear_quadratic
 
-VARIANT = "srho3p5A18A_cubic"
+VARIANT = "srho3p5A18A_linear_quadratic"
 
 N = 50            # ensemble size, e.g. 50 or 2000
 
@@ -50,13 +50,17 @@ SEED = 20260604
 # Optional inline hand-tuning (Method-B). Leave empty / None for the committed
 # bundle exactly. Override keys must be coefficients of the chosen form
 # (linear_cubic {a,b}, linear_quadratic {a,c}, power_law {C,n}).
+# (srho3p5A18A_linear_quadratic now carries B2, the thesis production law.)
 COEFF_OVERRIDES: dict[str, float] = {}
 E_BIND_OVERRIDE = None  # eV, or None to use the bundle's stamped binding
+# Fixed ion mass [amu], or None for the bundle's fit mass (19 He, 202.954).
+# G11.2: Tier-0 at I+ + 21 He (production m(n) convention).
+M_EFF_AMU_OVERRIDE = 126.90 + 21 * 4.0026   # 210.9546
 
 # Marker appended to the run-dir name for a tuned run, so it never overwrites the
 # committed-variant run. Set the SAME value in tier0_drag_comparison.py to score
 # it. Leave "" for an untuned run.
-RUN_TAG = ""
+RUN_TAG = "B2m21"
 
 # =============================================================================
 # PROJECT IMPORT SETUP
@@ -84,10 +88,12 @@ cfg = build_drag_cfg(
     seed=SEED,
     coeff_overrides=COEFF_OVERRIDES,
     e_bind_override=E_BIND_OVERRIDE,
+    m_eff_amu=M_EFF_AMU_OVERRIDE,
 )
 cfg.validate()
 
-tuned = bool(COEFF_OVERRIDES) or E_BIND_OVERRIDE is not None
+tuned = (bool(COEFF_OVERRIDES) or E_BIND_OVERRIDE is not None
+         or M_EFF_AMU_OVERRIDE is not None)
 run_dir = PROJECT_ROOT / "data" / "runs" / run_dir_name(CASE, VARIANT, N, RUN_TAG)
 run = RunDirectory(run_dir)
 run.save_cfg(cfg)
@@ -95,7 +101,7 @@ run.save_cfg(cfg)
 print(
     f"[{CASE} {VARIANT} N={N}] form={cfg.drag_form} "
     f"coeffs={dict(cfg.drag_coefficients.coefficients)} "
-    f"E_bind={cfg.binding_energy_I_ion_eV:.4f} eV"
+    f"E_bind={cfg.binding_energy_I_ion_eV:.4f} eV m={cfg.m_eff_amu:.4f} amu"
     + ("  (HAND-TUNED)" if tuned else "")
 )
 

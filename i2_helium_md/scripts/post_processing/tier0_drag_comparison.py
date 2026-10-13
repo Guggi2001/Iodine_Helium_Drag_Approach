@@ -59,13 +59,15 @@ CASE = "18A"      # droplet geometry: "9A" or "18A"
 # Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
 # VARIANT (and CASE / N / RUN_TAG) the run was generated with by
 # scripts/gen_tier0_runs.py.
-VARIANT = "srho3p5A18A_cubic"
+VARIANT = "srho3p5A18A_linear_quadratic"
 N = 50
-RUN_TAG = ""      # set to the same marker used in gen_tier0_runs.py for a tuned run
+RUN_TAG = "B2m21"  # set to the same marker used in gen_tier0_runs.py for a tuned run
 
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
-
+scale_figure = 0.8
+# Maximum time to display on x-axis (ps). Set to None for auto-scaling.
+T_MAX = 20  # e.g., set to 15 or 20 to zoom in
 # Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
 # vs time, with the droplet binding-depth line). Same gating pattern as the
 # positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
@@ -103,7 +105,8 @@ DRAG_COEFF_DIR = window_source_dir(CASE)
 # A G4 bundle (e.g. srho3p5A_*) exports to its own folder (tier0_srho3p5A).
 EXPORT_MEAN_SERIES_PATH = (
     PROJECT_ROOT / "data" / "reference" / "drag" / CASE
-    / reference_export_dir_name("tier0", VARIANT) / "md_mean_trajectory.csv"
+    / reference_export_dir_name("tier0", VARIANT)
+    / (f"md_mean_trajectory_{RUN_TAG}.csv" if RUN_TAG else "md_mean_trajectory.csv")
 )
 
 # Optional figure overlays, CASE-derived. mean_velocity.csv exists for 9A only;
@@ -157,9 +160,9 @@ def drag_bundle_label(cfg: SimConfig) -> str:
     coeffs = cfg.drag_coefficients
     terms = ", ".join(f"{k}={v:.4g}" for k, v in coeffs.coefficients.items())
     return (
-        f"{cfg.drag_bundle}: {coeffs.form} {terms} | "
+        f"{coeffs.form}: {terms} | "
         f"E_bind {cfg.binding_energy_I_ion_eV:.4g} eV | "
-        f"gate {drag_gate_steepness(cfg):.3g} Å"
+        #f"gate {drag_gate_steepness(cfg):.3g} Å"
     )
 
 
@@ -414,7 +417,8 @@ def build_figure(
         ax_z.legend(frameon=False)
 
     # Bottom figure: distance and velocity panels (share x-axis)
-    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0, 6.0), sharex=True, constrained_layout=True)
+
+    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0*scale_figure, 6.0*scale_figure), sharex=True, constrained_layout=True)
 
     ax_d.plot(t_md, dist_md, color="tab:blue", lw=1.5, label="MD mean")
     ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R1 mean")
@@ -433,15 +437,15 @@ def build_figure(
                     label=f"$d_{{\\mathrm{{droplet}}}}$ ={2*droplet_radius:.0f} Å")
         ax_d.legend(frameon=False)
 
-    ax_v.plot(t_md, v1_md, color="tab:blue", lw=1.2, label="MD mean |v| I1")
-    ax_v.plot(t_md, v2_md, color="tab:cyan", lw=1.2, ls = '--', label="MD mean |v| I2")
-    if time_ps is not None:
-        ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:purple", lw=1.2)
-    if time_SG is not None:
-        ax_v.plot(time_SG, velocity_SG, label = r'$mean velocity SG$', color="tab:pink", lw=1.2, ls=":")
-    ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1.2,
+    ax_v.plot(t_md, v1_md, color="tab:blue", ls='-', lw=1.5, label="MD mean |v1|")
+    ax_v.plot(t_md, v2_md, color="tab:cyan", ls='--', dashes=(10, 5), lw=1.5, label="MD mean |v2|")
+    #if time_ps is not None:
+   #     ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:pink", lw=1.2)
+    if time_SG is not None and CASE == "18A":
+        ax_v.plot(time_SG, velocity_SG, label = r'Smoothed TDDFT velocity', color="tab:purple", lw=1.2)
+    ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1, alpha = 0.8,
               ls="-", label="HeDFT |v1|")
-    ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1.2,
+    ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1, alpha = 0.8,
               ls=":", label="HeDFT |v2|")
     ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
     ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
@@ -449,8 +453,13 @@ def build_figure(
     ax_v.legend(frameon=False, ncol=2)
     ax_v.spines["top"].set_visible(False)
     ax_v.spines["right"].set_visible(False)
+     
+    # Apply T_MAX to both bottom figure axes
+    if T_MAX is not None:
+        ax_d.set_xlim(0, T_MAX)
+        ax_v.set_xlim(0, T_MAX)
 
-    title = f"Tier-0 drag comparison  (r0={hedft.droplet_radius_A:.0f} A)"
+    title = f"Tier-0 drag comparison  ($R_0$={hedft.droplet_radius_A:.0f} A)"
     if bundle_label:
         title += f"\n{bundle_label}"
     fig_bottom.suptitle(title)
@@ -679,7 +688,7 @@ def main() -> int:
         provenance = (
             f"Tier-0 MD ensemble-mean trajectory. run={RUN_DIR.name}, "
             f"N={ion.num_molecules}, ion_steps={ion.time_ps.size}, "
-            f"window=[{t_start},{t_end}] ps, m_eff={meff_amu} amu."
+            f"window=[{t_start},{t_end}] ps, m_eff={cfg.m_eff_amu} amu."
         )
         export_mean_series(EXPORT_MEAN_SERIES_PATH, ion, provenance=provenance)
 
