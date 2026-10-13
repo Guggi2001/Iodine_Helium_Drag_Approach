@@ -54,7 +54,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "18A"      # droplet geometry: "9A" or "18A"
+CASE = "9A"      # droplet geometry: "9A" or "18A"
 
 # Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
 # VARIANT (and CASE / N / RUN_TAG) the run was generated with by
@@ -65,7 +65,7 @@ RUN_TAG = "B2m21"  # set to the same marker used in gen_tier0_runs.py for a tune
 
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
-scale_figure = 0.8
+scale_figure = 0.9
 # Maximum time to display on x-axis (ps). Set to None for auto-scaling.
 T_MAX = 20  # e.g., set to 15 or 20 to zoom in
 # Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
@@ -425,8 +425,7 @@ def build_figure(
     ax_d.plot(t_md, r2_mean, color="tab:green", lw=1.5, label="R2 mean")
     ax_d.plot(hedft.time_ps, hedft.distance_A, color="black", lw=1.5,
               label="HeDFT / TDDFT")
-    ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-                 label="scored window")
+
     ax_d.set_ylabel(r"$R_1 - R_2$ / $\mathrm{\AA}$")
     ax_d.legend(frameon=False)
     ax_d.spines["top"].set_visible(False)
@@ -443,11 +442,14 @@ def build_figure(
    #     ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:pink", lw=1.2)
     if time_SG is not None and CASE == "18A":
         ax_v.plot(time_SG, velocity_SG, label = r'Smoothed TDDFT velocity', color="tab:purple", lw=1.2)
+        ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+                     label="scored window")
+        ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
     ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1, alpha = 0.8,
               ls="-", label="HeDFT |v1|")
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1, alpha = 0.8,
               ls=":", label="HeDFT |v2|")
-    ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
+
     ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
     ax_v.set_xlabel("t / ps")
     ax_v.legend(frameon=False, ncol=2)
