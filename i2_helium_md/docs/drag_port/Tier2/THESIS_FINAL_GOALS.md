@@ -1677,8 +1677,9 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   (`data/figures/thesis_tier0/`) are not committed — regenerate with
   `tier0_thesis_figure.py` / `gen_tier0_runs.py` + `tier0_drag_comparison.py`.
 
-**Open question (user).** Storyline section: drafted here or written
-directly into the thesis? (Tier-1a scope: moot, step 5 dropped.)
+**Settled (user, 2026-10-13).** Storyline, G6, G7 and the mass section
+go to `THESIS_DISCUSSION.md` (§0 storyline, §8 mass influence — done;
+§1 to be refreshed by G6 / G7). Tier-1a scope: moot, step 5 dropped.
 
 ### G11.5 Mass influence — discussion section, not validation (agreed 2026-10-13; zero MD)
 
