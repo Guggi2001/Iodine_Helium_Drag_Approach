@@ -109,10 +109,9 @@ distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
     chord axis fixes KE₁; only the map can move it: Coulomb budget, drag,
     or flight mass (`TIER2_MASS_SCENARIOS.md`, M1 gate).
   - The n = 1 KE width in the model (SD 0.038 eV, the "needle") is the
-    window width × the KE slope: slope −0.021 eV/Å × chord SD gives
-    0.036 eV; the residual at fixed chord is 0.012 eV. The experimental
-    σ(KE₁) is 0.70 eV — the width needs scatter in the map itself (Tier-3
-    noise or a channel mixture), not geometry (G7).
+    window width × the KE slope; the experimental width needs scatter in
+    the map itself (Tier-3 noise or a channel mixture), not geometry. Scope
+    of the claim: G7 caveat below.
   - Projection (not measured): on the B2 map KE ≈ 1.0 eV sits at a chord of
     ≈ 32–34 Å, inside the strip step where most ions still exit at n = 21.
     The ≈ 0.5–0.7 eV deficit (exp KE₁ median 1.13 / mean 1.30 eV) is
@@ -121,6 +120,52 @@ distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
 - Caveats: the chord ignores deflection (partner Coulomb, drag) and the soft
   erf edge; h405 is binned only (its run directories are no longer on
   disk); the arms are not CRN, so the old-vs-new agreement is ensemble-level.
+
+### 1.1 G7 caveat: scope of "KE₁ is geometry-invariant" (2026-10-13; zero MD)
+
+Numbers: `g6_chord_stats.csv`, `g7_ke_width.csv` (both from
+`tier2_g6_chord_map.py`, B2 pool).
+
+**Re-check on the B2 map (MEASURED).**
+- The n = 1 window is narrow: 5.3 Å of chord (q05–q95, 34.5–39.9 Å).
+- The map is near-deterministic: KE₁ SD 0.038 eV, of which 0.036 eV is
+  the KE slope along the chord (−0.021 eV/Å) times the chord spread inside
+  the window; the residual at fixed chord is 0.012 eV. n at fixed chord is
+  equally sharp (panel a: discrete bands, adjacent n overlap over ≈ 1–2 Å).
+- KE width at fixed n, model vs experiment (IQR / median):
+
+  | n | model (B2) | experiment | ratio |
+  |---|---|---|---|
+  | 1 | 0.101 | 0.804 | 8.0 |
+  | 2 | 0.086 | 0.702 | 8.1 |
+  | 3 | 0.092 | 0.706 | 7.7 |
+  | 4 | 0.090 | 0.691 | 7.7 |
+
+  The model is ≈ 8× too narrow in relative width at every n (consistent
+  with §7.4, measured there at the earlier law). In absolute terms the gap
+  at n = 1 is larger (σ 0.70 vs SD 0.038 eV, ≈ 18×) because the model
+  median is about half the experimental one. Experimental quartiles are
+  read from the unsmoothed 3-D P(E) (`IHe_KED_curves_n*.csv`); they match
+  the reference median / mean columns to ≈ 4–5 % only (cuts not re-done),
+  so only the relative width is taken from them.
+
+**Statement for the thesis.**
+1. "KE₁ is geometry-invariant" holds **within the deterministic model**:
+   geometry moves ions along the chord axis, the n = 1 window sits at a
+   fixed chord, and the map through it is near-deterministic, so KE₁
+   cannot change.
+2. The experimental KE width at fixed n shows the real map **scatters**
+   (≈ 8× wider). With scatter the n = 1 window gets blurred edges and a
+   chord-window selection can bias KE₁. Size (PROJECTION, not measured):
+   at most the KE slope × a shift of the window's mean chord by up to half
+   its width, −0.021 eV/Å × 2.7 Å ≈ 0.06 eV — small against the
+   0.5–0.7 eV KE₁ deficit, so the deficit is not a geometry artefact of the
+   deterministic map.
+3. The near-determinism is partly **by construction**: the model has no
+   fluctuation channel (zero noise; Langevin channel deferred to Tier 3),
+   so "identical map in both sampler arms" is expected (same physics
+   parameters). Map scatter (collision shot noise, §7.4) is the outlook,
+   not modelled here.
 
 ## 2. Size sampler: `post_pickup` is production (MEASURED, D0 §15.8–15.9; updated 2026-10-13)
 

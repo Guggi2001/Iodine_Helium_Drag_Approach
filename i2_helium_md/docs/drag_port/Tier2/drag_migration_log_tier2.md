@@ -14426,3 +14426,15 @@ and A5 `post_pickup` chords bit-identical. KE₁ SD 0.038 = window × slope
 `data/runs/h2b_forward_model/g6_chord_stats.csv`; figure
 `data/figures/thesis_tier2/` (not committed); text THESIS_DISCUSSION §1;
 storyline item 5 now points there.
+
+## 2026-10-13 — G7 executed: KE₁ geometry-invariance caveat (text; zero MD)
+
+THESIS_DISCUSSION §1.1. B2 map: n = 1 window 5.3 Å, KE₁ SD 0.038 =
+slope × window (0.036), residual 0.012 eV. KE width at fixed n = 1–4,
+IQR / median: model 0.086–0.101 vs experiment 0.691–0.804 (unsmoothed
+3-D P(E), dE-weighted; matches the reference median / mean to ≈ 4–5 %
+only, so relative width only) → ≈ 8× (`g7_ke_width.csv`, added to
+`tier2_g6_chord_map.py`). The earlier "8×" is this relative width; σ
+at n = 1 is ≈ 18× because the model median is half the experiment's.
+Window-selection bias under scatter: projection ≤ ≈ 0.06 eV. G11.4
+complete.

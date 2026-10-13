@@ -111,8 +111,11 @@ log (`drag_migration_log_tier2.md`).
     map overlaid; storyline (§0), mass influence (§8) and the refreshed
     chord map (§1) are in `THESIS_DISCUSSION.md`. See G6 status.
 
-**Next:** G7 caveat (numbers ready in G6 status / `g6_chord_stats.csv`;
-text only). Steps 2–3 and 6 (storyline, G6) done, steps 4–5 dropped. G4.14 recap point (a) settled by the decision below; (b)–(c)
+18. **G7 executed (2026-10-13):** caveat in `THESIS_DISCUSSION.md` §1.1;
+    KE width ≈ 8× too narrow (IQR / median) at n = 1–4. See G7 status.
+
+**Next:** G11.4 complete (steps 2–3, 6 done; 4–5 dropped). Remaining
+work is thesis writing from `THESIS_DISCUSSION.md`. G4.14 recap point (a) settled by the decision below; (b)–(c)
 parked.
 **Thesis production law (user, 2026-10-09; supersedes A5 of 2026-10-08):
 B2 — `post_pickup` sampler, linear + quadratic ridge c 1.6** (a 18.007,
@@ -1308,6 +1311,13 @@ rows (full vector, realized sizes, D4 firings).
   by construction (same physics parameters). The claim needs its scope.
 - **Evidence.** D0 §15.8 read 6 (caveats); CLAUDE.md Tier 3.
 - **Cost.** None beyond G6.
+- **Status — EXECUTED 2026-10-13 (text; zero MD).** Re-check on the B2
+  map: n = 1 window 5.3 Å, KE₁ SD 0.038 = slope × window (0.036), residual
+  0.012 eV. KE width at fixed n (IQR / median) model 0.09–0.10 vs
+  experiment 0.69–0.80 → ≈ 8× at n = 1–4 (`g7_ke_width.csv`; reconciles
+  the earlier "8×" = relative width; absolute σ at n = 1 ≈ 18×).
+  Window-selection bias with scatter: projection ≤ ≈ 0.06 eV. Text:
+  `THESIS_DISCUSSION.md` §1.1.
 
 ## G8. Bare-start channel screen (agreed 2026-10-06; frozen before any run)
 

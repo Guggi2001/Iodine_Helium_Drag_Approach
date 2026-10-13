@@ -24,7 +24,14 @@ the B2 member dirs reproduces the committed ``lqppb2`` rows of
 ``g5_postpickup_chord.csv`` to 4 dp.
 
 Also writes the G7 numbers (n = 1 window, KE1 spread, KE slope along the
-chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv``.
+chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv`` and the KE
+width at fixed n = 1-4 (model vs experiment, IQR / median) to
+``g7_ke_width.csv``. Experimental quantiles come from the unsmoothed 3-D
+P(E) of ``IHe_KED_curves_n{n}.csv`` (dE-weighted; the n = 1 curve equals
+the spectra file). They do not reproduce the reference median / mean
+columns exactly (n = 1: median 1.168 vs 1.128, mean 1.372 vs 1.302 eV --
+the reference applies cuts not re-done here), so only the relative width
+is taken from them; central values stay the reference columns.
 
 Writes ``data/figures/thesis_tier2/g6_chord_map.{png,pdf}`` (not committed).
 
@@ -81,6 +88,9 @@ from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
 )
 
 STATS_CSV = RUNS_ROOT / "h2b_forward_model" / "g6_chord_stats.csv"
+WIDTH_CSV = RUNS_ROOT / "h2b_forward_model" / "g7_ke_width.csv"
+KED_CURVE_TEMPLATE = IHE_KED_REFERENCE_CSV.parent / "IHe_KED_curves_n{n}.csv"
+WIDTH_N = (1, 2, 3, 4)
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 STYLE = {"B2": dict(color="#1f77b4", ls="-"),
          "h405": dict(color="#d62728", ls="-."),
@@ -159,6 +169,42 @@ def _g7_stats(d: dict[str, np.ndarray]) -> dict[str, float]:
             "KE1_resid_sd_eV": float(resid.std(ddof=1))}
 
 
+def _exp_quartiles(n: int) -> tuple[float, float, float]:
+    """Experimental KE quartiles [eV] at fixed n from the unsmoothed 3-D P(E)
+    (non-uniform E grid -> trapezoid-weighted CDF; NaN regions dropped)."""
+    with KED_CURVE_TEMPLATE.with_name(f"IHe_KED_curves_n{n}.csv").open(newline="") as f:
+        rows = list(csv.DictReader(f))
+    E = np.array([float(r["E_eV"]) for r in rows])
+    P = np.array([float(r["signal_3d_PE"]) for r in rows])
+    ok = np.isfinite(E) & np.isfinite(P)
+    E, P = E[ok], np.clip(P[ok], 0.0, None)
+    cdf = np.r_[0.0, np.cumsum(0.5 * (P[1:] + P[:-1]) * np.diff(E))]
+    if cdf[-1] <= 0:
+        raise ValueError(f"empty P(E) for n = {n}")
+    cdf /= cdf[-1]
+    q1, med, q3 = (float(np.interp(q, cdf, E)) for q in (0.25, 0.5, 0.75))
+    return q1, med, q3
+
+
+def _width_rows(d: dict[str, np.ndarray], ked) -> list[dict[str, float]]:
+    """KE width at fixed n: model (B2 per ion) vs experiment, IQR / median."""
+    s = d["scored"] & np.isfinite(d["ke"])
+    rows = []
+    for n in WIDTH_N:
+        k = d["ke"][s & (d["n"] == n)]
+        mq1, mmed, mq3 = np.quantile(k, [0.25, 0.5, 0.75])
+        eq1, emed, eq3 = _exp_quartiles(n)
+        i = int(np.flatnonzero(ked.n == n)[0])
+        rows.append({"n": n, "model_N": int(k.size), "model_median_eV": float(mmed),
+                     "model_sd_eV": float(k.std(ddof=1)),
+                     "model_iqr_over_med": float((mq3 - mq1) / mmed),
+                     "exp_median_ref_eV": float(ked.median_KE_eV[i]),
+                     "exp_sigma_ref_eV": float(ked.sigma_KE_eV[i]),
+                     "exp_iqr_over_med": (eq3 - eq1) / emed,
+                     "ratio_exp_over_model": ((eq3 - eq1) / emed) / float((mq3 - mq1) / mmed)})
+    return rows
+
+
 def main() -> int:
     warnings.simplefilter("ignore", RuntimeWarning)   # documented pairing warning
     b2_dirs = _b2_dirs()
@@ -178,6 +224,15 @@ def main() -> int:
         w.writeheader()
         w.writerow({"arm": "B2", **stats})
     print(f"CSV -> {STATS_CSV}")
+    width = _width_rows(b2, ked)
+    with WIDTH_CSV.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(width[0]))
+        w.writeheader()
+        w.writerows(width)
+    print(f"CSV -> {WIDTH_CSV}")
+    for r in width:
+        print(f"  n={r['n']}: model IQR/med {r['model_iqr_over_med']:.3f}  "
+              f"exp {r['exp_iqr_over_med']:.3f}  ratio {r['ratio_exp_over_model']:.1f}")
     for k, v in stats.items():
         print(f"  {k:24s} {v:.4f}" if isinstance(v, float) else f"  {k:24s} {v}")
 
