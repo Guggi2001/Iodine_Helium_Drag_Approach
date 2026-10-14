@@ -14,7 +14,9 @@ Sources read: D0 `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §14.3 (2026-10-0
 `data/reference/README.md`, `ihe_ked/README.md`, `paper_cov/README.md`.
 Later additions: §0 storyline, §8 mass influence and §9 Coulomb budget (2026-10-13, from
 `THESIS_FINAL_GOALS.md` G5 / G11); §1 is to be refreshed by G6 (chord map
-at B2) and G7 (KE₁ geometry-invariance caveat).
+at B2) and G7 (KE₁ geometry-invariance caveat). §10 (dissociation
+timescale and the RRK s_eff, 2026-10-14) is the one section backed by new
+runs made for it (s_eff scan + two N = 6000 pools at B2).
 
 ---
 
@@ -513,3 +515,193 @@ Arguments for the thesis text:
 Q = 3 channel mixture (§3): the 0.8·E_C calibration sets both channel
 energies (2.16 / 4.32 eV), and a re-arbitration at the calibrated budget
 is only meaningful with both channels present.
+
+## 10. Over what time does dissociation happen? The RRK s_eff at B2 (MEASURED; added 2026-10-14)
+
+Sources: runs made for this section (code `scripts/gen_tier2_b2_seff_scan.py`,
+scorers `scripts/post_processing/tier2_b2_seff_table.py` and
+`tier2_b2_seff_timing.py`; tables `data/runs/h2b_forward_model/b2_seff_table.csv`
+and `b2_seff_timing.csv`; commits cef04ee, b47778e, d39da86, 52b519b).
+Reference: Albrechtsen, Schouder, Viñas Muñoz, Christensen, Engelbrecht
+Petersen, Pi, Barranco, Stapelfeldt, *Nature* 623, 319 (2023),
+doi:10.1038/s41586-023-06593-5 (Methods, "Molecular dynamics simulations of
+the dissociation time of Na⁺He_N complexes"; Extended Data Fig. 4).
+Earlier in-model record: findings I10, I11, I13, I20, I32
+(`TIER2_STAIRCASE_PROBE_FINDINGS.md`), RQ6.
+
+### 10.1 The question
+
+The He shell sheds by energy-gated RRK evaporation,
+k = ν·(1 − D₀(n)/E_int)^(s−1), ν = 2.42 ps⁻¹ (`physics/evaporation.py`).
+Production uses a constant effective dof s_eff = 8 (`evap_rrk_dof`,
+CALIBRATION_MAP row 10). The earlier reading (I13, I20) was that s sets the
+**clock** of the cascade, not its endpoint, and that the detector is nearly
+s-blind. That was measured before the lq ridge, the `post_pickup` sampler
+and the absolute-E₀ arm; it had never been checked at B2. Two questions:
+(1) how long does dissociation take in the model, compared with the
+literature statement that it is essentially over within tens of
+picoseconds; (2) does s_eff change the detected observables at B2.
+
+### 10.2 Literature: dissociation is fast (SOURCED)
+
+Albrechtsen et al. 2023 justify that their detector records final sizes by
+classical MD (TINKER, AMOEBA-09) of isolated Na⁺He₆ and Na⁺He₁₄, heated to
+20 / 50 / 100 K, 1 ns NVE, 1000 runs each: "dissociation takes place
+almost exclusively during the first tens of picoseconds"; the timescale is
+"mostly unaffected" by size and energy; a slow decrease of ⟨N⟩ near
+threshold ("especially evident for total kinetic energies close to the
+binding energy") is attributed to rare events; "in a conservative estimate,
+the vast majority of dissociation events are finished after 400 ps".
+
+Transfer caveats: Na⁺, not I⁺ (different D₀ ladder and shell); classical
+MD keeps every mode, whereas a low s_eff stands for quantum mode freezing,
+so the paper contains no number that maps onto s; their complexes start
+well above threshold, where the rate is fast for any s. The paper
+constrains the **timescale**, not s directly. Its slow near-threshold tail
+is the same effect as the RRK slowdown below.
+
+### 10.3 Mechanism: why s can move the endpoint at finite flight time (DERIVED)
+
+After ejection the cooling is density-gated off, so E_int falls only by
+one D₀ per shed. Near threshold the bracket (1 − D₀/E_int) is small and
+the exponent s − 1 collapses the rate. An ion effectively stops shedding
+once 1/k exceeds the flight time t_detect = 8.53 µs = 8.53·10⁶ ps, i.e.
+k < k_min ≈ 1.2·10⁻⁷ ps⁻¹. The effective freeze threshold is
+
+E*/D₀ = 1 / [1 − (k_min/ν)^(1/(s−1))]:
+
+| s | ion stops shedding below E_int ≈ |
+|---|---|
+| 5 | 1.02 D₀ |
+| 8 | 1.10 D₀ |
+| 12 | 1.28 D₀ |
+| 20 | 1.70 D₀ |
+| 30 | 2.27 D₀ |
+
+For s ≲ 8 this is essentially the energetic floor E_int = D₀: the cascade
+runs to its endpoint and s only sets the clock (the earlier reading holds).
+For large s an ion can carry more than a full extra rung and still never
+shed again before the detector: s then moves the detected n. A second,
+smaller channel acts inside the droplet: a slower cascade gives the
+Newton cooling more time to drain E_int before the shed (the race, I13),
+and it lowers the number of pickups because n stays high under the
+occupancy cap. The 1/k > t_detect criterion is an order-of-magnitude
+threshold (shedding is a stochastic waiting time).
+
+### 10.4 s_eff scan at B2 (MEASURED; seed s1, N = 1000 per cell)
+
+The B2 s1 member with only `evap_rrk_dof` moved (cfg diff = that key;
+s_eff = 8 is the committed B2 s1 run; scorer anchor = its committed
+`g5_postpickup_table.csv` row, 4 dp).
+
+| s_eff | n̄ | n₁_solv | W₁ | midHot | χ²_med | KE₁ [eV] | frozen | still shedding at detector |
+|---|---|---|---|---|---|---|---|---|
+| 5 | 3.74 | 0.233 | 1.01 | 0.957 | 250 | 0.606 | 0.82 | 0.01 |
+| **8 (B2)** | **3.94** | **0.214** | **0.93** | **0.994** | **292** | **0.609** | **0.77** | **0.07** |
+| 12 | 4.21 | 0.183 | 0.90 | 1.05 | 406 | 0.615 | 0.65 | 0.20 |
+| 20 | 4.68 | 0.121 | 0.98 | 1.14 | 612 | 0.629 | 0.37 | 0.49 |
+| 30 | 5.28 | 0.030 | 1.32 | 1.25 | 998 | 0.650 | 0.04 | 0.82 |
+
+"Still shedding" = `time_exhausted` (next shed scheduled after 8.53 µs);
+fractions over all ions (suppressed ≈ 0.11 at every s).
+
+**He shed-event timing** (every shed of every ion over the whole flight:
+MD window 0–500 ps from the stored `n_shell` history, detection stage
+500 ps – 8.53 µs from the event record; re-runs with `ion.npz` kept,
+detection bit-identical to the scan):
+
+| s_eff | sheds per ion | median shed time | sheds after 50 ps | after 100 ps | after 400 ps |
+|---|---|---|---|---|---|
+| 5 | 14.8 | 7.8 ps | 2.2 % | 1.5 % | 1.0 % |
+| **8 (B2)** | **14.5** | **9.0 ps** | **5.2 %** | **3.7 %** | **2.3 %** |
+| 12 | 14.2 | 10.7 ps | 10 % | 7.1 % | 4.4 % |
+| 20 | 13.7 | 17 ps | 23 % | 15 % | 9.1 % |
+| 30 | 13.1 | 32 ps | 40 % | 28 % | 16 % |
+
+Pickups inside the MD window fall with s (1557 → 1194 → 876 → 548 → 333
+per 2000 ions). Undercount disclosed: a pickup and a shed inside the same
+0.16 ps storage interval cancel. (The fraction of *ions* with at least one
+shed after 400 ps is larger — 14 / 34 / 61 / 84 / 86 % — because one late
+near-threshold shed per ion suffices; the paper's statement is about
+events.)
+
+**Reading.**
+1. **Dissociation in the model is fast at production s:** at s_eff = 8
+   the median shed happens at 9 ps and 97.7 % of all sheds are over by
+   400 ps — consistent with Albrechtsen et al. ("first tens of
+   picoseconds"; "vast majority … finished after 400 ps"). s_eff = 5–12
+   pass both statements; s_eff = 20 is borderline (23 % after 50 ps);
+   s_eff = 30 fails (40 % after 50 ps, 16 % after 400 ps).
+2. **"s sets the clock" holds for ≈ 98 % of the sheds**: the shed count
+   per ion barely moves (14.8 → 13.1 over s 5 → 30). What changes the
+   detected n is the small tail of last, near-threshold sheds (§10.3):
+   pending at 8.53 µs, or late enough to suppress pickups in the droplet.
+3. **The detector is not s-blind at B2 above s ≈ 8**: n₁ collapses
+   (0.214 → 0.030) and χ² triples from s 8 to 30. The experiment rejects
+   s ≥ 12 (n₁ below the gate band [0.19, 0.30], χ² +40 %).
+4. **KE₁ is insensitive** (0.606–0.650 eV over the whole range): s_eff is
+   not a route to the KE₁ deficit (flight mass, `TIER2_MASS_SCENARIOS.md`).
+
+**Bound:** timing (literature) excludes s_eff ≳ 20, the experimental size
+distribution excludes s_eff ≳ 12; the window is s_eff ≈ 5–8. Production
+s_eff = 8 lies inside it; it is not uniquely selected.
+
+### 10.5 What a switch to s_eff = 5 achieves (MEASURED; pooled N = 6000, s1–s5 + r6)
+
+Three pools at the B2 cell, identical seeds, production pipeline; each
+cfg differs from B2 in only the listed keys (oracle). The E₀ step
+restoring n̄ came from the committed B1 E₀ column (dn̄/dE₀ ≈ −32 /eV):
+ΔE₀ = −0.182/32 = −0.0057 eV → 0.3240 eV.
+
+| pool | s_eff | E₀ [eV] | n̄ | n₁_solv | midHot | χ²_med | KE₁ [eV] | deepKE | W₁ | n ≥ 15 | suppressed |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| B2 | 8 | 0.3297 | 3.903 | 0.211 | 1.002 | 527 | 0.609 | 0.477 | 0.967 | 0.0008 | 0.111 |
+| s5 | 5 | 0.3297 | 3.721 | 0.226 | 0.960 | 461 | 0.607 | 0.512 | 1.044 | 0.0002 | 0.111 |
+| s5, E₀ compensated | 5 | 0.3240 | 3.909 | 0.210 | 0.994 | 442 | 0.628 | 0.556 | 1.066 | 0.0002 | 0.084 |
+
+Pooled containers (figures in each `figures/`):
+`…N6000_detfix_conf270_g5lqppc160e3297seff05pooled_th500` and
+`…g5lqppc160e3297seff05e3240pooled_th500` (build targets
+`g5_lqppb2seff05` / `g5_lqppb2seff05e3240`; builder verified by rebuilding
+the committed B2 pool array-for-array).
+
+**Reading.**
+1. **At matched n̄, n₁ and midHot, s_eff = 5 is not an E₀ shift.** The
+   KE side improves — χ²_med −16 % (442 vs 527), KE₁ +0.019 eV, deepKE
+   0.556 vs 0.477 — while the size histogram worsens: W₁ 1.066 vs 0.967
+   and the n ≥ 15 tail nearly empties (0.0002 vs 0.0008). The suppressed
+   fraction drops 0.111 → 0.084; that comes from the lower E₀, not from
+   s (s = 5 alone leaves it unchanged).
+2. **The same trade-off as τ** (G4.14: τ trades the large-n tail against
+   KE at every c): s_eff is a second lever on that one KE ↔ tail axis,
+   not a way to fit both. The experiment does not choose between s_eff 5
+   and 8; the preference depends on weighting χ² / KE against W₁ / tail.
+3. **KE₁ moves by 0.02 eV**, against a deficit of ≈ 0.7 eV to experiment
+   (1.302 ± 0.071 eV): the KE₁ question stays with the flight mass.
+4. **Thesis decision state:** production stays at s_eff = 8 (B2 unchanged;
+   no re-arbitration). s_eff is reported as Bounded ≈ 5–8 by two
+   independent arguments (dissociation timescale; size distribution),
+   with 8 a convention inside the window.
+
+Noise: the W₁ and KE₁ differences (≈ 0.10 and ≈ 0.02) are several pooled
+seed errors (member sd 0.036 / 0.003 → pooled ≈ 0.015 / 0.001), but those
+member sd were measured at c = 2.0 (G4.14), not at B2. The s scan in §10.4
+is single-seed.
+
+### 10.6 Text for the discussion chapter (suggested)
+
+- In the model, He dissociation is essentially complete within the first
+  tens of picoseconds (median ≈ 9 ps, ≈ 98 % of sheds before 400 ps at
+  production), in line with the MD estimate of Albrechtsen et al. (2023)
+  for Na⁺He_N. The remaining late sheds are near-threshold events whose
+  RRK rate collapses as (1 − D₀/E_int)^(s−1).
+- The effective RRK dof sets the clock of the cascade, but at a finite
+  flight time (8.53 µs) it also sets how far above threshold an ion can
+  stay without shedding again; for s_eff ≳ 12 this moves the detected
+  size distribution measurably and the experiment rejects it.
+- Within the allowed window (s_eff ≈ 5–8), s_eff acts on the same
+  KE ↔ large-n-tail trade-off as the cooling time τ; it neither resolves
+  the KE₁ deficit nor the missing n ≥ 17 tail.
+- Outlook: a sourced s_eff for I⁺Heₙ (quantum mode counts / He-cluster
+  heat capacities; RQ6) and an I⁺-specific dissociation-time simulation
+  would turn the bound into a value.
