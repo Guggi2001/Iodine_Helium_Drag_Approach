@@ -1,0 +1,191 @@
+"""RRK s_eff scan at the thesis production law B2 (seed s1, N = 1000 per cell).
+
+Question (user, 2026-10-14): does the RRK effective dof ``s_eff``
+(``evap_rrk_dof``, production 8) move the detected observables at B2, or only
+the shedding clock? Every committed s_eff evidence (staircase probe I10, Wave 7
+I20, Wave 9 I32) predates the lq ridge, the ``post_pickup`` sampler and the
+absolute-E0 arm; ``TIER2_PARAMETER_INFLUENCE.md`` flags s_eff as transferred.
+
+Cells: the committed B2 s1 member (``gen_tier2_detfix_postpickup.py --cell lq
+--b2``, label ``g5lqppc160e3297s1``) with **one field moved**:
+``evap_rrk_dof`` ∈ :data:`SEFF_GRID`. Same seed as B2 s1; s_eff = 8 is the
+committed B2 s1 run itself (not re-run). The cells share the seed, but the
+evaporation draws follow the rates, so downstream streams differ: read
+differences against the per-member seed sd, not as paired deltas.
+
+Oracles before any MD:
+
+1. ``verify_seff_cell`` — the cfg differs from the committed B2 s1
+   ``cfg.json`` in exactly ``{"evap_rrk_dof"}``; at s_eff = 8 it differs in
+   nothing (wiring check of the builder against the committed run).
+2. ``verify_handover_alignment`` (re-used) — last stored ion column at t_h.
+
+Usage::
+
+    python scripts/gen_tier2_b2_seff_scan.py --dry-run   # oracles only
+    python scripts/gen_tier2_b2_seff_scan.py             # all cells, 2 at a time
+    python scripts/gen_tier2_b2_seff_scan.py 12 30       # selected s_eff
+
+Scorer: ``scripts/post_processing/tier2_b2_seff_table.py``.
+Max two concurrent MD runs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import math
+import os
+from pathlib import Path
+import sys
+from typing import Optional
+
+for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
+             "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import numpy as np  # noqa: E402
+
+from scripts.gen_tier2_detfix_battery import (  # noqa: E402
+    MAX_BYTES_ION, T_HANDOVER_PS, verify_handover_alignment,
+)
+from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    B2_C, B2_E0_EV, B2_TAU_PS, LQ_DROP_REASON, b1c_e0, build_lq_member, lq_run_dir,
+)
+from scripts.gen_tier2_g414_tauline import ION_DROPPED_MARKER, drop_ion_npz  # noqa: E402
+from scripts.gen_tier2atlas_g4finals import CASE, N  # noqa: E402
+from scripts.gen_tier2_g413_ridge_battery import LQ_BUNDLE  # noqa: E402
+from scripts.tier0_common import run_dir_name  # noqa: E402
+from scripts.tier2_common import cfg_diff_vs_reference  # noqa: E402
+from i2_helium_md.config import SimConfig  # noqa: E402
+from i2_helium_md.simulation.detection_stage import run_detection_stage  # noqa: E402
+from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
+from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
+from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+
+# =============================================================================
+# USER SETTINGS
+# =============================================================================
+
+#: s_eff values run [dimensionless]; 8 = production (the committed B2 s1 run).
+SEFF_GRID = (5.0, 12.0, 20.0, 30.0)
+SEFF_PRODUCTION = 8.0
+MEMBER = "s1"
+SEFF_DIFF_KEYS = frozenset({"evap_rrk_dof"})
+MAX_CONCURRENCY = 2
+
+# =============================================================================
+
+
+def b2_run_dir() -> Path:
+    """The committed B2 s1 run (the s_eff = 8 cell)."""
+    return lq_run_dir(MEMBER, B2_E0_EV, B2_TAU_PS, B2_C)
+
+
+def seff_run_dir(s_eff: float) -> Path:
+    """Run dir of an s_eff cell; s_eff = 8 maps to the committed B2 s1 run."""
+    if s_eff == SEFF_PRODUCTION:
+        return b2_run_dir()
+    tag = f"g5lqppc160e3297seff{round(s_eff):02d}{MEMBER}"
+    return PROJECT_ROOT / "data" / "runs" / run_dir_name(
+        CASE, LQ_BUNDLE, N, run_tag=f"detfix_conf270_{tag}_th500")
+
+
+def build_seff_cell(s_eff: float) -> SimConfig:
+    """B2 s1 cfg with ``evap_rrk_dof`` = s_eff [dimensionless, >= 1]."""
+    if B2_E0_EV != b1c_e0(B2_C):
+        raise AssertionError(f"B2_E0_EV {B2_E0_EV} != b1c_e0({B2_C})")
+    cfg = dataclasses.replace(build_lq_member(MEMBER, B2_E0_EV, B2_TAU_PS, B2_C),
+                              evap_rrk_dof=float(s_eff))
+    cfg.validate()
+    return cfg
+
+
+def verify_seff_cell(s_eff: float) -> list[str]:
+    """Oracle 1: diff vs the committed B2 s1 cfg.json is exactly
+    ``{"evap_rrk_dof"}`` (empty at the production value). Returns the keys."""
+    diff = cfg_diff_vs_reference(build_seff_cell(s_eff), b2_run_dir() / "cfg.json",
+                                 context=f"B2 s_eff {s_eff}")
+    want = set() if s_eff == SEFF_PRODUCTION else set(SEFF_DIFF_KEYS)
+    if set(diff) != want:
+        raise AssertionError(f"[s_eff {s_eff}] cfg vs B2 s1 differs in {sorted(diff)}; "
+                             f"pre-registered exactly {sorted(want)}.")
+    return diff
+
+
+def run_cell(s_eff: float) -> float:
+    """Guard, neutral -> ion (to t_h) -> detection, drop ion.npz."""
+    verify_seff_cell(s_eff)
+    cfg = build_seff_cell(s_eff)
+    steps, stride = verify_handover_alignment(cfg)
+    run_dir = seff_run_dir(s_eff)
+    done = (all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
+            and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
+    if done:
+        drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
+        print(f"[s_eff {s_eff:g}] skip (complete) -> {run_dir.name}", flush=True)
+        return s_eff
+    run = RunDirectory(run_dir)
+    run.save_cfg(cfg)
+    print(f"[s_eff {s_eff:g}] seed={cfg.seed} ion {steps} steps (stride {stride}) "
+          f"-> {run_dir.name}", flush=True)
+    neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
+    ion = run_ion_propagation(cfg, neutral, run_dir=run, verbose=False,
+                              max_bytes=MAX_BYTES_ION)
+    t_last = float(np.asarray(ion.time_ps)[-1])
+    if not math.isclose(t_last, T_HANDOVER_PS, abs_tol=1e-9):
+        raise AssertionError(f"[s_eff {s_eff}] ion.npz last column at {t_last} ps, "
+                             f"not t_h {T_HANDOVER_PS} ps.")
+    det = run_detection_stage(ion, cfg, save_path=run.root / "detection.npz")
+    del ion, neutral
+    drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
+    print(f"[s_eff {s_eff:g}] done: scored {int(det.detected_mask.sum())}/"
+          f"{det.detected_mask.size}", flush=True)
+    return s_eff
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("seff", nargs="*", type=float)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args(argv)
+    grid = tuple(args.seff) or SEFF_GRID
+    unknown = sorted(set(grid) - set(SEFF_GRID))
+    if unknown:
+        raise SystemExit(f"s_eff {unknown} not in SEFF_GRID {SEFF_GRID}")
+
+    verify_seff_cell(SEFF_PRODUCTION)
+    print(f"[s_eff 8] builder == committed B2 s1 cfg ({b2_run_dir().name})", flush=True)
+    for s in grid:
+        diff = verify_seff_cell(s)
+        steps, stride = verify_handover_alignment(build_seff_cell(s))
+        print(f"[s_eff {s:g}] guards PASSED: diff {diff}, {steps} steps, stride {stride} "
+              f"-> {seff_run_dir(s).name}", flush=True)
+    if args.dry_run:
+        return 0
+
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    failures = 0
+    with ProcessPoolExecutor(max_workers=min(MAX_CONCURRENCY, len(grid))) as pool:
+        futures = {pool.submit(run_cell, s): s for s in grid}
+        for fut in as_completed(futures):
+            try:
+                fut.result()
+            except Exception as exc:  # noqa: BLE001
+                failures += 1
+                print(f"[s_eff {futures[fut]:g}] FAILED: {exc!r}", flush=True)
+    print(f"{len(grid) - failures}/{len(grid)} cells complete.", flush=True)
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
