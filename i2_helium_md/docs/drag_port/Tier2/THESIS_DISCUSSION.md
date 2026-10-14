@@ -628,8 +628,11 @@ events.)
 **Reading.**
 1. **Dissociation in the model is fast at production s:** at s_eff = 8
    the median shed happens at 9 ps and 97.7 % of all sheds are over by
-   400 ps — consistent with Albrechtsen et al. ("first tens of
-   picoseconds"; "vast majority … finished after 400 ps"). s_eff = 5–12
+   400 ps — consistent with the supplementary classical MD of
+   Albrechtsen et al. ("first tens of picoseconds"; "vast majority …
+   finished after 400 ps"; Methods + Extended Data Fig. 4, Na⁺He_N —
+   **not** an experimental timescale; their experiment, Yₙ(t) vs Pₙ(t),
+   only shows whether dissociation occurs, not when). s_eff = 5–12
    pass both statements; s_eff = 20 is borderline (23 % after 50 ps);
    s_eff = 30 fails (40 % after 50 ps, 16 % after 400 ps).
 2. **"s sets the clock" holds for ≈ 98 % of the sheds**: the shed count
@@ -638,13 +641,16 @@ events.)
    pending at 8.53 µs, or late enough to suppress pickups in the droplet.
 3. **The detector is not s-blind at B2 above s ≈ 8**: n₁ collapses
    (0.214 → 0.030) and χ² triples from s 8 to 30. The experiment rejects
-   s ≥ 12 (n₁ below the gate band [0.19, 0.30], χ² +40 %).
+   s ≥ 20 (n₁ 0.12 / 0.03); s = 12 is disfavoured, not excluded (n₁ 0.183
+   vs the gate edge 0.19 ≈ 0.7 single-seed sd; χ² +40 %; one seed).
 4. **KE₁ is insensitive** (0.606–0.650 eV over the whole range): s_eff is
    not a route to the KE₁ deficit (flight mass, `TIER2_MASS_SCENARIOS.md`).
 
-**Bound:** timing (literature) excludes s_eff ≳ 20, the experimental size
-distribution excludes s_eff ≳ 12; the window is s_eff ≈ 5–8. Production
-s_eff = 8 lies inside it; it is not uniquely selected.
+**Explored range, not an established bound:** only s_eff = 5, 8, 12, 20,
+30 were run at B2; **s < 5 and 8–12 are untested**. The size distribution
+excludes s_eff ≥ 20 and disfavours 12; the cross-system MD timescale
+(plausibility check only) fails s = 30. 5–8 is the plausible explored
+range; production s_eff = 8 lies in it and is not uniquely selected.
 
 ### 10.5 What a switch to s_eff = 5 achieves (MEASURED; pooled N = 6000, s1–s5 + r6)
 
@@ -679,9 +685,10 @@ the committed B2 pool array-for-array).
 3. **KE₁ moves by 0.02 eV**, against a deficit of ≈ 0.7 eV to experiment
    (1.302 ± 0.071 eV): the KE₁ question stays with the flight mass.
 4. **Thesis decision state:** production stays at s_eff = 8 (B2 unchanged;
-   no re-arbitration). s_eff is reported as Bounded ≈ 5–8 by two
-   independent arguments (dissociation timescale; size distribution),
-   with 8 a convention inside the window.
+   no re-arbitration). s_eff is reported as a convention within the
+   explored range (5–8 consistent; ≥ 20 excluded by the size distribution;
+   timescale consistent with cross-system classical MD; s < 5 and 8–12
+   untested).
 
 Noise: the W₁ and KE₁ differences (≈ 0.10 and ≈ 0.02) are several pooled
 seed errors (member sd 0.036 / 0.003 → pooled ≈ 0.015 / 0.001), but those
@@ -692,16 +699,19 @@ is single-seed.
 
 - In the model, He dissociation is essentially complete within the first
   tens of picoseconds (median ≈ 9 ps, ≈ 98 % of sheds before 400 ps at
-  production), in line with the MD estimate of Albrechtsen et al. (2023)
-  for Na⁺He_N. The remaining late sheds are near-threshold events whose
-  RRK rate collapses as (1 − D₀/E_int)^(s−1).
+  production), in line with the supplementary classical MD estimate of
+  Albrechtsen et al. (2023) for Na⁺He_N (a cross-system plausibility
+  check, not an experimental timescale). The remaining late sheds are
+  near-threshold events whose RRK rate collapses as (1 − D₀/E_int)^(s−1).
 - The effective RRK dof sets the clock of the cascade, but at a finite
   flight time (8.53 µs) it also sets how far above threshold an ion can
-  stay without shedding again; for s_eff ≳ 12 this moves the detected
-  size distribution measurably and the experiment rejects it.
-- Within the allowed window (s_eff ≈ 5–8), s_eff acts on the same
+  stay without shedding again; for s_eff ≥ 20 this moves the detected
+  size distribution measurably and the experiment rejects it (s_eff = 12
+  disfavoured).
+- Within the explored range (s_eff 5–8 consistent; s < 5 and 8–12 not
+  tested), s_eff acts on the same
   KE ↔ large-n-tail trade-off as the cooling time τ; it neither resolves
   the KE₁ deficit nor the missing n ≥ 17 tail.
 - Outlook: a sourced s_eff for I⁺Heₙ (quantum mode counts / He-cluster
   heat capacities; RQ6) and an I⁺-specific dissociation-time simulation
-  would turn the bound into a value.
+  would turn the explored range into a bound or a value.

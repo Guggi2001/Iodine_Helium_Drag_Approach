@@ -63,9 +63,9 @@ This splits the levers into two classes:
 | well depth E_bind | 0.11727 eV (ridge-tied) | well-only cut to 0.0482 at A5: midHot 0.995 → 1.130, KE₁ 0.617 → 0.653, n ≥ 15 ×10, trapped 0.035 → 0.013, n̄ +0.16. With drag retuned to midHot ≈ 1 (B3 at B2: a 19.8): n ≥ 15 ×9, W₁ −0.17, KE₁ −0.019. **Leaves the TDDFT band** (18 Å RMSE 0.58 vs band 0.19; no a rescues 0.0482, best 0.226; a refit still passes at 0.080 eV, band edge between the two). Slope dn̄/dE_bind ≈ −7.3 /eV | lq / B2; slope T + lq | G10, G10.5; G5 (B3); D0 §9.2, §6.7 item 2 |
 | E₀ = E_int(0) | 0.3297 eV | sharpest n̄ lever: dn̄/dE₀ ≈ −31 /eV. At A5 `post_pickup` E₀ 0.3355 / 0.3455 / 0.3555 → n̄ 3.91 / 3.60 / 3.34, midHot 0.87 / 0.82 / 0.78, KE₁ 0.55 / 0.52 / 0.49 (extra evaporation drops slow heavy clusters into low n). Cold minority (≤ 0.05 eV below E₀) makes no tail; the tail needs E₀ ≲ 0.18 eV | lq | D0 §15.9; G9 |
 | τ (cooling clock) | 6.4 ps | at A5 `post_pickup` τ 6.8 / 7.2 / 7.6 → n̄ 4.05 / 3.59 / 3.20, midHot 0.89 / 0.79 / 0.70, KE₁ 0.59 / 0.55 / 0.52 (dn̄/dτ ≈ −1.1 /ps). Under `raw` at every c 1.8–2.5: low τ keeps the large-n tail (W₁ ↓) but costs KE₁; high τ recovers KE₁, empties n ≥ 10 | lq | D0 §15.9; G4.14 |
-| ladder D₀(n), n* | rq4graded, n* 21 | on frozen lq trajectories (c 2.0) at matched n̄: every ladder / n* variant keeps n ≥ 15 ≤ 0.005 — high n stays on slow ions. Ladder family (rq4graded vs floor1) owns the n₁ / small-n shape | lq (replay); family choice T | G9b; D0 §8 |
+| ladder D₀(n), n* | rq4graded (flat 74.4 cm⁻¹ base, rungs 1–3 × 2.2 / 1.5 / 1.3: empirical low-n strengthening inspired by the abundance steps, not a histogram inversion), n* 21 | on frozen lq trajectories (c 2.0) at matched n̄: every ladder / n* variant keeps n ≥ 15 ≤ 0.005 — high n stays on slow ions. Ladder family (rq4graded vs floor1) owns the n₁ / small-n shape | lq (replay); family choice T | G9b; D0 §8 |
 | Coulomb budget | 2.70 eV / fragment | KE₁ slope S_k = 0.389 eV/eV; a uniform re-anchor to the calibrated ≈ 2.2 eV breaks the landing (n̄ 5.33, trapped ×2); does not widen KE at fixed n | T (h405) | `THESIS_DISCUSSION.md` §9; D0 §19 |
-| RRK s_eff | 8 | sets the shedding clock; moves the detected n once near-threshold sheds outlast the 8.53 µs flight (s ≳ 12): s 5 / 8 / 12 / 20 / 30 → n̄ 3.74 / 3.94 / 4.21 / 4.68 / 5.28, n₁ 0.233 / 0.214 / 0.183 / 0.121 / 0.030, KE₁ flat (0.606–0.650). At matched n̄ (s 5, E₀ 0.3240): χ² −16 %, KE₁ +0.019, W₁ +0.10, n ≥ 15 → 0.0002 — same KE ↔ tail trade as τ. Bound ≈ 5–8 (§2.1) | B2 | §2.1; `THESIS_DISCUSSION.md` §10 |
+| RRK s_eff | 8 | sets the shedding clock; moves the detected n once near-threshold sheds outlast the 8.53 µs flight (s ≳ 12): s 5 / 8 / 12 / 20 / 30 → n̄ 3.74 / 3.94 / 4.21 / 4.68 / 5.28, n₁ 0.233 / 0.214 / 0.183 / 0.121 / 0.030, KE₁ flat (0.606–0.650). At matched n̄ (s 5, E₀ 0.3240): χ² −16 %, KE₁ +0.019, W₁ +0.10, n ≥ 15 → 0.0002 — same KE ↔ tail trade as τ. Explored s 5–30: 5–8 consistent, ≥ 20 excluded; s < 5 and 8–12 untested (§2.1) | B2 | §2.1; `THESIS_DISCUSSION.md` §10 |
 | flight mass / Tier-0 fit mass | n₀ 21, fit 19 → 21 He | fit mass 19 → 21: a −1.4 to −2.3 % per c, E_bind +0.0004 eV, B2 passes unchanged. The flight mass, not the drag, carries the KE₁ deficit (open, gated by M1) | B2 (Tier 0); M-question open | G11.4, G11.5; `TIER2_MASS_SCENARIOS.md` |
 | initial shell (bare start) | n₀ = 21 for all | bare-born ions (n₀ 0, E_int 0) land at n = 2–4 by pickup; KE₁ 0.49 (lq) / 0.87 (h405) vs exp 1.13 median — no fast n = 1 source | lq (A5) + T | G8; `THESIS_DISCUSSION.md` §8 |
 | shed momentum convention | `co_moving` | `cold` injects ×1.61 KE₁ over a full strip; histogram convention-blind | T | D0 §12 |
@@ -100,13 +100,16 @@ reading "detector-compressed except the n = 1 bin" (I20 / I32).
   n₁ 0.233 / 0.214 / 0.183 / 0.121 / 0.030; χ² 250 / 292 / 406 / 612 / 998;
   W₁ 1.01 / 0.93 / 0.90 / 0.98 / 1.32; midHot 0.957 → 1.25; KE₁ 0.606 →
   0.650 (insensitive).
-- **Timing vs Albrechtsen et al. 2023** (Na⁺He_N MD: dissociation within
-  tens of ps, vast majority done by 400 ps): sheds after 400 ps 1.0 / 2.3 /
-  4.4 / 9.1 / 16 %, after 50 ps 2.2 / 5.2 / 10 / 23 / 40 %. B2 (s 8)
-  consistent; s 30 fails, s 20 borderline.
-- **Bound.** Timing excludes s ≳ 20, the size distribution s ≳ 12 (n₁
-  below the gate band, χ² +40 %): window s_eff ≈ 5–8; 8 is a convention
-  inside it.
+- **Timing vs Albrechtsen et al. 2023** — their **supplementary classical
+  MD**, not experiment (Methods + Extended Data Fig. 4: isolated
+  Na⁺He₆ / Na⁺He₁₄; dissociation within tens of ps, vast majority done by
+  400 ps): sheds after 400 ps 1.0 / 2.3 / 4.4 / 9.1 / 16 %, after 50 ps
+  2.2 / 5.2 / 10 / 23 / 40 %. B2 (s 8) consistent; s 30 fails, s 20
+  borderline. A cross-system plausibility check only.
+- **Explored range, not a bound.** Tested only s 5 / 8 / 12 / 20 / 30;
+  s < 5 and 8–12 untested. Size distribution: ≥ 20 excluded, 12
+  disfavoured (n₁ 0.183 vs gate edge 0.19, ≈ 0.7 single-seed sd; χ²
+  +40 %), 5–8 consistent. 8 is a convention within the explored range.
 - **s_eff 5 vs 8 at matched n̄ (pooled N = 6000, E₀ 0.3240 vs 0.3297).**
   n̄ 3.909 / 3.903, n₁ 0.210 / 0.211, midHot 0.994 / 1.002; χ² 442 / 527,
   KE₁ 0.628 / 0.609, deepKE 0.556 / 0.477; W₁ 1.066 / 0.967, n ≥ 15
@@ -118,7 +121,7 @@ reading "detector-compressed except the n = 1 bin" (I20 / I32).
 - **Two knobs are selected by the experiment (c, E₀)**, both measured at
   B2 / lq. τ, s_eff, the ladder and the pickup are pinned or sourced;
   their influence is reported, not fitted (CALIBRATION_MAP tally). τ and
-  s_eff (bound ≈ 5–8, §2.1) both act on the KE ↔ large-n-tail trade-off.
+  s_eff (explored 5–30, 5–8 consistent, §2.1) both act on the KE ↔ large-n-tail trade-off.
 - **KE₁ is a map property.** No geometry lever moves it; the measured map
   levers either cost the landing (E₀, τ, Coulomb re-anchor) or the TDDFT
   consistency (shallow well) — the deficit is an outlook item (flight
