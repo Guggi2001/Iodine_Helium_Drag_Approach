@@ -92,6 +92,7 @@ from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
 )
 from scripts.gen_tier2_h405_pp35 import (  # noqa: E402
     POOL_E0_EV as H405PP35_POOL_E0,
+    SCAN_POOL_CELL as H405PP35_SCAN_CELL,
     run_dir_for as h405pp35_run_dir_for,
 )
 from scripts.gen_tier2_b2_seff_scan import (  # noqa: E402
@@ -245,6 +246,15 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "h405 (capped_cubic v_c 5.5, tau 4.4 ps) with droplet_size_sampler_mode="
         "'post_pickup' and the 3.5 A density gate (h405g35 definition), E0 re-placed "
         "to 0.431 eV to restore the B2 nbar (s1-s5 + r6); production pipeline",
+    ),
+    # The same, re-landed in midHot by v_c (gen_tier2_h405_pp35.py --scan-pool).
+    "h405_pp35_relanded": (
+        [h405pp35_run_dir_for(m, H405PP35_SCAN_CELL[2], H405PP35_SCAN_CELL[0],
+                              H405PP35_SCAN_CELL[1]).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_shared_pure_cubic_N6000_detfix_conf270_h405pp35v540e4240pooled_th500",
+        "h405 at post_pickup + 3.5 A gate re-landed: v_c 5.40 A/ps (from 5.5), tau 4.4 "
+        "ps (own), E0 0.424 eV (s1-s5 + r6); production pipeline",
     ),
     # G5 B3 (user, 2026-10-09): the G10 high-tail recipe on the B2 cell --
     # post_pickup, c 1.6, E_bind 0.0482 eV, a 19.8, E0 holding the B2 nbar;

@@ -30,10 +30,20 @@ Oracle 1 (in memory; the h405 member run dirs are no longer on disk): the
 cfg differs from ``build_member(member)`` in exactly the h405g35 gate keys
 + the sampler + the E0 key.
 
+**--scan (user, 2026-10-14): (v_c, tau) re-landing of midHot.** The
+E0-only pool landed nbar but midHot 0.852 (band edge): h405's v_c / tau
+were fitted under raw / 14.2 A. Grid at s1, E0 POOL_E0_EV:
+v_c in :data:`SCAN_VC` x tau in :data:`SCAN_TAU_PS` (dmidHot/dv_c ~ -1.48
+per A/ps, D0 R5; lower tau raises midHot weakly and nbar). Oracle diff
+adds ``drag_coefficients`` (v_c only; b, p_tail checked unchanged) and the
+tau key. ``--scan-pool`` then runs :data:`SCAN_POOL_CELL` at s1-s5 + r6.
+
 Usage::
 
     python scripts/gen_tier2_h405_pp35.py --column [--dry-run]
     python scripts/gen_tier2_h405_pp35.py --pool [--dry-run]
+    python scripts/gen_tier2_h405_pp35.py --scan [--dry-run]
+    python scripts/gen_tier2_h405_pp35.py --scan-pool [--dry-run]
 
 Scorer: ``scripts/post_processing/tier2_h405_pp35_table.py``; pool target
 ``build_pooled_detection_container.py --target h405_pp35``. Max two
@@ -70,7 +80,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 )
 from scripts.gen_tier2_detfix_postpickup import LQ_DROP_REASON  # noqa: E402
 from scripts.gen_tier2_g413_ridge_battery import (  # noqa: E402
-    H405_GATE_LABEL, _E0_KEY, _H405G35_KEYS, build as g413_build,
+    H405_GATE_LABEL, _E0_KEY, _H405G35_KEYS, _TAU_KEY, build as g413_build,
 )
 from scripts.gen_tier2_g414_tauline import drop_ion_npz  # noqa: E402
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV, CASE, N  # noqa: E402
@@ -95,46 +105,80 @@ NBAR_TARGET = 3.903
 #: Pool E0 [eV], set from the column (s1, 2026-10-14): nbar 4.034 at 0.425,
 #: 3.819 at 0.435 -> linear in nbar to NBAR_TARGET 3.903 -> 0.4311 -> 0.431.
 POOL_E0_EV: Optional[float] = 0.431
+#: (v_c [A/ps], tau [ps]) scan at s1, E0 POOL_E0_EV (v_c 5.5 / tau 4.4 = the pool s1 run).
+SCAN_VC = (5.25, 5.35, 5.45)
+SCAN_TAU_PS = (4.0, 4.4)
+#: (v_c, tau, E0) of the re-landed pool, set from the scan (s1, 2026-10-14):
+#: tau 4.0 lifts nbar ~+1 He (4.6-4.8; restoring it costs midHot) -> tau stays
+#: h405's own 4.4 (None = unchanged). At tau 4.4, v_c 5.45 / 5.35 -> midHot
+#: 0.906 / 1.025, nbar 3.82 / 3.71 -> v_c 5.40 ~ midHot 0.97, nbar 3.76; E0
+#: restoring nbar 3.903 at dnbar/dE0 ~ -21 /eV (column) -> -0.007 eV -> 0.424
+#: (projected midHot ~1.0: E0 -0.005 eV ~ midHot +0.02..+0.03, D0).
+SCAN_POOL_CELL: Optional[tuple[float, Optional[float], float]] = (5.40, None, 0.424)
 MAX_CONCURRENCY = 2
 
 # =============================================================================
 
 
-def run_dir_for(member: str, e0_eV: float) -> Path:
-    """e.g. ``…shared_pure_cubic_N1000_detfix_conf270_h405pp35e4350s1_th500``."""
-    tag = f"h405pp35e{round(e0_eV * 1e4):04d}{member}"
+def run_dir_for(member: str, e0_eV: float, v_c: Optional[float] = None,
+                tau_ps: Optional[float] = None) -> Path:
+    """e.g. ``…shared_pure_cubic_N1000_detfix_conf270_h405pp35e4350s1_th500``;
+    with v_c / tau re-placed ``…h405pp35v535t40e4310s1…``."""
+    vt = (("" if v_c is None else f"v{round(v_c * 100):03d}")
+          + ("" if tau_ps is None else f"t{round(tau_ps * 10):d}"))
+    tag = f"h405pp35{vt}e{round(e0_eV * 1e4):04d}{member}"
     return PROJECT_ROOT / "data" / "runs" / run_dir_name(
         CASE, "shared_pure_cubic", N, run_tag=f"detfix_conf270_{tag}_th500")
 
 
-def build(member: str, e0_eV: float) -> SimConfig:
-    """h405 member with the h405g35 gate, ``post_pickup`` and E0 [eV]."""
-    cfg = dataclasses.replace(g413_build(H405_GATE_LABEL, member),
-                              droplet_size_sampler_mode=SAMPLER_MODE,
-                              **{_E0_KEY: float(e0_eV) / BUDGET_EV})
+def build(member: str, e0_eV: float, v_c: Optional[float] = None,
+          tau_ps: Optional[float] = None) -> SimConfig:
+    """h405 member with the h405g35 gate, ``post_pickup``, E0 [eV] and,
+    optionally, the cap speed v_c [A/ps] / cooling time tau [ps]."""
+    base = g413_build(H405_GATE_LABEL, member)
+    repl: dict = {"droplet_size_sampler_mode": SAMPLER_MODE,
+                  _E0_KEY: float(e0_eV) / BUDGET_EV}
+    if v_c is not None:
+        dc = base.drag_coefficients
+        repl["drag_coefficients"] = dataclasses.replace(
+            dc, coefficients={**dc.coefficients, "v_c": float(v_c)})
+    if tau_ps is not None:
+        repl[_TAU_KEY] = float(tau_ps)
+    cfg = dataclasses.replace(base, **repl)
     cfg.validate()
     return cfg
 
 
-def verify(member: str, e0_eV: float) -> list[str]:
+def verify(member: str, e0_eV: float, v_c: Optional[float] = None,
+           tau_ps: Optional[float] = None) -> list[str]:
     """Oracle 1: in-memory diff vs the h405 member is exactly the h405g35
-    gate keys + the sampler + the E0 key. Returns the keys."""
-    diff = sorted(cfg_field_diff(build_member(member), build(member, e0_eV)))
-    want = set(_H405G35_KEYS) | {"droplet_size_sampler_mode", _E0_KEY}
+    gate keys + the sampler + the E0 key (+ drag_coefficients / tau when
+    re-placed; only v_c may move inside the coefficients). Returns the keys."""
+    ref, cfg = build_member(member), build(member, e0_eV, v_c, tau_ps)
+    diff = sorted(cfg_field_diff(ref, cfg))
+    want = (set(_H405G35_KEYS) | {"droplet_size_sampler_mode", _E0_KEY}
+            | ({"drag_coefficients"} if v_c is not None else set())
+            | ({_TAU_KEY} if tau_ps is not None
+               and tau_ps != getattr(ref, _TAU_KEY) else set()))
+    if v_c is not None:
+        a, b = ref.drag_coefficients.coefficients, cfg.drag_coefficients.coefficients
+        if {k for k in a if a[k] != b.get(k)} != {"v_c"} or set(a) != set(b):
+            raise AssertionError(f"[{member}] drag coefficients moved beyond v_c: {a} -> {b}")
     if set(diff) != want:
         raise AssertionError(f"[{member} E0 {e0_eV}] diff vs h405 {diff}; "
                              f"pre-registered {sorted(want)}")
     return diff
 
 
-def run_one(job: tuple[str, float]) -> str:
-    """Guard, neutral -> ion (to t_h) -> detection, drop ion.npz."""
-    member, e0 = job
-    verify(member, e0)
-    cfg = build(member, e0)
+def run_one(job: tuple) -> str:
+    """Guard, neutral -> ion (to t_h) -> detection, drop ion.npz.
+    ``job`` = (member, E0[, v_c, tau])."""
+    member, e0, v_c, tau = (*job, None, None)[:4]
+    verify(member, e0, v_c, tau)
+    cfg = build(member, e0, v_c, tau)
     steps, stride = verify_handover_alignment(cfg)
-    run_dir = run_dir_for(member, e0)
-    tag = f"{member} E0 {e0}"
+    run_dir = run_dir_for(member, e0, v_c, tau)
+    tag = f"{member} E0 {e0} v_c {v_c} tau {tau}"
     if (run_dir / "detection.npz").exists() and (run_dir / "cfg.json").exists():
         drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
         print(f"[{tag}] skip (complete) -> {run_dir.name}", flush=True)
@@ -162,19 +206,29 @@ def main(argv: Optional[list[str]] = None) -> int:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--column", action="store_true", help="E0 column at s1")
     group.add_argument("--pool", action="store_true", help="POOL_E0_EV at s1-s5 + r6")
+    group.add_argument("--scan", action="store_true", help="(v_c, tau) grid at s1")
+    group.add_argument("--scan-pool", action="store_true",
+                       help="SCAN_POOL_CELL at s1-s5 + r6")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     if args.pool:
         if POOL_E0_EV is None:
             raise SystemExit("POOL_E0_EV not set: run --column and set it first")
-        jobs = [(m, POOL_E0_EV) for m in MEMBER_SEEDS]
+        jobs = [(m, POOL_E0_EV, None, None) for m in MEMBER_SEEDS]
+    elif args.scan:
+        jobs = [(COLUMN_MEMBER, POOL_E0_EV, v, t) for v in SCAN_VC for t in SCAN_TAU_PS]
+    elif args.scan_pool:
+        if SCAN_POOL_CELL is None:
+            raise SystemExit("SCAN_POOL_CELL not set: run --scan and set it first")
+        v, t, e0 = SCAN_POOL_CELL
+        jobs = [(m, e0, v, t) for m in MEMBER_SEEDS]
     else:
-        jobs = [(COLUMN_MEMBER, e0) for e0 in COLUMN_E0_EV]
-    for m, e0 in jobs:
-        diff = verify(m, e0)
-        steps, stride = verify_handover_alignment(build(m, e0))
-        print(f"[{m} E0 {e0}] guards PASSED: diff {diff}, {steps} steps, stride {stride} "
-              f"-> {run_dir_for(m, e0).name}", flush=True)
+        jobs = [(COLUMN_MEMBER, e0, None, None) for e0 in COLUMN_E0_EV]
+    for m, e0, v, t in jobs:
+        diff = verify(m, e0, v, t)
+        steps, stride = verify_handover_alignment(build(m, e0, v, t))
+        print(f"[{m} E0 {e0} v_c {v} tau {t}] guards PASSED: diff {diff}, {steps} steps, "
+              f"stride {stride} -> {run_dir_for(m, e0, v, t).name}", flush=True)
     if args.dry_run:
         return 0
     from concurrent.futures import ProcessPoolExecutor, as_completed

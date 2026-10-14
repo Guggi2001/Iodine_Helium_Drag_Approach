@@ -42,8 +42,10 @@ from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     B2_C, B2_E0_EV, B2_TAU_PS, lq_label, lq_run_dir,
 )
 from scripts.gen_tier2_g413_ridge_battery import _E0_KEY  # noqa: E402
+from scripts.gen_tier2_g413_ridge_battery import _TAU_KEY  # noqa: E402
 from scripts.gen_tier2_h405_pp35 import (  # noqa: E402
-    COLUMN_E0_EV, COLUMN_MEMBER, POOL_E0_EV, run_dir_for,
+    COLUMN_E0_EV, COLUMN_MEMBER, POOL_E0_EV, SCAN_POOL_CELL, SCAN_TAU_PS, SCAN_VC,
+    run_dir_for,
 )
 from scripts.post_processing.tier2_confirmation_score import (  # noqa: E402
     format_table, write_rows_csv,
@@ -76,6 +78,8 @@ def main() -> int:
         row = _row(label, member, cfg.droplet_size_sampler_mode, cfg.seed, read, ab, ked)
         row["E0_eV"] = float(getattr(cfg, _E0_KEY) * cfg.coulomb_available_eV)
         row["gate_A"] = float(cfg.drag_gate_steepness)
+        row["v_c"] = cfg.drag_coefficients.coefficients.get("v_c", "")
+        row["tau_ps"] = float(getattr(cfg, _TAU_KEY))
         row.update(tail_columns(read, ked))
         return row, read
 
@@ -86,6 +90,8 @@ def main() -> int:
                    "-", pr, ab, ked)
         row["E0_eV"] = float(getattr(cfg, _E0_KEY) * cfg.coulomb_available_eV)
         row["gate_A"] = float(cfg.drag_gate_steepness)
+        row["v_c"] = cfg.drag_coefficients.coefficients.get("v_c", "")
+        row["tau_ps"] = float(getattr(cfg, _TAU_KEY))
         row.update(tail_columns(pr, ked))
         return row
 
@@ -117,6 +123,28 @@ def main() -> int:
         if reads:
             rows.append(pooled(f"h405pp35_pooled{1000 * len(reads)}", reads,
                                run_dir_for("s1", POOL_E0_EV)))
+    for v in SCAN_VC:                                     # (v_c, tau) scan at s1
+        for t in SCAN_TAU_PS:
+            rd = run_dir_for(COLUMN_MEMBER, POOL_E0_EV, v, t)
+            if not (rd / "detection.npz").exists():
+                missing.append(rd.name)
+                continue
+            rows.append(scored(f"h405pp35_v{v}_t{t}_e{POOL_E0_EV:.4f}_{COLUMN_MEMBER}",
+                               COLUMN_MEMBER, rd)[0])
+    if SCAN_POOL_CELL is not None:                        # re-landed pool
+        v, t, e0 = SCAN_POOL_CELL
+        reads = []
+        for m in MEMBER_SEEDS:
+            rd = run_dir_for(m, e0, v, t)
+            if not (rd / "detection.npz").exists():
+                missing.append(rd.name)
+                continue
+            row, read = scored(f"h405pp35_v{v}_t{t}_e{e0:.4f}_{m}", m, rd)
+            rows.append(row)
+            reads.append(read)
+        if reads:
+            rows.append(pooled(f"h405pp35_v{v}_t{t}_pooled{1000 * len(reads)}", reads,
+                               run_dir_for("s1", e0, v, t)))
     rows.append(pooled("B2_pooled6000", [r for _, r in b2.values()],
                        lq_run_dir("s1", B2_E0_EV, B2_TAU_PS, B2_C)))
     for path, src, label in COMMITTED_ROWS:
@@ -124,7 +152,7 @@ def main() -> int:
 
     keys = list(dict.fromkeys(k for r in rows for k in r))
     rows = [{k: r.get(k, "") for k in keys} for r in rows]
-    show = ("label", "E0_eV", "gate_A", "num_scored", "nbar_det", "n1_solv", "w1_solv",
+    show = ("label", "v_c", "tau_ps", "E0_eV", "gate_A", "num_scored", "nbar_det", "n1_solv", "w1_solv",
             "midHot", "chi2_med", "KE1_mean", "deepKE", "supp", "trap",
             "mass_n15plus_solv", "n_max")
     show = tuple(c for c in show if c in keys)
