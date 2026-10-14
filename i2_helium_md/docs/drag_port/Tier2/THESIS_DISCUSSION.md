@@ -715,3 +715,40 @@ is single-seed.
 - Outlook: a sourced s_eff for I⁺Heₙ (quantum mode counts / He-cluster
   heat capacities; RQ6) and an I⁺-specific dissociation-time simulation
   would turn the explored range into a bound or a value.
+
+## 11. h405 at the production settings: a like-for-like contrast to B2 (MEASURED; added 2026-10-14)
+
+Sources: `scripts/gen_tier2_h405_pp35.py`, scorer
+`scripts/post_processing/tier2_h405_pp35_table.py`, table
+`data/runs/h2b_forward_model/h405_pp35_table.csv` (commits 9110806,
+0379a1d); pooled containers `…shared_pure_cubic_N6000_detfix_conf270_h405pp35e4310pooled_th500`
+(E₀ only) and `…h405pp35v540e4240pooled_th500` (re-landed), figures in each
+`figures/`.
+
+The contrast law h405 was quoted with the `raw` sampler and the 14.2 Å
+helium-boundary width, so B2 vs h405 differed in law, sampler and gate at
+once. h405 has now been run at **both production settings**
+(`post_pickup`, s_ρ 3.5 Å as `h405g35`) and re-landed with its own knobs:
+E₀ alone restores n̄ but leaves midHot at 0.852; lowering the cap v_c
+5.5 → 5.40 Å/ps (τ unchanged at 4.4 ps; τ 4.0 lifts n̄ by ≈ 1 He) and
+E₀ 0.405 → 0.424 eV land midHot as well. h405 therefore **also lands under
+the production settings**, so B2 and h405 now differ in the drag law only.
+
+| pooled N = 6000, `post_pickup`, 3.5 Å | n̄ | n₁_solv | W₁ | midHot | χ²_med | KE₁ [eV] | deepKE | n ≥ 15 | trapped | suppressed |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B2 (lq c 1.6, τ 6.4, E₀ 0.3297) | 3.903 | 0.211 | 0.967 | 1.002 | 527 | 0.609 | 0.477 | 0.0008 | 0.049 | 0.111 |
+| h405 re-landed (v_c 5.40, τ 4.4, E₀ 0.424) | 3.941 | 0.189 | 0.934 | 1.007 | 704 | 0.636 | 0.537 | 0.0040 | 0.128 | 0.220 |
+| *h405 as quoted (`raw`, 14.2 Å; v_c 5.5, E₀ 0.405)* | 3.890 | 0.209 | 0.755 | 0.948 | 456 | 0.640 | 0.571 | — | 0.080 | 0.192 |
+
+**Reading.** At matched n̄ and midHot the two laws land comparably, each
+with its own trade-off: h405 is slightly hotter (KE₁ +0.027 eV, deepKE)
+with a marginally better W₁ and more n ≥ 15 tail; B2 has the better n₁
+(h405 just below the 0.19 gate edge) and χ², and loses half as many ions
+to trapping and suppression (h405 traps 13 % vs 5 %). h405's earlier W₁
+advantage (0.755) came from the `raw` / 14.2 Å settings, not from the law.
+This sharpens the identifiability argument (§0, G5): two differently shaped
+drag laws reproduce the detected I⁺(He)ₙ observables comparably **under
+identical settings**, and both leave KE₁ at about half the experiment.
+The thesis contrast row is the re-landed h405, not the `raw` / 14.2 Å
+one. Caveat: h405's 14.2 Å-extracted bundle under the 3.5 Å gate is a
+production setting, not a Tier-0 refit (as for `h405g35`).
