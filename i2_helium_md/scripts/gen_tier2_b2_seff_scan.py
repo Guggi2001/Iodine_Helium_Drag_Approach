@@ -26,7 +26,17 @@ Usage::
     python scripts/gen_tier2_b2_seff_scan.py             # all cells, 2 at a time
     python scripts/gen_tier2_b2_seff_scan.py 12 30       # selected s_eff
 
-Scorer: ``scripts/post_processing/tier2_b2_seff_table.py``.
+**--keep-ion (user, 2026-10-14):** re-runs every cell incl. s_eff = 8 into
+``…seff##s1keepion…`` dirs and keeps ``ion.npz`` (the in-window n_shell
+history, for the shed-timing read against Albrechtsen et al., Nature 623,
+319 (2023): "the vast majority of dissociation events are finished after
+400 ps"). Oracle: each detection.npz equals its scan twin's (n_detected,
+state_reason, event times) — the runs are deterministic at fixed seed.
+
+    python scripts/gen_tier2_b2_seff_scan.py --keep-ion
+
+Scorer: ``scripts/post_processing/tier2_b2_seff_table.py``; shed timing:
+``scripts/post_processing/tier2_b2_seff_timing.py``.
 Max two concurrent MD runs.
 """
 
@@ -91,11 +101,12 @@ def b2_run_dir() -> Path:
     return lq_run_dir(MEMBER, B2_E0_EV, B2_TAU_PS, B2_C)
 
 
-def seff_run_dir(s_eff: float) -> Path:
-    """Run dir of an s_eff cell; s_eff = 8 maps to the committed B2 s1 run."""
-    if s_eff == SEFF_PRODUCTION:
+def seff_run_dir(s_eff: float, keep_ion: bool = False) -> Path:
+    """Run dir of an s_eff cell; s_eff = 8 maps to the committed B2 s1 run
+    unless ``keep_ion`` (the ion.npz-keeping re-run)."""
+    if s_eff == SEFF_PRODUCTION and not keep_ion:
         return b2_run_dir()
-    tag = f"g5lqppc160e3297seff{round(s_eff):02d}{MEMBER}"
+    tag = f"g5lqppc160e3297seff{round(s_eff):02d}{MEMBER}" + ("keepion" if keep_ion else "")
     return PROJECT_ROOT / "data" / "runs" / run_dir_name(
         CASE, LQ_BUNDLE, N, run_tag=f"detfix_conf270_{tag}_th500")
 
@@ -122,15 +133,29 @@ def verify_seff_cell(s_eff: float) -> list[str]:
     return diff
 
 
-def run_cell(s_eff: float) -> float:
-    """Guard, neutral -> ion (to t_h) -> detection, drop ion.npz."""
+def verify_same_detection(s_eff: float) -> None:
+    """Oracle (keep-ion): the re-run's detection.npz equals the scan twin's."""
+    from i2_helium_md.simulation.detection_stage import load_detection_result
+    a = load_detection_result(seff_run_dir(s_eff) / "detection.npz")
+    b = load_detection_result(seff_run_dir(s_eff, keep_ion=True) / "detection.npz")
+    for f in ("n_detected", "state_reason", "event_offsets", "event_time_ps"):
+        if not np.array_equal(np.asarray(getattr(a, f)), np.asarray(getattr(b, f))):
+            raise AssertionError(f"[s_eff {s_eff}] keep-ion re-run differs in {f}")
+
+
+def run_cell(s_eff: float, keep_ion: bool = False) -> float:
+    """Guard, neutral -> ion (to t_h) -> detection; drop ion.npz unless keep_ion."""
     verify_seff_cell(s_eff)
     cfg = build_seff_cell(s_eff)
     steps, stride = verify_handover_alignment(cfg)
-    run_dir = seff_run_dir(s_eff)
-    done = (all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
-            and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists()))
-    if done:
+    run_dir = seff_run_dir(s_eff, keep_ion)
+    done = all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
+    if keep_ion and done and (run_dir / "ion.npz").exists():
+        verify_same_detection(s_eff)
+        print(f"[s_eff {s_eff:g}] skip (complete, ion kept) -> {run_dir.name}", flush=True)
+        return s_eff
+    done = done and ((run_dir / "ion.npz").exists() or (run_dir / ION_DROPPED_MARKER).exists())
+    if done and not keep_ion:
         drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
         print(f"[s_eff {s_eff:g}] skip (complete) -> {run_dir.name}", flush=True)
         return s_eff
@@ -147,7 +172,10 @@ def run_cell(s_eff: float) -> float:
                              f"not t_h {T_HANDOVER_PS} ps.")
     det = run_detection_stage(ion, cfg, save_path=run.root / "detection.npz")
     del ion, neutral
-    drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
+    if keep_ion:
+        verify_same_detection(s_eff)
+    else:
+        drop_ion_npz(run_dir, reason=LQ_DROP_REASON)
     print(f"[s_eff {s_eff:g}] done: scored {int(det.detected_mask.sum())}/"
           f"{det.detected_mask.size}", flush=True)
     return s_eff
@@ -157,9 +185,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("seff", nargs="*", type=float)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--keep-ion", action="store_true",
+                        help="re-run every cell incl. s_eff 8, keep ion.npz")
     args = parser.parse_args(argv)
-    grid = tuple(args.seff) or SEFF_GRID
-    unknown = sorted(set(grid) - set(SEFF_GRID))
+    grid = tuple(args.seff) or (tuple(sorted((*SEFF_GRID, SEFF_PRODUCTION)))
+                                if args.keep_ion else SEFF_GRID)
+    unknown = sorted(set(grid) - set(SEFF_GRID) - ({SEFF_PRODUCTION} if args.keep_ion else set()))
     if unknown:
         raise SystemExit(f"s_eff {unknown} not in SEFF_GRID {SEFF_GRID}")
 
@@ -169,14 +200,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         diff = verify_seff_cell(s)
         steps, stride = verify_handover_alignment(build_seff_cell(s))
         print(f"[s_eff {s:g}] guards PASSED: diff {diff}, {steps} steps, stride {stride} "
-              f"-> {seff_run_dir(s).name}", flush=True)
+              f"-> {seff_run_dir(s, args.keep_ion).name}", flush=True)
     if args.dry_run:
         return 0
 
     from concurrent.futures import ProcessPoolExecutor, as_completed
     failures = 0
     with ProcessPoolExecutor(max_workers=min(MAX_CONCURRENCY, len(grid))) as pool:
-        futures = {pool.submit(run_cell, s): s for s in grid}
+        futures = {pool.submit(run_cell, s, args.keep_ion): s for s in grid}
         for fut in as_completed(futures):
             try:
                 fut.result()
