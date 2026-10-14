@@ -803,7 +803,7 @@ all seven recorded columns within 0.002 before any cell was read.
 **Outcome: the R1/R2 rows (6 cells) are measured; the five anchored-radius
 cells (R 49.4 / 68.3 Å) are blocked by a staging limit — see §G1.3.** The
 influence tables and the width decomposition live in
-`TIER2_PARAMETER_INFLUENCE.md` §14.1 (D0 is the influence reference; not
+`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §14.1 (D0 is the influence reference; not
 duplicated here). This section records what the axis *decided*.
 
 ### G1.1 The pre-registered prediction was confirmed on every clause
@@ -891,7 +891,7 @@ law over-dissipates at these path lengths — the Tier-0 calibration never saw a
 and run. The five blocked cells were completed **from their stored
 `relaxation.npz` by re-running only the detection stage — zero new MD**, since
 they had failed *after* the MD. Influence tables live in
-`TIER2_PARAMETER_INFLUENCE.md` §14.1–§14.2 (D0 is the influence reference, not
+`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §14.1–§14.2 (D0 is the influence reference, not
 duplicated here); this section records what the step *decided*.
 
 **Arm oracle passed (§3.5b item 10).** Re-running detection on the six

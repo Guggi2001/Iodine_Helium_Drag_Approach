@@ -313,7 +313,7 @@ friction is ∝ v³ ≈ 0 anyway). Leaving Stage I untouched keeps 0–30 ps
 and keeps the pipeline change to one variable. A time-switched gate (on only
 after 30 ps) would be scaffolding. Consequence to record: with E2 skipped,
 `relaxation_dissipation` has no production reader, and v_L loses its *drag*
-reader → the v_L "P" row in `TIER2_PARAMETER_INFLUENCE.md` §17 must say so.
+reader → the v_L "P" row in `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §17 must say so.
 `[Corrected 2026-09-30]` `v_limit_m_per_s = 58` itself **stays read** in
 production: it also sets `cfg.E_min_eV`, the Landau cutoff of the hard-sphere
 collision step in the neutral stage (`propagation_step.py`) — so the field
@@ -514,7 +514,7 @@ closure) reproduces the committed h405 and b031 results at ≈ 1/17 of the cost.
 3. Next, on the user's trigger: `[PROCEED TO IMPLEMENTATION]` for (a) generator constants
    (`ION_TIME_PS`, relaxation off) with a pipeline-version stamp, and (b) the
    Coulomb-closure enum + focused tests.
-4. Ledger / doc updates: v_L row in `TIER2_PARAMETER_INFLUENCE.md` §17; E2
+4. Ledger / doc updates: v_L row in `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §17; E2
    retirement entry in `drag_migration_log_tier2.md`; decide whether
    `relaxation_stage.py` is kept as a non-production enum or retired (rule 2).
 5. Thesis: E2-era atlas results stand (§2d verdict); state the stage change

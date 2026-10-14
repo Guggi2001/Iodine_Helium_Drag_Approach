@@ -8,7 +8,7 @@ modified and no committed artifact was rewritten. Every number below is
 reproducible from cached chord families with zero new MD.
 
 > **Why this is a separate document.** It grew out of the RQ12 /
-> helium-density-width thread (`TIER2_PARAMETER_INFLUENCE.md` §9.6) but it
+> helium-density-width thread (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §9.6) but it
 > is not about the density width, not about E_bind, and not about the drag
 > law. It is about the **mass of the object that flies through the Coulomb
 > explosion** — a modelling commitment inherited from Tier-1a that has
@@ -883,7 +883,7 @@ artifact.
 
 ## 17. Cross-links
 
-- `TIER2_PARAMETER_INFLUENCE.md` **§9.6** — the mass-partition finding,
+- `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` **§9.6** — the mass-partition finding,
   the corrected E_bind decomposition, the density-width null; **§9.2/§9.4/
   §9.5** carry the superseding notes.
 - `TIER2_SENSITIVITY_ATLAS_PLAN.md` §6.8 — the RQ12 programme this grew

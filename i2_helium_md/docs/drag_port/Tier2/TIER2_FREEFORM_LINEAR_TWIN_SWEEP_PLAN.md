@@ -19,7 +19,7 @@ the adoption discussion + escalation battery (§6.3).**
 Companion documents: `TIER2_SENSITIVITY_ATLAS_PLAN.md` (§3.5c is the
 gate/grid precedent reused here), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`
 (§6.6/§6.7 — the lq counterfactual precedent and the form-blindness
-record), `TIER2_PARAMETER_INFLUENCE.md` §1/§2 (the form-entry and
+record), `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §1/§2 (the form-entry and
 capped-tail ledgers this arm feeds), `drag_migration_log_tier2.md`
 (2026-07-30 entries: velocity anatomy, tail-force invariance, the
 mechanism correction).
@@ -1169,7 +1169,7 @@ every diff vs `h405p`); scorer-drift + KE-path + the committed
 
 - Results → a new **"Free-form linear twin sweep"** section in
   `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`; influence deltas → D0
-  (`TIER2_PARAMETER_INFLUENCE.md`) §1 form-entry bullet **first** (the
+  (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`) §1 form-entry bullet **first** (the
   D0-first memory rule), §2 tail ledger if Φ moves anything;
   chronology → `drag_migration_log_tier2.md`.
 - The Step-0 licensure result also back-fills the D0 §14.4 authority

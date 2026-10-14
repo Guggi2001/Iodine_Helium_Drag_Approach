@@ -2021,7 +2021,7 @@ G3_GRID_CELLS = (
 )
 
 # The MD-scored G1 rows this stage measures the twin against
-# (TIER2_PARAMETER_INFLUENCE.md §14.1; committed scorer: midHot geometric
+# (TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md §14.1; committed scorer: midHot geometric
 # n2-8, deepKE arithmetic n10-17; trap = t_b + t_m, i.e. the twin's single
 # trapped class is compared against the MD bound+marginal TOTAL; NaN = the
 # MD band was empty). Columns: trap, supp, nbar_det, n1_solv, W1_solv,

@@ -86,7 +86,8 @@ All in the MASS doc unless marked **[D]** = DESIGN doc.
 > means the same value. The effective high-tail variant **B3** differs
 > from B2 only in rows 2, 3 and 16 (a 19.8, E_bind 0.0482 eV, E₀ 0.3389
 > eV; not Tier-0-consistent, G10.5). Per-knob influence:
-> `TIER2_PARAMETER_INFLUENCE.md` §0 (still keyed to h405).
+> `TIER2_PARAMETER_INFLUENCE.md` (B2); "D0 §x" refers to the frozen
+> `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`.
 
 | # | Domain | Parameter (units) | Production (B2) | Contrast (h405) | Role | Class | Primary anchor (Tier) | Cross-check | Flag |
 |---|---|---|---|---|---|---|---|---|---|

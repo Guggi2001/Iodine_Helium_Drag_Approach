@@ -1,0 +1,3995 @@
+# Tier 2 — Parameter Influence Reference (compact) — ARCHIVE (h405 / finc1v725 era)
+
+> **FROZEN 2026-10-14 (user).** Historical record of the sensitivity-atlas
+> phase (2026-07-23 → 2026-10-13), keyed to the finc1v725 and h405
+> standing points (cubic / capped-cubic drag, 14.2 Å density width, `raw`
+> sampler) plus the G4.x / G5 results merged on the way. Not updated any
+> more. Renamed from `TIER2_PARAMETER_INFLUENCE.md`; every "D0 §x"
+> reference in the repo points **here**. The current, B2-keyed influence
+> reference is the new `TIER2_PARAMETER_INFLUENCE.md`; parameter values and
+> classes are in `CALIBRATION_MAP.md`. The §17 physical-sensibility ledger
+> is not carried forward (its classes live in `CALIBRATION_MAP.md`).
+
+> **What this is.** The D0 deliverable of `TIER2_SENSITIVITY_ATLAS_PLAN.md`:
+> a **pure distillation** of `TIER2_STAIRCASE_PROBE_FINDINGS.md` (§4a–§4ee,
+> I1–I100) into per-knob influence statements. **No new analysis** — every
+> number here is a pointer-backed quote of a measured result. The findings
+> doc stays the archive/provenance; this doc is the navigation layer.
+>
+> **How to read an entry.** *Role* = where the knob enters the mechanism.
+> *Class* = CALIBRATION_MAP calibration class (Sourced / Bounded / Free /
+> Derived). *Influence* = measured effect on the observables, with
+> magnitudes and insight pointers (I-numbers → the findings-doc register;
+> § → findings-doc sections). *Couplings* = structural entanglements with
+> other knobs. *Status* = locked / standing / open / **GAP** (no measured
+> influence yet — atlas target).
+>
+> **Two chapters, two questions.** §1–§16 answer *what each knob does*
+> (influence). **§17 — the physical-sensibility ledger** — answers *which
+> parts of the model are physics and which are scaffolding*, with what
+> would retire each. The program's purpose is model understanding and
+> physical soundness in general; RQ11 is one symptom, not the target
+> (plan §0, user 2026-07-26).
+>
+> **Living doc.** Each sensitivity-atlas stage merges its results in and
+> closes its GAP marker. Last built: 2026-07-23 (distillation of
+> I1–I100); merged 2026-07-24: D4 Step 1 + §6.6 counterfactual
+> (twin + MD spot-check — the form-blindness result, §1); §6.7 item 1
+> (lq sanity battery — over-suppression, §1) + item 2 (E_bind scan —
+> over-suppression is the FORM; **E_bind GAP closed, §9**); merged
+> 2026-07-26: the **D2b as-built provenance audit** (§15 — which
+> sampler actually ran in which production, code-verified and
+> distribution-verified) + the **parent-document geometry anchor**
+> (§15.4/§15.5 — solvation-depth reproduction and the source-condition
+> droplet range; the influence GAPs in §14/§15 stay open).
+>
+> **Standing point superseded 2026-09-30:** h405 (G4 successor adjudication,
+> production pipeline + N = 6000 reference: `TIER2_DetectorStageFix.md`
+> §5.7). The block below is the historical context of the "standing" values
+> quoted in this doc, which remain finc1v725-based unless stated.
+>
+> **Standing point (context for every "standing" value):** finc1v725 —
+> `capped_cubic` v_c 7.25 / p_tail −1, τ 3.2 ps, E₀ 0.27 eV, `rq4graded`
+> ladder, Landau v_L 0.58 Å/ps, locked Tier-0 b, E_bind 0.1168 eV,
+> margin 3 Å, N = 5000 pooled battery reference (§4cc).
+
+---
+
+## 0. Summary table
+
+> **Keyed to production (re-audited 2026-10-01).** The *production* column
+> is the value the production generator actually runs
+> (`gen_tier2_detfix_battery.py` → `build_cell(h405)` in
+> `gen_tier2atlas_g4finals.py` + the three pipeline keys), read off the
+> built `SimConfig` and checked against the committed run
+> `9A_drag_shared_pure_cubic_N1000_detfix_conf270_h405s1_th500`. The
+> production reference is the pooled N = 6000 h405 battery
+> (`TIER2_DetectorStageFix.md` §5.7: n̄ 3.890, n₁_solv 0.209, W₁ 0.755,
+> midHot 0.948, deepKE 0.571, KE₁ 0.640, trap 0.0795). Section bodies
+> still quote finc1v725-era "standing" values unless stated otherwise.
+
+| knob | class | headline influence | production (h405) | status |
+|---|---|---|---|---|
+| drag form + b (in-band) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with E_bind), then fixed; authority 2.54–4.95 Å/ps only | owns KE scale + fragment composition; **the landed observables do NOT identify the form — cubic and quadratic systems both land in full MD (§6.6)**; the free-form linear counterfactual can clone the h405 landing but not improve KE₁ and the histogram together (§1, family CLOSED 2026-08-13) | `capped_cubic`, b = 2.5154 amu·ps/Å², pure cubic (a = 0) below v_c | TDDFT authority only over 2.54–4.95 Å/ps; landing is form-blind (measured in MD). **G4 refit at s_ρ = 3.5 Å MEASURED (§1.G4, 2026-10-02):** cubic wins again, b → 2.230; adoption **decision needed** (Tier-1a gate reading) |
+| v_c, p_tail (capped tail) | Free (§17: **E**) | v_c owns the whole mid-bin KE curve. At the corrected geometry the basin moved to **v_c 5.5–6.0, confirmed in MD** (the old 7.25 breaks there: trap 0.437, n₁ 0). v_c 5.25 gives the deep-KE ceiling 0.656, at the cost of midHot 1.39. p_tail is not a second lever (the Block-2 trigger never fired) (§2, §14.5) | v_c = 5.5 Å/ps, p_tail = −1 | standing h405. The cap is a **permanent** effective element: TDDFT is infeasible at production kinematics (user 2026-07-30) |
+| τ (cooling clock) | Free — fitted at G4 inside the GAH25 band [2.6, 16.5] (§17: **E**) | descent clock; closes only jointly with v_c, as a pair; race coordinate with E₀ under the gate. Corrected-geometry W₁ ordering is τ 4.4 < 4.8 < 5.2, the reverse of the twin's ranking (§3, §14.5) | 4.4 ps | standing h405; τ 4.0 untested at v_c 5.5 |
+| E₀ = E_int(0) | Free — fitted at G4 inside the RQ1 band [0.2, 0.5] eV (§17: **E**) | sets the fate-cliff position (the bare↔shell split). At the corrected geometry it is the **sharpest one-knob lever**: each +0.005 eV moves W₁ −0.02…−0.04, n₁ +0.004…+0.007 and n̄ −0.11…−0.13 He. Because n₁ and n̄ move in opposite directions they cannot both be matched, which sets the W₁ floor ≈ 0.67; bins 7–20 cannot be reached through E₀ (§4, §14.5) | 0.405 eV (`internal_energy_partition_fraction` 0.15 × 2.70 eV); every ion starts at exactly 0.405 (T6 is inert, see below) | standing h405 |
+| κ (ladder steepness) | Inactive (was Free) | near-dead staircase lever (inverted + normalization-capped) | **not a runtime knob**: `dissociation_ladder="tabulated"` overrides it. κ = 1 enters only once, when the generator builds the rq4graded table (`LADDER_KAPPA_PIN`) | inactive in production |
+| picture (electronic) | Inactive (was Free selection) | magnitude-degenerate ≤ 4 %; discrimination belongs to the size distribution | **not a runtime knob**: like κ, it is baked into the rq4graded table at `statistical_mixture` (`LADDER_PICTURE_PIN`) | inactive in production |
+| f_int | Derived coordinate | superseded by absolute E₀; gated: only the race margin Δ× is physical | 0.15 (= 0.405 / 2.70) | retired as a free knob |
+| f_ret | Bounded (prior small) | pinned 0.1 throughout; never swept. `TIER2_MASS_SCENARIOS.md` M7 notes that at 0.1 a capture deposits only a tenth of the energy it costs to re-evaporate (a design question, not a measured influence) | 0.1 | **GAP** |
+| λ₀ pickup (+ p cap) | Sourced + Bounded (p conditional-Free) | re-filling ≈ 7 ions/100; p = 1 de-suppresses to the twin and lifts n₁ KE toward experiment. Since 2026-09-30, pickup stays live through the whole 500 ps Stage I; the E2 stage had switched it off (fix doc §2a) | λ₀ = 0.9 ps⁻¹, Langmuir cap p = 1 | standing |
+| s_eff (RRK dof) | Bounded [5, 20] | cascade *rate*, arm-conditional (8 ungated / 30 gated); detector-compressed except the n = 1 bin | 8 (constant) | standing |
+| ladder D₀(n), Σ | Sourced base × RQ4 taper (the family selected on the size distribution; §17: **P** rungs / **E** shape) | owns the n₁/small-n shape; rq4graded beats floor1 by ≫ 2σ; the deep tail is Σ-coupled and ×20 too stiff to move deep KE. Under G4 the corrected-geometry residual is traced to the mechanism (ladder shape, pickup, ε), not the drag (§8, §14.5) | `tabulated` rq4graded: Form-U (mixture, κ 1) with rungs 1–3 × (2.2, 1.5, 1.3); D₀(1) = 20.3 meV | standing |
+| Landau v_L | Sourced (bulk roton value) | bit-flat on the scored surface across 0.30–0.58; acts only on the retained class | 58 m/s = 0.58 Å/ps. **E2 is skipped, so the `landau_gated_drag` arm (`relaxation_dissipation`) is never read in production.** The only remaining reader is the hard-sphere collision cutoff `E_min_eV`. Stage-I drag has **no** Landau gate | quiet; the sub-Landau regime is not modelled in the production drag (a fix-doc limitation) |
+| per-shed ε | Bounded small (NB-RQ23-1; §17: **C**) | refuted as RQ11 owner; ε ≈ 1–2 meV/shed sub-dominant compatible | 0. There is no config field: each shed drains exactly D₀ | convention |
+| shed momentum convention | convention (two-valued) | cold-shed injects ×1.611 KE over a full strip; histogram convention-blind; bare-bin KE reads the fragmentation convention | `co_moving` (`cold` kept as the diagnostic bound) | standing; RQ3-coupled |
+| birth margin | Inactive (was a pinned convention; §17: **S**) | was **the sensitive robustness lever** under `uniform_volume` (6 Å moved n₁_solv −0.171, 3.4σ; I88) | 0 Å, **inactive**: under the Boltzmann birth law the config guard refuses any non-zero margin | retired with the G2 geometry (the finc1v725-era 3 Å pin) |
+| E_bind (ion–droplet well) | Locked — fitted to TDDFT (Tier-0 Method B, jointly with the drag pair), then fixed | **swept §6.7 item 2**: trap +0.058/0.1168-step (clean well lever), n̄ −0.50, midHot −0.076; over-suppression is the FORM, not the well. **KE transfer function measured (§9.2, 2026-08-10):** affine, **dKE₁/dE_bind = −0.542 (h405) / −0.549 (lin)** eV/eV — a *fixed ~45 % refund*, form- and depth-invariant; trap lever form-SPLIT (0.620 vs 0.033 /eV); whole axis worth ≤ +0.064 eV on KE₁. **MD-CONFIRMED (§9.3): −0.5308 measured, 2 % from the twin**. **MECHANISM SOLVED (§9.6, 2026-08-11): the "45 % refund" is a MASS-FRAME PARTITION, not drag** — the ion pays **98.1 %** of the well; the shortfall is 38.0 % `m(1)/m(21)` + 6.7 % cascade + **1.9 % genuine drag refund** (form-split 3.3× vs the lin arm's 6.2 %). Density-width scan **NULL** (c 0.5422 → 0.5597 over a 4.5× sharpening ⇒ +0.002 eV on KE₁). **Identifiability flag** (`CALIBRATION_MAP.md`): the Tier-0 co-extraction spread maps to Δn̄ ≈ 0.77, which is 1.3× the n̄ gate band | 0.1168 eV (the bundle well, `eb1168`) | measured (§9); KE half of the GAP **closed** (§9.2) + MD-confirmed (§9.3) + mechanism + width GAP closed (§9.6). **G4 co-fit at s_ρ = 3.5 Å: 0.1277 eV (rises +0.011, against the "falls" prediction; §1.G4)** — not adopted, decision needed |
+| droplet geometry (R × r) | controlled (Axis A G1 11-cell grid); **size externally anchored** (§15.5) | birth depth is the physics knob, R a selection knob; the landing needs the size *distribution* (pinning R̄ alone: W₁ 0.571 → 0.813); ≈ 95 % of detected-size variance geometry-inherited; deepKE crosses 1 at birth depth ≈ 11–15 Å. Re-arbitrated at the corrected geometry (G3/G4, §14.5): the landing survives, but with a W₁ floor ≈ 0.67–0.76 against finc1v725's 0.571 (wrong shape, not wrong scale) | corrected geometry: R̄ ≈ 49.9 Å, mean birth depth ≈ 34.9 Å (s1 member). Production trap 0.0795 (bound 0.0781 / marginal 0.0014), so the marginal class is empirically empty | **GAP closed** (§14); G2 adopted 2026-07-27; re-arbitration **closed** at h405 (2026-09-30) |
+| sampling laws (size + position) | legacy ports, now **the production laws** (G0-1 / G2) | provenance audited (§15). The finc1v725-era bypass (analytic ⟨N⟩ = 2000 prior + `uniform_volume`) is **no longer production**. The §15.7 forecast that the corrected ensemble would break the finc1v725 landing was resolved by re-arbitrating (v_c, τ, E₀) (§14.5) | `droplet_size_prior="legacy"`, `droplet_size_sampler_mode="raw"` (nozzle correlation at 40 bar / 14 K → ⟨N⟩ ≈ 12.8k, δ 0.625); `birth_position_law="boltzmann"` at 0.4 K with a well of 313.2 K. The 313.2 K is the DFT fit, set as a per-run override; the config default stays 573.3 K | standing; the E_solv 14 vs 30 meV pair is inert under `raw` (no pickup weighting). **raw vs `post_pickup` MEASURED at h405 (§15.8, 2026-10-02, 2 × N = 5000):** post_pickup moves n̄ +0.72 He, n₁ −0.033, W₁ +0.24, trap +0.057 and fails both gate clauses; KE₁ is almost unchanged (+0.007) |
+| T5 `initial_shell_model` | arm (§17: **S**) | birth dressing n₀ = round(n*·ρ̂(d_birth)) | `density_tied`, but **structurally inert**: ρ̂ saturates at the production birth depths, so n₀ = 21 for every ion (s1: 2000/2000 at t = 0) | carried; inert at the corrected geometry, as §17 predicted |
+| T6 `internal_energy_partition_law` | arm (§17: **S**) | onset scaled by Σ(n₀)/Σ(n*) | `sigma_proportional`, but **structurally inert**: the ratio is 1 because n₀ = 21, so E_int(0) = 0.405 eV for every ion (s1) | carried; inert at the corrected geometry |
+| `cooling_spatial_gate` | arm (§17: **E**; the alternative is unphysical) | ρ̂-scaled Newton drain: cooling switches off outside the bubble. On the staircase total-strip A/B this is the lever that opens the near-bare end; ungated cooling self-quenches the cascade (`TIER2_STAIRCASE_PROBE_FINDINGS.md`) | `density_scaled` | standing; not re-measured at the corrected geometry |
+| ρ̂ density width (`drag_gate_steepness`) | convention (§17: **C**; reuses the potential's 14.2 Å as the density width) | one shared surface for the drag gate, the cooling gate and T5. The density-width scan is **NULL at production** (+0.002 eV on KE₁ over a 4.5× sharpening, §9.6.5) | 14.2 Å, `drag_spatial_gate="density_proportional"` | measured null at production; **sourced replacement s_ρ = 3.5 Å (Harms et al. 1998, borrowed) agreed (THESIS_FINAL_GOALS G2); Tier-0 refit at 3.5 Å MEASURED (§1.G4) — production switch pending the G4 decision, then G5** |
+| Coulomb budget (per-ion KER) | Sourced scalar (§19) | **alive**: dKE₁/dbudget S_k = 0.389 eV/eV; suppression is driven by E_int. The Hatherly 1994 calibration (0.8·E_C → 2.16 / 4.32 eV channels) puts production ≈ 25 % high, but a naive uniform re-anchor to 2.16–2.26 breaks the basin | 2.70 eV/ion (`E_coulomb_scale` 1.0, R₀ 2.666 Å) | standing scalar; the channel-mixture replacement is shelved (next row) |
+| CE channel mixture + exit strip | Bounded-with-anchor (§20) | the mixture alone places KE₁ (0.920) but trap rises 0.087 → 0.465; the strip over-tolls and feeds the suppressed gate; all three kills fired | `ce_channel_mode="off"`, `exit_strip_mode="off"` | **SHELVED** 2026-07-30 (re-openable only on new external evidence) |
+| drag state coupling s(n) (R_core, ρ_shell) | Bounded geometric closure (design doc) | **MEASURED DEAD in-window (§18): gate-clipped** — no ion reaches n ≤ 8 while inside the droplet (min-n-inside ≥ 9 for 100 %, mean exit n = 19.0), so the low-n regime of s(n) is structurally unreachable; in-window s ∈ [0.85, 1.06] ≈ ρ-independent; net effect KE₁ **−0.04 (sign-inverted)**, needle SD unmoved (0.038), all SC predictions refuted | `drag_state_coupling="off"` | probe EXECUTED 2026-07-29; axis stopped (SC-P2 signature failure) |
+| detection pipeline (handover t_h + closure) | staging **C** / closure maths **P** (§17) | **E2 retired 2026-09-30**: Stage I runs full physics to t_h = 500 ps, then the partner-aware residual-Coulomb closure (exact two-body / fixed-centre asymptote), then an exact jump chain to detection. Reproduces the E2-era battery member by member within resampling noise. t_h has no measurable effect (500 vs 502.84 ps: observables equal to ≤ 4·10⁻⁶); the closure removes the 0.2–0.6 % one-sided KE deficit | `relaxation_stage_enabled=False`, `detection_coulomb_closure="partner_aware"`, t_detect = 8.53 µs (Sourced) | adopted (`TIER2_DetectorStageFix.md` §5.7). Limitations: point charges, fixed droplet, no mass change after t_h |
+| retained-ion policy | convention | decides which helium-coupled ions are excluded from the score. The marginal (modelling-exclusion) class is ≈ 0 at the re-arbitrated point, so the policy question largely disappears (§14.2, §14.5) | `exclude_all_coupled` | adopted 2026-09-30 |
+| noise (Tier 3) | missing (§17: **M**) | not modelled; the ensemble is under-dispersed against VMI | `noise_form="none"` | Tier 3, not started |
+
+---
+
+## 1. Drag law — in-band form + coefficient b
+
+| | |
+|---|---|
+| role | continuous friction γ(v) = ρ̂·b·v² (force ρ̂·b·v³) inside the bubble; owns all in-window dissipation |
+| class | Locked — fitted to TDDFT (Tier-0 Method B, jointly with E_bind), then fixed; authority only over the trace bands (18 Å 2.54–3.02, 9 Å 2.83–4.95 Å/ps). (Harmonized with `CALIBRATION_MAP.md` 2026-10-01; this line used to read "Derived".) |
+
+**Influence (measured):**
+
+- Owns the KE *scale* and the fragment *composition*: n₁/bare occupants
+  are near-edge births losing 0.8–1.2 eV to drag vs 2.6–2.8 eV for deep
+  bins (I60). Geometry owns the KE *shape*; the envelope [current-law,
+  ballistic] brackets experiment everywhere (I43).
+- Over-dissipates at production speeds: detected model speeds undershoot
+  the VMI I⁺He peak ~2–2.5× (I40); measured K₂.₇₀ = 0.746 with 41.7 % of
+  exposure beyond the calibrated band (I37).
+- The RQ11 deep-bin cold tail (sim/ref 0.81 → 0.38 over n = 10–17, a
+  slope not a scale, I92) accrues in the **in-band pure-cubic phase at
+  v ≈ 2–7 Å/ps, t ≈ 2–14 ps, in-bubble** (I90); with candidates
+  (i)/(ii)/(iii) refuted, the in-band law at low v is the surviving
+  owner-candidate (I96) — ~1.5 % of the deep survivors' dissipation.
+  **Revised by the §6.6 MD spot-check (NB-RQ11-12): the velocity window
+  that actually moves deep-bin KE is the upper-mid band v ≈ 5–9 Å/ps,
+  not the theorized sub-2.5 low band.** Measured: the lq cell at
+  standing τ (γ lower than capped-cubic above ~5 Å/ps, cap at 9)
+  lifts deep bins ~+0.1–0.2 (qcb 1.02…0.45 vs pooled cubic
+  0.81…0.38) *despite* carrying ×2.5 the drag at v = 2 — the sub-2.5
+  region barely registers on deep KE, the 5–9 window dominates. The
+  deficit's slope survives every form tested (form-robust).
+  Direction-only at N = 500 deep-bin counts; N = 1000 confirmation is
+  the escalation path.
+- Low-v form space mapped in the twin (§4ee): hard/erf floors are
+  perfectly speed-selective and act by un-trapping the marginal retained
+  class (trap 0.042 → 0); the sub form at v_f ≈ 1.5–2.0 is the twin's
+  landing window (deep → 1.06…0.83, midHot ≤ 1.14); the parameter-free
+  shifted-cubic at locked b over-corrects globally (all bins ×1.2–1.4,
+  midHot 1.40 — though W₁ improves 0.678 → 0.502) (I98/I99).
+- Literature: above ~1 Å/ps in a droplet the drag *shape* is
+  unconstrained — TDDFT is the only authority; the (v−v_L)³ law is
+  near-threshold/negative-ion/mean-of-sawtooth and does not transfer
+  (I97, I100, NB-RQ11-1..9).
+- Atlas D4 Step 1 (2026-07-23, artifact reuse, zero MD): the three-mode
+  form table stands as compiled — lq rejected (shared Δobj +0.0339,
+  held-out 9 Å FAIL) with its low-v limb ×2.54 the production drag at
+  v = 2 (wrong direction for RQ11); power law cubic-equivalent
+  (n̂ = 2.927). Tail re-inspection: **no drag-dominated trace samples
+  below v ≈ 2.5 Å/ps** — the sub-2.5 shape is TDDFT-blind pending the
+  collaborator ask. The subtractive gated form is trace-constrainable
+  in-band (×0.65–0.38 at 2.54 for v_f 1.5–2.0 vs the whole 18 Å window
+  at 2.54–3.02); its re-fit is a pending decision. Full tables:
+  `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (NB-RQ11-10).
+- **The landed *histogram* does not identify the in-band form — the
+  histogram landing is form-blind, measured at battery scale (§6.6 +
+  the §6.7 N = 1000 paired battery, 2026-07-24).** W₁, midHot, n̄, and
+  n₁_solv are all form-comparable (pooled lq W₁ 0.548 vs cubic 0.571,
+  midHot 1.023 vs 1.014). "Form-blind" is a **W₁-only** statement, and
+  the §6.7 item-2 E_bind scan sharpens why: item-1's midHot/n̄ *match* is
+  a **(form, well) co-compensation**, not form-insensitivity. At a
+  *matched* well (0.1168) the forms diverge strongly — lq is colder
+  (midHot Δ−0.070, ~35σ) and smaller (n̄ Δ−0.57, ~20σ) than cubic (§6.7
+  item-2 firm-up); item-1 saw them equal only because lq's shallower
+  0.048 well cancelled its intrinsic coldness. W₁ alone stays form-blind
+  even at matched well (Δ+0.009, ns), but the fate split (supp/trap) and
+  the KE/size (midHot/n̄) *do* separate the forms — so this is not a
+  claim that every observable is form-insensitive.
+  A quadratic-form system with its own Tier-0 artifacts (a ≈ 0,
+  c = 12.79, E_bind 0.0482) and re-arbitrated downstream knobs lands
+  the full Tier-2 observable vector in *full MD*: three cells
+  (v_c 8.8–9.0 × τ 3.2–3.5), all landing, including the cell the twin
+  predicted to fail by ~5 seed-SD (the twin's needle-thin lq basin was
+  a frozen-chord artifact; the MD basin is wide — mechanism feedback
+  smooths the (τ, E₀) knife-edge). Consequences, program-level: the
+  experimental landing can never be cited as evidence for any drag
+  form (cubic included); form authority lives exclusively in the
+  Tier-0 trace instruments (held-out above all, where lq fails 0.699);
+  and a large share of the landing quality is owned by the downstream
+  mechanism's compensation capacity (through K, I47), not by the drag
+  law. This is the measured closure of the §6.1 anti-circularity
+  question.
+- **The §6.6 read that a quadratic law lands *better* on the KE surface
+  does NOT replicate — REFUTED by the §6.7 N = 1000 battery (2026-07-24).**
+  The §6.6 same-N same-seed comparison (three lq cells halving χ²_med,
+  64.7 / 61.3 / 82.6 vs cubic finc1v725 125.7) was a **single-seed
+  artifact** (seed 20260721, N = 500). Paired across the 5 fresh battery
+  seeds at N = 1000, lq's median-anchored KE χ²_med is *worse* than cubic
+  on **every** seed (paired Δ+13.3±10.0; pooled 277 vs 242). The KE
+  advantage was not even seed-robust — it evaporated *before* the E_bind
+  confound is addressed.
+- **lq over-suppresses — a resolved drag-form influence on the fate
+  split (§6.7 battery + item-2 scan).** supp 0.213 vs cubic 0.187 at the
+  battery (paired Δ+0.0255 ± 0.0041, ~6σ), with under-trapping. **The
+  §6.7 item-2 E_bind scan DISCHARGES the confound: the over-suppression
+  is the FORM, not the well** — at a *matched* well (0.1168) lq still
+  over-suppresses by Δ+0.034 ± 0.004 (~8σ, N = 1000 × 3 seeds); the well
+  adds only +0.010 more. lq also runs colder/smaller at matched well
+  (midHot Δ−0.070, n̄ Δ−0.57) — the intrinsic quadratic-form signature
+  that item-1's shallow co-calibrated well masked. (χ²_med stays
+  seed-noise-dominated and does not resolve form vs well even at N = 1000.
+  Deep well 0.154 over-retains: 2/3 cells trip the handover guard as
+  ~2/2000 ions never decouple in 8000 ps.)
+  **Atlas stance: no adoption** — the Tier-0 traces reject this form
+  (held-out 0.699 FAIL); these entries document what the observables
+  *reward/penalize*, not a form change.
+- **lq runs COLDER at n = 1/n = 2 — the direct KE₁ read (§6.7 item 3,
+  2026-07-30, committed `tier2atlas_lq_ke1_table.py`,
+  `atlas_lq_ke1_table.csv`).** Measured on the regenerated §6.7 battery
+  (the lq run dirs had been cleaned locally; regenerated seed-exact from
+  the committed generator and gated by a printed-precision reproduction
+  oracle on the committed §6.7 rows — all 10 members + the pooled row
+  reproduce). Paired (lq − cubic), 5 × N = 1000: **ΔKE₁_mean
+  −0.047 ± 0.005 eV (lower on every seed, ~10σ paired)**, ΔKE₂_mean
+  −0.060 ± 0.004, Δabove-1.15 −0.093 ± 0.018 (pooled 0.095 vs 0.188;
+  reference 0.487), ΔKE₁_SD +0.005 ± 0.002 (no width gain), Δn₁_solv
+  +0.001 ± 0.006 (no population gain). Pooled KE₁: lq 0.987 ± 0.132 vs
+  cubic 1.034 ± 0.128 (reference n = 1 mean 1.302). **This closes the
+  "could a lower-power form raise the low-n KE" question with the
+  direct observable: below the TDDFT-calibrated band a lower power
+  decays slower ⇒ MORE drag on slow ions — quadratic moves KE₁/KE₂ the
+  wrong way, buys no width and no n₁, and keeps its over-suppression.**
+  Consistent with (and sharper than) the item-1 χ² read; the drag-form
+  KE lever at low n is measured DOWNHILL-ONLY toward lq. Pooled lq
+  figure set rendered (`..._lq_N5000_tier2atlas_conf270_qccbigpooled`,
+  pair-preserving container via the committed
+  `build_pooled_detection_container.py`, builder-oracled against
+  `bigc1v725pooled`). **Provenance caveat (user-raised, 2026-07-30):
+  this battery sits at the PRE-CORRECTION geometry (leg-D
+  uniform-volume birth, old droplet ensemble) — the corrected-geometry
+  lq-vs-cubic KE ordering is UNMEASURED, and the Δ is a whole-path
+  integral (lq is softer in the 5–9 mid-band yet colder at n = 1/2
+  net), so the ordering does not transfer by argument alone. Candidate
+  resolving test posted (log 2026-07-30): lq twin scan at the
+  corrected geometry for lq's own basin, then a CRN-paired MD ring vs
+  h405 with frozen KE/fate bands — NOT adjudicated.**
+
+- **The pure-linear counterfactual holds the corrected-geometry twin
+  gate INCLUDING at sub-plateau tail force — kill-3's universality
+  BREAKS at twin level (free-form linear sweep arm 1 `linscan`,
+  2026-07-30, zero MD; `TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`
+  §3.1/§5.1, `atlas_linsweep*.csv`).** γ = ρ̂·a swept a ∈ [15, 60] × 3
+  wells × the §3.5c free surface (12 312 cells, frozen gate verbatim):
+  **35 cells gate** (R1), τ = 4.8 dominant (28/35, zero τ-flags), all
+  three wells (shallow-favored 19/9/7), a core 27.5–42.5. **Φ =
+  F(9.7)/418.5 spans 0.64–1.39 with 6 sub-plateau cells (Φ ≤ 0.7),
+  none below the bare-ram floor** — the histogram gate does NOT pin
+  the fast-class force inside the linear family. **R4 (twin KE₁
+  ranked under the Step-0 licensure, levels ~2 % cold): softer tail →
+  hotter n = 1 monotonically — best gated twin KE₁ 0.892 at a = 27.5
+  (Φ 0.64) vs the h405 twin anchor 0.624 (+0.27).** Twin-level
+  caveats, pre-registered: deepKE (unlicensed, ρ 0.33) runs 2.0–3.4×
+  HOT at the sub-plateau cells — the declared MD-undecidable axis;
+  above-1.15 = 0 (the twin carries no source-KER width by
+  construction); trap is a twin floor and the lin form's low-v
+  over-drag makes MD trap the risk axis. **Nothing adopted; the MD
+  ring (plan §6) is the decision instrument and sits behind its own
+  trigger.** **Arm 2 (`linqscan`, a* = 35.0 W₁-optimum, R5 freeze;
+  seam oracle bit-exact): the landing REJECTS the ram term** — at
+  fixed a* every observable degrades monotonically with c (W₁ 0.586 →
+  1.02, twin KE₁ 0.703 → ≤ 0.25, trap → 0.93–0.97 by c = 12.79 where
+  nothing gates — the shared-lq landmark is dead in-family; far-c
+  stragglers τ-flagged). Within the free-form family the data selects
+  **pure linear**; the MD-ring candidate set is the arm-1 sub-plateau
+  core a 27.5–35.
+
+- **The MD ring CONFIRMS the twin landing — the drag-side KE₁ door is
+  MD-OPEN (free-form linear ring, 2026-07-31, 8 × N = 500 CRN seed
+  20260731 vs the h405 partner; plan §6.3, `atlas_linring_table.csv`).**
+  6/7 lin cells pass the MD-side hard gate under BOTH retained-policy
+  ends (zero policy-blocked; lr7's miss was twin-predicted — the gate
+  pattern transfers 7/7). **K-KE does NOT fire: ΔKE₁ = +0.077…+0.266 eV
+  at every gated cell; five cells beat the (A)-ceiling success band
+  (KE₁ ≥ 0.75), best KE₁ 0.903 at a = 27.5/eb0482/E₀ 0.35 vs h405p
+  0.637 — the first MD-measured drag-side KE₁ result above the exit-
+  stripping ceiling.** The capped→lin twin transfer HELD: twin KE₁
+  uniformly ~1–2 % cold in-family (d(twin−MD) −0.010…−0.015 eV), n₁
+  transfer ≤ 0.006, n̄ twin-hot bias uniform ≈ +0.46…+0.59 — the
+  lin-family authority box is a near-copy of the capped one. **The two
+  pre-registered kill axes both came back benign:** trap ≤ 0.011 (all
+  bound, zero marginal; the low-v over-drag fear is DEAD — the CRN
+  fate flow runs the other way, lin *frees* the ~60 ions h405p traps,
+  new-trapped = 0 at every cell); deepKE mixed/neutral (2.37 at the
+  KE₁-best cell down to 0.95 at a = 35 — the twin's 2.0–3.4× hot flag
+  was itself ~30 % hot; no form-question). **Honest costs, reported:**
+  midHot 1.39–1.98 (the soft band is 0.85–1.15) and χ²_med 795–2160 vs
+  h405p's 267 — the n = 1/2 heat is bought with mid-band overheating
+  (the NB-RQ11-12 coordinate, now measured from the lin side); W₁
+  0.78–0.97 vs h405p 0.767 (±0.13 single-seed, not gating);
+  above-1.15 = 0 everywhere (source-KER width stays (B)-side, as
+  designed). h405p itself sat just under the n̄ band this seed (3.748
+  vs 3.77; Arm-B flips it in) — disclosed Δ-only per §6.2 item 5.
+  **Nothing adopted; per plan §0 an MD-level win on the form-sensitive
+  observables opens the adoption discussion — that discussion + the
+  pre-registered escalation (one N = 1000 × 5-seed battery at the
+  single best cell; KE₁-best lr1 vs W₁-convention lr6 is part of the
+  call) are the NEXT USER GATE.**
+
+- **The linear family has TWO personalities, and the second one
+  CLONES h405 with no cap — the choice between forms is *where the
+  deviation is hidden*, not whether there is one (adoption-discussion
+  re-read of the committed arm-1 rows, 2026-08-10, zero MD; plan
+  §6.4).** a is a continuous dial: Φ 0.64 buys KE₁ 0.892 at midHot
+  2.16/deepKE 3.38 (the ring's MD-confirmed corner), while **Φ 0.985
+  (a = 42.5 / eb0482 / τ 6.4 / E₀ 0.31) reproduces the h405 twin
+  vector near observable-for-observable — KE₁ 0.615 vs 0.624, midHot
+  1.003 vs 1.069, W₁ 0.686 vs 0.703, n₁ 0.197 vs 0.208, n̄ 4.58 vs
+  4.48 — from a kink-free pure-linear law**, at the price of the KE₁
+  gain (the user's proposed trade, confirmed). **But the cap is not
+  thereby retired:** crossover √(a/b) = 4.11 Å/ps means that same
+  line runs ×4.2 the Tier-0 cubic at v = 2, ×1.9 at v = 3 and 31 %
+  soft at the band top — the fiction moves *into* the TDDFT-validated
+  window (the Tier-0 linear rejection, n̂ = 2.927, restated at system
+  level), whereas `capped_cubic` is exact in-band and parks its free
+  element above 4.95 where TDDFT is permanently infeasible. Cap
+  physics recorded: v_c 5.5 ≈ **Mach 2.3** (He sound ~2.4 Å/ps),
+  constant force = constant loss per Å = wave-drag/vortex-shedding
+  signature; the *sharpness* of the corner is forced (any smooth
+  saturation `b·v³/(1+(v/v_c)^m)` breaks the in-band lock unless
+  m → ∞, which is the cap). Posted-not-taken: a Hill-type
+  smooth-saturation twin scan to measure how sharp the corner must be
+  (plan §6.4 item 5; NOT a §3.5h p_tail re-open — corner vs tail
+  exponent). Arm 2 already closed the ram term (c = 0 optimal), so
+  the flatness is what the landing wants.
+
+- **The clone is MD-measured a KE-equivalent, NOT a landing-equivalent
+  — and the ring's mid-band overheating is a position on the a dial,
+  not a property of constant γ (h405-clone battery, 2026-08-12,
+  3 × N = 500 seeds 20260731/0812/0813, CRN vs the committed h405p;
+  plan §6.5, `atlas_linclone_table.csv`).** At `pure_linear a 42.5 /
+  eb0482 / τ 6.4 / E₀ 0.31` the KE side of the §6.4 forecast transfers
+  and the histogram side does not:
+  - **KE₁ equivalence confirmed** — pooled 0.6348 vs the committed
+    h405 battery 0.6406 (Δ **−0.0059 eV**; the same-seed same-N CRN
+    pair gives **−0.0016**), against a ±0.05 band. χ²_med per seed
+    173/234/241 vs h405p's 267 — the KE *curve* fit is as good or
+    better (pooled χ² is N-extensive and not comparable).
+  - **midHot 0.891 — cooler than h405 itself (0.946), against the
+    ring's 1.39–1.98 at a 27.5–35.** The §6.3 "honest cost" is
+    therefore **not form-intrinsic**: constant γ can be mid-band
+    neutral; where it sits on the NB-RQ11-12 coordinate is set by a,
+    not by the form. (deepKE 0.376, i.e. cold, vs h405p 0.472.)
+  - **Trap stays dead at 1.5× the ring's chord:** 0.062 (bound 0.0613,
+    marginal 0.0007 = 2 ions) *below* h405's 0.078; CRN fate flow
+    new-trapped 1 / freed 9. The low-v over-drag fear does not revive
+    at a = 42.5. Suppression collapses to 0.051 vs h405p's 0.216
+    (τ 6.4 + E₀ 0.31).
+  - **But W₁ 1.079 vs h405 0.765 (+0.31)** while n₁ 0.192 and n̄ 3.99
+    sit at/inside their gate bands — the two histogram *moments* match
+    and the *shape* does not. Reported-only per the §6.5 user
+    adjudication; it cannot overturn the KE reads, and it is what makes
+    "clone" the wrong word for anything but the KE observables.
+  - **n₁ sits ON the gate floor**: pooled 0.1921 vs the 0.19 edge, gap
+    0.0021, per-seed 0.1734/0.1937/0.2095 (SD 0.0181) ⇒ **~72 seeds of
+    N = 500** would be needed to separate it from the edge. Verdict
+    `gate-marginal` under **both** retained-policy ends (not
+    policy-blocked). That is a measurement, not a resolution
+    shortfall — this cell is boundary, and no affordable MD makes it
+    otherwise.
+  - **CL-P6 — the in-family twin↔MD box does NOT extend to this
+    corner.** n₁ (twin−MD +0.0045) and n̄ (+0.583) transfer inside the
+    §6.3 ring ranges, but KE₁ (−0.0195) falls outside [−0.015, −0.010],
+    and **W₁ transfer collapses: twin 0.686 → MD 1.079, a −0.39 bias
+    against the ring's ≈ −0.2.** The §6.4 clone claim rested on the
+    twin W₁ being within 0.02 of h405's; that specific number is now
+    measured wrong by an order of magnitude more than the gap it was
+    asserting. Twin W₁ is not transferable at a 42.5 / τ 6.4.
+
+- **The (a, τ) joint ring CLOSES the question: KE₁ and the histogram are
+  NOT simultaneously improvable in this family, and the reason is the
+  FLIGHT MASS (§6.6 ring, 2026-08-12, 6 × N = 500 at the §6.3 seed
+  20260731 — CRN with lr1–lr7, h405p and the clone; plan §6.6,
+  `atlas_linjoint_table.csv`).** The τ 4.8 a-curve is monotone in every
+  observable at once — a ∈ {35, 37.5, 40, 42.5, 45} gives W₁ 0.785 →
+  0.790 → 0.831 → 0.853 → 0.879, KE₁ 0.715 → 0.653 → 0.587 → 0.557 →
+  0.501, midHot 1.393 → 1.216 → 1.059 → 0.969 → 0.841, tail(n ≥ 10)
+  0.096 → 0.097 → 0.103 → 0.115 → 0.117. Consequences:
+  - **W₁ has a genuine minimum at a ≈ 35 worth 0.785**, above h405's
+    0.767 — the family cannot match the incumbent histogram, let alone
+    beat it. (Below 35 the ring already measured W₁ rising again: 0.856
+    at 32.5, 0.877 at 30.)
+  - **Every cell that brings midHot into band (a ≥ 40) sits below h405
+    on KE₁**; every cell that beats h405 on KE₁ (a ≤ 37.5) is out of
+    band on midHot. **JR-P3 empty: no cell beats h405 on W₁ and KE₁
+    together at midHot ≤ 1.15.**
+  - **τ owns the histogram, measured at three chords with no overlap
+    between the clocks:** W₁(τ 6.4) − W₁(τ 4.8) = +0.407 (a 35), +0.314
+    (a 40), +0.226 (a 42.5) — a clean interaction (the penalty shrinks
+    with a) on top of a uniformly disqualifying τ 6.4. The CRN per-ion
+    shell flow separates identically: mean Δn vs lr6 is **+0.21…+0.53**
+    at τ 4.8 (tail preserved, 178–224 of 237 heavy ions survive) and
+    **−7.65…−9.80** at τ 6.4 (tail destroyed, 94–114 survive). Only
+    3–59 ions are trapped anywhere, so this is **evaporation, not
+    capture**.
+  - **The one escape from the coupling proves the mechanism.** `j1`
+    (a 40 / τ 6.4) is the sole cell beating h405 on KE₁ (0.666) while
+    holding midHot in band (0.977) — and it does so by *evaporating the
+    shells*: lighter ions fly faster and vacate the mid-band. It pays
+    W₁ 1.145 and the worst tail measured (0.052, n_max 14).
+  - **Synthesis: KE₁ = E_exit · m(1)/m_flight is a flight-mass
+    observable and the size distribution is what pins the flight mass** —
+    two readings of one quantity. (a, τ, E₀) can move mass between them
+    but cannot decouple them, which is why the Pareto front stays
+    {h405p (0.767, 0.637), lr6 (0.785, 0.715)} and why the residual is
+    a mass question, not a drag question ([[TIER2_MASS_SCENARIOS]]).
+  - Reported, non-gating: χ²_med falls monotonically to **199.8 at
+    a 45 — below h405p's 267** (the KE *curve* is fit better than the
+    incumbent at chords whose KE₁ is worst); s45's midHot 0.841 dips
+    just under the soft-band floor 0.85. Every ring cell returns
+    `gate-marginal` on n₁ (0.188–0.214 against the 0.19 floor), which is
+    exactly why the gate was made reporting-only for this ring.
+
+- **The τ refinement CLOSES the family — and this time the exhaustion is
+  earned on licensed axes (§6.7 `lintau` scan, 2026-08-12, zero MD,
+  14 364 cells; `atlas_lintau.csv`).** §6.6's "no joint improvement" was
+  measured only at τ ∈ {4.8, 6.4} while the committed grid jumps 3.2 →
+  4.8 with nothing between — an axis sampled ten times coarser than the
+  effect it controls. Refilling it (τ = 3.6/4.0/4.4/5.2/5.6, all 57
+  chord families cached, anchors at 4.8/6.4 reproducing the committed
+  `atlas_linsweep.csv` value-for-value on 4104 rows) **triples the gated
+  basin, 35 → 126 cells** — and then closes it:
+  - **21 gated cells beat h405 on BOTH KE₁ and tail**, all at the
+    newly-sampled τ 3.6–4.4 — but their **minimum predicted midHot is
+    1.213**, missing the 1.15 band by ≥ 0.063 against a ~0.005 transfer
+    SD (>10σ). The 58 gated cells that *are* in band top out at KE₁
+    ≈ 0.67 with tails 0.058–0.101, all under h405's 0.1057.
+  - **The constraint set {gate ∧ midHot ≤ 1.15 ∧ KE₁ > h405 ∧ tail >
+    h405} is EMPTY over a ∈ [15, 60] × τ ∈ [3.6, 6.4] × E₀ ∈ [0.17,
+    0.52] × 3 wells.** The §6.6 conclusion survives the refinement.
+- **Twin transfer MEASURED over the 14-cell MD family (reusable program
+  capital, §6.7):** KE₁ **ρ 0.9998** (bias −0.0142 ± 0.0029),
+  **tail(n ≥ 10) ρ 0.964 / Spearman 0.982** (bias +0.069 ± 0.014, ratio
+  a stable ×1.7–1.9) — a **NEW licensed leg** — n₁ ρ 0.943 (bias
+  +0.0008), n̄ ρ 0.921 (bias +0.590), midHot ratio MD/twin **0.906 ±
+  0.004**; and **W₁ ρ 0.319 / Spearman 0.437 — REFUTED as a ranking
+  instrument**, now quantified over 14 cells rather than inferred from
+  two. The τ-step sign check is the sharpest statement: at a 42.5 the
+  twin predicts τ 6.4 *improves* W₁ by 0.122 while MD measures it
+  *worsening* by 0.226 — **opposite sign**. Validation of the method
+  itself: s37's predicted midHot 1.213 vs measured 1.216, and the
+  clone's predicted tail 0.0628 vs measured 0.0668.
+  **Consequence:** the twin's *tail* correctly reproduces the very τ
+  effect its W₁ gets backwards, so tail — not W₁ — is the histogram-side
+  instrument for any future free-form work.
+
+- **The family is CLOSED — measured, on a pre-committed kill (§6.8 pair,
+  2026-08-13, 2 × N = 500, whole-family CRN; `atlas_lintauring_table.csv`).**
+  The §6.7 closure was withdrawn after two errors (generalising from
+  `s37`, the *weakest* of the 21 candidates; and promoting the soft
+  midHot band to a gate). A W₁ predictor on the licensed legs
+  (W₁ = 2.434 − 4.662·n₁ − 6.618·tail; R² 0.797, LOO RMSE 0.081) then
+  named 14 cells above h405 on W₁ *and* KE₁, and the two best were run:
+  - **Both FAIL.** `t1` (a 35 / τ 4.0 / E₀ 0.45): W₁ **0.7805**, KE₁
+    0.6576, midHot 1.395. `t2` (a 42.5 / τ 4.4 / E₀ 0.44): W₁ **0.8528**,
+    KE₁ 0.5071, midHot 0.927. Both W₁ ≥ h405's 0.7675 ⇒ the
+    user-pre-committed **KILL fires**.
+  - **The predictor is refuted at 3.1× and 4.5× its LOO RMSE** — but the
+    **licensed legs are not**: at τ 4.0/4.4, *outside their entire
+    training range*, KE₁ predicted 0.659/0.506 vs measured
+    **0.6576/0.5071** (errors ∓0.001) and midHot 1.380/0.923 vs
+    **1.395/0.927**. Only the tail degraded (over-predicted by 2–3σ).
+    **The failure is the functional form, not the transfers: W₁ is not a
+    function of (n₁, tail).** `t1` carries a tail 17 % better than h405's
+    and still loses W₁, because the n = 2–9 interior — which neither
+    input constrains — holds the remaining mass. Third recurrence of the
+    §6.5 lesson that matched summary numbers do not pin a distribution.
+  - Closest approach on record: `t1` is W₁-**indistinguishable** from
+    h405 (Δ +0.0130 vs a 0.031 seed SD) with KE₁ +0.0205 — but `lr6`
+    dominates it (same W₁, KE₁ 0.7146). **Pareto front unchanged:**
+    h405p (0.767, 0.637), lr6 (0.785, 0.715).
+
+**Couplings:** jointly extracted with E_bind (§9 below); KE↔histogram
+anti-correlate through the exposure integral K (I47) — any drag change
+re-opens the (v_c, τ, E₀) arbitration (I99).
+
+**Status:** locked in-band **by the Tier-0 trace instruments only** —
+after §6.6 (twin + MD, 2026-07-24) the Tier-2 landing carries zero
+form-discrimination power (see the form-blindness influence bullet
+above), so the traces are not merely the *best* authority but the
+*sole* one; lq stays rejected there (held-out 0.699 FAIL, n̂ = 2.927).
+RQ11's drag-shape axis is re-pointed at the 5–9 Å/ps mid-band
+(NB-RQ11-12). Open items: subtractive-form re-fit decision
+(Step-1 gate fired), the variable-mass Method-B re-run
+(§6.6 pre-registered follow-up), the collaborator ask
+(sub-2.5 + production-kinematics traces). Chronology + full tables:
+`drag_migration_log_tier2.md`, `TIER2_SENSITIVITY_ATLAS_FINDINGS.md`.
+
+### 1.G4 Tier-0 refit at the sourced density width s_ρ = 3.5 Å (MEASURED 2026-10-02; adoption DECISION NEEDED)
+
+`THESIS_FINAL_GOALS.md` G4 (= atlas §6.8 T5). Method-B Stage 2 only (joint
+18 + 9 Å, N = 50, seed 20260604, m_eff = 19 He), drag gate
+`erf_independent` at 3.5 Å, `potential_steepness` 14.2 Å unchanged.
+Pre-registration committed `b729c28` before any run; code `ebda074`;
+artifacts `c1f9bb5` under
+`data/reference/drag/shared/trajectory_matching_srho3p5A/` (`verdict.json`).
+
+**Oracle first.** The committed `shared_pure_cubic` objective
+0.1292649398514104 reproduces **bit-exactly** — but only against the 9 Å
+reference as it stood before `aacc71f` (2026-09-29). That commit
+re-smoothed `9A/velocity_smoothed/cleaned_data_long.csv` (SG + smoothing
+spline λ = 5; max |Δv| 0.022 Å/ps); on the current file the same point
+scores 0.129183 (9 Å RMSE −1.6·10⁻⁴). A data change, not code drift
+(bisected). All fits below use the **current** reference (user decision),
+with a 14.2 Å control on the same reference to split the two changes.
+
+| family | a [amu/ps] | b [amu·ps/Å²] | E_bind [eV] | obj [Å/ps] | RMSE 18 / 9 Å | bands |
+|---|---|---|---|---|---|---|
+| `shared_cubic` | 0 | **2.2300** (hw 0.213) | **0.1277** (hw 0.012) | 0.166102 | 0.125 / 0.207 | **pass** |
+| `shared_linear_cubic` | → 0 (all starts) | 2.2297 | 0.1278 | 0.166103 | 0.125 / 0.207 | pass |
+| `shared_linear` | 50.05 | 0 | 0.010 (floor) | 0.6755 | 0.620 / 0.731 | **fail** |
+| control: cubic @ 14.2 Å | 0 | 2.5144 | 0.1168 | 0.129183 | — | (not a bundle) |
+| legacy bundle @ 14.2 Å | 0 | 2.5154 | 0.11676 | 0.129265 | 0.134 / 0.124 | (old reference) |
+
+- **Selection (pre-registered rule):** T_a0 = −7·10⁻⁸ Å/ps (cubic
+  equivalent; negative = optimizer noise, the linear_cubic fit runs onto
+  its a = 0 boundary), T_b0 = +0.509 Å/ps (linear distinguishable, and it
+  fails its bands) ⇒ **winner `shared_cubic`**. G4.6: no form change for
+  production; only b and E_bind would move (through the `drag_bundle`
+  selector, id `srho3p5A_shared_cubic`).
+- **Attribution (vs the control):** smoothing effect Δb −0.001, ΔE_bind
+  +0.0001 eV (nil); **gate effect Δb −0.284 (−11 %, 1.3 half-widths),
+  ΔE_bind +0.0109 eV (+9 %)**.
+- **Predictions on record vs measured:** "E_bind falls" — **wrong**, it
+  rises; "b shift small" — it is −11 %, larger than predicted. The
+  prediction rested on the §9.4 probe's R = 9 Å cell, which mistook the
+  I–I start separation for a droplet radius; see the §9.4 **CORRECTION**
+  (2026-10-05) for the geometry error and the untested drag-tail
+  hypothesis for the sign.
+- **Fit quality cost:** the 9 Å RMSE degrades 0.124 → 0.207 Å/ps (inside
+  the 0.45 band); 18 Å slightly improves (0.134 → 0.125). The
+  `diagnostic_4param` localization wants per-case wells 0.132 (18 Å) /
+  0.193 eV (9 Å) with a = 6.13, b = 1.41 (obj 0.089): at 3.5 Å a single
+  shared E_bind is a worse compromise between the two droplets.
+- **Tier-0 forward check** (30 ps): |v2| RMSE 9 Å 0.2072, 18 Å 0.1250 —
+  reproduces the fit. Exports `{9A,18A}/tier0_srho3p5A/`.
+- **Tier-1a re-check** (9 Å; legacy rows re-scored on an in-memory
+  regeneration that reproduces the committed `9A/tier1a/` exports
+  bit-exactly): |v2| RMSE fixed / t* 0.5 / 5 / 9 =
+  0.207 / 0.211 / 0.220 / 0.222 vs legacy 0.124 / 0.126 / 0.132 / 0.136;
+  R RMSE and ledger closure unchanged within noise. The variable-mass
+  increment over its own fixed row is +0.004 / +0.013 / +0.015 vs legacy
+  +0.002 / +0.008 / +0.012. Tables in `9A/tier1a_srho3p5A/`.
+
+> **DECISION NEEDED (open, 2026-10-02).** The pre-registered Tier-1a gate
+> ("R(t), |v(t)| and ledger closure no worse than the delivered result")
+> **fails on |v2| as literally worded**. Most of the loss is inherited
+> from the Tier-0 fit (the fixed row is already +0.083 Å/ps); the
+> variable-mass increment is comparable to legacy. Two readings:
+> **(a)** record the failure as Tier-0-inherited, accept the bundle, and
+> proceed to G5; **(b)** treat it as blocking and open the 9 Å misfit
+> (shared-binding tension) as an item before G5. Until decided, the
+> production bundle stays `shared_pure_cubic` at 14.2 Å.
+> **SUPERSEDED 2026-10-05 by G4.9** (below): 9 Å leaves the fit.
+
+#### 1.G4.9 18 Å-only refit, 9 Å held out as non-radial (MEASURED 2026-10-05)
+
+`THESIS_FINAL_GOALS.md` G4.9 (pre-registered `fc4ece9`; step 3 amended
+before any fit result). Same engine, anchors, N = 50, seed and references
+as G4, single case. Driver `scripts/extraction/method_b_18A_only_refit.py`;
+artifacts `data/reference/drag/18A/trajectory_matching_srho3p5A/`
+(`verdict.json`). Oracle: single-case evaluations reproduce the committed
+G4 and control per-case RMSEs bit-exactly (both cases, both widths).
+
+**Step 1 — why 9 Å fails (no new fits).** The 9 Å atom 2 is radial only to
+≈ 2 ps (< t* = 2.67 ps): it swings to y ≈ −10 Å by 5 ps, then drifts in
+−x; at 14 ps it sits at (−15, −2, 37) Å moving ≈ 50° off the axis. No
+radial sub-window exists. The extra squared residual of the 3.5 Å gate
+(vs 14.2 Å, committed G4 points) has two lobes: ≈ 39 % at 3.5–6.5 ps (MD
+too slow) and ≈ 61 % at 9.5–14.5 ps (MD too fast: the reference keeps
+slowing to ≈ 2.85 Å/ps at r ≈ 40 Å, the 3.5 Å MD re-accelerates
+3.04 → 3.17 Å/ps under the partner Coulomb push with no drag left). The
+pre-specified "transverse mask" share is uninformative (85 % of samples
+are transverse-dominated). `step1_9A_residual_vs_transverse.{csv,json}`.
+
+**Step 2 — 18 Å-only fits.**
+
+| fit | a [amu/ps] | b [amu·ps/Å²] | E_bind [eV] | RMSE 18 Å [Å/ps] | bands |
+|---|---|---|---|---|---|
+| `cubic` @ 3.5 Å | 0 | **2.2286** (hw 0.213) | **0.1214** (hw 0.006) | 0.1092 | pass |
+| `linear_cubic` @ 3.5 Å | → 0 | 2.2368 | 0.1210 | 0.1092 | pass |
+| `linear` @ 3.5 Å | 23.15 (hw 1.13) | 0 | 0.1165 | 0.1239 | pass |
+| control `cubic` @ 14.2 Å | 0 | 3.4490 | 0.0721 | 0.0966 | (not a bundle) |
+
+- **Winner `cubic`** (T_a0 = −5·10⁻⁶ equivalent; T_b0 = +0.0147 > 0.005,
+  linear distinguishable though it passes its bands). Bundle id
+  `srho3p5A18A_cubic`. No production form change (G4.6).
+- **At 3.5 Å, 18 Å alone returns the G4 joint law** (b 2.2286 vs 2.2300,
+  E_bind 0.121 vs 0.128). Dropping 9 Å changes almost nothing at the
+  sourced width.
+- **At 14.2 Å it does not:** 18 Å alone gives b 3.45 / E_bind 0.072 vs the
+  joint 2.51 / 0.117. The 0.071 eV of the old per-case 18 Å fit (§8) is a
+  14.2 Å value. **Gate effect on 18 Å alone: b −35 %, E_bind +68 %** —
+  much larger than the joint fit's −11 % / +9 %.
+- **Projection on record refuted:** "E_bind falls toward 0.071 eV" — it is
+  0.121 eV (−5 % vs G4), because the fall was a 14.2 Å property. No KE₁
+  gain from this route.
+- **18 Å also prefers the soft gate:** RMSE 0.0966 (14.2 Å) vs 0.1092
+  (3.5 Å). The tail outside the surface helps the clean radial case too,
+  so the drag-tail effect is not only a 9 Å non-radial artifact.
+- **Step 3 — 9 Å escape check:** escape 1.0 under the winner (and under
+  the control). Full-window 9 Å RMSE 0.241 (winner) / 0.280 (control),
+  descriptive only.
+
+#### 1.G4.10 Force-balance (Method A) cross-check, cos θ-projected (MEASURED 2026-10-05; gate formally DISAGREES, result INCONCLUSIVE — smoothing inadequate for derivatives)
+
+`THESIS_FINAL_GOALS.md` G4.10 (pre-registered `cbefdb7`, amended `114c1ca`
+before any run: well-term sign, raw-|v₂| row, 18 Å form non-identifiable,
+radius row). Zero MD. Module `extraction/force_balance.py`, driver
+`scripts/extraction/method_a_force_balance_g410.py`, artifacts
+`data/reference/drag/force_balance_srho3p5A/` (`verdict.json`, `fits.csv`,
+`bins_1ps.csv`, `trace_{9A,18A}.csv`). Balance along v̂ of atom 2:
+γρ̂v = F_C cos θ − dU/dr (r̂·v̂) − m d|v|/dt. Primary: committed smoothed
+reference, SG order 2 / 0.5 ps derivative, m_eff, E_bind 0.1214 eV,
+U width 14.2 Å, R = 27.94 Å (N = 2000, centre at origin), s_ρ = 3.5 Å,
+interior ρ̂ ≥ 0.9.
+
+**Anchor.** The `legacy_no_well` projection with the old spline derivative
+reproduces both committed Method-A `linear_and_cubic` fits to ≤ 5·10⁻⁶
+(the old 9648.5 rounding): 18 Å on the repo reference; 9 Å **only** on the
+uncommitted `Drag_function/drag_function/cleaned_data.csv` (`cleaned_SG`),
+which differs from the repo's 9 Å `cleaned_data.csv` — this locates the
+"provenance-broken" 9 Å Method-A artifact (`drag_migration_log_tier0.md`
+2026-06-11). Synthetic radial inversion (test) returns b exactly with the
+exact derivative; the SG 0.5 ps curvature bias is −0.36 %.
+
+**Gate (pre-registered).** 18 Å cubic **b_A = 1.618** vs band
+2.2286 ± 2·0.2127 = [1.803, 2.654] → **DISAGREES** as worded. No
+automatic adoption. **Read: inconclusive** (corrected 2026-10-05, same
+day, after review of the raw speed — see "Why the result is
+inconclusive"). The numbers below are measured; none of the force-balance
+coefficients is trusted until a derivative-grade smoothing exists.
+
+| case set (primary) | cubic b | linear a | linear_cubic (a, b) | force RMSE lin / cub / lc | interior |v| [Å/ps] |
+|---|---|---|---|---|---|
+| 18 Å | **1.618** | 14.36 | (−263, 31.1) | 12.3 / 11.7 / 1.4 | 2.95–3.02 |
+| 9 Å | 2.013 | 32.81 | (0.90, 1.961) | 48.7 / 35.1 / 35.0 | 3.08–4.94 |
+| joint | 1.991 | 29.63 | (−2.47, 2.140) | 49.5 / 31.2 / 31.1 | 2.95–4.94 |
+
+**What the primary run shows.** In the 18 Å interior the reference speed
+is almost flat (3.01 → 2.95; the full Method-B window does fall ≈ 3.2 →
+2.6) and the bulk drag falls 59 → 26 amu·Å/ps² across 4.54–6.2 ps (F/v³
+by 0.5 ps bins: 2.16, 1.67, 1.24, 1.01), driven by the position terms
+(F_C 85 → 54, inward well term 35 → 45); m·d|v|/dt is one constant
+(−9.35). The 18 Å `linear_cubic` (−263, 31) is this time trend fitted
+through a 2 % speed range — non-identifiable, as amended.
+
+**Why the result is inconclusive.** The committed references were built
+for trajectory matching (order-1 SG over 3.4 ps at 18 Å, IMF + SG over
+2.4 ps at 9 Å), not for differentiation. At 18 Å they do not follow the raw
+speed in the interior:
+
+| t [ps] | raw \|v₂\| mean (min–max) | committed reference |
+|---|---|---|
+| 4.00–4.54 | 2.85 (2.71–3.12) | — |
+| 4.54–5.00 | 3.22 (3.12–3.28) | 3.01 |
+| 5.00–5.50 | 3.15 | 2.99 |
+| 5.50–6.20 | 3.12 | 2.96 |
+| 6.20–7.00 | 2.82 (2.55–3.10) | 2.93 |
+| 7.00–8.00 | 2.75 | 2.89 |
+
+The raw speed oscillates, sits 0.15–0.2 Å/ps above the reference in the
+interior and drops ≈ 0.3 Å/ps at 6.2–7 ps; the interior (1.66 ps) is
+shorter than the reference's smoothing window. The falling drag trend can
+therefore be partly a smoothing artifact (the reference smears the
+near-surface deceleration), and the raw-|v₂| rows (1.1–1.8) are dominated
+by the oscillation. *Withdrawn the same day:* the first reading of this
+entry ("the drag is depth-dependent; the 14.2 Å well vs 3.5 Å density
+widths disagree near the surface") overclaimed — it rested on the
+reference's flat speed. What stands: the machinery (synthetic inversion,
+anchor) and the 9 Å projection effect.
+
+**Recorded sensitivities (18 Å cubic b unless stated).**
+- SG window on the committed reference 0.25 / 1.0 ps: 1.618 / 1.618
+  (inert, as amended; 9 Å ±0.0003).
+- Raw-|v₂| derivative 0.25 / 0.5 / 1.0 ps: 1.105 / 1.265 / 1.800; force
+  RMSE 106 / 63 / 24 (vs 11.7): too noisy to serve as primary.
+- Projection: scalar 1.627 (18 Å consistency, cos θ ≈ 1 ✓); **9 Å scalar
+  2.830 vs projected 2.013 (−29 %)**; legacy (no well, scalar) 3.129 /
+  9 Å 3.111.
+- E_bind ± 1 hw: 1.691 / 1.544 (slope −12.4 amu·ps/Å² per eV, amendment
+  estimate −12.5).
+- Radius −8 % / +8 %: 1.795 / 1.499 (−8 % is the closest row to the band,
+  still outside).
+- 9 Å anchored m(t) 21 → 14 He (t* 2.67 ps): 2.055 vs 2.013.
+- **Form:** 9 Å and joint prefer cubic over linear (RMSE 35.1 vs 48.7;
+  31.2 vs 49.5) and the free linear term goes to ≈ 0 — consistent with the
+  G4/G4.9 form. Caveat: the projected 9 Å samples scatter (RMSE 35 vs
+  scalar 7.6) because cos θ is resolved at 0.5 ps while |v| is smoothed
+  over 2.4 ps; the 9 Å / joint b inside the band is weak evidence.
+- **Structural limit (independent of smoothing):** at s_ρ = 3.5 Å the
+  18 Å interior is 1.66 ps with a few-% speed range, so 18 Å can check the
+  size of b but never the form; only 9 Å has the speed range.
+- **Not independent on E_bind:** Method A takes E_bind from the G4.9 fit
+  and checks b given E_bind.
+
+**Outside the surface (ρ̂ < 0.1).** 18 Å (8.5–14.8 ps): mean apparent drag
++6.5 amu·Å/ps² (0.16 of the G4.9 bulk cubic at that v), rising 1.5 → 13.7
+from 10–11 to 14–15 ps — the late slowing of G4.9 step 1, present on the
+clean radial case. 9 Å (10.3–14.1 ps): −7.0. Same caveat as the
+interior: the late m·d|v|/dt (−8.4 constant) is the 3.4 ps reference
+slope, not resolved dynamics; not interpreted.
+
+> **NEXT (user, 2026-10-05).** The intended comparison — all three forms
+> by force balance on 9 Å and 18 Å with derivative-grade smoothing, against
+> trajectory matching — is **not yet achieved**. Next: design and validate
+> that smoothing (discussion first), then rerun. Adoption of
+> `srho3p5A18A_cubic` for G5 waits on it. Production stays
+> `shared_pure_cubic` at 14.2 Å.
+> *(Superseded the same day by the post-hoc June-pipeline set below and
+> the G4.11 goal.)*
+
+##### 1.G4.10-PH Post-hoc: the June Method-A pipeline + the agreed corrections (MEASURED 2026-10-05; POST-HOC)
+
+**Why.** The pre-registered run replaced the June Method-A data handling
+(`Drag_function/drag_function/drag_calculation.py`) along with the
+physics. This set keeps the June handling and changes only the physics.
+It is post-hoc (decided after the G4.10 result), but the June windows,
+trim and smoothing were fixed in June 2026, not tuned here. Driver
+`scripts/extraction/method_a_force_balance_g410_posthoc.py`; artifacts
+`data/reference/drag/force_balance_srho3p5A/posthoc_june_pipeline/`
+(`fits.csv`, `summary.json`); the G4.10 band is applied descriptively.
+
+- **June handling kept:** short references `velocity_smoothed/cleaned_data.csv`
+  (18 Å order-1 SG over 3.4 ps on [4.54, 8.0]; 9 Å IMF + SG on
+  [2.67, 6.0]); cubic spline with the MAD-based s; 0.5 ps trim per end →
+  trusted 18 Å [5.04, 7.5] (ρ̂ 1.00 → 0.42 at 3.5 Å), 9 Å [3.17, 5.5]
+  (ρ̂ ≈ 1). The repo 9 Å short file gives cubic b 2.634, the June local
+  file 2.646 (the repo file is used).
+- **Physics changed:** Coulomb projected on the motion, the well
+  −dU/dr (r̂·v̂) at the G4.9 E_bind, F/ρ̂ at s_ρ = 3.5 Å.
+- **Reference note:** the short and long 18 Å references differ by
+  0.27 Å/ps at 4.54 ps (3.29 vs 3.02; same order-1 SG over different
+  spans). On the ρ̂ ≥ 0.9 points the short reference gives b 2.25, the
+  pre-registered run on the long one 1.62: the reference end-effect, not
+  the physics, drove most of the G4.10 gap.
+
+| cubic b (band [1.803, 2.654]) | 18 Å | 9 Å | joint |
+|---|---|---|---|
+| **primary** (all trusted points) | **2.449 ✓** | **2.634 ✓** | 2.607 |
+| ρ̂ ≥ 0.5 / ≥ 0.9 | 2.385 ✓ / 2.252 ✓ | 2.634 ✓ (ρ̂ ≈ 1) | 2.599 / 2.599 |
+| E_bind − / + 1 hw | 2.549 ✓ / 2.349 ✓ | 2.650 ✓ / 2.618 ✓ | 2.635 / 2.579 |
+| radius − 8 % / + 8 % | **3.783 ✗** / 2.281 ✓ | 2.571 ✓ / **2.705 ✗** | 2.749 / 2.643 |
+| spline s × 0.5 / × 2 | 2.449 / 2.449 (inert) | 2.634 / 2.634 | — |
+| 9 Å anchored m(t) 21 → 14 | — | **2.691 ✗** | — |
+| decomposition: June (no well, scalar, no gate) | 3.683 | 3.574 | 3.590 |
+| + well (scalar, no gate) | 2.064 | 3.245 | 3.071 |
+| + well + projection (no gate) | 2.056 | 2.633 | 2.548 |
+
+(June row = the committed Method-A `linear_and_cubic` (14.56, 2.05) /
+(24.88, 2.08) as linear_cubic — reproduced.)
+
+- **Reads (measured).** With the June handling and the corrections, the
+  force-balance cubic b of **both** cases lies in the trajectory-matching
+  band, including **9 Å, which the G4.9 fit never saw** (held out).
+  18 Å is robust to the ρ̂ cut, E_bind and spline s (2.25–2.55). The well
+  is the largest correction (18 Å 3.68 → 2.06); the projection matters
+  only at 9 Å (3.25 → 2.63); the gate only where ρ̂ < 1 (18 Å 2.06 → 2.45).
+- **Limits.** 9 Å sits at the band's upper edge: + 8 % radius (2.705)
+  and the anchored mass (2.691) leave it by ≤ 0.05. 18 Å − 8 % radius
+  (3.78) leaves it far: a smaller droplet puts the late trusted points
+  outside the surface, so ρ̂ → small and F/ρ̂ blows up. Only the size of b
+  is checked: `linear_cubic` flips sign between rows (18 Å primary
+  a 31.0, b −1.02; 9 Å a −24.7, b 4.11), so these windows carry no form
+  information. E_bind is borrowed from Method B (b given E_bind).
+- **Reading.** Consistent within uncertainties, 9 Å at the band edge.
+  Supports the *size* of the cubic b (2.23) from an independent local
+  method on both TDDFT cases; the form remains a decision. Next: G4.11
+  (`THESIS_FINAL_GOALS.md`) — the same two-method test for the
+  linear / quadratic / linear + quadratic families.
+
+#### 1.G4.11 Cross-case drag-law test across families (MEASURED 2026-10-05; pre-registered `10144c3`) — **only the cubic is consistent → cubic supported by the TDDFT data** (C-X at the band edge)
+
+**Question.** Does one law F(v) fitted on 18 Å (v ≈ 3 Å/ps) predict the
+drag at 9 Å (v ≈ 3.4–4.6 Å/ps)? The 18 Å trajectory-matched law L₁₈
+(s_ρ = 3.5 Å) is scored against the G4.10-PH force-balance drag, each
+family at its own E_bind. s = Σ F·L₁₈ / Σ L₁₈²; pass |s − 1| ≤ 0.19
+(frozen; = 2·0.2127/2.2286). C-X uses the 9 Å points (main), C-M the 18 Å
+points. A family is consistent if both pass. Drivers
+`scripts/extraction/method_b_g411_lq_18A_refit.py` (step 1),
+`scripts/extraction/method_a_g411_cross_case.py` (step 2); artifacts
+`18A/trajectory_matching_srho3p5A/{quadratic,linear_quadratic}/`,
+`force_balance_srho3p5A/g411_cross_case/{scores.csv,verdict.json}`.
+
+- **Anchors.** Step 1: the G4.9 cubic point reproduces 18 Å RMSE
+  0.10919 at 3.5 Å, the June quadratic point 0.09932 at 14.2 Å (both
+  bit-exact). Step 2: the cubic bundle reproduces all 25 committed
+  G4.10-PH cubic b bit-exactly.
+- **Step 1, new 18 Å fits at 3.5 Å (measured).** `quadratic` c 7.224 ±
+  0.353 amu/Å, E_bind 0.1191 ± 0.0058 eV, RMSE 0.1168, escape 1 (bands
+  pass). `linear_quadratic` collapses onto it: a 0.004 (at the a ≥ 0
+  bound), c 7.221, E_bind 0.1191, RMSE 0.1168 — so its scores equal the
+  quadratic's. All four families fit 18 Å within 0.109–0.124 Å/ps.
+
+| family (18 Å law, E_bind) | **s_X** (9 Å) | s_M (18 Å) | C-A (FB 9 Å / 18 Å) | shape_X | consistent |
+|---|---|---|---|---|---|
+| linear (a 23.15, 0.1165) | **1.823 ✗** | 0.981 ✓ | 1.857 | 0.323 | no |
+| quadratic (c 7.224, 0.1191) | **1.476 ✗** | 1.035 ✓ | 1.426 | 0.249 | no |
+| linear + quadratic (≡ quadratic) | **1.476 ✗** | 1.035 ✓ | — | 0.249 | no |
+| **cubic** (b 2.2286, 0.1214) | **1.182 ✓** | 1.099 ✓ | 1.075 | 0.187 | **yes** |
+
+- **Sensitivity rows (recorded, not gating).** s_X ranges: linear
+  1.78–1.87, quadratic 1.44–1.52 — they fail in every row. Cubic 1.15–1.21:
+  it leaves the band under + 8 % radius (1.214) and the 9 Å anchored m(t)
+  (1.207), by ≤ 0.024. s_M passes in every row for every family except
+  − 8 % radius (1.58–1.70; the late 18 Å points fall outside the surface,
+  as in G4.10-PH). Spline s inert. The force-balance `linear_quadratic`
+  fit itself is sign-unstable (18 Å primary a 44.2, c −7.37; 9 Å a −89.3,
+  c 32.8) — no form information from force balance alone, as for
+  `linear_cubic` in G4.10-PH.
+- **Reads (measured).** All four 18 Å laws reproduce the 18 Å force
+  balance (s_M 0.98–1.10): one speed range does not separate them. Carried
+  to 9 Å, every law under-predicts the drag, and the deficit shrinks as
+  the law steepens: linear 1.82 → quadratic 1.48 → cubic 1.18. Only the
+  cubic is inside the band. C-A (no trajectory fit) shows the same order
+  (1.86 / 1.43 / 1.08).
+- **Decision rule (pre-registered).** Only the cubic consistent → the
+  cubic form is supported by the TDDFT data, not only chosen.
+- **Limits.** The cubic C-X passes at 1.182 against a band edge of 1.19
+  and fails in two of nine sensitivity rows: the support is marginal, and
+  s_X > 1 throughout means the 9 Å drag is, if anything, steeper than
+  v³ (projection, not tested: power law is out of scope). The 9 Å force
+  balance scatters about any law (shape_X ≥ 0.19). The test is a
+  cross-case ratio over 3–4.6 Å/ps; it says nothing about the capped tail
+  above 5.5 Å/ps. E_bind is borrowed from each family's own Method-B fit
+  (b given E_bind).
+- **Consequence.** The G4.10 / G4.11 gate on adopting
+  `srho3p5A18A_cubic` for G5 is cleared on the pre-registered rule; the
+  adoption itself is the user's call.
+- **Contested (post-hoc, 2026-10-05; visual, to be quantified in G4.12
+  step 2).** Radial Tier-0 9 Å runs of the same 18 Å laws: the quadratic
+  tracks HeDFT atom 1 and the cubic tracks the transverse atom 2. A
+  radial ion should leave at least as fast as atom 1, so the cubic
+  over-dissipates at 9 Å speeds. The C-X "under-prediction" is a
+  statement about atom 2's force balance only. Adoption on hold; G4.12
+  tests the TDDFT-tied linear + quadratic ridge uncapped against the
+  experiment (log 2026-10-05 "G4.11 re-read"). **Quantified in G4.12
+  step 2** (§1.G4.12): quadratic RMSE vs |v1| 0.274 / |v2| 0.992, cubic
+  0.938 / 0.520; cubic exit 3.23 vs atom 1 4.24 Å/ps.
+
+#### 1.G4.12 TDDFT-tied linear + quadratic ridge, steps 1–3 (MEASURED 2026-10-05; frozen `beb5440`) — **the whole ridge fits 18 Å; c ≤ 5 passes the 9 Å exit bound; every passing point lands in the twin uncapped, but each sits on a KE₁ / midHot trade-off line dominated by h405**
+
+**Question.** 18 Å fixes only F(v ≈ 3). Along the one-parameter ridge
+F = a·v + c·v² (a [amu/ps], c [amu/Å]; s_ρ = 3.5 Å, m_eff = 19 He), which
+points fit 18 Å, and which do not over-dissipate the radial 9 Å ion?
+Driver `scripts/extraction/method_b_g412_ridge.py` (fixed-c fit =
+`lq_fixed_c` variant of the form engine); artifacts
+`18A/trajectory_matching_srho3p5A/g412_ridge/{c*.json,ridge.csv}`,
+`9A/g412_exit_bound/{c*.json,bound.csv,bound_anchor.csv}`.
+
+- **Anchors.** Step 1: the lq form reproduces the G4.9 linear RMSE
+  0.12389 and the G4.11 quadratic RMSE 0.11677 bit-exactly; the c = 0 fit
+  returns the G4.9 linear point (|Δa| < 10⁻⁴, |ΔE| < 10⁻⁵). Step 2: the
+  scorer's mean series equals the user's cubic export exactly; the ridge
+  ends c = 0 / 7.224 reproduce the user's linear / quadratic runs
+  (v_exit 5.502 / 4.095).
+- **Atom assignment (measured).** Mean |v_⊥|/|v| over [2.67, 14.08] ps:
+  atom 1 0.294, atom 2 0.639 → atom 1 is the less-transverse atom (but not
+  radial: ≈ 17° off). Both atoms are outside the surface in the exit
+  window (ρ̂ ≤ 6·10⁻⁵). v_exit [13, 14] ps: atom 1 4.237, atom 2 2.752 Å/ps.
+
+| c | a | E_bind | 18 Å RMSE | F(5.5) | F(9.7) | Φ | v_exit 9 Å | margin vs atom 1 | RMSE vs \|v1\| |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 23.15 | 0.1165 | 0.1239 | 127 | 225 | 0.54 | 5.50 | +1.27 ✓ | 1.18 |
+| 0.4 | 21.87 | 0.1167 | 0.1235 | 132 | 250 | 0.60 | 5.40 | +1.16 ✓ | 1.08 |
+| 0.8 | 20.58 | 0.1169 | 0.1232 | 137 | 275 | 0.66 | 5.29 | +1.06 ✓ | 0.98 |
+| 1.2 | 19.29 | 0.1171 | 0.1228 | 142 | 300 | 0.72 | 5.20 | +0.96 ✓ | 0.89 |
+| 1.6 | 18.01 | 0.1173 | 0.1224 | 147 | 325 | 0.78 | 5.10 | +0.87 ✓ | 0.81 |
+| 2.0 | 16.72 | 0.1175 | 0.1220 | 152 | 350 | 0.84 | 5.01 | +0.78 ✓ | 0.72 |
+| 2.5 | 15.11 | 0.1177 | 0.1216 | 159 | 382 | 0.91 | 4.90 | +0.67 ✓ | 0.63 |
+| 3.0 | 13.50 | 0.1180 | 0.1211 | 165 | 413 | 0.99 | 4.80 | +0.56 ✓ | 0.54 |
+| 3.5 | 11.89 | 0.1182 | 0.1206 | 171 | 445 | 1.06 | 4.70 | +0.47 ✓ | 0.45 |
+| 4.0 | 10.27 | 0.1184 | 0.1201 | 178 | 476 | 1.14 | 4.61 | +0.37 ✓ | 0.38 |
+| 5.0 | 7.03 | 0.1189 | 0.1191 | 190 | 539 | 1.29 | 4.43 | +0.20 ✓ | 0.27 |
+| 7.224 | 0 | 0.1191 | 0.1168 | 219 | 680 | 1.62 | 4.10 | −0.14 ✗ | 0.28 |
+
+(F in amu·Å/ps², Φ = F(9.7)/418.5, speeds Å/ps.)
+
+- **Reads (measured).** Step 1: every point passes the G4.9 bands; RMSE
+  moves only 0.117–0.124 along the ridge (weak preference for the
+  quadratic end), E_bind 0.1165–0.1191. 18 Å does not select c, as
+  expected. Step 2: the bound cuts between c = 5 and 7.224 (linear
+  interpolation of the margin: c ≈ 6.3, projection). The draft's
+  "every c < 7.22 passes by construction" premise was wrong in detail —
+  the quadratic itself sits 0.14 below atom 1, not on it — but the
+  conclusion holds for the window c ≈ 0.8–3: all pass, by +0.56 to
+  +1.06 Å/ps.
+- **Limits.** The bound is one-sided (G4.12 step 2): it does not flag
+  the window's large surplus. In the window the radial ion leaves 0.56–
+  1.06 Å/ps faster than atom 1, with RMSE vs |v1| 0.54–0.98 — these laws
+  under-dissipate relative to the least-transverse TDDFT atom. Atom 1 is
+  17° off radial (cos ≈ 0.96, a few % of speed at most), and removing the
+  fixed-mass bias would make the MD ion faster still, widening the gap
+  (projection). The points that
+  track atom 1 most closely (c ≈ 5–7, RMSE vs |v1| 0.27) have Φ 1.3–1.6,
+  above the landing band.
+- **Step 3 (twin, zero MD; `tier2_h2b_forward_model.py g412twin` /
+  `g412refine`; `data/runs/h2b_forward_model/atlas_g412_*.csv`).** The 11
+  step-2 passes, uncapped linq chords at the 3.5 Å density gate (drag +
+  cooling exposure; well and birth dressing on 14.2 Å), own 18 Å E_bind,
+  §3.5c hard gate verbatim.
+  - *Anchors.* Landmark oracle passes; h405 at its own cell (τ 4.4,
+    E₀ 0.405) at 14.2 Å reproduces the committed `atlas_ebind_twin.csv`
+    H/eb1168 row string-identically. **Gate shift (measured):** at 3.5 Å
+    the same cell keeps KE₁ (0.6234 vs 0.6236) but n̄ falls 4.484 →
+    4.326, just under the 4.4 edge; W₁ 0.703 → 0.632, deepKE 0.84 →
+    0.68. Over the grid h405 still gates at 3.5 Å.
+  - *Frozen linscan grid (τ 6 × E₀ 36).* 8 of the 10 c > 0 points gate
+    1–2 cells; c = 0, 3.0, 5.0 gate none, each missing n₁ ≥ 0.19 by
+    ≤ 0.0006 (E₀-step granularity). Well grid: every point gates at
+    ≥ 1 well.
+  - *Near-pass refinement (frozen rule; cached chords, τ 11 × E₀ step
+    0.0025; anchor: all 2376 linscan rows reproduced).* **All 11 points
+    gate** (2–18 cells each); h405 gates 30 (14.2 Å) / 23 (3.5 Å).
+
+| c | Φ | 9 Å margin | gated | best KE₁ | midHot at best | W₁ min | deepKE min |
+|---|---|---|---|---|---|---|---|
+| 0 | 0.54 | +1.27 | 6 | 0.952 | 2.35 | 0.680 | 4.51 |
+| 0.4 | 0.60 | +1.16 | 9 | 0.872 | 2.02 | 0.654 | 3.22 |
+| 0.8 | 0.66 | +1.06 | 16 | 0.806 | 1.70 | 0.611 | 2.08 |
+| 1.2 | 0.72 | +0.96 | 16 | 0.732 | 1.49 | 0.607 | 1.67 |
+| 1.6 | 0.78 | +0.87 | 17 | 0.665 | 1.32 | 0.601 | 1.36 |
+| 2.0 | 0.84 | +0.78 | 18 | 0.618 | 1.11 | 0.616 | 1.00 |
+| 2.5 | 0.91 | +0.67 | 15 | 0.553 | 0.97 | 0.636 | 0.80 |
+| 3.0 | 0.99 | +0.56 | 13 | 0.488 | 0.84 | 0.701 | 0.66 |
+| 3.5 | 1.06 | +0.46 | 9 | 0.440 | 0.75 | 0.730 | 0.60 |
+| 4.0 | 1.14 | +0.37 | 5 | 0.392 | 0.67 | 0.770 | 0.55 |
+| 5.0 | 1.29 | +0.20 | 2 | 0.310 | 0.53 | 0.892 | 0.46 |
+| h405 @ 14.2 Å | 1.00 | — | 30 | 0.725 | 1.08 | 0.450 | 0.58 |
+| h405 @ 3.5 Å | 1.00 | — | 23 | 0.725 | 1.06 | 0.556 | 0.54 |
+
+  (Refined grid; KE₁ = twin n = 1 KE [eV], licensed ranking, levels ~2 %
+  cold; midHot geometric, soft band 0.85–1.15; zero τ-flags.)
+- **Step-3 reads (measured, twin level).** c is a single dial: as it
+  rises, KE₁ falls (0.95 → 0.31), midHot falls (2.35 → 0.53), deepKE
+  falls, the 9 Å surplus shrinks — and W₁ is best near c 1.2–2.0. The
+  soft midHot band is reached at c ≈ 2–2.5 (KE₁ 0.62–0.55). **At matched
+  midHot h405 is ahead on every reported axis** (c 2.0 vs h405 @ 3.5 Å:
+  KE₁ 0.618 vs 0.725, W₁ 0.616 vs 0.556, deepKE 1.00 vs 0.54), and every
+  ridge point with KE₁ ≥ h405's has midHot ≥ 1.49. The pure-linear family
+  showed the same KE₁/midHot dial (§ free-form linear sweep); the
+  TDDFT-tied ridge does not escape it. No point is close to atom 1 at
+  9 Å and in the soft band at once (c 2–2.5: +0.78 / +0.67 Å/ps).
+- **Correction to the chat-level projection made before step 3** (γ(7)
+  → midHot via the linear rows): it put c = 2 at midHot ≈ 1.67; measured
+  1.11. KE₁ was close (0.65 projected, 0.62 measured). The mid band
+  responds more to c than the single-speed mapping assumed.
+- **Decision rule (frozen).** Some c > 0 passes steps 1–3 → the
+  uncapped TDDFT-tied mixed law is a **landing candidate**; an MD
+  battery follows only under its own trigger; nothing adopted. Twin
+  dominance by h405 and the 9 Å surplus are recorded, not gating.
+- **Extraction mass m = 19 → 21 He (G11.4 step 2, MEASURED 2026-10-09;
+  `g11_ridge_m21/ridge_m21.csv`).** Same steps 1–2 at m = I⁺ + 21 He
+  (210.9546 amu, production m(n)). The ridge is mass-robust: a per c
+  **falls** 1.4–2.3 % (c 1.6: 18.007 → 17.757; c 2.0: 16.717 → 16.480),
+  E_bind +0.0004 eV, RMSE 0.113–0.119 (all bands pass); 9 Å margins
+  shrink 0.00–0.04 Å/ps, cut unchanged (c ≤ 5 pass, 7.224 −0.130). Sign
+  is opposite to the G11.2 projection: a heavier ion also gains less
+  speed from the Coulomb push, so less drag matches the same trace.
+  **Committed B2 / A5 coefficients re-scored unchanged at m = 21 pass
+  both:** RMSE 0.1182 / 0.1178, escape 1, margin +0.823 / +0.739 —
+  B2 / A5 stay Tier-0-consistent at m = 21; no re-landing needed.
+  **h405 on the same 9 Å bound (G11.4 step 3, measured):** margin
+  −1.21 Å/ps (fail; 18 Å RMSE 0.134 passes) — the capped cubic
+  over-dissipates the radial 9 Å ion and tracks the transverse atom 2.
+  The contrast law is 18 Å-consistent but not 9 Å-consistent.
+
+#### 1.G4.13 MD battery for the ridge law c = 2.0, uncapped (MEASURED 2026-10-06; pre-registered `4e0908c`) — **dominated at the selected cell only** (pooled N = 6000 misses the n₁ gate; KE₁ ties h405, W₁ much worse); law-level verdict open (G4.14)
+
+Production pipeline (Stage I 500 ps, E2 off, partner-aware closure,
+N = 1000/member), law a 16.717 / c 2.0 / E_bind 0.11748 / gate 3.5 Å,
+no cap. Generator `scripts/gen_tier2_g413_ridge_battery.py`, scorer
+`scripts/post_processing/tier2_g413_table.py`; artifacts
+`data/runs/h2b_forward_model/g413_{table,verdict}.csv`.
+
+- **Anchors.** Every cfg diffs against the h405 detfix member of its
+  seed in exactly the pre-registered keys; the h405 s1 run rescored =
+  committed `s1_new` (4 dp).
+- **Stage A (seed s1, CRN with h405 s1; measured).** 7/16 cells pass the
+  MD gate, all with midHot in band (1.04–1.11). KE₁ 0.548–0.639 (h405 s1
+  0.644), W₁ 0.88–1.10 (h405 0.80), χ² 400–645 (h405 236), trap
+  0.037–0.042 (h405 0.087). Frozen selection → t64e310 (τ 6.4, E₀ 0.31;
+  KE₁ 0.639). Gate shift on h405 (h405g35, 3.5 Å, same seed): KE₁
+  0.645, n̄ 3.811, n₁ 0.214, W₁ 0.866, χ² 300 — gated.
+- **Stage B (t64e310, s1–s5 + r6, pooled N = 6000; measured).**
+
+| | gate | n₁ | n̄ | KE₁ | midHot | W₁ | deepKE | χ² | trap |
+|---|---|---|---|---|---|---|---|---|---|
+| t64e310 pooled | ✗ | **0.186** | 4.085 | 0.638 | 1.032 | 1.100 | 0.542 | 558 | 0.036 |
+| h405 `pooled_new6000` | ✓ | 0.209 | 3.890 | 0.640 | 0.948 | 0.755 | 0.571 | 456 | 0.080 |
+
+  Per member n₁ 0.177–0.204: only s1 gates (5/6 miss n₁ ≥ 0.19).
+- **Reads (measured).** KE₁ ties h405 (−0.002), above the twin
+  prediction (0.54–0.61; twin was ≈ 3 % cold here). midHot sits in the
+  band. The cost is the histogram: n₁ below the gate, W₁ +0.34, χ² +100.
+  The ridge law traps half as many ions (0.036 vs 0.080). The single-seed
+  selection picked a cell whose s1 n₁ (0.204) was the high end of its
+  seed spread (winner's curse, disclosed).
+- **Decision (frozen).** *Dominated* — the TDDFT-tied uncapped ridge does
+  not reproduce the production landing at its best Stage-A cell; the
+  cap stays as the effective element. Nothing adopted.
+- **Correction (2026-10-06, user-caught).** The verdict is about
+  t64e310, not the law. Stage A could not resolve the landing: one seed,
+  E₀ step 0.01, τ step 0.4–0.8, while n₁'s seed sd (0.010) equals the
+  gate margin and the gated E₀ band moves −0.07 eV per ps of τ. Measured
+  transfer for this law (16 cells): KE₁ MD − twin +0.020 ± 0.001,
+  midHot × 0.945 ± 0.014, n̄ −0.37 ± 0.035, n₁ −0.011 ± 0.014, W₁
+  +0.31 ± 0.06; seed sd (6 seeds) KE₁ 0.002, midHot 0.003, n̄ 0.07,
+  n₁ 0.010, W₁ 0.036. "The cap stays" withdrawn; G4.14 (fine τ line).
+
+#### 1.G4.14 Fine τ lines for the ridge law, c 1.8–2.5 (MEASURED 2026-10-06; frozen `7726e43`, amendments A1–A5 `12908a1`) — **no c / τ / E₀ beats h405; τ trades the histogram tail against KE₁ at every c**
+
+Production pipeline, N = 1000 per run, **independent seeds** (20261101–74,
+no CRN); generator `scripts/gen_tier2_g414_tauline.py`, scorer
+`scripts/post_processing/tier2_g414_table.py`; artifacts
+`data/runs/h2b_forward_model/{atlas_g414_*,g414_*}.csv`.
+
+- **Step 0a (Tier-0).** c 1.8 / 1.9 / 2.1 / 2.2 fit 18 Å (RMSE
+  0.1219–0.1222) and pass the 9 Å exit bound (+0.82 → +0.73, monotone in
+  c between the G4.12 points); c = 2.0 refit bit-exact.
+- **Step 0 (twin).** midHot filter (predicted MD midHot in band for some
+  τ 4.8–6.6) keeps c 1.8–2.5, drops 1.2 (1.33–1.40) and 1.6 (1.16–1.22).
+- **Reference added.** h405 with the 3.5 Å gate, pooled N = 6000: n₁ 0.207,
+  n̄ 3.857, KE₁ 0.643, W₁ 0.818, χ² 636 — the 3.5 Å gate alone costs h405
+  +0.06 W₁ (14.2 Å: 0.755) at equal KE₁.
+- **Step 1 (74 runs; fit amended A1: no n₁ ΔE² term).** Fitted, at
+  n̄ = 3.89 inside the feasible window (n₁ ≥ 0.200, midHot in band):
+
+| c | best W₁ (τ; KE₁) | best KE₁ (τ; W₁) | n₁ max on curve |
+|---|---|---|---|
+| 1.8 | 0.831 (4.91; 0.577) | 0.632 (5.90; 1.046) | 0.204 |
+| 1.9 | 0.867 (5.07; 0.574) | 0.612 (6.05; 1.023) | 0.207 |
+| 2.0 | 0.904 (5.25; 0.564) | 0.620 (6.49; 1.117) | 0.208 |
+| 2.1 | 0.872 (5.07; 0.545) | 0.613 (6.40; 1.137) | 0.212 |
+| 2.2 | — second-seed rule tripped (W₁), skipped (A2) | | |
+| 2.5 | 0.999 (6.10; 0.536) | 0.543 (6.40; 1.049) | 0.203 |
+
+- **Reads (measured).** (i) Every c shows the same τ trade: low τ keeps
+  the large-n tail (W₁ down) but costs KE₁; high τ recovers KE₁ but empties
+  n ≥ 10. (ii) Landing is marginal everywhere (n₁ ≤ 0.212 vs 0.200).
+  (iii) s1 is a high seed for this law (+0.014 n₁ on in-band Stage-A
+  cells vs the independent-seed surface). (iv) On KE alone the high-τ cells
+  (c 1.8–2.0, τ 6.0–6.6) match h405 per member: KE₁ 0.62–0.65, χ² 243–320
+  (h405 members 236–347 at 14.2 Å, 300–470 at 3.5 Å).
+- **Histogram shape (measured, all 200 runs on disk).** Monotone
+  decrease is generic (93/95 ridge runs within 2σ; h405 pooled strictly
+  decreasing n = 0…17). The misfit is **spread, not location**: model /
+  experiment (solvated) 0.67 at n = 1, 1.2–1.35 at n = 3–12, 0.42 / 0.09 /
+  0.05 at n = 15 / 16 / 17, zero beyond. E₀ shifts the distribution (n̄
+  −0.7 to −1.1 per +0.03 eV, tail shrinks, n₁/n₂ stays 1.3–1.5 vs 2.18) and
+  cannot create mass above n ≈ 17: first-shell cap n* = 21 plus weak top
+  rungs (8.6 → 6.0 meV for n 19–21) strip the top; deep bottom rungs
+  (20.3 / 13.8 / 12.0 meV) pile ions at n 2–4. The size histogram's shape
+  is a mass-model (ladder / n* / E_int spread) question, not a drag, τ or
+  E₀ one.
+- **A5 pooled confirmation (c 2.0, τ 6.4, E₀ 0.3155; s1–s5 + r6,
+  N = 6000; measured).** n̄ 3.886, n₁ 0.204, monotone, midHot 0.995,
+  KE₁ 0.6172, W₁ 1.097, χ² 507, n ≥ 15 mass 0.0006. **Loses on KE** vs
+  both references: KE₁ −0.023 (14.2 Å) / −0.026 (3.5 Å); χ² beats 3.5 Å
+  (636) but not 14.2 Å (456). Prediction held (KE₁ 0.616, W₁ 1.10; χ²
+  above the 420–470 projection). Pooled figures container:
+  `data/runs/9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g414c200t64pooled_th500`
+  (`build_pooled_detection_container.py --target g414_c200t64`).
+- **KE against experiment (measured; context for the KE₁ gap).** Experiment
+  (`ihe_ked`) mean KE: n = 1 1.302 ± 0.071 eV (sys), n = 2 0.706 eV. Every
+  law sits at about half of the experimental KE₁ (ridge 0.617, h405 0.640 /
+  0.643 eV), so the ridge − h405 gap is ≈ 2 % of the experimental value; the
+  common deficit is the flight-mass question (`TIER2_MASS_SCENARIOS.md` M1),
+  not a drag-law property. midHot (n 2–8, sim/exp): ridge 0.995, h405
+  0.981 (3.5 Å) / 0.948 (14.2 Å).
+- **Per-member KE (measured, N = 1000 single runs vs single members).**
+  High-τ ridge cells (c 1.8–2.0, τ 6.0–6.6) reach KE₁ 0.62–0.65 and χ²
+  243–320 (h405 members 236–347 at 14.2 Å, 300–470 at 3.5 Å), partly at
+  n̄ ≈ 4.05; at matched n̄ 3.89 the pooled KE₁ is 0.617 (A5). χ² grows
+  with N (sim-error term): compare pooled with pooled only.
+- **Bare class and the shared n = 0 → small-n lever (measured,
+  2026-10-06 discussion; per-ion read of the 24 c = 2.0 Step-1 runs and
+  the 6 h405g35 members, anchored: supp and KE₁ reproduce
+  `g414_table.csv` to 4 dp; session-local script).** (i) Every
+  suppressed (bin-0) ion is an **intact n = 21 complex**, KE 1.0–1.25 eV,
+  all above the mean KE₁ — the fastest exiters, which leave the dense He
+  before cooling opens the gate. (ii) Along the c = 2.0 τ line (E₀
+  0.49 → 0.30) supp falls 0.30 → 0.03 while KE₁ rises 0.50 → 0.65, the
+  bare-class KE 1.00 → 1.22 and KE n 2–3 0.44 → 0.51: the bare/open
+  boundary moves up the speed distribution and the converts land at
+  n = 1–3 with their speed. This, not a lighter flight mass, is the
+  τ-line KE₁ mechanism. (iii) Ram braking is a separate measured effect:
+  at equal supp ≈ 0.19 the lq bare class is 0.2 eV slower than h405's
+  (1.05 vs 1.25) and n = 1 0.09 eV slower. (iv) **The capped law has the
+  same route** (committed `atlas_ke_lown_scan.csv`, v_c 5.5, single
+  seed, 14.2 Å): h405 τ 4.4 supp 0.18 KE₁ 0.64 → f2 τ 5.2 / E₀ 0.34 supp
+  0.07 KE₁ 0.72 (W₁ 0.92, n₁ 0.187) → d030 τ 6.4 / E₀ 0.30 supp 0.03
+  KE₁ 0.76 (midHot 0.81, W₁ 1.17). Emptying n = 0 buys KE₁ under both
+  laws and costs the large-n tail under both; the capped law buys more
+  KE₁, lq keeps mid-n KE matched (midHot ≈ 1 vs 0.81 at τ 6.4). (v)
+  KE₂/KE₁ ≈ 0.83–0.87 for every law and corner vs experiment 0.54: no
+  drag / τ / E₀ setting reproduces the steep n = 1 → 2 drop — the n = 1
+  deficit is a channel question (RQ8), not a drag or boundary one. n = 0
+  exclusion from scoring: physically justified (RQ8 NB 2026-10-06).
+- **Why no n ≥ 16 — the escape cliff (measured, 2026-10-06; per-ion
+  reads of h405g35 s1 and g413 t64e310 s1 trajectories, anchored:
+  retained / suppressed counts = detection scoring; session-local
+  scripts).** (i) Inside the droplet pickup pins n = 21 while K2 drains
+  E_int: E_int at exit = E₀·exp(−X/τ) per ion (ratio 0.98), X = ∫ρ̂ dt
+  to exit. (ii) Shedding happens in the surface region and just after
+  exit (handover n ≈ final n); final n follows from E_int at exit
+  through the rung chain (≈ 9.2 meV per He, flat n 4–16). (iii) High n
+  needs low exit E_int (n ≥ 13: 26–33 meV) = long exposure = slow:
+  exit KE 0.05 eV for n ≥ 13. Ions with more exposure are **retained**
+  (intact n = 21, E_int = 0, KE 0). Escaper exposure ceiling X/τ ≈ 2.09
+  (h405) / 1.78 (lq): lq drags ~25 % longer but cools 45 % slower (τ 6.4
+  vs 4.4). (iv) Chord map (anchor: committed
+  `detfix_postpickup_chord.csv` reproduced bin-exact): near-deterministic,
+  chord → n up / KE down; scored chords end ≈ 80 Å at n ≈ 11–13, KE
+  0.04–0.08 eV; beyond retained. Birth geometry only reweights along the
+  map — it cannot make high-n ions fast. **High n and slow high-n are
+  one selection: high-n ions are marginal escapers.**
+- **Twin independence (measured, 2026-10-06; partner i ↔ i + N;
+  anchored 4 dp on `g414_table.csv`).** corr(n, n_partner) = 0.00 ±
+  0.02 in lq A5, h405 3.5 Å and h405 14.2 Å pools; partner of n = 1
+  among detected: bare / n = 1 / n > 1 = 0.08 / 0.20 / 0.73 (lq), 0.18 /
+  0.17 / 0.66 (h405) vs experiment 0.43 / 0.18 / 0.39 (covariance,
+  150 mW). Geometry already gives maximal twin randomness; the gap is
+  the bare share (RQ8 NB amendment 2026-10-06).
+- **KE width at fixed n (measured).** IQR/median of KE at n = 1–4:
+  experiment (3-D curves) 0.82 / 0.71 / 0.71 / 0.69, model (lq A5;
+  h405 alike) 0.11 / 0.09 / 0.09 / 0.09 — the model's map is ≈ 8× too
+  narrow; medians at n = 2–4 match. (Curve-file moments run 5–25 % above
+  the committed reference means — IQR used.)
+- **Onset-energy spread (PROJECTION, zero MD, frozen trajectories;
+  reduced model anchored: suppressed/open class 96–98 %, final n ±1 for
+  94 %).** A cold minority (10–20 % at ½ E₀) populates n ≥ 15 (0.025 →
+  0.05) and raises deep-bin KE (to 1.4–2.8× experiment — overshoot),
+  but breaks the n̄ gate (5.3–6.4); a symmetric log-normal spread at
+  fixed n̄ widens KE at fixed n to experiment-like IQR (σ 0.4–0.6: 0.56
+  –0.75) but parks the hot side suppressed (supp 0.5–0.8) and lowers KE₁
+  (0.63 → 0.41–0.50). Decoupling works; the shape is unsourced. **Not
+  pursued (user, 2026-10-06): a single E₀ is kept.**
+- **Surface-well depth E_bind at FIXED drag fixes both (measured on committed ring
+  runs — the well alone varied, not Tier-0-consistent; see the next bullet; W₁ reproduces committed `atlas_ke_lown_scan.csv` exactly; old
+  pipeline, capped law v_c 5.5, τ 4.8, E₀ 0.35–0.37, N = 500, single
+  seed).** E_bind 0.154 / 0.117 / 0.048 eV: trap 0.115 / 0.085 / 0.026,
+  n ≥ 15 0.000 / 0.011 / **0.046** (exp 0.057), max n 14 / 17 / 19,
+  KE n 10–14 / exp 0.49 / 0.52–0.61 / **0.83**, KE₁ 0.70 / 0.69–0.75 /
+  0.76, W₁ 0.986 / 0.83–0.95 / **0.667**. A shallower well frees the
+  cold full-shell retained ions and lets marginal escapers out faster —
+  the escape cliff is the high-n lever. `post_pickup` sampler (G1,
+  production pipeline, pooled s1–s5): n ≥ 15 0.0085 → 0.0095, trap 0.078
+  → 0.135, W₁ 0.765 → 1.005 — not a tail lever.
+- **Tier-0-consistent shallow well does NOT help (measured, 2026-10-06;
+  user trigger `[PROCEED TO IMPLEMENTATION]`).** 18 Å refit of a at c 2.0
+  and fixed E_bind (`method_b_g415_fixed_well.py`; oracle: committed
+  E_bind reproduces c2p000.json, |da| 0.001, |dRMSE| 1e-8):
+  E_bind 0.080 eV → a 22.76 (+36 %), RMSE 0.159 (band pass); 0.0482 eV
+  → a 28.02, RMSE 0.226 (**band FAIL**). MD of the A5 cell at the 0.080
+  well (`gen_tier2_g415_well.py`, seed s1, paired with
+  `g414c200t64confs1`; scorer `tier2_g415_table.py`, anchor 4 dp;
+  `g415_table.csv`): E₀ 0.3155 / 0.3255 vs A5 s1 — trap 0.068 / 0.067
+  vs 0.041, n ≥ 15 0.0006 / 0.000 vs 0.0011, max n 15 / 14 vs 16, KE
+  n 10–14 / ref 0.59 / 0.49 vs 0.61, KE₁ 0.570 / 0.534 vs 0.621,
+  midHot 0.874 / 0.814 vs 0.992, n̄ 4.20 / 3.85, W₁ 1.07 / 1.02 vs
+  1.11, χ²_med 164 / 153 vs 316. **Reading:** the 18 Å trace pins the
+  *total* escape cost — a shallower well is compensated by stronger drag
+  (well and drag are degenerate along the trace), so the escape cliff
+  does not move and trapping even rises. The ring's tail gain came from
+  varying the well alone. Within TDDFT-consistent laws the high-n
+  ceiling stands; the remaining levers (per-ion energy scatter, cooling
+  not tied to residence) are mass-model physics, outside this program's
+  thesis scope.
+- **Well-only arm at the A5 cell (measured, informative, NOT
+  Tier-0-consistent; user request 2026-10-06; A5 law a 16.72 / c 2.0
+  kept, only E_bind lowered; seed s1, rows `well_only_informative` in
+  `g415_table.csv`).** E_bind 0.1175 / 0.080 / 0.0482 eV: trap 0.041 /
+  0.025 / 0.016, KE n 10–14 / ref **0.61 / 0.77 / 0.98**, deepKE 0.55 /
+  0.69 / 0.74, KE₁ 0.621 / 0.639 / 0.656, midHot 0.99 / 1.07 / 1.13,
+  W₁ 1.11 / 1.00 / 0.93, n̄ 3.86 / 3.99 / 4.06, n ≥ 15 0.0011 / 0.0017
+  / **0.0071** (exp 0.057), max n 16 / 16 / 17, χ²_med 316 / 294 / 399.
+  **Reading:** the well alone fixes the *slowness* of the deep bins
+  (KE n 10–14 reaches experiment at 0.048 eV) and lowers trapping, but
+  at τ 6.4 barely moves the n ≥ 15 *abundance* — the ring's 0.046
+  (e0482) came at τ 4.8 (faster cooling). Abundance needs the escape
+  cost lowered AND enough cooling per exposure; speed needs only the
+  former. Both require leaving the 18 Å band (previous bullet).
+  **Pooled N = 6000 (measured 2026-10-08; s1–s5 + r6, production seeds;
+  rows `g415wo080pooled` / `g415wo048pooled` in `g415_table.csv`; figure
+  containers `…_N6000_detfix_conf270_g415wo0{80,48}pooled_th500`)** vs the
+  A5 pool (E_bind 0.1175): E_bind 0.080 / 0.0482 — trap 0.035 → 0.022 /
+  0.013, n ≥ 15 0.0006 → 0.0025 / **0.0062** (member range 0.0033–0.0092),
+  max n 17 / 17, KE n 10–14 / ref 0.76 / **0.93**, deepKE 0.49 → 0.60 /
+  0.74, KE₁ 0.617 → 0.637 / 0.653, midHot 0.995 → 1.068 / 1.130, W₁ 1.097
+  → 1.016 / 0.950, n̄ 3.886 → 3.983 / 4.049, n₁ 0.204 → 0.202 / 0.201,
+  χ²_med 507 → 646 / 614. The s1 reading holds pooled: the well fixes the
+  deep-bin speed, while the n ≥ 15 share stays ≈ 9× below experiment and
+  max n stays 17 (the ceiling is X/τ, not the well, at τ 6.4).
+  **Drag sweep on the 0.0482 well (2026-10-08; twin `g415twin` →
+  `atlas_g415_{twin,summary}.csv`, anchors: committed ebown / eb0482
+  rows at τ 6.4 reproduced, transfer measured on `g415wo048pooled`:
+  midHot × 0.943, KE₁ + 0.020, n̄ − 0.29; MD seed s1, rows
+  `g415wo048c230s1` / `g415wo048a195s1`).** Twin at n̄-matched E₀: midHot
+  ≈ 1 at c ≈ 2.3 (A5 a) or a ≈ 19.5 (c 2.0); at matched midHot raising a
+  costs ≈ 0.01 eV less KE₁, raising c traps slightly less. MD (s1, E₀
+  0.3235 / 0.3216) hits the twin (midHot 0.988 / 0.996 vs 0.988 / 0.998;
+  KE₁ 0.586 / 0.598 vs 0.585 / 0.597). Against A5 s1 at the same midHot
+  (0.99) and χ²_med (319 / 322 vs 316): n ≥ 15 0.0045 / 0.0062 vs 0.0011,
+  max n 18 / 18 vs 16, KE n 10–14 / ref 0.75 / 0.72 vs 0.61, deepKE 0.71
+  / 0.66 vs 0.55, trap 0.023 / 0.025 vs 0.041, W₁ 0.861 / 0.880 vs 1.107,
+  n₁ 0.223 / 0.219; cost KE₁ 0.586 / 0.598 vs 0.621, supp 0.099 / 0.095
+  vs 0.067. c vs a is not resolved on one seed (the wo048 member spread
+  of n ≥ 15 is 0.003–0.009). **Pooled N = 6000 (s1–s5 + r6; rows
+  `g415wo048c230pooled` / `g415wo048a195pooled`; containers
+  `…_N6000_detfix_conf270_g415wo048{c230,a195}pooled_th500`)** vs the A5
+  pool: midHot 0.990 / 0.997 (0.995), n ≥ 15 0.0059 / 0.0053 (0.0006),
+  max n 18 / 18, KE n 10–14 / ref 0.77 / 0.73, deepKE 0.61 / 0.58 (0.49),
+  trap 0.019 / 0.023 (0.035), W₁ 0.879 / 0.905 (1.097; h405 0.755),
+  n₁ 0.209 / 0.207 (0.204), n̄ 4.01 / 4.01 (3.89), KE₁ 0.584 / 0.597
+  (0.617), supp 0.095 / 0.090 (0.067), χ²_med 557 / 581 (507). c and a
+  tie on the tail; c is ahead on W₁ / deep KE / trap, a by 0.013 eV on
+  KE₁. Tail ≈ 10× below experiment.
+  **Tier-0 check (2026-10-08, zero MD; THESIS_FINAL_GOALS G10.5):** on the
+  18 Å trace the G10 cells score RMSE 0.661 (c 2.3) / 0.557 (a 19.5), band
+  0.19 (A5 0.122; anchors reproduce committed RMSE); the best a at 0.0482
+  fails at c 2.0 and 2.3 (0.226 / 0.227: too slow 6–10 ps, too fast
+  10–15 ps). The well / drag degeneracy holds to ≈ 0.080 eV only; 0.0482
+  is excluded by the trace.
+
+#### 1.G8 Bare-start screen (MEASURED 2026-10-06; THESIS_FINAL_GOALS G8) — **bare-born ions land at n = 2–4, not n = 1; KE boost only under the cap, and too small for n = 1**
+
+Fragments born with no shell (`initial_shell_model = "bare"`: n₀ = 0,
+E_int(0) = 0 via the T6 `sigma_proportional` law; both fragments of a
+pair, P1). One run per law, N = 1000, seed s1, production pipeline; each
+cfg differs from its parent only in `initial_shell_model` (same births:
+neutral stage bit-identical to the parent). Generator
+`scripts/gen_tier2_bare_screen.py`, scorer
+`scripts/post_processing/tier2_bare_screen_table.py` (anchors: both
+parents rescored = committed `c200t64confs1` / `s1_new`, 4 dp);
+`data/runs/h2b_forward_model/g8_bare_{table,by_n}.csv`. Parents: lq A5
+cell (3.5 Å) and h405 detfix s1 (14.2 Å).
+
+| | lq intact | lq bare | h405 intact | h405 bare | experiment |
+|---|---|---|---|---|---|
+| scored / retained | 0.959 / 0.041 | 0.851 / 0.149 | 0.913 / 0.086 | 0.882 / 0.118 | — |
+| n = 0 of scored | 0.067 | 0.052 | 0.203 | 0.085 | (excluded) |
+| n₁ (solvated) | 0.220 | 0.145 | 0.213 | 0.201 | 0.310 |
+| n ≥ 4 (solvated) | 0.475 | 0.452 | 0.528 | 0.351 | — |
+| max n | 16 | 11 | 17 | 12 | > 20 |
+| KE₁ mean [eV] | 0.621 | **0.491** | 0.644 | **0.865** | 1.302 (median 1.128) |
+| KE₂ / KE₃ / KE₄ | 0.53 / 0.45 / 0.40 | 0.43 / 0.38 / 0.31 | 0.55 / 0.47 / 0.40 | 0.78 / 0.64 / 0.48 | 0.71 / 0.50 / 0.39 |
+| KE₂/KE₁ | 0.85 | 0.87 | 0.85 | 0.90 | 0.54 |
+| KE IQR/median, n = 1 | 0.11 | 0.55 | 0.09 | 0.50 | 0.82 |
+| midHot | 0.99 | 0.72 | 0.94 | 1.01 | 1 |
+
+- **No evaporation, pure pickup (as projected).** Final n = n at handover
+  for every bare ion; E_int stays 2–7 meV (< D₀(1) 20.3 meV). n follows
+  exposure: ∫ρ̂ dt 2.6–3.2 ps at n ≤ 1 → 6–8 ps at n 9–12 (λ₀ 0.9/ps).
+  The bare class **peaks at n = 2–3**, not n = 1 (n₁ share 0.15–0.20 of
+  solvated, below the intact class and experiment); 35–45 % lands at
+  n ≥ 4.
+- **KE depends on the law (measured).** h405 bare is faster at every
+  n ≤ 4 (KE₁ +34 %); lq bare is *slower* at every n (KE₁ −21 %). Reading
+  (interpretation, consistent with the exit-energy invariance measured
+  under the cap, `TIER2_MASS_SCENARIOS.md` §4): above v_c the capped force is
+  speed-independent, so drag work is path-only and a lighter flight
+  keeps its exit energy; the lq force rises with v, so the lighter
+  (faster) bare ion pays more ram drag. The bare-start KE gain is a
+  property of the cap, not of the bare start.
+- **Against the targets.** Even a pure bare population reaches only
+  KE₁ 0.865 (h405), below the experimental median 1.128, while it
+  overshoots n = 2–4 (+10–30 %); KE₂/KE₁ stays 0.87–0.90 (exp 0.54).
+  The only target that moves toward experiment is the KE width at fixed
+  n (IQR/median 0.50–0.60 vs intact 0.09–0.11, exp 0.71–0.82). Bare
+  ions are also retained more (0.12–0.15 vs 0.04–0.09).
+- **Reading.** By the screen's own question (user, 2026-10-06: too
+  much in the middle, KE does not fit → stop): lq — KE goes the wrong
+  way; h405 — the boost is too small for n = 1, too large for n = 2–4,
+  and the class lands in the middle. A bare/intact mixture cannot
+  supply the fast n = 1 ions. Mixture design (P1 fit, P2): user
+  decision pending.
+
+#### 1.G9 Cold-onset minority ≤ 0.05 eV below E₀ (MEASURED 2026-10-08; THESIS_FINAL_GOALS G9) — **no tail: n ≥ 15 stays ≈ 0.001–0.002; the tail needs E₀ ≲ 0.18 eV, not a small spread**
+
+lq A5 law (c 2.0, τ 6.4, 3.5 Å), seed s1 E₀ columns (step 0.0125 eV;
+each cfg = A5 s1 except E₀; k = 0 is the committed member), production
+pipeline, N = 1000. Generator `scripts/gen_tier2_g9_cold_onset.py`,
+scorer `scripts/post_processing/tier2_g9_cold_onset_table.py` (anchors:
+the A5 s1 column and the mask-path pure mixture both = committed
+`c200t64confs1`, 4 dp; n̄ monotone across the grid);
+`g9_columns.csv`, `g9_mixtures.csv`.
+
+| E₀ [eV] | n̄ | n₁ | mass n 10–14 | n ≥ 15 | max n | trap | supp | KE n 10–14 / exp | KE₁ | midHot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.2655 | 5.86 | 0.007 | 0.117 | 0.003 | 17 | 0.046 | 0.000 | 0.93 | 0.827 | 1.41 |
+| 0.2780 | 5.33 | 0.036 | 0.104 | 0.003 | 16 | 0.044 | 0.000 | 0.84 | 0.774 | 1.29 |
+| 0.2905 | 4.83 | 0.095 | 0.087 | 0.002 | 17 | 0.043 | 0.004 | 0.77 | 0.716 | 1.18 |
+| 0.3030 | 4.33 | 0.162 | 0.073 | 0.002 | 16 | 0.040 | 0.024 | 0.63 | 0.666 | 1.08 |
+| 0.3155 (A5 s1) | 3.86 | 0.220 | 0.066 | 0.001 | 16 | 0.041 | 0.067 | 0.61 | 0.621 | 0.99 |
+| 0.3280 | 3.42 | 0.246 | 0.063 | 0.001 | 16 | 0.040 | 0.145 | 0.54 | 0.572 | 0.92 |
+| 0.3405 | 3.05 | 0.242 | 0.064 | 0.001 | 16 | 0.039 | 0.227 | 0.53 | 0.531 | 0.85 |
+
+- **Columns (whole ensemble shifted).** −0.05 eV moves the distribution
+  up by +2 (n̄ 3.86 → 5.86) and fills n 10–14 (0.066 → 0.117), but
+  n ≥ 15 stays at 0.001–0.003 and max n at 16–17; trapping is flat
+  (0.04). Colder ions at a given n are faster: KE n 10–14 / exp 0.61 →
+  0.93. KE₁ rises (0.62 → 0.83) as the suppressed class empties.
+- **Mixtures (main E₀ re-placed to expected n̄ 3.89; assignment rng
+  20261008).** Point at −0.05 (P), w 0–0.45: n ≥ 15 0.0011 → 0.0018,
+  W₁ 1.102 → 1.09–1.13, deepKE 0.55 → 0.55–0.59, KE₁ 0.623 → 0.585,
+  midHot 1.00 → 1.05 (main E₀ 0.315 → 0.339). Uniform over [−0.05, 0]
+  (U), w 0–0.5: n ≥ 15 ≤ 0.0017, W₁ 1.084–1.099, deepKE 0.54–0.57,
+  KE₁ 0.623 → 0.605. Best marked rows (P w 0.05; U w 0.15) differ from
+  w = 0 by less than the W₁ seed sd (0.036). The KE width at n = 1 does
+  not widen (IQR/median ≈ 0.1 in every column).
+- **Why (reading, from the escape-cliff record above).** High n needs
+  exit E_int ≈ 26–33 meV (n ≥ 13), and lq escapers have exposure
+  X/τ ≤ 1.78, so E_int,exit ≥ E₀·e^(−1.78) = 0.17·E₀. n ≥ 13 for an
+  escaper therefore needs E₀ ≲ 0.18 eV; at E₀ ≥ 0.2655 the floor is
+  ≥ 45 meV, so cold ions stop at n ≈ 10–14. A tail needs a distinct
+  cold population (≥ 0.13 eV below the main), the regime of the
+  earlier ½ E₀ projection (which broke n̄ without re-placement), not a
+  small spread.
+
+#### 1.G9b Ladder top and n* on frozen trajectories (ZERO-MD REPLAY, anchored, 2026-10-08) — **n ≥ 15 ≤ 0.005 for every variant at matched n̄; high n stays on slow ions**
+
+Replay of the internal-energy / shell channel only (K2 cooling, K1 RRK,
+S1 pickup with Langmuir cap n*, event-driven RRK to the detector; the
+package's own functions) on the frozen trajectories of the six
+G4.13 t64e310 members (lq c 2.0, τ 6.4, E₀ 0.310, 3.5 Å; N = 6000);
+retention and KE frozen. Session-local scratchpad scripts
+(`ladder_replay.py`, `matched_nbar.py`, `exposure_dist.py`).
+**Anchors:** the builder reproduces the production rung table exactly
+(Form U κ = 1 × taper 2.2 / 1.5 / 1.3); the production ladder replayed
+= MD pool (n̄ 4.079 vs 4.085, n₁ 0.186 vs 0.186 = committed, n 10–14
+0.071 vs 0.073, n ≥ 15 0.0005 vs 0.0006, n = 0 0.0431 vs 0.0431;
+per-ion |Δn| ≤ 1 for 94.5 %); E₀ transfer onto the e310 trajectories
+= the own-trajectory replay and MD at E₀ 0.300 / 0.320 (s1; n̄ within
+0.02, n = 0 exact).
+
+Each variant at E₀ re-matched to n̄ ≈ 4.08 (two secant steps):
+
+| ladder | Σ(n*) [meV] | E₀ [eV] | n₁ | n 10–14 | n ≥ 15 | max n | n = 0 |
+|---|---|---|---|---|---|---|---|
+| production (κ 1, n* 21) | 206.3 | 0.310 | 0.186 | 0.071 | 0.0005 | 16 | 0.043 |
+| sharp edge (κ 20), n* 21 | 212.2 | 0.321 | 0.190 | 0.075 | 0.0006 | 16 | 0.051 |
+| κ 1, n* 22 | 215.5 | 0.329 | 0.195 | 0.085 | 0.0012 | 17 | 0.066 |
+| sharp, n* 22 | 221.4 | 0.341 | 0.193 | 0.089 | 0.0014 | 17 | 0.078 |
+| κ 1, n* 23 | 224.7 | 0.349 | 0.199 | 0.098 | 0.0022 | 17 | 0.096 |
+| sharp, n* 23 | 230.6 | 0.360 | 0.202 | 0.102 | 0.0027 | 17 | 0.103 |
+| κ 1, n* 24 | 234.0 | 0.370 | 0.207 | 0.110 | 0.0047 | 17 | 0.124 |
+| experiment | | | 0.310 | 0.116 | 0.057 | > 17 | (excluded) |
+
+- **The edge width is not a lever** (sharp edge: n ≥ 15 unchanged).
+  **n* is a weak one:** n* 24 gives n ≥ 15 ×9 (still 12× short),
+  n 10–14 reaches experiment, n₁ +0.02, but the suppressed (n = 0)
+  class triples because E₀ must rise to hold n̄. Max n stays 17.
+- **Why (measured on the same trajectories).** Escapers' exposure
+  X/τ ≤ 1.86; retained ions sit at X/τ ≥ 5 (at 150 ps) — a gap, no
+  intermediate class. Fraction of escapers with X/τ ≥ 1.0 / 1.2 / 1.4 /
+  1.6 / 1.7: 0.146 / 0.070 / 0.033 / 0.011 / 0.004. Final n tracks X
+  (n 1–3: X/τ 0.54; 7–9: 1.02; 10–12: 1.35; 13–14: 1.62; ≥ 15: 1.73),
+  and so does KE (0.56 / 0.22 / 0.10 / 0.042 / 0.019 eV; experiment n 13
+  / 15: 0.096 / 0.075 eV). A ladder change only re-labels which X
+  ends at which n; it cannot change the X → KE map, so any ladder puts
+  high n on the slowest, near-trapped ions — about 4× slower than the
+  experiment's high-n ions. The experiment's fast high-n ions need n set
+  by something other than exposure (per-ion energy, or cooling not tied
+  to residence), not a ladder change.
+
+## 2. Capped tail — v_c and p_tail
+
+| | |
+|---|---|
+| role | production arbitration's above-band extension: cap at v_c with tail exponent p_tail |
+| class | Free (the program's genuinely fitted knobs, arbitrated by experiment); production v_c 5.5 / p_tail −1 (G4) |
+
+**Influence (measured):**
+
+- **v_c owns the entire mid-bin KE curve**: v6.5 → v7.5 at p−1 moves
+  midHot 1.74 → 0.95 with n2–n8 within ~10 % (I78). The KE χ² argmin was
+  right-censored at the bracket top until the taper was understood (I71).
+- **Joint landing is a basin, not a knife-edge**: v_c ∈ [7.25, 7.5] at
+  (τ3.2, E₀0.27, rq4graded); W₁_solv bowls at 7.25 (0.424), n₁_solv
+  crosses 0.31 at ≈ 7.25, midHot crosses 1.0 at ≈ 7.2; closes above
+  ~7.75 (whole curve ×0.68–0.88 at v8.0) (I80/I81).
+- **p_tail is the wrong second lever**: a more-negative exponent re-heats
+  the whole KE curve *and* re-strips — KE and histogram move together,
+  not orthogonally (I78). p = 1 tails excluded outright (I51).
+- Three observables prefer three v_c (KE χ² ≥ 8.5, n₁ anchor ≈ 6.2–6.3,
+  W₁ ≈ 7.25) — a drag-form-*shape* statement, not a calibration error
+  (I72).
+- Hard cutoff (tail removed) excluded: 99.7 % suppression → bare at
+  v_c ≤ 10 (I48).
+
+**Couplings:** with τ (joint closure exists only as a pair, I49); with
+the ladder — orthogonal (ladder is KE-neutral: midHot flat across the
+ladder family at every v_c, I79).
+
+**Status:** standing v_c 7.25 / p_tail −1; every sensitivity-ring
+perturbation at the blessed point degrades W₁ (+0.18..+0.33) — the
+standing cell sits at the basin optimum (I88). The candidate smooth
+cap-replacement (Padé saturating cubic, one knob v_s) is **excluded by
+zero-cost arithmetic** (atlas D4 Step 1): in-band cubicity forces
+v_s ≳ ~15 Å/ps, which forfeits the p_tail = −1 saturation at the
+production peak — the principled cap-remover remains extending TDDFT
+authority to production kinematics (the collaborator ask), not a
+different closed form. **Domain input (user, 2026-07-30): the
+collaborator ask is INFEASIBLE — TDDFT itself breaks down at
+production kinematics. The principled cap-remover is therefore
+unavailable: the cap is a PERMANENT effective element (§17 class
+unchanged), and no velocity band outside the existing traces can ever
+gain ab-initio authority.**
+
+**Velocity anatomy + tail-force invariance (zero-MD arithmetic,
+2026-07-30, from the two pooled containers + committed coefficient
+bundles through the committed drag module; triggered by the user's
+form-logic challenge):** detected |v| by terminal n (old-geometry
+pools, co-moving shed preserves v through the vacuum cascade, minus
+residual post-exit Coulomb gain): **n = 1 mean 12.3 Å/ps (p10 11.3),
+n = 2 10.4** — the n = 1/n = 2 ions live entirely ABOVE both caps
+(user-argued premise CONFIRMED; at the corrected geometry KE₁ 0.637 ⇒
+≈ 9.7 Å/ps vs v_c 5.5, even deeper in the tail); n = 5 at 6.5
+(band top), n = 10 at 3.5 (mid/low band). Production force curves:
+cubic tail plateau **958.5** amu·Å/ps² (b 2.515, v_c 7.25) vs lq tail
+plateau **990.6** (c 12.79, v_c 8.8) — **the two independently
+arbitrated systems, one power apart, land within 3 % of the SAME tail
+force, with the LOWER power ending HIGHER** (its landing pushed v_c up
+to recover dissipation). The form redistributes drag only BELOW the
+cap (lq ×5.1 harder at v = 1, ×0.70 softer at 7.25) — where the
+n = 1/n = 2 ions never are. **Reading: at n = 1/n = 2 velocities the
+drag is plateau-set, not power-set, and the plateau is
+histogram-pinned (the §3.5h p_tail kill is its direct lowering test) —
+a lower-power form does NOT deliver lower drag to the fast ions in any
+landed system.** **Mechanism correction (user-caught, 2026-07-30):
+drag work never enters E_int (it books to E_dissip; E_int sources are
+the E₀ seed + the f_ret·D₀ pickup heat, sinks are the density-gated τ
+cooling + the per-shed D₀ — `biphasic_step` K1/K2/S1). The
+drag↔shedding coupling is a TIME coupling, not an energy pipe:
+E_int^exit ≈ E₀·exp(−t_res/τ_eff), and the plateau sets t_res for the
+fast class. Reaching n = 1 requires exiting hot, and the ions that
+exit hot are exactly the ones that exit fast — the KE↔histogram
+anti-correlation (I47) is a CO-SELECTION on residence time. This is
+why (v_c, τ) close only jointly (the race coordinate), why §3.5h
+softening un-damps the cascade (more ions exit fast-and-hot,
+over-shedding small-n while mid bins starve), and why the source-KER
+lever is the unique KE₁ mover (it shortens residence: raises exit KE
+AND preserves E_int simultaneously).** **Mid-band γ magnitude (band top → cap,
+v ≈ 5–9 Å/ps) is the newly-identified deep-KE lever** (§6.6 MD
+spot-check, NB-RQ11-12; escalated by the §6.7 item-1 lq battery to
+~300 counts/bin, 2026-07-24): the lq system's softer γ in exactly this
+window lifts deep bins ~+0.1–0.2 at n = 10–12 (direction confirmed at
+battery scale), a region where cubic-vs-quadratic differ most and TDDFT
+authority is absent (the collaborator-ask window). **CORRECTED by the
+§6.7 battery:** the §6.6 read that this mid-band softening *"halves the
+same-N χ²_med / lands the KE better"* **does NOT replicate paired** —
+across 5 fresh seeds at N = 1000, lq's median-anchored KE χ²_med is
+*worse* than cubic on every seed (paired Δ+13.3±10.0; pooled 277 vs
+242). The §6.6 halving was a favourable-seed artifact (seed 20260721,
+N = 500). So the mid-band warming is real (direction) but does **not**
+yield a better KE landing; and the lq system additionally
+**over-suppresses** (supp 0.213 vs 0.187, paired Δ+0.026 ~6σ) — a
+distinct resolved fate-split influence. Histogram form-blindness (W₁,
+midHot) still holds at battery scale. The cap arbitration (I72's
+three-observables-three-v_c tension) should be re-read in this light at
+synthesis. **Confound pending (§6.5 E_bind scan):** the lq cells carry
+their co-extracted E_bind 0.048 eV (~0.07 eV shallower exit well), so
+the residual supp/deep-direction attribution is provisional until the
+E_bind-only scan separates the jointly-extracted pair.
+**Corrected geometry (G3 Step 2 + Step 3 ring, §14.5):** the gate
+basin sits at **v_c 5.5–6.0, MD-CONFIRMED** (a037/b031/d030/e154 land;
+c50 shows the basin nearly reaches 5.0; c65 fails on n₁) — the
+standing 7.25 is MD-measured broken at the corrected geometry (f725:
+trap 0.437, n₁ 0). The shift is exactly the mid-band-softening
+direction NB-RQ11-12 identified.
+**Deep-KE ceiling MEASURED (G4 ladder v525 probe, N = 1000):** dropping
+to **v_c 5.25** reaches **deepKE 0.656 in a GATED cell** — above the
+standing pooled 0.633 — but at midHot 1.394 / χ²_med 912. So the
+mid-band lever has genuine deep-KE headroom and it is paid for in
+midHot: ≈ 0.66 at midHot ≈ 1.4, or ≈ 0.60 at midHot ≈ 0.96 (v_c 5.5).
+v_c 5.25 also traps least (0.048 vs 0.087 at 5.5). **`p_tail` was not
+needed:** the pre-registered Block-2 trigger did not fire — the deep-KE
+axis proved parameter-accessible on (v_c, τ, E₀) at fixed form
+(§14.5 G4F-P4), so the "p_tail is not a second lever" verdict stands
+un-retested at v_c 5.5–6.0 rather than being overturned.
+
+## 3. τ — Newton cooling clock
+
+| | |
+|---|---|
+| role | E_int Newton-cooling time constant; sets the evaporative-descent clock and the in-bubble leak |
+| class | Free — fitted to the Tier-2 observables at G4 (production 4.4 ps), inside the Bounded GAH25 band (reclassified 2026-10-01; was Bounded, re-classed from the 6.55 pin, §I.8) |
+
+**Influence (measured):**
+
+- Alone, cannot fix the KE↔histogram anti-correlation; **(v_c, τ)
+  jointly close** what neither does alone (18-cell basin at τ ≈ 4.1;
+  refined to τ 3.2 at the c1 winner, τ 3.8 at the c4 basin) (I49, I82).
+- Under the gate, τ and f_int are **not independent** — only the race
+  margin Δ× = t_eject − t× is physical; the gated arm is binary in the
+  t×↔ejection race (cliff, re-opening at τ 16.5 × f_int 0.25) (I7, I16,
+  I18).
+- s_eff↔τ separate through first-shed timing (I4).
+
+**Couplings:** v_c (joint basin); f_int/E₀ (race coordinate); the
+cooling exposure K is the single integral through which KE and stripping
+trade off (I47).
+
+**Status:** standing 3.2 ps. **Corrected geometry (G3 Step 2 + Step 3
+ring, §14.5):** the basin wants τ 4.8–6.4 — *toward* the sourced GAH25
+6.55 — and the ring MD-confirms **both** τ values land at v5.5
+(a037 @ 4.8, d030 @ 6.4); the τ ≫ 6.55 arms are not needed.
+**Ordering MEASURED at N = 1000 (G4 ladder, three CRN-paired τ arms at
+v_c 5.5, each swept in E₀):** on W₁ at matched gate status,
+**τ 4.4 (0.669–0.709) < τ 4.8 (0.733–0.792) < τ 5.2 (0.872–0.892)** —
+shorter τ is better at the corrected geometry, i.e. back *toward* the
+standing 3.2, not toward 6.55. deepKE follows the same ordering
+(0.55–0.61 / 0.53–0.59 / 0.43–0.50). **The twin ranked τ 5.2 best**
+(twin W₁ 0.42–0.49) — the second twin-W₁ inversion (§14.4). Successor
+candidate τ = 4.4; τ 4.0 is untested at v_c 5.5 (the twin gates nothing
+there, but its n₁ gate is the mis-calibrated one — §14.4).
+
+## 4. E₀ = E_int(0) — internal-energy budget
+
+| | |
+|---|---|
+| role | absolute internal energy at onset [eV]; feeds the RRK gate via the Σ(21) crossing |
+| class | Free — fitted to the Tier-2 observables at G4 (production 0.405 eV), inside the Bounded RQ1 band [0.2, 0.5] eV, floor ≈ 0.22 (reclassified 2026-10-01; row 16; replaced f_int as the physical variable, I25) |
+
+**Influence (measured):**
+
+- **Bin-level signature (G4 Step 2 Block D, CRN-paired τ 4.4 arm, per
+  +0.005 eV):** the E₀ lever closes the solvated CDF gaps **only at
+  n = 1–4** (Δgap +0.002…+0.012 there; |Δgap| < 0.003 and sign-unstable
+  for n ≥ 5). **Bins 7–20 are E₀-inaccessible** — they carry ≈ 45 % of
+  the pooled-h405 W₁ residual (five of its nine top-70 % bins), which is
+  the measured identity of the W₁ floor's carriers (findings "G4 Step 2
+  — Block D").
+- Sets the **fate cliff**: closed-form bare ⇔ K < K* = ln(E₀/Σ(21));
+  the (E₀, K) two-parameter fate map reproduces measured columns to
+  0.84 He (I34). At a congruent single-point ensemble the suppressed
+  fraction is a delta step — coexistence requires ensemble heterogeneity
+  (I26).
+- The experimental histogram inverts into a smooth unimodal p(E₀)
+  coinciding with the RQ1 band untuned (W₁ = 0.086 at the probe basis)
+  (I29–I31).
+- **Scale is geometry-dependent**: pinned-droplet reads wanted
+  E₀ ≈ 0.38–0.41 (I39); full position geometry re-lands the optimum at
+  the solvation scale 0.22–0.27 eV (I45). Standing 0.27.
+- Budget-corner regime change: c1's suppressed channel closes entirely
+  at E₀ = 0.23 (supp ≈ 0), inverting orderings (I82).
+- The scenario *budget* (0.80 vs 2.70 eV) is bookkeeping-only in the
+  delivered model — the gated map is budget-invariant in absolute E₀
+  (I28).
+
+**Couplings:** τ (race), droplet-K axis (the cliff position moves with
+exposure: E*(K) = Σ(21)·e^K, I39), sampling width δ (bare-fraction
+trade-off, I35/I36).
+
+**Status:** standing 0.27 eV. **Corrected geometry (G3 Step 2 + Step 3
+ring, §14.5):** MD lands at E₀ 0.30–0.37 (gated cells 0.30/0.31/
+0.36/0.37 depending on (v_c, τ)) — still inside the RQ1 band; the
+geometry-dependence chain gains its third point (pinned 0.38–0.41 →
+standing mixture 0.22–0.27 → corrected ~0.30–0.37).
+
+**Slope MEASURED — the cleanest one-knob response in the atlas (G4
+Block 3 ladder, 2026-07-28; 15 × N = 1000 CRN-paired, §14.5).** Inside
+the corrected-geometry ridge, per **+0.005 eV** of E₀, monotone in all
+three τ arms (4.4 / 4.8 / 5.2):
+
+| observable | Δ per +0.005 eV | direction |
+|---|---|---|
+| W₁_solv | **−0.02 … −0.04** | improves |
+| n₁_solv | **+0.004 … +0.007** | improves (toward exp. 0.243) |
+| n̄_det | **−0.11 … −0.13 He** | degrades (away from exp. 4.07) |
+| midHot | **−0.02 … −0.03** | degrades |
+| supp | +0.02 … +0.03 | — |
+
+Each τ arm therefore gates over a window of only **~0.01 eV in E₀** —
+E₀ is a sharp knob at the corrected geometry, not a soft one, and it is
+the knob that trades histogram quality against n̄ and midHot.
+**Consequence (the G4 headline, §14.5 item 3):** because n₁ and n̄ move
+in opposite directions under E₀, they cannot be matched simultaneously —
+n₁ = 0.243 needs E₀ ≈ 0.435 where n̄ ≈ 3.3, 0.77 He below experiment.
+This is what sets the W₁ floor ≈ 0.67 and localizes the corrected-
+geometry residual to the *mechanism*, not the drag surface. Corrected-
+geometry successor candidate: **E₀ 0.405** at (v_c 5.5, τ 4.4) — the
+E₀-band chain's fourth point, back up near the pinned-droplet scale.
+
+## 5. κ — ladder steepness (Form U)
+
+| | |
+|---|---|
+| role | sigmoid steepness of the D₀(n > 1) ladder |
+| class | Inactive in production — baked into the rq4graded table at κ = 1 (reclassified 2026-10-01; was Free, one of the two original Free knobs) |
+
+**Influence:** near-dead: inverted *and* normalization-capped for the
+21→14 staircase (Form-U floors D₀(21) at ≈ 0.53·D₀(1)) (I2); Σ(21) is
+nearly κ-independent (~11 % over the pure-κ range, CALIBRATION_MAP row
+21). Superseded in practice by the rq4graded ladder family (§8).
+
+**Status:** standing within rq4graded; not an active lever.
+
+## 6. picture — electronic-state selection
+
+| | |
+|---|---|
+| role | selects the D₀ curve family (statistical_mixture / x2_only / cooling_relaxed) |
+| class | Inactive in production — baked into the rq4graded table at `statistical_mixture` (reclassified 2026-10-01; was Free selection) |
+
+**Influence:** magnitude-degenerate — ≤ 4 % spread from x-invariance;
+its only staircase signal is gate-open timing via Σ(21), degenerate with
+f_int (I3); landing band picture-robust (Wave 3). Discrimination belongs
+to the terminal size distribution, i.e. Tier-2 arbitration, where the
+mixture family stands.
+
+**Status:** standing `statistical_mixture` family (c1 bundle).
+
+## 7. f_int, f_ret, λ₀, p — budget fraction, retention, pickup
+
+- **f_int** (Derived coordinate = E₀/E_avail): parametrization broken in
+  both directions (no mechanical partition; literal coupling ~1 % would
+  be inert) → replaced by absolute E₀ (I25). Under the gate it was a
+  joint timing + budget knob (I15); only the race margin Δ× is physical
+  — independent τ × f_int grids sample the race incidentally (I18).
+  Retired as a free knob.
+- **f_ret** (Bounded, prior small): pinned 0.1 through the whole probe +
+  campaign chain; **never swept — GAP** (atlas candidate if ever
+  motivated; no measured influence on record).
+- **λ₀ pickup** (Sourced + Bounded, ~0.7–1.1/ps): live Langmuir
+  re-filling is real and measurable — MD suppression sits ≈ 7 ions/100
+  below the frozen twin at leg B, ≈ 1–3/100 at p = 1 (I63, I65).
+- **p occupancy-cap exponent** (conditional-Free, standing p = 1):
+  p = 0 → 1 de-suppresses ≈ 3× to the twin's prediction (best twin↔MD
+  W₁ 0.31–0.47 of the chain) and lifts solvated n₁ KE to ≈ 1.1 eV —
+  closest to the experimental n₁ on the solvated branch; touches only
+  the onset, never chord dynamics (trapped p-invariant) (I65/I66).
+
+## 8. Ladder — D₀(n) rungs, tail, Σ
+
+| | |
+|---|---|
+| role | per-shell binding ladder: RRK gate, suppression criterion (E_ej > Σ(n₀)), descent bookkeeping, e_bind E_pot fold |
+| class | D₀(1) **Sourced base × RQ4 taper**: base 74.4 cm⁻¹ (±3, IHe05) × 2.2, giving 163.7 cm⁻¹ in production. The shape is RQ4-graded (2.2 : 1.5 : 1.3), a family selected on the size distribution (I86). The floor is Sourced (bulk µ_He). (Reclassified 2026-10-01.) |
+
+**Influence (measured):**
+
+- **Owns the small-n histogram shape**: n = 1 is a one-rung-wide E_ej
+  window — the taper controls n₁; equal-deep-rung families revert n₁/n₂
+  to the flat chord-K ratio (I42). The solvated histogram independently
+  demands the RQ4 target ratios through a purely geometric forward model
+  (I42).
+- **rq4graded > floor1, decisively**: N = 500 verdict on every histogram
+  read (W₁ 0.524/0.657 vs 0.843, ≫ 2σ; c4's KE curve also fails
+  structurally) (I86). Cheap-bottom ladders strip *past* n = 1 into bare
+  and *lower* n₁_solv — rq4graded's 20 meV D₀(1) barrier is what piles
+  weight at n = 1 (I79).
+- The ladder is **KE-neutral** (midHot flat across the family at every
+  v_c) — orthogonal to the drag axis (I79).
+- **The deep tail cannot move deep-bin KE**: deep-KE and histogram are
+  rigidly Σ-coupled, ~×20 too stiff — ±5 % deep rungs ↔ ∓3.5 pts
+  suppressed weight; ×1.05 already bleeds supp 0.202 → 0.167, ×1.2
+  wrecks midHot (1.46); Σ-preserving transfers blow W₁ to 1.1–2.0.
+  Corollary: the seed-robust histogram landing is itself evidence the
+  deep rungs are approximately right (I93, §4dd).
+
+**Couplings:** Σ(21) sets the gate threshold (κ-insensitive); the
+suppression criterion and KE re-mapping read the *same* tail (the I93
+stiffness); picture selects the curve family (§6).
+
+**Status:** standing rq4graded; RQ4 external arbitration remains the
+blocking authority for the taper's *physics* (I42).
+
+## 9. E_bind — ion–droplet surface well (0.1168 eV)
+
+| | |
+|---|---|
+| role | depth of the mean-field droplet exit barrier for the ion (`binding_energy_I_ion_eV`); decides eject vs trapped |
+| class | Locked — fitted to TDDFT (Tier-0 Method B, jointly with the drag coefficients), then fixed; the §6.5.1 guard enforces the exact pairing. (Harmonized 2026-10-01; this line used to read "Derived".) |
+
+**Influence (measured — DIRECT OAT sweep; §6.7 item-2 E_bind scan,
+2026-07-24; GAP CLOSED).** Swept on the lq system at N = 1000 × 3 paired
+seeds (well overridden, drag stamp held → honest under
+`allow_unvalidated_binding_pairing`). Δ per the 0.048 → 0.1168 eV step,
+mean ± SD:
+
+- **trap +0.058 ± 0.004 — the clean well lever** (deeper well retains
+  more; single-seed OAT trap 0.038 / 0.075 / 0.100 across
+  0.048 / 0.1168 / 0.154 eV).
+- **n̄ −0.50 ± 0.05, midHot −0.076 ± 0.003** — deeper well → smaller,
+  colder detected clusters (the large/slow ions are retained away).
+- supp +0.010 ± 0.002 (small); W₁ +0.023 ± 0.012 (marginal);
+  χ²_med not resolved (±35).
+- **Deep well 0.154 over-retains** — 2/3 N = 1000 cells trip the P1–P3
+  detection handover guard (~2/2000 ions never decouple from He in
+  8000 ps; ρ̂ ≈ 0.93, live drag exposure).
+- **Not the driver of lq's over-suppression** — that is the drag FORM:
+  the matched-well form gap Δsupp +0.034 (~8σ) survives, the well adds
+  only +0.010 (see §1). This scan's purpose was to separate that pair.
+
+Prior indirect reads (retained):
+
+- Defines the **trapped droplet-retained class**: 5–11 % of fragments
+  (inward partners of off-center births, chord K up to ≈ 18) dissipated
+  below the 0.117 eV barrier, never ejecting; includes centrifugal
+  resonances; fragile at meV scale (1–3 ions/config flip at a
+  convention change) (I44, I56, I61).
+- The §4ee low-v twin sweep moved this boundary *from the drag side*:
+  un-trapping the marginal class (trap 0.042 → 0) was the floors'
+  dominant effect — an in-model echo of RQ11 candidate (iv).
+
+**Couplings:** drag law (jointly calibrated pair — "correct drag traps
+the ions", TIER0_FINDINGS); *not* connected to the ladder D₀(n)/Σ
+(different bookkeeping surfaces: droplet exit well vs per-atom shell
+energetics). **Corrected geometry (G3 Step 2, §14.5):** the trap lever
+steepens dramatically with v_c at long chords (eb0482 holds trap
+0.01–0.04 everywhere; eb154 reaches 0.55–0.61 at v_c ≥ 8 with K_q50
+17–18) — the (v_c, well) coupling is the §3.5b over-dissipation
+distinguishing evidence; the gate itself is only weakly well-sensitive
+(gated cells exist at all three wells, v_c window shifting ~0.5).
+**Ring MD (arm E, §14.5):** trap ordering CONFIRMED in MD at the basin
+chord — 0.026 / 0.087 / 0.115 for 0.0482 / 0.1168 / 0.154 eV (≈ 0.8/eV,
+matching the item-2 lq-system 0.85/eV — the lever transfers), and the
+deep well *gates* (e154), so the basin tolerates the full Tier-0 well
+spread.
+
+### 9.1 Is E_bind R-dependent? — bounded analytically (2026-07-26, zero cost)
+
+The well was co-extracted in an ⟨N⟩ = 2000 droplet, so Axis A's large-R
+cells would run it outside its calibration geometry. The bound splits the
+well by range:
+
+- **Local term (snowball / electrostriction)** — the compressed first
+  shells within a few Å of the ion. Nonlinear, dominates the absolute
+  depth, and **R-independent**: it does not know where the surface is.
+- **Far-field term** — the dielectric continuum out to the surface. The
+  only part that carries R, and weak because helium is nearly
+  non-polarizable.
+
+Born for an ion of radius a at the center of a dielectric sphere of
+radius R, `W(R) = −c·(1/a − 1/R)` with
+`c = (q²/8πε₀)(1 − 1/ε) = 7.20 eV·Å × 0.0541 = 0.390 eV·Å`
+(liquid He ε = 1.0572). The R-term is `+c/R` — a smaller droplet is a
+*shallower* well:
+
+| R [Å] | c/R [eV] | ΔE_bind vs R1 | implied Δtrap (at 0.85/eV) |
+|---|---|---|---|
+| 26.6 (R1, standing) | 0.0146 | — | — |
+| 34.0 (R2) | 0.0115 | +0.0032 | +0.003 |
+| 49.4 (R3) | 0.0079 | +0.0068 | +0.006 |
+| 68.3 (largest cell) | 0.0057 | +0.0089 | +0.008 |
+
+The Δtrap column uses this section's own measured lever (trap
++0.058 ± 0.004 per +0.0686 eV ⇒ ≈ 0.85 per eV).
+
+- **Deepening over the entire grid span ≤ 0.009 eV = 7.6 % of 0.1168** —
+  about ⅛ of the smallest step measured to matter, moving trapped by
+  ≈ 0.006 against the 0.0003 → 0.158 R-selection effect the grid
+  measures. One-sided and small.
+- **Free sanity check on the extraction:** at a = 3.5 Å the same formula
+  gives W(26.6 Å) = 0.096 eV vs the jointly-extracted 0.1168 eV — within
+  ~20 %, the first independent number of any kind on E_bind.
+- **Caveat:** Born underestimates the *absolute* depth (no
+  electrostriction), so this validates nothing about 0.1168 eV. It bounds
+  the **difference** only — legitimately, because the local term cancels
+  there.
+
+**G0 decision (2026-07-26):** defer — all Axis A cells run at 0.1168 eV;
+the R-dependence is carried as this bound. An MD bracket cell at R3 is
+**armed as a rider**, firing only if G1 shows the trapped channel near a
+boundary (trapped > ~0.4, or a detection-handover-guard trip as at
+0.154 eV). Modelling E_bind(R) as a derived quantity is explicitly not
+done in this program.
+
+### 9.2 The KE transfer function — MEASURED (atlas §6.5 Step 2 twin scan, 2026-08-10, zero MD)
+
+§9 carried trap / n̄ / midHot but never the **KE** response, which is the
+one the user's first-order argument is about. Measured on the corrected
+geometry at two arms × 7 wells (`atlas_ebind_twin.csv`; stage
+`ebindscan`): **arm H** = h405 (`capped_cubic` v_c 5.5 / τ 4.4 / E₀ 0.405),
+**arm L** = the MD-measured lin chord (`pure_linear` a 27.5 / τ 4.8 /
+E₀ 0.35). Both oracles green (arm L reproduces three committed
+`atlas_linsweep.csv` wells string-exact; arm H reproduces the committed
+h405 twin anchor string-exact).
+
+**The first-order argument, and why it is wrong by a factor of 2.** The
+droplet well and the He density gate are the *same* erf at the *same*
+width — identically `U(r) = E_bind·(1 − ρ̂(r))`, `cfg.potential_steepness`
+= 14.2 Å. Births sit ~35 Å inside a ~48 Å droplet, so `U(birth) = 0` and
+for a **fixed trajectory** E_bind is a purely additive, velocity-independent
+per-fragment exit toll: `dKE_∞/dE_bind = −1` exactly, uniformly for every
+peak. Measured, it is **≈ −0.545**.
+
+> **THE MISSING 45 % IS SOLVED — see §9.6 (2026-08-11). It is not a drag
+> refund and there is no defect.** The ion pays **98.1 %** of the well
+> (measured two independent ways: a dressed-frame derivative, and energy
+> closure at 0.1167 eV against the nominal 0.1168 eV). The scored gap is
+> a **mass-frame partition**: the toll is paid by the 211 amu *dressed*
+> complex, while KE₁ scores the 131 amu *bare* ion at that complex's final
+> velocity, so only `m(1)/m(21) = 0.6205` of the toll reaches the
+> observable. Decomposition of the measured 0.5422: **38.0 % mass
+> partition + 6.7 % cascade + 1.9 % genuine drag refund**. Every
+> statement below about a "refund" being 45 % should be read as the 1.9 %
+> figure; the *measured numbers* in this section are all unaffected —
+> only the mechanism attributed to them moved. The consequences for the
+> flight mass are a separate, larger thread: `TIER2_MASS_SCENARIOS.md`.
+
+| quantity | arm H (h405, capped) | arm L (lin a 27.5) |
+|---|---|---|
+| dKE₁/dE_bind [eV/eV] | **−0.5421** | **−0.5486** |
+| max fit residual [eV] | 0.00008 | 0.00007 |
+| dKE₂/dE_bind | −0.5513 | −0.5619 |
+| d⟨KE⟩(n2–8, geo)/dE_bind | −0.5617 | −0.6077 |
+| d⟨KE⟩(n10–17)/dE_bind | −0.4171 | −0.6813 |
+| dtrap/dE_bind [1/eV] | **+0.6199** | **+0.0326** |
+| KE₁ at E_bind = 0 | 0.6876 | 0.9189 |
+| KE₁ at the bundle well | 0.6236 | 0.8546 |
+
+Fits are over the five provenance wells only (0.048 / 0.071 / 0.113 /
+0.1168 / 0.154); 0.0 and 0.2168 eV are labelled out-of-provenance
+diagnostics (`in_provenance = 0`) and enter no fit.
+
+**Four things this establishes.**
+
+1. **The response is affine over the whole span, not just locally.**
+   Residuals against the provenance line stay ≤ 0.0007 eV out to
+   *both* diagnostic wells — 0.0 and 0.2168 eV, a 4.5× range in depth.
+   There is no saturation and no curvature: the refund is a **fixed
+   fraction**, not a depth-dependent one.
+2. **It is drag-form invariant.** 0.5421 vs 0.5486 — 1.2 % apart across
+   two genuinely different laws (Φ 0.64 lin vs the h405 plateau). A
+   refund driven by drag *magnitude* would not do that.
+
+   > **Mechanism REVISED THREE TIMES. The final form is §9.6, not this
+   > block.** Form-invariance is not evidence about the drag refund at
+   > all: it is the signature of a term that does not involve the drag
+   > law — the `m(1)/m(21)` mass partition, identical on both arms by
+   > construction. Once that is removed, the genuine drag refund *is*
+   > form-split as this block's reasoning expected, 1.9 % (capped) vs
+   > 6.2 % (linear), a 3.3× ratio in the predicted direction — it was
+   > simply 30× smaller than the effect it was being read from. The
+   > product-of-two-factors physics below is **correct as physics** and is
+   > what governs the 1.9 %/6.2 % residual and the R = 9 Å calibration
+   > end; it was mis-scaled, not mis-derived. Retained for that reason.
+   >
+   > From the energy balance
+   > `c = 1 + d(∫F_drag ds)/dδ`, the refund is a **product of two
+   > necessary factors**:
+   >
+   > 1. **overlap** — the extra deceleration must occur where drag is
+   >    live (if the well is paid outside the helium, the ion is only
+   >    slowed downstream and `∫F ds` is untouched);
+   > 2. **velocity sensitivity** — the drag force must respond to being
+   >    slowed (a saturated, v-independent force does the same work over
+   >    the same path however slow the ion is).
+   >
+   > Either factor at zero kills the refund. This is why a centre-born
+   > ion under the h405 cap measures c = 1.000 flat across R = 9–47.8 Å
+   > (factor 2 = 0, so varying factor 1 does nothing), while under the
+   > **uncapped** Tier-0 cubic c ≈ 0.48–0.73 and **sharpening the density
+   > halves the refund** (factor 1 is the manipulable one). The two
+   > measured facts (fixed fraction, form-invariance) stand throughout;
+   > only the explanation moved.
+3. **The trap lever is form-SPLIT — the genuinely new number.** 0.620/eV
+   on capped_cubic (inside the D0 §9 band 0.85 ± , measured 0.6199) but
+   **0.033/eV on the linear arm**: over the entire 0 → 0.2168 eV span the
+   lin family moves trap 0.0003 → 0.0085. The lin family is
+   ~19× less well-sensitive on the trapped channel — the ring's "trap
+   axis dead" single-point read, now a slope over seven wells.
+4. **The axis is closed as a KE lever.** Even at `E_bind = 0` — the
+   physically impossible limit — h405 reaches KE₁ 0.6876, short of the
+   0.75 (A)-ceiling band and far short of the 1.00 eV reference peak. The
+   whole well axis is worth **≤ +0.064 eV** on KE₁.
+
+**Cross-instrument check.** The committed lin MD ring measures the same
+coefficient on CRN well pairs: −0.5268 (lr1→lr2), −0.5062 (lr3→lr4),
+mean **−0.5165** vs the twin's −0.5486 on the same chord — the twin runs
+≈ 6 % steep there. **MD-confirmed on the capped arm (§9.3): −0.5308 vs
+the twin's −0.5421, a 2 % transfer.**
+
+**W₁ side effect (twin, non-gating).** On the capped arm W₁ is
+*non-monotone* in the well: 1.388 (0) → 0.703 (bundle) → **0.600**
+(0.154) → 0.676 (0.2168) — the 0.154 cell sits below the G4 W₁ floor
+≈ 0.67, but it **fails the twin n̄ gate** (4.247 < 4.4), i.e. it buys W₁
+by pushing n̄ out of band; the known trade, not a new landing. The lin
+arm runs the other way (0.665 → 0.734, monotone worsening) and stays
+gated at every well. Gate verdicts here are the §3.5c **twin-convention**
+band (n₁ [0.19, 0.30], n̄ [4.4, 7.1]); the ring recorded that this differs
+from the MD-side realization band.
+
+**Pre-registered predictions (frozen before execution).** EB-P1 **PASS**
+on its threshold (|slope_H| 0.542 < 0.56) but the *mechanism* claim
+behind it — that capped_cubic would refund visibly more — is only
+marginally supported (1.2 %); read the result as form-invariance, not as
+a form effect. EB-P2 **PASS** (residual 8e-5 ≪ 0.005). EB-P3 **FAIL,
+both arms** — the size grading is real and correctly signed (heavier
+clusters pay closer to the nominal toll: +0.020 H, +0.059 L) but 2.5–7×
+smaller than the predicted 0.10–0.20 band. EB-P4 **PASS** capped /
+**FAIL** lin — the failure *is* finding 3. EB-P5 **PASS**. EB-P6 **PASS
+on sign only** (+0.0007 eV excess at E_bind = 0): the predicted
+saturation is absent, which is finding 1.
+
+**Provenance caveat, on every row.** E_bind is *Locked* — fitted to TDDFT
+jointly with the drag pair (Tier-0 Method B, §6.5.1), then fixed. Every cell here overrides it
+alone and so deliberately breaks that pairing (the §6.7 item-2
+precedent). These are sensitivity reads, never candidate points; §9.1
+bounds the physically defensible variation at ≤ 0.009 eV, so the
+0.2168 eV diagnostic is ~14× outside what any geometry argument licenses.
+
+**Retires:** the KE half of this section's GAP. **Leaves open:** the
+steepness-decoupling test of the geometric-overlap explanation. (The
+capped-arm MD confirmation named here as open was executed same-day —
+§9.3.)
+
+### 9.3 MD confirmation of the transfer function — EXECUTED (atlas §6.5 Step 3, 2026-08-10, 1 × N = 500)
+
+One MD cell (`ebmdh405s`: h405 pins, well 0.0482 eV), CRN-paired against
+the **committed** `linrh405p` ring run — cfg diff is exactly
+`{binding_energy_I_ion_eV, allow_unvalidated_binding_pairing}`, so the
+pair differs in the well and nothing else. Partner oracle green (nine
+committed `atlas_linring_table.csv` observables reproduced).
+Artifact `atlas_ebind_md.csv`.
+
+| observable | bundle 0.11676 | shallow 0.0482 | MD slope [eV/eV] | twin |
+|---|---|---|---|---|
+| ⟨KE⟩ n=1 | 0.6371 | 0.6735 | **−0.5308** | −0.5421 |
+| ⟨KE⟩ n=2 | 0.5511 | 0.5848 | −0.4914 | −0.5513 |
+| ⟨KE⟩ n2–8 (geo) | 0.3205 | 0.3581 | −0.5493 | −0.5617 |
+| ⟨KE⟩ n10–17 | 0.0789 | 0.1098 | −0.4521 (3 bins — fragile) | −0.4171 |
+| trap | 0.0630 | 0.0120 | **+0.7439 /eV** | +0.6199 |
+| n̄ | 3.748 | 4.245 | −7.25 /eV | −7.36 /eV |
+
+**The transfer function is confirmed.** MD −0.5308 vs twin −0.5421 —
+**2 %**, better than the lin arm's 6 %. The twin's error is a near-constant
+**level** offset on KE₁ (−0.0135 eV at the bundle well, −0.0127 at the
+shallow one), not a slope error: the *slope* is the licensed quantity.
+The n̄ lever agrees to 1.5 % across instruments and matches the §6.7
+item-2 lq value (−0.50 per 0.0686 eV step) — three independent systems.
+The trap lever lands at 0.744/eV, inside D0 §9's band and between the
+twin's 0.620 and the §6.7 0.85.
+
+**Pre-registered MD-P1..P6:** P1 (refund exists) **PASS**; P2 (twin
+transfer, band [−0.55, −0.47]) **PASS**; P3 (rigid translation, KE2
+within 0.10 of KE1) **PASS** at 0.039; P4 (trap ≤ 0.025) **PASS** at
+0.0120; P6 (ceiling holds) **PASS** at 0.6735 — extrapolating the MD
+slope to `E_bind = 0` gives 0.699, still below 0.75. **P5 FAILED**, and
+it corrects a §9.2 claim — see below.
+
+**CORRECTION to §9.2 (the twin-grading caveat is withdrawn as stated).**
+§9.2 recorded, from the lin arm alone, that "the twin under-reports
+cross-bin KE grading by ~2.5×". MD-P5 predicted that would reproduce on
+the capped arm (band [0.05, 0.25]). It does not: MD grading
+(mid-band − n₁) is **+0.0184** against the twin's **+0.0277** — the twin
+slightly *over*-reports here, and both are far below the lin arm's
+values (MD +0.13, twin +0.059). The defensible statement is narrower:
+**cross-bin KE grading is small and drag-form-dependent** (≈ 0.02 on the
+capped arm, ≈ 0.06–0.13 on the linear arm); the twin tracks it to ±0.01
+on the capped arm and misses it by ≈ 0.07 on the linear arm. It is *not*
+a systematic twin under-report, and §9.2's EB-P3 band [0.10, 0.20] was
+mis-calibrated by generalizing from one lin measurement. Slopes transfer
+across instruments; differences of slopes are form-specific and should
+be measured per arm, not carried over.
+
+### 9.4 RQ12 probe — the refund is a *velocity-sensitivity* effect, and the Tier-0 calibration is NOT biased by it (2026-08-10, zero MD)
+
+Built to test a specific hypothesis (user): if the model cashes only ~55 %
+of the well, then Tier-0's co-fit of `E_bind` — anchored to real TDDFT
+traces at R = 9/18 Å — must have returned an *inflated* `E_bind` ≈
+`E_bind^true`/c, and correcting the density width would deflate it and
+raise production KE₁. The transfer factor is `T = c(R_prod)/c(R_cal)`;
+`T = 1` would make the whole refund an unobservable re-parametrisation.
+
+Instrument: twin stage `refundscan` (+ a byte-inert `rho_steepness`
+override on `integrate_pairs`, the twin-side mirror of production's
+`erf_independent` gate). Controlled single trajectories — monodisperse R,
+fully dressed fixed mass, radial launch, two wells, per-fragment finite
+difference; no fate map, no ensemble. Artifacts
+`atlas_refund_geometry{,_summary}.csv`.
+
+**Correction applied during execution (not a refinement).** The raw
+finite difference conflated the refund with a birth-geometry term: at
+small R the ion is born partway *up* the well, so it can never pay the
+full depth. That term alone reproduced the raw c to four decimals at
+R = 9 and 18 Å (0.7774 predicted vs 0.7771 measured). All values below
+are divided by the available fraction `ρ̂(depth_birth)` at the potential
+width; the first-pass numbers were discarded.
+
+Birth-corrected cashed fraction c (centre-born arm):
+
+| s_ρ [Å] | R 9 | R 18 | R 26.6 | R 34.4 | R 47.8 | R 68.3 |
+|---|---|---|---|---|---|---|
+| **14.2** (standing) | **1.000** | **1.000** | 0.535 | 0.556 | 0.671 | −0.088 |
+| 7.1 | 1.000 | 1.000 | 0.652 | 0.661 | 0.739 | −0.114 |
+| 3.14 (Harms DFT) | 1.000 | 1.000 | 0.703 | 0.700 | 0.762 | −0.123 |
+
+(The `frac027` birth arm runs 1.061 / 0.880 / 0.798 / 0.612 / 0.200 /
+0.249 at s_ρ = 14.2 — see the birth-sensitivity point below.)
+
+**Second correction, same session — the drag LAW.** The first working
+build measured both sides of the transfer question under a *capped* law,
+and hardcoded `G3_STANDING[1]` = v_c **7.25** (the superseded chord)
+rather than h405's 5.5. Both are wrong for this question: Method B
+extracted {a, b, E_bind} under the **uncapped** `shared_pure_cubic`,
+while production runs the h405 cap. Above a cap the drag force is
+v-independent, so a refund cannot exist *by construction* — which is
+where a spurious `c = 1.000` at the calibration radii came from. The
+probe now carries both laws explicitly (`REFUND_LAWS`), and the transfer
+factor is **cross-law by construction**:
+
+$$T = \frac{c_\text{prod}(\text{h405 cap},\, R \approx 48)}
+          {c_\text{cal}(\text{uncapped cubic},\, R = 9)}$$
+
+Birth-corrected c under the **Tier-0 (uncapped) law**, centre-born:
+
+| s_ρ [Å] | R 9 | R 18 | R 26.6 | R 34.4 |
+|---|---|---|---|---|
+| **14.2** (standing) | **0.482** | 0.494 | 0.553 | 0.612 |
+| 7.1 | 0.663 | 0.625 | 0.659 | 0.700 |
+| 3.14 (Harms DFT) | **0.754** | 0.681 | 0.700 | 0.732 |
+
+**1. The mechanism — a PRODUCT of two necessary factors.** From
+`c = 1 + d(∫F_drag ds)/dδ`, a refund requires **both** (i) that the extra
+deceleration happen where drag is live — *overlap*, the factor the
+density width controls — and (ii) that the drag force respond to being
+slowed — *velocity sensitivity*. Either at zero kills it. Under the h405
+cap a centre-born ion stays above v_c from 9 to 47.8 Å and measures
+c = 1.000 flat: factor (ii) is zero, so varying (i) does nothing. Under
+the uncapped cubic, (ii) is live everywhere and c ≈ 0.48–0.73, and
+**sharpening the density halves the refund** (0.518 → 0.246 at R = 9)
+— factor (i) is the manipulable one. In the strongly over-dissipated
+corner (R = 68.3, or R = 47.8 uncapped + sharpened) c goes **negative**:
+a deeper well slows the ion enough that it loses *less* to cubic drag
+than it gained in toll — a > 100 % refund. Physical, not a failure.
+
+*(Two earlier framings in §9.2 — "geometric overlap" alone, then
+"velocity sensitivity, not overlap" — were each wrong as stated; the
+second was a false dichotomy. Corrected there too.)*
+
+**2. Sharpening makes E_bind's effect STRONGER.** c rises toward 1 at
+every radius as s_ρ sharpens (0.482 → 0.754 at R = 9; 0.553 → 0.700 at
+26.6). Less refund, more of the well actually paid — the predicted
+direction (RF-P2, which holds everywhere off the over-dissipated cell).
+
+**3. E_bind IS inflated by the refund — and the transfer error runs
+toward more KE, not less.** With c_cal = 0.482, a fit anchored to the
+TDDFT traces returns `E_bind^fit ≈ E_bind^true / 0.482 ≈ 2.1 ×
+E_bind^true`. Measured transfer factors:
+
+| arm | T (standing) | T (sharpened) |
+|---|---|---|
+| centre | 2.073 | 1.327 |
+| production-like birth | 1.488 | 1.032 |
+
+**T > 1: production cashes more than the calibration did, i.e. it
+over-pays the exit toll.** Correcting the density width lowers the
+effective toll and **raises** KE₁ — and RF-P3 **PASSES** on both arms
+(sharpening drives T toward 1, removing the transfer error).
+
+**Magnitude — T is NOW a number (§9.6, 2026-08-11): T = 2.04,
+ensemble-confirmed.** The apparent disagreement between the probe's
+production-side c (0.80–1.00) and the MD ensemble 0.5308 was **not** an
+ensemble-vs-trajectory discrepancy — it was the mass frame. Scored in the
+frame the toll is actually paid in (dressed, m(21)), the production
+ensemble measures **c_prod = 0.9815** on 6427 ions, i.e. it agrees with
+the single-trajectory probe's 1.000 to 2 %. Both terms of
+
+$$T = \frac{c_\text{prod}}{c_\text{cal}} = \frac{0.9815}{0.482} = 2.04$$
+
+are now fixed-mass trajectory-level quantities, so the category error that
+sank the first estimate cannot recur. This lands on the probe's own
+centre-arm value 2.073. **`E_bind^fit ≈ 2× E_bind^true` stands** — the
+robust part was always `T > 1`, and it is now sized.
+
+The "+0.006–0.02 eV" payoff estimate is **reinstated at ≈ +0.02 eV**, but
+for different and now level-consistent reasons: it is entirely
+**calibration-side** arithmetic. Sharpening lifts c_cal 0.482 → 0.754 at
+R = 9 Å, so a re-fit returns `E_bind` ≈ 0.1168 × (0.482/0.754) ≈ 0.075 eV
+(≈ 0.085 via R = 18), and propagating that through the **MD-confirmed**
+system slope −0.531 gives **ΔKE₁ ≈ +0.017…+0.022 eV**. Caveat: this
+assumes the re-fit rescales `E_bind` alone, whereas Method B fits
+{a, b, E_bind} jointly — an order-of-magnitude forecast, not a
+prediction. **The production-side leg is dead** (§9.6): at R ≈ 48 Å the
+drag refund is 1.9 %, so no width correction can act there.
+
+**4. What IS falsified — RF-P5, and only that.** RF-P5 predicted
+c(18)/c(9) ≈ 2.17, the ratio of the Tier-0 per-case fitted E_binds
+(0.154 at 9 Å / 0.071 at 18 Å), if that split were the refund. Measured
+**1.023** (centre) / 0.994 (frac027) under the correct Tier-0 law: c is
+essentially *equal* at the two calibration radii, so the refund cannot
+produce a 2.2× difference in fitted E_bind. **The 0.154/0.071 split has
+another, still-unknown cause** — a live loose end.
+
+**5. Birth position matters as much as radius.** Under the h405 cap at
+R = 47.8, c = 1.000 centre-born vs 0.800 at the production-median birth
+fraction; under the Tier-0 law, 0.706 vs 0.164. The refund is not a
+geometric constant — it is a strong function of birth depth through the
+speed history, coupling it to the §14.3 birth-depth lever.
+
+**Verdicts.** RF-P1 **PASS**; RF-P2 **PASS** (production-like arm; the
+centre arm's FAIL is the over-dissipated R = 68.3 cell only); RF-P3
+**PASS** both arms; RF-P5 **FAIL** — the headline. RF-P4 was withdrawn as
+mis-specified: a single trajectory cannot reproduce an ensemble mean, and
+the two birth arms *bracket* it instead.
+
+**Consequence for RQ12.** Sharpening the density width is right physics
+**and** correctly signed for KE₁ — it removes a real
+calibration-to-production transfer error. Its size is not yet established
+(see the magnitude caveat above). It is not a solution to the KE₁
+deficit. Doing it properly requires a Tier-0 re-extraction under the
+corrected width, and the production-side c must first be re-measured on
+the ensemble rather than on single trajectories.
+
+> **CORRECTION (2026-10-05) — the calibration side of this probe used the
+> wrong geometry.** `REFUND_RADII_A` (`tier2_h2b_forward_model.py`) treats
+> 9 / 18 Å as "the Tier-0 calibration droplets". They are not droplet
+> radii: 9 Å / 18 Å is the initial I–I separation `R0_GS_angstrom` of the two
+> HeDFT cases. Both Tier-0 cases run in the **same** N = 2000 droplet,
+> R ≈ 30.1 Å (≈ 28 Å with the legacy 2.22·N^⅓ rule), each ion born 4.5 /
+> 9 Å from the centre (21–25 Å deep). Consequences:
+> - `c_cal = 0.482` "at R = 9" and what was derived from it (E_bind
+>   inflated ≈ 2.1×, T = 2.04, the ≈ +0.02 eV KE₁ payoff) and the "+11 % at
+>   the 9 Å Tier-0 droplet" width-blindness figure (§17) were read off a
+>   near-droplet-free toy cell. The nearest valid cell is R = 26.6
+>   (Tier-0 law: c 0.553 → 0.700 under sharpening).
+> - **RF-P5 was mis-specified**, not merely failed: the per-case split
+>   (0.154 at 9 Å / 0.071 at 18 Å) is between two birth offsets / Coulomb
+>   energies in one droplet, not two radii.
+> - The G4 prediction "E_bind falls" (`THESIS_FINAL_GOALS.md` G4.2) rested
+>   on this R = 9 cell (≈ 0.075 eV). It was **refuted** (measured 0.1277,
+>   §1.G4). The correct cell still predicts a fall (×0.79 ≈ 0.092 eV), so
+>   the geometry error does not explain the sign by itself; the probe also
+>   holds b fixed, whereas Method B re-fits b and E_bind jointly (the G4.2
+>   caveat).
+> - **Hypothesis for the sign (untested):** at 14.2 Å the gate
+>   under-weights drag inside the droplet (ρ̂ ≈ 0.84 at 10 Å depth) and
+>   leaves a drag tail outside the surface (ρ̂ ≈ 0.16 at +10 Å). At 3.5 Å
+>   b drops to compensate for the fuller interior drag (measured −11 %),
+>   and E_bind rises because it takes over the late-window slowdown the
+>   outside tail used to supply (measured +9 %). Zero-MD check: split the
+>   drag work per ion into inside / outside the surface over the TDDFT
+>   window, for both bundles.
+
+### 9.5 Is the measured response dynamical or cascade? — DECOMPOSED (2026-08-11, zero MD, zero new integrations)
+
+The §9.4 probe measures c = 1.000 for a supercritical single trajectory
+while the ensemble measures 0.5422 (twin) / 0.5308 (MD). Since the probe
+runs at **fixed mass with no fate map**, the hypothesis was that much of
+the ensemble "refund" is not a drag refund at all but **cascade
+repopulation** of the n = 1 bin — which the density width could not
+reach, making the whole RQ12 leverage argument mis-attributed.
+
+Method: KE₁ depends on the well through two bundles — **T** (trajectory:
+`v_inf`, `trapped`) and **C** (cascade: `n_det` from the fate map). Score
+all four cross-combinations KE₁(T_x, C_y) and difference. The split is
+exact by construction; the ordering-dependence is reported as the
+interaction term. Stage `ebinddecomp`, artifact `atlas_ebind_decomp.csv`;
+both un-crossed corners **anchored** against the committed
+`atlas_ebind_twin.csv` bin means before any crossed value was read.
+Because KE₁ conditions on n = 1, the complex mass is pinned at m(1) — the
+cascade enters **only** through bin membership, not through mass.
+
+| cell | c_total | c_traj (dynamical) | c_casc (cascade) | cascade share | interaction |
+|---|---|---|---|---|---|
+| **h405** | 0.5422 | **+0.6090** | −0.0669 | **12.3 %** | −0.0000 |
+| **lr1** (lin) | 0.5488 | **+0.5817** | −0.0330 | 6.0 % | +0.0001 |
+
+**The hypothesis is REFUTED — DC-P1 FAIL** (registered: cascade ≥ 0.15;
+measured 0.067 / 0.033). In refund terms the total refund 0.458 splits
+**0.391 dynamical (85 %) / 0.067 cascade (15 %)**. So the response *is*
+overwhelmingly the drag channel, and **the density width can reach it** —
+RQ12's leverage argument is not mis-attributed on this axis.
+
+**It also resolves the 1.000-vs-0.53 tension, and not as guessed.** The
+ensemble's *dynamical* value is 0.6090 (DC-P2 PASS: a real refund even
+with membership frozen), so the gap from the single trajectory's 1.000
+down to 0.542 is ≈ 0.39 **ensemble geometry** (birth-position spread and
+non-radial paths putting real ions below v_c during the crossing) and
+only ≈ 0.07 cascade. The probe's defect was representativeness, not the
+missing mass mechanism.
+
+> **THIS ATTRIBUTION IS WITHDRAWN (§9.6, 2026-08-11).** The 0.39 is not
+> ensemble geometry. It is the **mass frame**: `refundscan` scores at the
+> same fixed dressed mass it integrates with (so m_ratio = 1 → c = 1.000),
+> while the ensemble scores KE₁ at m(n_det) = m(1). Re-scored in the
+> dressed frame the ensemble gives **c_traj = 0.9815**, i.e.
+> 0.6090 = 0.9815 × 0.6205 exactly. Birth spread and non-radial paths
+> contribute the 1.9 % residual, not 0.39. The **DC-P1 verdict is
+> unaffected** — the cascade really is small — but the "85 % dynamical /
+> 15 % cascade" split is better stated as *38 % mass partition,
+> 6.7 % cascade, 1.9 % drag*.
+>
+> **The open T1 caveat below is also retired, and not by measurement:**
+> `trapped` cannot contaminate c_traj through the n = 1 bin, because a
+> trapped ion parks inside the droplet for the full 150 ps, accumulates a
+> large cooling exposure K, and therefore lands at n_det = 21 — never
+> n = 1. The `& ~trapped` mask is near-inert for KE₁. Splitting trapping
+> into its own bundle is **not worth running**; the split that was
+> actually missing was the mass frame.
+
+**Cascade sign.** c_casc is small and **negative**: deepening the well
+shifts n = 1 membership toward slightly *faster* ions, partially
+offsetting the dynamical loss.
+
+**Caveat on attribution (open).** `trapped` was bundled with T, being a
+trajectory output, so **c_traj = velocity response + trapping
+selection**. Trap moves 0.012 → 0.063 across this well pair, so part of
+the 0.609 is selection rather than pure dynamics. Splitting trapping into
+its own bundle is one further crossing and should be done **before the
+85 % figure is leaned on**. DC-P3 (closure) and DC-P4 (interaction
+≤ 0.10) both PASS — the split is well-conditioned.
+
+### 9.6 THE 45 % IS SOLVED — mass partition, not a refund; and the density width is measured NULL at production (2026-08-11, zero MD)
+
+This section supersedes the mechanism statements in §9.2, §9.4 and §9.5.
+None of the *measured numbers* in those sections change; the physics
+attributed to them does. **There is no defect and no missing energy: the
+model is working correctly.**
+
+#### 9.6.1 The question
+
+Every earlier reading said the ion cashes only ~55 % of the solvation
+well and that ~45 % is "refunded as un-incurred drag". That was always
+uncomfortable — an ion cannot escape a droplet while paying only half
+its binding energy — and three measured invariances made it untenable:
+the "refund" was invariant to the drag **form** (0.5421 capped vs 0.5486
+linear, §9.2), invariant to birth **depth** (§9.2), and — measured here —
+invariant to the density **width**. A quantity indifferent to everything
+about the drag is not a drag effect.
+
+#### 9.6.2 The answer: a mass-frame partition
+
+$$\boxed{\;c \;=\; \frac{m(1)}{m(21)} \;=\; \frac{130.903}{210.955} \;=\; 0.6205\;}$$
+
+The twin integrates every trajectory at the **dressed** mass
+`complex_mass_amu(ne_mol)`, and at the corrected geometry *every* fragment
+carries `n₀ = 21` (measured: 20000/20000; the shallowest birth in the
+committed master sits at depth −19.95 Å, so the pickup gate is saturated).
+`_bin1_mean_ke` then scores `kinetic_energy_eV(complex_mass_amu(n_det),
+v_inf)` — the **bare** mass. Hence
+
+$$\Delta\!\left(\tfrac12 m_{21} v^2\right) = -E_\text{bind}
+\;\Longrightarrow\;
+\Delta KE_1 = \tfrac12 m_1 \Delta(v^2) = -E_\text{bind}\cdot\frac{m_1}{m_{21}}$$
+
+**The toll is paid in full. The observable only ever sees the iodine's
+share of it.** The other 38 % was paid by helium that evaporates
+afterwards and is no longer part of the scored particle — under the
+Tier-1a velocity-preserving shed each departing atom leaves at the
+complex velocity and carries its own ½m_He v² away. Nothing is lost and
+nothing is double-counted.
+
+Confirmed by re-scoring the committed chord families in both frames
+(both un-crossed corners anchored string-exact against
+`atlas_ebind_twin.csv` before any crossed value was read):
+
+| arm | frame | c_total | c_traj | c_casc | toll actually paid |
+|---|---|---|---|---|---|
+| **h405** (capped) | bare (production) | +0.5422 | +0.6090 | −0.0669 | |
+| **h405** | **dressed** | +0.8737 | **+0.9815** | −0.1078 | **98.1 %** |
+| **lr1** (lin) | bare (production) | +0.5488 | +0.5817 | −0.0330 | |
+| **lr1** | **dressed** | +0.8843 | **+0.9375** | −0.0532 | **93.8 %** |
+
+#### 9.6.3 Independent confirmation by energy closure
+
+A completely different route — the ledger of the 6375 scored n = 1 ions
+at h405 — gives the same answer:
+
+| term | eV | |
+|---|---|---|
+| source budget (14.3996 / 2.666 / 2) | 2.7006 | per fragment |
+| − solvation toll actually paid | **0.1167** | **99.9 % of E_bind = 0.1168** |
+| − drag dissipation | 1.5790 | 58 % of the budget |
+| = exit KE, dressed frame | 1.0050 | |
+| × m(1)/m(21) | 0.6205 | |
+| = scored KE₁ | **0.6236** | matches the committed value |
+
+The well line is the direct answer to "where is that energy coming from":
+**nowhere — it is paid, 99.9 % of it.**
+
+#### 9.6.4 The corrected decomposition
+
+| component | h405 (capped) | lr1 (lin) |
+|---|---|---|
+| mass partition `m(1)/m(21)` | 38.0 % | 38.0 % |
+| cascade (bin membership) | 6.7 % | 3.3 % |
+| **genuine drag refund** | **1.9 %** | **6.2 %** |
+| = observed shortfall | 45.8 % | 45.1 % |
+
+The genuine drag refund is **form-split 3.3×** in the direction §9.2's
+mechanism block predicted — it was simply buried under a constant 30×
+larger. It also explains why n-graded slopes rise (|slope| KE₁ < KE₂ <
+mid on both arms, since m(n)/m(21) rises with n) and **retro-explains the
+EB-P3 FAIL**: the mass ratio predicts a grading increment ≈ 0.057, not the
+registered 0.10–0.20 band. That band was mis-specified, not the model.
+
+#### 9.6.5 The density-width scan — atlas §6.8 T2, EXECUTED (NULL)
+
+`c` re-measured at five widths across the Harms bracket, both arms,
+two-well finite difference (licensed by EB-P2 affinity). Anchors: the
+re-integration at s_ρ = 14.2 is **bit-identical** to the committed chord
+npz, and all four (arm × well) `n1_ke_eV` reproduce
+`atlas_ebind_twin.csv` **string-exact**.
+
+| s_ρ [Å] | 14.2 (standing) | 7.10 | 4.40 | 3.50 | 3.14 (Harms DFT) |
+|---|---|---|---|---|---|
+| h405 (capped) | 0.5422 | 0.5548 | 0.5583 | 0.5590 | **0.5597** |
+| lr1 (lin) | 0.5488 | 0.5635 | 0.5686 | 0.5693 | **0.5695** |
+
+**A 4.5× sharpening moves `c` by 3 %**, converged by s_ρ = 4.4. In KE₁
+terms **+0.002 eV**, against a 0.36 eV deficit. This is exactly the size
+§9.6.4 predicts (the whole recoverable drag refund is 1.9 %), so the null
+is *structural*, not bad luck — two independent routes to the same
+number.
+
+Why: at R ≈ 48 Å, ∫ρ̂ dr = R to 0.0 % (§17), so sharpening only
+redistributes exposure across the surface shell; and a deep-born ion
+(median birth depth 33.8 Å) is already at terminal speed when it crosses
+that shell, so there is no velocity gradient for the redistribution to
+exploit. The width bites only where **s ∼ R** — i.e. at the 9 Å Tier-0
+calibration droplet (c_cal 0.482 → 0.754), and nowhere in production.
+
+Side observables, capped arm only (twin, non-gating, hatch reads): n̄
+4.484 → 4.322, W₁ 0.7025 → **0.6318**, trap 0.0535 → 0.0637, midHot
+1.0685 → 1.0557. The lin arm is flat (n̄ 4.507 → 4.507). The W₁ movement
+is below the G4 floor ≈ 0.67 and is worth noting, but n̄ 4.32 falls out of
+the twin gate band [4.4, 7.1], i.e. it buys W₁ the known way. **Mechanism
+not verified** — the plausible route is the cooling exposure
+`K = ∫ρ dt` losing its ~30 Å of post-surface accumulation, which raises
+`E_ej = E₀e^(−K)` and evaporates more. One integration would settle it;
+not run.
+
+#### 9.6.6 Consequences
+
+- **RQ12's production-side leg is retired.** Sharpening the density width
+  is right physics and remains a model-correctness fix, but it cannot
+  move production observables: there is nothing there to recover.
+- **RQ12's calibration-side leg is intact and now sized**: T = 2.04,
+  ΔKE₁ ≈ +0.02 eV via a Tier-0 re-extraction (§9.4, T5).
+- **T1 is not worth running** (see the §9.5 note); **T3's four-consumer
+  confound is moot on the twin side** — pickup is measured inert and the
+  twin has no detection stage, so "change the sharpness" is one argument
+  to `integrate_pairs`.
+- **A structural ceiling on every source-side lever**, new:
+
+  $$\frac{\partial KE_1}{\partial(\text{any pre-evaporation energy})}
+    \;\le\; \frac{m(1)}{m(21)} = 0.6205$$
+
+  §3.5k's measured `S_k = 0.389 eV/eV` is **63 % of that ceiling**, not a
+  free number that happened to land low; and the top **32 %** of its
+  registered band [0.35, 0.75] was structurally unreachable. The BP-KILL
+  verdict is unaffected (0.389 sits inside, above 0.35).
+- **The large consequence is not in this section.** The same mass frame
+  says KE₁ = E_exit · m(1)/m_flight with E_exit measured *mass-invariant*,
+  which turns the entire KE₁ deficit into a question about what mass
+  actually flies. That thread — §3.5g cross-check, the flight-mass
+  measurement, the KE-vs-n shape, and the speed-gated co-moving
+  hypothesis — is **`TIER2_MASS_SCENARIOS.md`**.
+
+**Instruments:** scratchpad probes (`rq12_width_slope.py`,
+`rq12_mass_frame.py`, `rq12_g35g_crosscheck.py`, `rq12_flight_mass.py`),
+each anchored on committed artifacts before any new number was read. No
+committed stage was modified and no committed artifact was rewritten.
+Promotion of any of these to a committed stage is a separate decision.
+
+**Retires:** the RQ12 magnitude GAP and the §9.2/§9.4/§9.5 mechanism
+ambiguity. **Stance unchanged:** nothing adopted; Tier-0, h405 and
+`finc1v725` all stand.
+
+## 10. Landau v_L — dissipation threshold
+
+| | |
+|---|---|
+| role | γ = 0 gate below v_L (0.58 Å/ps); also a latent shared reader (sets the neutral-stage E_min threshold, I84) |
+| class | Sourced — bulk roton Landau value, droplet-persistent down to ~1000 atoms (NB-RQ11-1..3) |
+
+**Influence (measured):** **bit-flat on every scored observable** across
+v_L ∈ {0.30, 0.40, 0.58} (Δn₁_solv = ΔW₁ = 0.0000) while demonstrably
+acting on the retained class (retained KE 0.277 → 0.005–0.023 eV,
+monotone) — the scored surface is structurally insulated, not the arm
+inert (I84, re-confirmed at the blessed point I88). The Landau floor
+(≈ 0.003 eV) sits an order of magnitude below the scored deep bins —
+part of why RQ11 candidate (i) fails (I89).
+
+**Status:** standing 0.58, quiet on the scored surface; literature
+deep-read confirms the value but shows the *gate shape* above v_L is
+unconstrained (I100).
+
+## 11. Per-shed ε — evaporative recoil
+
+| | |
+|---|---|
+| role | translational energy carried per shed He (currently ε = 0; OQ-F origin, I23) |
+| class | Bounded small (NB-RQ23-1: ~0.5–0.6 meV prescription) |
+
+**Influence (measured):** required ε_req(n) to close RQ11 is
+sign-changing (−3…−4 meV/shed at n = 2–3, +3 → +9 over n = 10–17); flat
+ε ≈ 6–8 meV closes the deep slope (χ²_med 242 → 66) only by breaking
+midHot (1.25–1.33 vs [0.84, 1.14]); physical drag-retention is
+*inverted* (deep-bin sheds happen in-bubble, 43 % retention vs 95 % at
+n₁) — retention-weighted forward model floors at χ²_med ≈ 198.
+**Refuted as RQ11 owner; ε ≈ 1–2 meV sub-dominant stays compatible**
+(I94, §4dd).
+
+## 12. Shed momentum convention (cold-shed vs co-moving)
+
+| | |
+|---|---|
+| role | what the evaporated He carries away: at-rest-in-lab (cold-shed, momentum-conserving) vs co-moving (ε ≈ 0) |
+| class | convention — RQ2/RQ3-coupled (OQ-J) |
+
+**Influence (measured):** cold-shed injects +0.91 eV over a full
+post-exit strip (×1.611 = m₂₁/m₁ in KE) — it *was* the twin−MD n₁ KE
+divergence, closed entirely by the co-moving counterfactual (I59, I61).
+The histogram is convention-blind (W₁(A″, A′) = 0.14–0.20); the
+suppressed-class *fragmentation* read is convention-decided: pooled
+conventions give intact 1.96 / co-moving 1.36 / cold-shed 2.82 eV vs
+ref bare mean 3.706 — direction momentum-conserving, all 6–10× too
+narrow in σ, and the bare mean is kinematically un-sourceable from the
+production channel (cap ≈ 3.37 eV pre-drag) → n = 0 is a two-channel
+mixture; the suppressed class belongs to the low-KE shoulder (I60, I64,
+I95).
+
+## 13. Birth margin — 3 Å pinned convention
+
+| | |
+|---|---|
+| role | minimum birth depth below the droplet surface for the sampled I₂ center |
+| class | Inactive in production — guard-refused under the `boltzmann` birth law, so production runs margin 0 (reclassified 2026-10-01; was a pinned convention, I88, under `uniform_volume`) |
+
+**Influence (measured):** **the sensitive robustness lever** at the
+blessed point: margin 3 → 4.67 / 6.0 Å moves n₁_solv −0.094 / −0.171
+(≈ 1.9σ / 3.4σ), collapses the ratio, halves suppression — the
+histogram landing depends on this pin (I88). In-tier open item.
+
+**Couplings:** position sampling (§15) — the margin truncates the
+Boltzmann radial law near the surface; the position axis is a two-sided
+race lever (I55).
+
+## 14. Droplet geometry — size R × birth position r **(GAP CLOSED — all 11 grid cells scored; Axis A G1 2026-07-26/27 + the retained-class arm 2026-07-27)**
+
+> **Caveat that travels with the R ≥ 49 Å rows only.** Those cells exclude a
+> `droplet_retained_marginal` class (ions energetically able to escape but
+> still helium-coupled at handover) whose size is conditional on a cubic drag
+> law extrapolated ~3× beyond its 9/18 Å calibration band. §14.2 measures
+> what that exclusion does to each observable: it is **resolved, not
+> negligible**, on `deepKE`, `n̄` and `W₁`. The R ≤ 34 Å rows have an
+> **empty** marginal class and are unaffected.
+
+Never controlled independently; everything known is inference from
+sampled ensembles:
+
+- The droplet-radius axis has a **quantified demand**: ≥ 9.6 % of the
+  ensemble below the 0.22 eV solvation floor requires a larger-K
+  (larger-droplet) tail (I30); width attribution: the ~21-bin span must
+  be carried by the E₀ and/or droplet-K axes — per-point reads are
+  ≤ 1 bin wide (I33).
+- The **position axis alone opens the two-sided race** (first MD weight
+  at n = 0/1 with no dressing; suppressed/bare ordering transfers
+  exactly from the twin) (I55); center-pinning was half of the T3 park
+  (I52).
+- The **droplet prior and the KE axis are decoupled**: flipping the
+  kornilov prior moves the histogram (n̄ ≈ −1 He) while solvated n₁ KE
+  moves ≤ 0.12 eV (I68); prior axis asymmetric at the blessed point
+  (δ 0.40 / pickup ≈ 1.5σ; δ 0.80 noise-level) (I88).
+- **Fate is birth-dressing + droplet-size ordered** (deep survivors:
+  larger droplets 30.1 Å, fuller dressing 18.4; retained: 34.0 Å)
+  (I90); frozen-geometry twin bias (channel (d)) scales with in-droplet
+  residence, 0 → −0.8 He across the v_c bracket (I73), (τ, E₀)-blind
+  (I74).
+
+**Measured influence — entangled battery read (2026-07-26, zero MD;
+full tables in `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` "Axis A pre-read").**
+The pooled N = 5000 battery binned by its own sampled geometry. Sampled,
+not controlled — R and depth co-vary and the T5 `density_tied` dressing
+rides on depth (⟨n₀⟩ = 14.0 / 16.4 / 19.3 across depth terciles) — so
+this orders and bounds, it does not attribute.
+
+- **Birth depth is the physics knob** (terciles 4.4 / 7.7 / 14.6 Å):
+  supp 0.381 → 0.182 → 0.003, n̄ 2.36 → 3.52 → 6.29, n₁_solv
+  0.358 → 0.109, midHot 0.703 → 1.209, **deep-KE 0.316 → 0.792**.
+- **Droplet radius is a selection knob**: at *fixed* depth, R is nearly
+  inert on the scored ensemble (supp and deep-KE flat to ±0.03 across R
+  terciles within each depth tercile); what R does move is trapped,
+  0.0003 → 0.042 → 0.158. Mechanism: the escaping fragment's path is its
+  birth depth (R-independent at fixed depth); R sets the *inward*
+  partner's path ≈ 2R − depth, and those fragments leave the ensemble.
+- **The landing is a mixture property**: pooled W₁ 0.571 beats every
+  geometry bin (best tercile 0.750, best quintile 0.639). No single
+  geometry lands the histogram.
+- **RQ11 relevance**: the deep-bin cold tail closes by ×2.5 with birth
+  depth — the first candidate owner this program has found. Confounded
+  with the dressing. **The control that would decompose it does not
+  exist** (2026-07-26): the three density-keyed legs — T5 birth dressing,
+  ρ̂-scaled cooling, drag gate — all read the single shared surface
+  `rho_he_ratio(depth, …)`, so they are *one* physical fact (local He
+  density at birth) expressed three ways, and every proposed control
+  (`initial_shell_model="full"`, `internal_energy_partition_law=
+  "constant"`, `cooling_spatial_gate="none"`) requires the less physical
+  arm of its pair. The correction achieves what they were meant to
+  measure: at the anchored geometry ρ̂ saturates and T5/T6 go inert on
+  their own.
+
+### 14.1 Measured influence — the CONTROLLED grid (Axis A G1, all 11 cells)
+
+**All 11 cells scored.** Six landed on the first pass (2026-07-26); the five
+anchored-radius cells were completed on 2026-07-27 by the retained-class arm
+(`detection_droplet_retained_policy="exclude_all_coupled"`) — a
+**detection-only re-run from the stored `relaxation.npz`, zero new MD**.
+N = 500, **one shared seed 20260727** (common random numbers), fixed droplet
+size per cell, everything else at the standing point; committed scorer,
+pooled-battery oracle reproduced (all 7 columns within 0.002). Re-running
+detection on the six original cells under the new arm reproduced them
+**bit-for-bit** (the arm oracle — the marginal class is empty at R ≤ 34 Å).
+Per the §3.1 mixture rule these cells are read against **each other**, never
+against the acceptance.
+
+`trap` is decomposed: **`t_b`** = `droplet_retained` (**physics** — total
+energy below the effective-potential barrier including angular momentum, so
+the ion cannot escape at any relaxation length) and **`t_m`** =
+`droplet_retained_marginal` (**modelling exclusion** — can escape, still
+helium-coupled at handover). They are never summed in a reading; `trap` is
+their total.
+
+| cell | R [Å] | law | ⟨depth⟩ | trap | t_b | t_m | supp | n̄_det | n₁_solv | W₁ | midHot (bins) | deepKE (bins) | χ²_med (npts) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| r1l1 | 26.6 | center-pin | 26.6 | 0 | 0 | 0 | 0 | 8.39 | 0 | 4.98 | 1.04 (3) | 1.83 (1) | 406 (4) |
+| r1l2 | 26.6 | parent Boltzmann | 24.9 | 0 | 0 | 0 | 0 | 8.35 | 0 | 4.76 | 1.25 (4) | 1.58 (2) | 117 (6) |
+| r1l3 | 26.6 | `uniform_volume` m3 | 9.0 | 0.059 | 0.059 | 0 | 0.167 | 4.46 | 0.235 | 0.81 | 1.02 (7) | 0.51 (8) | 266 (17) |
+| r2l1 | 34.0 | center-pin | 34.0 | 0 | 0 | 0 | 0 | 12.58 | 0 | 7.96 | NaN (0) | 1.49 (6) | 339 (6) |
+| r2l2 | 34.0 | parent Boltzmann | 29.3 | 0 | 0 | 0 | 0 | 12.30 | 0 | 7.53 | 1.42 (2) | 1.38 (8) | 46 (10) |
+| r2l3 | 34.0 | `uniform_volume` m3 | 10.9 | 0.196 | 0.196 | 0 | 0.140 | 5.33 | 0.184 | 1.40 | 1.11 (7) | 0.75 (8) | 127 (17) |
+| r3l1 | 49.4 | center-pin | 49.4 | 0.538 | 0.324 | **0.214** | 0 | 18.35 | 0 | 13.46 | NaN (0) | 1.94 (2) | 39 (2) |
+| r3l2 | 49.4 | parent Boltzmann | 34.8 | 0.476 | 0.470 | 0.006 | 0 | 15.12 | 0 | 10.24 | NaN (0) | 2.19 (8) | 311 (8) |
+| r3l3 | 49.4 | `uniform_volume` m3 | 14.8 | 0.404 | 0.402 | 0.002 | 0.123 | 6.30 | 0.151 | 2.31 | 1.31 (7) | 1.59 (8) | 109 (17) |
+| r4l2 | 68.3 | parent Boltzmann | 40.5 | 0.800 | 0.200 | **0.600** | 0 | 15.28 | 0 | 10.39 | NaN (0) | 1.93 (8) | 173 (8) |
+| r4l3 | 68.3 | `uniform_volume` m3 | 19.5 | 0.570 | 0.396 | **0.174** | 0.126 | 6.71 | 0.128 | 2.83 | 1.33 (7) | 1.97 (8) | 363 (17) |
+| *pooled battery* | *sampled* | *m3* | *9.0* | *0.067* | *0.067* | *0* | *0.187* | *4.07* | *0.243* | *0.571* | *1.011* | *0.631* | *242 (17)* |
+
+**Read χ²_med only with `ke_npts`.** The deep-birth cells vacate the low-n
+bins, so their χ² sums over 4–10 points against the pooled 17; r2l2's 46 and
+r1l2's 117 are fewer terms, **not** better KE agreement. Same for midHot /
+deepKE at L1/L2 — r1l1's deepKE rests on one bin, r2l1's midHot band is
+empty (NaN, correctly reported as 0 bins).
+
+1. **The birth law is the dominant axis; R at fixed law is second-order.**
+   At R1, going from the standing shallow law to either anchored deep law:
+   supp 0.167 → **0**, n₁_solv 0.235 → **0**, n̄ 4.46 → 8.39, W₁ 0.81 → 4.98.
+   Under L3, R 26.6 → 34 Å moves n̄ 4.46 → 5.33, trap 0.059 → 0.196,
+   deepKE 0.51 → 0.75 (with mean depth also rising 9.0 → 10.9 Å, since
+   `uniform_volume` depth scales with R — the two are not separable on this
+   law). Confirms the pre-read's "depth is the physics knob, R the selection
+   knob" with controlled cells.
+2. **Width decomposition — the headline (§3.3 Q5 answered).** The detected
+   size distribution's width tracks the *birth-depth* spread almost one-for-one,
+   on top of a small irreducible mechanism term:
+
+   | cell | SD(birth depth) [Å] | SD(n_det) [He] |
+   |---|---|---|
+   | r1l1 / r2l1 (center-pin) | **0** | 0.63 / 0.98 |
+   | r1l2 / r2l2 (Boltzmann) | 0.86 / 1.78 | 0.93 / 1.74 |
+   | r1l3 / r2l3 (m3) | 4.48 / 5.88 | 4.34 / 4.88 |
+
+   So SD(n) ≈ **1 He per Å of birth-depth spread**, with the zero-spread
+   cells exposing the mechanism-only floor (Poisson pickup + RRK evaporation,
+   0.6–1.0 He). At the standing law that makes **≈ 95 % of the size variance
+   geometry-inherited** (0.63²/4.34² ≈ 2 % mechanism). The L1 cells earn
+   their place precisely here — the near-degeneracy with L2 in the *means*
+   (n̄ 8.39 vs 8.35) is what makes them a clean zero-spread reference.
+   No ceiling pile-up anywhere (share at n = 21 is 0.000 in all six cells),
+   so the n̄ climb is not saturation.
+3. **The landing needs the size *distribution*, not the right mean size.**
+   r1l3 is the standing geometry with only the droplet-size spread removed
+   (R fixed at its own realized mean): W₁ degrades **0.571 → 0.813** while
+   supp / n₁_solv / trap / n̄ stay close. A controlled sharpening of the
+   pre-read's mixture finding.
+4. **RQ11: the deep-bin deficit is geometry-reachable and it inverts.**
+   deepKE 0.51 (depth 9 Å) → 0.75 (10.9) → 1.38 / 1.49 (29–34 Å), the
+   deep-birth values now on 6–8 occupied bins rather than 1–2. So the cold
+   tail does not merely close with depth — it crosses 1.0 and overshoots to
+   ≈ +40 % too hot, implying some intermediate depth matches the deep-bin KE
+   exactly. First controlled evidence that RQ11 sits on an axis geometry can
+   traverse. **Not** a claim that these cells are better models — their
+   histograms are destroyed (W₁ 7.5–8.0).
+5. **Trapping requires a shallow, off-centre birth, then scales with R.**
+   trap is exactly 0 in all four L1/L2 cells and 0.059 → 0.196 across L3.
+   The long path belongs to the *inward* Coulomb partner (≈ 2R − depth);
+   at L1/L2 depth ≈ R so both fragments travel only R.
+6. **The frozen anchored-cell prediction is confirmed on every clause**
+   (supp ≈ 0 → exactly 0; n̄ > 6.3 → 8.4; n₁_solv ≲ 0.1 → exactly 0;
+   W₁ ≳ 1.6 → 4.8–5.0). The anchored geometry does not shift the histogram,
+   it **evacuates its low-n half**.
+7. **Along the production birth law, every observable degrades monotonically
+   with R** — the completed rows make this the axis's cleanest single trend
+   (L3 column, R 26.6 → 34.0 → 49.4 → 68.3 Å, mean depth 9.0 → 10.9 → 14.8
+   → 19.5 Å):
+
+   | R [Å] | trap | supp | n̄_det | n₁_solv | W₁ | midHot | deepKE |
+   |---|---|---|---|---|---|---|---|
+   | 26.6 | 0.059 | 0.167 | 4.46 | 0.235 | 0.81 | 1.02 | 0.51 |
+   | 34.0 | 0.196 | 0.140 | 5.33 | 0.184 | 1.40 | 1.11 | 0.75 |
+   | 49.4 | 0.404 | 0.123 | 6.30 | 0.151 | 2.31 | 1.31 | 1.59 |
+   | 68.3 | 0.570 | 0.126 | 6.71 | 0.128 | 2.83 | 1.33 | 1.97 |
+
+   Trapping and W₁ rise, n₁_solv falls, and the KE observables heat
+   monotonically. Note `uniform_volume` depth scales with R, so this column
+   moves both axes together by construction — it is the *production law's* R
+   response, not an R-at-fixed-depth read (which the pre-read showed is
+   nearly inert).
+8. **The deepKE = 1 crossing is located, on the production law.** Along L3,
+   deepKE crosses 1.0 between R 34.0 and 49.4 Å, i.e. **mean birth depth
+   ≈ 11–15 Å**, on 8 occupied bins throughout — no longer the 1–2-bin read
+   finding 4 had to caveat. This sharpens finding 4: RQ11's deficit and its
+   overshoot bracket a depth in that window. **The R ≥ 49 Å deepKE values
+   are, however, bracket-sensitive** (§14.2): at r4l3 the marginal exclusion
+   alone accounts for +0.42 of the 1.97, and at r3l1 for +1.61 of 1.94. The
+   *crossing* survives because r3l3/r4l3 carry marginal fractions of 0.002 /
+   0.174 and the r3l3 bracket is tight, but any quantitative deep-KE claim at
+   the anchored radii must be quoted with its bracket.
+
+### 14.2 The retained class at the anchored radii — decomposed, and the exclusion bracketed
+
+All five R ≥ 49.4 Å cells originally failed the detection-stage P1–P3 handover
+guard. Not a bug and not a tolerance artifact — the measured mechanism:
+
+| cell | R | still helium-coupled at 8 ns | **bound** (`droplet_retained`) | **marginal** (`…_marginal`) |
+|---|---|---|---|---|
+| r3l1 | 49.4 | 538/1000 | 324 | 214 |
+| r3l2 | 49.4 | 476 | 470 | 6 |
+| r3l3 | 49.4 | 404 | 402 | 2 |
+| r4l2 | 68.3 | 800 | 200 | 600 |
+| r4l3 | 68.3 | 570 | 396 | 174 |
+
+**The composition flips with R, which is why the two classes are never
+summed.** At R = 49.4 Å the coupled population is essentially all *bound* —
+98–99 % of it at r3l2/r3l3, a physics statement. At R = 68.3 Å on the parent
+law it is 75 % *marginal* (600 of 800), i.e. three quarters of that cell's
+exclusion is a modelling convention. A single `trap` column would have read
+0.476 and 0.800 as the same kind of number.
+
+- **A third to a half of all ions never leave the droplet** at the parent's
+  radii — plan §3.6's "does the trapped channel explode at large R?" answered
+  emphatically yes.
+- Those still inside sit 20–30 Å **below** the surface with |v_rad| ≈ 0.01–0.04
+  Å/ps. Cubic drag over a 25–50 Å path takes them below the Landau threshold
+  (v_L = 0.58 Å/ps), where `landau_gated_drag` switches dissipation off; they
+  then **oscillate** conservatively in the well. Median net radial progress
+  over the window's last 4 ns is **−0.5 Å** (r3l1) / **−0.9 Å** (r4l2);
+  only ~35 % still move outward, ~18 % have flatly asymptoted.
+- The escaping subset needs **~80–690 ns** more at its observed late drift
+  rate — **10–90×** the 8 ns relaxation window, not the ~5× a naive read
+  suggests.
+- **The timescale separation the staging assumes does not exist at the
+  corrected geometry.** 30 ps drag-active MD → 8 ns conservative E2 →
+  8.53 µs free flight is calibrated to R ≈ 27 Å, where ejected ions leave at
+  several Å/ps and cover ~48 000 Å (≈ 5 µm) inside the E2 window — decoupled
+  by an enormous margin. At R ≥ 49 Å escape time and flight time become
+  comparable, with helium still present. Recorded as a ledger row (§17): a
+  structural consequence the correction **creates**, the first found.
+
+**Resolution (2026-07-27): count the coupled class instead of integrating it.**
+`detection_droplet_retained_policy="exclude_all_coupled"` excludes every
+still-coupled ion and counts it, keeping bound/marginal decomposed. Adopted
+after the ~µs staging extension was rejected on the grounds that it would
+spend ~100× the relaxation cost integrating trajectories that are an artifact
+of a law extrapolated past its calibration band. Recovery cost **zero MD** —
+the cells had failed at detection, after the MD.
+
+**The exclusion is NOT observable-neutral — measured, per the pre-registered
+§3.5b item-8 bracket.** Each cell was scored twice: **Arm A** with marginals
+excluded (the headline row above) and **Arm B** with them injected at their
+handover `n` and their exact conservative asymptotic KE. Arm B costs nothing
+new: E2 is zero-gamma, so an ion clearing its barrier arrives at infinity with
+exactly `E_tot − U(∞)`, a quantity the classifier already computes. Seed-SDs
+measured from the five N = 1000 battery members and scaled by
+√(N_member/N_cell):
+
+| cell | t_m | Δn̄ | Δn₁_solv | ΔmidHot | ΔdeepKE | Δχ²_med | ΔW₁ | verdict |
+|---|---|---|---|---|---|---|---|---|
+| r3l1 | 0.214 | −0.44 | 0 | — | **−1.61** | +128 | −0.44 | **WIDE** |
+| r3l2 | 0.006 | +0.01 | 0 | — | −0.02 | −23 | +0.01 | tight |
+| r3l3 | 0.002 | +0.04 | −0.001 | 0.000 | −0.010 | −2.6 | +0.04 | tight |
+| r4l2 | 0.600 | **+2.50** | 0 | — | **−0.41** | −38 | **+2.50** | **WIDE** |
+| r4l3 | 0.174 | **+3.38** | **−0.040** | 0.000 | **−0.42** | −123 | **+3.35** | **WIDE** |
+
+Direction exactly as pre-registered — deepKE **down**, n̄ **up**, midHot
+**flat**, supp unchanged — and the magnitude is 10–38 seed-SD on deepKE where
+the class is large. **So the R ≥ 49 Å deepKE and n̄ values are conditional on
+the exclusion, and the R ≤ 34 Å rows are not** (empty marginal class,
+bit-for-bit reproduced).
+
+**The dossier is the physical finding, and it settles what the class is.**
+Marginal ions' asymptotic energetics, read off the stored handover states:
+
+| cell | n_marg | median handover n | median depth [Å] | median KE_asym [eV] | KE_ceiling [eV] | ref ⟨KE⟩ at that n [eV] |
+|---|---|---|---|---|---|---|
+| r3l1 | 214 | 17 | −12.9 | **0.000** | 0.094 | 0.066 |
+| r3l2 | 6 | 16 | −12.2 | **0.000** | 0.093 | 0.069 |
+| r3l3 | 2 | 17 | −11.8 | **0.000** | 0.091 | 0.067 |
+| r4l2 | 600 | 19 | −15.9 | **0.000** | 0.031 | 0.066 |
+| r4l3 | 174 | 19 | −15.5 | **0.000** | 0.031 | 0.066 |
+
+Two readings, both important:
+
+1. **They would arrive essentially at rest, carrying a large shell.** Median
+   handover n = 16–19 with asymptotic KE clipping to zero. That is precisely
+   the deep-n / low-KE corner, which is why injecting them craters deepKE
+   (1.94 → 0.33 at r3l1). The intuition that the retained class is "slow,
+   high-n ions" is **confirmed quantitatively**; the accompanying intuition
+   that it therefore "doesn't shift the result" is **refuted** — slow and
+   high-n is not a null direction, it is the RQ11 direction.
+2. **Most of the class is probably bound, not marginal.** `KE_asym` uses the
+   *physical* half-credit pair-Coulomb split; `_conservatively_bound` credits
+   the **full** pair energy to both fragments (a deliberate, documented
+   over-estimate that keeps a `bound` verdict certain). The median marginal
+   ion has `E_tot − ½E_coul − E_bind ≤ 0`, i.e. it clears its barrier *only*
+   on the over-crediting convention. "Marginal" therefore means **"not
+   provably bound"**, and the marginal fraction is an **upper bound** on
+   genuine slow escapers. The full-credit ceiling (0.03–0.09 eV) sits at or
+   below the experimental mean KE at the same n (0.066 eV) — these fragments
+   would be a cold population the reference does not show. That is not a
+   detector-acceptance test (the reference is a first-moment table, not an
+   acceptance function), but it is the direction that matters.
+
+**What the bracket does not close.** Arm B holds `n` at its handover value and
+lets the ion coast out unchanged. Over the ~80–690 ns these ions actually
+need, pickup is live (λ₀ρ) and would both raise `n` and mass-load them —
+plausibly into the bound class, which would mean the conservative split
+*understates* trapping. That is the kinetic-forward-model follow-up
+(conservative orbit + Poisson pickup + RRK), still open.
+
+**As-built geometry the standing point actually sits at** (audit
+2026-07-26, §15): `kornilov_lognormal` prior pinned at ⟨N⟩ = 2000,
+δ = 0.625, truncated [250, 16000] He; births `uniform_volume` with a
+3 Å margin. Realized in `bigc1v725s1` (N = 1000): **R q10/med/mean/q90
+= 20.1 / 26.1 / 26.6 / 33.5 Å**; closed-form prior quantiles
+N = 742 / 1647 / 3665 He → R = 20.1 / 26.2 / 34.2 Å (truncation
+discards 0.14 %). These are the numbers the §3 grid should be built
+from — no sampler draw needed.
+
+**Structural note (why the two axes may not separate).** R and r enter
+the physics *only* through `depth = r − R`: the erf solvation
+potential/force, the erf-complement drag gate `g(depth)`
+(`physics/drag.py`), the `density_tied` birth dressing, and the
+escape/handover test. He density is a constant. To first order both
+axes therefore act through the single scalar chord `R − r₀`, so the
+3 × 3 factorial is expected to be **near-degenerate along the exposure
+diagonal**; the discriminating read is whether the n = 1 velocity
+distribution breaks that degeneracy (plan §3.3 Q2). Worth
+pre-registering before the grid runs.
+
+**Atlas target — EXECUTED, all 11 cells (see §14.1):** the §3 factorial grid,
+adjudicated **option (B)**
+2026-07-26 — R ∈ {26.6, 34.0, 49.4} Å × birth law ∈ {center-pin,
+parent-consistent Boltzmann, `uniform_volume` m 3}: a
+standing-vs-anchored-geometry test spanning birth depths 8.9 → 49.4 Å
+(the isotropic-chord coordinate is *withdrawn* — the pre-read showed R is
+inert at fixed depth). **Funded at 11 cells** (2026-07-26): the 3 × 3
+plus two R = 68.3 Å cells on L2/L3, the parent's largest droplet, which
+also close the D2b re-weighting extrapolation. Plus the D2b re-weighting
+(the ⟨N⟩ = 12794 variant sits inside the grid support).
+
+**Design caution carried into the grid** (from §9's own scan, finding 4):
+at N = 500 with a single seed, W₁ swings ≈ 0.1 on seed alone. Per-cell W₁
+is therefore *reported, not read as a discriminator* below |Δ| ≈ 0.15;
+the grid's discriminating observables are supp, trap, n̄, n₁_solv, midHot
+and deep-bin KE, which resolved at 8–35σ in that scan. All cells share
+one seed (common random numbers).
+
+**Near-degeneracy noted, kept deliberately:** L1 (center-pin) and L2
+(parent Boltzmann) have almost the same mean depth and chord at every R
+(26.6/26.6, 34.0/33.8, 49.4/47.9 Å) and both saturate the dressing, so
+they differ essentially only in birth-depth *spread*. That contrast is
+the axis's handle on how much ensemble spread is geometry-inherited
+(§3.3 Q5); all three L1 cells were kept for a balanced factorial.
+
+### 14.3 Why birth depth is the lever — two-channel decomposition (synthesis, 2026-07-27 discussion; measured components §4p + G1)
+
+> **Refinement (2026-10-02, §15.8 read 5).** At the corrected geometry the
+> sharper controlling variable is the **emission-axis chord** (birth point
+> → surface along the explosion axis), not the radial birth depth. The
+> detected (n, KE) is a near-deterministic function of it (n = 1 ⇔ chord
+> 35–39 Å), and the map is invariant under the size sampler. Birth depth
+> acts through the chord.
+
+The birth-depth influence is two separable geometry-derived channels, both
+already measured, and the distinction decides which one downstream knobs
+can compensate:
+
+1. **Partial initial dressing** (T5 `density_tied`; probe findings **§4p**,
+   the one-lever A/B at the standing geometry): flipping n₀ = 21-for-all to
+   depth-dressed (mean n₀ ≈ 17.2 at 9 Å births) **triples the
+   suppressed/bare class** (0.096 → 0.322 at c1; ordering transfers from
+   the twin), drops n̄_det by 1.0–1.9 He, truncates the deep tail at the
+   dressed band, and pulls n₁ KE from ≈ 1.0 to ≈ 0.63 eV — W₁(lever) =
+   1.0–1.9 bins, one of the largest single levers of the whole build, and
+   the best twin↔MD agreement of the oracle chain (W₁ 0.41–0.51). *(A
+   session recollection that this activation was low-impact was checked
+   against §4p and corrected.)* **Geometry-locked:** the dressing
+   saturates by depth ≈ 25 Å (§G) and shares the one `rho_he_ratio`
+   surface with the cooling and drag gates (§3.1c rejection) — no
+   downstream knob can un-saturate it at realistic depths.
+2. **Short transit** (exposure): shallow births exit fast, so pickup
+   re-filling is small (measured ≈ 7 ions/100 at shallow chords, §4p) and
+   the cascade freezes early; deep births transit long at ρ̂ ≈ 1 and
+   re-fill toward n ≈ 20 — the origin of the ≈ 1 He/Å depth slope
+   (§14.1). **Parameter-accessible:** transit time, cascade duration,
+   budget and exit boundary are exactly what (v_c, τ, E₀, E_bind) touch.
+
+Consequence for the G3 question ("can the realistic geometry land with
+the right parameters"): channel 1 is dead at realistic depths regardless
+of parameters; channel 2 is open. Two candidate routes, both twin-scannable:
+**Route A (cascade)** — shed ~10 more He/ion (≈ 0.05–0.15 eV extra E_int,
+same order as E₀) and cool deep arrivals (the deepKE sign flip and its
+crossing at 11–15 Å mean the arbitration passes through the right value);
+the small in-tier lever slopes were all measured at *short* transits and do
+not bound long-transit behavior. **Route B (selection)** — make only
+shallow-born ions detectable: the trap/retention boundary (E_bind lever
+0.85/eV measured, §9; v_c) plus the marginal class sitting at/below the
+experimental KE support (§14.2) can carve the detected ensemble toward the
+shallow tail — the emergent version of what the ⟨N⟩ = 2000 prior was
+hand-doing. Acceptance note: supp is a *softer* target than n₁_solv/n̄/W₁
+(the experimental n = 0 bin is an RQ3 two-channel mixture; the solvated
+histogram renormalizes to n ≥ 1), so losing the suppression channel at
+saturated dressing is not by itself disqualifying.
+
+**Low-n KE is the same transit channel, measured (G4 Step 2, user-found
+2026-07-28):** the corrected geometry **halves the n = 1 mean KE**
+(pooled h405 battery 0.641 ± 0.003 eV vs the incumbent's 1.034 against
+ref mean/median/mode 1.302/1.128/0.891) and takes ~20 % off n = 2
+(0.549 ± 0.002 vs ref 0.706), while n ≥ 3 lands (h405 n = 3: 0.471 vs
+0.496). The fastest, most-stripped fragments pay the full ~35 Å
+transit-drag toll — the incumbent's n = 1 KE match was partly a
+shallow-birth artifact, the KE-side twin of its W₁ 0.571. The scored
+surface was blind (n = 1 KE only inside reported-not-scored χ²_med,
+which did register 242 → 350+; midHot's n = 2–8 geo-mean dilutes n = 2);
+now **pre-registered as a hard axis** for every future ranking (plan
+§3.5f: KE₁ vs ref median 1.128, KE₂ vs ref mean 0.706,
+|ln ratio|/ln(1.15) score terms). p_tail's "not a second lever" verdict
+was earned on deep-KE and does **not** carry over to this axis.
+*(Anchor amendment 2026-07-29, plan §3.5g: KE₁ is scored against the
+experimental n = 1 **peak 1.00 eV** — the wide upper tail is read as a
+second process; the median anchor stays reported.)*
+
+**The low-n KE in-surface freedom, MEASURED (§3.5g retro-scan,
+2026-07-29, zero MD, 52 committed rows — the per-knob KE₁ influence
+GAP closes):**
+
+- **∂KE₁/∂E₀ = −2.8…−3.9 eV/eV** (arm-resolved, CRN-paired), gate-bounded
+  at **+0.038 eV** (the n₁ floor binds after ΔE₀ ≈ −0.014).
+- **∂KE₁/∂τ = +0.083 eV/ps** along the gated ridge chord (the first τ
+  read on this axis), gate-bounded at **+0.094 eV** (n₁ floor at
+  τ ≈ 5.5).
+- **∂KE₁/∂v_c = −0.43 eV per Å/ps**, paying **∂midHot/∂v_c = −1.48**:
+  c50 (v_c 5.0) reaches KE₁ 0.956 / KE₂ 0.881 at midHot **1.923**, v525
+  KE₁ 0.774 at midHot 1.394 — the KE₁↔midHot trade is measured across
+  the whole v_c range, not a linearization artifact. In-gate bound
+  **+0.054 eV**.
+- **R5 verdict: the additive in-gate bound is +0.19 eV against the
+  required +0.31 eV (target 0.95 = 1.00 − 1σ) — the (v_c, τ, E₀)
+  surface CANNOT reach the KE₁ anchor.** The p_tail axis is motivated
+  with this record as its evidence (the E₀-arm/W₁-floor structure).
+- **The n = 1 channel is bifurcated (the R4 geometry read, standing
+  chord):** the deep-born cells (Boltzmann/center, depth ≥ 25 Å) produce
+  **zero** n = 1 fragments at every R (n₁ = 0.000, 6/6 cells; f725 at
+  the corrected ensemble likewise n₁ = 0, n̄ 14.3, trap 0.437 —
+  under-stripped, not over-stripped); **every** standing-chord n = 1 is
+  shallow-born (depth 9–19.5 Å) with **KE₁ 1.042–1.091 eV** — the
+  reference peak scale — and shallow n₁_solv falling with R
+  (0.235/0.184/0.151/0.128 at R 26.6/34.0/49.4/68.3). The corrected
+  basin instead makes its n = 1 deep-born and slow (0.64). The
+  experimental peak ≈ 1.0 numerically coincides with the model's
+  shallow-birth channel — the mixture/birth-law lever (a shallow-birth
+  or small-droplet weight the pure center-weighted Boltzmann law lacks)
+  is a *second* live candidate beside p_tail, and it is the only one of
+  the two that also feeds the Block-D n = 1 *weight* deficit (−0.101).
+  *(REJECTED on physics by the user 2026-07-29 — solvated I₂ sits
+  centrally; the R4 bifurcation re-reads as evidence the p_tail = −1
+  tail over-drags real deep-born fragments.)*
+
+**p_tail single-knob, MEASURED AND KILLED (§3.5h ring, 2026-07-29,
+3 × N = 1000 CRN-paired at the h405 pins):**
+
+- **The KE₁ placement works:** pt15 (−1.5) 0.917 ∈ [0.79, 0.99], pt20
+  (−2.0) 1.151 ∈ [0.96, 1.16]; pt30 (−3.0) 1.428 over-band (the 1-D
+  model breaks at far softening). ∂KE₁/∂p_tail ≈ −0.26 eV per unit
+  near −1.5.
+- **But the tail is NOT an exit-toll-only knob — it re-times the whole
+  cascade.** At pt15/pt20/pt30: midHot 1.92 / 3.02 / 4.41, deepKE
+  0.88 / 4.32 / 12.5, n̄_det 3.08 / 2.39 / 1.84, supp 0.26 / 0.34 /
+  0.41, n₁ 0.259 / 0.295 / 0.346, trap 0.011 / 0 / 0, χ²_med up to
+  4.6e4. The 5.5–9.5 Å/ps band is where mid/deep ions do their late
+  deceleration (and where the E2 Landau-gated relaxation thermalizes
+  them): relief there keeps the *entire* ensemble fast and extends
+  stripping. **PT-P4 sign prediction refuted** (n̄ falls, n₁/supp rise
+  — the residence/relaxation channel dominates the heating channel),
+  **PT-P5 orthogonality refuted** (deep bins are the most affected,
+  not the least).
+- **PT-P3 kill criterion FIRED** (every cell with KE₁ ≥ 0.95 has
+  midHot ≫ 1.15) → per the frozen registration, **no further
+  single-knob tail cells**; the axis moves to a joint re-tune or the
+  honest-residual branch (user).
+- **The selectivity numbers any successor shape must beat:** required
+  relief n = 1 +0.36 eV vs n = 2 ≤ +0.16 vs mid ≲ +0.10 — a ≳ 2.3:1
+  differential between exit speeds 9.9 and 9.1 Å/ps. Uniform tail
+  softening measured a ≈ 1.3:1 differential (pt15: KE₁ +0.28, KE₂
+  +0.30 — KE₂ overshoots ref before KE₁ reaches target). A
+  KE₁-selective lever must confine relief to **v ≳ 9.5 Å/ps** (the
+  band only the n = 1 exiters occupy at late times, once-through for
+  everyone else) — a band-limited tail (second cap v_c2 with softening
+  only above it) is the shape this measurement points at; **not
+  registered, user adjudication pending**.
+
+### 14.4 Twin authority at the corrected geometry (G3 Step 1, 2026-07-27 — the scan instrument's error model; **ring-validated at Step 3**: n̄ bias 0.24–2.66 He small-end residence-scaled at 14/14 cells, n₁ transfer ≤ 0.036, trap floor +0.012…+0.13; **ranking authority MEASURED at G4 Block 0, 2026-07-28: W₁ ρ +0.82 and midHot ρ +1.00 LICENSED, deepKE ρ +0.33 NOT — the deep-KE axis is not twin-scannable**)
+
+The S6 twin was re-issued at the corrected geometry and measured against
+all 11 G1 MD cells (stage `g3landmarks`; full record findings "G3
+Step 1"). The per-observable authority box, superseding the
+standing-geometry channel-(d) numbers for G3 use: **supp / n₁_solv
+near-quantitative** (within 0.02 / 0.016 on L3, exact 0 on L1/L2);
+**n̄ hot with a residence-scaled bias** (+0.2…+3.2 He across R1→R4, W₁
+inheriting it) — twin scans aim at target + bias; **trap a twin floor**
+(−0.03…−0.14; the r3l1 center-pin trap channel, MD 0.538, is
+structurally twin-invisible — mechanism-made by pickup mass-loading +
+Landau freeze); **KE direction-only** (+15–30 % hot); all orderings
+preserved incl. the deepKE = 1 crossing bracket. The corrected-ensemble
+twin row at finc1v725 parameters confirms the §15.7 forecast
+cross-instrument (trap 0.308, supp 0, n̄ 17.0, W₁ 12.1, deepKE 2.12 —
+each discrepancy = the measured bias). Landmark table re-issued and
+law-tagged (the recorded center-pin K 0.74460 is pure-cubic; under the
+capped tail the anchored radii are traversable at K_capped 1.7–20.2).
+
+**Ranking authority — MEASURED (G4 Block 0, 2026-07-28, zero MD).** The
+14 paired (twin, MD) ring cells were read as a transfer measurement for
+the first time (report `tier2atlas_g4_transfer.py`, CSV
+`h2b_g4_transfer.csv`; both §1.4 oracles passed first). Spearman ρ,
+twin vs MD, with 95 % bootstrap CI, against the pre-registered
+permission gate ρ ≥ 0.7:
+
+| observable | ρ (n = 14) | 95 % CI | verdict |
+|---|---|---|---|
+| W₁_solv | **+0.824** | [+0.44, +0.98] | **LICENSED** — the twin may *rank* on W₁ |
+| midHot | **+0.996** | [+0.93, +1.00] | **LICENSED** — near-perfect rank transfer |
+| deepKE | +0.327 | [−0.28, +0.82] | **NOT LICENSED** — gate-only; MD must rank it |
+
+Consequences, both first-order for the atlas:
+
+- The §14.4 header caveats "W₁ bias-loaded" and "KE direction-only" are
+  now **split**: W₁ and midHot are *rank*-faithful (the bias is a level
+  shift, not a reordering), while **deepKE is not** — the twin's deep-bin
+  ratio does not order MD cells. **The deep-KE axis is not twin-scannable
+  at all**; any RQ11 statement must come from MD. This is measured, not
+  assumed, and it is the reason the G4 MD finalists must span the ridge
+  rather than sit at the twin's top-scoring cell.
+- **n̄ bias model** (replacing the crude [+0.3, +3] bracket):
+  `Δn̄ = a + b·n̄_twin`, Δn̄ = MD − twin, `a = +0.58, b = −0.238`
+  (13 cells, f725 excluded as leverage) or `a = +0.23, b = −0.173`
+  (all 14). **Residual SD 0.28 He either way** — the fit's R² is carried
+  by f725 but the *band* is robust, so predicted-MD n̄ is good to ±0.3 He
+  and the twin gate can be run at the MD band itself.
+
+**Level transfer is a REGRESSION, not an offset (same session).** Ranking
+licence says nothing about level, and the score is a *distance* from the
+experiment, so the level model matters for cell selection. Over the 13
+non-f725 paired cells:
+
+- `MD_W₁ = 0.671 + 0.412 · twin_W₁` (R² 0.60, resid SD 0.18),
+- `MD_midHot = 0.001 + 0.897 · twin_midHot` (R² **0.994**, resid SD 0.035).
+
+A constant shift is refuted: the mean W₁ shift over all 13 cells is +0.03 but
+over the four MD-*gated* cells it is **+0.32 ± 0.10**, and it is negative at
+the badly-landing cells (d036 −0.62) — the twin over-disperses W₁ and the
+transfer regresses toward the middle. Two consequences:
+
+1. **The W₁ intercept 0.671 is a predicted floor.** Even a twin cell at
+   W₁ = 0 maps to MD W₁ ≈ 0.67, *above* the standing pooled 0.571. Extrapolated
+   from cells that mostly land badly (R² 0.60), so it is a lead, not a verdict
+   — but it is the quantitative form of "the corrected geometry may not reach
+   the old histogram quality".
+2. **midHot must be ranked on the corrected value.** |ln x| is V-shaped about
+   1, so a multiplicative bias does *not* preserve the ordering of the raw
+   values even though the rank correlation is +0.996: a twin midHot of 1.00
+   lands at 0.90 in MD, while a twin 1.07 lands at 0.96. Ranking cells on raw
+   twin midHot systematically picks the wrong ones.
+
+**Seed-SD normalizers (same session, five N = 1000 battery members).**
+W₁ 0.5791 ± 0.0954, midHot 1.0108 ± 0.0222, deepKE 0.6327 ± 0.0209,
+χ²_med 131.5 ± 15.4. Two **provenance corrections to plan §1.2**
+(recorded, not silently overwritten):
+
+1. §1.2's "W₁_solv SD ≈ 0.04" is the **SEM of the pooled mean**
+   (0.0954/√5 = 0.043), not the per-seed SD. The per-seed N = 1000
+   scatter is 0.095, so an N = 500 single-seed W₁ carries ≈ 0.13 — the
+   G3-ring W₁ column is even softer than it was read as.
+2. §1.2's "deep-bin KE read 0.0603 ± 0.0033" does **not** reconcile with
+   the deepKE ratio (0.633 ± 0.021). It is not the ratio's mean/SD; the
+   most likely reading is the deep-bin *population weight*. Flagged, not
+   resolved; the G4 score normalizes by the measured 0.0209.
+
+**KE₁ joins the authority box — ranking LICENSED (free-form linear
+sweep Step 0 `ke1auth`, 2026-07-30, zero MD;
+`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md` §2/§2.1,
+`atlas_ke1_authority.csv`).** Twin KE₁ (the `g3_score` n = 1 bin mean)
+vs MD KE1_mean over the 26 distinct-pin corrected-ensemble cells of the
+committed `atlas_ke_lown_scan.csv` (dedupe: pooled N = 5000 > finals
+N = 1000 > ring N = 500; f725 excluded — MD n₁ = 0): **Spearman ρ
++0.9979** (KE₂ +0.9966), against the pre-registered bands 0.8/0.5 —
+far above the licensure line, the twin's best KE bin (deepKE stays
++0.33 NOT licensed; the n = 1 class is short-chord and
+mechanism-light, the opposite of the deep bins). Levels are *not*
+licensed (the standing rule): twin KE₁ runs uniformly cold, ratio
+0.897–0.984 (median 0.975), additive −0.013…−0.037 eV (median
+−0.017); 3/25 adjacent rank inversions, all among near-ties.
+Transfer caveat pre-registered: measured on capped-cubic cells;
+transfer to any new form family is an assumption backstopped by that
+family's MD ring.
+
+### 14.5 The corrected-geometry landing surface — (v_c, τ, E₀, E_bind) re-arbitrated by the G3 Step 2 twin scan (2026-07-27, zero MD)
+
+The §3.5c nested Route A/B factorial: 30 chord families (v_c × E_bind,
+one integration of the committed corrected master each) × 216 free cells
+(τ × E₀) = 6480 scored cells against the pre-registered hard gate
+(n₁_solv ∈ [0.19, 0.30] ∧ n̄ ∈ [4.4, 7.1]; W₁/KE/supp non-gating; trap a
+floor). Oracles bit-exact (S6 rows + the Step-1 corrected landmark). Full
+record: findings "G3 Step 2"; stage `g3scan`.
+
+**Result — the basin exists and is Tier-0-legitimate: 24/6480 cells
+gate, every one inside the calibrated v_c range** (the pre-registered
+failure criterion did NOT fire; the sub-band diagnostic arms land
+nothing). Four cells are clean of *both* caveat stamps (standing well
+eb1168, τ ≤ the sourced 6.55): **(v_c 5.5, τ 4.8, E₀ 0.36–0.37) and
+(v_c 6.0, τ 6.4, E₀ 0.32–0.33)** — twin W₁ 0.50–0.74, trap floor
+0.053–0.129, supp 0.08–0.13, deepKE 0.46–0.80 (direction-only). Versus
+finc1v725 the corrected geometry re-arbitrates **all three knobs in
+physically comfortable directions**: v_c 7.25 → 5.5–6.0 (softer mid-band
+γ — the NB-RQ11-12 deep-KE lever direction), τ 3.2 → 4.8–6.4 (*toward*
+the sourced GAH25 6.55 — the calibration-class tension relaxes), E₀
+0.27 → 0.32–0.37 (inside the RQ1 band; extends the §4 "scale is
+geometry-dependent" chain: pinned 0.38–0.41 → standing-mixture
+0.22–0.27 → corrected ~0.35).
+
+**Mechanism reads:**
+
+- **Cascade-carried, not selection-carried.** At the gated families
+  det_yield is 0.87–0.99 and the detected-subset R quantiles sit within
+  1–2 Å of the source — the Route-B droplet-size selection axis is
+  barely exercised. The landing comes from the chord law itself:
+  K655_q50 1.334 → 0.60–0.73 (≈ ×2 exposure reduction) *plus* the trap
+  composition change (0.308 → 0.05–0.13).
+- **Pure exposure rescaling cannot land it** (pre-scan): uniform
+  X → f·X of the *standing* chord reaches the n₁ band at 141/216 free
+  cells (Route-A kill NOT fired) but the **full joint gate at 0/216·20
+  scalings** — the standing chord's K-shape + frozen trap 0.308 block
+  n̄. The gate opens only when the chord *reshapes* (trap + K tail),
+  i.e. the landing genuinely needs the chord surface, not a scale
+  factor.
+- **The standing drag point does not survive the corrected geometry:**
+  the (v_c 7.25, eb1168) family gates at 0/216 — no (τ, E₀) rescue.
+- **E_bind × v_c coupling (over-dissipation regime):** the trap ladder
+  steepens with v_c — eb0482 keeps trap 0.01–0.04 everywhere, while at
+  v_c ≥ 8 the deep well 0.154 sends K_q50 to 17–18 and trap to
+  0.55–0.61. The helium-coupled class is strongly (v_c, well)-sensitive
+  — evidence for the §3.5b "over-dissipation artifact" branch of the
+  retained-policy sub-decision (G2 record).
+- **Why the sub-band diagnostic arms fail:** at v_c 3.5/4.25 the n₁
+  band is reachable only at n̄ 3.0–3.6 (< the 4.4 gate floor) —
+  over-stripped. The corrected-geometry landing does *not* point below
+  the TDDFT band top; the collaborator-ask branch did not fire.
+
+**Authority caveats (§14.4 applied):** twin-level statements only — n̄
+gate already carries the residence bias bracket; trap is a floor (MD
+adds pickup mass-loading + the Landau freeze — the twin-invisible
+center-pin channel); KE direction-only; W₁ bias-loaded. Nothing is
+adopted: finc1v725 stands until G4; the designed next step is the MD
+confirmation ring (~10–20 × N = 500) behind its own trigger.
+
+**MD-CONFIRMED (G3 Step 3 ring, 2026-07-27/28 — 14 × N = 500, seed
+20260728, plan §3.5d; findings "G3 Step 3").** The basin is real in MD:
+**four cells land the bias-free MD acceptance** (n₁ ∈ [0.19, 0.30] ∧
+n̄ ∈ [3.77, 4.37]) — **a037 (v5.5, τ4.8, E₀0.37; n̄ 4.097), b031
+(v6.0, τ6.4, E₀0.31), d030 (v5.5, τ6.4, E₀0.30), e154 (v5.5 + 0.154
+well, τ4.8, E₀0.36)** — so the MD basin spans both τ values at v5.5
+and tolerates the deep well. GR-P2..P6 all confirmed (P5 c50 split:
+the control fails as predicted but on the n₁ clause, not n̄ — its n̄
+4.35 is *inside* the band, so the basin nearly reaches v_c 5.0). The
+instrument itself is now MD-calibrated at the corrected geometry: n̄
+twin-hot at 14/14 with Δ 0.24–2.66 He (small-end, residence-scaled),
+n₁ transfer ≤ 0.036 everywhere. **f725 (finc1v725 at the corrected
+geometry) measured broken: trap 0.437 (bound 0.278 + marginal 0.159),
+supp 0, n₁ 0, n̄ 14.3.** Policy evidence: the marginal (modelling-
+exclusion) class is ≈ 0 at the basin (≤ 0.018) and 0.159 at the
+standing chord — the coupled-class question largely *evaporates* at
+the re-arbitrated point (§3.5b over-dissipation reading, MD-grade).
+KE trade-off at the gated cells (reported): midHot 0.94/0.50/0.81/0.96,
+deepKE 0.43/0.72/0.27/0.43 (a037/b031/d030/e154; standing pooled
+reference 1.011/0.631) — no gated cell holds both axes at once; the
+mid-vs-deep KE tension persists at the corrected geometry (RQ11
+successor question, now at v_c 5.5–6.0). G4 (successor-point
+adjudication + re-baseline) decides among these on user authority.
+
+**REFINED — the fine ridge scan (G4 Block 1, 2026-07-28, zero MD; stage
+`g4scan`, 5544 cells, CSVs `h2b_g4scan_{predictions,gated_ke,ridge}.csv`).**
+v_c step 0.25, τ step 0.4, E₀ step 0.005, E_bind unchanged; the Step-2
+grids are exact sub-lattices and **G4-P1 passed — 408 shared cells
+reproduce the committed Step-2 values string-exactly**.
+
+- **574/5544 cells gate (172 clean of both caveat stamps), against 24/6480
+  at Step 2.** The dominant cause is *not* the finer grid: it is the gate.
+  Step 2 had to carry the crude bias bracket (twin n̄ ∈ [4.4, 7.1]); the
+  Block-0 bias model gates on predicted MD n̄ ∈ [3.77, 4.37] ± 0.28, i.e.
+  twin n̄ ∈ [3.8, 5.4] — *narrower*, but positioned where the n₁ band
+  actually lives. n₁ and n̄ are anti-correlated under stripping, so the old
+  n̄ floor of 4.4 was fighting the n₁ band. **The binding constraint at
+  Step 2 was the instrument's error model, not the parameter surface.**
+- **G4-P2 CONFIRMED — the ridge is connected.** The clean gated set forms
+  one 4-neighbour-connected diagonal band from (v_c 5.5, τ 4.8) to
+  (v_c 6.0, τ 6.4): at τ ≤ 4.4 only v_c ≤ 5.5 gates, at τ ≥ 5.2 the band
+  reaches v_c 6.25. The two Step-2 "sub-basins" were opposite corners of a
+  single ridge, exactly as hypothesized.
+- **Clean optimum: v_c 5.5, τ 4.8–5.2, E₀ 0.34–0.37** (E₀ now resolved to
+  0.005). a037's corner is confirmed near-optimal but slightly off — the
+  best clean cells are (5.5, 4.8, **0.365**) and (5.5, 5.2, **0.34**).
+- **No clean cell is predicted to beat the incumbent.** On the licensed
+  axes with the transfer regression applied, best clean S_pred **1.59**
+  (per-cell uncertainty ≈ 0.57) vs the pooled battery's measured
+  **1.091**; best of all, including the off-bundle-well stamp, is
+  (5.5, eb0482, 5.6, 0.33) at 1.47. In-sample check at the four ring
+  cells: predicted S 1.82/6.89/2.66/1.79 vs measured 1.90/6.83/3.52/2.05.
+- **G4-P3 is NOT EVALUABLE at twin level.** 75 gated cells hold
+  midHot ∈ [0.85, 1.15] ∧ twin deepKE ≥ 0.6, but deepKE is precisely the
+  axis Block 0 measured as rank-untransferable (ρ +0.33) — a037's twin
+  deepKE 0.755 landed at MD 0.43. The pre-registered Block-2 (p_tail)
+  trigger therefore **cannot be decided by this scan** and moves to the MD
+  finalists. This is a pre-registration defect discovered by G4's own
+  Block 0, recorded rather than reinterpreted.
+- **Open confound on the W₁ comparison:** the ring cells are N = 500
+  (≈ 900 scored ions) while the incumbent reference is pooled N = 5000.
+  Sampling noise inflates W₁, so part of the 0.83–1.17 vs 0.571 gap may be
+  statistical. The five battery members (N = 1000, W₁ 0.48–0.73, mean
+  0.579) bracket the pooled 0.571, suggesting the N = 1000 → 5000 step is
+  small; the N = 500 → 1000 step is untested. The mandatory a037/b031
+  N = 1000 replicates in Block 3 are the control that settles it.
+  **SETTLED — it is not sample size (below).**
+
+**MD-CONFIRMED at N = 1000 (G4 Block 3, 2026-07-28; 6 cells, fresh shared
+seed 20260729, table `atlas_g4finals_table.csv`).** Oracles passed
+(frozen twin rows string-exact, pooled-battery drift).
+
+| cell | (v_c, τ, E₀) | n̄ | n₁ | W₁ | midHot | deepKE | χ²_med | gate |
+|---|---|---|---|---|---|---|---|---|
+| f1 | 5.5, 4.8, 0.365 | 4.169 | 0.1878 | 0.821 | 0.990 | 0.523 | 411 | 0 |
+| f2 | 5.5, 5.2, 0.34 | 4.194 | 0.1876 | 0.916 | 0.980 | 0.438 | 440 | 0 |
+| **f3** | 5.5, 4.4, 0.395 | 4.205 | 0.1867 | **0.769** | **1.023** | **0.614** | 426 | 0 |
+| **a037** | 5.5, 4.8, 0.37 | 4.024 | 0.1984 | 0.792 | 0.960 | 0.526 | 360 | **1** |
+| b031 | 6.0, 6.4, 0.31 | 4.263 | 0.1771 | 1.113 | 0.520 | 0.732 | 68 | 0 |
+| x345 | 5.5, 4.8, 0.345 | 4.782 | 0.1491 | 0.966 | 1.155 | 0.499 | 603 | 0 |
+
+1. **The n̄ bias model is quantitative.** Predicted − measured MD n̄ =
+   −0.005 / +0.000 / +0.004 at f1/f2/f3 (fitted residual SD 0.28 He).
+   Bias-corrected, the twin is an n̄ instrument, not just a ranker.
+2. **n₁ carries transfer scatter of ±0.02 with inconsistent sign, and it
+   decides the gate.** f1/f2/f3 land n₁ 0.1867–0.1878 — missing the 0.19
+   floor by 0.001–0.003 — because MD came in 0.011–0.015 *below* twin,
+   whereas at the G3 ring MD ran *above* twin (+0.001…+0.026). Block 1
+   bias-corrected n̄ but treated n₁ as unbiased on the strength of its
+   ≤ 0.036 tolerance; that tolerance is scatter, not zero bias. **Any
+   future twin gate on n₁ must carry a ±0.02 band, and a ridge optimum
+   selected on twin n₁ sits ≈ half an E₀ step too low.**
+3. **The W₁ deficit is REAL, not sampling noise (G4F-P3).** a037
+   N = 500 → 1000: W₁ 0.826 → 0.792 (Δ −0.034, against a per-seed SD of
+   0.095); b031 moved the other way (1.061 → 1.113). The corrected
+   geometry sits at **W₁ ≈ 0.77–0.92 against the incumbent's 0.579**, and
+   the measured floor agrees with the regression intercept 0.671.
+4. **The mid-vs-deep KE tension is BROKEN (G4F-P4).** Twin deepKE
+   0.691/0.776/0.887 → MD 0.438/0.523/0.614 at f2/f1/f3, ordering
+   preserved, span 0.176 across cells that are near-identical in n̄/n₁.
+   **f3 holds midHot 1.023 *and* deepKE 0.614 simultaneously** — the
+   incumbent's own KE profile (1.011 / 0.633). So the deep-KE axis *is*
+   parameter-accessible on the (v_c, τ, E₀) surface at fixed drag form;
+   the G3-ring reading "no cell holds both axes" was a resolution artifact
+   of its coarse E₀ ladder. **Block 2 (p_tail) is not required by this
+   evidence.** Note the twin ranked f3 *worst* of the three; MD ranks it
+   best — the unlicensed-deepKE finding in operation.
+5. **a037 replicates its landing** on a fresh seed at double N (n̄ 4.024,
+   n₁ 0.1984) — the corrected-geometry basin is seed- and N-robust.
+6. **b031's corner is out:** trap 0.203, midHot 0.520, S 6.63. The
+   v_c 6.0 / τ 6.4 sub-basin does not survive N = 1000.
+7. **Fate/trap at the ridge:** trap 0.088–0.093 with the marginal
+   (modelling-exclusion) class at **0.002–0.003** — the retained-policy
+   question is empirically empty at the successor point (G4 input).
+
+**Net:** at the corrected geometry the residual deficit is **one axis —
+W₁ — not a KE trade-off**. Best S on the licensed axes: f1 1.511 ≈ f3
+1.512 < a037 1.683, all above the incumbent's 1.091, and only a037 gates.
+The measured n₁ bias plus f3's KE profile point the successor at
+**E₀ ≈ 0.38–0.41 on the (v_c 5.5, τ 4.4–4.8) chord** — untested.
+
+**E₀ LADDER — the successor located and the W₁ floor measured (G4 Block 3
+ladder arm, 2026-07-28; 9 further cells × N = 1000, same seed 20260729,
+CRN-paired with the six above).** Three τ arms at v_c 5.5 plus one v_c
+probe. The E₀ direction is the atlas's cleanest one-knob response:
+
+| τ | E₀ | n̄ | n₁ | W₁ | midHot | deepKE | gate |
+|---|---|---|---|---|---|---|---|
+| 4.4 | 0.395 (f3) | 4.205 | 0.1867 | 0.769 | 1.023 | 0.614 | 0 |
+| 4.4 | **0.405 (h405)** | 3.955 | 0.2078 | **0.709** | 0.957 | 0.603 | **1** |
+| 4.4 | 0.410 (h410) | 3.862 | 0.2119 | 0.674 | 0.931 | 0.570 | 1 |
+| 4.4 | 0.415 (h415) | 3.753 | 0.2147 | 0.669 | 0.906 | 0.548 | 0 |
+| 4.8 | 0.370 (a037) | 4.024 | 0.1984 | 0.792 | 0.960 | 0.526 | 1 |
+| 4.8 | 0.375 (h375) | 3.889 | 0.2141 | 0.747 | 0.926 | 0.585 | 1 |
+| 4.8 | 0.380 (h380) | 3.769 | 0.2202 | 0.733 | 0.895 | 0.577 | 0 |
+| 5.2 | 0.345–0.355 | 4.04→3.73 | 0.194→0.222 | 0.892→0.872 | 0.945→0.859 | 0.43→0.50 | 1/1/0 |
+
+1. **E₀ influence (the knob's own entry, §4):** inside the ridge, raising
+   E₀ by 0.005 eV moves **W₁ −0.02…−0.04, n₁ +0.004…+0.007, n̄
+   −0.11…−0.13 He, midHot −0.02…−0.03**, monotonically in every arm. It
+   is a single-parameter trade of histogram quality against n̄ and midHot,
+   and each τ arm gates over a window of only ~2 E₀ steps (0.01 eV).
+2. **The W₁ floor is real and ≈ 0.67.** The τ 4.4 arm flattens:
+   0.769 → 0.709 → 0.674 → **0.669**, against the incumbent's 0.579.
+   Block 0's transfer regression predicted the MD floor as its intercept
+   **0.671** — an independent estimate agreeing to 0.002. The corrected
+   geometry cannot reach the standing point's histogram quality by any
+   (v_c, τ, E₀) setting.
+3. **Why — n₁ and n̄ cannot be matched simultaneously.** W₁ improves
+   because n₁ climbs toward the experimental 0.243, but n̄ falls as it
+   does. Extrapolating the measured τ 4.4 slopes, n₁ = 0.243 needs
+   E₀ ≈ 0.435, where n̄ ≈ 3.3 — **0.77 He below the experimental 4.07**.
+   The standing point achieved n₁ 0.243 *and* n̄ 4.068 together only at
+   the wrong geometry. **This is the precise, quantified form of the
+   corrected-geometry deficit: the detected size distribution has the
+   wrong shape, not the wrong scale** — which localizes the residual to
+   the mechanism (ladder shape, pickup, per-shed ε), exactly the branch
+   §3.5c's failure criterion pointed at, and not to the drag surface.
+4. **τ ordering is the twin's reverse.** On W₁ at matched gate status:
+   τ 4.4 (0.669–0.709) < τ 4.8 (0.733–0.792) < τ 5.2 (0.872–0.892). The
+   twin ranked τ 5.2 *best* (twin W₁ 0.42–0.49). **Twin W₁ is not usable
+   for fine discrimination** — a second inversion after f1/f3, despite
+   ρ = 0.824. Read: the licensing was measured over cells spanning W₁
+   0.5–12 and does not survive down to separations of ~0.05.
+5. **Deep-KE ceiling (v525 probe, v_c 5.25/τ4.4/E₀0.39):** deepKE
+   **0.656 > the incumbent's 0.633**, and the cell *gates* (n₁ 0.208,
+   n̄ 3.994, W₁ 0.727) — but midHot 1.394 and χ²_med 912. So the deep-KE
+   axis does have headroom above the standing point, reachable by
+   lowering v_c, and it is paid for in midHot. RQ11 has a ceiling answer:
+   ~0.66 with midHot ≈ 1.4, or ~0.60 with midHot ≈ 0.96.
+6. **n̄ model validity range:** |pred − MD| ≤ 0.08 He everywhere inside
+   the ridge (systematically −0.04…−0.08 at the high-E₀ end of each arm),
+   but −0.30 at b031 and +0.11 at v525/x345 — the model is an
+   in-ridge instrument, not a global one.
+7. **Successor candidate: h405** (v_c 5.5, τ 4.4, E₀ 0.405) — gated,
+   best gated S 1.559, and better than a037 on **every** axis (W₁ 0.709
+   vs 0.792, deepKE 0.603 vs 0.526, midHot 0.957 vs 0.960, n₁ 0.208 vs
+   0.198). Its supp 0.183 also lands on the standing 0.187 (RQ3), its
+   trap is 0.087 and its marginal class 0.002.
+
+## 15. Sampling laws — size distribution + radial positions **(provenance AUDITED 2026-07-26; ⟨N⟩-pin influence MEASURED by grid re-weighting 2026-07-27 — §15.7; distribution-level A/B remainder open)**
+
+### 15.1 The laws as implemented
+
+- **Size law** (`sampling/droplet_sizes.py`): nozzle correlation
+  ⟨N⟩ = k₁·p^0.97·T^−3.88·d² (Lackner); log-normal δ = 0.625 (Kornilov);
+  pickup + evaporation chain (mean free path 4 Å, ε = 0.04/collision,
+  **E_solv = 14 meV vs thesis-text 30 meV — documented discrepancy**);
+  analytic D4 prior family (`droplet_size_prior`, Slice T8).
+- **Position law** (`sampling/radial_positions.py`): thermal-equilibrium
+  ansatz p(r) ∝ r²·exp(−U_drop(r−R)/k_B T) at T_particles_K
+  (`binding_energy_molecule_meV`, steepness), or the twin's L1 law
+  `uniform_volume` + hard margin (Slice T7).
+
+### 15.2 Which sampler actually ran, per production (code + distribution verified)
+
+| production | size | position | realized geometry |
+|---|---|---|---|
+| legacy MATLAB (thesis) | pickup MC, source-condition ⟨N⟩ | Boltzmann | N̄ ≈ 16.4k He, R̄ ≈ 54 Å |
+| `main`-branch Python port | pickup MC (`mode="post_pickup"`) | Boltzmann | N̄ 16.4k–16.7k, R̄ 53.9–54.2 Å |
+| **Tier-2 drag (standing point)** | **analytic `kornilov_lognormal`, ⟨N⟩ pinned 2000** | **`uniform_volume`, margin 3 Å** | **N̄ 2.0k, R̄ 26.6 Å** |
+| Tier-0 / HeDFT presets | fixed N = 2000 | center-pinned | R = 28.0 Å, r₀ ≡ 0 |
+
+- **Legacy production did use both samplers.** `run_simulation.m:66` runs
+  `inputfiles_dft_comparison/single_pulse_droplet_distribution.m`
+  (`use_single_droplet_size=false`, `single_initial_position=false`,
+  8000 molecules, 40 bar / 14 K); `vmi_sim_3d_neutral_propa_HeDFT_mimic.m`
+  calls `generate_droplet_sizes(...)` at `:141` and
+  `generate_radial_samples_3d(...)` at `:196`. No later assignment
+  overwrites `droplet_radii` (the only constant-N assignment is `:145`,
+  inside the `use_single_droplet_size` branch). Trap, harmless:
+  `generate_droplet_sizes.m:16-17` hardcodes `p0=40; T0=14`, clobbering
+  the globals with the same values.
+- **Distribution-level identification** (flags alone cannot separate raw
+  from post-pickup): correlation ⟨N⟩ = 12794; sampler `raw` → mean
+  12589 / med 10384 / R̄ 49.4 Å; sampler `post_pickup` → mean 16267 /
+  med 13400 / R̄ 53.8 Å (the +30 % mean shift is the N^(2/3) pickup
+  weighting, exp(⅔δ²) = 1.30, net of evaporation). Stored runs:
+  `single_pulse_droplet` 16392 / 13571, `single_pulse_droplet_long`
+  16658 / 13697 → **post-pickup**; `single_pulse_droplet_log_droplet`
+  12843 / 10547 → raw (the named log-normal comparison run).
+- **The drag branch bypasses both legacy laws.** The leg-D generators
+  (e.g. `gen_tier2atlas_lqbattery.py:94-103`) pin
+  `SIZE_PRIOR="kornilov_lognormal"`, `BIRTH_LAW="uniform_volume"`,
+  `BIRTH_MARGIN_ANGSTROM=3.0`, `SINGLE_INITIAL_POSITION=False`.
+  `single_droplet_size=2000` from the 9 Å preset is inert; the number
+  that replaced it is *also* 2000 because no generator ever overrides
+  the config default `droplet_prior_mean_N=2000` — the twin's Wave-10/11
+  D4 pin, inherited from the 9 Å TDDFT droplet, **never re-derived from
+  the source conditions**. Consequence: the legacy pickup MC and the
+  E_solv 14-vs-30 meV discrepancy are *inert* at the standing point.
+
+### 15.3 N → R convention (one convention on the propagation path)
+
+Propagation converts with **bulk** density:
+`droplet_radius_bulk_angstrom` = (3N/4πn_He)^(1/3) at n_He = 0.0219 Å⁻³
+= 2.2173·N^(1/3) (`simulation/initial_state.py:86`), matching legacy
+MATLAB's rounded `2.22·N^(1/3)` (the 0.8·ρ_bulk line is commented out at
+`vmi_sim_3d_neutral_propa_HeDFT_mimic.m:151-153`). The 0.8·ρ_bulk
+convention (2.39·N^(1/3), **+7.7 % in R**) lives only *inside* the
+size sampler — its pickup cross-section, `mean_droplet_size`,
+`droplet_radius_from_N` — and is never seen by propagation. Any grid
+or re-weighting that converts N → R must use the bulk form.
+
+### 15.4 The Boltzmann position law is strongly R-dependent — the parent model's own behavior
+
+`U` depends on `r − R` only, with a fixed erf width 14.3324 Å and well
+573.3 K = 49.4 meV at T = 0.4 K, so the allowed shell is `r ≲ R − 35 Å`
+at any R: an interior shell at legacy R̄ ≈ 53 Å (r/R q10/med/q90
+0.131 / 0.286 / 0.450) but effectively center-pinned at R ≈ 28 Å
+(median r₀ = 1.36 Å, V0-3 `birthlaw` oracle). That is why T7 introduced
+`uniform_volume` — the legacy law was structurally inert at the
+production droplet size, not rejected on physics.
+
+**Parent-document anchor.** The parent computes the molecule position
+from *"the thermal velocity of the iodine molecule and its droplet
+solvation potential"* at 0.4 K (its Fig. 6.9), quoting mean solvation
+depth 29 Å at R = 34 Å → 40 Å at R = 68.3 Å:
+
+| well depth used | depth @ R = 34 Å | depth @ R = 68.3 Å |
+|---|---|---|
+| parent document | 29.0 | 40.0 |
+| ours at β₂ = 26.99 meV (the DFT fit) | **29.34** | **40.43** |
+| ours at 573.3 K = 49.4 meV (as-built) | 30.35 | 41.80 |
+
+**Epistemic status: port-fidelity reproduction, not validation** — the
+parent computes the same ansatz we implement, HeDFT entering only as the
+potential *shape*; depths stay Derived, 0.4 K a stated assumption. The
+parent used the fit's own β₂ = 26.99 meV, so the code's 573.3 K carries
+a ~1.3 Å systematic (open item; inert today).
+
+**Measured departure at the standing point** (`bigc1v725s1`, N = 1000):
+
+| birth law on the production droplets (R̄ 26.6 Å) | ⟨r₀⟩ | mean depth | mean isotropic chord |
+|---|---|---|---|
+| production `uniform_volume`, m = 3 Å | 17.6 Å | **9.0 Å** | **21.7 Å** |
+| Boltzmann (the parent model) on the same droplets | 1.6 Å | 25.0 Å | 26.5 Å |
+
+`uniform_volume` **cannot** reach the parent depth at this R
+(`⟨depth⟩ = 0.25·R + 0.75·m` would need m = 24.4 Å > R), so at R ≈ 27 Å
+only a centered law is parent-consistent — but the chord differs by only
+22 %, i.e. birth depth is the secondary term and droplet size the
+primary one (§15.5).
+
+### 15.5 Consequence for D2b — the variant that matters most
+
+Legacy production vs standing point: **R̄ 54 → 26.6 Å (×2.0), N̄ 16.4k
+→ 2.0k (×8.2)**. Since exposure ≈ the chord `R − r₀` (§14), that gap is
+larger than the whole proposed §3 grid span (20 → 34 Å). The
+first-class D2b variant is therefore **the ⟨N⟩ pin itself** (2000 vs
+the source-condition 12794 and its pickup-weighted 16.3k), ahead of
+δ perturbations and the E_solv 14/30 meV pair, which are inert at the
+standing point. Whether the standing landing survives at the
+experiment's own source-condition droplet size is an open model risk,
+not a settled choice.
+
+**External confirmation of the source-condition ensemble (2026-07-26).**
+The parent document quotes its droplet range as R = 34 Å (smallest) to
+68.3 Å (largest) ⇒ N = 3605 / 29227, ratio 8.11. Against the
+source-condition ln-normal (⟨N⟩ = 12794 at 40 bar / 14 K, δ = 0.625)
+those sit at quantiles **0.043 and 0.949** — i.e. the ~5–95 % range of
+exactly that distribution. Its **raw** quantiles (q05 34.9 / q95
+68.7 Å) match the quoted pair; post-pickup would give 37.7 / 74.1 Å. So
+the parent ensemble is the source-condition distribution, **raw, not
+pickup-weighted** — which both fixes the external anchor at
+⟨N⟩ ≈ 12.8k and pre-answers one §4.2 A/B item.
+
+**Exposure ledger (mean isotropic chord, the quantity drag integrates):**
+
+| geometry | R | mean depth | mean chord |
+|---|---|---|---|
+| standing point (⟨N⟩ 2000, `uniform_volume` m 3) | 26.6 | 9.0 | **21.7 Å** |
+| same droplets, parent birth law | 26.6 | 25.0 | 26.5 Å |
+| parent small droplet | 34.0 | 30.3 | 33.8 Å |
+| parent large droplet | 68.3 | 41.7 | 64.5 Å |
+| legacy production (R̄, Boltzmann) | 54.0 | 37.8 | 52.2 Å |
+
+**≈ 2.4–3× less helium traversed than the parent geometry.** The drag
+law itself is unaffected (b is calibrated per unit density behind the
+ρ̂ gate; interior density is R-independent, so no Tier-0 re-extraction),
+but (v_c, τ, E₀) were arbitrated at this exposure and trade against it
+through K (I47/I72) — an exposure change of that size is outside every
+knob in this atlas.
+
+**Atlas target (remaining):** the grid re-weighting is **EXECUTED**
+(§15.7 — the ⟨N⟩-pin variant measured at ensemble level, zero MD); left
+open are the §4.2 distribution-level A/B plots, the ≤ 2 MD confirmations
+(the below-support R ≈ 20 Å × L3 cell is now the designed first
+candidate, §15.7 oracle read), and the salvageability verdict, which is
+G2-coupled: the standing ⟨N⟩ = 2000 pin is *known wrong* against the
+source conditions, so "landed under the standing pin" is no longer a
+defensible-variant statement.
+
+### 15.6 Reachability of the corrected ensemble — the G0-1 decision (2026-07-26)
+
+Code fact established this session: **`mode="raw"` is unreachable from
+config.** `simulation/initial_state.py:83` hardcodes
+`sample_droplet_sizes(cfg, mode="post_pickup")` for the `legacy` arm; the
+selector exists only as a function argument
+(`sampling/droplet_sizes.py:141`). The three candidate corrected-ensemble
+arms therefore differ in cost, not just in physics:
+
+| arm | reachable today | realized ensemble | cost |
+|---|---|---|---|
+| legacy `post_pickup` | yes | ⟨N⟩ 16267, R̄ 53.8 Å — the *pickup-weighted* ensemble, which §15.5 showed is **not** the parent's | zero |
+| **legacy `raw`** ← adopted | **no** | ⟨N⟩ 12589, R̄ 49.4 Å; q05/q95 34.9 / 68.7 Å vs the parent's quoted 34 / 68.3 Å | one config field + plumb |
+| analytic prior re-pinned at ⟨N⟩ 12794 | needs `DROPLET_PRIOR_N_HI` raised from 16000 | truncated family; ≈ 25 % of the mass sits above the present window at δ = 0.625 | constant change + re-pin of the twin's D4 family |
+
+**Decisive point:** under `legacy` the mean is not a knob — it comes from
+the nozzle correlation evaluated on the preset's **own** p = 40 bar /
+T = 14 K, which *is* ⟨N⟩ = 12794. The corrected ensemble therefore needs
+**no new number**: no re-pinned mean (the `legacy` guard at
+`config.py:1152` forbids an off-default `droplet_prior_mean_N` anyway), no
+widened truncation window. It also retires the analytic prior family
+along with the ⟨N⟩ pin — one **S** row more than §17 credited.
+
+**Adopted:** a `droplet_size_sampler_mode ∈ {raw, post_pickup}` selector
+defaulting to `post_pickup`, so every existing run is bit-for-bit
+unchanged (no default-scope change). Not required for G1 (fixed-R cells);
+required for G3/G4 and the D2b confirmations. Built with the stage-2b
+generator under its trigger.
+
+### 15.7 Grid re-weighting — the ⟨N⟩-pin influence at ensemble level (D2b §4.3 EXECUTED 2026-07-27, zero MD)
+
+`scripts/post_processing/tier2atlas_geometry_reweight.py` re-weights the
+§14 grid with candidate size densities. Method conventions (frozen
+before the first run): **column-matched 1-D re-weighting** — the
+candidate position laws coincide with grid columns exactly (production
+`uniform_volume` m3 ≡ L3; corrected Boltzmann 313.2 K ≡ L2), so the
+conditional birth depth at each R is the cell's own and only the R
+marginal is interpolated (nearest-midpoint vs piecewise-linear, clamped
+outside support with the clamp reported); the mixture is scored by the
+**committed scorer** through an exact weighted sufficient-statistics
+read (test-locked against literal pooling); `χ²_med` is intentionally
+absent (its sim-SE convention has no weighted analogue).
+
+**Oracle verdicts.** The pre-registered §4.3 oracle — reconstruct the
+pooled N = 5000 row from the standing density — is **INADMISSIBLE, 3/7
+columns pass**: **53.8 % of the standing density lies below the grid's
+R = 26.6 Å support edge** (the support starts at the standing *mean*),
+and the clamp overshoots trap (+0.027, 9 SD), n̄ (+0.58) and W₁ (+0.34).
+A **post-hoc in-support oracle** (declared post-hoc; the battery's own
+R ≥ 26.6 Å sub-ensemble, 46.2 % of its ions, support-covered by
+construction) passes **7/7 on both conventions** (`nearest` adopted;
+worst error W₁ −0.18 ≈ 1.9 SD, all others ≤ ~1 SD). Reading: the
+*method* is valid where the support covers the density; the full-density
+failure is the support hole. The corrected density is covered to ~95 %
+(clamp 0.2 % below / 5.1 % above), so its forecast inherits the
+in-support error scale, not the full-density failure. The designed
+remedy for the hole — only needed if a standing-mixture reconstruction
+is ever load-bearing — is a below-support R ≈ 20 Å × L3 cell (the §4.3
+"≤ 2 confirmations" budget).
+
+**Forecast (nearest convention; Arm A = marginals excluded / Arm B =
+marginals injected at exact conservative asymptotic KE — the §14.2
+NOT-TIGHT bracket propagated to ensemble level; quote deepKE and n̄ as
+A–B ranges):**
+
+| mixture | trap (marg) | det_yield | supp | n̄ | n₁_solv | W₁_solv | midHot | deepKE |
+|---|---|---|---|---|---|---|---|---|
+| pooled recorded | 0.067 | — | 0.187 | 4.07 | 0.243 | 0.571 | 1.011 | 0.631 |
+| std × L3 (oracle recon) | 0.094 | 0.91 | 0.161 | 4.65 | 0.224 | 0.912 | 1.04 | 0.599 |
+| std × L2 | 0.005 | 1.00 | 0 | 9.29 | 0 | 4.67 | 1.252 (4 bins) | 1.47 |
+| corr × L3 | 0.35–0.38 (0.032) | 0.62–0.65 | 0.12–0.13 | 6.0–6.7 | 0.15–0.16 | 2.07–2.69 | 1.254 | 1.35–1.45 |
+| **corr × L2 (corrected geometry)** | **0.31–0.42 (0.110)** | **0.58–0.69** | **0** | **13.9–14.7** | **0** | **9.0–9.8** | **1.256 (4 bins)** | **1.80–1.90** |
+
+**Reads.**
+
+1. **The corrected geometry breaks the landing at ensemble level,
+   through the §3.1-predicted channel:** suppression → 0 and the low-n
+   half evacuates (n₁_solv 0, W₁ ≈ 9–10), with trap 0.31–0.42. What the
+   anchored *cells* showed (§14.1), the anchored *ensemble* confirms —
+   this is the quantitative form of the G2 clause "the landing is
+   expected to break".
+2. **Decomposition:** the **birth law owns the histogram breakage**
+   (std × L2 already gives W₁ 4.67, n̄ 9.3, supp 0 at unchanged sizes,
+   with trap ≈ 0.005) and the **size distribution owns trapping**
+   (corr × L3: trap 0.35–0.38 at supp 0.13); each alone pushes deepKE
+   past 1 (1.35–1.47), together 1.80–1.90 — the two axes are separately
+   fatal, not one compound effect.
+3. **RQ11 at ensemble level:** deepKE crosses 1.0 between the standing
+   and corrected geometry along *either* axis — the ensemble echo of
+   §14.1's depth-crossing at ≈ 11–15 Å. The corrected geometry
+   *overshoots* the deep-bin KE (too hot) by ×1.8–1.9.
+4. **Detected-subset bias:** det_yield 0.58–0.69 at the corrected
+   geometry — the detected ensemble is a small-R / shallow-birth biased
+   subset of the source ensemble, so every detection-conditional
+   observable there must be read jointly with the fate split.
+5. **Caveats:** grid cells are N = 500 single-seed; midHot at the L2
+   mixtures rests on 4 of 7 band bins; the marginal fraction (0.11 of
+   source ions at corr × L2 Arm A) is conditional on the cubic law
+   extrapolated ~3× past its calibration band (§14.2); the in-support
+   interpolation error travels with every row.
+
+### 15.8 raw vs `post_pickup` at h405 — the size-sampler A/B (MEASURED 2026-10-02)
+
+**Question.** Production samples droplet sizes with `raw` (the plain source
+log-normal, G0-1). The `post_pickup` arm adds single-I₂ pickup conditioning
+(cross-section ∝ N^(2/3), exactly-one-pickup selection) and pickup-induced
+evaporation; it is the legacy MATLAB production sampler. How much does the
+choice move the scored observables at the standing point?
+
+**Instrument.** `gen_tier2_detfix_postpickup.py`: the production battery
+with only `droplet_size_sampler_mode` changed (cfg-diff oracle vs each
+committed production cfg.json). Scorer
+`tier2_detfix_postpickup_table.py`; the production anchor (s1–s5 re-pooled
+= the committed `pooled_new` row, 4 dp) passed. The arms are **not CRN**:
+the pickup Monte Carlo consumes the shared RNG stream first. The comparison
+is therefore pooled vs pooled, s1–s5, N = 5000 each.
+
+**r6 excluded.** The post_pickup r6 run tripped the D4 marginal-partner
+safeguard, its first firing in ~90 finished runs. One slow escaper (ion 610:
+56 Å outside the surface, 0.12 Å/ps, 12 He, droplet R = 50.6 Å at the 40th
+percentile) was still helium-coupled at t_h = 500 ps while its partner had
+escaped. One event cannot say whether larger droplets make this more
+frequent. User decision: pool s1–s5 for both arms.
+
+| pooled N = 5000 | ⟨N⟩ | R̄ [Å] | trap | supp | n̄ | n₁_solv | W₁_solv | midHot | deepKE | KE₁ | S |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| raw (production) | 12 800 | 49.7 | 0.078 | 0.194 | 3.876 | 0.210 | 0.765 | 0.946 | 0.520 | 0.641 | 1.74 |
+| post_pickup | 16 560 | 54.2 | 0.135 | 0.135 | 4.594 | 0.177 | 1.005 | 0.968 | 0.535 | 0.647 | 1.99 |
+| Δ | +3 760 | +4.5 | **+0.057** | **−0.059** | **+0.72** | **−0.033** | **+0.24** | +0.022 | +0.015 | +0.007 | +0.25 |
+
+Member ranges are disjoint between the arms for trap, n̄, n₁, W₁ and KE₁:
+the shifts are resolved, not seed noise (n̄ members 3.82–3.94 vs
+4.43–4.69). deepKE (members 0.48–0.66) and midHot are within noise.
+
+**Reads.**
+
+1. **The sampler is a live histogram knob, not a KE knob.** +9 % in R̄
+   (+29 % in ⟨N⟩) moves the size distribution strongly and KE₁ only
+   +0.007 eV. This is the §14 pattern: droplet size is a selection and
+   exposure lever on the histogram.
+2. **Direction.** Larger droplets mean more He traversed and more trapping
+   (trap +0.057, almost all bound), fewer fully stripped ions (supp −0.059,
+   n₁ −0.033) and heavier detected clusters (n̄ +0.72).
+3. **h405 does not land under post_pickup.** Both MD gate clauses fail:
+   n̄ 4.59 > 4.37 and n₁ 0.177 < 0.19. Experiment is n̄ 4.07, n₁ 0.243;
+   post_pickup moves away from both. h405 was arbitrated under `raw`, so
+   this says the **standing point is conditional on the sampler choice**,
+   not that post_pickup is ruled out. A post_pickup-arbitrated point would
+   need its own (v_c, τ, E₀) search. Projection only, untested: on the §4
+   E₀ slopes, recovering +0.72 He in n̄ needs roughly +0.03 eV in E₀.
+4. **Consequence for the G0-1 rationale.** The raw choice rests on a
+   circumstantial quantile match (D0 §15.5; discriminating margin ≈ the
+   N→R convention spread). The choice now has a measured price: it moves
+   the landing by more than the whole n̄ gate width (0.60). It belongs in
+   the thesis as a stated modelling assumption with this sensitivity, not
+   as a validated property.
+
+5. **Why KE₁ barely moves: the chord → (n, KE) map (zero-MD read,
+   2026-10-02).** The controlling variable is the **emission-axis chord**:
+   the straight-line path from the birth point along the explosion axis
+   (partner → fragment) to the droplet surface. Binned on it, the detected
+   outcome is near-deterministic, and **the map is the same in both arms**
+   (bin by bin within ≈ 0.01 eV and 0.1 in n):
+
+   | chord [Å] | retained | n = 1 frac | mean n | KE [eV] (raw / pp) |
+   |---|---|---|---|---|
+   | < 33 | 0 | 0 | **21** (intact) | 1.24–1.57 / 1.24–1.56 |
+   | 33–35 | 0 | 0.15 | 17.9 / 18.0 | 1.072 / 1.080 |
+   | **35–39** | 0 | **0.94–1.00** | **1.0–1.06** | 0.61–0.66 / 0.62–0.67 |
+   | 39–41 | 0 | 0.03 | 2.0 | 0.566 / 0.571 |
+   | 41–48 | 0 | 0 | 2.6–3.9 / 2.6–4.0 | 0.50–0.41 |
+   | 48–65 | 0 | 0 | 6.4–10.2 / 6.5–10.3 | 0.25–0.10 |
+   | 65–80 | 0.72 / 0.75 | 0 | 13.8 / 13.7 | 0.03 |
+   | > 80 | 1.00 | — | — | — |
+
+   - **n = 1 is a ≈ 4 Å chord window (35–39 Å)** in either arm, so KE₁ is
+     fixed: every n = 1 ion crossed ≈ 37 Å of helium (class mean 36.9 Å in
+     both arms, q10–q90 35.2–38.6). The sampler only changes how many ions
+     fall in the window (1560 → 1322). The window width × the KE slope is
+     also the origin of the n = 1 "needle" (KE₁ SD 0.038).
+   - **Radial birth depth is the weaker proxy.** n = 1 ions come from
+     droplets +3 Å larger in post_pickup but from the same depth (32.7 vs
+     32.5 Å). Under the Boltzmann law depth grows ≈ 0.3 Å per Å of R (the
+     parent anchor, §15.4), so +4.5 Å in R̄ is ≈ +1 Å of path across all
+     scored ions, not +4.5 Å.
+   - **The drag is strong; it is converted along the map.** KE falls
+     ≈ 0.03–0.04 eV per Å of chord. The capped-tail force at production,
+     F = b·v_c³ = 2.515 × 5.5³ ≈ 419 amu·Å/ps² ≈ 0.043 eV/Å, sets the
+     scale. The heavy class carries the visible cost: n ≥ 5 KE
+     0.567 → 0.437 eV at +3 Å chord (46.6 → 49.8 Å).
+   - **Short chords (< 33 Å) leave intact at n = 21**, i.e. before E_int
+     opens the evaporation gate. In raw, the chord bins alone reproduce
+     supp = 0.194. This is matched on the fraction only; the per-ion
+     identity with the scorer's suppressed class is not checked.
+
+6. **Consequences.**
+   - The detected histogram is **the chord distribution pushed through
+     one map**. Geometry sets the chord distribution; (v_c, τ, E₀) set the
+     map. They trade against each other, which is why h405 had to be
+     re-arbitrated when the geometry changed (§14.5).
+   - **No geometry change can move KE₁**: it cannot change what n = 1
+     means. Only the map can (Coulomb budget §19, drag, flight mass —
+     `TIER2_MASS_SCENARIOS.md`). This is the geometric form of the §2
+     "residence co-selection" and the §19 "source KER is the unique KE₁
+     mover".
+   - **The experimental KE width at fixed n cannot come from geometry.**
+     It needs scatter in the map itself (Tier-3 noise, or a channel
+     mixture, §20).
+   - Caveats: the chord ignores deflection (partner Coulomb, drag) and
+     the soft erf edge; the arms are not CRN, so the agreement is
+     ensemble-level.
+
+Records: scorer CSV `data/runs/h2b_forward_model/detfix_postpickup_table.csv`
+(full vector + realized sizes) and `detfix_postpickup_chord.csv` (the
+chord map; `emission_chords` in the same scorer); figures containers
+`…N5000_detfix_conf270_h405pppooled_th500` (post_pickup) and
+`…N5000_detfix_conf270_h405pooled_th500` (production s1–s5, raw).
+
+### 15.9 raw vs `post_pickup` on the lq A5 cell, and what restores n̄ (MEASURED 2026-10-08; THESIS_FINAL_GOALS G5)
+
+Same flip on the thesis production law (lq c 2.0, a 16.717, E_bind 0.1175,
+3.5 Å gate, τ 6.4, E₀ 0.3155); production pipeline, seeds s1–s5 + r6, no
+D4 firing (r6 included, unlike h405).
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | trap | S | ⟨N⟩ |
+|---|---|---|---|---|---|---|---|---|---|
+| raw (A5) | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.035 | 1.958 | 12.9k |
+| post_pickup | 4.581 | 0.163 | 1.091 | 1.003 | 0.618 | 0.535 | 0.067 | 1.928 | 16.7k |
+| Δ | **+0.695** | −0.041 | −0.007 | +0.008 | +0.001 | +0.043 | +0.032 | −0.030 | +3.8k |
+
+- **The n̄ shift is law-independent** (h405 +0.717, §15.8); for lq
+  **nothing else moves** — W₁, midHot, KE₁, S flat (h405: W₁ +0.24). The
+  larger droplets add He, they do not slow the ions.
+- **The shift sits in n ≤ 1.** Experiment / raw / post_pickup: n = 1 share
+  of n ≥ 1 = 0.310 / 0.192 / 0.156; mean over n ≥ 2 = 6.64 / 6.31 / 6.17.
+  Above n = 1 both samplers sit comparably below the experiment; the n̄
+  gap is the n = 1 deficit (outlook, G8), which post_pickup widens.
+- **Evaporation knobs cannot restore n̄ without KE loss** (s1, N = 1000):
+  E₀ 0.3355 / 0.3455 / 0.3555 → n̄ 3.91 / 3.60 / 3.34, midHot 0.87 / 0.82
+  / 0.78, KE₁ 0.55 / 0.52 / 0.49 (dn̄/dE₀ ≈ −31 /eV); τ 6.8 / 7.2 / 7.6
+  → n̄ 4.05 / 3.59 / 3.20, midHot 0.89 / 0.79 / 0.70, KE₁ 0.59 / 0.55 /
+  0.52 (dn̄/dτ ≈ −1.1 /ps). At matched n̄ ≈ 3.87 both land at midHot
+  ≈ 0.85–0.87. Reading: extra evaporation moves slow heavy clusters into
+  the low-n bins. Untested pickup-side lever: λ₀ (0.9, sourced 0.7–1.1).
+- **The chord map is sampler-invariant** (`g5_postpickup_chord.csv`: per
+  chord bin n and KE identical); post_pickup only moves ions from short
+  chords (n = 1 window 33–37 Å) to long ones. E₀ / τ change the map
+  (fewer He per chord, slower ions per n); the drag changes it the other
+  way (KE per chord).
+- **The drag holds both (B1c → B2).** Lower c on the TDDFT ridge (committed
+  g412 points, 18 Å-passing) + E₀ re-placed per c (twin line at n̄ 3.89 +
+  0.0213 eV post_pickup shift). s1: c 1.8 (E₀ 0.3331) midHot 0.925; c 1.6
+  (E₀ 0.3297) midHot 0.994. Pooled N = 6000 at c 1.6 (a 18.007, E_bind
+  0.11727, τ 6.4, post_pickup):
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | trap | S |
+|---|---|---|---|---|---|---|---|---|
+| A5 raw (c 2.0) | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.035 | 1.958 |
+| post_pickup, c 1.6 | 3.903 | 0.211 | **0.967** | 1.002 | 0.609 | 0.477 | 0.049 | **1.705** |
+
+  Every observable at or better than A5; W₁ −0.13, S −0.25. The selected
+  c depends on the droplet description (identifiability, G5): the ridge
+  freedom TDDFT leaves open absorbs the droplet-size change.
+- **G10 high-tail recipe on this cell (B1w → B3; effective, not
+  Tier-0-consistent, G10.5).** E_bind 0.0482 eV, a scanned at s1 (19.8 /
+  20.8 / 21.8 → midHot 1.004 / 0.956 / 0.911; E₀ = B2 E₀ + 0.0053 +
+  0.002185·(a − 18.007)). Pooled N = 6000 at a 19.8, E₀ 0.3389:
+
+| pooled N = 6000 | n̄ | n₁ | W₁ | midHot | KE₁ | deepKE | KE n10–14/exp | n ≥ 15 | max n | trap | supp | S | χ²_med |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A5 raw | 3.886 | 0.204 | 1.097 | 0.995 | 0.617 | 0.492 | 0.60 | 0.0006 | 16 | 0.035 | 0.067 | 1.958 | 507 |
+| B2 (c 1.6) | 3.903 | 0.211 | 0.967 | 1.002 | 0.609 | 0.477 | 0.64 | 0.0008 | 17 | 0.049 | 0.111 | 1.705 | 527 |
+| B3 (+ 0.0482, a 19.8) | 3.956 | 0.211 | **0.795** | 1.016 | 0.590 | **0.601** | **0.77** | **0.0075** | 18 | 0.028 | 0.151 | **1.505** | 674 |
+
+  vs B2: n ≥ 15 ×9, W₁ −0.17, deep bins faster, trapping halved; costs
+  KE₁ −0.019 eV, χ²_med +28 %, suppressed +0.04 (G10 raw: χ² +15 %,
+  supp +0.02). midHot 1.016 (s1 read 1.004; members 1.004–1.025).
+
+Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (full vector,
+sizes, c/E₀/τ columns) + `g5_postpickup_chord.csv`; generator
+`gen_tier2_detfix_postpickup.py --cell lq` (`--b1`, `--b1tau`, `--b1c`,
+`--b2`); figures containers `…N6000_detfix_conf270_g5lqpppooled_th500`
+(unchanged parameters) and `…N6000_detfix_conf270_g5lqppc160e3297pooled_th500`
+(c 1.6) and `…N6000_detfix_conf270_g5lqppc160a198w0482e3389pooled_th500`
+(B3), all pairing with `…N6000_detfix_conf270_g414c200t64pooled_th500`.
+
+## 16. Quiet / structural surfaces (for completeness)
+
+- **s_eff (RRK dof, Bounded):** a *rate*, not an amount (I13);
+  arm-conditional landing (ungated ≈ 8, gated ≈ 30 — the ungated prior
+  does not carry, I10); the detector compresses it (arrival state, not
+  arrival n) *except* the n = 1 bin, which selects the kinetics band
+  (I20, I32). Standing: the 8-family via the production bundle.
+- **E2 relaxation stage:** KE-frozen at handover on every solvated bin
+  (E_dissip gain 0.0000; Landau-gated E2 drag touches only the retained
+  class); detection-stage sheds KE-negligible — the post-window chain is
+  causally disconnected from the KE curve (I89); E2 checkpoint stride is
+  scored-read-neutral (I67).
+- **Detection time:** Sourced 8.53 µs; ungated reads are
+  detector-converged (n_detect ≡ n_relaxed); the gated long-time
+  structure is the Klots evaporative-ensemble regime (I19, I23).
+- **Scenario budget (0.80/2.70 eV):** bookkeeping-only in the delivered
+  model; the gated map is budget-invariant in absolute E₀ (I28).
+- **Guard flags:** biphasic runs under `allow_inconsistent_mass_pairing`
+  (§6.6 mid-window defense); E_bind sweeps will use
+  `allow_unvalidated_binding_pairing` (§6.5.1). Deliberate, logged.
+
+---
+
+## 17. Physical-sensibility ledger (added 2026-07-26)
+
+Influence answers *what a knob does*. This chapter answers a different
+question, the one the atlas exists for: **which parts of the model are
+physics, and which are scaffolding?** Role codes:
+
+- **P** — physics-constrained: external evidence pins it (TDDFT traces,
+  literature, source conditions, experiment).
+- **C** — convention: a choice that must be made; documented, defensible,
+  not free.
+- **E** — effective: no external constraint; fitted, and absorbing
+  whatever physics is missing there.
+- **S** — scaffolding: exists to compensate another element's wrong
+  value; would retire if that element were fixed.
+- **M** — missing: known-absent physics, tracked so it is not mistaken
+  for zero.
+
+| element | provenance | external constraint? | role | what would retire / confirm it |
+|---|---|---|---|---|
+| in-band drag form + b | Tier-0 Method-B on 9/18 Å TDDFT | **yes**, 2.54–4.95 Å/ps only | **P** (band-limited) | extended TDDFT (collaborator ask). Note §1: the Tier-2 landing is form-blind — it is *not* evidence |
+| capped tail v_c, p_tail | fit to experiment above the TDDFT band | no | **E** | TDDFT at production kinematics; the "S-shape" framing (§6.1) says a cap is a stand-in, not a law. **Retirement attempt in progress (2026-10-05/06):** an uncapped TDDFT-tied law F = a·v + c·v² on the 18 Å ridge — every point fits 18 Å, c ≤ 5 passes the 9 Å exit bound, all land in the twin (§1.G4.12); MD at c = 2.0 ties h405 on KE₁ but its one escalated cell misses the n₁ gate with W₁ +0.34 (§1.G4.13, verdict scoped to that cell). **G4.14 (measured, §1.G4.14):** the fine τ lines over c 1.8–2.5 find no cell that beats h405; the pooled KE-led confirmation (c 2.0, τ 6.4, uncapped) matches h405 on the n = 2–8 KE (midHot 0.995) and beats it on χ² at the same 3.5 Å gate (507 vs 636), with KE₁ −0.026 and W₁ 1.10 vs 0.82. The cap is *replaceable on the KE side* by a physical, kink-free law at the sourced τ (6.4 vs GAH25 6.55), at the cost of the size-histogram tail; c (1.8–2.5) is then the experiment-chosen element instead of v_c. Retirement = a thesis-framing decision (`THESIS_FINAL_GOALS.md` G4.14 recap) |
+| τ cooling clock | arbitration basin §4w | no | **E** | a physical cooling model for the bubble |
+| E₀ = E_int(0) | solvation-scale bracket + arbitration | weak (bracket only) | **E** | Axis B curve + an independent onset argument |
+| κ, picture | Form-U parametrisation | no | **E** (both near-dead levers) | superseded by the tabulated `rq4graded` ladder |
+| ladder D₀(n) rungs | RQ4 literature | **yes** (rungs) | **P** rungs / **E** graded shape | shape: an independent size-resolved binding source |
+| λ₀ pickup, detection time | source conditions / flight geometry | **yes** | **P** | — |
+| Landau v_L 0.58 | literature bulk value | **yes** | **P** (measured quiet) | — . Since 2026-09-30 its only production reader is the collision cutoff `E_min_eV` (neutral stage); the E2 drag-gate reader is legacy (`TIER2_DetectorStageFix.md` §3a, `POST_THESIS_CLEANUP.md` C1/C4) |
+| **handover t_h = 500 ps + partner-aware Coulomb closure** (added 2026-09-30) | replaces the 8 ns E2 stage; closure = exact two-body / fixed-centre asymptote | **yes** — exact vs E2 ground truth (≤ 0.2 % p95) | **C** (staging), **P** (closure maths) | t_h measured irrelevant (500 vs 502.84 ps: observables ≤ 4·10⁻⁶); omits droplet polarisation and any post-t_h mass change (`TIER2_DetectorStageFix.md` §2e, §5.6) |
+| per-shed ε | bounded small (NB-RQ23-1) | weak | **C** (set 0) | a recoil model |
+| shed convention (cold/co-moving) | two-valued bookkeeping choice | no | **C** | RQ3 resolution |
+| E_bind 0.1168 eV | joint Method-B with the drag pair | **yes** (jointly) | **P** (paired) | measured to matter (§9); pairing is the constraint, not the value. R-dependence **bounded** ≤ 0.009 eV over the Axis A span (§9.1, Born far-field; the local snowball term cancels) |
+| **⟨N⟩ = 2000 droplet pin** | Tier-0 TDDFT droplet → S2-D4 freeze → twin D4 family | **contradicted**: parent ensemble is ⟨N⟩ ≈ 12794 (§15.5) | **S** | adopting the source-condition prior (Axis A / D2b) — which under `legacy` needs no pin at all, the nozzle correlation supplies it from p/T (§15.6) |
+| **analytic `kornilov_lognormal` prior family** | T8 twin-parity device carrying the ⟨N⟩ pin; window [250, 16000] He | no — and the window cannot hold the source-condition distribution | **S** | retires with the pin: the `legacy` + `raw` sampler is the parent's own law (§15.6) |
+| **`uniform_volume` birth law** | T7 twin parity, because Boltzmann is center-pinning at R ≈ 28 Å | **contradicted**: the parent model is the thermal law (§15.4) | **S** | adopting the parent birth law — which is *also* our own ported sampler |
+| **margin 3 Å** | pinned convention (I88) | no | **E**, and load-bearing (n₁_solv 3.4σ at 6 Å) | a birth law that needs no margin (i.e. the parent law) |
+| **T5 `density_tied`** | dressing for under-dressed shallow births | no | **S** — inert at the parent geometry (§G) | adopting the parent geometry. *No control can decompose it* — it shares one `rho_he_ratio` surface with the cooling gate and the drag gate (§14) |
+| **T6 `sigma_proportional`** | onset scaled by Σ(n₀)/Σ(n*) | no | **S** — same; and it silently imposes `E_int/Σ = 1.309` at every birth | same: the geometry correction, not a control cell (C1/C2 rejected 2026-07-26 — each needs the less physical arm of its pair) |
+| `cooling_spatial_gate="density_scaled"` | ρ̂-scaled Newton drain | no | **E**, but the alternative is unphysical | nothing available: `"none"` means cooling with no bath to cool into. Third leg of the same shared ρ̂ surface |
+| Boltzmann well 573.3 K | code value (legacy MATLAB); the DFT fit it cites is 26.99 meV = 313.2 K | **mismatch** (~1.3 Å in depth) | **provenance defect** | **G0 decision 2026-07-26:** Axis A L2 cells override to 313.2 K **per run**; the config default stays 573.3 K (legacy port fidelity — a default change buys nothing while the arm is unused in production). 573.3 K is a robustness check, not a cell |
+| **`potential_steepness` 14.2 Å reused as the He *density* width** | DFT fit of the **solvation potential** (legacy: `% from ernesto dft result beta = [14.3324 26.9916 34.4431]`, "from fit of solvation potential DFT result") — then reused verbatim by `rho_he_ratio` via `drag_gate_steepness` | **mismatch**: 14.2 Å ⇒ a 10–90 % interface of **25.7 Å**, vs **5.7 Å** (DFT) / **6–8 Å** (experiment) for ⁴He droplets at N = 10³–10⁴ [Harms/Toennies/Dalfovo PRB 58, 3341 (1998)] ⇒ $s_\rho \approx 3.1$–4.4 Å, a factor ≈ 4. The potential is $\rho\otimes V_\text{I–He}$ + cavity, so ≈ 14 Å is *right for U* and too wide for ρ — the defect is the **reuse**, not the value | **convention (C)**, quantitatively bounded below | **RQ12** — the DFT *density* profile from the same calculation. Instrument already exists and is bit-inert: `drag_spatial_gate="erf_independent"` + `cfg.drag_gate_steepness` (DESIGN §5.7 G3, held for exactly this). **2026-10-02:** literature value s_ρ = 3.5 Å agreed (G2, role → **P**, borrowed); Tier-0 refit at 3.5 Å **measured** (§1.G4: cubic, b 2.230, E_bind 0.1277; 9 Å RMSE 0.124 → 0.207); the row retires on adoption — **decision needed** (Tier-1a gate reading) |
+| ↳ *its measured leverage* (2026-08-10/11, §9.4–§9.5) | (a) analytic: for a radial exit $\int_0^\infty\hat\rho(r-R)dr = R$, so a **saturated** drag is width-blind on total dissipation (0.0 % at R = 47.8 Å, +11 % at the 9 Å Tier-0 droplet); (b) the **E_bind transfer factor** $T = c_\text{prod}/c_\text{cal}$, measured cross-law; (c) the dynamical/cascade split of the ensemble response | (a) leaves the drag channel nearly inert on *total* dissipation; (b) $c_\text{cal} = 0.482$ under the **uncapped** Tier-0 cubic ⇒ the co-fitted $E_\text{bind}$ is inflated ≈ 2.1×, and **T > 1** (1.66–2.07 taken consistently at trajectory level): production **over**-pays. Sharpening drives T → 1 and **halves the refund** (0.518 → 0.246 at R = 9); (c) the ensemble response is **85 % dynamical / 15 % cascade** (§9.5) — so the density width *can* reach it | — | **consequence:** correcting $s_\rho$ is right physics and correctly signed for KE₁, but its **size is not yet established** (the "+0.006–0.02 eV" estimate mixed trajectory- and system-level derivatives — withdrawn). Needs: the trapping bundle split out of $c_\text{traj}$, an **ensemble** $c(s_\rho)$, then a **Tier-0 re-extraction**. Third channel, untouched: **birth dressing** ($\hat\rho(10\,\text{Å})$ 0.84 → ~1.00, $n_0 \approx 18 \to 21$), the §14.3 lever. **2026-10-05: (a)'s "+11 % at 9 Å" and (b)'s $c_\text{cal}$ / T used a 9 Å *droplet*, but 9 Å is the I–I start separation (Tier-0 droplet R ≈ 30 Å) — superseded, see the §9.4 CORRECTION; the refit's E_bind rose, not fell (§1.G4)** |
+| mass / binding pairing hatches | §6.5–§6.6 documented exceptions | n/a | **C** (logged per run) | — |
+| ensemble second moments | not modelled | experiment says under-dispersed | **M** | Tier 3 (discrete-emission drag is the standing candidate) |
+| **three-stage timescale separation** (30 ps drag-active MD → 8 ns conservative E2 → 8.53 µs free flight; **since 2026-09-30: 500 ps full-physics Stage I → closure → free flight**, the E2 middle stage retired from production — `TIER2_DetectorStageFix.md`) | staging calibrated at R ≈ 27 Å, where ejection is effectively instantaneous | **contradicted at the anchored radii**: at R ≥ 49 Å escape takes ~0.1–1 µs with He still present, and ⅓–½ of ions never leave (§14.2) | **S** — scaffolding for the wrong geometry; **no longer a blocker** | **partly retired 2026-07-27** by the second option: the µs-orbiting class *is* defined as retained (`exclude_all_coupled`), decomposed into bound (physics) and marginal (convention), so the grid is readable — §14.2. What remains open is whether the µs residence is real at all, i.e. whether cubic drag over-dissipates on 25–50 Å paths (the collaborator ask; a *geometric* retained fraction is insensitive to (v_c, b), an over-dissipation artifact is not). **The first ledger row the correction created rather than retired** |
+
+**What the ledger says.** The **S** rows share one root: the droplet is
+~2× too small and births ~3× too shallow, and several arms exist to
+describe or compensate for that. Adopting the anchored geometry retires
+**six rows at once** — the ⟨N⟩ pin, the analytic prior family that
+carries it (§15.6), the `uniform_volume` birth law, the margin knob, and
+both dressing arms — i.e. it *simplifies* the model rather than
+complicating it. That is the strongest
+physical-sensibility argument the program has produced, and it is the
+reason Axis A was re-cut as a geometry test (plan §3.1b).
+
+The **E** rows are where the model is fitted rather than known: the
+capped tail, τ, E₀, the graded ladder shape, the margin, the cooling
+gate. Each is a candidate for an external constraint we do not yet have;
+the collaborator ask (extended TDDFT) covers the first, Axis B measures
+the next two, and the geometry decision removes the fourth and fifth.
+
+**Ledger discipline.** Role codes are claims about *evidence*, not
+quality — an **E** entry is not wrong, it is unconstrained. Nothing in
+this chapter adopts anything; adoption stays a separate pre-registered
+decision (plan §0). The ledger's job is to be the dossier that decision
+would read.
+
+---
+
+## 18. Drag state coupling s(n) — MEASURED DEAD in-window: gate-clipped (probe 2026-07-29)
+
+| | |
+|---|---|
+| knob | `drag_state_coupling` ∈ {off, shell_area} + (R_core [Å], ρ_shell [Å⁻³]) |
+| class | Bounded geometric closure (design `TIER2_DRAG_STATE_COUPLING_DESIGN.md`) |
+| instrument | 3-cell probe sa22/sa30/sa44 (ρ_shell bulk/prior/2×bulk, R_core 3.2) × N = 1000 at the h405 pins, seed 20260729 CRN-paired; oracles O1/O2 + cfg-diff + unit oracle all pass |
+| status | **probe EXECUTED; every registered prediction REFUTED; axis STOPPED** (SC-P2 signature failure kills the central claim per the registration). Code delivered and regression-clean; production default stays `off`. |
+
+**Measured influence (vs the CRN h405 baseline KE₁ 0.637, needle SD 0.038):**
+
+- KE₁ 0.596 / 0.599 / 0.601 at sa22/sa30/sa44 — **sign-inverted** (−0.04,
+  the design predicted +0.2..+0.5) and **ordering-inverted** (strongest
+  coupling = lowest KE₁).
+- **Needle SD unmoved**: 0.038 in every cell (SC-P2 floor was 0.08) — the
+  n–KE lock survives the state coupling entirely.
+- Cells nearly indistinguishable across the full ρ Bounded range
+  (factor 2): the swept parameter has almost no in-window authority.
+- Exploratory (SC-P5): n̄ +0.26..+0.30, n₁ −0.012..−0.017, supp −0.014,
+  trap +0.005, W₁ +0.046..+0.062 — all cells strictly worse than baseline
+  on the landing surface; deepKE −0.08..−0.11.
+
+**Why (the mechanism finding — measured on sa30's ion checkpoint, zero MD):**
+the coupling is **gate-clipped**. Stripping is slow relative to transit:
+**no ion reaches n ≤ 8 while still inside the droplet** (fraction 0.0000;
+n ≤ 14 inside: 7.4 %), the mean shell at first surface crossing is
+**19.0 He (median 20)** — ions exit essentially fully dressed — and 93 %
+have exited by sim-end. All stripping to the design's large-|effect|
+regime (n ≤ 2, s ≈ 0.32–0.43) happens outside, where the spatial gate
+g(d) = 0 has already switched the drag off. In-window the shell stays in
+[14, 21] → s ∈ [0.85, 1.06], and there s is nearly ρ-independent by
+construction (ρ differentiates s only where R_core³ competes with n/ρ,
+i.e. at low n). The small negative net KE₁ comes from the early-transit
+s(21) ≈ 1.06 over-drag at the highest speeds plus back-reaction (less
+mid-window drag → n̄ rises, the §14.5 residence channel sign). The
+needle cannot break because per-ion in-window s variance is minute —
+the strip-timing decorrelation the design §2 posited does not exist
+inside the gate.
+
+**Consequence:** being at low n and being inside the drag gate are
+mutually exclusive states of the delivered mechanism — *no* γ(v,n)
+coupling of this family (state factor × gated γ) can move KE₁, because
+the exit toll is paid dressed. Any successor low-n KE lever must either
+act outside the gate (a different force surface entirely) or change the
+strip-timing itself (the OQ-F cooling-contact discussion, or upstream
+E_int dynamics). Options on the table per the registration: the
+honest-residual branch extended to KE₁, or OQ-F — user adjudication
+either way. Nothing adopted; `finc1v725` and the h405 successor
+candidacy stand as before the probe.
+
+Records: findings "§3.5i s(n) probe" (scorer table + verdicts), scorer
+CSV `atlas_sn_probe.csv`, design doc §8 (registration), log entries
+2026-07-29.
+
+---
+
+## 19. Coulomb budget (E_coulomb_scale / per-fragment KER) — MEASURED ALIVE: S_k = 0.389 eV/eV; suppression is E_int-driven (probe 2026-07-29)
+
+| | |
+|---|---|
+| knob | `E_coulomb_scale` (pair Coulomb ×scale at fixed R₀ 2.666) + `coulomb_available_eV` stamp; `internal_energy_partition_fraction` used as the E₀ pin |
+| class | **Sourced** (user paper input 2026-07-29: gas phase reproduced at 0.8·E_C with Q = 2/Q = 3 → channels 2.16 / 4.32 eV per I⁺; RQ7/RQ8 NBs). The standing production 2.70 (scale 1.0) is ~25 % high vs this calibration. |
+| instrument | §3.5k probe bud226k/bud411k/bud411 × N = 1000 at the h405 pins, seed 20260729 CRN-paired; oracles O1/O2 + cfg-diff + kinematic unit oracle all pass |
+| status | **probe EXECUTED; BP-KILL NOT fired (S_k = 0.389 ≥ 0.2) — the source-side lever is ALIVE; the (C) design discussion proceeds per the registration** |
+
+**Measured influence (vs the CRN h405 baseline, budget 2.7006):**
+
+- **Kinematic transfer slope S_k = dKE₁/dbudget = 0.389 eV/eV**
+  (E₀-pinned line 2.26 → 2.7006 → 4.11: KE₁ 0.486 → 0.637 → 1.200;
+  BP-P2 band [0.35, 0.75] CONFIRMED). The 1-D placement slope 0.587
+  over-predicts by the back-reaction factor ≈ 0.66 — this also puts
+  bud226k 0.006 eV above its BP-P1 band edge (0.486 vs [0.29, 0.48]);
+  the registered diagnose-obligation is discharged by the S_k reading
+  itself (the placement's constant-toll picture is ~⅓ too steep).
+  bud411k lands in-band (1.200 ∈ [1.13, 1.70]). KE₂ tracks (0.404 →
+  0.551 → 1.081).
+- **The suppression mechanism, measured (BP-P3 sign-INVERTED — the
+  probe's mechanism yield):** supp(bud411) 0.909 > supp(bud411k) 0.546
+  at identical kinematics — raising E₀ 0.405 → 0.6165 adds +36 pp
+  suppressed (∂supp/∂E₀ ≈ +1.7 /eV). Suppression is **E_int-driven
+  (self-unbound at detection)**, not freeze-driven: more deposited or
+  onset energy → hotter E_int → more of the ensemble relabeled bare.
+  Under the full (B) proportional wiring the fast ions go to
+  suppressed-bare and **KE₁ stays at baseline** (bud411: KE₁ 0.623,
+  n = 1 count 44) — the Q3 → n = 1-upper-half leg therefore requires
+  (A) exit stripping (rebin at existing KE) or partial E₀ decoupling.
+  The (A)/(B) complementarity is now measured from both sides.
+- **Needle persists** (BP-P4 ✓): KE₁ SD 0.034 / 0.047 at the k-cells —
+  a single-valued budget cannot widen the n = 1 KE; width requires the
+  channel mixture.
+- **Uniform-budget landing damage (exploratory — NOT the (C)
+  channel-weighted forecast):** bud226k n̄ 5.33 / n₁ 0.126 / trap 0.179
+  (2×) / W₁ 1.365 — a naive re-anchor to the calibrated 2.16–2.26
+  **breaks the standing basin** (re-tune required, RQ7 NB); bud411k
+  n̄ 1.63 / supp 0.546 / midHot 2.301 / deepKE 1.093 / W₁ 1.294;
+  bud411 n̄ 0.34 / supp 0.909 / trap → 0.001.
+
+**Consequence:** the KER → KE₁ transfer is physically real in-model at
+≈ 0.39 eV/eV, the honest-residual branch is NOT forced, and the (C)
+design (paper-anchored channel mixture {single, Q2, Q3} + exit
+stripping) proceeds with this section as its slope authority. Per-channel
+E₀ coupling (f_int channel-dependence) is a live design axis with
+measured leverage. Nothing adopted; `finc1v725` and the h405 candidacy
+stand.
+
+**Addendum (2026-07-29, post-§3.5l):** the 0.8 calibration's
+provenance is **CLOSED** — Hatherly et al, J. Phys. B 27 (1994)
+2993–3003 (doi:10.1088/0953-4075/27/14/032; consulted, not
+repo-kept): gas-phase finite-pulse CE, fraction
+channel-independent (0.75/0.65·E_C at 90/200 fs), intrinsic channel
+widths (FWHM 2.6/5.8 eV at 200 fs); NOT droplet screening; the Abel
+gas export confirms 2.26/4.11 in the repo's own frame (a 2-D-rim
+"frame split" rider was posted and withdrawn same-session). Under the
+adjudicated (C) design (`TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`
+OQ-B) **this knob's scalar form retires**: the per-molecule sampled
+channel budget E_m (means 2.16/4.32 × shared Bounded f, widths
+sampled) replaces the single `coulomb_available_eV` stamp; the
+uniform-re-anchor damage row above stays the measured warning against
+any single-budget re-anchor.
+
+Records: findings "§3.5k budget probe" (table + verdicts), scorer CSV
+`atlas_budget_probe.csv`, plan §3.5k (registration), RQ7/RQ8 NBs
+2026-07-29, log entries 2026-07-29; provenance + (C)-design records:
+findings "§3.5l reads (i)+(iii)", `TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md`.
+
+---
+
+## 20. CE channel mixture (B) + depth-graded exit strip (A) — MEASURED at the (C) probe (2026-07-29): registration FAILED, all three kills fired; the strip arm over-tolls (ε-dominated) and FEEDS the suppressed gate; the mixture alone PLACES KE₁
+
+**Status: probe-measured (4 × N = 1000 at the h405 pins, seed 20260729,
+CRN; `atlas_ce_probe.csv`; findings "(C) probe EXECUTED"). Knobs built
+2026-07-29 (config surface `ce_*` / `exit_strip_*`, checkpoint v8, both
+enums default off = bit-identical). Frozen inputs and CP bands: design
+doc §8. NOTHING adopted; the §11 PC-3 failure semantics are triggered
+and await user adjudication.**
+
+Measured influence (deltas vs the committed h405 baseline row
+trap 0.087 / supp 0.183 / n̄ 3.955 / n₁ 0.208 / W₁ 0.709 / midHot 0.957 /
+KE₁ 0.637 / KE₁ SD 0.038):
+
+| knob / arm | measured influence |
+|---|---|
+| `ce_channel_mode = sampled` alone (bonly) | **KE₁ 0.920** (± the 1.00 anchor; above-1.15 share 0.42 ∈ the CP-3 band; KE₁ SD 0.286 — needle broken): the source-side placement works as forecast. **But** trap 0.087 → 0.465 (the E_single ≈ 0.53 channel, s_m ≈ 0.2, cannot climb out of realistic droplets — a class P3's registered single-channel assumption never priced), n̄ 6.69, n₁ 0.080, W₁ 2.97 (CP-7 range). supp 0.138 (mild w_Q3-diluted parking, not the full §3.5k complementarity). |
+| `exit_strip_mode = depth_graded` alone (aonly) | **Catastrophic over-toll.** 90 % of ions strip, knock count mean 13.7 / p90 20: the box-mid ε_carry 0.025 × the measured knock count = 0.34–0.50 eV, plus Σ-outer 0.14–0.20 eV → total toll ≈ 0.5–0.7 eV per exiter, 2.5–3.5× the design's "≈ 0.2 eV" anchor. KE₁ 0.637 → **0.119**, midHot 0.96 → 0.30, W₁ 0.709 → 0.947, trap 0.087 → 0.167 (toll converts marginal escapers to retained). **supp 0.183 → 0.551**: the strip lowers Σ(n) faster than E_int drains — post-strip survivors at n 2–12 with E_int ≈ 0.15 eV sit above the tiny post-strip Σ(n) and park suppressed forever. **(A) feeds the suppressed scaffolding instead of retiring it** — the §17 ledger entry inverts. |
+| C-full (both on) | The two failures compose: trap 0.564, supp 0.368, KE₁ 0.180, W₁ 1.887, midHot 0.370, slow-bare 0.446. CP-1..4 FAIL, CP-5/6/7 kills FIRED. |
+| `f_int,Q3` 0.0985 → 0.15 (coupling arm, in-mixture) | Nearly flat: midHot 0.370 → 0.350, supp 0.368 → 0.361, KE₁ 0.180 → 0.213 — the coupling is second-order behind the strip toll; **CP-6 fired at both bracket ends**. |
+
+Structural reads (why the P1/P3 forecasts missed):
+
+1. **ε-box internal inconsistency, now measured.** ε_carry ∈ [0, 0.05]
+   was anchored on "total ≈ 0.2 eV" assuming few knocks; the measured
+   knock count (median ~14, p90 20 at the pinned box: P₀ ≈ 0.25–1 for
+   ordinary exiters × G ≈ 1 on all rungs above j₀ ≈ 2) makes the box
+   mid alone worth 0.35–0.50 eV. Consistency with the 0.2 eV anchor at
+   the measured knock counts needs ε ≲ 0.005 eV/He.
+2. **P1's evidence base stripped the suppressed class only** (the CF-3
+   counterfactual re-labels), with no energy toll; the live §3.3 strip
+   acts on EVERY outbound crossing of EVERY ion — the general solvated
+   population that carried the good histogram is stripped too (W₁/midHot
+   kills), and multi-crossing (OQ-J) ratchets the count to p90 = 20.
+3. **The E_int/Σ(n) gate inversion.** CP-1's "conversion by
+   construction" was occupancy arithmetic; live, a stripped survivor
+   keeps its E_int while Σ(n) collapses → gate-closed → suppressed
+   (aonly: 918 suppressed at n_det 2–12, E_int ≈ 0.15 eV). Emptying the
+   class needs the strip to touch E_int (or the E_int at crossing to be
+   below the post-strip Σ) — a design change, not a knob setting.
+
+Class/identifiability: the (C) knobs stay Bounded-with-anchor as
+registered; no value inside the frozen boxes can undo mechanisms 1–3
+(the kills are family/structure-level, per the design §11 PC-3
+pre-commitment). The scalar `coulomb_available_eV` budget did NOT
+retire — it stands with `finc1v725`/h405 (nothing adopted).
+
+**ADJUDICATED CLOSED (2026-07-30, user).** The PC-3 consequences are
+ratified ((A) strip design v1 stopped; the current f_int wiring
+closed) and **all three candidate follow-ups are DECLINED** (ε → ~0 +
+suppressed-class-gated strip; E_int co-strip; single-channel
+trap-class pricing) — the (C) line is SHELVED as a measured boundary,
+re-openable only on new external evidence, not a re-parameterization.
+Structural reading recorded at closure (arithmetic estimate from the
+committed probe-table scored counts, NOT a per-ion read — the v8
+`ce_channel`/`ce_E_m_eV` fields support an exact zero-MD
+decomposition if ever needed): under the covariance-anchored weights
+the n = 1 feeder pool is essentially the partner-masked Q3 channel
+(~200 of ~1800 scored-eligible ions per 1000 molecules ≈ 0.11 of the
+scored ensemble, a hard ceiling); even converting every bonly
+suppressed ion to n = 1 gives n₁ ≈ (78 + 134)/970 ≈ 0.22 < 0.31 —
+**the anchored mixture cannot populate n = 1 at the reference level**,
+and re-splitting the provisional w_single/w_Q2 pair drains the trap
+class without feeding n = 1 (Q2 at 2.16 eV lands dressed). The n = 1
+residual therefore has exactly three live attributions: (1)
+exit-conversion physics (the strip family — v1 measured dead here);
+(2) the soft anchors (w_single/w_Q2 — measurably insufficient for
+n₁); (3) the reference n = 1 bin partly not owned by the modeled
+droplet ensemble (small-droplet / surface / gas-side feed — the
+unmeasured branch). Record: findings "(C) adjudication CLOSED", log
+2026-07-30.
+
+Records: findings "(C) probe EXECUTED" (full table + verdicts +
+decomposition), scorer CSV `atlas_ce_probe.csv`, generator
+`gen_tier2atlas_ce_probe.py`, scorer `tier2atlas_ce_probe_table.py`,
+design doc §8/§9/§11, log entries 2026-07-29 + 2026-07-30.
+
+---
+
+## Cross-references
+
+- Archive/provenance: `TIER2_STAIRCASE_PROBE_FINDINGS.md` (§4a–§4ee,
+  I1–I100, boundaries §6, open questions §7, run inventory §8).
+- Program that fills the GAPs: `TIER2_SENSITIVITY_ATLAS_PLAN.md`.
+- Calibration classes + identifiability: `CALIBRATION_MAP.md`.
+- Open physics questions: `RESEARCH_QUESTIONS.md` (RQ1–RQ11 + NB
+  registers).
+- Decision history: `drag_migration_log_tier2.md`.

@@ -4,7 +4,7 @@ Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
 
 **Status (2026-10-13; COMPLETED)** — entry point for a new chat; details in each
-section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE.md`) and the
+section's own status, D0 §1.G4.x (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`) and the
 log (`drag_migration_log_tier2.md`).
 
 1. **G4 / G4.8** (Stage-2 refit at s_ρ = 3.5 Å) executed; adoption

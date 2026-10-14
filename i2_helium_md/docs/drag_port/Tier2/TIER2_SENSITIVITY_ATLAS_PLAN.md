@@ -76,7 +76,7 @@ program: (i) a study is worth running if it tells us what the model is
 doing or whether an element is physically justified, *independently* of
 whether it moves the deep-bin deficit; (ii) the program carries a second
 deliverable beside the influence map — the **physical-sensibility
-ledger** (`TIER2_PARAMETER_INFLUENCE.md` §17), which classes every
+ledger** (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §17), which classes every
 element as physics-constrained / convention / effective / scaffolding /
 missing, records what would retire it, and is maintained as results
 land. The atlas still adopts nothing (see the stance below), but it now
@@ -185,7 +185,7 @@ the doc's tables state cell N next to every number.
 
 ## 2. Deliverable documents
 
-### 2.1 `TIER2_PARAMETER_INFLUENCE.md` — compact reference (D0, written first)
+### 2.1 `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` — compact reference (D0, written first)
 
 Pure distillation of `TIER2_STAIRCASE_PROBE_FINDINGS.md` — **no new
 analysis, zero MD**. The findings doc stays untouched as archive. One
@@ -1895,7 +1895,7 @@ stay inside the §1.2 seed-SD yardstick under all defensible variants
 (class Bounded moves within their bounds; the E_solv discrepancy tested
 at both published values). A variant that breaks the landing is flagged
 as a real model risk in the atlas findings and in
-`TIER2_PARAMETER_INFLUENCE.md` — reported, never silently retuned.
+`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` — reported, never silently retuned.
 
 ## 5. Axis B — E₀ and τ (D3; MD + partial twin)
 
@@ -2427,7 +2427,7 @@ calibration rather than a refinement of it.
 | 4 | Axis B E₀/τ curves | 8 × 500 | trigger |
 | 5 | D4 Step 2 twin sweeps | zero | none (scratchpad twin, §4ee precedent) |
 | 6 | D4 Step 3 spot-checks + E_bind zero-MD swaps/twin, then conditional MD confirms | ~0–7 × 500 | trigger (incl. enum build; swaps are scratchpad) |
-| 7 | synthesis: merge all results into `TIER2_PARAMETER_INFLUENCE.md`, close GAP markers | zero | none |
+| 7 | synthesis: merge all results into `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`, close GAP markers | zero | none |
 | G3 | geometry re-arbitration: Step 1 landmarks + Step 2 twin scan (zero MD) + Step 3 MD ring (**DONE** 2026-07-27/28) | 14 × 500 | trigger (per step) |
 | G4-1 | fine ridge sweep (§3.5e): Blocks 0/1 zero-MD + Block 3 finalists **and** the ladder arm (**DONE** 2026-07-28) | 15 × 1000 | trigger (per block) |
 | E-2/3 | §6.5 E_bind study: Step 2 twin scan + Step 3 MD confirmation (**DONE** 2026-08-10; Step 1 superseded) | 1 × 500 | trigger (per step) |

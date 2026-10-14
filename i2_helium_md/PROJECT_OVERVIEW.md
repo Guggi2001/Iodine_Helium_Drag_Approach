@@ -432,7 +432,7 @@ Comparing the MD window directly to experiment would be a category error.
 ### A mechanism correction worth reading twice
 
 On 2026-07-30 a user challenge caught a wiring error in the project's own
-description of itself (`TIER2_PARAMETER_INFLUENCE.md` §2). The prior statement
+description of itself (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §2). The prior statement
 was "E_int is fed by drag work." It is not: `biphasic_step` books drag loss to
 `E_dissip`, and E_int's only sources are the E₀ seed and pickup heat.
 
@@ -548,7 +548,7 @@ This section is the core of the recent work.
 
 ### How droplets are modelled
 
-Two independent laws (`TIER2_PARAMETER_INFLUENCE.md` §15.1):
+Two independent laws (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §15.1):
 
 - **Size.** A nozzle correlation `⟨N⟩ = k₁·p^0.97·T^(−3.88)·d²` (Lackner) sets
   the mean from the experiment's own source conditions, and the distribution
@@ -591,7 +591,7 @@ The onset internal energy E₀ enters through the fate cliff `E_ej = E₀·e^(�
 where `K = ∫ρ dt` is the cooling exposure along the ion's path. Longer chords
 mean more exposure and demand a larger E₀ to keep ions on the un-suppressed
 side. So E₀ is not a free physical constant being fitted — **it is tracking the
-geometry**. The measured chain has four points (`TIER2_PARAMETER_INFLUENCE.md`
+geometry**. The measured chain has four points (`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`
 §4):
 
 ```
@@ -770,7 +770,7 @@ closed-form alternative tried, a Padé saturating cubic, is excluded by
 arithmetic: in-band cubicity forces its saturation scale above ~15 Å/ps, which
 forfeits saturation at the production velocities entirely.
 
-**The critique, in its strong form.** `TIER2_PARAMETER_INFLUENCE.md` §17 is a
+**The critique, in its strong form.** `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §17 is a
 *physical-sensibility ledger* that classifies every element of the model as
 **P** (physics-constrained), **C** (convention), **E** (effective/fitted),
 **S** (scaffolding) or **M** (missing). It classes the in-band form and b as
@@ -912,7 +912,7 @@ A long-standing oddity: the measured transfer function is
 −0.5308. An ion that pays a 0.1168 eV solvation well appears to lose only ~55 %
 of it from its kinetic energy. The earlier reading called the missing 45 % a
 "refund of un-incurred drag." Three measured invariances killed that story
-(`TIER2_PARAMETER_INFLUENCE.md` §9.6): the quantity is invariant to drag
+(`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §9.6): the quantity is invariant to drag
 *form*, to birth *depth*, and to density *width*. **A quantity indifferent to
 everything about the drag is not a drag effect.**
 
@@ -1071,7 +1071,7 @@ stubbed behind its enum, awaiting its own plan.
 | the drag-form extraction and its verdict | `docs/drag_port/Tier0/METHOD_B_trajectory_matching_extraction.md`, `TIER0_FINDINGS.md` |
 | anchored mass validation | `docs/drag_port/Tier1/TIER1A_IMPLEMENTATION_PLAN.md` |
 | open physics questions | `docs/drag_port/Tier2/RESEARCH_QUESTIONS.md` |
-| per-knob influence, and the physical-sensibility ledger (§17) | `docs/drag_port/Tier2/TIER2_PARAMETER_INFLUENCE.md` |
+| per-knob influence, and the physical-sensibility ledger (§17) | `docs/drag_port/Tier2/TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` |
 | the current open arm | `docs/drag_port/Tier2/TIER2_MASS_SCENARIOS.md` |
 | chronology and every verdict | `docs/drag_port/Tier2/drag_migration_log_tier2.md` |
 

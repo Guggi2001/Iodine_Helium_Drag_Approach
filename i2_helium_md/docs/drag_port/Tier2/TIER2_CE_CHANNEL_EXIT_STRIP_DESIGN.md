@@ -589,7 +589,7 @@ post-hoc rationalized:
 
 - Plan: `TIER2_SENSITIVITY_ATLAS_PLAN.md` §3.5j–§3.5l.
 - Findings: "§3.5j", "§3.5k", "§3.5l reads (i)+(iii)".
-- Influence: `TIER2_PARAMETER_INFLUENCE.md` §19 (budget), §17
+- Influence: `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §19 (budget), §17
   (suppression scaffolding ledger).
 - RQs: RQ7 (budget provenance, closed 2026-07-29), RQ8 (channel
   assignment + covariance anchors), RQ3 (bare/n = 0 fate, fed by

@@ -54,10 +54,10 @@ Repo root:
   + G7 caveat §1, sampler §2, mass influence §8, discussion / outlook)
 - `TIER2_SENSITIVITY_ATLAS_PLAN.md` — the sensitivity-atlas study program
   (goal document 2026-07-23 → 2026-10-02)
-- `TIER2_PARAMETER_INFLUENCE.md` — compact per-knob influence reference
-  (atlas D0; living doc — its GAP markers are the atlas targets; §17 is
-  the physical-sensibility ledger: physics / convention / effective /
-  scaffolding / missing, with what would retire each)
+- `TIER2_PARAMETER_INFLUENCE.md` — per-lever influence reference keyed to
+  B2 (2026-10-14); every row flagged measured-at-B2/lq vs transferred
+- `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` — **frozen** atlas D0
+  (h405 / finc1v725 era; every "D0 §x" reference points here)
 - `TIER2_DetectorStageFix.md` — E2 retirement + production pipeline
   (adopted 2026-09-30); deferred E2 removal: `docs/POST_THESIS_CLEANUP.md`
 - `TIER2_MASS_SCENARIOS.md` — **open investigation** (2026-08-11): what
@@ -87,7 +87,7 @@ h405 — B2 runs go through the post-pickup generator.
 Tier status: see the Validation hierarchy section below. **Live
 status, every result and all open gates:** `drag_migration_log_tier2.md`
 (chronology), `TIER2_SENSITIVITY_ATLAS_FINDINGS.md` (results),
-`TIER2_PARAMETER_INFLUENCE.md` (per-knob influence),
+`TIER2_PARAMETER_INFLUENCE.md` (per-lever influence at B2),
 `THESIS_FINAL_GOALS.md` (goal document, completed),
 `TIER2_MASS_SCENARIOS.md` (open investigation). Verify against the log
 before relying on anything summarised here.

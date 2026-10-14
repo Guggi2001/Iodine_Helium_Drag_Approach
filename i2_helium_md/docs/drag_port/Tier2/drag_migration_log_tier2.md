@@ -9562,7 +9562,7 @@ E_bind meaning all user-adjudicated), then written:
   under `allow_unvalidated_binding_pairing`. Total spend stated:
   ≈ 23–27 MD cells × N = 500. Every execution stage stays behind its
   own `[PROCEED TO IMPLEMENTATION]` trigger.
-- **`TIER2_PARAMETER_INFLUENCE.md`** (D0, delivered): the compact
+- **`TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md`** (D0, delivered): the compact
   parameter→influence reference distilled from the findings doc
   (§4a–§4ee, I1–I100) — 16 knob entries + summary table, calibration
   classes per CALIBRATION_MAP, couplings, status; explicit **GAP**
@@ -10003,7 +10003,7 @@ exceeds the entire §3 grid span (20 → 34 Å) and sits *outside* its
 support — not re-weightable, MD-only. The ⟨N⟩ pin is therefore promoted
 to the first-class D2b variant, ahead of δ and E_solv.
 
-**Docs updated:** `TIER2_PARAMETER_INFLUENCE.md` §14 (as-built geometry
+**Docs updated:** `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §14 (as-built geometry
 numbers + the `depth`-only degeneracy note) and §15 (rewritten as the
 audited sampling-laws chapter, §15.1–§15.5) + summary-table rows;
 `TIER2_SENSITIVITY_ATLAS_PLAN.md` §3.1 (grid R values 20.1 / 26.2 /
@@ -10270,7 +10270,7 @@ cost if it explains the model or tests an element's physical
 justification, independently of RQ11; and the program now carries a
 second deliverable beside the influence map.
 
-**Delivered: `TIER2_PARAMETER_INFLUENCE.md` §17 — the physical-sensibility
+**Delivered: `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §17 — the physical-sensibility
 ledger.** Every model element classed **P** physics-constrained / **C**
 convention / **E** effective (fitted, unconstrained) / **S** scaffolding
 (compensating another element's wrong value) / **M** missing, each with
@@ -10479,7 +10479,7 @@ record that **no physically realizable control can decompose the dressing**
 the retirement path. §14's withdrawn isotropic-chord coordinate also
 removed from the atlas-target line.
 
-**Files:** `TIER2_PARAMETER_INFLUENCE.md` (§9.1 new; §14, §15.6 new, §17),
+**Files:** `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` (§9.1 new; §14, §15.6 new, §17),
 `TIER2_SENSITIVITY_ATLAS_PLAN.md` (status block, §3.1, §3.2, §3.5 G0,
 §3.6, §4.3, §7). Atlas stance unchanged: nothing adopts before G2,
 `finc1v725` stands, nothing discharges F5. **Next:** stage 2b build under

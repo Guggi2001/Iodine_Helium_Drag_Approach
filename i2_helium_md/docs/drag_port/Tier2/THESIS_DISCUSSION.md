@@ -6,7 +6,7 @@ line is out of scope for the thesis (user decision, 2026-10-02) and appears
 there at most as discussion. Measured results and projections are labelled
 as such. No runs were made for this document.
 
-Sources read: D0 `TIER2_PARAMETER_INFLUENCE.md` §14.3 (2026-10-02 note),
+Sources read: D0 `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §14.3 (2026-10-02 note),
 §15.8, §20; `drag_migration_log_tier2.md` 2026-10-02 entry;
 `data/runs/h2b_forward_model/detfix_postpickup_table.csv` and
 `detfix_postpickup_chord.csv`; `TIER2_DetectorStageFix.md` §5.7;
@@ -465,7 +465,7 @@ channel can be tested; ties to the n = 1 outlook (§3, §5; RQ1 / RQ8, M1).
 
 ## 9. Coulomb budget: production at E_C, the source calibration at 0.8·E_C (DISCUSSION; added 2026-10-13; zero MD)
 
-Sources: D0 `TIER2_PARAMETER_INFLUENCE.md` §19; `CALIBRATION_MAP.md`
+Sources: D0 `TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md` §19; `CALIBRATION_MAP.md`
 row 15; `RESEARCH_QUESTIONS.md` RQ7 / RQ8 NBs 2026-07-29; log 2026-07-29.
 
 **What production uses (MEASURED, cfg.json).** Every Tier-2 production
