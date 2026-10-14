@@ -21,8 +21,10 @@ cooling, ladder, early window). Physics-Definition only; no code.
 ## Classification scheme
 
 - **Locked** — fitted to TDDFT (Tier-0 Method B), then fixed; not
-  re-fit downstream. TDDFT authority covers only the trace velocity band,
-  2.54–4.95 Å/ps. (Harmonized 2026-10-01 with D0, which used to say
+  re-fit downstream. TDDFT authority covers only the fitted 18 Å trace
+  band, 2.54–3.02 Å/ps; the 9 Å trace (2.83–4.95 Å/ps) enters only as a
+  one-sided exit bound, not a fit (G4.9 / G4.12). The former
+  2.54–4.95 Å/ps was the union of both traces (pre-G4.9). (Harmonized 2026-10-01 with D0, which used to say
   "Derived" for the same quantities.) Under B2 the Tier-0 output is a
   **one-parameter ridge**, not a point: the ridge is TDDFT-fixed, the
   position on it is Free (rows 1–3; THESIS_FINAL_GOALS G4.12 / G11.1).
@@ -149,8 +151,9 @@ tallies below, which are kept as the record.
 
 - **TDDFT ridge (Tier 0, 18 Å, m = 21 He, 3.5 Å gate):** a one-parameter
   family $(a, E_\text{bind})(c)$; at B2 $a$ 18.007, $E_\text{bind}$
-  0.11727 eV (rows 2–3, Derived on the ridge). Authority covers
-  2.54–4.95 Å/ps only.
+  0.11727 eV (rows 2–3, Derived on the ridge). Authority covers the
+  18 Å fit band 2.54–3.02 Å/ps only; 9 Å = one-sided exit bound
+  (c ≤ 5 pass; B2 margin +0.823 Å/ps at m = 21).
 - **Sourced (9 + 1 composite):** $s_\rho$ 3.5 Å (gate + density),
   $\lambda_\text{attach}$ (λ₀ 0.9), $\nu$ 2.42, $E_\infty$ (|S| 0.308),
   $E_\text{avail}^\text{ion}$ 2.70, $n^*$ 21, $D_\text{floor}$ 4.97 cm⁻¹,
