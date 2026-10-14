@@ -90,6 +90,10 @@ from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     lq_run_dir as g5_lq_run_dir,
     member_run_dir_name as postpickup_run_dir_name,
 )
+from scripts.gen_tier2_h405_pp35 import (  # noqa: E402
+    POOL_E0_EV as H405PP35_POOL_E0,
+    run_dir_for as h405pp35_run_dir_for,
+)
 from scripts.gen_tier2_b2_seff_scan import (  # noqa: E402
     POOL_E0_EV as SEFF_POOL_E0,
     POOL_SEFF as SEFF_POOL,
@@ -231,6 +235,16 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "g5lqppc160e3297seff05e3240pooled_th500",
         "B2 with the RRK s_eff = 5 and E0 re-placed to 0.3240 eV (restoring the "
         "B2 pooled nbar; s1-s5 + r6); production pipeline",
+    ),
+    # h405 at both production settings (user, 2026-10-14;
+    # gen_tier2_h405_pp35.py --pool): post_pickup + 3.5 A gate, E0 re-placed.
+    "h405_pp35": (
+        [h405pp35_run_dir_for(m, H405PP35_POOL_E0).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_shared_pure_cubic_N6000_detfix_conf270_h405pp35e4310pooled_th500",
+        "h405 (capped_cubic v_c 5.5, tau 4.4 ps) with droplet_size_sampler_mode="
+        "'post_pickup' and the 3.5 A density gate (h405g35 definition), E0 re-placed "
+        "to 0.431 eV to restore the B2 nbar (s1-s5 + r6); production pipeline",
     ),
     # G5 B3 (user, 2026-10-09): the G10 high-tail recipe on the B2 cell --
     # post_pickup, c 1.6, E_bind 0.0482 eV, a 19.8, E0 holding the B2 nbar;
