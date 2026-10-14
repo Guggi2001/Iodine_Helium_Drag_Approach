@@ -75,7 +75,7 @@ This splits the levers into two classes:
 | birth depth / chord | mean depth ≈ 36 Å | sets n and KE per ion through the map (n = 1 ⇔ chord 34.5–39.9 Å). Radial depth is the weaker proxy; ≈ 1 He/Å depth slope at the finc1v725 geometry | B2 (map) + T (slope) | `THESIS_DISCUSSION.md` §1; D0 §14.1, §14.3 |
 | density width s_ρ | 3.5 Å | at h405 3.5 vs 14.2 Å: W₁ +0.06, KE₁ +0.003; width scan null on KE₁ (+0.002 eV over 4.5×). Enters mainly through the Tier-0 refit; birth dressing saturates (n₀ = 21) | T | G4.14 (`h405g35`); D0 §9.6.5; G2 |
 | **Mechanism levers not measured on the lq family** | | | | |
-| pickup λ₀ (+ Langmuir p) | 0.9 /ps, p 1 | re-filling ≈ 7 ions / 100 at shallow chords; p = 1 lifts n₁ KE toward experiment. Named as the untested pickup-side n̄ lever at lq | T | D0 §7; D0 §15.9 |
+| pickup λ₀ (+ Langmuir p) | 0.9 /ps (prescribed transferred estimate within the GAH25 heavy-alkali range ≈ 0.5–1.1 /ps; CALIBRATION_MAP row 7), p 1 | re-filling ≈ 7 ions / 100 at shallow chords; p = 1 lifts n₁ KE toward experiment. Named as the untested pickup-side n̄ lever at lq | T | D0 §7; D0 §15.9 |
 | RRK prefactor ν | 2.42 /ps | cascade rate prefactor (Sourced from the I⁺–He V''(R_e)); never swept. s_eff moved to the map levers (measured at B2, §2.1) | — | D0 §0, §16 |
 | retention f_ret | 0.1 | never swept | — | D0 §7 |
 | noise (Tier 3) | off | not modelled; KE width at fixed n ≈ 8× too narrow at B2 | B2 (width) | `THESIS_DISCUSSION.md` §1.1, §7.4 |
