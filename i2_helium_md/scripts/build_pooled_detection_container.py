@@ -91,6 +91,7 @@ from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     member_run_dir_name as postpickup_run_dir_name,
 )
 from scripts.gen_tier2_b2_seff_scan import (  # noqa: E402
+    POOL_E0_EV as SEFF_POOL_E0,
     POOL_SEFF as SEFF_POOL,
     seff_run_dir,
 )
@@ -220,6 +221,16 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
         "g5lqppc160e3297seff05pooled_th500",
         "B2 (post_pickup, lq c 1.6, E0 0.3297 eV, tau 6.4 ps) with the RRK "
         "s_eff = 5 instead of 8 (s1-s5 + r6); production pipeline",
+    ),
+    # The s_eff = 5 pool with E0 re-placed to restore the B2 nbar (user,
+    # 2026-10-14; gen_tier2_b2_seff_scan.py --pool-e0).
+    "g5_lqppb2seff05e3240": (
+        [seff_run_dir(SEFF_POOL, member=m, e0_eV=SEFF_POOL_E0).name for m in DETFIX_SEEDS],
+        list(DETFIX_SEEDS.values()),
+        "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_"
+        "g5lqppc160e3297seff05e3240pooled_th500",
+        "B2 with the RRK s_eff = 5 and E0 re-placed to 0.3240 eV (restoring the "
+        "B2 pooled nbar; s1-s5 + r6); production pipeline",
     ),
     # G5 B3 (user, 2026-10-09): the G10 high-tail recipe on the B2 cell --
     # post_pickup, c 1.6, E_bind 0.0482 eV, a 19.8, E0 holding the B2 nbar;

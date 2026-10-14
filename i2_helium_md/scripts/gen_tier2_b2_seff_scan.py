@@ -42,6 +42,15 @@ Pool: ``build_pooled_detection_container.py --target g5_lqppb2seff05``.
 
     python scripts/gen_tier2_b2_seff_scan.py --pool
 
+**--pool-e0 (user, 2026-10-14):** the same six members with E0 re-placed to
+:data:`POOL_E0_EV` to restore the B2 pooled nbar (3.903 vs 3.721 at s_eff 5,
+E0 0.3297): dnbar/dE0 ~ -32 /eV from the committed B1 E0 column (s1,
+post_pickup, c 2.0: 0.3155 -> 0.3355 eV, nbar 4.557 -> 3.910), so
+dE0 = -0.182 / 32 = -0.0057 eV. Oracle 1 diff = {evap_rrk_dof, E0 key}.
+Pool target ``g5_lqppb2seff05e3240``.
+
+    python scripts/gen_tier2_b2_seff_scan.py --pool-e0
+
 Scorer: ``scripts/post_processing/tier2_b2_seff_table.py``; shed timing:
 ``scripts/post_processing/tier2_b2_seff_timing.py``.
 Max two concurrent MD runs.
@@ -76,7 +85,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     MAX_BYTES_ION, MEMBER_SEEDS, T_HANDOVER_PS, verify_handover_alignment,
 )
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B2_C, B2_E0_EV, B2_TAU_PS, LQ_DROP_REASON, b1c_e0, build_lq_member, lq_run_dir,
+    B2_C, B2_E0_EV, B2_TAU_PS, LQ_DROP_REASON, _E0_KEY, b1c_e0, build_lq_member, lq_run_dir,
 )
 from scripts.gen_tier2_g414_tauline import ION_DROPPED_MARKER, drop_ion_npz  # noqa: E402
 from scripts.gen_tier2atlas_g4finals import CASE, N  # noqa: E402
@@ -100,6 +109,8 @@ MEMBER = "s1"
 SEFF_DIFF_KEYS = frozenset({"evap_rrk_dof"})
 #: s_eff of the six-member pool (--pool).
 POOL_SEFF = 5.0
+#: E0 [eV] of the nbar-restoring pool (--pool-e0); see module docstring.
+POOL_E0_EV = 0.3240
 MAX_CONCURRENCY = 2
 
 # =============================================================================
@@ -110,33 +121,42 @@ def b2_run_dir(member: str = MEMBER) -> Path:
     return lq_run_dir(member, B2_E0_EV, B2_TAU_PS, B2_C)
 
 
-def seff_run_dir(s_eff: float, keep_ion: bool = False, member: str = MEMBER) -> Path:
-    """Run dir of an s_eff cell; s_eff = 8 maps to the committed B2 run
-    unless ``keep_ion`` (the ion.npz-keeping re-run)."""
-    if s_eff == SEFF_PRODUCTION and not keep_ion:
+def seff_run_dir(s_eff: float, keep_ion: bool = False, member: str = MEMBER,
+                 e0_eV: Optional[float] = None) -> Path:
+    """Run dir of an s_eff cell (optionally at E0 ``e0_eV`` [eV]); s_eff = 8
+    at the B2 E0 maps to the committed B2 run unless ``keep_ion``."""
+    if s_eff == SEFF_PRODUCTION and not keep_ion and e0_eV is None:
         return b2_run_dir(member)
-    tag = f"g5lqppc160e3297seff{round(s_eff):02d}{member}" + ("keepion" if keep_ion else "")
+    e0_tag = "" if e0_eV is None else f"e{round(e0_eV * 1e4):04d}"
+    tag = (f"g5lqppc160e3297seff{round(s_eff):02d}{e0_tag}{member}"
+           + ("keepion" if keep_ion else ""))
     return PROJECT_ROOT / "data" / "runs" / run_dir_name(
         CASE, LQ_BUNDLE, N, run_tag=f"detfix_conf270_{tag}_th500")
 
 
-def build_seff_cell(s_eff: float, member: str = MEMBER) -> SimConfig:
-    """B2 member cfg with ``evap_rrk_dof`` = s_eff [dimensionless, >= 1]."""
+def build_seff_cell(s_eff: float, member: str = MEMBER,
+                    e0_eV: Optional[float] = None) -> SimConfig:
+    """B2 member cfg with ``evap_rrk_dof`` = s_eff [dimensionless, >= 1] and,
+    optionally, E0 re-placed to ``e0_eV`` [eV]."""
     if B2_E0_EV != b1c_e0(B2_C):
         raise AssertionError(f"B2_E0_EV {B2_E0_EV} != b1c_e0({B2_C})")
-    cfg = dataclasses.replace(build_lq_member(member, B2_E0_EV, B2_TAU_PS, B2_C),
+    e0 = B2_E0_EV if e0_eV is None else e0_eV
+    cfg = dataclasses.replace(build_lq_member(member, e0, B2_TAU_PS, B2_C),
                               evap_rrk_dof=float(s_eff))
     cfg.validate()
     return cfg
 
 
-def verify_seff_cell(s_eff: float, member: str = MEMBER) -> list[str]:
+def verify_seff_cell(s_eff: float, member: str = MEMBER,
+                     e0_eV: Optional[float] = None) -> list[str]:
     """Oracle 1: diff vs the committed B2 member cfg.json is exactly
-    ``{"evap_rrk_dof"}`` (empty at the production value). Returns the keys."""
-    diff = cfg_diff_vs_reference(build_seff_cell(s_eff, member),
+    ``{"evap_rrk_dof"}`` (+ the E0 key when re-placed; empty at the
+    production value). Returns the keys."""
+    diff = cfg_diff_vs_reference(build_seff_cell(s_eff, member, e0_eV),
                                  b2_run_dir(member) / "cfg.json",
-                                 context=f"B2 {member} s_eff {s_eff}")
-    want = set() if s_eff == SEFF_PRODUCTION else set(SEFF_DIFF_KEYS)
+                                 context=f"B2 {member} s_eff {s_eff} E0 {e0_eV}")
+    want = ((set() if s_eff == SEFF_PRODUCTION else set(SEFF_DIFF_KEYS))
+            | (set() if e0_eV is None else {_E0_KEY}))
     if set(diff) != want:
         raise AssertionError(f"[s_eff {s_eff}] cfg vs B2 s1 differs in {sorted(diff)}; "
                              f"pre-registered exactly {sorted(want)}.")
@@ -153,12 +173,13 @@ def verify_same_detection(s_eff: float) -> None:
             raise AssertionError(f"[s_eff {s_eff}] keep-ion re-run differs in {f}")
 
 
-def run_cell(s_eff: float, keep_ion: bool = False, member: str = MEMBER) -> float:
+def run_cell(s_eff: float, keep_ion: bool = False, member: str = MEMBER,
+             e0_eV: Optional[float] = None) -> float:
     """Guard, neutral -> ion (to t_h) -> detection; drop ion.npz unless keep_ion."""
-    verify_seff_cell(s_eff, member)
-    cfg = build_seff_cell(s_eff, member)
+    verify_seff_cell(s_eff, member, e0_eV)
+    cfg = build_seff_cell(s_eff, member, e0_eV)
     steps, stride = verify_handover_alignment(cfg)
-    run_dir = seff_run_dir(s_eff, keep_ion, member)
+    run_dir = seff_run_dir(s_eff, keep_ion, member, e0_eV)
     done = all((run_dir / n).exists() for n in ("cfg.json", "neutral.npz", "detection.npz"))
     if keep_ion and done and (run_dir / "ion.npz").exists():
         verify_same_detection(s_eff)
@@ -191,19 +212,22 @@ def run_cell(s_eff: float, keep_ion: bool = False, member: str = MEMBER) -> floa
     return s_eff
 
 
-def run_pool(dry_run: bool) -> int:
-    """s_eff = POOL_SEFF at every B2 member; ion.npz dropped."""
+def run_pool(dry_run: bool, e0_eV: Optional[float] = None) -> int:
+    """s_eff = POOL_SEFF at every B2 member (E0 optionally re-placed);
+    ion.npz dropped."""
     for m in MEMBER_SEEDS:
-        diff = verify_seff_cell(POOL_SEFF, m)
-        steps, stride = verify_handover_alignment(build_seff_cell(POOL_SEFF, m))
-        print(f"[{m} s_eff {POOL_SEFF:g}] guards PASSED: diff {diff}, {steps} steps, "
-              f"stride {stride} -> {seff_run_dir(POOL_SEFF, member=m).name}", flush=True)
+        diff = verify_seff_cell(POOL_SEFF, m, e0_eV)
+        steps, stride = verify_handover_alignment(build_seff_cell(POOL_SEFF, m, e0_eV))
+        print(f"[{m} s_eff {POOL_SEFF:g} E0 {e0_eV}] guards PASSED: diff {diff}, {steps} "
+              f"steps, stride {stride} -> "
+              f"{seff_run_dir(POOL_SEFF, member=m, e0_eV=e0_eV).name}", flush=True)
     if dry_run:
         return 0
     from concurrent.futures import ProcessPoolExecutor, as_completed
     failures = 0
     with ProcessPoolExecutor(max_workers=MAX_CONCURRENCY) as pool:
-        futures = {pool.submit(run_cell, POOL_SEFF, False, m): m for m in MEMBER_SEEDS}
+        futures = {pool.submit(run_cell, POOL_SEFF, False, m, e0_eV): m
+                   for m in MEMBER_SEEDS}
         for fut in as_completed(futures):
             try:
                 fut.result()
@@ -222,9 +246,11 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="re-run every cell incl. s_eff 8, keep ion.npz")
     parser.add_argument("--pool", action="store_true",
                         help="s_eff POOL_SEFF at all six B2 members (s1-s5 + r6)")
+    parser.add_argument("--pool-e0", action="store_true",
+                        help="as --pool, with E0 re-placed to POOL_E0_EV")
     args = parser.parse_args(argv)
-    if args.pool:
-        return run_pool(args.dry_run)
+    if args.pool or args.pool_e0:
+        return run_pool(args.dry_run, POOL_E0_EV if args.pool_e0 else None)
     grid = tuple(args.seff) or (tuple(sorted((*SEFF_GRID, SEFF_PRODUCTION)))
                                 if args.keep_ion else SEFF_GRID)
     unknown = sorted(set(grid) - set(SEFF_GRID) - ({SEFF_PRODUCTION} if args.keep_ion else set()))
