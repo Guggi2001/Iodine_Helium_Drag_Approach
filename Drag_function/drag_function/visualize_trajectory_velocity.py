@@ -48,3 +48,34 @@ ax18.legend()
 
 plt.tight_layout()
 plt.show()
+
+
+
+fig2, (ax, ax18) = plt.subplots(1, 2, figsize=(24*scaling_factor_plot, 8*scaling_factor_plot))
+
+# Plotting 9A
+# Velocity Iodine 1
+ax.plot(dict9['t'], dict9['v2'], color='#0072BD', lw=1.5, alpha=0.8, label = 'Top Iodine |v|')
+ax.plot(dict9['t'], dict9['v1'], color='#00A6D6', lw=1.5, alpha=0.5, label = 'Bottom Iodine |v|')
+ax.set_title('TDDFT Velocities: 9Å')
+ax.set_xlabel('t / ps')
+ax.set_ylabel('v / Å/ps')
+ax.axhline(y= 4.236575, color='green', linestyle='--', alpha = 0.3, label='Lower bound exit velocity')
+ax.grid(True, alpha=0.3)
+ax.legend(fontsize = 8, loc = 'lower right')
+
+# Plotting 18A
+# Velocity Iodine 1
+ax18.plot(dict18['t'], dict18['v2'], color='#0072BD', lw=1.5, alpha=0.8, label = 'Top Iodine |v|')
+ax18.plot(dict18['t'], dict18['v1'], color='#00A6D6', lw=1.5, alpha=0.5, label = 'Bottom Iodine |v|')
+ax18.plot(vel_18_t, vel_18_cleaned, color='#A2142F', lw=1.5, label='Cleaned reference velocity')
+ax18.set_title('TDDFT Velocities: 18Å')
+ax18.axvline(x=bubble_exit_18, color='green', linestyle='--', label='Approximate bubble exit')
+ax18.set_xlabel('t / ps')
+ax18.set_ylabel('v / Å/ps')
+ax18.axvline(4.54, color='#D95319', lw=1.5, label='Violent onset threshold', ls='--')
+ax18.grid(True, alpha=0.3)
+ax18.legend(fontsize = 8)
+
+plt.tight_layout()
+plt.show()

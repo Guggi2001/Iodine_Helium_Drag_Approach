@@ -1,8 +1,10 @@
 import os
 
-home = False
+home = True
 if home:
     BASE_PATH = r"C:\Users\paulg\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_DFT"
+    PATH_9A_CLEANED = r"C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\velocity_smoothed\cleaned_data_long.csv"
+    PATH_18A_CLEANED = r"C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\18A\velocity_smoothed\cleaned_data_long.csv"
 else:
     BASE_PATH = r"T:\NextCloud_PaulGuggenbichler\Dokumente\Studium\Masterarbeit\Drag_Calculation\Data_DFT"
     PATH_9A_CLEANED = r"T:\github synchronized\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\velocity_smoothed\cleaned_data_long.csv"

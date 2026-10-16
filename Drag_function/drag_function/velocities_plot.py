@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 import pandas as pd
-home = False
+home = True
 dict9 = io.load_data(C.PATH9A)
 dict18 = io.load_data(C.PATH18A)
 
@@ -136,20 +136,20 @@ plt.show()
 
 
 
-from i2_helium_md.physics.potentials import droplet_potential
-
-R = 56
-r = np.linspace(0,100, 1000)
-plt.figure(figsize=(12,8))
-plt.plot(r-R, droplet_potential(r-R, steepness = 5, binding_energy = 0.3 ),label = r'$Steepness 5$')
-plt.plot(r-R, droplet_potential(r-R, steepness = 9, binding_energy = 0.3 ),label = r'$Steepness 9$')
-plt.plot(r-R, droplet_potential(r-R, steepness = 14.2, binding_energy = 0.3 ),label = r'$Steepness 14.2$')
-
-plt.xlabel(r'$r-Rdroplet$')
-plt.ylabel(r'$V$ / eV')
-plt.title('Droplet Potential')
-plt.legend()
-plt.show()
+# from i2_helium_md.physics.potentials import droplet_potential
+#
+# R = 56
+# r = np.linspace(0,100, 1000)
+# plt.figure(figsize=(12,8))
+# plt.plot(r-R, droplet_potential(r-R, steepness = 5, binding_energy = 0.3 ),label = r'$Steepness 5$')
+# plt.plot(r-R, droplet_potential(r-R, steepness = 9, binding_energy = 0.3 ),label = r'$Steepness 9$')
+# plt.plot(r-R, droplet_potential(r-R, steepness = 14.2, binding_energy = 0.3 ),label = r'$Steepness 14.2$')
+#
+# plt.xlabel(r'$r-Rdroplet$')
+# plt.ylabel(r'$V$ / eV')
+# plt.title('Droplet Potential')
+# plt.legend()
+# plt.show()
 
 if home:
     import numpy as np
