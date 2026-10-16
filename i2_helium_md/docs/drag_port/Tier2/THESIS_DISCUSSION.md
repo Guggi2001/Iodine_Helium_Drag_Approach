@@ -16,7 +16,9 @@ Later additions: §0 storyline, §8 mass influence and §9 Coulomb budget (2026-
 `THESIS_FINAL_GOALS.md` G5 / G11); §1 is to be refreshed by G6 (chord map
 at B2) and G7 (KE₁ geometry-invariance caveat). §10 (dissociation
 timescale and the RRK s_eff, 2026-10-14) is the one section backed by new
-runs made for it (s_eff scan + two N = 6000 pools at B2).
+runs made for it (s_eff scan + two N = 6000 pools at B2). §12 (exit vs
+detection readout, 2026-10-16) is a design decision for future work; no
+runs.
 
 ---
 
@@ -333,7 +335,9 @@ Recorded so the discussion chapter can name them as future work:
 - interpretation of the 300/600 mW KED cross-check as a Q = 3 test;
 - an arbitration objective that moves n = 1 from gate clause to held-out
   prediction (relevant to the planned re-arbitration);
-- the high-n tail as a Tier-3 (fluctuation) problem, §7.
+- the high-n tail as a Tier-3 (fluctuation) problem, §7;
+- the exit-versus-detection comparison (post-exit evaporation), readout
+  defined in §12.
 
 ## 7. The high-n tail: a ceiling and a gap (DISCUSSION, added 2026-10-08)
 
@@ -752,3 +756,75 @@ identical settings**, and both leave KE₁ at about half the experiment.
 The thesis contrast row is the re-landed h405, not the `raw` / 14.2 Å
 one. Caveat: h405's 14.2 Å-extracted bundle under the 3.5 Å gate is a
 production setting, not a Tier-0 refit (as for `h405g35`).
+
+## 12. Exit versus detection: the readout definition (DESIGN DECISION, future work; added 2026-10-16; no runs)
+
+Decision (user, 2026-10-16): "droplet exit" for the exit-versus-detection
+comparison is the state at an **actual outward crossing of the sharp
+droplet radius, r − R = 0**, not the state at the fixed handover time
+t_h = 500 ps. Not executed for the thesis; this section fixes the
+definition so that the discussion chapter can state it and future work
+can implement it unchanged.
+
+### 12.1 Why not the handover state
+
+The two readouts are different comparisons:
+
+- **Evaporation continues outside the droplet.** Only pickup, drag and
+  cooling are density-gated (the P1–P3 handover guard,
+  `simulation/detection_stage.py` module docstring); the RRK shedding is
+  not. Sheds between the physical crossing and t_h would be booked as
+  "in-droplet" by a handover readout.
+- The handover state is a pipeline boundary (Stage I end), not a physical
+  event; it would change with t_h.
+
+### 12.2 Definition
+
+- **Boundary:** depth dᵢ(t) = |rᵢ(t)| − Rᵢ = 0, with Rᵢ the per-atom
+  droplet radius (`droplet_radii_angstrom`): the same depth and the same
+  sharp radius as `b_ion_outside` (`simulation/ion.py`
+  `_write_final_state`). On the 3.5 Å erf profile this is the half-density
+  point, ρ̂(0) = 0.5 (`physics/_gates.py` `_erf_complement`): the sharp
+  radius is a stated convention, not the point where the helium coupling
+  vanishes (drag, pickup and cooling are still active just outside it).
+- **Exit time t_exit,i:** the **last** outward crossing (dᵢ ≤ 0 → dᵢ > 0)
+  in [0, t_h], so an ion that leaves and falls back is read at its final
+  departure.
+- **Exit state:** (n, E_int, m, v, KE) at the first stored column after
+  that crossing; time resolution = the ion stage's stored stride.
+- **Unit:** each iodine fragment separately (2N rows), not the
+  per-molecule OR rule of `b_ion_outside`.
+
+### 12.3 Which fragments enter both samples
+
+- **Both samples are the same ions:** the detected ensemble,
+  `DetectionResult.detected_mask` (state `frozen`, `suppressed`,
+  `time_exhausted`). Every such ion has left the droplet before t_h (the
+  P1–P3 guard and the closure's well-plateau check require it).
+- **Excluded from both:** `droplet_retained` and
+  `droplet_retained_marginal` (`RETAINED_REASONS`); their fractions are
+  reported separately (B2: trapped 0.049, no D4 firing).
+- `suppressed` ions are included in both; they keep their exit n only if
+  no shed occurs after exit.
+
+### 12.4 What is compared
+
+- **Primary:** n at exit vs n at detection. Their difference is the
+  post-exit evaporation: sheds in (t_exit, t_h] in the ion stage plus the
+  detection-stage events (all at t > t_h).
+- **Secondary, not an evaporation measure:** KE at exit vs detection. The
+  residual pair Coulomb repulsion (booked at detection by the
+  partner-aware closure) and the remaining well climb also change KE after
+  exit, so a KE difference mixes Coulomb work with evaporation.
+
+### 12.5 What it costs
+
+- The B2 member directories hold `cfg.json`, `neutral.npz`,
+  `detection.npz` only (`ion.npz` dropped after detection verified), so
+  the crossing read needs the six members (s1–s5 + r6) re-run with
+  `ion.npz` kept (deterministic seeds, ≤ 2 concurrent) and a small
+  post-processing read of the crossing (code: `[PROCEED TO
+  IMPLEMENTATION]`).
+- Zero-MD by-product (not the exit comparison): n and E_int at **t_h** are
+  exact from `detection.npz` alone, n(t_h) = n_det + number of events and
+  E_int(t_h) = E_int,det + Σ D₀(n_pre) over the events.
