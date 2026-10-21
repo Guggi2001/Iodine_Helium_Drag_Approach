@@ -46,7 +46,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -65,7 +66,7 @@ RUN_TAG = "B2m21"  # set to the same marker used in gen_tier0_runs.py for a tune
 
 # Show the figure window. Off for headless / batch use.
 SHOW_FIGURE = True
-scale_figure = 0.9
+scale_figure = 0.75
 # Maximum time to display on x-axis (ps). Set to None for auto-scaling.
 T_MAX = 20  # e.g., set to 15 or 20 to zoom in
 # Also build the per-atom kinetic-energy diagnostic figure (mean KE of I1, I2
@@ -73,7 +74,10 @@ T_MAX = 20  # e.g., set to 15 or 20 to zoom in
 # positions figure; rendered by the shared plt.show() in the SHOW_FIGURE block.
 ENERGY_FIGURE = False
 
-FORCE_FIGURE = False
+FORCE_FIGURE = True
+
+plasma_colors = plt.cm.get_cmap('plasma', 256)
+colors = [plasma_colors(i) for i in np.linspace(0, 1,10)]
 
 # =============================================================================
 # IMPORT SETUP
@@ -420,9 +424,9 @@ def build_figure(
 
     fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0*scale_figure, 6.0*scale_figure), sharex=True, constrained_layout=True)
 
-    ax_d.plot(t_md, dist_md, color="tab:blue", lw=1.5, label="MD mean")
-    ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R1 mean")
-    ax_d.plot(t_md, r2_mean, color="tab:green", lw=1.5, label="R2 mean")
+    ax_d.plot(t_md, dist_md, color=colors[1], lw=1.5, label="MD mean")
+    # ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R$_1$ mean")
+    # ax_d.plot(t_md, r2_mean, color="tab:green", ls='--', dashes=(10, 5), lw=1.5, label="R$_2$ mean")
     ax_d.plot(hedft.time_ps, hedft.distance_A, color="black", lw=1.5,
               label="HeDFT / TDDFT")
 
@@ -430,43 +434,54 @@ def build_figure(
     ax_d.legend(frameon=False)
     ax_d.spines["top"].set_visible(False)
     ax_d.spines["right"].set_visible(False)
+
     if droplet_radius is not None:
-        ax_d.hlines(2*droplet_radius, xmin=hedft.time_ps[0], xmax=hedft.time_ps[-1],
-                    color="tab:orange", lw=1.2, ls="--",
+        if T_MAX == None:
+            x_max = hedft.time_ps[-1]
+        else:
+            x_max = T_MAX
+        ax_d.hlines(2*droplet_radius, xmin=hedft.time_ps[0], xmax=x_max,
+                    color="tab:gray", lw=1.2, ls="--",
                     label=f"$d_{{\\mathrm{{droplet}}}}$ ={2*droplet_radius:.0f} Å")
         ax_d.legend(frameon=False)
 
-    ax_v.plot(t_md, v1_md, color="tab:blue", ls='-', lw=1.5, label="MD mean |v1|")
-    ax_v.plot(t_md, v2_md, color="tab:cyan", ls='--', dashes=(10, 5), lw=1.5, label="MD mean |v2|")
+    ax_v.plot(t_md, v1_md, color=colors[7], ls='-', lw=1.5, label="MD mean |v$_1$|")
+    ax_v.plot(t_md, v2_md, color=colors[6], ls='--', dashes=(10, 5), lw=1.5, label="MD mean |v$_2$|")
     #if time_ps is not None:
    #     ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:pink", lw=1.2)
     if time_SG is not None and CASE == "18A":
-        ax_v.plot(time_SG, velocity_SG, label = r'Smoothed TDDFT velocity', color="tab:purple", lw=1.2)
+        ax_v.plot(time_SG, velocity_SG, label = r'Smoothed |v$_1$|', color=colors[4], lw=1.2)
         ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
                      label="scored window")
         ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
     ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1, alpha = 0.8,
-              ls="-", label="HeDFT |v1|")
+              ls="-", label="HeDFT |v$_1$|")
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1, alpha = 0.8,
-              ls=":", label="HeDFT |v2|")
+              ls=":", label="HeDFT |v$_2$|")
+
+    if CASE == "9A":
+        ax_v.axhline(y=4.236575, color='green', linestyle='--', alpha=0.3, label='Lower bound exit velocity')
 
     ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
     ax_v.set_xlabel("t / ps")
     ax_v.legend(frameon=False, ncol=2)
     ax_v.spines["top"].set_visible(False)
     ax_v.spines["right"].set_visible(False)
+
+    ax_v.set_title(f"Fragment speed comparison")
+    ax_d.set_title(f"Internuclear separation; $R_0 = {hedft.droplet_radius_A:.0f}$ Å")
      
     # Apply T_MAX to both bottom figure axes
     if T_MAX is not None:
         ax_d.set_xlim(0, T_MAX)
         ax_v.set_xlim(0, T_MAX)
 
-    title = f"Tier-0 drag comparison  ($R_0$={hedft.droplet_radius_A:.0f} A)"
-    if bundle_label:
-        title += f"\n{bundle_label}"
-    fig_bottom.suptitle(title)
-    if positions_figure and bundle_label:
-        fig_top.suptitle(bundle_label)
+    # title = f"$R_0 = {hedft.droplet_radius_A:.0f}$ Å"
+    # # if bundle_label:
+    # #     title += f"\n{bundle_label}"
+    # fig_bottom.suptitle(title)
+    # if positions_figure and bundle_label:
+    #     fig_top.suptitle(bundle_label)
     # layout is handled by constrained_layout=True in the subplots calls;
     # calling tight_layout() after constrained_layout can trigger a Matplotlib
     # warning about switching layout engines, so avoid it.
@@ -481,6 +496,7 @@ def plot_energy_analysis(
     ion: IonCheckpoint,
     cfg: SimConfig,
     window: tuple[float, float],
+    hedft: HedftTrajectory,
 ):
     """Per-atom mean kinetic energy of both iodine atoms vs time.
 
@@ -512,22 +528,22 @@ def plot_energy_analysis(
     t_md = np.asarray(ion.time_ps, dtype=float)
     t_start, t_end = window
 
-    fig, ax = plt.subplots(figsize=(8.0, 4.5), constrained_layout=True)
-    ax.plot(t_md, ke_i1, color="tab:blue", lw=1.4, label="MD mean KE I1")
-    ax.plot(t_md, ke_i2, color="tab:cyan", lw=1.4, ls="--",
-            label="MD mean KE I2")
+    fig, ax = plt.subplots(figsize=(8.0*scale_figure, 4.5*scale_figure), constrained_layout=True)
+    ax.plot(t_md, ke_i1, color="tab:blue", lw=1.4, label="MD mean KE $\mathrm{I}_1$")
+    ax.plot(t_md, ke_i2, color="tab:cyan", lw=1.4, ls="--", label="MD mean KE $\mathrm{I}_2$")
     ax.axhline(
         cfg.binding_energy_I_ion_eV, color="tab:orange", lw=1.2, ls=":",
-        label=f"droplet binding depth = {cfg.binding_energy_I_ion_eV:.3g} eV",
+        label=f"Droplet binding depth = {cfg.binding_energy_I_ion_eV:.3g} eV",
     )
-    ax.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-               label="scored window")
+    ax.axvspan(t_start, t_end, color="tab:green", alpha=0.12,label="Scored window")
+    if T_MAX is not None:
+        ax.set_xlim(0, T_MAX)
     ax.set_xlabel("t / ps")
     ax.set_ylabel(r"$E_\mathrm{kin}$ / eV")
     ax.legend(frameon=False)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    fig.suptitle(f"Tier-0 per-atom kinetic energy\n{drag_bundle_label(cfg)}")
+    fig.suptitle(f"{hedft.droplet_radius_A:.0f} Å: Per-atom kinetic energy") #\n{drag_bundle_label(cfg)}")
     return fig
 
 
@@ -595,7 +611,7 @@ def _reconstruct_radial_forces(ion, cfg, *, atom_index):
     return drag_r, coul_r, drop_r
 
 
-def build_force_figure(ion, cfg, window, *, atom_index=1):
+def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
     """Plot the radial-projected force evolution for the clean atom (atom 2).
 
     Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
@@ -619,36 +635,88 @@ def build_force_figure(ion, cfg, window, *, atom_index=1):
     t_start, t_end = window
     net_force = coul_r + drop_r + drag_r
 
-    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8, 7))
+    n = ion.num_molecules
+    ke = _E_kin_eV(
+        ion.mass_history_kg,
+        ion.velocities_x,
+        ion.velocities_y,
+        ion.velocities_z,
+    )
+    ke_i1 = np.mean(ke[:n], axis=0)
+    ke_i2 = np.mean(ke[n:], axis=0)
+    t_md = np.asarray(ion.time_ps, dtype=float)
 
-    # Top subplot: individual forces
+
+
+    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8 * scale_figure, 6 * scale_figure), sharex=True)
     ax_top.axhline(0.0, color="0.6", lw=0.8)
     ax_top.plot(t, coul_r, color="tab:red", label="Coulomb")
-    ax_top.plot(t, drop_r, color="tab:blue", label="droplet (confining)")
-    ax_top.plot(t, drag_r, color="tab:green", label="drag")
+    ax_top.plot(t, net_force, color="tab:purple", label="Net force", lw=2)
+    ax_top.plot(t, drop_r, color="tab:blue", label="Droplet (confining)")
+    ax_top.plot(t, drag_r, color="tab:green", label="Drag")
     ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-                   label="scored window")
+                   label="Scored window")
     ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
     ax_top.set_title(
-        f"{CASE} t*-seeded -- radial-projected forces, atom {atom_index + 1}"
-        f"\n{drag_bundle_label(cfg)}"
+        f"Radial-projected forces, Atom {atom_index + 1}"
+        #f"\n{drag_bundle_label(cfg)}"
     )
     ax_top.legend(frameon=False, ncol=2)
     ax_top.spines["top"].set_visible(False)
     ax_top.spines["right"].set_visible(False)
 
-    # Bottom subplot: net force
-    ax_bottom.axhline(0.0, color="0.6", lw=0.8)
-    ax_bottom.plot(t, net_force, color="tab:purple", label="net force", lw=2)
-    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-                      label="scored window")
+    ax_bottom.plot(t_md, ke_i1, color=colors[5], lw=1.5, label="MD mean KE $\mathrm{I}_1$")
+    ax_bottom.plot(t_md, ke_i2, color=colors[6], ls='--', dashes=(10, 5), lw=1.5, label="MD mean KE $\mathrm{I}_2$")
+    ax_bottom.axhline(
+        cfg.binding_energy_I_ion_eV, color=colors[7], lw=1.2, ls=":",
+        label=f"Droplet binding depth = {cfg.binding_energy_I_ion_eV:.3g} eV",
+    )
+    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12, label="Scored window")
     ax_bottom.set_xlabel("t / ps")
-    ax_bottom.set_ylabel(r"$F_{\mathrm{net}} \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
-    ax_bottom.set_title("net force")
-    ax_bottom.legend(frameon=False, ncol=2)
+    ax_bottom.set_ylabel(r"$E_\mathrm{kin}$ / eV")
+    ax_bottom.legend(frameon=False)
     ax_bottom.spines["top"].set_visible(False)
     ax_bottom.spines["right"].set_visible(False)
+    ax_bottom.set_title(f"Per-atom kinetic energy")
 
+
+    if T_MAX is not None:
+        ax_top.set_xlim(0, T_MAX)
+        ax_bottom.set_xlim(0, T_MAX)
+
+
+    # fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8 * scale_figure, 7 * scale_figure))
+    # # Top subplot: individual forces
+    # ax_top.axhline(0.0, color="0.6", lw=0.8)
+    # ax_top.plot(t, coul_r, color="tab:red", label="Coulomb")
+    # ax_top.plot(t, drop_r, color="tab:blue", label="Droplet (confining)")
+    # ax_top.plot(t, drag_r, color="tab:green", label="Drag")
+    # ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+    #                label="Scored window")
+    # ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    # ax_top.set_title(
+    #     f"{hedft.droplet_radius_A:.0f} Å: Radial-projected forces, atom {atom_index + 1}"
+    #     #f"\n{drag_bundle_label(cfg)}"
+    # )
+    # ax_top.legend(frameon=False, ncol=2)
+    # ax_top.spines["top"].set_visible(False)
+    # ax_top.spines["right"].set_visible(False)
+    #
+    # # Bottom subplot: net force
+    # ax_bottom.axhline(0.0, color="0.6", lw=0.8)
+    # ax_bottom.plot(t, net_force, color="tab:purple", label="Net force", lw=2)
+    # ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+    #                   label="Scored window")
+    # ax_bottom.set_xlabel("t / ps")
+    # ax_bottom.set_ylabel(r"$F_{\mathrm{net}} \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
+    # ax_bottom.set_title("Net force")
+    # ax_bottom.legend(frameon=False, ncol=2)
+    # ax_bottom.spines["top"].set_visible(False)
+    # ax_bottom.spines["right"].set_visible(False)
+    # # Apply T_MAX to both bottom figure axes
+    # if T_MAX is not None:
+    #     ax_top.set_xlim(0, T_MAX)
+    #     ax_bottom.set_xlim(0, T_MAX)
     fig.tight_layout()
     return fig
 
@@ -699,10 +767,10 @@ def main() -> int:
         build_figure(ion, hedft, window, False, droplet_radius,
                      bundle_label=drag_bundle_label(cfg))
         if ENERGY_FIGURE:
-            plot_energy_analysis(ion, cfg, window)
+            plot_energy_analysis(ion, cfg, window, hedft)
         plt.show()
         if FORCE_FIGURE:
-            build_force_figure(ion, cfg, window, atom_index=0)
+            build_force_figure(ion, cfg, window, hedft, atom_index=0)
             plt.show()
     return 0
 
