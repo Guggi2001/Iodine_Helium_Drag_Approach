@@ -55,7 +55,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-CASE = "9A"      # droplet geometry: "9A" or "18A"
+CASE = "18A"      # droplet geometry: "9A" or "18A"
 
 # Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
 # VARIANT (and CASE / N / RUN_TAG) the run was generated with by
@@ -658,7 +658,7 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
                    label="Scored window")
     ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
     ax_top.set_title(
-        f"Radial-projected forces, Atom {atom_index + 1}"
+        f"Radial-projected forces, Fragment {atom_index + 1}"
         #f"\n{drag_bundle_label(cfg)}"
     )
     ax_top.legend(frameon=False, ncol=2)
@@ -677,7 +677,7 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
     ax_bottom.legend(frameon=False)
     ax_bottom.spines["top"].set_visible(False)
     ax_bottom.spines["right"].set_visible(False)
-    ax_bottom.set_title(f"Per-atom kinetic energy")
+    ax_bottom.set_title(f"Fragment kinetic energy")
 
 
     if T_MAX is not None:
