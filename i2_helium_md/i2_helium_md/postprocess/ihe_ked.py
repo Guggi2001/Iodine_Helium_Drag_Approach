@@ -64,8 +64,11 @@ _LEGAL_DOMINANT_ERROR: frozenset[str] = frozenset(
     {"stat", "analysis", "calib", "bg-structural"}
 )
 
-# Fragments with trusted full curves (IHe_KED_curves_n{0..4}.csv).
-CURVE_N_MAX: int = 4
+# Fragments with full curves (IHe_KED_curves_n{0..7}.csv): n <= 4 are the
+# verified (trusted) fragments; n = 5..7 use the same exporter recipe but are
+# extended, not verified (provenance ``curves_files.trust``) -- shape plots only.
+CURVE_TRUSTED_N_MAX: int = 4
+CURVE_N_MAX: int = 7
 
 
 @dataclass(frozen=True)
@@ -294,7 +297,10 @@ class IHeKedCurve:
 
 
 def load_ihe_ked_curve(directory: str | Path, n: int) -> IHeKedCurve:
-    """Load ``IHe_KED_curves_n{n}.csv`` for one fragment n in 0..4.
+    """Load ``IHe_KED_curves_n{n}.csv`` for one fragment n in 0..``CURVE_N_MAX``.
+
+    n <= ``CURVE_TRUSTED_N_MAX`` (4) are the verified curves; n = 5..7 are
+    extended exports of the same recipe, not verified.
 
     Raises
     ------
@@ -307,7 +313,7 @@ def load_ihe_ked_curve(directory: str | Path, n: int) -> IHeKedCurve:
     """
     if not (0 <= int(n) <= CURVE_N_MAX):
         raise ValueError(
-            f"n must be in 0..{CURVE_N_MAX} (trusted curves); got {n}."
+            f"n must be in 0..{CURVE_N_MAX} (exported curves); got {n}."
         )
     p = Path(directory) / f"IHe_KED_curves_n{int(n)}.csv"
     if not p.exists():

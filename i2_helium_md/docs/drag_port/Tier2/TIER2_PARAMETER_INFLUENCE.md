@@ -21,6 +21,16 @@ Outcome): n̄ 3.903, n₁ 0.211 (exp 0.310), W₁ 0.967, midHot 1.002, KE₁
 0.609 eV (exp 1.302), deepKE 0.477, n ≥ 15 0.0008 (exp 0.057), max n 17,
 trapped 0.049, suppressed 0.111.
 
+> **ihe_ked reference v2 (2026-10-23, `THESIS_FINAL_GOALS.md` G12).** Every
+> KE number in this document (midHot, deepKE, χ², KE ratios, experimental
+> KE₁ 1.302) is scored against the **v1** reference. The corrected v2
+> reference (inversion axis and centre fixed; ⟨E⟩ 3–8 % lower) gives at
+> B2: midHot 1.050, deepKE 0.499, χ² 350, experimental KE₁ 1.198 eV
+> (`g5_winners_table_ihekedv2.csv`). Size observables are unchanged. Lever
+> *slopes* and signs below are differences between cells scored against
+> the same reference and carry over; absolute KE levels shift by ≈ +5 %
+> in midHot / deepKE.
+
 **Observables.** n̄ detected mean size; n₁ solvated n = 1 share; W₁
 Wasserstein distance of the solvated size histogram to experiment; midHot
 / deepKE mean-KE ratio model / experiment over n 2–8 / n 10–17; KE₁ mean

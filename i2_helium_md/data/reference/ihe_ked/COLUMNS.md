@@ -116,6 +116,35 @@ elevation as slow-ion signal. The 3-D columns are immune (P(v) ∝ v² near 0).
 
 ---
 
+## `IHe_KED_beta.csv` — anisotropy per fragment (v2, 2026-10-23)
+
+β from pyabel `distr.rIbeta()`: I(r, θ) ∝ 1 + β·P₂(cos θ), θ measured from the
+inversion symmetry axis. In v2 that axis is the laser polarisation (image X,
+`rotate_for_pyabel`), so β > 0 means ions preferentially along the
+polarisation (β = 2 pure cos², 0 isotropic, −1 pure sin²). Central pipeline only;
+**diagnostic, no sysErr**.
+
+| column | meaning |
+|---|---|
+| `n` | number of attached He (0…17) |
+| `beta_mean` | β averaged with weight P(v) over the central ⟨E⟩ signal mask |
+| `beta_core` | same, restricted to the half-maximum core of the mask-smoothed P(E) |
+
+## `IHe_KED_beta_vs_v.csv` — β per speed bin, n = 0…7 (v2, 2026-10-23)
+
+| column | meaning |
+|---|---|
+| `n` | fragment |
+| `E_eV`, `v_mps` | bin energy (mass-independent) and true speed of the I⁺Heₙ complex, same grid as the 3-D curve columns |
+| `beta` | pyabel β of that radius |
+| `weight_3d_Pv` | P(v) / max P(v) within the signal mask — cut small weights, β is noisy there |
+| `in_signal_mask` | 1 inside the central ⟨E⟩ signal mask, else 0 |
+
+⚠️ A trend of β with v inside a fragment (slow aligned, fast isotropic) is seen
+but not yet checked against inversion artefacts (`THESIS_DISCUSSION.md` §13.3).
+
+---
+
 ## `IHe_KED_crosscheck_300mW.csv` — independent 300 mW series vs. the reference
 
 | column | meaning |

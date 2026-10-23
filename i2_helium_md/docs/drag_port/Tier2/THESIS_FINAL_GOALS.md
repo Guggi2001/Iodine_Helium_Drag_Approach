@@ -114,6 +114,14 @@ log (`drag_migration_log_tier2.md`).
 18. **G7 executed (2026-10-13):** caveat in `THESIS_DISCUSSION.md` §1.1;
     KE width ≈ 8× too narrow (IQR / median) at n = 1–4. See G7 status.
 
+19. **G12 opened (2026-10-23, zero MD):** the committed `ihe_ked` 3-D
+    reference was inverted about the wrong axis and centre (⟨E⟩ 3–8 %
+    too high); polarisation = image X (predecessor's direction correct);
+    model β 2 vs experiment ≈ 0.3 explains the 2-D mismatch with the
+    width and a speed offset. Plan: corrected reference, re-score B2 / B3
+    only, docs. **Executed 2026-10-23:** reference v2 adopted; B2 midHot
+    1.050, deepKE 0.499, χ² 350 (v1: 1.002 / 0.477 / 527). See G12.3.
+
 **COMPLETED (user, 2026-10-13).** All goals executed, dropped or moved
 to the outlook; no open gate. G11.4 complete (steps 2–3, 6 done; 4–5
 dropped). G4.14 recap: (a) settled by the decision below; (b)–(c) moot
@@ -1247,6 +1255,13 @@ lowest); n̄, trapped and suppressed carry no target. Experiment row from the re
   experiment for every law (G8 / status 9–11); n ≥ 15 ≈ 8× below
   experiment even for B3 (status 11, `THESIS_DISCUSSION.md` §7).
 
+**Addendum 2026-10-23 (G12): the KE numbers above are scored against the
+ihe_ked reference v1.** The re-exported reference v2 (inversion axis and
+centre corrected; ⟨E⟩ 3–8 % lower) gives B2 midHot 1.050, deepKE 0.499,
+χ² 350, KE₁ exp 1.198 eV; B3 midHot
+1.065, deepKE 0.628, χ² 366 — table in
+G12.3, `g5_winners_table_ihekedv2.csv`. Size observables unchanged.
+
 Records: `data/runs/h2b_forward_model/g5_postpickup_table.csv` (all steps,
 per member), `g5_winners_table.csv` (this table, full vector),
 `g5_postpickup_chord.csv`; generator `gen_tier2_detfix_postpickup.py
@@ -1747,6 +1762,184 @@ bare / partly-solvated source channel can be tested; ties to the n = 1
 outlook (G8 decision, RQ1 / RQ8, M1).
 
 The old Tier-1a results (`drag_migration_log_tier1a.md`) are not used.
+
+## G12. VMI inversion fix and the 2-D / angular comparison (agreed 2026-10-23; zero MD)
+
+Trigger: the new 2-D KED figure (B2-4, `tier2_b2_thesis_figure.py`) puts
+every simulated 2-D peak right of the experiment, while the 3-D overlay
+(B2-3) looks fine. Investigated 2026-10-23 (scratch probes, VMI exporter
+`export_IHe_KED_withoutZaccess.m`; nothing committed yet).
+
+### G12.1 Findings
+
+1. **Polarisation axis = image X (horizontal) = droplet-beam axis.**
+   Evidence: gas-phase I⁺ lobes along X (up to 8:1); the per-fragment
+   centre shift (beam velocity) runs along X; thesis cues (user), under
+   the standard crossed-beam geometry. The predecessor's initial
+   orientation — I–I axis cos² along the polarisation — is **correct in
+   direction**.
+2. **The committed `ihe_ked` 3-D reference has two inversion errors.**
+   pyabel (`rbasex`) inverts about the image **vertical** axis and about
+   the array pixel (rows//2, cols//2):
+   - wrong symmetry axis (polarisation horizontal);
+   - wrong centre: `recenter_VMI` only relabels the X/Y grids, so the
+     per-fragment recentring never reaches pyabel (offset 3–5 grid px,
+     7–15 camera px).
+   Synthetic tests (exporter's call): axis → ⟨E⟩ ≈ +5 % at β 0.3, σ
+   ≈ −10 %; centre → ⟨E⟩ +1 % (n 1) to +5 % (n 17), σ +2 to +9 %. Both
+   push ⟨E⟩ up. The corrected export (`rotate_for_pyabel`,
+   `center_for_pyabel`) lowers ⟨E⟩ by 3–8 % coherently for every n
+   (n 1: −8.0 %); the 2-D columns are identical (never inverted).
+3. **3-D comparison is clean** with the corrected export: speeds / KE
+   are rotation-invariant in the model (spherical droplet, isotropic
+   positions, geometry-only forces), so the orientation mismatch below
+   does not touch any KE observable. → **the 3-D comparison is the one
+   the thesis presents.**
+4. **Alignment: model β = 2, experiment β ≈ +0.3.** The model keeps the
+   cos² alignment exactly (axial Coulomb push, drag ∥ v, noise off).
+   All He-attached fragments show β ≈ +0.22–0.34 (corrected export,
+   flat in n); droplet-born bare I⁺ (gas-phase background 43635
+   subtracted) β ≈ 0.05 (core 0.16). Why the experiment is weakly
+   aligned is **open**: alignment at ionisation already weak in the
+   droplet, or lost in flight — not separable from the final β. Hint
+   (unverified, possible inversion artefact): within a fragment slow
+   ions are aligned (+0.5–0.8), fast ones isotropic (≈ 0).
+5. **The 2-D mismatch is explained.** A projection depends on speed
+   *and* angular distribution. For n 4–7 (medians), roughly one third
+   each: over-alignment (β 2 vs 0.3), the 3-D width deficit (sim 5–12×
+   too narrow; a narrow shell projects to an edge at its own speed),
+   and a genuine speed offset (+5–10 %) that the corrected 3-D
+   comparison shows too. "3-D fits, 2-D does not" came from comparing a
+   narrow simulated peak with a broad skewed experiment plus a
+   ~3–8 % hot reference.
+
+**Thesis framing.** Present the 3-D comparison against the corrected
+reference. The 2-D comparison tests speed and angular distribution
+together; without the stochastic channel (noise off) the model cannot
+reproduce the measured β — either the strict alignment argument fails
+in the droplet or the alignment is lost in flight; not resolved here.
+2-D is a diagnostic, not a score.
+
+### G12.2 Plan (agreed 2026-10-23; no sweeps)
+
+1. Replace `data/reference/ihe_ked/` with the rotated + centred export
+   (reference CSV, curves n0–n7, spectra, provenance) + the β files
+   (`IHe_KED_beta.csv`, `IHe_KED_beta_vs_v.csv`); README changelog
+   (both fixes, evidence, synthetic bias sizes, ⟨E⟩ changes per n).
+2. Re-score **B2 and B3 only** (existing pooled `detection.npz`, full
+   observable vector) into a **new** table
+   `data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv`; the
+   committed `g5_winners_table.csv` stays as the historical record.
+3. Documentation: this section (results below), G5 Outcome addendum,
+   `THESIS_DISCUSSION.md` (numbers + 2-D / β argument),
+   `TIER2_PARAMETER_INFLUENCE.md` (B2 KE rows), migration-log entry;
+   other docs / atlas CSVs get one note "scored against reference v1
+   (pre-2026-10-23)" — not re-scored.
+4. Code / tests: `test_ihe_ked.py` pinned I⁺ ⟨E⟩; figure-script anchor
+   → new table; regenerate B2-1…B2-4; no commit without approval.
+5. Then: synthetic β(v) artefact test (does pyabel fake the slow/fast β
+   trend?).
+
+### G12.3 Results (EXECUTED 2026-10-23; zero MD)
+
+**Reference v2 adopted** (user approval 2026-10-23): `data/reference/ihe_ked/`
+now holds the rotated + centred export (reference CSV, curves n0–n7,
+spectra, provenance with `rotate_for_pyabel` / `center_for_pyabel` true,
+`IHe_KED_beta.csv`, `IHe_KED_beta_vs_v.csv`); v1 reference CSV +
+provenance archived in `archive_v1_2026-07-14/`. README / COLUMNS
+changelog. Validation: 2-D columns identical to v1 (never inverted).
+v2 vs v1 ⟨E⟩: n 0 −3.0 %, n 1 −8.0 %, n 2–8 −3.1 to −6.2 %, n 9–17 −2.7
+to −5.3 %; the calibration-limited ("gold") set shrank from n = 0, 3–10,
+12 to n = 0, 4, 5 (per-point sysErr re-derived).
+
+**B2 / B3 re-scored** (`scripts/post_processing/tier2_g12_ihekedv2_table.py`;
+oracle: scoring against the archived v1 reproduces the committed
+`g5_winners_table.csv` rows to 4 dp — PASSED) →
+`data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv`.
+
+**Full observable vector** (bold = reference-dependent, changes with v2;
+every other row is a property of the model run alone and is identical by
+construction; experiment columns = reference-derived values only):
+
+| observable | B2 v1 | **B2 v2** | B3 v1 | **B3 v2** | exp v1 | **exp v2** |
+|---|---|---|---|---|---|---|
+| scored ions | 11415 | 11415 | 11668 | 11668 | — | — |
+| trapped (droplet-retained) | 0.0488 | 0.0488 | 0.0277 | 0.0277 | — | — |
+| trapped, bound | 0.0488 | 0.0488 | 0.0277 | 0.0277 | — | — |
+| trapped, marginal | 0.0000 | 0.0000 | 0.0000 | 0.0000 | — | — |
+| suppressed (n = 0 class) | 0.1105 | 0.1105 | 0.1511 | 0.1511 | — | — |
+| n̄ detected | 3.9028 | 3.9028 | 3.9562 | 3.9562 | — | — |
+| n₁ solvated share | 0.2110 | 0.2110 | 0.2113 | 0.2113 | 0.3103 | 0.3103 |
+| W₁ solvated histogram | 0.9672 | 0.9672 | 0.7947 | 0.7947 | 0.0000 | 0.0000 |
+| n ≥ 15 solvated mass | 0.0008 | 0.0008 | 0.0075 | 0.0075 | 0.0569 | 0.0569 |
+| max n | 17 | 17 | 18 | 18 | — | — |
+| MD gate (n₁, n̄) passed | 1 | 1 | 1 | 1 | — | — |
+| midHot (KE ratio n 2–8, geo. mean) | 1.0016 | **1.0502** | 1.0160 | **1.0652** | 1.0000 | 1.0000 |
+| midHot bins | 7 | 7 | 7 | 7 | — | — |
+| deepKE (KE ratio n 10–17, mean) | 0.4770 | **0.4987** | 0.6008 | **0.6278** | 1.0000 | 1.0000 |
+| deepKE bins | 8 | 8 | 8 | 8 | — | — |
+| KE n 10–14 / reference | 0.6416 | **0.6707** | 0.7718 | **0.8065** | 1.0000 | 1.0000 |
+| χ²_med (profiled, median anchor) | 526.6 | **349.7** | 674.0 | **365.9** | — | — |
+| χ² bins | 15 | 15 | 17 | 17 | — | — |
+| S (joint W₁ / midHot / deepKE) | 1.705 | **2.044** | 1.505 | **1.844** | — | — |
+| KE₁ mean [eV] | 0.6088 | 0.6088 | 0.5899 | 0.5899 | 1.3017 | 1.1975 |
+| KE₁ median [eV] | 0.6086 | 0.6086 | 0.5899 | 0.5899 | 1.1283 | 1.0527 |
+| KE₁ mode [eV] | 0.5687 | 0.5687 | 0.5687 | 0.5687 | 0.8908 | 0.8516 |
+| KE₂ mean [eV] | 0.5212 | 0.5212 | 0.5085 | 0.5085 | 0.7058 | 0.6687 |
+| KE₂ median [eV] | 0.5212 | 0.5212 | 0.5085 | 0.5085 | 0.6493 | 0.6202 |
+| KE₂ mode [eV] | 0.4812 | 0.4812 | 0.4812 | 0.4812 | 0.6022 | 0.5701 |
+
+**Experimental reference per fragment, v1 → v2** (`IHe_KED_reference.csv`;
+⟨E⟩ = scored mean; σ_KE = spread of the 3-D KED; statErr / sysErr = errors
+of the mean; the correlated bands calibSyst 4 % and conditionSyst 6 % are
+unchanged; bgOffShift is a diagnostic, not listed):
+
+| n | ⟨E⟩ v1 | **⟨E⟩ v2** | Δ | median v1 / v2 | mode v1 / v2 | σ_KE v1 / v2 | statErr v2 | sysErr v1 / v2 | N_eff v2 | dominant error v1 → v2 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 3.7057 | **3.5936** | -3.0 % | 3.7758 / 3.6393 | 4.7579 / 4.9427 | 1.3563 / 1.4183 | 0.0032 | 0.0384 / 0.0014 | 193723 | calib → calib |
+| 1 | 1.3017 | **1.1975** | -8.0 % | 1.1283 / 1.0527 | 0.8908 / 0.8516 | 0.6975 / 0.6674 | 0.0029 | 0.0710 / 0.0813 | 53467 | bg-structural → bg-structural |
+| 2 | 0.7058 | **0.6687** | -5.3 % | 0.6493 / 0.6202 | 0.6022 / 0.5701 | 0.3236 / 0.3222 | 0.0021 | 0.0265 / 0.0266 | 22786 | bg-structural → bg-structural |
+| 3 | 0.4964 | **0.4810** | -3.1 % | 0.4567 / 0.4458 | 0.3959 / 0.3959 | 0.2335 / 0.2382 | 0.0019 | 0.0195 / 0.0066 | 15151 | calib → bg-structural |
+| 4 | 0.3905 | **0.3778** | -3.2 % | 0.3596 / 0.3457 | 0.3449 / 0.3449 | 0.1814 / 0.1930 | 0.0018 | 0.0047 / 0.0077 | 11756 | calib → calib |
+| 5 | 0.3185 | **0.3058** | -4.0 % | 0.2858 / 0.2709 | 0.2534 / 0.2327 | 0.1487 / 0.1594 | 0.0016 | 0.0088 / 0.0115 | 9708 | calib → calib |
+| 6 | 0.2670 | **0.2522** | -5.6 % | 0.2387 / 0.2269 | 0.2129 / 0.2129 | 0.1262 / 0.1248 | 0.0014 | 0.0025 / 0.0180 | 7797 | calib → analysis |
+| 7 | 0.2283 | **0.2142** | -6.2 % | 0.2019 / 0.1896 | 0.1940 / 0.1760 | 0.1125 / 0.1138 | 0.0012 | 0.0066 / 0.0128 | 8477 | calib → analysis |
+| 8 | 0.1919 | **0.1823** | -5.0 % | 0.1695 / 0.1566 | 0.1760 / 0.1425 | 0.0928 / 0.0982 | 0.0011 | 0.0044 / 0.0099 | 7405 | calib → analysis |
+| 9 | 0.1635 | **0.1587** | -2.9 % | 0.1376 / 0.1321 | 0.1271 / 0.1425 | 0.0833 / 0.0888 | 0.0010 | 0.0036 / 0.0126 | 7764 | calib → analysis |
+| 10 | 0.1419 | **0.1344** | -5.3 % | 0.1192 / 0.1128 | 0.0990 / 0.1126 | 0.0728 / 0.0729 | 0.0009 | 0.0049 / 0.0086 | 6837 | calib → analysis |
+| 11 | 0.1232 | **0.1174** | -4.7 % | 0.1057 / 0.0984 | 0.1126 / 0.1126 | 0.0630 / 0.0676 | 0.0009 | 0.0062 / 0.0050 | 6052 | analysis → bg-structural |
+| 12 | 0.1070 | **0.1033** | -3.4 % | 0.0883 / 0.0862 | 0.0862 / 0.0862 | 0.0590 / 0.0617 | 0.0009 | 0.0034 / 0.0062 | 5005 | calib → analysis |
+| 13 | 0.0960 | **0.0916** | -4.6 % | 0.0767 / 0.0764 | 0.0862 / 0.0532 | 0.0529 / 0.0535 | 0.0008 | 0.0077 / 0.0052 | 4506 | analysis → analysis |
+| 14 | 0.0814 | **0.0793** | -2.7 % | 0.0680 / 0.0645 | 0.0633 / 0.0532 | 0.0455 / 0.0481 | 0.0008 | 0.0038 / 0.0026 | 3910 | analysis → bg-structural |
+| 15 | 0.0750 | **0.0717** | -4.3 % | 0.0599 / 0.0574 | 0.0532 / 0.0440 | 0.0443 / 0.0455 | 0.0008 | 0.0080 / 0.0031 | 3284 | analysis → bg-structural |
+| 16 | 0.0689 | **0.0666** | -3.3 % | 0.0540 / 0.0514 | 0.0532 / 0.0356 | 0.0417 / 0.0429 | 0.0006 | 0.0029 / 0.0090 | 5237 | bg-structural → analysis |
+| 17 | 0.0657 | **0.0623** | -5.2 % | 0.0500 / 0.0476 | 0.0532 / 0.0356 | 0.0438 / 0.0397 | 0.0007 | 0.0101 / 0.0046 | 3628 | analysis → analysis |
+
+**Reading.** The corrected reference is 3–8 % lower, coherently, inside
+the correlated calibration ⊕ condition envelope (4 % ⊕ 6 %). B2 is now
+≈ 5 % hot over n 2–8 (midHot 1.050) instead of on the reference; the
+deep-KE deficit (0.50) and the KE₁ deficit (model / exp 0.51, was 0.47)
+stay. S rises because midHot moves off 1; χ² falls (527 → 350). The storyline is unchanged: the experiment selects (c, E₀) on
+the TDDFT ridge to within the correlated bands; no sweep was redone
+(G12.2), so whether a re-selection on v2 would move c / E₀ is **not
+measured**. For scale only: at matched n̄ under `post_pickup` midHot falls
+0.994 → 0.925 from c 1.6 → 1.8 (G5 B1 / B1c), so bringing midHot back
+to ≈ 1 would correspond to c ≈ 1.75 — an interpolation, not a run. Profiled
+residuals z per n (B2 v2): n 1 −4.6, 2 −3.9, 3 +0.2, 4 +5.5, 5 +5.6, 6 +3.8, 7 +4.1,
+8 +3.4, 9 +1.2, 10 −0.2, 11 −3.5, 12 −4.6, 13 −5.1, 14 −8.4, 15 −8.8).
+
+Figures B2-1…B2-4 regenerated (anchor guard on the v2 table); tests
+162 targeted + full suite 3386 passed (1 unrelated failure:
+`test_g411_cross_case.py::test_figure_label_names_the_bundle`, Tier-0
+figure label, not touched here). Documents scored before 2026-10-23
+quote v1 numbers (see the migration-log entry); they are not re-scored.
+
+**Step 5 — β(v) artefact test (EXECUTED 2026-10-23, synthetic):** a
+constant β = 0.3 comes back flat across the speed terciles (noise-free
++0.30 / +0.30 / +0.31; at real counts ± 0.03–0.11), so the measured
+slow-aligned / fast-isotropic trend (n 4: +0.64 / +0.40 / −0.01) is not
+an inversion artefact. Background-subtraction structure is not yet
+excluded (`THESIS_DISCUSSION.md` §13.3, §13.8).
 
 ## Thesis framing implied
 

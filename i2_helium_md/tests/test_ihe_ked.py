@@ -104,8 +104,9 @@ class TestLoadIHeKedReference:
         ref = load_ihe_ked_reference(REFERENCE_CSV)
         assert isinstance(ref, IHeKedReference)
         np.testing.assert_array_equal(ref.n, np.arange(18))
-        # Frozen reference value (README: I+ scale anchor 3.706 eV).
-        assert ref.mean_KE_eV[0] == pytest.approx(3.70569, abs=1e-5)
+        # Frozen reference value, v2 release 2026-10-23 (inversion axis and
+        # centre corrected; v1 was 3.70569, archive_v1_2026-07-14/).
+        assert ref.mean_KE_eV[0] == pytest.approx(3.59357, abs=1e-5)
         # Mass model column matches m(n) = 126.90 + 4.0026 n.
         np.testing.assert_allclose(
             ref.mass_center_u, 126.90 + 4.0026 * ref.n, atol=1e-4,
@@ -116,7 +117,8 @@ class TestLoadIHeKedReference:
 
     def test_gold_mask_is_calib_limited_set(self):
         ref = load_ihe_ked_reference(REFERENCE_CSV)
-        expected_gold = {0, 3, 4, 5, 6, 7, 8, 9, 10, 12}
+        # v2 release 2026-10-23 (v1: {0, 3, 4, 5, 6, 7, 8, 9, 10, 12})
+        expected_gold = {0, 4, 5}
         assert set(ref.n[ref.gold_mask].tolist()) == expected_gold
 
     def test_point_err_is_stat_sys_quadrature(self):
@@ -167,6 +169,8 @@ class TestLoadIHeKedReference:
 
 
 from i2_helium_md.postprocess.ihe_ked import (  # noqa: E402 (grouped here)
+    CURVE_N_MAX,
+    CURVE_TRUSTED_N_MAX,
     IHeKedCurve,
     load_ihe_ked_curve,
 )
@@ -189,14 +193,19 @@ class TestLoadIHeKedCurve:
         # Above the cut the 3-D reconstruction is real data.
         assert np.isfinite(curve.signal_3d_Pv[~low]).any()
 
-    def test_all_five_fragments_load(self):
-        for n in range(5):
+    def test_all_exported_fragments_load(self):
+        # n = 0..4 trusted, n = 5..7 extended (same exporter recipe)
+        for n in range(CURVE_N_MAX + 1):
             curve = load_ihe_ked_curve(IHE_KED_DIR, n)
             assert curve.n == n
+            assert np.isfinite(curve.signal_3d_Pv).any()
+
+    def test_trust_split(self):
+        assert CURVE_TRUSTED_N_MAX == 4 and CURVE_N_MAX == 7
 
     def test_out_of_range_n_raises(self):
         with pytest.raises(ValueError, match="n must be"):
-            load_ihe_ked_curve(IHE_KED_DIR, 5)
+            load_ihe_ked_curve(IHE_KED_DIR, CURVE_N_MAX + 1)
 
     def test_missing_file_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):

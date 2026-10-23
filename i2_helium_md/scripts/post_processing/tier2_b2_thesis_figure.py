@@ -8,16 +8,17 @@ Three figures, rendered from the pooled N = 6000 B2 container
   excluded; suppressed ions in the bare n = 0 bin, hatched), (b) solvated
   branch (n >= 1 renormalized, RQ8) vs the experimental abundance, with
   n̄ against the MD landing band, n₁ and W₁ annotated.
-* **B2-2 mean KE vs n** -- (a) detected per-n mean KE vs the ihe_ked
-  reference (correlated calibration / condition bands as envelopes, n = 1
-  median anchor) with the midHot (n 2-8, geometric) and deepKE (n 10-17,
-  arithmetic) bands; bins below the scorer's chi^2 min-count are drawn as
-  open markers with their ion count -- they enter deepKE (committed
-  ``min_count = 1``) but not chi^2; (b) profiled residuals z (the KE
-  anatomy) on a shared n axis.
-* **B2-3 KED shapes** -- per-n 3-D P(v) (or 2-D detector projection),
-  experiment raw + movmean vs simulation, peak-normalized, in Å/ps, with
-  v(<E>) markers.
+* **B2-2 mean KE vs n** -- the ``plot_run_summary`` / detection-summary
+  format: (a) n = 1-4 and (b) n = 5-17, linear, each on its own scale --
+  correlated calibration / condition bands as envelopes, per-point
+  stat (+) sys bars, n = 1 median anchor, scored sim bins (chi^2 min-count
+  2); (c) the KE anatomy (profiled residuals z). Optional extras (off by
+  default): midHot / deepKE band shading, thin bins (< 2 ions; they enter
+  the committed deepKE, ``min_count = 1``, but not chi^2).
+* **B2-3 KED shapes** -- the detection-summary curve panels for n = 0-3
+  (n = 0 = suppressed / bare-candidate class), 3-D P(v) (or 2-D detector
+  projection), experiment raw + movmean vs simulation, peak-normalized,
+  v(<E>) markers; speed axis in Å/ps.
 
 Structure: a **data layer** (``*_data`` functions; numbers only, every
 recipe imported -- ``tier2_confirmation`` scorers, the ``postprocess``
@@ -25,14 +26,15 @@ histogram / smoothing helpers, the ``summary_sections`` recipe constants;
 nothing re-derived), a **draw layer** (``draw_*`` functions; draw into a
 given axis, never create figures) and three figure builders. All styling
 lives in ``COMMON_STYLE`` plus one override dict per figure
-(``FIG_B2_1`` / ``FIG_B2_2`` / ``FIG_B2_3``); an override wins key by key
+(``FIG_B2_1`` / ``FIG_B2_2`` / ``FIG_B2_3`` / ``FIG_B2_4``, the 2-D twin of
+B2-3); an override wins key by key
 (nested dicts merged one level deep).
 
 Anchor guard: before drawing, every quoted scalar (n̄, suppressed, n₁,
 W₁, midHot, deepKE, chi^2_med, KE₁, number of chi^2 bins, scored count) is
 checked against the committed B2 row of
-``data/runs/h2b_forward_model/g5_winners_table.csv`` to 4 dp; a mismatch
-raises.
+``data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv`` (scored
+against the corrected ihe_ked reference v2, G12) to 4 dp; a mismatch raises.
 
 Edit the ``USER SETTINGS`` block and run::
 
@@ -62,15 +64,16 @@ RUN_DIR: Path = (
     PROJECT_ROOT / "data" / "runs"
     / "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g5lqppc160e3297pooled_th500"
 )
-WINNERS_CSV: Path = PROJECT_ROOT / "data" / "runs" / "h2b_forward_model" / "g5_winners_table.csv"
+# G12: scored against the corrected ihe_ked reference (v2, 2026-10-23)
+WINNERS_CSV: Path = PROJECT_ROOT / "data" / "runs" / "h2b_forward_model" / "g5_winners_table_ihekedv2.csv"
 WINNERS_LABEL: str = "B2_pp_c160"
 ANCHOR_CHECK: bool = True
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
 OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
-FIGURES: tuple[str, ...] = ("b2_1", "b2_2", "b2_3")
-FORMATS: tuple[str, ...] = ("png", "pdf")
+FIGURES: tuple[str, ...] = ("b2_1", "b2_2", "b2_3", "b2_4")
+FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
 SHOW_FIGURE: bool = False
 MPLSTYLE: Path | None = None     # optional .mplstyle applied to every figure
@@ -78,7 +81,6 @@ MPLSTYLE: Path | None = None     # optional .mplstyle applied to every figure
 # Shared defaults; each FIG_* dict below overrides key by key.
 COMMON_STYLE: dict = {
     "exp": dict(color="black"),
-    "exp_light": dict(color="0.55"),
     "sim": dict(color="#1f77b4"),        # B2 colour of the Tier-0 / G6 figures
     "band": dict(color="0.80"),          # midHot / deepKE / landing-band shading
     "band_shade_alpha": 0.25,
@@ -110,45 +112,73 @@ FIG_B2_1: dict = {
 }
 
 FIG_B2_2: dict = {
+    # Defaults reproduce the plot_run_summary / plot_detection_summary
+    # sections (detected mean KE + KE anatomy) on one figure:
+    # (a) n = 1..split-1, (b) n = split..n_max (linear, own scales), (c) z.
     "stem": "b2_2_mean_ke",
-    "figsize": (7.0, 5.6),
-    "height_ratios": (2.6, 1.0),
-    "show_residual": True,
-    "yscale": "log",                     # "log" | "linear"
-    "ylim": None,
-    "n_xlim": (0.4, 17.6),
+    "figsize": (12.5, 8.0),
+    "height_ratios": (5.0, 3.5),
+    "exp": dict(color="tab:blue"),
+    "sim": dict(color="tab:red"),
+    "anchor": dict(color="tab:purple"),
+    "split_n": 5,                        # = summary_sections.IHE_KED_MEAN_ENERGY_SPLIT_N
+    "yscale": "linear",
+    "ylim_low": None,
+    "ylim_high": None,
     "show_bands": True,                  # correlated calib / condition envelopes
-    "band_alphas": (0.35, 0.20),
+    "band_alphas": (0.20, 0.12),
     "show_median_anchor": True,
-    "show_midhot_band": True,
-    "show_deepke_band": True,
-    "show_thin_bin_counts": True,
+    "show_thin_bins": False,             # bins < chi^2 min-count (they enter deepKE only)
+    "show_midhot_band": False,
+    "show_deepke_band": False,
     "annot_chi2": True,
     "annot_loc": (0.03, 0.05),
-    "legend_loc": "upper right",
+    "legend_loc": "best",
+    "legend_fontsize": 8,
+    "annot_fontsize": 9,
+    "titles": ("n = 1–{hi} (detected read)", "n = {lo}–{n_max} (detected read)",
+               "Detected KE per-bin anatomy (profiled residual z)"),
     "z_guides": (-2.0, 2.0),
-    "z_colors": ("#d62728", "#1f77b4"),  # (sim hot, sim cold)
-    "ylabel": r"$\langle E\rangle$ / eV",
-    "ylabel_z": r"$z$",
+    "z_colors": ("tab:red", "tab:blue"),  # (sim hot, sim cold)
+    "annot_z": True,
+    "ylabel": "mean kinetic energy / eV",
+    "ylabel_z": r"z (sim − ref, per-point $\sigma$)",
     "xlabel": "n (attached He atoms)",
 }
 
 FIG_B2_3: dict = {
+    # Defaults reproduce the plot_detection_summary ihe_ked curve section
+    # extended to n = 0..7 (4 x 2) with the speed axis in Å/ps.
     "stem": "b2_3_ked_shapes",
     "representation": "3d",              # "3d" (P(v)) | "2d" (detector projection)
-    "n_values": (1, 2, 3, 4),
+    "n_values": (0, 1, 2, 3, 4, 5, 6, 7),  # n 5-7: extended exports, not verified
     "ncols": 2,
-    "figsize": (8.0, 6.0),
-    "v_xlim_Aps": (0.0, 26.0),
+    "figsize": (10.5, 13.0),
+    "sharex": False,
+    "sharey": False,
+    "exp": dict(color="tab:blue"),
+    "sim": dict(color="tab:red"),
+    "v_xlim_Aps": (0.0, 31.0),           # IHE_KED_PLOT_V_MAX_MPS / 100
     "ylim": (0.0, 1.25),
     "show_exp_raw": True,
     "show_v_of_mean_E": True,
-    "show_counts": True,
-    "annot_ke_n": (1,),                  # panels that print <E> sim / exp
-    "legend_panel": "figure",            # "figure" (one legend on top) | panel index | None
-    "legend_loc": "upper right",         # used for a panel legend only
-    "xlabel": r"$v$ / Å ps$^{-1}$",
-    "ylabel": "P(v) / peak-normalized",
+    "show_counts": False,                # per-panel N text (N is in the legend label)
+    "annot_ke_n": (),                    # panels that print <E> sim / exp
+    "titles": "n = {n}",
+    "suptitle": None,
+    "legend_panel": 0,                   # "figure" | panel index | None
+    "legend_loc": "best",
+    "legend_fontsize": 7,
+    "xlabel": r"v / Å ps$^{-1}$",
+    "ylabel": "signal / arb. units",
+}
+
+# B2-4: B2-3 on the 2-D detector projection (sim: sqrt(vx^2 + vy^2));
+# starts as a copy of FIG_B2_3, override keys here.
+FIG_B2_4: dict = {
+    **copy.deepcopy(FIG_B2_3),
+    "stem": "b2_4_ked_shapes_2d",
+    "representation": "2d",
 }
 
 # =============================================================================
@@ -447,91 +477,109 @@ def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
     _finish_axis(ax, st, integer_x=True)
 
 
-def draw_ke_mean(ax, d: KEData, st: dict) -> None:
-    """Mean KE vs n: reference (bands, error bars, median anchor) + B2."""
+def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
+                 show_legend: bool, show_chi2: bool) -> None:
+    """Mean KE vs n over ``n_lo..n_hi`` -- the ``_section_detected_ked_mean_energy``
+    panel: correlated bands as envelopes, per-point stat (+) sys bars, n = 1
+    median anchor, scored sim bins (chi^2 min-count) with SE bars."""
     ref = d.ref
-    sel = np.asarray(ref.n) >= DETECTED_KE_N_MIN
-    n_ref = np.asarray(ref.n)[sel]
+    n_all = np.asarray(ref.n)
+    sel = (n_all >= max(n_lo, DETECTED_KE_N_MIN)) & (n_all <= n_hi)
+    n_ref = n_all[sel]
     mean = np.asarray(ref.mean_KE_eV)[sel]
-    if st["show_midhot_band"]:
-        ax.axvspan(MIDHOT_BAND[0] - 0.5, MIDHOT_BAND[1] + 0.5, zorder=0,
-                   alpha=st["band_shade_alpha"], linewidth=0, **st["band"])
-        ax.text(0.5 * sum(MIDHOT_BAND), 1.0, f"midHot {d.midhot.value:.3f}",
-                transform=ax.get_xaxis_transform(), ha="center", va="bottom",
-                fontsize=st["annot_fontsize"])
-    if st["show_deepke_band"]:
-        ax.axvspan(DEEP_KE_BAND[0] - 0.5, DEEP_KE_BAND[1] + 0.5, zorder=0,
-                   alpha=st["band_shade_alpha"], linewidth=0, **st["band"])
-        ax.text(0.5 * sum(DEEP_KE_BAND), 1.0, f"deepKE {d.deepke.value:.3f}",
-                transform=ax.get_xaxis_transform(), ha="center", va="bottom",
-                fontsize=st["annot_fontsize"])
+    for show, (b_lo, b_hi) in ((st["show_midhot_band"], MIDHOT_BAND),
+                               (st["show_deepke_band"], DEEP_KE_BAND)):
+        if show and b_lo <= n_hi and b_hi >= n_lo:
+            ax.axvspan(max(b_lo, n_lo) - 0.5, min(b_hi, n_hi) + 0.5, zorder=0,
+                       alpha=st["band_shade_alpha"], linewidth=0, **st["band"])
     if st["show_bands"]:
-        for frac, alpha in zip((ref.calib_syst_frac, ref.condition_syst_frac), st["band_alphas"]):
+        for frac, label, alpha in zip(
+                (ref.calib_syst_frac, ref.condition_syst_frac),
+                ("calibration band (correlated)", "condition band (correlated)"),
+                st["band_alphas"]):
             frac = np.asarray(frac)[sel]
             ax.fill_between(n_ref, mean * (1.0 - frac), mean * (1.0 + frac), linewidth=0,
-                            alpha=alpha, **st["exp_light"])
-    ax.errorbar(n_ref, mean, yerr=np.asarray(ref.point_err_eV)[sel], fmt="o", ms=4, capsize=2,
-                label="experiment", **st["exp"])
-    if st["show_median_anchor"]:
-        hit = n_ref == 1
-        ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", ms=6,
-                mfc="none", mew=1.2, color=st["exp"]["color"], label="experiment median (n = 1)")
-    ok = d.scored_mask
-    ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", ms=4.5, capsize=2,
-                label="B2", **st["sim"])
-    if np.any(~ok):
-        ax.plot(d.n[~ok], d.mean_eV[~ok], "s", ms=4.5, mfc="none", mew=1.0,
+                            alpha=alpha, label=label, **st["exp"])
+    ax.errorbar(n_ref, mean, yerr=np.asarray(ref.point_err_eV)[sel], fmt="o", markersize=4,
+                capsize=2, label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)",
+                **st["exp"])
+    hit = n_ref == 1
+    if st["show_median_anchor"] and np.any(hit):
+        ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", markersize=7,
+                markerfacecolor="none", markeredgecolor=st["anchor"]["color"],
+                markeredgewidth=1.5, label="n = 1 median anchor (I77, operative)")
+    in_panel = (d.n >= n_lo) & (d.n <= n_hi)
+    ok = in_panel & d.scored_mask
+    if np.any(ok):
+        ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", linestyle="none",
+                    markersize=5, capsize=2, label=r"detected simulation $\langle E\rangle$",
+                    **st["sim"])
+    thin = in_panel & ~d.scored_mask
+    if st["show_thin_bins"] and np.any(thin):
+        ax.plot(d.n[thin], d.mean_eV[thin], "s", markersize=5, markerfacecolor="none",
                 color=st["sim"]["color"],
-                label=f"B2, < {DETECTED_KE_MIN_BIN_COUNT} ions (not in $\\chi^2$)")
-        if st["show_thin_bin_counts"]:
-            for n, e, c in zip(d.n[~ok], d.mean_eV[~ok], d.count[~ok]):
-                ax.annotate(f"{c}", (n, e), xytext=(0, 5), textcoords="offset points",
-                            ha="center", va="bottom", fontsize=st["annot_fontsize"] - 1,
-                            color=st["sim"]["color"])
-    if st["annot_chi2"]:
-        _annot(ax, rf"$\chi^2_\mathrm{{med}}$ = {d.chi2_score.chi2_profiled:.1f}"
-                   f" ({d.chi2_score.n_points} bins)", st, st["annot_loc"], ha="left", va="bottom")
-    ax.set(yscale=st["yscale"], xlim=st["n_xlim"], ylabel=st["ylabel"])
-    if st["ylim"] is not None:
-        ax.set_ylim(st["ylim"])
-    _legend(ax, st, st["legend_loc"])
-    _finish_axis(ax, st, integer_x=True)
+                label=f"simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions (not in $\\chi^2$)")
+        for n, e, c in zip(d.n[thin], d.mean_eV[thin], d.count[thin]):
+            ax.annotate(f"{c}", (n, e), xytext=(0, 5), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=st["annot_fontsize"] - 1,
+                        color=st["sim"]["color"])
+    if show_chi2 and st["annot_chi2"]:
+        _annot(ax, rf"$\chi^2$_med = {d.chi2_score.chi2_profiled:.1f}; "
+                   f"{d.chi2_score.n_points} bins", st, st["annot_loc"], ha="left", va="bottom")
+    ax.set(yscale=st["yscale"], xlabel=st["xlabel"], ylabel=st["ylabel"])
+    if show_legend:
+        _legend(ax, st, st["legend_loc"])
+    _finish_axis(ax, st)
 
 
 def draw_ke_residual(ax, d: KEData, st: dict) -> None:
-    """Profiled residuals z (scored chi^2 bins only)."""
+    """Profiled residuals z (scored chi^2 bins) -- the ``_section_detected_ke_anatomy`` panel."""
     s = d.chi2_score
     hot, cold = st["z_colors"]
     ax.bar(s.n, s.z_profiled, width=0.8, edgecolor="black", linewidth=0.4,
            color=[hot if z > 0 else cold for z in s.z_profiled])
-    ax.axhline(0.0, color="black", lw=0.8)
+    ax.axhline(0.0, color="black", linewidth=0.8)
     for lvl in st["z_guides"]:
-        ax.axhline(lvl, color="0.5", lw=0.8, ls="--")
-    ax.set(xlim=st["n_xlim"], xlabel=st["xlabel"], ylabel=st["ylabel_z"])
-    _finish_axis(ax, st, integer_x=True)
+        ax.axhline(lvl, color="gray", linewidth=0.8, linestyle="--")
+    if st["annot_z"]:
+        _annot(ax, rf"$\chi^2$_med = {s.chi2_profiled:.1f}, {s.n_points} bins" "\n"
+                   f"a_calib = {s.a_calib:.2f}, b_cond = {s.b_condition:.2f}",
+               st, st["annot_loc"], ha="left", va="bottom")
+    ax.set(xlabel=st["xlabel"], ylabel=st["ylabel_z"])
+    _finish_axis(ax, st)
 
 
-def draw_pv(ax, d: PvData, st: dict) -> None:
-    """One KED-shape panel (Å/ps)."""
+def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
+    """One KED-shape panel -- the ``_section_ihe_ked_curves`` panel in Å/ps."""
     if st["show_exp_raw"]:
-        ax.plot(d.v_exp_Aps, d.exp_raw, ".-", ms=2.0, lw=0.4, alpha=0.35,
-                label="experiment (raw)", **st["exp_light"])
-    ax.plot(d.v_exp_Aps, d.exp_smooth, lw=1.4,
+        ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.5, linewidth=0.5, alpha=0.30,
+                label="experiment (raw)", **st["exp"])
+    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4,
             label=f"experiment (movmean {IHE_KED_EXP_SMOOTHING_WINDOW})", **st["exp"])
     if d.sim_trace is not None:
-        ax.plot(d.v_sim_Aps, d.sim_trace, lw=1.4, label="B2", **st["sim"])
+        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4,
+                label=f"simulation (N={d.num_sim})", **st["sim"])
+    else:
+        ax.annotate("sim: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
+                    ha="right", fontsize=8, color=st["sim"]["color"])
     if st["show_v_of_mean_E"]:
-        ax.axvline(d.v_mean_E_exp_Aps, ls=":", lw=1.0, **st["exp"])
+        ax.axvline(d.v_mean_E_exp_Aps, linestyle=":", linewidth=1.0,
+                   label=r"exp $v(\langle E\rangle)$", **st["exp"])
         if d.v_mean_E_sim_Aps is not None:
-            ax.axvline(d.v_mean_E_sim_Aps, ls=":", lw=1.0, **st["sim"])
-    lines = [rf"I$^+$He$_{{{d.n}}}$" if d.n > 1 else r"I$^+$He"]
+            ax.axvline(d.v_mean_E_sim_Aps, linestyle=":", linewidth=1.0,
+                       label=r"sim $v(\langle E\rangle)$", **st["sim"])
+    lines = []
     if st["show_counts"]:
         lines.append(f"N = {d.num_sim}")
     if d.n in st["annot_ke_n"] and d.mean_E_sim_eV is not None:
         lines.append(rf"$\langle E\rangle$ {d.mean_E_sim_eV:.3f} / exp {d.mean_E_exp_eV:.3f} eV")
-    ax.text(0.03, 0.95, "\n".join(lines), transform=ax.transAxes, ha="left", va="top",
-            fontsize=st["annot_fontsize"])
-    ax.set(xlim=st["v_xlim_Aps"], ylim=st["ylim"])
+    if lines:
+        ax.text(0.03, 0.95, "\n".join(lines), transform=ax.transAxes, ha="left", va="top",
+                fontsize=st["annot_fontsize"])
+    ax.set(title=st["titles"].format(n=d.n), xlim=st["v_xlim_Aps"], ylim=st["ylim"],
+           xlabel=st["xlabel"], ylabel=st["ylabel"])
+    if show_legend:
+        _legend(ax, st, st["legend_loc"])
     _finish_axis(ax, st)
 
 
@@ -556,18 +604,24 @@ def build_b2_1(d: SizeData, style: dict | None = None) -> plt.Figure:
 
 
 def build_b2_2(d: KEData, style: dict | None = None) -> plt.Figure:
+    """(a) n = 1..split-1 | (b) n = split..n_max on top, (c) residual z below."""
     st = merged_style(FIG_B2_2 if style is None else style)
-    if not st["show_residual"]:
-        fig, ax = plt.subplots(figsize=st["figsize"], constrained_layout=True)
-        draw_ke_mean(ax, d, st)
-        ax.set_xlabel(st["xlabel"])
-        return fig
-    fig, (ax, axz) = plt.subplots(2, 1, sharex=True, figsize=st["figsize"],
+    split = st["split_n"]
+    n_max = int(np.asarray(d.ref.n).max())
+    fig, axd = plt.subplot_mosaic([["a", "b"], ["c", "c"]], figsize=st["figsize"],
                                   constrained_layout=True,
                                   gridspec_kw={"height_ratios": st["height_ratios"]})
-    draw_ke_mean(ax, d, st)
-    draw_ke_residual(axz, d, st)
-    _panel_letters((ax, axz), st)
+    t_lo, t_hi, t_z = st["titles"]
+    draw_ke_mean(axd["a"], d, st, DETECTED_KE_N_MIN, split - 1, show_legend=True, show_chi2=True)
+    draw_ke_mean(axd["b"], d, st, split, n_max, show_legend=False, show_chi2=False)
+    draw_ke_residual(axd["c"], d, st)
+    axd["a"].set_title(t_lo.format(hi=split - 1))
+    axd["b"].set_title(t_hi.format(lo=split, n_max=n_max))
+    axd["c"].set_title(t_z)
+    for key, lim in (("a", st["ylim_low"]), ("b", st["ylim_high"])):
+        if lim is not None:
+            axd[key].set_ylim(lim)
+    _panel_letters((axd["a"], axd["b"], axd["c"]), st)
     return fig
 
 
@@ -575,23 +629,19 @@ def build_b2_3(panels: list[PvData], style: dict | None = None) -> plt.Figure:
     st = merged_style(FIG_B2_3 if style is None else style)
     ncols = st["ncols"]
     nrows = -(-len(panels) // ncols)
-    fig, axes = plt.subplots(nrows, ncols, figsize=st["figsize"], sharex=True, sharey=True,
-                             constrained_layout=True, squeeze=False)
+    fig, axes = plt.subplots(nrows, ncols, figsize=st["figsize"], sharex=st["sharex"],
+                             sharey=st["sharey"], constrained_layout=True, squeeze=False)
     flat = axes.ravel()
-    for ax, d in zip(flat, panels):
-        draw_pv(ax, d, st)
+    for k, (ax, d) in enumerate(zip(flat, panels)):
+        draw_pv(ax, d, st, show_legend=(st["legend_panel"] == k))
     for ax in flat[len(panels):]:
         ax.set_axis_off()
-    for ax in axes[-1]:
-        ax.set_xlabel(st["xlabel"])
-    for ax in axes[:, 0]:
-        ax.set_ylabel(st["ylabel"])
     if st["legend_panel"] == "figure":
         handles, labels = flat[0].get_legend_handles_labels()
         fig.legend(handles, labels, loc="outside upper center", ncols=len(labels),
                    frameon=st["legend_frameon"], fontsize=st["legend_fontsize"])
-    elif st["legend_panel"] is not None:
-        _legend(flat[st["legend_panel"]], st, st["legend_loc"])
+    if st["suptitle"]:
+        fig.suptitle(st["suptitle"])
     _panel_letters(flat[:len(panels)], st)
     return fig
 
@@ -625,11 +675,12 @@ def main() -> int:
             _save(build_b2_1(size), FIG_B2_1["stem"])
         if "b2_2" in FIGURES:
             _save(build_b2_2(ke), FIG_B2_2["stem"])
-        if "b2_3" in FIGURES:
-            view = detected_ensemble_view(det)
-            panels = [pv_data(view, IHE_KED_REFERENCE_DIR, ked_ref, n,
-                              FIG_B2_3["representation"]) for n in FIG_B2_3["n_values"]]
-            _save(build_b2_3(panels), FIG_B2_3["stem"])
+        view = detected_ensemble_view(det)
+        for key, fig_style in (("b2_3", FIG_B2_3), ("b2_4", FIG_B2_4)):
+            if key in FIGURES:
+                panels = [pv_data(view, IHE_KED_REFERENCE_DIR, ked_ref, n,
+                                  fig_style["representation"]) for n in fig_style["n_values"]]
+                _save(build_b2_3(panels, fig_style), fig_style["stem"])
     if SHOW_FIGURE:
         plt.show()
     return 0

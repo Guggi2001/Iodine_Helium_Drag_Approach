@@ -8,6 +8,13 @@ dynamics simulation (H.2b forward model).
 `matfile_data_scripts/A_state_paper_figures_single_pulse/fragment scan/171024/`.
 Exporter: `export_IHe_KED_reference.m`. Measurement date 17.10.24, FLIR camera.
 
+**Current release: v2 (2026-10-23)** — written by `export_IHe_KED_withoutZaccess.m`
+with `rotate_for_pyabel = true` and `center_for_pyabel = true` (corrected 3-D
+inversion: symmetry axis = laser polarisation = image X, inversion centre =
+per-fragment centre). See the 2026-10-23 v2 changelog. The previous release (v1,
+2026-07-14) is kept in `archive_v1_2026-07-14/` (reference CSV + provenance) so
+numbers scored against it stay reproducible.
+
 ---
 
 ## Files in this folder
@@ -17,6 +24,10 @@ Exporter: `export_IHe_KED_reference.m`. Measurement date 17.10.24, FLIR camera.
 | `IHe_KED_reference.csv` | the per-fragment table (one row per n) |
 | `IHe_KED_spectra_n0_n1.csv` | UNSMOOTHED normalized P(E) for n=0 and n=1 (common native E axis; NaN marks excluded regions: E < 0.01 eV for both, E < 0.4 eV for n=0 only) |
 | `IHe_KED_curves_n0.csv` … `n4.csv` | trusted curves for n = 0…4: 2-D detector projection AND 3-D reconstruction, each in BOTH measures (per unit v and per unit E), peak-normalized, dual E/v axes (see `COLUMNS.md`) |
+| `IHe_KED_curves_n5.csv` … `n7.csv` | **extended, not verified** curves for n = 5…7 (same recipe and columns as n0…n4; lower N_eff, noisier 3-D reconstruction) — shape plots only; provenance `curves_files.trust` |
+| `IHe_KED_beta.csv` | anisotropy β per fragment (n = 0…17): `beta_mean` (P(v)-weighted over the ⟨E⟩ signal mask) and `beta_core` (half-maximum core); diagnostic, no sysErr (see `COLUMNS.md`) |
+| `IHe_KED_beta_vs_v.csv` | β(v) per speed bin for n = 0…7 (long format) with the P(v) weight and the signal-mask flag |
+| `archive_v1_2026-07-14/` | the superseded v1 `IHe_KED_reference.csv` + provenance (wrong inversion axis and centre; kept for reproducing pre-2026-10-23 scores) |
 | `IHe_KED_reference.provenance.json` | machine-readable record of every convention below |
 | `COLUMNS.md` | data dictionary — what every column in every CSV means and how to use it |
 | `IHe_KED_crosscheck_300mW.csv` | per-fragment ⟨E⟩ of the independent 300 mW series vs. the reference (same pipeline; see cross-check section) |
@@ -127,11 +138,11 @@ including the sub-0.1-eV high-n points.
 
 ## Trust guidance for the comparison
 
-- **Gold points (calib-limited): n = 0, 3, 4, 5, 6, 7, 8, 9, 10, 12.** Internal
+- **Gold points (calib-limited): n = 0, 4, 5** (v2; v1: n = 0, 3–10, 12). Internal
   analysis systematic is below the calibration floor → a disagreement here is
   real physics — *beyond* the two correlated bands (4% calib, 6% condition),
   which shift the whole curve, not individual points.
-- **I⁺ scale anchor (n = 0):** 3.706 eV, good to ~1% ⊕ 4% ⊕ 6%
+- **I⁺ scale anchor (n = 0):** 3.594 eV (v2; v1 3.706), good to ~1% ⊕ 4% ⊕ 6%
   (analysis ⊕ calib ⊕ condition; the last from the −6.3% shift at 300 mW).
 - **n = 1:** background-structural (bg-off shifts it +29%); report with the bg
   caveat, not as a clean point.
@@ -179,6 +190,13 @@ correlated between the series, so the z column is indicative.
 ## Regenerating
 
 ```
+matlab -batch "rotate_for_pyabel = true; center_for_pyabel = true; run('export_IHe_KED_withoutZaccess.m')"
+```
+This writes the **v2** release (to `reference_export_withoutZaccess_rotated_centred/`).
+`export_IHe_KED_reference.m` does not have the two inversion fixes and reproduces
+v1 (as does `export_IHe_KED_withoutZaccess.m` with both flags left false):
+
+```
 matlab -batch "run('export_IHe_KED_reference.m')"   % ~10 min (5 Abel passes)
 ```
 Runs headless; writes all files in this folder. The script pins its own
@@ -188,7 +206,14 @@ grid (blocksize can match while the crop/VM_center vintage differs — that
 mixed-cache state crashes `subtract_processed_data`), reprocessing any stale
 ones, and asserts the n=0/n=1 grid identity before writing the spectra file —
 so it is independent of MATLAB session state and of caches left by other
-figure scripts. The cross-check regenerates the same way:
+figure scripts.
+
+Without the raw-data drive (`Z:`, needed only for the `info_*.txt` frame
+count and for raw reprocessing) use `export_IHe_KED_withoutZaccess.m`: same
+recipe, loads the `VMIdata_*.mat` caches directly, errors instead of
+reprocessing, writes to `reference_export_withoutZaccess/`.
+
+The cross-check regenerates the same way:
 
 ```
 matlab -batch "run('crosscheck_300mW_series.m')"    % ~4 min (2 Abel passes)
@@ -225,7 +250,7 @@ matlab -batch "run('crosscheck_300mW_series.m')"    % ~4 min (2 Abel passes)
    samples, and `VM_center` sits ~23 px off the MCP centre — so azimuthal
    coverage falls from 1.00 at 309 px (2672 m/s, 4.70 eV) to 0.43 at 340 px and
    0.12 at 354 px, the top of the I⁺ signal window. Consequences:
-   - `meanKE_eV` (n=0) = 3.706 eV is a **lower bound**; the suppressed
+   - `meanKE_eV` (n=0) = 3.594 eV (v2; v1 3.706) is a **lower bound**; the suppressed
      high-energy bins would raise it by roughly 4% (rough estimate, not
      propagated into the error columns), plus an unmeasurable contribution
      beyond the detector edge at 6.13 eV.
@@ -241,6 +266,63 @@ matlab -batch "run('crosscheck_300mW_series.m')"    % ~4 min (2 Abel passes)
    Not pursued further because I⁺ is not used for the MD comparison. If an I⁺
    number is ever needed, restrict it to r ≤ 309 px (E ≤ 4.70 eV) and quote it
    over that defined range.
+
+---
+
+## Changelog — 2026-10-23 v2: inversion axis and centre corrected (VALUES CHANGED)
+
+Two errors in the 3-D (Abel) inversion, found while explaining why the MD 2-D
+projections sit right of the experiment (`THESIS_FINAL_GOALS.md` G12,
+`THESIS_DISCUSSION.md` §13):
+
+1. **Wrong symmetry axis.** pyabel (`rbasex`) inverts about the image *vertical*
+   axis; the laser polarisation is along image **X** (horizontal) = the
+   droplet-beam axis. Evidence: gas-phase I⁺ lobes along X (up to 8 : 1); the
+   per-fragment centre shift (beam velocity) runs along X; predecessor-thesis
+   cues under the standard crossed-beam geometry; the rotated inversion
+   reproduces the measured 2-D curves slightly better (n = 0–6). Fix
+   (`rotate_for_pyabel`): transpose the recentred image before the inversion.
+2. **Wrong inversion centre.** `recenter_VMI` only relabels the X/Y grids; pyabel
+   receives the bare matrix and inverts about the array pixel (rows//2, cols//2).
+   The per-fragment centres (`fragment_vmi_centers.mat`, confirmed by pyabel's
+   own convolution centre finder to ≈ 1 px) sat 3–5 grid px (7–15 camera px)
+   away. Fix (`center_for_pyabel`): whole-pixel shift (zero fill, no
+   interpolation) of the image onto pyabel's origin; residual 0.33–0.66 grid px.
+
+Synthetic tests with the exporter's exact call (Monte-Carlo shells, pyabel
+0.8.4): (1) at β = 0.3 about the wrong axis ⟨E⟩ +5 %, σ −10 % (β comes back as
+−β); (2) at the measured offsets ⟨E⟩ +1.2 % (n = 1) rising to +4.8 % (n = 17),
+σ +2 to +9 %; both 0.0 % when correct.
+
+**Effect (v2 vs v1):** `meanKE_eV` −3.0 % (n = 0), −8.0 % (n = 1), −3.1 to
+−6.2 % (n = 2–8), −2.7 to −5.3 % (n = 9–17) — coherent for every n; `sigmaKE_eV`
+−9 to +7 % (no common direction); errors re-derived by the same ensemble — the
+per-point sysErr pattern changed, so the calibration-limited (gold) set shrank
+from n = 0, 3–10, 12 to n = 0, 4, 5 (`dominantError`). The
+2-D columns of the curve files are identical to v1 (never inverted); the 3-D
+columns and `IHe_KED_spectra_n0_n1.csv` change. New: `IHe_KED_beta.csv`,
+`IHe_KED_beta_vs_v.csv` (β ≈ +0.22 to +0.34 along the polarisation for
+n = 1–17, ≈ 0.05 for droplet-born I⁺; the gas-phase partner 43635 = background
+without He). The shift (3–8 %) lies inside the correlated calibration ⊕
+condition envelope (4 % ⊕ 6 %).
+
+**Not re-exported:** `IHe_KED_crosscheck_300mW.csv` (v1 inversion for both
+series; the 300 / 600 mW ratios, hence `conditionSyst_frac`, are expected to be
+largely unaffected because both series carry the same bias; absolute values are
+v1). Every MD score computed before 2026-10-23 used v1 (archived in
+`archive_v1_2026-07-14/`).
+
+---
+
+## Changelog — 2026-10-23 extended curves n = 5…7 (values unchanged)
+
+Exporter curve loop extended to n = 0…7 (`n_curve_trusted_max = 4`,
+`n_curve_max = 7`); new provenance field `curves_files.trust`. Generated with
+`export_IHe_KED_withoutZaccess.m` (cache-only copy; `Z:` unavailable).
+Validation: `IHe_KED_reference.csv`, `IHe_KED_spectra_n0_n1.csv` and
+`IHe_KED_curves_n0..n4.csv` are byte-identical to the 2026-07-14 release;
+provenance differs only in `generated_by` and `curves_files`. n = 5…7 are
+for shape plots only (not verified); the loader keeps `CURVE_TRUSTED_N_MAX = 4`.
 
 ---
 

@@ -14457,3 +14457,35 @@ All goals executed, dropped or moved to the outlook; no open gate.
 G4.14 recap (b)–(c) moot after G5; G4.8 decision superseded by G4.9.
 Current arm: thesis writing from THESIS_DISCUSSION.md. CLAUDE.md
 pointers updated (current arm, production law B2).
+
+## 2026-10-23 — G12: ihe_ked reference v2 (inversion axis + centre), B2 / B3 re-scored; over-alignment (zero MD)
+
+Trigger: the 2-D KED figure B2-4 puts the model right of the experiment
+while 3-D (B2-3) looks fine. Findings (THESIS_FINAL_GOALS G12,
+THESIS_DISCUSSION §13):
+- Polarisation = image X = droplet-beam axis (gas-phase I⁺ lobes, centre
+  shift, predecessor-thesis cues). The committed ihe_ked 3-D curves / ⟨E⟩
+  were inverted by pyabel about the image vertical axis and the array
+  centre (recentring never reached pyabel; offset 3–5 grid px).
+  Synthetic: ⟨E⟩ +5 % (axis, β 0.3) and +1…+5 % (centre). Exporter
+  `export_IHe_KED_withoutZaccess.m` (VMI_matlab; cache-only copy, needs no
+  Z:) gained `rotate_for_pyabel` / `center_for_pyabel` and a β export.
+- **Reference v2 adopted** (user): ⟨E⟩ −3 to −8 % for every n; 2-D columns
+  identical; new `IHe_KED_beta*.csv`; v1 archived
+  (`data/reference/ihe_ked/archive_v1_2026-07-14/`); gold set n = 0, 4, 5
+  (was 0, 3–10, 12).
+- **Re-scored B2 / B3 only** (`tier2_g12_ihekedv2_table.py`, v1 oracle
+  4 dp passed → `g5_winners_table_ihekedv2.csv`): B2 midHot 1.0016 →
+  1.0502, deepKE 0.4770 → 0.4987, χ² 526.6 → 349.7 (B3 674.0 → 365.9), exp KE₁ 1.302 →
+  1.198; B3 midHot 1.0160 → 1.0652, deepKE 0.6008 → 0.6278. No sweep
+  redone. **All KE numbers in entries before this one are v1.**
+- Alignment: model β = 2 (cos² sampling, axial recoil, drag ∥ v, noise
+  off) vs experiment β ≈ 0.22–0.34 for n = 1–17 (droplet-born I⁺ ≈ 0.05).
+  KE observables are rotation-invariant in the model → 3-D comparison is
+  the score; 2-D mismatch ≈ ⅓ over-alignment, ⅓ width deficit, ⅓ speed
+  offset (the latter also seen in 3-D on v2). Cause of the weak
+  experimental alignment open (ionisation in the droplet vs in flight;
+  single elastic He collisions kinematically too weak).
+- Code: figure script `tier2_b2_thesis_figure.py` (B2-1…B2-4, anchor on
+  the v2 table), loader `CURVE_N_MAX` 7, tests updated (I⁺ ⟨E⟩ 3.59357,
+  gold set). Open: β(v) artefact test.

@@ -18,7 +18,9 @@ at B2) and G7 (KE₁ geometry-invariance caveat). §10 (dissociation
 timescale and the RRK s_eff, 2026-10-14) is the one section backed by new
 runs made for it (s_eff scan + two N = 6000 pools at B2). §12 (exit vs
 detection readout, 2026-10-16) is a design decision for future work; no
-runs.
+runs. §13 (over-alignment: model β = 2 vs experiment ≈ 0.3, the 2-D /
+3-D comparison and the corrected VMI inversion, 2026-10-23;
+`THESIS_FINAL_GOALS.md` G12) is zero-MD.
 
 ---
 
@@ -828,3 +830,258 @@ The two readouts are different comparisons:
 - Zero-MD by-product (not the exit comparison): n and E_int at **t_h** are
   exact from `detection.npz` alone, n(t_h) = n_det + number of events and
   E_int(t_h) = E_int,det + Σ D₀(n_pre) over the events.
+
+---
+
+## 13. Over-alignment: the model keeps the laser alignment, the experiment does not (MEASURED + DISCUSSION; added 2026-10-23; zero MD)
+
+Origin: the 2-D KED figure B2-4 (`tier2_b2_thesis_figure.py`,
+`b2_4_ked_shapes_2d.png`) puts every simulated 2-D peak to the right of
+the experiment, while the 3-D overlay (B2-3) looks fine. Tracing this led
+to the angular distribution. Goal record and plan: `THESIS_FINAL_GOALS.md`
+G12. All numbers below are zero-MD reads of the B2 pool
+(`…g5lqppc160e3297pooled_th500`) and of the VMI fragment scan of
+17.10.24; scratch probes, not yet committed. Experimental numbers use the
+**corrected** inversion (§13.2, G12); where the committed (v1) reference
+differs this is said.
+
+### 13.1 Geometry and how alignment is measured
+
+- **Polarisation = image X (horizontal) = droplet-beam axis.** Evidence:
+  (i) gas-phase I⁺ from free I₂ (same laser) has lobes along X, up to
+  8 : 1 (strong-field ionisation of I₂ selects molecules along the field,
+  ions fly along the polarisation); (ii) the per-fragment image centres
+  shift along X with fragment mass (droplet-beam velocity × flight time),
+  so X is the beam axis, and in the standard crossed-beam geometry the
+  in-plane polarisation is along the beam; (iii) cues in the
+  predecessor's thesis (user, 2026-10-23); (iv) the rotated inversion
+  reproduces the measured 2-D curves slightly better (n 0–6).
+- **Anisotropy parameter.** I(θ) ∝ 1 + β·P₂(cos θ), θ from the
+  polarisation; β = 2 is pure cos² (all ions along the field), β = 0
+  isotropic, β = −1 pure sin². Model β: measured directly from the final
+  velocities (5⟨P₂⟩ about lab x). Experimental β: pyabel `rIbeta` on the
+  inverted image, per speed bin, P(v)-weighted over the ⟨E⟩ signal mask
+  (`IHe_KED_beta.csv`, `IHe_KED_beta_vs_v.csv`).
+- **Two pitfalls found on the way** (both matter for reading old numbers):
+  - pyabel's symmetry axis is the image *vertical*. For weak anisotropy
+    an inversion about the wrong in-plane axis returns β ≈ −β_true
+    (synthetic test, exact to ±0.01). The β sign alone therefore cannot
+    tell which axis is right.
+  - an image-plane fit a + b·cos²(φ − φ₀) with free φ₀ measures only the
+    *strength*, not the sign, of the anisotropy (φ₀ absorbs a 90° turn).
+
+### 13.2 Side result: the 3-D reference was inverted about the wrong axis and centre (MEASURED)
+
+The same investigation found that the committed `ihe_ked` 3-D curves
+and ⟨E⟩ were inverted (i) about the wrong symmetry axis (vertical,
+polarisation horizontal) and (ii) about the array centre instead of the
+per-fragment centre (`recenter_VMI` relabels the X/Y grids only; pyabel
+receives the bare matrix; offset 3–5 grid px). Synthetic tests with the
+exporter's call: (i) ⟨E⟩ ≈ +5 % at β 0.3, σ ≈ −10 %; (ii) ⟨E⟩ +1 % (n 1)
+to +5 % (n 17), σ +2 to +9 %. The corrected export lowers ⟨E⟩ by 3–8 %
+coherently for every n (n 1 −8.0 %); the 2-D columns are identical (never
+inverted). **Adopted as reference v2 (2026-10-23).** Re-scored
+(`g5_winners_table_ihekedv2.csv`): B2 midHot 1.002 → 1.050, deepKE
+0.477 → 0.499, χ² 527 → 350, KE₁ model / exp 0.609 / 1.198 (deficit
+53 % → 49 %); B3 midHot 1.016 → 1.065, deepKE 0.601 → 0.628. Sizes
+unchanged. KE numbers elsewhere in this document that predate
+2026-10-23 are v1. Table: `THESIS_FINAL_GOALS.md` G12.3.
+
+### 13.3 What is measured (MEASURED)
+
+**Model vs experiment, per fragment** (β along the polarisation):
+
+| n | model β (B2) | experiment β (corrected) |
+|---|---|---|
+| 0 (bare I⁺) | 1.88 | 0.05 (core 0.16) |
+| 1 | 2.04 | 0.30 |
+| 2 | 1.97 | 0.25 |
+| 3 | 1.98 | 0.25 |
+| 4 | 1.98 | 0.33 |
+| 5 | 1.83 | 0.29 |
+| 6 | 1.93 | 0.31 |
+| 7 | 2.04 | 0.34 |
+| 8–17 | — | 0.22–0.34 |
+
+- The model sits at the cos² limit for every n (β 1.83–2.04; image-plane
+  fit 1.89–2.02). The experiment is weakly aligned, **flat in n** from
+  n = 1 to 17. Experimental n = 0 is droplet-born I⁺ only: the
+  gas-phase background (run 43635, no He) is subtracted; caveat — an
+  over/under-subtraction of the strongly aligned gas I⁺ would move it.
+- **Gas phase vs droplet** (raw images, horizontal / vertical intensity,
+  crude ring sectors): gas I⁺ 8.3 / 5.2 / 3.3 at 160 / 300 / 600 mW
+  (alignment falls with power: saturation); droplet-beam I⁺ before
+  background subtraction 5.3 / 3.1 (160 / 600 mW; carries the gas
+  component); I⁺He 1.28 / 1.38; I⁺He₂ ≈ 1.2. The free molecule is
+  strongly aligned; everything that comes out of the droplet is not.
+- **β inside a fragment depends on speed** (corrected export, P(v)
+  terciles slow / mid / fast): n 1 +0.33 / +0.29 / +0.28; n 4 +0.64 /
+  +0.40 / −0.01; n 6 +0.83 / +0.31 / −0.06; n 7 +0.62 / +0.42 / +0.04;
+  n 0 −0.05 / +0.11 / +0.09. For n ≥ 3 the slow ions keep a clear
+  alignment and the fast ones are isotropic. **Not an inversion
+  artefact** (synthetic check 2026-10-23, exporter's pyabel call):
+  a constant β = 0.3 on log-normal shells at the n = 2 / 4 / 7 radii and
+  widths, 0.5 px residual offset, comes back flat — noise-free
+  +0.30 / +0.30 / +0.31; at the real counts (N_eff, 5 seeds)
+  e.g. n 4 +0.28 ± 0.03 / +0.27 ± 0.07 / +0.31 ± 0.04, n 7 +0.27 ± 0.11 /
+  +0.27 ± 0.10 / +0.31 ± 0.06. The measured slow–fast differences (n 4
+  0.65, n 7 0.58) are ≈ 10σ and ≈ 4–5σ. Not excluded: structure in
+  the background subtraction (global background 43655, scaled in a
+  4–8 eV window), which the synthetic test does not contain.
+  Across fragments the same pattern appears: the fastest fragment (bare
+  I⁺, ≈ 3.6 eV) is the least aligned.
+
+### 13.4 Why the model is at β = 2 (MECHANISM, by construction)
+
+1. **Initial orientation.** `sampling/orientations.py` draws the I–I axis
+   with probability ∝ cos²(angle to the polarisation, lab x) — the
+   one-photon/strong-field selection law (legacy recipe, PRA 1993). This
+   alone gives β = 2 for axial recoil. Direction correct (§13.1).
+2. **Axial recoil.** The Coulomb explosion pushes both ions along the
+   I–I axis.
+3. **No deflection afterwards.** The drag force is antiparallel to the
+   velocity (F = −γ(v)·v), so it slows an ion without turning it; the
+   fluctuation channel is off (noise zero). Nothing in the flight changes
+   the direction, so the initial cos² arrives at the detector unchanged.
+4. The legacy hard-sphere model used the same sampler; that the legacy
+   runs showed the same 2-D offset is consistent with this.
+
+### 13.5 Consequences
+
+**(a) Energy / speed observables are unaffected (ARGUED, exact in the
+model).** All forces depend on relative geometry, the droplet is
+spherical and positions are drawn isotropically, so the model is
+rotation-invariant: the orientation distribution changes only where each
+ion points, never its speed, n or fate. Every Tier-2 score (size
+histogram, KE per n, midHot, deepKE, χ²) is independent of the β
+mismatch. **The 3-D comparison against the corrected reference is clean
+and is the one the thesis presents.**
+
+**(b) The 2-D comparison mixes speed and angle (MEASURED decomposition).**
+A projection onto the detector depends on the speed distribution *and*
+the angular distribution. Exact forward projection (shell kernel, line of
+sight z, polarisation in-plane; validated: the kernel at β = 2
+reproduces the model's direct √(vx² + vy²) histogram to ≤ 0.1 Å/ps).
+Medians in Å/ps, n = 4–7:
+
+| n | exp 2-D | model as is | + exp β | + exp β + exp width | left over | 3-D: model / exp (corr.) |
+|---|---|---|---|---|---|---|
+| 4 | 5.61 | 6.85 | 6.45 | 5.95 | +0.34 (+6 %) | 7.35 / 7.07 (+4 %) |
+| 5 | 5.05 | 6.25 | 5.95 | 5.45 | +0.40 (+8 %) | 6.85 / 6.25 (+10 %) |
+| 6 | 4.51 | 5.75 | 5.35 | 5.05 | +0.54 (+12 %) | 6.25 / 5.69 (+10 %) |
+| 7 | 4.21 | 5.15 | 4.85 | 4.45 | +0.24 (+6 %) | 5.65 / 5.15 (+10 %) |
+
+("exp width": the model 3-D P(v) Gaussian-broadened to the experimental
+spread — a stand-in, not physics; experimental medians quantised at
+0.25 Å/ps.) Roughly one third each: over-alignment, the 3-D width deficit
+(model 5–12× too narrow in speed SD; a narrow shell projects to an edge
+at its own speed whatever β is, so only the width moves the 2-D *peak*),
+and a genuine speed offset that the corrected 3-D comparison shows as
+well. "3-D fits, 2-D does not" came from comparing a narrow model peak
+with the peak of a broad, skewed experiment, plus a 3–8 % hot reference.
+For n = 1–2 the sign flips (model too slow in 3-D: the KE₁ deficit) and
+2-D agrees with that.
+
+**(c) Direction of the comparison.** Inverting the experiment (3-D) and
+projecting the model (2-D) are both valid. 3-D tests speeds only and is
+the score; 2-D tests speeds and angles together and is a diagnostic. 2-D
+becomes a clean speed/width test only if the model is projected with the
+measured β (post-processing re-orientation — not implemented).
+
+### 13.6 Why is the experiment only weakly aligned? (OPEN)
+
+The final β ≈ 0.3 cannot separate "weak from the start" from "lost on the
+way": 15 % cos²-selected + 85 % isotropic gives β = 2·0.15 = 0.3, and so
+does full cos² followed by strong randomisation. Candidates:
+
+**A. Weak alignment already at ionisation (in the droplet).**
+- A second, orientation-blind ionisation route next to direct
+  strong-field ionisation — e.g. ionisation of the dopant via the helium
+  (charge transfer to a He⁺ hole, Penning-type processes), which does not
+  select the molecular axis. With axial recoil, β ≈ 2·f for a selected
+  fraction f, so f ≈ 0.15.
+- For: β is flat in n (an initial property is n-independent); the free
+  molecule under the same laser is strongly aligned, so the selection law
+  itself works — what changes is the environment.
+- Against / open: an He-mediated channel should grow with intensity
+  (clusters *less* aligned at high power); the crude raw-image ratio
+  says I⁺He is slightly *more* aligned at 600 than at 160 mW
+  (b/a 0.44 vs 0.30) — weak evidence, not inverted. The speed trend
+  (§13.3) needs the two routes to give different speeds.
+
+**B. Alignment lost in flight (deflection by the helium).**
+- The physical picture behind the drag is many He collisions; the mean
+  force has no transverse part, but each collision does.
+- **Kinematic limit (ESTIMATE).** A heavy ion scattering off a light atom
+  at rest is deflected by at most sin θ_max = m_He/m_ion ≈ 4/127 → θ_max
+  ≈ 1.8° (less for I⁺Heₙ). With ≈ 20–40 collisions to stop (§7.4) the
+  random-walk angle is ≈ 7–10°. Reducing β from 2 to 0.3 needs
+  ⟨P₂⟩ × 0.15, i.e. an rms angular spread of ≈ 60° (small-angle
+  diffusion: ⟨P₂⟩ factor ≈ exp(−1.5 ⟨δ²⟩)). Binary elastic deflection by
+  single He atoms is short by almost an order of magnitude.
+- So B needs a stronger momentum exchange than single elastic He
+  collisions: collective / many-body He response, the ion being steered
+  by the droplet's own asymmetry around an off-centre ionisation site, or
+  transverse kicks in the early, dense phase (bubble formation). None of
+  these is in the model, and none is quantified here.
+- The speed trend argues against the simplest form of B: the slowest ions
+  in a fragment are the most braked and should be the least aligned, but
+  they are the most aligned.
+
+**C. Two populations with different speeds (HINT; §13.3's trend survives
+the inversion-artefact check, background structure not yet excluded).** A slower population that keeps the laser alignment and a
+faster isotropic one. Fast and isotropic is what an orientation-blind or
+higher-charge route would look like (the faster Q = 3 channel of §3 is
+one candidate, but its ≤ 20 % share of n = 1 is too small to make all
+fast ions isotropic). Speculative until the artefact check is done.
+
+### 13.7 What the thesis can state
+
+- The initial orientation (cos² along the polarisation) is correct in
+  direction; the gas-phase images confirm a strong alignment for the free
+  molecule.
+- The model transports that alignment unchanged (β = 2); the experiment
+  shows β ≈ 0.3 for every He-attached fragment and ≈ 0 for droplet-born
+  bare I⁺. **The model over-aligns.**
+- This does not affect any energy, speed or size observable (rotation
+  invariance); the KE comparison is done in 3-D against the corrected
+  reference.
+- The 2-D comparison tests speed and angular distribution together. With
+  the stochastic channel switched off the model cannot lose alignment;
+  whether the strict alignment argument already fails at ionisation in
+  the droplet or the alignment is lost in flight is not resolved here.
+  An elementary kinematic estimate shows that single elastic He
+  collisions cannot isotropise a heavy ion, so either the ionisation step
+  or a stronger, collective momentum exchange must be responsible.
+- Together with the too-narrow KE width at fixed n (§1.1) and the n ≥ 17
+  tail (§7), this is the third observable pointing at the same missing
+  physics: momentum exchange with the helium beyond the mean drag.
+
+**Suggested text (draft).** "In the simulation the I⁺(He)ₙ fragments
+keep the initial cos² alignment of the molecular axis (β = 2), because
+the Coulomb recoil is axial and the mean drag force only decelerates the
+ions. The experiment shows β ≈ 0.3 for all He-attached fragments. Since
+the model is rotationally invariant, this does not affect the
+kinetic-energy comparison, which we therefore perform on the
+Abel-inverted (3-D) distributions; the detector projections (2-D) depend
+on the angular distribution as well and serve as a diagnostic. Whether
+the alignment is already weak at ionisation in the droplet or is lost
+during the flight cannot be decided from the final distributions; single
+elastic He collisions are kinematically too weak to isotropise a heavy
+ion."
+
+### 13.8 Open checks and outlook
+
+1. **β(v) artefact test — DONE 2026-10-23:** pyabel does not create the
+   trend (§13.3). Remaining check: background-subtraction structure
+   (β(v) with the global-background scale varied, or bg-off).
+2. **Power dependence, properly inverted:** β of the clusters at 160 /
+   300 / 600 mW (corrected inversion). An He-mediated ionisation route
+   (A) predicts falling β with power; in-flight loss (B) predicts none.
+3. **Background check for n = 0:** β of droplet-born I⁺ vs the gas-phase
+   scale factor (over/under-subtraction sensitivity).
+4. **Model side (outlook, behind `SimConfig` enums, not implemented):**
+   an initial-orientation option (cos² / channel mixture with fraction
+   f) and a Tier-3 stochastic channel with a transverse component; and,
+   for figures only, a post-processing re-orientation that projects the
+   model with the measured β so that 2-D tests speed and width alone.

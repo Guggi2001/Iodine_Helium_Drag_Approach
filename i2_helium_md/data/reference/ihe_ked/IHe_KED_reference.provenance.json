@@ -1,6 +1,8 @@
 {
   "description": "I+He_n fragment kinetic-energy reference for MD comparison",
-  "generated_by": "export_IHe_KED_reference.m",
+  "generated_by": "export_IHe_KED_withoutZaccess.m (export_IHe_KED_reference.m recipe; caches loaded directly, no info_*.txt)",
+  "rotate_for_pyabel": true,
+  "center_for_pyabel": true,
   "matlab_source_of_truth": "matfile_data_scripts/A_state_paper_figures_single_pulse/fragment scan/171024",
   "measurement_ids": {
     "fragments": [
@@ -181,9 +183,15 @@
     "dominantError": "largest of {statErr, sysErr, calibSyst_frac*meanKE, |bgOffShift|} in absolute eV: stat|analysis|calib|bg-structural. bg-structural means the value hinges on the global-bg choice (treat with care).",
     "noiseLimited": "1 if N_eff<100 or sys/mean>0.5 or stat/mean>0.5"
   },
+  "beta_files": {
+    "files": "IHe_KED_beta.csv (n = 0..17), IHe_KED_beta_vs_v.csv (n = 0..n_curve_max, long format)",
+    "definition": "pyabel distr.rIbeta() anisotropy beta(r): I(r,theta) prop. 1 + beta*P2(cos theta), theta measured from the image VERTICAL axis (inversion symmetry axis); same grid as the 3-D speed distribution. beta_mean = P(v)-weighted over the central <E> signal mask; beta_core = same over the half-maximum core of the mask-smoothed P(E). weight_3d_Pv = P(v)/max(P(v) in mask).",
+    "trust": "diagnostic only: central pipeline, no ensemble sysErr; noisy where weight_3d_Pv is small"
+  },
   "curves_files": {
-    "files": "IHe_KED_curves_n0.csv .. IHe_KED_curves_n4.csv",
-    "contents": "trusted reference curves for the five verified low-n fragments, in BOTH representations and BOTH measures. 2d = angle-integrated radial density of the bg-subtracted, RECENTERED detector image (NOT Abel-inverted; interpolated from its 1-px grid onto the 3-D grid); 3d = pyabel rIbeta speed distribution (the corrected 3-D measure the reference moments use). _Pv columns are densities per unit SPEED (plot against v_mps); _PE columns are densities per unit ENERGY, P(E) = P(v)*dv/dE prop. P(v)/v (plot against E_eV). Plotting a _Pv column against E_eV merely relabels the axis and is NOT the energy density. CAUTION: signal_2d_PE tends to a FINITE center-fill plateau at low E (it is prop. to the ring-averaged image brightness, and the center of a VMI image is filled by fast ions projected inward) - do not read its low-E elevation as slow-ion signal; the 3d columns are immune (P(v) prop. v^2 near 0).",
+    "files": "IHe_KED_curves_n0.csv .. IHe_KED_curves_n7.csv",
+    "trust": "n = 0..4: trusted (verified low-n fragments); n = 5..7: extended, same recipe, not verified (lower N_eff, noisier 3-D reconstruction) - shape plots only",
+    "contents": "reference curves in BOTH representations and BOTH measures. 2d = angle-integrated radial density of the bg-subtracted, RECENTERED detector image (NOT Abel-inverted; interpolated from its 1-px grid onto the 3-D grid); 3d = pyabel rIbeta speed distribution (the corrected 3-D measure the reference moments use). _Pv columns are densities per unit SPEED (plot against v_mps); _PE columns are densities per unit ENERGY, P(E) = P(v)*dv/dE prop. P(v)/v (plot against E_eV). Plotting a _Pv column against E_eV merely relabels the axis and is NOT the energy density. CAUTION: signal_2d_PE tends to a FINITE center-fill plateau at low E (it is prop. to the ring-averaged image brightness, and the center of a VMI image is filled by fast ions projected inward) - do not read its low-E elevation as slow-ion signal; the 3d columns are immune (P(v) prop. v^2 near 0).",
     "normalization": "each signal column INDEPENDENTLY normalized so its movmean-smoothed envelope peaks at 1 in the signal region (n=0: E>1 eV, else E>0.01 eV); columns live in different measures - compare shapes, never amplitudes across columns",
     "axes": "E_eV = mass-independent KE 1/2*127*(r*vf)^2; v_mps = sqrt(2E/m(n)). ONE shared axis pair for both representations (Abel inversion does not remap the radius axis: shell rim in the projection = shell peak in the reconstruction). Interpretation differs: for _3d_ columns the coordinate is the TRUE speed/energy of the ion; for _2d_ columns it is the PROJECTED in-plane component v*sin(theta) / apparent energy.",
     "excluded_regions": "3d columns ONLY: NaN where E < 0.01 eV (n>=1) or E < 0.4 eV (n=0, Abel-center spike - an inversion artifact). 2d columns cover the full detector range (the raw projection is clean to r=0; small negatives = bg-subtraction noise). Upper end = detector/crop edge at 354 px = 6.13 eV (=3052 m/s at m=127); NOTE the on-the-day lab-book plots show the same edge at ~3576 m/s because they used the legacy velocity factor 10.0995 - same pixels, superseded calibration."

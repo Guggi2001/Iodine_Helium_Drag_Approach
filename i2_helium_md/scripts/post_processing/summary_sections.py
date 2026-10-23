@@ -317,7 +317,7 @@ def _section_ihe_ked_curves(
     n = 4 is dropped from this display: it is the weakest trusted curve
     (N_eff ~= 11.7k vs 193.7k at n = 0) and forced a 2x3 grid with a dead
     sixth axis. The n = 4 export stays on disk and loadable
-    (``load_ihe_ked_curve`` still supports n up to ``CURVE_N_MAX`` = 4) --
+    (``load_ihe_ked_curve`` supports n up to ``CURVE_N_MAX`` = 7) --
     only this figure's panel count changed.
 
     representation: "3d" overlays the sim 3-D |v| histogram on the

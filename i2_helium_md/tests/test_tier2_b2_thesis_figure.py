@@ -177,22 +177,43 @@ class TestBuilders:
         finally:
             plt.close(fig)
 
-    @pytest.mark.parametrize("residual,n_axes", [(True, 2), (False, 1)])
-    def test_b2_2_residual_toggle(self, mod, inputs, residual, n_axes):
+    def test_b2_2_split_matches_section(self, mod, sections):
+        assert mod.FIG_B2_2["split_n"] == sections.IHE_KED_MEAN_ENERGY_SPLIT_N
+
+    @pytest.mark.parametrize("thin", [False, True])
+    def test_b2_2_three_panels_linear(self, mod, inputs, thin):
         fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
-                             {**mod.FIG_B2_2, "show_residual": residual})
+                             {**mod.FIG_B2_2, "show_thin_bins": thin})
         try:
-            assert len(fig.axes) == n_axes
+            assert len(fig.axes) == 3
+            assert all(ax.get_yscale() == "linear" for ax in fig.axes[:2])
         finally:
             plt.close(fig)
 
-    def test_b2_3_grid_hides_spare_axes(self, mod, inputs):
+    def test_b2_3_default_is_n0_to_n7_with_panel_legend(self, mod, inputs):
+        assert mod.FIG_B2_3["n_values"] == tuple(range(8))
+        panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")
+                  for n in mod.FIG_B2_3["n_values"]]
+        fig = mod.build_b2_3(panels)
+        try:
+            assert len(fig.axes) == 8
+            assert fig.axes[0].get_legend() is not None
+            assert all(ax.get_legend() is None for ax in fig.axes[1:])
+        finally:
+            plt.close(fig)
+
+    def test_b2_4_is_b2_3_on_the_2d_projection(self, mod):
+        diff = {k for k in mod.FIG_B2_3 if mod.FIG_B2_3[k] != mod.FIG_B2_4[k]}
+        assert diff == {"stem", "representation"}
+        assert mod.FIG_B2_4["representation"] == "2d"
+
+    def test_b2_3_grid_hides_spare_axes_and_figure_legend(self, mod, inputs):
         panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")
                   for n in (1, 2, 3)]
-        fig = mod.build_b2_3(panels)
+        fig = mod.build_b2_3(panels, {**mod.FIG_B2_3, "legend_panel": "figure"})
         try:
             assert len(fig.axes) == 4
             assert not fig.axes[3].axison
-            assert len(fig.legends) == 1      # default: one figure-level legend
+            assert len(fig.legends) == 1
         finally:
             plt.close(fig)
