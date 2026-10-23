@@ -17,17 +17,21 @@ Laws (production coefficients, not refit):
 * B3 -- effective high-tail variant: B2 with a 19.8, E_bind 0.0482 eV
   (``gen_tier2_detfix_postpickup.py`` B3 cell), same setup; not
   Tier-0-consistent by construction (G10.5), shown as the departure.
-* h405 -- capped cubic (``shared_pure_cubic`` bundle + v_c 5.5, p_tail -1),
-  14.2 A gate, at its bundle's fit mass m = 19 He (the contrast law as fitted).
+* h405 -- the contrast law re-landed at the production settings
+  (``gen_tier2_h405_pp35.py``): capped cubic (``shared_pure_cubic`` bundle b,
+  p_tail -1, cap v_c 5.40), 3.5 A gate (``allow_inconsistent_gate_pairing``:
+  the bundle was extracted at 14.2 A), run at m = 21 He like B2 / B3. Its
+  Tier-2-only knobs (tau 4.4, E0 0.424) do not enter fixed-mass Tier 0.
 
 Anchors (fail loudly): the B2 18 A RMSE equals the committed
 ``g11_ridge_m21/check_B2.json`` bit-exactly and its 9 A margin the committed
-``g11_exit_bound_m21/B2.json``; the h405 18 A RMSE equals its bundle's
-committed ``per_case`` value (cap above the band). B3 has no committed Tier-0
-value (new numbers, reported as measured).
+``g11_exit_bound_m21/B2.json``. B3 and the re-landed h405 have no committed
+Tier-0 value (new numbers, reported as measured).
 
-Writes ``data/figures/thesis_tier0/tier0_B2_B3_h405.{png,pdf}`` and the plotted
-series ``tier0_B2_B3_h405_series.csv`` + ``tier0_B2_B3_h405_scores.csv``.
+Writes ``data/figures/thesis_tier0/tier0_B2_B3_h405.png`` and the plotted
+series ``tier0_B2_B3_h405_series.csv`` + ``tier0_B2_B3_h405_scores.csv``, plus
+``tier0_ridge_m21_laws.png``: panel (c) on its own for every ``g11_ridge_m21``
+ridge point, the c = 1.6 point replaced by B2.
 
 Usage::
 
@@ -52,7 +56,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # =============================================================================
 OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_tier0"
 SHOW_FIGURE = False
-H405_V_C_APS = 5.5          # h405 cap [A/ps] (gen_tier2atlas_g4finals cell h405)
+H405_V_C_APS = 5.40         # re-landed h405 cap [A/ps] (gen_tier2_h405_pp35 SCAN_POOL_CELL)
 H405_P_TAIL = -1.0          # gen_tier2atlas_g4finals.P_TAIL
 
 import matplotlib  # noqa: E402
@@ -61,7 +65,7 @@ if not SHOW_FIGURE:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from i2_helium_md import resolve_drag_bundle_dir  # noqa: E402
+from i2_helium_md import load_drag_bundle  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     build_case_setup,
     evaluate_form_objective,
@@ -79,8 +83,10 @@ from scripts.extraction.method_b_g412_ridge import (  # noqa: E402
     _window_9a, score_run,
 )
 from scripts.post_processing.tier0_drag_comparison import ensemble_mean_series  # noqa: E402
-from scripts.tier0_common import build_drag_cfg, run_dir_name  # noqa: E402
+from scripts.tier0_common import M_EFF_AMU, build_drag_cfg, run_dir_name  # noqa: E402
 
+
+scaling_factor = 0.85
 HEDFT_18A_PATH = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
 H405_VARIANT = "shared_pure_cubic"
 _B2 = _committed_point(1.6)
@@ -90,6 +96,7 @@ LQ_LAWS = {
     "B3": (19.8, 1.6, 0.0482, False),   # gen_tier2_detfix_postpickup B3_A / B1W_*
 }
 STEM = "tier0_B2_B3_h405"
+RIDGE_STEM = "tier0_ridge_m21_laws"
 STYLE = {"B2": dict(color="#1f77b4", ls="-"),
          "B3": dict(color="#9467bd", ls="--"),
          "h405": dict(color="#d62728", ls="-.")}
@@ -115,7 +122,7 @@ def _scored_run(form, coefficients, e_bind, setup):
 
 
 def run_18a() -> dict:
-    """18 A ensemble means + RMSE per law (B2 / B3 at m = 21, h405 as fitted)."""
+    """18 A ensemble means + RMSE per law (all at m = 21, 3.5 A gate)."""
     setup21 = build_case_setup(
         "18A", num_molecules=N, seed=SEED, ion_time_ps=ION_TIME_PS, dt_ion_ps=DT_ION_PS,
         reference_filename=REFERENCE_FILENAME,
@@ -135,36 +142,29 @@ def run_18a() -> dict:
         print(f"  18A {label}: rmse {r.rmse_Aps:.4f}"
               f"{' (anchor bit-exact)' if anchored else ' (unanchored)'}, escape {r.escape_fraction}")
 
-    # h405: the production drag preset bundle (shared_pure_cubic, 14.2 A gate, m = 19).
-    setup19 = build_case_setup(
-        "18A", num_molecules=N, seed=SEED, ion_time_ps=ION_TIME_PS, dt_ion_ps=DT_ION_PS,
-        reference_filename=REFERENCE_FILENAME,
-    )
-    bundle = setup19.cfg_base.drag_coefficients
+    # h405 re-landed: the preset bundle's (shared_pure_cubic) b / E_bind, capped,
+    # scored in the same m = 21 / 3.5 A setup (no committed anchor at 3.5 A).
+    bundle = load_drag_bundle(H405_VARIANT, "18A", expected_m_eff_amu=M_EFF_AMU)
     h = _capped(bundle)
     e_bind = bundle.effective_binding_energy_I_ion_eV
-    r, ion, coeffs = _scored_run(CAPPED_CUBIC, h.coefficients, e_bind, setup19)
-    # Anchor: the cap sits above the 18 A band, so the bundle's committed 18 A
-    # RMSE (uncapped pure cubic) must come back bit-exactly.
-    anchor = load_json(resolve_drag_bundle_dir(H405_VARIANT, "18A")
-                       / "fit_parameters.json")["per_case"]["18A"]["rmse_Aps"]
-    if r.rmse_Aps != anchor:
-        raise AssertionError(f"h405: 18 A rmse {r.rmse_Aps!r} != committed {anchor!r}")
+    r, ion, coeffs = _scored_run(CAPPED_CUBIC, h.coefficients, e_bind, setup21)
     out["h405"] = dict(ion=ion, coeffs=coeffs, rmse=r.rmse_Aps, escape=r.escape_fraction,
-                       m_amu=setup19.cfg_base.m_eff_amu, gate_A=14.2, e_bind=e_bind,
-                       law=f"b {h.coefficients['b']:.3f}, v_c {H405_V_C_APS}")
+                       m_amu=G11_M_EFF_AMU, gate_A=3.5, e_bind=e_bind,
+                       law=f"b {h.coefficients['b']:.3f}, v_c {H405_V_C_APS:.2f}")
     print(f"  18A h405: rmse {r.rmse_Aps:.4f}, escape {r.escape_fraction}, "
           f"b {h.coefficients['b']:.4f}, E_bind {e_bind:.4f}")
     return out, setup21
 
 
 def _h405_9a_run() -> Path:
-    """Radial 9 A Tier-0 run of h405 (same settings as the G4.12 bound runs)."""
+    """Radial 9 A Tier-0 run of the re-landed h405 (G4.12 bound settings, m = 21, 3.5 A)."""
     cfg = build_drag_cfg("9A", H405_VARIANT, num_molecules=BOUND_N,
-                         ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS, seed=SEED)
-    cfg = replace(cfg, drag_form=CAPPED_CUBIC, drag_coefficients=_capped(cfg.drag_coefficients))
+                         ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS, seed=SEED,
+                         m_eff_amu=G11_M_EFF_AMU)
+    cfg = replace(cfg, drag_form=CAPPED_CUBIC, drag_coefficients=_capped(cfg.drag_coefficients),
+                  **GATE_OVERRIDES, allow_inconsistent_gate_pairing=True)
     cfg.validate()
-    run_dir = RUNS_ROOT / run_dir_name("9A", H405_VARIANT, BOUND_N, "g11fig_h405capped")
+    run_dir = RUNS_ROOT / run_dir_name("9A", H405_VARIANT, BOUND_N, "g11fig_h405pp35m21")
     if not (run_dir / "ion.npz").exists():
         run = RunDirectory(run_dir)
         run.save_cfg(cfg)
@@ -194,6 +194,49 @@ def run_9a() -> tuple[dict, object]:
         print(f"  9A {label}: margin {row['margin_Aps']:+.3f} ({'pass' if row['pass'] else 'FAIL'}), "
               f"m {row['m_eff_amu']:.3f}")
     return out, hedft
+
+
+def plot_ridge_laws(b2_coeffs, v_ref) -> Path:
+    """Standalone panel-(c) figure: the bulk F(v) of every m = 21 ridge point.
+
+    The ridge points are the rows of ``g11_ridge_m21/ridge_m21.csv``; the
+    c = 1.6 row is replaced by B2 (its a / E_bind, the production point on the
+    ridge). ``b2_coeffs`` is B2's scored DragCoefficients (form + gate stamp
+    reused for every point); ``v_ref`` [A/ps] the smoothed 18 A trace speeds.
+    """
+    with open(G11_RIDGE_DIR / "ridge_m21.csv", newline="", encoding="utf-8") as fh:
+        # Ridge-grid rows only (labels c<x>p<yyy>); the B2 / A5 check rows are skipped.
+        ridge = [(float(r["c_amu_per_A"]), float(r["a_amu_per_ps"]), r["bound_pass"] == "True")
+                 for r in csv.DictReader(fh) if r["label"].startswith("c")]
+    if not any(c == LQ_LAWS["B2"][1] for c, _, _ in ridge):
+        raise AssertionError(f"ridge_m21.csv has no c = {LQ_LAWS['B2'][1]} row to replace by B2")
+    c_max = max(c for c, _, _ in ridge)
+    cmap = plt.get_cmap("viridis")
+    v_lo, v_hi = float(v_ref.min()), float(v_ref.max())
+    a_b2, c_b2 = b2_coeffs.coefficients["a"], b2_coeffs.coefficients["c"]
+
+    fig, (ax, axz) = plt.subplots(1, 2, figsize=(10.4*scaling_factor, 4.6*scaling_factor), constrained_layout=True)
+    # (b) zoom: the trace-speed band with a 0.25 A/ps margin each side.
+    for axis, v in ((ax, np.linspace(0.0, 12.0, 241)),
+                    (axz, np.linspace(v_lo - 0.25, v_hi + 0.25, 201))):
+        bulk = np.full_like(v, -1e3)
+        axis.axvspan(v_lo, v_hi, color="0.92", zorder=0, label="18 Å trace speeds")
+        for c, a, bound_pass in ridge:
+            if c == LQ_LAWS["B2"][1]:
+                continue
+            coeffs = replace(b2_coeffs, coefficients={"a": a, "c": c})
+            axis.plot(v, drag_force(v, bulk, coeffs, 3.5), lw=1.2, alpha=0.55,
+                      ls="-" if bound_pass else "--", color=cmap(0.9 * c / c_max),
+                      label=f"c {c:g} (a {a:.2f})" + ("" if bound_pass else ", fails 9 Å"))
+        axis.plot(v, drag_force(v, bulk, b2_coeffs, 3.5), lw=2.4, zorder=5,
+                  **STYLE["B2"], label=f"B2: c {c_b2:g} (a {a_b2:.2f})")
+        axis.set(xlim=(v[0], v[-1]), xlabel="|v| / Å/ps", ylabel="$F_{drag}$ / amu·Å/ps²")
+    ax.set(ylim=(0, None), title="(a) 18 Å ridge (m = 21 He): drag laws in bulk He")
+    axz.set(title="(b) Zoom: 18 Å trace speeds")
+    ax.legend(fontsize=7, loc="upper left")
+    png = OUT_DIR / f"{RIDGE_STEM}.png"
+    fig.savefig(png, dpi=200)
+    return png
 
 
 def main() -> int:
@@ -244,12 +287,12 @@ def main() -> int:
         F = drag_force(v, np.full_like(v, -1e3), d["coeffs"], 3.5)
         axF.plot(v, F, lw=1.8, **STYLE[label], label=label)
     axF.set(xlim=(0, 12), ylim=(0, None), xlabel="|v| [Å/ps]",
-            ylabel="F_drag (bulk) [amu·Å/ps²]", title="(c) drag laws in bulk He")
+            ylabel="$F_{drag}$ / amu·Å/ps²", title="(c) drag laws in bulk He")
     axF.legend(fontsize=8, loc="upper left")
 
-    png, pdf = OUT_DIR / f"{STEM}.png", OUT_DIR / f"{STEM}.pdf"
+    png = OUT_DIR / f"{STEM}.png"
     fig.savefig(png, dpi=200)
-    fig.savefig(pdf)
+    ridge_png = plot_ridge_laws(runs18["B2"]["coeffs"], v_ref)
 
     with open(OUT_DIR / f"{STEM}_series.csv", "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
@@ -264,7 +307,7 @@ def main() -> int:
             w.writerow((label, d["law"], d["e_bind"], d["m_amu"], d["gate_A"], d["rmse"],
                         d["escape"], row["v_exit_md_Aps"], row["v_exit_atom1_Aps"],
                         row["margin_Aps"], row["pass"]))
-    for p in (png, pdf):
+    for p in (png, ridge_png):
         print(f"  wrote {p.relative_to(PROJECT_ROOT).as_posix()}")
     if SHOW_FIGURE:
         plt.show()
