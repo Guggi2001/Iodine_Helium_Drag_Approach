@@ -123,15 +123,21 @@ FIG_B2_1: dict = {
 }
 
 FIG_B2_2: dict = {
-    # (a) n = 1..split-1, (b) n = split..n_max (linear, own scales) -- the
-    # plot_detection_summary mean-KE section; (c) "ratio" (default) or the
-    # profiled-residual anatomy "z".
+    # "stacked" (default): (a) <E> vs n = 1..n_max on a log axis, full
+    # width, over (b) the lower panel, shared n axis. "split": (a) n =
+    # 1..split-1, (b) n = split..n_max (linear, own scales) -- the
+    # plot_detection_summary mean-KE section -- over (c). Lower panel:
+    # "ratio" (default) or the profiled-residual anatomy "z".
     "stem": "b2_2_mean_ke",
-    "figsize": (TEXTWIDTH_IN, 4.6),
-    "height_ratios": (1.15, 1.0),        # top panels ~3:2 (width : height)
+    "layout": "stacked",                 # "stacked" | "split"
+    "figsize": (TEXTWIDTH_IN, 5.0),
+    "height_ratios": (1.2, 1.0),
+    "figsize_split": (TEXTWIDTH_IN, 4.6),
+    "height_ratios_split": (1.15, 1.0),
     "anchor": dict(color="tab:purple"),
     "split_n": 5,                        # = summary_sections.IHE_KED_MEAN_ENERGY_SPLIT_N
-    "yscale": "linear",
+    "yscale_stacked": "log",
+    "yscale": "linear",                  # split layout
     "ylim_low": None,
     "ylim_high": None,
     "show_bands": True,                  # correlated calib / condition envelopes
@@ -202,7 +208,7 @@ import matplotlib  # noqa: E402
 if not SHOW_FIGURE:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.ticker import MaxNLocator  # noqa: E402
+from matplotlib.ticker import FuncFormatter, MaxNLocator  # noqa: E402
 
 from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
 from i2_helium_md.postprocess import (  # noqa: E402
@@ -679,16 +685,31 @@ def build_b2_1(d: SizeData, style: dict | None = None) -> plt.Figure:
 
 
 def build_b2_2(d: KEData, style: dict | None = None) -> plt.Figure:
-    """(a) n = 1..split-1 | (b) n = split..n_max on top, (c) ratio or z below."""
+    """``stacked``: (a) all n on a log axis over (b) ratio or z, shared n.
+    ``split``: (a) n = 1..split-1 | (b) n = split..n_max on top, (c) below."""
     st = merged_style(FIG_B2_2 if style is None else style)
     split = st["split_n"]
     n_max = int(np.asarray(d.ref.n).max())
     lower = {"ratio": draw_ke_ratio, "z": draw_ke_residual}.get(st["lower_panel"])
     if lower is None:
         raise ValueError(f"lower_panel must be 'ratio' or 'z', got {st['lower_panel']!r}")
-    fig, axd = plt.subplot_mosaic([["a", "b"], ["c", "c"]], figsize=st["figsize"],
+    if st["layout"] == "stacked":
+        fig, (ax_e, ax_l) = plt.subplots(2, 1, figsize=st["figsize"], sharex=True,
+                                         constrained_layout=True,
+                                         gridspec_kw={"height_ratios": st["height_ratios"]})
+        draw_ke_mean(ax_e, d, st | {"yscale": st["yscale_stacked"]}, DETECTED_KE_N_MIN, n_max,
+                     show_legend=True, show_chi2=True)
+        lower(ax_l, d, st)
+        ax_e.set_xlabel("")
+        if st["yscale_stacked"] == "log":
+            ax_e.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{y:g}"))
+        _panel_letters((ax_e, ax_l), st)
+        return fig
+    if st["layout"] != "split":
+        raise ValueError(f"unknown B2-2 layout {st['layout']!r}")
+    fig, axd = plt.subplot_mosaic([["a", "b"], ["c", "c"]], figsize=st["figsize_split"],
                                   constrained_layout=True,
-                                  gridspec_kw={"height_ratios": st["height_ratios"]})
+                                  gridspec_kw={"height_ratios": st["height_ratios_split"]})
     t_lo, t_hi, t_c = st["titles"]
     draw_ke_mean(axd["a"], d, st, DETECTED_KE_N_MIN, split - 1, show_legend=True, show_chi2=True)
     draw_ke_mean(axd["b"], d, st, split, n_max, show_legend=False, show_chi2=False)

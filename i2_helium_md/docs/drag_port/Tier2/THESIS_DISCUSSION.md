@@ -1112,11 +1112,11 @@ n ≥ 15: solvated share in the high-n tail."
 
 **B2-2 — mean kinetic energy.** "Mean kinetic energy per fragment size,
 simulation (B2) vs the 3-D experimental reference (corrected inversion).
-(a) n = 1–4 and (b) n = 5–17, each on its own scale. Experiment: ⟨E⟩
+(a) ⟨E⟩ vs n on a logarithmic axis. Experiment: ⟨E⟩
 with statistical ⊕ systematic errors; shaded: correlated calibration
 (4 %) and condition (6 %) bands; open diamond: experimental median at
 n = 1. Simulation: mean ± standard error of the detected ions; open
-squares: sizes with fewer than two ions. (c) Ratio ⟨E⟩_sim / ⟨E⟩_exp per
+squares: sizes with fewer than two ions. (b) Ratio ⟨E⟩_sim / ⟨E⟩_exp per
 size (error: simulation SE ⊕ experimental point error); line and band:
 experiment with its correlated bands. Dashed: midHot = 1.050, geometric
 mean of the ratio over n = 2–8; dotted: deepKE = 0.499, arithmetic mean

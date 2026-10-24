@@ -199,19 +199,34 @@ class TestBuilders:
 
     @pytest.mark.parametrize("thin", [False, True])
     @pytest.mark.parametrize("lower", ["ratio", "z"])
-    def test_b2_2_three_panels_linear(self, mod, inputs, thin, lower):
+    def test_b2_2_split_three_panels_linear(self, mod, inputs, thin, lower):
         fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
-                             {**mod.FIG_B2_2, "show_thin_bins": thin, "lower_panel": lower})
+                             {**mod.FIG_B2_2, "layout": "split", "show_thin_bins": thin,
+                              "lower_panel": lower})
         try:
             assert len(fig.axes) == 3
             assert all(ax.get_yscale() == "linear" for ax in fig.axes[:2])
         finally:
             plt.close(fig)
 
-    def test_b2_2_rejects_unknown_lower_panel(self, mod, inputs):
-        with pytest.raises(ValueError, match="lower_panel"):
+    @pytest.mark.parametrize("lower", ["ratio", "z"])
+    def test_b2_2_default_is_stacked_log_with_shared_n(self, mod, inputs, lower):
+        assert mod.FIG_B2_2["layout"] == "stacked"
+        fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
+                             {**mod.FIG_B2_2, "lower_panel": lower})
+        try:
+            top, bottom = fig.axes
+            assert top.get_yscale() == "log" and bottom.get_yscale() == "linear"
+            assert top.get_shared_x_axes().joined(top, bottom)
+        finally:
+            plt.close(fig)
+
+    @pytest.mark.parametrize("key,value,match", [("lower_panel", "chi2", "lower_panel"),
+                                                 ("layout", "grid", "layout")])
+    def test_b2_2_rejects_unknown_options(self, mod, inputs, key, value, match):
+        with pytest.raises(ValueError, match=match):
             mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
-                           {**mod.FIG_B2_2, "lower_panel": "chi2"})
+                           {**mod.FIG_B2_2, key: value})
 
     def test_figures_span_the_text_width(self, mod):
         for fig_style in (mod.FIG_B2_1, mod.FIG_B2_2, mod.FIG_B2_3, mod.FIG_B2_4):
