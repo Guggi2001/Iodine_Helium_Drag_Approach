@@ -117,8 +117,8 @@ FIG_B2_1: dict = {
     "tail_n": 15,                        # n >= tail_n solvated mass (committed column)
     "annot_loc": (0.97, 0.95),           # axes fraction, top-right anchor
     "legend_loc": "center right",
-    "ylabel_scored": "fraction / %",
-    "ylabel_solvated": "fraction (n ≥ 1) / %",
+    "ylabel_scored": "Fraction / %",
+    "ylabel_solvated": "Fraction (n ≥ 1) / %",
     "xlabel": "n (attached He atoms)",
 }
 
@@ -158,7 +158,7 @@ FIG_B2_2: dict = {
     "z_guides": (-2.0, 2.0),
     "z_colors": ("tab:red", "tab:blue"),  # (sim hot, sim cold)
     "annot_z": True,
-    "ylabel": "mean kinetic energy / eV",
+    "ylabel": "Mean kinetic energy / eV",
     "ylabel_z": r"z (sim − ref, per-point $\sigma$)",
     "xlabel": "n (attached He atoms)",
 }
@@ -189,7 +189,7 @@ FIG_B2_3: dict = {
     "legend_loc": "best",
     "outer_labels_only": True,
     "xlabel": r"v / Å ps$^{-1}$",
-    "ylabel": "signal / arb. units",
+    "ylabel": "Signal / arb. units",
 }
 
 # B2-4: B2-3 on the 2-D detector projection (sim: sqrt(vx^2 + vy^2));
@@ -544,7 +544,7 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
     if st["show_bands"]:
         for frac, label, alpha in zip(
                 (ref.calib_syst_frac, ref.condition_syst_frac),
-                ("calibration band", "condition band"), st["band_alphas"]):
+                ("correlated bands (calibration, condition)", None), st["band_alphas"]):
             frac = np.asarray(frac)[sel]
             ax.fill_between(n_ref, mean * (1.0 - frac), mean * (1.0 + frac), linewidth=0,
                             alpha=alpha, label=label, **st["exp"])
