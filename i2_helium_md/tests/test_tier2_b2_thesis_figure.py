@@ -232,6 +232,17 @@ class TestBuilders:
         for fig_style in (mod.FIG_B2_1, mod.FIG_B2_2, mod.FIG_B2_3, mod.FIG_B2_4):
             assert fig_style["figsize"][0] == pytest.approx(mod.TEXTWIDTH_CM / 2.54)
 
+    def test_b2_2_split_variant_matches_stacked_footprint(self, mod, inputs):
+        v = mod.FIG_B2_2_SPLIT
+        diff = {k for k in mod.FIG_B2_2 if mod.FIG_B2_2[k] != v[k]}
+        assert diff == {"stem", "layout", "figsize_split", "height_ratios_split"}
+        fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]), v)
+        try:
+            assert len(fig.axes) == 3
+            assert tuple(fig.get_size_inches()) == pytest.approx(mod.FIG_B2_2["figsize"])
+        finally:
+            plt.close(fig)
+
     def test_b2_3_default_is_n1_to_n6_with_figure_legend(self, mod, inputs):
         assert mod.FIG_B2_3["n_values"] == tuple(range(1, 7))
         panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")

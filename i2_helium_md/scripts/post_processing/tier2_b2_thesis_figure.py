@@ -78,7 +78,7 @@ IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
 OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
-FIGURES: tuple[str, ...] = ("b2_1", "b2_2", "b2_3", "b2_4")
+FIGURES: tuple[str, ...] = ("b2_1", "b2_2", "b2_2_split", "b2_3", "b2_4")
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
 SHOW_FIGURE: bool = False
@@ -161,6 +161,16 @@ FIG_B2_2: dict = {
     "ylabel": "Mean kinetic energy / eV",
     "ylabel_z": r"z (sim − ref, per-point $\sigma$)",
     "xlabel": "n (attached He atoms)",
+}
+
+# B2-2 split variant: linear n = 1-4 | 5-17 over the same lower panel, at
+# the stacked figure's size for a side-by-side comparison.
+FIG_B2_2_SPLIT: dict = {
+    **copy.deepcopy(FIG_B2_2),
+    "stem": "b2_2_mean_ke_split",
+    "layout": "split",
+    "figsize_split": FIG_B2_2["figsize"],
+    "height_ratios_split": FIG_B2_2["height_ratios"],
 }
 
 FIG_B2_3: dict = {
@@ -711,8 +721,15 @@ def build_b2_2(d: KEData, style: dict | None = None) -> plt.Figure:
                                   constrained_layout=True,
                                   gridspec_kw={"height_ratios": st["height_ratios_split"]})
     t_lo, t_hi, t_c = st["titles"]
-    draw_ke_mean(axd["a"], d, st, DETECTED_KE_N_MIN, split - 1, show_legend=True, show_chi2=True)
+    draw_ke_mean(axd["a"], d, st, DETECTED_KE_N_MIN, split - 1, show_legend=False, show_chi2=True)
     draw_ke_mean(axd["b"], d, st, split, n_max, show_legend=False, show_chi2=False)
+    # one legend for (a) + (b) above the figure: wider than a half-width panel
+    handles = {}
+    for key in ("a", "b"):
+        for h, lab in zip(*axd[key].get_legend_handles_labels()):
+            handles.setdefault(lab, h)
+    fig.legend(handles.values(), handles.keys(), loc="outside upper center", ncols=3,
+               frameon=st["legend_frameon"], fontsize=st["legend_fontsize"])
     lower(axd["c"], d, st)
     axd["a"].set_title(t_lo.format(hi=split - 1), fontsize=st["title_fontsize"])
     axd["b"].set_title(t_hi.format(lo=split, n_max=n_max), fontsize=st["title_fontsize"])
@@ -780,6 +797,8 @@ def main() -> int:
             _save(build_b2_1(size), FIG_B2_1["stem"])
         if "b2_2" in FIGURES:
             _save(build_b2_2(ke), FIG_B2_2["stem"])
+        if "b2_2_split" in FIGURES:
+            _save(build_b2_2(ke, FIG_B2_2_SPLIT), FIG_B2_2_SPLIT["stem"])
         view = detected_ensemble_view(det)
         for key, fig_style in (("b2_3", FIG_B2_3), ("b2_4", FIG_B2_4)):
             if key in FIGURES:
