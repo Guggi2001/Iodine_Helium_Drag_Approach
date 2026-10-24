@@ -1,24 +1,29 @@
 """Tier-2 thesis figures for the production law B2 (detected ensemble).
 
-Three figures, rendered from the pooled N = 6000 B2 container
-(``…g5lqppc160e3297pooled_th500``, s1-s5 + r6) and written to
-``data/figures/thesis_tier2/``:
+Four figures, rendered from the pooled N = 6000 B2 container
+(``…g5lqppc160e3297pooled_th500``, s1-s5 + r6) at the thesis text width
+(``TEXTWIDTH_CM``) and written to ``data/figures/thesis_tier2/``. Pipeline
+vocabulary (scored / detected read, median anchor provenance, chi^2,
+smoothing window) lives in the captions, not on the figures
+(``THESIS_DISCUSSION.md`` §14):
 
 * **B2-1 size distribution** -- (a) scored histogram (droplet-retained
   excluded; suppressed ions in the bare n = 0 bin, hatched), (b) solvated
   branch (n >= 1 renormalized, RQ8) vs the experimental abundance, with
-  n̄ against the MD landing band, n₁ and W₁ annotated.
-* **B2-2 mean KE vs n** -- the ``plot_run_summary`` / detection-summary
-  format: (a) n = 1-4 and (b) n = 5-17, linear, each on its own scale --
-  correlated calibration / condition bands as envelopes, per-point
-  stat (+) sys bars, n = 1 median anchor, scored sim bins (chi^2 min-count
-  2); (c) the KE anatomy (profiled residuals z). Optional extras (off by
-  default): midHot / deepKE band shading, thin bins (< 2 ions; they enter
-  the committed deepKE, ``min_count = 1``, but not chi^2).
-* **B2-3 KED shapes** -- the detection-summary curve panels for n = 0-3
-  (n = 0 = suppressed / bare-candidate class), 3-D P(v) (or 2-D detector
-  projection), experiment raw + movmean vs simulation, peak-normalized,
-  v(<E>) markers; speed axis in Å/ps.
+  n̄ against the MD landing band, n₁, W₁ and the n >= 15 mass annotated.
+* **B2-2 mean KE vs n** -- (a) n = 1-4 and (b) n = 5-17, linear, each on
+  its own scale -- correlated calibration / condition bands as envelopes,
+  per-point stat (+) sys bars, n = 1 median, sim bins with SE (open
+  markers: < chi^2 min-count ions; they enter the committed deepKE,
+  ``min_count = 1``); (c) per-bin ratio sim / experiment mean
+  (``ke_band_ratio``, the midHot / deepKE ingredient) with the midHot
+  (n 2-8, geometric) and deepKE (n 10-17, arithmetic) band means as
+  segments. ``lower_panel = "z"`` restores the profiled-residual panel.
+* **B2-3 KED shapes** -- the detection-summary curve panels for n = 1-6
+  (3 x 2), 3-D P(v), experiment raw + movmean vs simulation,
+  peak-normalized, v(<E>) markers; speed axis in Å/ps, per-n range.
+* **B2-4** -- B2-3 on the 2-D detector projection (discussion figure,
+  ``THESIS_DISCUSSION.md`` §13; 2-D is a diagnostic, not a score).
 
 Structure: a **data layer** (``*_data`` functions; numbers only, every
 recipe imported -- ``tier2_confirmation`` scorers, the ``postprocess``
@@ -31,7 +36,8 @@ B2-3); an override wins key by key
 (nested dicts merged one level deep).
 
 Anchor guard: before drawing, every quoted scalar (n̄, suppressed, n₁,
-W₁, midHot, deepKE, chi^2_med, KE₁, number of chi^2 bins, scored count) is
+W₁, n >= 15 mass, midHot, deepKE, chi^2_med, KE₁, number of chi^2 bins,
+scored count) is
 checked against the committed B2 row of
 ``data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv`` (scored
 against the corrected ihe_ked reference v2, G12) to 4 dp; a mismatch raises.
@@ -78,16 +84,20 @@ DPI: int = 200
 SHOW_FIGURE: bool = False
 MPLSTYLE: Path | None = None     # optional .mplstyle applied to every figure
 
+TEXTWIDTH_CM: float = 16.6              # thesis \textwidth; every figure spans it
+TEXTWIDTH_IN: float = TEXTWIDTH_CM / 2.54
+
 # Shared defaults; each FIG_* dict below overrides key by key.
 COMMON_STYLE: dict = {
-    "exp": dict(color="black"),
-    "sim": dict(color="#1f77b4"),        # B2 colour of the Tier-0 / G6 figures
-    "band": dict(color="0.80"),          # midHot / deepKE / landing-band shading
+    "exp": dict(color="tab:blue"),
+    "sim": dict(color="tab:red"),        # blue / red pair of the detection summary
+    "band": dict(color="0.80"),          # landing-band shading
     "band_shade_alpha": 0.25,
-    "label_fontsize": 10,
-    "tick_fontsize": 9,
-    "legend_fontsize": 8,
-    "annot_fontsize": 8,
+    "label_fontsize": 9,
+    "tick_fontsize": 8,
+    "title_fontsize": 9,
+    "legend_fontsize": 7.5,
+    "annot_fontsize": 7.5,
     "panel_letters": True,
     "panel_letter_fmt": "({})",
     "legend_frameon": False,
@@ -96,7 +106,7 @@ COMMON_STYLE: dict = {
 FIG_B2_1: dict = {
     "stem": "b2_1_size_distribution",
     "layout": "1x2",                     # "1x2" | "2x1" | "solvated_only"
-    "figsize": (10.0, 3.8),
+    "figsize": (TEXTWIDTH_IN, 2.8),
     "n_xlim": (-0.7, 21.0),
     "bar_width_scored": 0.8,
     "bar_width_pair": 0.4,
@@ -104,22 +114,21 @@ FIG_B2_1: dict = {
     "show_landing_band": True,
     "annot_scored": True,
     "annot_solvated": True,
+    "tail_n": 15,                        # n >= tail_n solvated mass (committed column)
     "annot_loc": (0.97, 0.95),           # axes fraction, top-right anchor
     "legend_loc": "center right",
-    "ylabel_scored": "scored fraction / %",
+    "ylabel_scored": "fraction / %",
     "ylabel_solvated": "fraction (n ≥ 1) / %",
     "xlabel": "n (attached He atoms)",
 }
 
 FIG_B2_2: dict = {
-    # Defaults reproduce the plot_run_summary / plot_detection_summary
-    # sections (detected mean KE + KE anatomy) on one figure:
-    # (a) n = 1..split-1, (b) n = split..n_max (linear, own scales), (c) z.
+    # (a) n = 1..split-1, (b) n = split..n_max (linear, own scales) -- the
+    # plot_detection_summary mean-KE section; (c) "ratio" (default) or the
+    # profiled-residual anatomy "z".
     "stem": "b2_2_mean_ke",
-    "figsize": (12.5, 8.0),
+    "figsize": (TEXTWIDTH_IN, 5.6),
     "height_ratios": (5.0, 3.5),
-    "exp": dict(color="tab:blue"),
-    "sim": dict(color="tab:red"),
     "anchor": dict(color="tab:purple"),
     "split_n": 5,                        # = summary_sections.IHE_KED_MEAN_ENERGY_SPLIT_N
     "yscale": "linear",
@@ -128,16 +137,18 @@ FIG_B2_2: dict = {
     "show_bands": True,                  # correlated calib / condition envelopes
     "band_alphas": (0.20, 0.12),
     "show_median_anchor": True,
-    "show_thin_bins": False,             # bins < chi^2 min-count (they enter deepKE only)
+    "show_thin_bins": True,              # bins < chi^2 min-count (they enter deepKE only)
     "show_midhot_band": False,
     "show_deepke_band": False,
-    "annot_chi2": True,
+    "annot_chi2": False,
     "annot_loc": (0.03, 0.05),
-    "legend_loc": "best",
-    "legend_fontsize": 8,
-    "annot_fontsize": 9,
-    "titles": ("n = 1–{hi} (detected read)", "n = {lo}–{n_max} (detected read)",
-               "Detected KE per-bin anatomy (profiled residual z)"),
+    "legend_loc": "upper right",
+    "titles": ("n = 1–{hi}", "n = {lo}–{n_max}", None),
+    "lower_panel": "ratio",              # "ratio" | "z"
+    "ratio_ylim": None,
+    "annot_band_means": True,            # midHot / deepKE segments + values (legend)
+    "legend_loc_ratio": "upper right",
+    "ylabel_ratio": r"$\langle E\rangle_\mathrm{sim} / \langle E\rangle_\mathrm{exp}$",
     "z_guides": (-2.0, 2.0),
     "z_colors": ("tab:red", "tab:blue"),  # (sim hot, sim cold)
     "annot_z": True,
@@ -147,28 +158,30 @@ FIG_B2_2: dict = {
 }
 
 FIG_B2_3: dict = {
-    # Defaults reproduce the plot_detection_summary ihe_ked curve section
-    # extended to n = 0..7 (4 x 2) with the speed axis in Å/ps.
+    # The plot_detection_summary ihe_ked curve section for n = 1..6 (3 x 2)
+    # with the speed axis in Å/ps; n = 0 (suppressed vs bare I+) is a
+    # different population and is left out (THESIS_DISCUSSION §14).
     "stem": "b2_3_ked_shapes",
     "representation": "3d",              # "3d" (P(v)) | "2d" (detector projection)
-    "n_values": (0, 1, 2, 3, 4, 5, 6, 7),  # n 5-7: extended exports, not verified
+    "n_values": (1, 2, 3, 4, 5, 6),      # n 5-7: extended exports, not verified
     "ncols": 2,
-    "figsize": (10.5, 13.0),
+    "figsize": (TEXTWIDTH_IN, 7.0),
     "sharex": False,
-    "sharey": False,
-    "exp": dict(color="tab:blue"),
-    "sim": dict(color="tab:red"),
-    "v_xlim_Aps": (0.0, 31.0),           # IHE_KED_PLOT_V_MAX_MPS / 100
-    "ylim": (0.0, 1.25),
+    "sharey": True,
+    "v_xlim_Aps": (0.0, 31.0),           # IHE_KED_PLOT_V_MAX_MPS / 100 (fallback)
+    "v_xlim_by_n": {1: (0.0, 26.0), 2: (0.0, 20.0), 3: (0.0, 16.0),
+                    4: (0.0, 14.0), 5: (0.0, 14.0), 6: (0.0, 12.0)},
+    "ylim": (0.0, 1.35),
     "show_exp_raw": True,
     "show_v_of_mean_E": True,
-    "show_counts": False,                # per-panel N text (N is in the legend label)
+    "show_counts": True,                 # per-panel N text
     "annot_ke_n": (),                    # panels that print <E> sim / exp
     "titles": "n = {n}",
     "suptitle": None,
-    "legend_panel": 0,                   # "figure" | panel index | None
+    "legend_panel": "figure",            # "figure" | panel index | None
+    "legend_ncols": 3,                   # figure legend only
     "legend_loc": "best",
-    "legend_fontsize": 7,
+    "outer_labels_only": True,
     "xlabel": r"v / Å ps$^{-1}$",
     "ylabel": "signal / arb. units",
 }
@@ -206,6 +219,7 @@ from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
     DEEP_KE_BAND,
     MIDHOT_BAND,
     deep_bin_ke_ratio,
+    ke_band_ratio,
     midhot_ratio,
     read_confirmation_detection,
     score_histogram_vs_reference,
@@ -249,6 +263,7 @@ def _finish_axis(ax, st: dict, integer_x: bool = False) -> None:
     ax.tick_params(labelsize=st["tick_fontsize"])
     ax.xaxis.label.set_size(st["label_fontsize"])
     ax.yaxis.label.set_size(st["label_fontsize"])
+    ax.title.set_size(st["title_fontsize"])
 
 
 def _panel_letters(axes, st: dict) -> None:
@@ -283,13 +298,19 @@ class SizeData:
     w1_solvated: float
     sim_n1: float
     ref_n1: float
+    sim_tail_mass: float
+    ref_tail_mass: float
 
 
-def size_data(read, abundance) -> SizeData:
-    """Scorer read path of ``_section_detected_size_distribution``."""
+def size_data(read, abundance, tail_n: int = FIG_B2_1["tail_n"]) -> SizeData:
+    """Scorer read path of ``_section_detected_size_distribution``; the tail
+    mass is the solvated share at ``n >= tail_n`` (the
+    ``mass_n15plus_solv`` column of ``tier2_g5_winners_table``)."""
     score = score_histogram_vs_reference(read, abundance)
     sim_n, sim_f = solvated_renormalized(read.n_values, read.fraction, n_min=score.n_min)
     ref_n, ref_f = solvated_renormalized(abundance.n, abundance.ion_fraction, n_min=score.n_min)
+    sim_n, sim_f = np.asarray(sim_n), np.asarray(sim_f, dtype=float)
+    ref_n, ref_f = np.asarray(ref_n), np.asarray(ref_f, dtype=float)
     return SizeData(
         n_scored=np.asarray(read.n_values), frac_scored=np.asarray(read.fraction),
         n_sim_solv=sim_n, frac_sim_solv=sim_f, n_ref_solv=ref_n, frac_ref_solv=ref_f,
@@ -297,6 +318,8 @@ def size_data(read, abundance) -> SizeData:
         num_scored=int(read.num_scored), num_ions=int(read.num_ions),
         w1_solvated=float(score.w1_solvated), sim_n1=float(score.sim_n1),
         ref_n1=float(score.ref_n1),
+        sim_tail_mass=float(sim_f[sim_n >= tail_n].sum()),
+        ref_tail_mass=float(ref_f[ref_n >= tail_n].sum()),
     )
 
 
@@ -306,12 +329,18 @@ class KEData:
 
     ``scored_mask`` marks the bins that pass the chi^2 min-count
     (``DETECTED_KE_MIN_BIN_COUNT``); the others are display-only thin bins.
+    ``ratio`` is the per-bin ``ke_band_ratio`` over every bin (sim mean /
+    raw reference mean -- the ingredient of midHot / deepKE), aligned with
+    ``n``; ``ratio_err`` is its display error bar, sim SE and reference
+    point error in quadrature (NaN where the sim SE is undefined).
     """
     n: np.ndarray
     mean_eV: np.ndarray
     se_eV: np.ndarray
     count: np.ndarray
     scored_mask: np.ndarray
+    ratio: np.ndarray
+    ratio_err: np.ndarray
     ref: object
     chi2_score: object
     midhot: object
@@ -328,12 +357,24 @@ def ke_data(read, ked_ref) -> KEData:
         read, ked_ref, n_min=DETECTED_KE_N_MIN, min_count=DETECTED_KE_MIN_BIN_COUNT,
         include_sim_se=DETECTED_KE_INCLUDE_SIM_SE, n1_anchor=DETECTED_KE_N1_ANCHOR,
     )
+    n = np.asarray(ke.n)[keep]
+    mean = np.asarray(ke.mean_eV, dtype=float)[keep]
+    se = np.asarray(ke.se_eV, dtype=float)[keep]
     count = np.asarray(ke.count)[keep]
+    per_bin = ke_band_ratio(read, ked_ref, n_lo=DETECTED_KE_N_MIN, n_hi=int(n.max()),
+                            min_count=1)
+    ratio_of = dict(zip(per_bin.n.tolist(), per_bin.ratio.tolist()))
+    ratio = np.array([ratio_of.get(int(k), np.nan) for k in n])
+    ref_idx = {int(v): i for i, v in enumerate(np.asarray(ked_ref.n))}
+    rel_ref = np.array([
+        ked_ref.point_err_eV[ref_idx[int(k)]] / ked_ref.mean_KE_eV[ref_idx[int(k)]]
+        if int(k) in ref_idx else np.nan for k in n])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        ratio_err = ratio * np.hypot(se / mean, rel_ref)
     return KEData(
-        n=np.asarray(ke.n)[keep], mean_eV=np.asarray(ke.mean_eV)[keep],
-        se_eV=np.asarray(ke.se_eV)[keep], count=count,
-        scored_mask=count >= DETECTED_KE_MIN_BIN_COUNT, ref=ked_ref,
-        chi2_score=chi2, midhot=midhot_ratio(read, ked_ref),
+        n=n, mean_eV=mean, se_eV=se, count=count,
+        scored_mask=count >= DETECTED_KE_MIN_BIN_COUNT, ratio=ratio, ratio_err=ratio_err,
+        ref=ked_ref, chi2_score=chi2, midhot=midhot_ratio(read, ked_ref),
         deepke=deep_bin_ke_ratio(read, ked_ref),
     )
 
@@ -406,6 +447,7 @@ def anchor_values(size: SizeData, ke: KEData) -> dict[str, float]:
         "nbar_det": size.n_mean,
         "n1_solv": size.sim_n1,
         "w1_solv": size.w1_solvated,
+        "mass_n15plus_solv": size.sim_tail_mass,
         "midHot": ke.midhot.value,
         "midHot_bins": ke.midhot.n_bins,
         "deepKE": ke.deepke.value,
@@ -452,8 +494,7 @@ def draw_size_scored(ax, d: SizeData, st: dict) -> None:
         lo, hi = NBAR_LANDING
         flag = "∈" if lo <= d.n_mean <= hi else "∉"
         _annot(ax, rf"$\bar n$ = {d.n_mean:.2f} {flag} [{lo:.2f}, {hi:.2f}]" "\n"
-                   f"suppressed {100.0 * d.suppressed_frac:.1f} %\n"
-                   f"scored {d.num_scored} / {d.num_ions} ions", st, st["annot_loc"])
+                   f"suppressed {100.0 * d.suppressed_frac:.1f} %", st, st["annot_loc"])
     if st["show_landing_band"]:
         ax.axvspan(*NBAR_LANDING, zorder=0, alpha=2 * st["band_shade_alpha"], linewidth=0,
                    label=r"$\bar n$ landing band", **st["band"])
@@ -471,7 +512,9 @@ def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
     ax.bar(d.n_sim_solv + w / 2, 100.0 * d.frac_sim_solv, width=w, label="B2", **st["sim"])
     if st["annot_solvated"]:
         _annot(ax, rf"$n_1$ = {d.sim_n1:.3f} (exp {d.ref_n1:.3f})" "\n"
-                   rf"$W_1$ = {d.w1_solvated:.3f} bins", st, st["annot_loc"])
+                   rf"$W_1$ = {d.w1_solvated:.3f} bins" "\n"
+                   rf"n ≥ {st['tail_n']}: {d.sim_tail_mass:.4f} (exp {d.ref_tail_mass:.4f})",
+               st, st["annot_loc"])
     ax.set(xlim=st["n_xlim"], xlabel=st["xlabel"], ylabel=st["ylabel_solvated"])
     _legend(ax, st, st["legend_loc"])
     _finish_axis(ax, st, integer_x=True)
@@ -495,41 +538,71 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
     if st["show_bands"]:
         for frac, label, alpha in zip(
                 (ref.calib_syst_frac, ref.condition_syst_frac),
-                ("calibration band (correlated)", "condition band (correlated)"),
-                st["band_alphas"]):
+                ("calibration band", "condition band"), st["band_alphas"]):
             frac = np.asarray(frac)[sel]
             ax.fill_between(n_ref, mean * (1.0 - frac), mean * (1.0 + frac), linewidth=0,
                             alpha=alpha, label=label, **st["exp"])
     ax.errorbar(n_ref, mean, yerr=np.asarray(ref.point_err_eV)[sel], fmt="o", markersize=4,
-                capsize=2, label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)",
-                **st["exp"])
+                capsize=2, label=r"experiment $\langle E\rangle$", **st["exp"])
     hit = n_ref == 1
     if st["show_median_anchor"] and np.any(hit):
-        ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", markersize=7,
+        ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", markersize=6,
                 markerfacecolor="none", markeredgecolor=st["anchor"]["color"],
-                markeredgewidth=1.5, label="n = 1 median anchor (I77, operative)")
+                markeredgewidth=1.3, label="experiment median (n = 1)")
     in_panel = (d.n >= n_lo) & (d.n <= n_hi)
     ok = in_panel & d.scored_mask
     if np.any(ok):
         ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", linestyle="none",
-                    markersize=5, capsize=2, label=r"detected simulation $\langle E\rangle$",
+                    markersize=4, capsize=2, label=r"simulation (B2) $\langle E\rangle$",
                     **st["sim"])
     thin = in_panel & ~d.scored_mask
     if st["show_thin_bins"] and np.any(thin):
-        ax.plot(d.n[thin], d.mean_eV[thin], "s", markersize=5, markerfacecolor="none",
+        ax.plot(d.n[thin], d.mean_eV[thin], "s", markersize=4, markerfacecolor="none",
                 color=st["sim"]["color"],
-                label=f"simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions (not in $\\chi^2$)")
-        for n, e, c in zip(d.n[thin], d.mean_eV[thin], d.count[thin]):
-            ax.annotate(f"{c}", (n, e), xytext=(0, 5), textcoords="offset points",
-                        ha="center", va="bottom", fontsize=st["annot_fontsize"] - 1,
-                        color=st["sim"]["color"])
+                label=f"simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions")
     if show_chi2 and st["annot_chi2"]:
         _annot(ax, rf"$\chi^2$_med = {d.chi2_score.chi2_profiled:.1f}; "
                    f"{d.chi2_score.n_points} bins", st, st["annot_loc"], ha="left", va="bottom")
     ax.set(yscale=st["yscale"], xlabel=st["xlabel"], ylabel=st["ylabel"])
     if show_legend:
         _legend(ax, st, st["legend_loc"])
-    _finish_axis(ax, st)
+    _finish_axis(ax, st, integer_x=True)
+
+
+def draw_ke_ratio(ax, d: KEData, st: dict) -> None:
+    """Per-bin sim / experiment mean-KE ratio (``ke_band_ratio``, raw
+    reference mean) with the correlated bands as 1 +- frac envelopes and the
+    committed midHot / deepKE band means as segments."""
+    ref = d.ref
+    n_ref = np.asarray(ref.n)
+    sel = (n_ref >= DETECTED_KE_N_MIN) & (n_ref <= int(d.n.max()))
+    if st["show_bands"]:
+        for frac, alpha in zip((ref.calib_syst_frac, ref.condition_syst_frac),
+                               st["band_alphas"]):
+            frac = np.asarray(frac)[sel]
+            ax.fill_between(n_ref[sel], 1.0 - frac, 1.0 + frac, linewidth=0, alpha=alpha,
+                            **st["exp"])
+    ax.axhline(1.0, linewidth=0.8, **st["exp"])
+    ok = d.scored_mask & np.isfinite(d.ratio)
+    ax.errorbar(d.n[ok], d.ratio[ok], yerr=d.ratio_err[ok], fmt="s", linestyle="none",
+                markersize=4, capsize=2, **st["sim"])
+    thin = ~d.scored_mask & np.isfinite(d.ratio)
+    if st["show_thin_bins"] and np.any(thin):
+        ax.plot(d.n[thin], d.ratio[thin], "s", markersize=4, markerfacecolor="none",
+                color=st["sim"]["color"])
+    if st["annot_band_means"]:
+        for band, name, ls in ((d.midhot, "midHot", "--"), (d.deepke, "deepKE", ":")):
+            if band.n_bins == 0:
+                continue
+            ax.hlines(band.value, band.n.min() - 0.4, band.n.max() + 0.4, linestyles=ls,
+                      linewidth=1.4, label=f"{name} (n {band.n.min()}–{band.n.max()}) = "
+                                           f"{band.value:.3f}", **st["sim"])
+        _legend(ax, st, st["legend_loc_ratio"])
+    if st["ratio_ylim"] is not None:
+        ax.set_ylim(st["ratio_ylim"])
+    ax.set(xlim=(DETECTED_KE_N_MIN - 0.6, int(np.asarray(ref.n).max()) + 0.6),
+           xlabel=st["xlabel"], ylabel=st["ylabel_ratio"])
+    _finish_axis(ax, st, integer_x=True)
 
 
 def draw_ke_residual(ax, d: KEData, st: dict) -> None:
@@ -545,8 +618,9 @@ def draw_ke_residual(ax, d: KEData, st: dict) -> None:
         _annot(ax, rf"$\chi^2$_med = {s.chi2_profiled:.1f}, {s.n_points} bins" "\n"
                    f"a_calib = {s.a_calib:.2f}, b_cond = {s.b_condition:.2f}",
                st, st["annot_loc"], ha="left", va="bottom")
-    ax.set(xlabel=st["xlabel"], ylabel=st["ylabel_z"])
-    _finish_axis(ax, st)
+    ax.set(xlim=(DETECTED_KE_N_MIN - 0.6, int(np.asarray(d.ref.n).max()) + 0.6),
+           xlabel=st["xlabel"], ylabel=st["ylabel_z"])
+    _finish_axis(ax, st, integer_x=True)
 
 
 def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
@@ -554,33 +628,34 @@ def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
     if st["show_exp_raw"]:
         ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.5, linewidth=0.5, alpha=0.30,
                 label="experiment (raw)", **st["exp"])
-    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4,
-            label=f"experiment (movmean {IHE_KED_EXP_SMOOTHING_WINDOW})", **st["exp"])
+    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="experiment (smoothed)",
+            **st["exp"])
     if d.sim_trace is not None:
-        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4,
-                label=f"simulation (N={d.num_sim})", **st["sim"])
+        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4, label="simulation (B2)",
+                **st["sim"])
     else:
         ax.annotate("sim: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
                     ha="right", fontsize=8, color=st["sim"]["color"])
     if st["show_v_of_mean_E"]:
         ax.axvline(d.v_mean_E_exp_Aps, linestyle=":", linewidth=1.0,
-                   label=r"exp $v(\langle E\rangle)$", **st["exp"])
+                   label=r"experiment $v(\langle E\rangle)$", **st["exp"])
         if d.v_mean_E_sim_Aps is not None:
             ax.axvline(d.v_mean_E_sim_Aps, linestyle=":", linewidth=1.0,
-                       label=r"sim $v(\langle E\rangle)$", **st["sim"])
+                       label=r"simulation $v(\langle E\rangle)$", **st["sim"])
     lines = []
     if st["show_counts"]:
         lines.append(f"N = {d.num_sim}")
     if d.n in st["annot_ke_n"] and d.mean_E_sim_eV is not None:
         lines.append(rf"$\langle E\rangle$ {d.mean_E_sim_eV:.3f} / exp {d.mean_E_exp_eV:.3f} eV")
     if lines:
-        ax.text(0.03, 0.95, "\n".join(lines), transform=ax.transAxes, ha="left", va="top",
+        ax.text(0.97, 0.95, "\n".join(lines), transform=ax.transAxes, ha="right", va="top",
                 fontsize=st["annot_fontsize"])
-    ax.set(title=st["titles"].format(n=d.n), xlim=st["v_xlim_Aps"], ylim=st["ylim"],
+    xlim = st.get("v_xlim_by_n", {}).get(d.n, st["v_xlim_Aps"])
+    ax.set(title=st["titles"].format(n=d.n), xlim=xlim, ylim=st["ylim"],
            xlabel=st["xlabel"], ylabel=st["ylabel"])
     if show_legend:
         _legend(ax, st, st["legend_loc"])
-    _finish_axis(ax, st)
+    _finish_axis(ax, st, integer_x=True)
 
 
 # =============================================================================
@@ -604,20 +679,24 @@ def build_b2_1(d: SizeData, style: dict | None = None) -> plt.Figure:
 
 
 def build_b2_2(d: KEData, style: dict | None = None) -> plt.Figure:
-    """(a) n = 1..split-1 | (b) n = split..n_max on top, (c) residual z below."""
+    """(a) n = 1..split-1 | (b) n = split..n_max on top, (c) ratio or z below."""
     st = merged_style(FIG_B2_2 if style is None else style)
     split = st["split_n"]
     n_max = int(np.asarray(d.ref.n).max())
+    lower = {"ratio": draw_ke_ratio, "z": draw_ke_residual}.get(st["lower_panel"])
+    if lower is None:
+        raise ValueError(f"lower_panel must be 'ratio' or 'z', got {st['lower_panel']!r}")
     fig, axd = plt.subplot_mosaic([["a", "b"], ["c", "c"]], figsize=st["figsize"],
                                   constrained_layout=True,
                                   gridspec_kw={"height_ratios": st["height_ratios"]})
-    t_lo, t_hi, t_z = st["titles"]
+    t_lo, t_hi, t_c = st["titles"]
     draw_ke_mean(axd["a"], d, st, DETECTED_KE_N_MIN, split - 1, show_legend=True, show_chi2=True)
     draw_ke_mean(axd["b"], d, st, split, n_max, show_legend=False, show_chi2=False)
-    draw_ke_residual(axd["c"], d, st)
-    axd["a"].set_title(t_lo.format(hi=split - 1))
-    axd["b"].set_title(t_hi.format(lo=split, n_max=n_max))
-    axd["c"].set_title(t_z)
+    lower(axd["c"], d, st)
+    axd["a"].set_title(t_lo.format(hi=split - 1), fontsize=st["title_fontsize"])
+    axd["b"].set_title(t_hi.format(lo=split, n_max=n_max), fontsize=st["title_fontsize"])
+    if t_c:
+        axd["c"].set_title(t_c, fontsize=st["title_fontsize"])
     for key, lim in (("a", st["ylim_low"]), ("b", st["ylim_high"])):
         if lim is not None:
             axd[key].set_ylim(lim)
@@ -634,11 +713,16 @@ def build_b2_3(panels: list[PvData], style: dict | None = None) -> plt.Figure:
     flat = axes.ravel()
     for k, (ax, d) in enumerate(zip(flat, panels)):
         draw_pv(ax, d, st, show_legend=(st["legend_panel"] == k))
+        if st.get("outer_labels_only"):
+            if k % ncols:
+                ax.set_ylabel("")
+            if k + ncols < len(panels):
+                ax.set_xlabel("")
     for ax in flat[len(panels):]:
         ax.set_axis_off()
     if st["legend_panel"] == "figure":
         handles, labels = flat[0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc="outside upper center", ncols=len(labels),
+        fig.legend(handles, labels, loc="outside upper center", ncols=st["legend_ncols"],
                    frameon=st["legend_frameon"], fontsize=st["legend_fontsize"])
     if st["suptitle"]:
         fig.suptitle(st["suptitle"])

@@ -132,6 +132,23 @@ class TestRecipeParity:
         finally:
             plt.close(fig)
 
+    def test_ratio_is_the_band_ratio_ingredient(self, mod, inputs):
+        # per-bin ratio = ke_band_ratio's (sim mean / raw ref mean), so the
+        # plotted points are the ones midHot / deepKE aggregate
+        from i2_helium_md.postprocess.tier2_confirmation import ke_band_ratio
+        d = mod.ke_data(inputs["read"], inputs["ked_ref"])
+        ref = ke_band_ratio(inputs["read"], inputs["ked_ref"], n_lo=1, n_hi=int(d.n.max()))
+        np.testing.assert_allclose(d.ratio[np.isin(d.n, ref.n)], ref.ratio)
+        assert d.ratio_err.shape == d.ratio.shape
+
+    def test_tail_mass_is_the_winners_table_column(self, mod, inputs):
+        # mass_n15plus_solv = solvated share at n >= 15 (tier2_g5_winners_table);
+        # tail_n 3 so the two synthetic n = 3 ions land in it
+        d = mod.size_data(inputs["read"], inputs["abundance"], tail_n=3)
+        np.testing.assert_allclose(d.sim_tail_mass, d.frac_sim_solv[d.n_sim_solv >= 3].sum())
+        assert d.sim_tail_mass > 0.0
+        assert 0.0 < d.ref_tail_mass < 1.0
+
     def test_pv_rejects_unknown_representation(self, mod, inputs):
         with pytest.raises(ValueError, match="representation"):
             mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "1d")
@@ -162,9 +179,9 @@ class TestAnchorGuard:
     def test_anchor_values_cover_quoted_scalars(self, mod, inputs):
         v = mod.anchor_values(mod.size_data(inputs["read"], inputs["abundance"]),
                               mod.ke_data(inputs["read"], inputs["ked_ref"]))
-        assert set(v) == {"num_scored", "supp", "nbar_det", "n1_solv", "w1_solv", "midHot",
-                          "midHot_bins", "deepKE", "deepKE_bins", "chi2_med", "ke_npts",
-                          "KE1_mean"}
+        assert set(v) == {"num_scored", "supp", "nbar_det", "n1_solv", "w1_solv",
+                          "mass_n15plus_solv", "midHot", "midHot_bins", "deepKE",
+                          "deepKE_bins", "chi2_med", "ke_npts", "KE1_mean"}
 
 
 class TestBuilders:
@@ -181,24 +198,38 @@ class TestBuilders:
         assert mod.FIG_B2_2["split_n"] == sections.IHE_KED_MEAN_ENERGY_SPLIT_N
 
     @pytest.mark.parametrize("thin", [False, True])
-    def test_b2_2_three_panels_linear(self, mod, inputs, thin):
+    @pytest.mark.parametrize("lower", ["ratio", "z"])
+    def test_b2_2_three_panels_linear(self, mod, inputs, thin, lower):
         fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
-                             {**mod.FIG_B2_2, "show_thin_bins": thin})
+                             {**mod.FIG_B2_2, "show_thin_bins": thin, "lower_panel": lower})
         try:
             assert len(fig.axes) == 3
             assert all(ax.get_yscale() == "linear" for ax in fig.axes[:2])
         finally:
             plt.close(fig)
 
-    def test_b2_3_default_is_n0_to_n7_with_panel_legend(self, mod, inputs):
-        assert mod.FIG_B2_3["n_values"] == tuple(range(8))
+    def test_b2_2_rejects_unknown_lower_panel(self, mod, inputs):
+        with pytest.raises(ValueError, match="lower_panel"):
+            mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]),
+                           {**mod.FIG_B2_2, "lower_panel": "chi2"})
+
+    def test_figures_span_the_text_width(self, mod):
+        for fig_style in (mod.FIG_B2_1, mod.FIG_B2_2, mod.FIG_B2_3, mod.FIG_B2_4):
+            assert fig_style["figsize"][0] == pytest.approx(mod.TEXTWIDTH_CM / 2.54)
+
+    def test_b2_3_default_is_n1_to_n6_with_figure_legend(self, mod, inputs):
+        assert mod.FIG_B2_3["n_values"] == tuple(range(1, 7))
         panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")
                   for n in mod.FIG_B2_3["n_values"]]
         fig = mod.build_b2_3(panels)
         try:
-            assert len(fig.axes) == 8
-            assert fig.axes[0].get_legend() is not None
-            assert all(ax.get_legend() is None for ax in fig.axes[1:])
+            assert len(fig.axes) == 6
+            assert len(fig.legends) == 1
+            assert all(ax.get_legend() is None for ax in fig.axes)
+            # per-n speed range; inner column / upper rows carry no axis labels
+            assert fig.axes[0].get_xlim() == mod.FIG_B2_3["v_xlim_by_n"][1]
+            assert fig.axes[1].get_ylabel() == "" and fig.axes[0].get_xlabel() == ""
+            assert fig.axes[4].get_xlabel() and fig.axes[4].get_ylabel()
         finally:
             plt.close(fig)
 

@@ -1085,3 +1085,57 @@ ion."
    f) and a Tier-3 stochastic channel with a transverse component; and,
    for figures only, a post-processing re-orientation that projects the
    model with the measured β so that 2-D tests speed and width alone.
+
+## 14. B2 thesis figures: caption drafts (added 2026-10-24; zero MD)
+
+Figures: `scripts/post_processing/tier2_b2_thesis_figure.py` →
+`data/figures/thesis_tier2/b2_{1,2,3,4}_*.png`, full text width
+(16.6 cm), blue = experiment, red = B2. Every quoted number is checked
+against the B2 row of `g5_winners_table_ihekedv2.csv` (reference v2,
+G12.3) before drawing. Pipeline vocabulary that used to sit on the
+figures (scored / detected read, median-anchor provenance, χ², smoothing
+windows) is in these captions. Layout decisions (user, 2026-10-24):
+sim / ref ratio replaces the profiled residual z in B2-2 (c) (the
+profiled fit carries large uncertainties; the z values stay in G12.3);
+B2-3 shows n = 1–6, so n = 0 (suppressed class vs bare I⁺, different
+populations) is not in the results grid; B2-4 belongs to §13.
+
+**B2-1 — size distribution.** "Terminal I⁺Heₙ size distribution for the
+production law B2 (6000 molecules, 12 000 ions). Ions that stay bound
+to the droplet (4.9 %) are excluded; 11 415 ions are scored. (a) Scored
+distribution; the hatched n = 0 bar is the suppressed class (11.0 %).
+Dashed line: mean size n̄ = 3.90; grey band: the n̄ landing band
+[3.83, 4.31]. (b) Solvated branch (n ≥ 1, renormalised) compared with
+the experimental abundance. n₁: share of n = 1 among solvated ions;
+W₁: Wasserstein-1 distance between the two histograms in units of n;
+n ≥ 15: solvated share in the high-n tail."
+
+**B2-2 — mean kinetic energy.** "Mean kinetic energy per fragment size,
+simulation (B2) vs the 3-D experimental reference (corrected inversion).
+(a) n = 1–4 and (b) n = 5–17, each on its own scale. Experiment: ⟨E⟩
+with statistical ⊕ systematic errors; shaded: correlated calibration
+(4 %) and condition (6 %) bands; open diamond: experimental median at
+n = 1. Simulation: mean ± standard error of the detected ions; open
+squares: sizes with fewer than two ions. (c) Ratio ⟨E⟩_sim / ⟨E⟩_exp per
+size (error: simulation SE ⊕ experimental point error); line and band:
+experiment with its correlated bands. Dashed: midHot = 1.050, geometric
+mean of the ratio over n = 2–8; dotted: deepKE = 0.499, arithmetic mean
+over n = 10–17."
+(Optional sentence in the text, not on the figure: profiled
+χ²_med = 349.7 over 15 sizes with ≥ 2 ions, n = 1 anchored to the
+median.)
+
+**B2-3 — speed distributions (3-D).** "Speed distributions of I⁺Heₙ,
+n = 1–6. Experiment: Abel-inverted (3-D) VMI distribution, raw (dots)
+and moving mean over 10 points (solid). Simulation (B2): |v| of the
+detected ions, 0.04 Å/ps bins, moving mean over 15 bins (dashed); N =
+ions per size. All curves are normalised to their maximum. Dotted
+vertical lines: speed of the mean kinetic energy, v(⟨E⟩). The simulated
+distributions are much narrower than the measured ones (§1.1, G7)."
+
+**B2-4 — detector projection (2-D, §13).** As B2-3 with the 2-D
+detector projection: experiment = projected VMI distribution (not
+inverted), simulation = √(v_x² + v_y²). Caption must state that the
+projection depends on the angular distribution: the model keeps β = 2,
+the experiment shows β ≈ 0.3 (§13), so this comparison is a diagnostic,
+not a score.
