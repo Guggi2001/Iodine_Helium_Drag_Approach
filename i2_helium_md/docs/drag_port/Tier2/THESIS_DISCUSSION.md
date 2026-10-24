@@ -77,8 +77,9 @@ non-uniqueness is reported as a finding.
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
 `data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed): (a) scored n
 vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments)
-with the old-bundle map (h405 `post_pickup`, binned) overlaid, (c) chord
-distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
+with the old-bundle map (h405 `post_pickup`, binned) overlaid, (c) B2 chord
+distribution (the raw-sampler A5 overlay was dropped 2026-10-24: its runs
+are no longer on disk). Numbers: `g5_postpickup_chord.csv` (binned,
 `lqppb2`; the script anchors on it to 4 dp), `detfix_postpickup_chord.csv`
 (h405), `g6_chord_stats.csv` (n = 1 window, KE₁ spread).
 
@@ -115,8 +116,8 @@ distribution per sampler. Numbers: `g5_postpickup_chord.csv` (binned,
   surface. This is why radial birth depth is the weaker proxy.
 - **Consequences.**
   - Geometry (droplet size, sampler, birth depth) only reweights the chord
-    distribution (panel c: B2 and A5 `post_pickup` have bit-identical
-    chords — the law does not enter; `post_pickup` shifts weight from
+    distribution (B2 and A5 `post_pickup` had bit-identical chords,
+    checked 2026-10-13 — the law does not enter; `post_pickup` shifts weight from
     < 40 Å to long chords); drag, τ, E₀ and the ladder set the map. The
     histogram is the chord distribution pushed through one map.
   - **No geometry change can move KE₁.** The n = 1 window position on the
@@ -147,22 +148,32 @@ Numbers: `g6_chord_stats.csv`, `g7_ke_width.csv` (both from
   the KE slope along the chord (−0.021 eV/Å) times the chord spread inside
   the window; the residual at fixed chord is 0.012 eV. n at fixed chord is
   equally sharp (panel a: discrete bands, adjacent n overlap over ≈ 1–2 Å).
-- KE width at fixed n, model vs experiment (IQR / median):
+- KE width at fixed n, model vs experiment (IQR / median; corrected KED
+  reference v2, G12; refreshed 2026-10-24 and extended to n = 1–6, the
+  B2-3 KED panels):
 
-  | n | model (B2) | experiment | ratio |
+  | n | model (B2) | experiment (v2) | ratio |
   |---|---|---|---|
-  | 1 | 0.101 | 0.804 | 8.0 |
-  | 2 | 0.086 | 0.702 | 8.1 |
-  | 3 | 0.092 | 0.706 | 7.7 |
-  | 4 | 0.090 | 0.691 | 7.7 |
+  | 1 | 0.101 | 0.847 | 8.4 |
+  | 2 | 0.086 | 0.730 | 8.5 |
+  | 3 | 0.092 | 0.733 | 8.0 |
+  | 4 | 0.090 | 0.733 | 8.2 |
+  | 5 | 0.116 | 0.773 | 6.6 |
+  | 6 | 0.152 | 0.789 | 5.2 |
 
-  The model is ≈ 8× too narrow in relative width at every n (consistent
-  with §7.4, measured there at the earlier law). In absolute terms the gap
-  at n = 1 is larger (σ 0.70 vs SD 0.038 eV, ≈ 18×) because the model
-  median is about half the experimental one. Experimental quartiles are
-  read from the unsmoothed 3-D P(E) (`IHe_KED_curves_n*.csv`); they match
-  the reference median / mean columns to ≈ 4–5 % only (cuts not re-done),
-  so only the relative width is taken from them.
+  The model is ≈ 8× too narrow in relative width at n = 1–4, falling to
+  ≈ 5× by n = 6 (the model width grows with n, the experimental one
+  barely); consistent with §7.4, measured there at the earlier law. (v1
+  values, 2026-10-13: experiment 0.69–0.80, ratio 7.7–8.1 at n = 1–4; the
+  model side is unchanged.) In absolute terms the gap at n = 1 is larger
+  (σ 0.67 vs SD 0.038 eV, ≈ 18×) because the model median is about half
+  the experimental one. Experimental quartiles are read from the
+  unsmoothed 3-D P(E) (`IHe_KED_curves_n*.csv`, v2); their medians sit
+  4–11 % above the reference median column (cuts not re-done), so only
+  the relative width is taken from them.
+  Caption sentence (B2-3): the simulated distributions are 5–8× narrower
+  than the experiment (IQR / median 0.09–0.15 vs 0.73–0.85, n = 1–6;
+  ≈ 8× for n ≤ 4).
 
 **Statement for the thesis.**
 1. "KE₁ is geometry-invariant" holds **within the deterministic model**:
@@ -170,11 +181,12 @@ Numbers: `g6_chord_stats.csv`, `g7_ke_width.csv` (both from
    fixed chord, and the map through it is near-deterministic, so KE₁
    cannot change.
 2. The experimental KE width at fixed n shows the real map **scatters**
-   (≈ 8× wider). With scatter the n = 1 window gets blurred edges and a
+   (≈ 5–8× wider). With scatter the n = 1 window gets blurred edges and a
    chord-window selection can bias KE₁. Size (PROJECTION, not measured):
    at most the KE slope × a shift of the window's mean chord by up to half
    its width, −0.021 eV/Å × 2.7 Å ≈ 0.06 eV — small against the
-   0.5–0.7 eV KE₁ deficit, so the deficit is not a geometry artefact of the
+   0.45–0.6 eV KE₁ deficit (v2: exp median 1.05 / mean 1.20 vs model
+   0.61 eV), so the deficit is not a geometry artefact of the
    deterministic map.
 3. The near-determinism is partly **by construction**: the model has no
    fluctuation channel (zero noise; Langevin channel deferred to Tier 3),

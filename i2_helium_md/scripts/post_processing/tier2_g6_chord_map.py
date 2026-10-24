@@ -18,9 +18,10 @@ its run directories are no longer on disk) overlaid from the committed
     marked (KE of the intact complex -- their fragmentation is open, RQ3), the B2 n = 1 window
     (chord q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median
     as horizontal lines;
-(c) chord distribution per sampler (raw: A5; ``post_pickup``: B2, whose
-    births and chords are bit-identical to A5 ``post_pickup`` -- checked):
-    geometry reweights the chord axis only; the law does not enter.
+(c) B2 chord distribution: geometry reweights the chord axis only; the law
+    does not enter. (The raw-sampler A5 overlay and the B2 = A5
+    ``post_pickup`` chord identity check, done 2026-10-13, were dropped
+    2026-10-24: the A5 run directories are no longer on disk.)
 
 Chord = straight path from the birth point along the explosion axis to the
 droplet surface (``emission_chords``; ignores deflection and the soft erf
@@ -33,13 +34,13 @@ the B2 member dirs reproduces the committed ``lqppb2`` rows of
 
 Also writes the G7 numbers (n = 1 window, KE1 spread, KE slope along the
 chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv`` and the KE
-width at fixed n = 1-4 (model vs experiment, IQR / median) to
-``g7_ke_width.csv``. Experimental quantiles come from the unsmoothed 3-D
-P(E) of ``IHe_KED_curves_n{n}.csv`` (dE-weighted; the n = 1 curve equals
-the spectra file). They do not reproduce the reference median / mean
-columns exactly (n = 1: median 1.168 vs 1.128, mean 1.372 vs 1.302 eV --
-the reference applies cuts not re-done here), so only the relative width
-is taken from them; central values stay the reference columns.
+width at fixed n = 1-6 (model vs experiment, IQR / median; the B2-3 KED
+panels) to ``g7_ke_width.csv``. Experimental quantiles come from the
+unsmoothed 3-D P(E) of the corrected (v2, G12) ``IHe_KED_curves_n{n}.csv``
+(dE-weighted). They do not reproduce the reference median column exactly
+(curve medians 4-11 % high, n = 1: 1.094 vs 1.053 eV -- the reference
+applies cuts not re-done here), so only the relative width is taken from
+them; central values stay the reference columns.
 
 Writes ``data/figures/thesis_tier2/g6_chord_map.{png,pdf}`` (not committed).
 
@@ -80,10 +81,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
-from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B2_C, B2_E0_EV, B2_TAU_PS, a5_member_cell, lq_run_dir,
-)
-from scripts.gen_tier2_g414_tauline import run_dir_for as a5_run_dir_for  # noqa: E402
+from scripts.gen_tier2_detfix_postpickup import B2_C, B2_E0_EV, B2_TAU_PS, lq_run_dir  # noqa: E402
 from scripts.post_processing.tier2_detfix_postpickup_table import (  # noqa: E402
     CHORD_CSV as H405_CHORD_CSV,
     chord_rows,
@@ -98,14 +96,13 @@ from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
 STATS_CSV = RUNS_ROOT / "h2b_forward_model" / "g6_chord_stats.csv"
 WIDTH_CSV = RUNS_ROOT / "h2b_forward_model" / "g7_ke_width.csv"
 KED_CURVE_TEMPLATE = IHE_KED_REFERENCE_CSV.parent / "IHe_KED_curves_n{n}.csv"
-WIDTH_N = (1, 2, 3, 4)
+WIDTH_N = (1, 2, 3, 4, 5, 6)
 SUPPRESSED = "suppressed"
 N_START = 21                        # intact shell size of a suppressed ion
 SUPP_MAX_CHORD_A = 35.0             # bins entirely below this may hold suppressed ions
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 STYLE = {"B2": dict(color="#1f77b4", ls="-"),
-         "h405": dict(color="#d62728", ls="-."),
-         "A5 raw": dict(color="0.45", ls="--")}
+         "h405": dict(color="#d62728", ls="-.")}
 
 
 def _b2_dirs() -> list[Path]:
@@ -244,8 +241,6 @@ def main() -> int:
     b2_dirs = _b2_dirs()
     _check_anchor(b2_dirs)
     b2 = _per_ion(b2_dirs)
-    a5_raw = _per_ion([a5_run_dir_for(a5_member_cell(m)) for m in MEMBER_SEEDS])
-    a5_pp = _per_ion([lq_run_dir(m) for m in MEMBER_SEEDS])
     s_all = b2["scored"]
     if not (np.array_equal(b2["supp"] & s_all, s_all & (b2["n"] == N_START))
             and b2["chord"][b2["supp"]].max() < SUPP_MAX_CHORD_A):
@@ -328,18 +323,13 @@ def main() -> int:
             ylabel="detected KE [eV]", title="(b) chord → KE")
     axk.legend(fontsize=7.5, loc="upper right")
 
-    if not np.array_equal(a5_pp["chord"], b2["chord"]):
-        raise RuntimeError("A5 post_pickup and B2 chords differ (births should be identical)")
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
-    for label, d, text in (("A5 raw", a5_raw, "raw (A5)"),
-                           ("B2", b2, "post_pickup (B2 = A5, identical births)")):
-        axc.hist(d["chord"], bins=edges, density=True, histtype="step", lw=1.6,
-                 color=STYLE[label]["color"], ls=STYLE[label]["ls"],
-                 label=f"{text}, N = {d['chord'].size}")
+    axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.6,
+             **STYLE["B2"], label=f"B2 (post_pickup), N = {b2['chord'].size}")
     axc.axvspan(*win, color="0.92", zorder=0)
     axc.set_ylim(0, 1.25 * axc.get_ylim()[1])
     axc.set(xlim=CHORD_RANGE_A, xlabel="emission-axis chord [Å]",
-            ylabel="probability density [1/Å]", title="(c) chord distribution per sampler")
+            ylabel="probability density [1/Å]", title="(c) chord distribution")
     axc.legend(fontsize=8)
 
     png, pdf = OUT_DIR / "g6_chord_map.png", OUT_DIR / "g6_chord_map.pdf"
