@@ -127,8 +127,8 @@ FIG_B2_2: dict = {
     # plot_detection_summary mean-KE section; (c) "ratio" (default) or the
     # profiled-residual anatomy "z".
     "stem": "b2_2_mean_ke",
-    "figsize": (TEXTWIDTH_IN, 5.6),
-    "height_ratios": (5.0, 3.5),
+    "figsize": (TEXTWIDTH_IN, 4.6),
+    "height_ratios": (1.15, 1.0),        # top panels ~3:2 (width : height)
     "anchor": dict(color="tab:purple"),
     "split_n": 5,                        # = summary_sections.IHE_KED_MEAN_ENERGY_SPLIT_N
     "yscale": "linear",
