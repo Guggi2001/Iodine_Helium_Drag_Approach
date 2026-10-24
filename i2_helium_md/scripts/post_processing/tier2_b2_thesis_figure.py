@@ -495,12 +495,12 @@ def draw_size_scored(ax, d: SizeData, st: dict) -> None:
            edgecolor="black", linewidth=0.4, **st["sim"])
     ax.bar(d.n_scored[bare], 100.0 * d.frac_scored[bare], width=st["bar_width_scored"],
            facecolor="white", edgecolor=st["sim"]["color"], hatch=st["suppressed_hatch"],
-           linewidth=0.8, label="suppressed (n = 0)")
+           linewidth=0.8, label="Suppressed (n = 0)")
     if st["annot_scored"]:
         lo, hi = NBAR_LANDING
         flag = "∈" if lo <= d.n_mean <= hi else "∉"
         _annot(ax, rf"$\bar n$ = {d.n_mean:.2f} {flag} [{lo:.2f}, {hi:.2f}]" "\n"
-                   f"suppressed {100.0 * d.suppressed_frac:.1f} %", st, st["annot_loc"])
+                   f"Suppressed {100.0 * d.suppressed_frac:.1f} %", st, st["annot_loc"])
     if st["show_landing_band"]:
         ax.axvspan(*NBAR_LANDING, zorder=0, alpha=2 * st["band_shade_alpha"], linewidth=0,
                    label=r"$\bar n$ landing band", **st["band"])
@@ -513,7 +513,7 @@ def draw_size_scored(ax, d: SizeData, st: dict) -> None:
 def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
     """Solvated branch, experiment vs B2, side-by-side bars."""
     w = st["bar_width_pair"]
-    ax.bar(d.n_ref_solv - w / 2, 100.0 * d.frac_ref_solv, width=w, label="experiment",
+    ax.bar(d.n_ref_solv - w / 2, 100.0 * d.frac_ref_solv, width=w, label="Experiment",
            **st["exp"])
     ax.bar(d.n_sim_solv + w / 2, 100.0 * d.frac_sim_solv, width=w, label="B2", **st["sim"])
     if st["annot_solvated"]:
@@ -544,28 +544,28 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
     if st["show_bands"]:
         for frac, label, alpha in zip(
                 (ref.calib_syst_frac, ref.condition_syst_frac),
-                ("correlated bands (calibration, condition)", None), st["band_alphas"]):
+                ("Correlated bands (calibration, condition)", None), st["band_alphas"]):
             frac = np.asarray(frac)[sel]
             ax.fill_between(n_ref, mean * (1.0 - frac), mean * (1.0 + frac), linewidth=0,
                             alpha=alpha, label=label, **st["exp"])
     ax.errorbar(n_ref, mean, yerr=np.asarray(ref.point_err_eV)[sel], fmt="o", markersize=4,
-                capsize=2, label=r"experiment $\langle E\rangle$", **st["exp"])
+                capsize=2, label=r"Experiment $\langle E\rangle$", **st["exp"])
     hit = n_ref == 1
     if st["show_median_anchor"] and np.any(hit):
         ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", markersize=6,
                 markerfacecolor="none", markeredgecolor=st["anchor"]["color"],
-                markeredgewidth=1.3, label="experiment median (n = 1)")
+                markeredgewidth=1.3, label="Experiment median (n = 1)")
     in_panel = (d.n >= n_lo) & (d.n <= n_hi)
     ok = in_panel & d.scored_mask
     if np.any(ok):
         ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", linestyle="none",
-                    markersize=4, capsize=2, label=r"simulation (B2) $\langle E\rangle$",
+                    markersize=4, capsize=2, label=r"Simulation (B2) $\langle E\rangle$",
                     **st["sim"])
     thin = in_panel & ~d.scored_mask
     if st["show_thin_bins"] and np.any(thin):
         ax.plot(d.n[thin], d.mean_eV[thin], "s", markersize=4, markerfacecolor="none",
                 color=st["sim"]["color"],
-                label=f"simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions")
+                label=f"Simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions")
     if show_chi2 and st["annot_chi2"]:
         _annot(ax, rf"$\chi^2$_med = {d.chi2_score.chi2_profiled:.1f}; "
                    f"{d.chi2_score.n_points} bins", st, st["annot_loc"], ha="left", va="bottom")
@@ -633,21 +633,21 @@ def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
     """One KED-shape panel -- the ``_section_ihe_ked_curves`` panel in Å/ps."""
     if st["show_exp_raw"]:
         ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.5, linewidth=0.5, alpha=0.30,
-                label="experiment (raw)", **st["exp"])
-    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="experiment (smoothed)",
+                label="Experiment (raw)", **st["exp"])
+    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="Experiment (smoothed)",
             **st["exp"])
     if d.sim_trace is not None:
-        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4, label="simulation (B2)",
+        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4, label="Simulation (B2)",
                 **st["sim"])
     else:
         ax.annotate("sim: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
                     ha="right", fontsize=8, color=st["sim"]["color"])
     if st["show_v_of_mean_E"]:
         ax.axvline(d.v_mean_E_exp_Aps, linestyle=":", linewidth=1.0,
-                   label=r"experiment $v(\langle E\rangle)$", **st["exp"])
+                   label=r"Experiment $v(\langle E\rangle)$", **st["exp"])
         if d.v_mean_E_sim_Aps is not None:
             ax.axvline(d.v_mean_E_sim_Aps, linestyle=":", linewidth=1.0,
-                       label=r"simulation $v(\langle E\rangle)$", **st["sim"])
+                       label=r"Simulation $v(\langle E\rangle)$", **st["sim"])
     lines = []
     if st["show_counts"]:
         lines.append(f"N = {d.num_sim}")
