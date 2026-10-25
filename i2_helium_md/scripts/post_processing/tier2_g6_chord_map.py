@@ -1,36 +1,40 @@
 """G6 chord-map figure (THESIS_FINAL_GOALS G6): chord -> (n, KE) at B2.
 
 Three panels, per-ion at the thesis production law B2 (``post_pickup``, lq
-ridge c 1.6, E0 0.3297 eV; pooled N = 6000, s1-s5 + r6), with the old-bundle
-map (h405, capped cubic v_c 5.5, 14.2 A gate, ``post_pickup``; binned only --
-its run directories are no longer on disk) overlaid from the committed
-``detfix_postpickup_chord.csv``:
+ridge c 1.6, E0 0.3297 eV; pooled N = 6000, s1-s5 + r6), written twice:
+``g6_chord_map_b2_only`` (B2 alone) and ``g6_chord_map_with_h405`` (the
+re-landed contrast law h405 overlaid in every panel: ``post_pickup``, 3.5 A
+gate, v_c 5.40, tau 4.4, E0 0.424 -- ``gen_tier2_h405_pp35.SCAN_POOL_CELL``,
+THESIS_DISCUSSION §11; per ion from its s1-s5 + r6 member directories, binned
+on the B2 chord bins):
 
 (a) scored n vs emission-axis chord [A] (per-ion scatter + binned mean n),
     in the scorer's convention: ``suppressed`` ions (ejected net-self-unbound
     complexes, raw ``n_detected`` = 21) count as n = 0, the bare-candidate
     class (``tier2_confirmation``: bin 0; excluded from the solvated read,
-    RQ8). The committed binned CSVs carry the raw n = 21; their mean n is
+    RQ8). The committed B2 chord CSV carries the raw n = 21; its mean n is
     converted where the bin holds only n = 1 and n = 21 ions (checked
-    exactly; chord < 35 A), elsewhere no suppressed ion occurs (B2 checked
-    per ion; h405 assumed, its runs are gone);
+    exactly; chord < 35 A) and must equal the per-ion binned curve;
 (b) detected KE [eV] vs chord, n = 1 ions highlighted, suppressed ions
     marked (KE of the intact complex -- their fragmentation is open, RQ3), the B2 n = 1 window
     (chord q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median
     as horizontal lines;
-(c) B2 chord distribution: geometry reweights the chord axis only; the law
-    does not enter. (The raw-sampler A5 overlay and the B2 = A5
-    ``post_pickup`` chord identity check, done 2026-10-13, were dropped
-    2026-10-24: the A5 run directories are no longer on disk.)
+(c) chord distribution: geometry reweights the chord axis only; the law
+    does not enter (B2 and the re-landed h405 share seeds and sampler, so
+    their chords coincide ion by ion). (The raw-sampler A5 overlay and the
+    B2 = A5 ``post_pickup`` chord identity check, done 2026-10-13, were
+    dropped 2026-10-24: the A5 run directories are no longer on disk.)
 
 Chord = straight path from the birth point along the explosion axis to the
 droplet surface (``emission_chords``; ignores deflection and the soft erf
 edge). "Scored" = the detection stage's ``detected_mask`` (same selection as
 ``chord_rows``).
 
-Pure scorer + plot -- runs no MD. Anchor (fails loudly): ``chord_rows`` over
+Pure scorer + plot -- runs no MD. Anchors (fail loudly): ``chord_rows`` over
 the B2 member dirs reproduces the committed ``lqppb2`` rows of
-``g5_postpickup_chord.csv`` to 4 dp.
+``g5_postpickup_chord.csv`` to 4 dp; the pooled re-landed h405 read (scored
+count, n̄, suppressed share) reproduces its committed ``h405_pp35_table.csv``
+row to 4 dp.
 
 Also writes the G7 numbers (n = 1 window, KE1 spread, KE slope along the
 chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv`` and the KE
@@ -42,7 +46,8 @@ unsmoothed 3-D P(E) of the corrected (v2, G12) ``IHe_KED_curves_n{n}.csv``
 applies cuts not re-done here), so only the relative width is taken from
 them; central values stay the reference columns.
 
-Writes ``data/figures/thesis_tier2/g6_chord_map.{png,pdf}`` (not committed).
+Writes ``data/figures/thesis_tier2/g6_chord_map_b2_only.{png,pdf}`` and
+``g6_chord_map_with_h405.{png,pdf}`` (not committed).
 
 Usage::
 
@@ -82,12 +87,13 @@ from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E40
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import B2_C, B2_E0_EV, B2_TAU_PS, lq_run_dir  # noqa: E402
+from scripts.gen_tier2_h405_pp35 import SCAN_POOL_CELL, run_dir_for  # noqa: E402
 from scripts.post_processing.tier2_detfix_postpickup_table import (  # noqa: E402
-    CHORD_CSV as H405_CHORD_CSV,
     chord_rows,
     emission_chords,
 )
 from scripts.post_processing.tier2_g5_postpickup_table import CHORD_CSV as G5_CHORD_CSV  # noqa: E402
+from scripts.post_processing.tier2_h405_pp35_table import OUT_CSV as H405_TABLE_CSV  # noqa: E402
 from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
     IHE_KED_REFERENCE_CSV,
     RUNS_ROOT,
@@ -101,12 +107,55 @@ SUPPRESSED = "suppressed"
 N_START = 21                        # intact shell size of a suppressed ion
 SUPP_MAX_CHORD_A = 35.0             # bins entirely below this may hold suppressed ions
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
+H405_ANCHOR_COLS = ("num_scored", "nbar_det", "supp")
 STYLE = {"B2": dict(color="#1f77b4", ls="-"),
          "h405": dict(color="#d62728", ls="-.")}
+NAMES = {"B2": "B2", "h405": "h405 re-landed"}
+VARIANTS = (("g6_chord_map_b2_only", False), ("g6_chord_map_with_h405", True))
 
 
 def _b2_dirs() -> list[Path]:
     return [lq_run_dir(m, B2_E0_EV, B2_TAU_PS, B2_C) for m in MEMBER_SEEDS]
+
+
+def _h405_dirs() -> list[Path]:
+    """Re-landed h405 pool members (``SCAN_POOL_CELL`` = (v_c, tau, E0))."""
+    v_c, tau, e0 = SCAN_POOL_CELL
+    return [run_dir_for(m, e0, v_c, tau) for m in MEMBER_SEEDS]
+
+
+def _check_h405_anchor(d: dict[str, np.ndarray]) -> None:
+    """Pooled re-landed h405 per-ion read vs its committed
+    ``h405_pp35_table.csv`` row, 4 dp (fail loudly)."""
+    v_c, tau, _ = SCAN_POOL_CELL
+    label = f"h405pp35_v{v_c}_t{tau}_pooled{1000 * len(MEMBER_SEEDS)}"
+    with H405_TABLE_CSV.open(newline="") as f:
+        rows = [r for r in csv.DictReader(f) if r["label"] == label]
+    if len(rows) != 1:
+        raise RuntimeError(f"anchor: expected one row {label!r} in {H405_TABLE_CSV.name}")
+    s = d["scored"]
+    got = {"num_scored": float(s.sum()), "nbar_det": float(d["n_scorer"][s].mean()),
+           "supp": float((d["supp"] & s).sum() / s.sum())}
+    for k in H405_ANCHOR_COLS:
+        if round(got[k], 4) != round(float(rows[0][k]), 4):
+            raise RuntimeError(f"anchor: h405 {k} {got[k]:.4f} vs committed {rows[0][k]}")
+
+
+def _binned_from_ions(d: dict[str, np.ndarray], edges: list[float]
+                      ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Bin midpoints [A], mean scorer-n and mean detected KE [eV] over scored
+    ions per chord bin (empty bins dropped; open last bin plotted at its lower
+    edge + 10 A, as in ``_binned``)."""
+    s = d["scored"] & np.isfinite(d["ke"])
+    x, mn, mk = [], [], []
+    for lo_e, hi_e in zip(edges[:-1], edges[1:]):
+        sel = s & (d["chord"] >= lo_e) & (d["chord"] < hi_e)
+        if not sel.any():
+            continue
+        x.append(0.5 * (lo_e + hi_e) if hi_e - lo_e < 50 else lo_e + 10.0)
+        mn.append(float(d["n_scorer"][sel].mean()))
+        mk.append(float(d["ke"][sel].mean()))
+    return np.asarray(x), np.asarray(mn), np.asarray(mk)
 
 
 def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
@@ -247,14 +296,18 @@ def main() -> int:
         raise RuntimeError("B2: scored n = 21 is not exactly the suppressed class "
                            "below the conversion edge")
     b2_rows = _read_chord_csv(G5_CHORD_CSV, "lqppb2")
-    h405_rows = _read_chord_csv(H405_CHORD_CSV, "pp")
     ked = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
-    xb, yb = _binned_n_scorer(b2_rows)          # cross-check vs per-ion B2
     edges_csv = [float(r["chord_lo_A"]) for r in b2_rows] + [float(b2_rows[-1]["chord_hi_A"])]
-    for (lo_e, hi_e), v in zip(zip(edges_csv[:-1], edges_csv[1:]), yb):
-        sel = s_all & (b2["chord"] >= lo_e) & (b2["chord"] < hi_e)
-        if round(float(b2["n_scorer"][sel].mean()), 4) != round(float(v), 4):
-            raise RuntimeError(f"binned scorer-n conversion off in bin {lo_e}")
+    binned = {"B2": _binned_from_ions(b2, edges_csv)}
+    xc, nc = _binned_n_scorer(b2_rows)          # per-ion B2 curves vs committed CSV
+    _, kc = _binned(b2_rows, "mean_KE_eV")
+    xb, nb, kb = binned["B2"]
+    if not (np.array_equal(xb, xc) and np.array_equal(nb.round(4), nc.round(4))
+            and np.array_equal(kb.round(4), kc.round(4))):
+        raise RuntimeError("per-ion B2 binned curves differ from the committed chord CSV")
+    h405 = _per_ion(_h405_dirs())
+    _check_h405_anchor(h405)
+    binned["h405"] = _binned_from_ions(h405, edges_csv)
 
     stats = _g7_stats(b2)
     stats["exp_KE1_sigma_eV"] = _exp_ke1(ked)[2]
@@ -276,6 +329,24 @@ def main() -> int:
     for k, v in stats.items():
         print(f"  {k:24s} {v:.4f}" if isinstance(v, float) else f"  {k:24s} {v}")
 
+    ke1 = _exp_ke1(ked)[:2]
+    win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
+    for stem, with_h405 in VARIANTS:
+        fig = _draw(b2, h405 if with_h405 else None, binned, win, ke1)
+        png, pdf = OUT_DIR / f"{stem}.png", OUT_DIR / f"{stem}.pdf"
+        fig.savefig(png, dpi=200)
+        fig.savefig(pdf)
+        print(f"figure -> {png}")
+    if SHOW_FIGURE:
+        plt.show()
+    return 0
+
+
+def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
+          binned: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]],
+          win: tuple[float, float], ke1: tuple[float, float]) -> plt.Figure:
+    """The three-panel chord map; ``h405 = None`` leaves the overlay out."""
+    arms = ("B2",) if h405 is None else ("B2", "h405")
     s = b2["scored"] & np.isfinite(b2["ke"])
     idx = np.flatnonzero(s)
     rng = np.random.default_rng(SCATTER_SEED)
@@ -284,7 +355,6 @@ def main() -> int:
     is1 = b2["n"][idx] == 1
     isS = b2["supp"][idx]
     lo, hi = CHORD_RANGE_A
-    win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
 
     fig, (axn, axk, axc) = plt.subplots(1, 3, figsize=(15.0, 4.6), constrained_layout=True)
 
@@ -296,10 +366,10 @@ def main() -> int:
     axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=3,
                 alpha=0.35, color="0.35", lw=0, rasterized=True,
                 label="B2 suppressed → n = 0 (bare candidate)")
-    for label, rows in (("B2", b2_rows), ("h405", h405_rows)):
-        x, y = _binned_n_scorer(rows)
-        axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[label],
-                 label=f"{label} binned mean n")
+    for arm in arms:
+        x, y, _ = binned[arm]
+        axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
+                 label=f"{NAMES[arm]} binned mean n")
     axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel="emission-axis chord [Å]",
             ylabel="scored n", title="(a) chord → n")
     axn.legend(fontsize=8, loc="upper left")
@@ -312,11 +382,11 @@ def main() -> int:
                 color=STYLE["B2"]["color"], lw=0, rasterized=True, label="B2 ions, n ≥ 2")
     axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=4, alpha=0.6,
                 color="#ff7f0e", lw=0, rasterized=True, label="B2 ions, n = 1")
-    for label, rows in (("B2", b2_rows), ("h405", h405_rows)):
-        x, y = _binned(rows, "mean_KE_eV")
-        axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[label],
-                 label=f"{label} binned mean KE")
-    ke1_mean, ke1_med, _ = _exp_ke1(ked)
+    for arm in arms:
+        x, _, y = binned[arm]
+        axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
+                 label=f"{NAMES[arm]} binned mean KE")
+    ke1_mean, ke1_med = ke1
     axk.axhline(ke1_mean, color="k", lw=1.2, label=f"exp KE₁ mean {ke1_mean:.2f} eV")
     axk.axhline(ke1_med, color="k", lw=1.2, ls="--", label=f"exp KE₁ median {ke1_med:.2f} eV")
     axk.set(xlim=CHORD_RANGE_A, ylim=(0, 1.6), xlabel="emission-axis chord [Å]",
@@ -326,19 +396,15 @@ def main() -> int:
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
     axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.6,
              **STYLE["B2"], label=f"B2 (post_pickup), N = {b2['chord'].size}")
+    if h405 is not None:
+        axc.hist(h405["chord"], bins=edges, density=True, histtype="step", lw=1.6,
+                 **STYLE["h405"], label=f"{NAMES['h405']} (post_pickup), N = {h405['chord'].size}")
     axc.axvspan(*win, color="0.92", zorder=0)
     axc.set_ylim(0, 1.25 * axc.get_ylim()[1])
     axc.set(xlim=CHORD_RANGE_A, xlabel="emission-axis chord [Å]",
             ylabel="probability density [1/Å]", title="(c) chord distribution")
     axc.legend(fontsize=8)
-
-    png, pdf = OUT_DIR / "g6_chord_map.png", OUT_DIR / "g6_chord_map.pdf"
-    fig.savefig(png, dpi=200)
-    fig.savefig(pdf)
-    print(f"figure -> {png}")
-    if SHOW_FIGURE:
-        plt.show()
-    return 0
+    return fig
 
 
 def _exp_ke1(ked) -> tuple[float, float, float]:

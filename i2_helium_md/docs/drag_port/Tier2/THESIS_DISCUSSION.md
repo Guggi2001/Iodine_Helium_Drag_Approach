@@ -78,13 +78,18 @@ non-uniqueness is reported as a finding.
 ## 1. The chord → (n, KE) map (MEASURED; refreshed at B2 by G6, 2026-10-13)
 
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
-`data/figures/thesis_tier2/g6_chord_map.{png,pdf}` (not committed): (a) scored n
-vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments)
-with the old-bundle map (h405 `post_pickup`, binned) overlaid, (c) B2 chord
-distribution (the raw-sampler A5 overlay was dropped 2026-10-24: its runs
-are no longer on disk). Numbers: `g5_postpickup_chord.csv` (binned,
-`lqppb2`; the script anchors on it to 4 dp), `detfix_postpickup_chord.csv`
-(h405), `g6_chord_stats.csv` (n = 1 window, KE₁ spread).
+`data/figures/thesis_tier2/g6_chord_map_b2_only.{png,pdf}` and
+`g6_chord_map_with_h405.{png,pdf}` (not committed): (a) scored n
+vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments),
+(c) chord distribution; the `with_h405` variant overlays the **re-landed**
+h405 (§11; `post_pickup`, 3.5 Å, v_c 5.40, τ 4.4, E₀ 0.424; per ion from its
+s1–s5 + r6 members, B2 chord bins) in all three panels (changed 2026-10-25;
+before, the old h405 at 14.2 Å was overlaid binned from
+`detfix_postpickup_chord.csv`). The raw-sampler A5 overlay was dropped
+2026-10-24 (its runs are no longer on disk). Numbers: `g5_postpickup_chord.csv` (binned,
+`lqppb2`; the script anchors on it to 4 dp), `h405_pp35_table.csv` (the
+re-landed h405 pooled row; anchored to 4 dp), `g6_chord_stats.csv` (n = 1
+window, KE₁ spread).
 
 - The detected (n, KE) is a near-deterministic function of the
   **emission-axis chord**: the straight path from the birth point along the
