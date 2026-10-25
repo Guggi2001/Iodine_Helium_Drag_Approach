@@ -316,6 +316,13 @@ and remaining risks.
 During the drag-model phase, "implementation" requests still require the
 `[PROCEED TO IMPLEMENTATION]` trigger before any code is written.
 
+**Never commit without explicit approval.** Do not run `git commit` (or
+push) unless the user explicitly asks for that commit in the current
+request. A general instruction such as "commit on branch X" names the
+branch, not a standing permission; `[PROCEED TO IMPLEMENTATION]` authorizes
+code edits, not commits. When work is done, leave the changes uncommitted
+and offer to commit.
+
 ## Post-Processing Workflow
 
 Keep HeDFT and experimental workflows separate (the legacy combined MATLAB figure

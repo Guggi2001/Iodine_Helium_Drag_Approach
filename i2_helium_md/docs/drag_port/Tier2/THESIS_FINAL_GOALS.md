@@ -122,6 +122,13 @@ log (`drag_migration_log_tier2.md`).
     only, docs. **Executed 2026-10-23:** reference v2 adopted; B2 midHot
     1.050, deepKE 0.499, χ² 350 (v1: 1.002 / 0.477 / 527). See G12.3.
 
+20. **G13 opened (2026-10-25, nothing run):** resolve the fate of the
+    suppressed (net self-unbound) complexes, RQ3. The scorer counts them
+    as bare I⁺ (n = 0) while the model carries them intact (I⁺He₂₁);
+    the fate is a lever on the n₁ misfit. Plan: zero-MD convention
+    rescore first, no simulation change. **The "COMPLETED" status below
+    predates G12 / G13; G13 is the one open goal.** See G13.
+
 **COMPLETED (user, 2026-10-13).** All goals executed, dropped or moved
 to the outlook; no open gate. G11.4 complete (steps 2–3, 6 done; 4–5
 dropped). G4.14 recap: (a) settled by the decision below; (b)–(c) moot
@@ -1940,6 +1947,94 @@ constant β = 0.3 comes back flat across the speed terciles (noise-free
 slow-aligned / fast-isotropic trend (n 4: +0.64 / +0.40 / −0.01) is not
 an inversion artefact. Background-subtraction structure is not yet
 excluded (`THESIS_DISCUSSION.md` §13.3, §13.8).
+
+## G13. Fate of the suppressed complexes (RQ3) (opened 2026-10-25; nothing run)
+
+Trigger: the G6 chord map (panel b). Near the suppressed / n = 1 edge
+the detected KE drops sharply. A scratch read of the B2 pool (not
+committed) shows that the two branches fly at the **same speed** in the
+mixed 34–35 Å bin (suppressed 9.85, n = 1 9.89 Å/ps) and that their KE
+ratio (0.664 / 1.060 eV = 0.63) is the mass ratio m(I⁺He) / m(I⁺He₂₁)
+= 0.62. The step is therefore a mass relabelling, not extra stopping —
+and it exposes an inconsistency in the current convention.
+
+### G13.1 The question
+
+What happens to a complex that leaves the droplet net self-unbound
+(E_int > Σ(n), detection-stage class `suppressed`) on its 8.5 µs flight
+to the detector? This is RQ3 (`RESEARCH_QUESTIONS.md`), open; partially
+un-anchored since 2026-07-11 (the experimental bare-I⁺ KE, ≈ 3.6 eV,
+is channel-distinct and too fast for an evaporative bare class).
+
+### G13.2 Current state (committed unless marked)
+
+- **Model:** the complex rides to the detector intact at its handover
+  n (B2: n = 21, KE at the I⁺He₂₁ mass); no fragmentation.
+- **Scorer:** the same ions score as **n = 0** (bare candidate), i.e.
+  the size scores already assume full fragmentation to bare I⁺. Their
+  KE never enters a score (KE scoring starts at n = 1).
+- **Share:** suppressed 0.1105 of the 11 415 scored B2 ions (1261 ions;
+  `g5_winners_table_ihekedv2.csv`).
+- **n₁ misfit:** B2 n₁ (solvated) 0.211 vs experiment 0.310 — the
+  thesis currently lists it as unexplained (outlook).
+- **Inconsistency:** counted as bare, plotted at intact-complex KE (G6
+  panel b; legend "intact-complex KE").
+
+### G13.3 Candidate fates (RQ3 register)
+
+1. **Full boil-off to bare I⁺** (current scoring convention). Gateless
+   sequential boil-off without ε goes exactly to bare (RQ3).
+2. **Termination at small n, including n = 1** (RQ3 "marginal
+   self-termination" sub-case; with ε (RQ2) a decreasing small-n tail).
+   Named in the register as a candidate n = 1 feeder.
+3. **Kinematic convention of the fragmentation** (orthogonal to 1/2):
+   intact / co-moving (constant speed) / cold-shed / momentum-conserving
+   with a kick. Prior pooled reading at an earlier law and the v1
+   reference (RQ3 NB 2026-07-22): intact 1.96 / co-moving 1.36 /
+   cold-shed 2.82 eV vs reference n = 0 3.706 eV — every convention too
+   slow and 6–10× too narrow.
+
+**Why it matters (back-of-envelope, not a run):** if all suppressed B2
+ions ended at n = 1 instead of n = 0, n₁ (solvated) ≈ (2142 + 1261) /
+11 415 ≈ 0.30 (experiment 0.310) and n̄ ≈ 3.90 + 0.11 ≈ 4.01 (inside
+the 3.83–4.31 band); KE₁ would move little (≈ 0.65 eV co-moving, still
+≈ half the experiment). The fate choice is therefore a lever on the n₁
+misfit, not a neutral convention — choosing either extreme by fiat is
+unjustified.
+
+### G13.4 Plan (proposed 2026-10-25; to be agreed before any step runs)
+
+1. **Zero-MD convention rescore** of the B2 pool (existing
+   `detection.npz`, no simulation change): the full observable vector
+   under (a) suppressed → n = 0 (current; oracle: must reproduce the
+   committed v2 row to 4 dp), (b) suppressed → n = 1, (c) the
+   intermediate split implied by a stated termination rule, each with
+   the KE under the co-moving and cold-shed kinematics. Output: a new
+   table, not a change to the committed rows. Repeat for B3 / re-landed
+   h405 only if (b) moves a gate.
+2. **Literature** (RQ3 "literature needed"): sequential evaporation vs
+   multifragmentation of clusters excited far above total binding;
+   shell blow-off timescales of ionic cores in He; whether the last
+   He of I⁺He₂ / I⁺He is lost when the excess is small.
+3. **Experimental discriminator check** (RQ3): a slow shoulder (or its
+   absence) in the experimental bare-I⁺ KE distribution (v2 n = 0
+   curve), where an evaporative bare class would land (≈ 0.6–1.4 eV by
+   the conventions above); and whether the experimental n = 1 KE
+   distribution shows a second, faster component that co-moving
+   fragments of I⁺He₂₁ would add.
+4. **Decision and thesis framing:** adopt a scoring convention only if
+   steps 2–3 support it; otherwise report the rescore as a sensitivity
+   (n₁ under the two extremes) in `THESIS_DISCUSSION.md` and keep the
+   current convention with the inconsistency stated.
+
+**Out of scope here:** any change to the detection stage or the
+pooled `detection.npz` (physics change: a `SimConfig` enum + its own
+plan + `[PROCEED TO IMPLEMENTATION]`); re-selection of c / E₀.
+
+**Figure consequence (independent of the outcome):** G6 panel (b)
+keeps the suppressed branch at intact-complex KE, labelled so, with
+the binned mean drawn per branch (2026-10-25); if step 4 adopts a
+fragmentation convention, panel (b) follows it.
 
 ## Thesis framing implied
 

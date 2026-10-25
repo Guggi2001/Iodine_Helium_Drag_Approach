@@ -16,7 +16,11 @@ on the B2 chord bins):
     converted where the bin holds only n = 1 and n = 21 ions (checked
     exactly; chord < 35 A) and must equal the per-ion binned curve;
 (b) detected KE [eV] vs chord, n = 1 ions highlighted, suppressed ions
-    marked (KE of the intact complex -- their fragmentation is open, RQ3), the B2 n = 1 window
+    marked (KE of the intact complex -- their fragmentation is open, RQ3);
+    the binned mean KE is drawn per energy branch (suppressed at the I+He21
+    mass | n >= 1 at the detected complex mass), not joined: across the
+    suppressed / n = 1 edge the speed is continuous and the KE step is the
+    mass ratio (~0.62), not extra stopping. The B2 n = 1 window
     (chord q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median
     as horizontal lines;
 (c) chord distribution: geometry reweights the chord axis only; the law
@@ -46,8 +50,9 @@ unsmoothed 3-D P(E) of the corrected (v2, G12) ``IHe_KED_curves_n{n}.csv``
 applies cuts not re-done here), so only the relative width is taken from
 them; central values stay the reference columns.
 
-Writes ``data/figures/thesis_tier2/g6_chord_map_b2_only.{png,pdf}`` and
-``g6_chord_map_with_h405.{png,pdf}`` (not committed).
+Writes ``data/figures/thesis_tier2/g6_chord_map_b2_only.jpg`` and
+``g6_chord_map_with_h405.jpg`` (not committed). Colours follow
+``tier2_b2_thesis_figure`` (experiment blue, B2 red).
 
 Usage::
 
@@ -82,6 +87,7 @@ import matplotlib  # noqa: E402
 if not SHOW_FIGURE:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import MaxNLocator  # noqa: E402
 
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
@@ -108,9 +114,11 @@ N_START = 21                        # intact shell size of a suppressed ion
 SUPP_MAX_CHORD_A = 35.0             # bins entirely below this may hold suppressed ions
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 H405_ANCHOR_COLS = ("num_scored", "nbar_det", "supp")
-STYLE = {"B2": dict(color="#1f77b4", ls="-"),
-         "h405": dict(color="#d62728", ls="-.")}
-NAMES = {"B2": "B2", "h405": "h405 re-landed"}
+# tier2_b2_thesis_figure colours: experiment tab:blue, B2 simulation tab:red
+STYLE = {"B2": dict(color="tab:red", ls="-"),
+         "h405": dict(color="tab:green", ls="-.")}
+EXP_COLOR = "tab:blue"
+NAMES = {"B2": "B2", "h405": "Re-landed h405"}
 VARIANTS = (("g6_chord_map_b2_only", False), ("g6_chord_map_with_h405", True))
 
 
@@ -156,6 +164,19 @@ def _binned_from_ions(d: dict[str, np.ndarray], edges: list[float]
         mn.append(float(d["n_scorer"][sel].mean()))
         mk.append(float(d["ke"][sel].mean()))
     return np.asarray(x), np.asarray(mn), np.asarray(mk)
+
+
+def _ke_branches(d: dict[str, np.ndarray], edges: list[float]
+                 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Binned mean detected KE per energy branch: ``"supp"`` (suppressed,
+    KE at the intact I+He21 mass) and ``"solv"`` (n >= 1, KE at the detected
+    complex mass). Kept apart because at equal speed the two masses give KE
+    ratios of ~0.62, so a joint mean across the edge mixes two quantities."""
+    out = {}
+    for branch, keep in (("supp", d["supp"]), ("solv", ~d["supp"])):
+        x, _, k = _binned_from_ions({**d, "scored": d["scored"] & keep}, edges)
+        out[branch] = (x, k)
+    return out
 
 
 def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
@@ -308,6 +329,7 @@ def main() -> int:
     h405 = _per_ion(_h405_dirs())
     _check_h405_anchor(h405)
     binned["h405"] = _binned_from_ions(h405, edges_csv)
+    ke_branches = {"B2": _ke_branches(b2, edges_csv), "h405": _ke_branches(h405, edges_csv)}
 
     stats = _g7_stats(b2)
     stats["exp_KE1_sigma_eV"] = _exp_ke1(ked)[2]
@@ -332,11 +354,10 @@ def main() -> int:
     ke1 = _exp_ke1(ked)[:2]
     win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
     for stem, with_h405 in VARIANTS:
-        fig = _draw(b2, h405 if with_h405 else None, binned, win, ke1)
-        png, pdf = OUT_DIR / f"{stem}.png", OUT_DIR / f"{stem}.pdf"
-        fig.savefig(png, dpi=200)
-        fig.savefig(pdf)
-        print(f"figure -> {png}")
+        fig = _draw(b2, h405 if with_h405 else None, binned, ke_branches, win, ke1)
+        jpg = OUT_DIR / f"{stem}.jpg"
+        fig.savefig(jpg, dpi=200, pil_kwargs={"quality": 95})   # high quality: fine scatter dots
+        print(f"figure -> {jpg}")
     if SHOW_FIGURE:
         plt.show()
     return 0
@@ -344,8 +365,11 @@ def main() -> int:
 
 def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
           binned: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]],
+          ke_branches: dict[str, dict[str, tuple[np.ndarray, np.ndarray]]],
           win: tuple[float, float], ke1: tuple[float, float]) -> plt.Figure:
-    """The three-panel chord map; ``h405 = None`` leaves the overlay out."""
+    """The three-panel chord map; ``h405 = None`` leaves the overlay out.
+    Panel (b) draws the binned mean KE per energy branch (``_ke_branches``),
+    two unconnected segments per law."""
     arms = ("B2",) if h405 is None else ("B2", "h405")
     s = b2["scored"] & np.isfinite(b2["ke"])
     idx = np.flatnonzero(s)
@@ -365,13 +389,14 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
                 s=3, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
     axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=3,
                 alpha=0.35, color="0.35", lw=0, rasterized=True,
-                label="B2 suppressed → n = 0 (bare candidate)")
+                label="B2 suppressed → scored n = 0")
     for arm in arms:
         x, y, _ = binned[arm]
         axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
                  label=f"{NAMES[arm]} binned mean n")
-    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel="emission-axis chord [Å]",
-            ylabel="scored n", title="(a) chord → n")
+    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel="Emission-axis chord / Å",
+            ylabel="Scored n", title="(a) Chord → n")
+    axn.yaxis.set_major_locator(MaxNLocator(integer=True))   # n is an integer
     axn.legend(fontsize=8, loc="upper left")
 
     axk.scatter(b2["chord"][idx][isS], b2["ke"][idx][isS], s=3, alpha=0.35,
@@ -383,14 +408,18 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
     axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=4, alpha=0.6,
                 color="#ff7f0e", lw=0, rasterized=True, label="B2 ions, n = 1")
     for arm in arms:
-        x, _, y = binned[arm]
-        axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
-                 label=f"{NAMES[arm]} binned mean KE")
+        for branch in ("solv", "supp"):
+            x, y = ke_branches[arm][branch]
+            axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
+                     label=f"{NAMES[arm]} binned mean KE (per branch)"
+                     if branch == "solv" else None)
     ke1_mean, ke1_med = ke1
-    axk.axhline(ke1_mean, color="k", lw=1.2, label=f"exp KE₁ mean {ke1_mean:.2f} eV")
-    axk.axhline(ke1_med, color="k", lw=1.2, ls="--", label=f"exp KE₁ median {ke1_med:.2f} eV")
-    axk.set(xlim=CHORD_RANGE_A, ylim=(0, 1.6), xlabel="emission-axis chord [Å]",
-            ylabel="detected KE [eV]", title="(b) chord → KE")
+    axk.axhline(ke1_mean, color=EXP_COLOR, lw=1.2,
+                label=f"Experiment KE₁ mean {ke1_mean:.2f} eV")
+    axk.axhline(ke1_med, color=EXP_COLOR, lw=1.2, ls="--",
+                label=f"Experiment KE₁ median {ke1_med:.2f} eV")
+    axk.set(xlim=CHORD_RANGE_A, ylim=(0, 1.6), xlabel="Emission-axis chord / Å",
+            ylabel="Detected KE / eV", title="(b) Chord → KE")
     axk.legend(fontsize=7.5, loc="upper right")
 
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
@@ -401,8 +430,8 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
                  **STYLE["h405"], label=f"{NAMES['h405']} (post_pickup), N = {h405['chord'].size}")
     axc.axvspan(*win, color="0.92", zorder=0)
     axc.set_ylim(0, 1.25 * axc.get_ylim()[1])
-    axc.set(xlim=CHORD_RANGE_A, xlabel="emission-axis chord [Å]",
-            ylabel="probability density [1/Å]", title="(c) chord distribution")
+    axc.set(xlim=CHORD_RANGE_A, xlabel="Emission-axis chord / Å",
+            ylabel=r"Probability density / Å$^{-1}$", title="(c) Chord distribution")
     axc.legend(fontsize=8)
     return fig
 

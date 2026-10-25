@@ -78,8 +78,8 @@ non-uniqueness is reported as a finding.
 ## 1. The chord → (n, KE) map (MEASURED; refreshed at B2 by G6, 2026-10-13)
 
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
-`data/figures/thesis_tier2/g6_chord_map_b2_only.{png,pdf}` and
-`g6_chord_map_with_h405.{png,pdf}` (not committed): (a) scored n
+`data/figures/thesis_tier2/g6_chord_map_b2_only.jpg` and
+`g6_chord_map_with_h405.jpg` (not committed): (a) scored n
 vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments),
 (c) chord distribution; the `with_h405` variant overlays the **re-landed**
 h405 (§11; `post_pickup`, 3.5 Å, v_c 5.40, τ 4.4, E₀ 0.424; per ion from its
