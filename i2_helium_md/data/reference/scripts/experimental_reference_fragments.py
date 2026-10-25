@@ -22,8 +22,12 @@ ihe_ked/COLUMNS.md. Reminders encoded there and honored here:
 The dashed markers on the 3-D panels are the reference <E> per fragment
 (IHe_KED_reference.csv), placed at <E> resp. v = sqrt(2<E>/m(n)).
 
+A second figure holds only the two velocity panels (2-D projection | 3-D
+P(v)), same drawing.
+
 Usage:  python experimental_reference_fragments.py
-Writes: ../ihe_ked/experimental_reference_fragments.png
+Writes: ../ihe_ked/experimental_reference_fragments.png (2 x 2)
+        ../ihe_ked/experimental_reference_fragments_velocity.png (1 x 2)
 """
 
 import csv
@@ -37,6 +41,7 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(SCRIPT_DIR, "..", "ihe_ked")
 OUT_PNG = os.path.join(DATA_DIR, "experimental_reference_fragments.png")
+OUT_VELOCITY_PNG = os.path.join(DATA_DIR, "experimental_reference_fragments_velocity.png")
 
 EKF = 1.03642697e-8          # u*(m/s)^2 -> eV
 M_I, M_HE = 126.90, 4.0026
@@ -77,53 +82,67 @@ def movmean(y, k):
     return out
 
 
+# panel key -> (x column, signal column, title, x label, dashed-marker kind, note)
+PANELS = {
+    "2d_v": ("v_mps", "signal_2d_Pv", "2-D detector projection vs velocity",
+             "projected speed v$\\cdot$sin$\\theta$ / m s$^{-1}$", None, None),
+    "2d_E": ("E_eV", "signal_2d_PE", "2-D detector projection vs energy",
+             "apparent energy / eV", None,
+             "low-E elevation = center fill\n(projected fast ions), not slow ions"),
+    "3d_v": ("v_mps", "signal_3d_Pv", "3-D reconstruction P(v) vs velocity",
+             "speed / m s$^{-1}$", "v",
+             "dashed: $v(\\langle E\\rangle)$, not $\\langle v\\rangle$"),
+    "3d_E": ("E_eV", "signal_3d_PE", "3-D reconstruction P(E) vs energy",
+             "kinetic energy / eV", "E", "dashed: reference $\\langle E\\rangle$"),
+}
+
+
+def draw_panel(ax, key, curves, means, colors, legend=False):
+    """All fragments on one panel: raw (faint) + display-smoothed curves and,
+    on the 3-D panels, the reference <E> marker (at <E> or v(<E>))."""
+    xcol, ycol, title, xlabel, marker, note = PANELS[key]
+    for n, color in zip(N_FRAGMENTS, colors):
+        x, y = curves[n][xcol], curves[n][ycol]
+        ax.plot(x, y, "-", color=color, lw=0.7, alpha=0.25)
+        ax.plot(x, movmean(y, SMOOTH_BINS), "-", color=color, lw=1.6,
+                label=LABELS[n] if legend else None)
+        if marker == "v":
+            ax.axvline(np.sqrt(2.0 * means[n] / ((M_I + M_HE * n) * EKF)),
+                       color=color, ls="--", lw=0.9, alpha=0.8)
+        elif marker == "E":
+            ax.axvline(means[n], color=color, ls="--", lw=0.9, alpha=0.8)
+    ax.set_title(title, fontsize=10)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("signal, envelope-normalized")
+    ax.set_ylim(0, 1.35)
+    ax.set_xlim(0, 3100 if xcol == "v_mps" else 6.3)
+    if note:
+        ax.text(0.98, 0.86, note, transform=ax.transAxes, fontsize=8, ha="right")
+    if legend:
+        ax.legend(fontsize=9, loc="upper right")
+
+
 def main():
     means = load_reference_means()
-    fig, axs = plt.subplots(2, 2, figsize=(12.5, 8.6))
-    panels = [
-        (axs[0, 0], "v_mps", "signal_2d_Pv", "2-D detector projection vs velocity",
-         "projected speed v$\\cdot$sin$\\theta$ / m s$^{-1}$"),
-        (axs[0, 1], "E_eV", "signal_2d_PE", "2-D detector projection vs energy",
-         "apparent energy / eV"),
-        (axs[1, 0], "v_mps", "signal_3d_Pv", "3-D reconstruction P(v) vs velocity",
-         "speed / m s$^{-1}$"),
-        (axs[1, 1], "E_eV", "signal_3d_PE", "3-D reconstruction P(E) vs energy",
-         "kinetic energy / eV"),
-    ]
+    curves = {n: load_curves(n) for n in N_FRAGMENTS}
     cmap = plt.get_cmap("viridis")
     colors = [cmap(0.85 * n / (len(N_FRAGMENTS) - 1)) for n in N_FRAGMENTS]
 
-    for n, color in zip(N_FRAGMENTS, colors):
-        d = load_curves(n)
-        mass_n = M_I + M_HE * n
-        v_mean = np.sqrt(2.0 * means[n] / (mass_n * EKF))
-        for ax, xcol, ycol, _, _ in panels:
-            x, y = d[xcol], d[ycol]
-            ax.plot(x, y, "-", color=color, lw=0.7, alpha=0.25)
-            ax.plot(x, movmean(y, SMOOTH_BINS), "-", color=color, lw=1.6,
-                    label=LABELS[n] if ax is axs[0, 0] else None)
-        for ax, xpos in ((axs[1, 0], v_mean), (axs[1, 1], means[n])):
-            ax.axvline(xpos, color=color, ls="--", lw=0.9, alpha=0.8)
-
-    for ax, _, _, title, xlabel in panels:
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel("signal, envelope-normalized")
-        ax.set_ylim(0, 1.35)
-        ax.set_xlim(0, 3100 if "m s" in xlabel else 6.3)
-    axs[0, 0].legend(fontsize=9, loc="upper right")
-    axs[1, 1].text(0.98, 0.86, "dashed: reference $\\langle E\\rangle$",
-                   transform=axs[1, 1].transAxes, fontsize=8, ha="right")
-    axs[1, 0].text(0.98, 0.86,
-                   "dashed: $v(\\langle E\\rangle)$, not $\\langle v\\rangle$",
-                   transform=axs[1, 0].transAxes, fontsize=8, ha="right")
-    axs[0, 1].text(0.98, 0.86, "low-E elevation = center fill\n(projected fast ions), not slow ions",
-                   transform=axs[0, 1].transAxes, fontsize=8, ha="right")
+    fig, axs = plt.subplots(2, 2, figsize=(12.5, 8.6))
+    for ax, key in zip(axs.flat, ("2d_v", "2d_E", "3d_v", "3d_E")):
+        draw_panel(ax, key, curves, means, colors, legend=(key == "2d_v"))
     fig.suptitle("Experimental reference fragments I$^+$He$_n$, n = 0..4 "
                  "(fragment scan 17.10.24, 600 mW series)", y=0.99)
     fig.tight_layout()
     fig.savefig(OUT_PNG, dpi=170)
     print(f"wrote {os.path.normpath(OUT_PNG)}")
+
+    fig, axs = plt.subplots(1, 2, figsize=(12.5, 4.6))
+    for ax, key in zip(axs, ("2d_v", "3d_v")):
+        draw_panel(ax, key, curves, means, colors, legend=(key == "2d_v"))
+    fig.tight_layout()
+    fig.savefig(OUT_VELOCITY_PNG, dpi=170)
+    print(f"wrote {os.path.normpath(OUT_VELOCITY_PNG)}")
 
 
 if __name__ == "__main__":

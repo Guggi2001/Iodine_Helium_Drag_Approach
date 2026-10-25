@@ -32,6 +32,8 @@ numbers scored against it stay reproducible.
 | `COLUMNS.md` | data dictionary — what every column in every CSV means and how to use it |
 | `IHe_KED_crosscheck_300mW.csv` | per-fragment ⟨E⟩ of the independent 300 mW series vs. the reference (same pipeline; see cross-check section) |
 | `IHe_KED_crosscheck_300mW.png` | the comparison figure for the row above |
+| `experimental_reference_fragments.png` | overview of the n = 0…4 curves, 2 × 2 (2-D / 3-D × per v / per E); generator `../scripts/experimental_reference_fragments.py` |
+| `experimental_reference_fragments_velocity.png` | the two velocity panels of the overview (2-D projection, 3-D P(v)), 1 × 2; same generator (v2 since 2026-10-25) |
 | `Experimental_details/New Section 1.one` | lab-book pages (OneNote) for 17.10.24: measurement tables, TOF gates, on-the-day plots |
 | `README.md` | this file |
 

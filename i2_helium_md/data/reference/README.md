@@ -98,7 +98,9 @@ README.md                         <- full conventions, error model, and
 
 Overview plot: `scripts/experimental_reference_fragments.py` renders all five
 trusted fragment curves in the four representation/measure combinations
-(2-D/3-D × per-v/per-E) → `ihe_ked/experimental_reference_fragments.png`.
+(2-D/3-D × per-v/per-E) → `ihe_ked/experimental_reference_fragments.png`,
+plus the two velocity panels alone (2-D projection | 3-D P(v)) →
+`ihe_ked/experimental_reference_fragments_velocity.png` (PNG only).
 
 Key contract points: the reference value is the **mean** of the 3-D KED
 (pyabel rIbeta speed distribution, proper dE weighting) in the droplet rest
