@@ -20,7 +20,10 @@ runs made for it (s_eff scan + two N = 6000 pools at B2). §12 (exit vs
 detection readout, 2026-10-16) is a design decision for future work; no
 runs. §13 (over-alignment: model β = 2 vs experiment ≈ 0.3, the 2-D /
 3-D comparison and the corrected VMI inversion, 2026-10-23;
-`THESIS_FINAL_GOALS.md` G12) is zero-MD.
+`THESIS_FINAL_GOALS.md` G12) is zero-MD. §14 (improved landing over B2:
+the c lever on the v2 reference, the per-n shape of every measured lever,
+untested candidates for a local n = 5–8 correction, 2026-10-25) is
+zero-MD.
 
 ---
 
@@ -1098,56 +1101,112 @@ ion."
    for figures only, a post-processing re-orientation that projects the
    model with the measured β so that 2-D tests speed and width alone.
 
-## 14. B2 thesis figures: caption drafts (added 2026-10-24; zero MD)
+## 14. Improved landing over B2 (MEASURED re-scores + DISCUSSION; added 2026-10-25; zero MD)
 
-Figures: `scripts/post_processing/tier2_b2_thesis_figure.py` →
-`data/figures/thesis_tier2/b2_{1,2,3,4}_*.png`, full text width
-(16.6 cm), blue = experiment, red = B2. Every quoted number is checked
-against the B2 row of `g5_winners_table_ihekedv2.csv` (reference v2,
-G12.3) before drawing. Pipeline vocabulary that used to sit on the
-figures (scored / detected read, median-anchor provenance, χ², smoothing
-windows) is in these captions. Layout decisions (user, 2026-10-24):
-sim / ref ratio replaces the profiled residual z in B2-2 (c) (the
-profiled fit carries large uncertainties; the z values stay in G12.3);
-B2-3 shows n = 1–6, so n = 0 (suppressed class vs bare I⁺, different
-populations) is not in the results grid; B2-4 belongs to §13.
+Question: on the corrected KED reference (v2, G12) B2 runs ≈ 5 % hot
+over n 2–8 (midHot 1.050), and the overshoot sits in n = 5–8 (per-n
+ratio 1.15–1.21). Is there a lever that cools n = 5–8 and leaves the
+other sizes less affected?
 
-**B2-1 — size distribution.** "Terminal I⁺Heₙ size distribution for the
-production law B2 (6000 molecules, 12 000 ions). Ions that stay bound
-to the droplet (4.9 %) are excluded; 11 415 ions are scored. (a) Scored
-distribution; the hatched n = 0 bar is the suppressed class (11.0 %).
-Dashed line: mean size n̄ = 3.90; grey band: the n̄ landing band
-[3.83, 4.31]. (b) Solvated branch (n ≥ 1, renormalised) compared with
-the experimental abundance. n₁: share of n = 1 among solvated ions;
-W₁: Wasserstein-1 distance between the two histograms in units of n;
-n ≥ 15: solvated share in the high-n tail."
+Numbers: zero-MD re-scores of existing run directories against v2 with
+the G12 read path (`tier2_detfix_battery_table._row`, per-n
+`ke_by_n(min_count = 1)`). Oracle: the c 1.6 / c 1.8 s1 runs reproduce
+their committed v1 rows in `g5_postpickup_table.csv` to 4 dp, and the
+B2 pool reproduces its committed v2 row in
+`g5_winners_table_ihekedv2.csv`. Scratch scripts, **not yet committed
+tables**; single-seed rows are N = 1000, pooled rows N = 6000.
 
-**B2-2 — mean kinetic energy.** "Mean kinetic energy per fragment size,
-simulation (B2) vs the 3-D experimental reference (corrected inversion).
-(a) ⟨E⟩ vs n on a logarithmic axis. Experiment: ⟨E⟩
-with statistical ⊕ systematic errors; shaded: correlated calibration
-(4 %) and condition (6 %) bands; open diamond: experimental median at
-n = 1. Simulation: mean ± standard error of the detected ions; open
-squares: sizes with fewer than two ions. (b) Ratio ⟨E⟩_sim / ⟨E⟩_exp per
-size (error: simulation SE ⊕ experimental point error); line and band:
-experiment with its correlated bands. Dashed: midHot = 1.050, geometric
-mean of the ratio over n = 2–8; dotted: deepKE = 0.499, arithmetic mean
-over n = 10–17."
-(Optional sentence in the text, not on the figure: profiled
-χ²_med = 349.7 over 15 sizes with ≥ 2 ions, n = 1 anchored to the
-median.)
+### 14.1 The c lever at re-placed E₀ (B1c pair, s1, v2)
 
-**B2-3 — speed distributions (3-D).** "Speed distributions of I⁺Heₙ,
-n = 1–6. Experiment: Abel-inverted (3-D) VMI distribution, raw (dots)
-and moving mean over 10 points (solid). Simulation (B2): |v| of the
-detected ions, 0.04 Å/ps bins, moving mean over 15 bins (dashed); N =
-ions per size. All curves are normalised to their maximum. Dotted
-vertical lines: speed of the mean kinetic energy, v(⟨E⟩). The simulated
-distributions are much narrower than the measured ones (§1.1, G7)."
+The G5 B1c step ran c 1.6 (E₀ 0.3297) and c 1.8 (E₀ 0.3331) on the same
+seed (identical births; paired), E₀ placed per c from the twin line to
+hold n̄. The selection of c 1.6 was made against v1.
 
-**B2-4 — detector projection (2-D, §13).** As B2-3 with the 2-D
-detector projection: experiment = projected VMI distribution (not
-inverted), simulation = √(v_x² + v_y²). Caption must state that the
-projection depends on the angular distribution: the model keeps β = 2,
-the experiment shows β ≈ 0.3 (§13), so this comparison is a diagnostic,
-not a score.
+| | c 1.6 s1 | c 1.8 s1 | B2 pool |
+|---|---|---|---|
+| n̄ / n₁ / W₁ (reference-independent) | 3.94 / 0.214 / 0.930 | 3.90 / 0.217 / 0.926 | 3.90 / 0.211 / 0.967 |
+| suppressed / trapped | 0.114 / 0.050 | 0.122 / 0.060 | 0.111 / 0.049 |
+| KE₁ mean [eV] (exp 1.198) | 0.609 | 0.577 | 0.609 |
+| n 2–4 (geometric) | 0.918 | 0.861 | 0.916 |
+| **n 5–8 (geometric)** | **1.146** | **1.061** | 1.164 |
+| midHot n 2–8, v1 → v2 | 0.994 → 1.042 | 0.925 → 0.970 | 1.002 → 1.050 |
+| n 9–12 (geometric) | 0.795 | 0.714 | 0.824 |
+| deepKE n 10–17 (arithmetic, v2) | 0.593 | 0.597 | 0.499 |
+| χ²_med v1 → v2 | 292 → 186 | 249 → 154 | 527 → 350 |
+| S (W₁ + midHot) v1 → v2 | 1.67 → 1.93 | 2.18 → 1.84 | 1.71 → 2.04 |
+
+- The sizes do not discriminate (E₀ re-placed per c absorbs them).
+- On v1, c 1.6 won on midHot (0.994 vs 0.925); χ²_med already favoured
+  c 1.8. On v2 the two cells sit about symmetrically around midHot = 1
+  (1.042 / 0.970) and both χ² and S favour c 1.8. Interpolated (not
+  run): c ≈ 1.7 gives midHot ≈ 1.0 on v2. The v2 correction moves the
+  experiment's pick along the TDDFT ridge from c 1.6 to roughly
+  c 1.7–1.8 — a strengthening of the ridge-freedom argument (§0), not
+  a change of the production law (G12.2: no re-selection).
+- c is a **global KE scale**, not a shape lever: c 1.6 → 1.8 multiplies
+  ⟨E⟩ by 0.91–0.95 at every n = 1–10 (0.87–0.88 at n 11–12). It removes
+  the n = 5–8 overshoot (1.146 → 1.061) but cools the sizes that are
+  already too cold by the same factor (n 2–4 0.918 → 0.861, n 9–12
+  0.795 → 0.714) and widens the KE₁ deficit (−0.032 eV, −5 %).
+
+### 14.2 The shape of every measured lever (v2, per-n variant / baseline)
+
+| lever (pair) | n 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | pattern |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| c 1.6 → 1.8, E₀ re-placed (s1) | .95 | .94 | .94 | .93 | .93 | .93 | .93 | .91 | .95 | .90 | .87 | .88 | uniform −7 % |
+| E₀ 0.3155 → 0.3355 (c 2.0, s1) | .89 | .89 | .89 | .87 | .88 | .89 | .87 | .84 | .92 | .86 | .74 | .94 | uniform −12 %; n̄ 4.56 → 3.91 |
+| τ 6.4 → 6.8 ps (c 2.0, s1) | .95 | .94 | .92 | .91 | .89 | .89 | .87 | .80 | .88 | .80 | .71 | 1.00 | uniform, slight tilt; n̄ 4.56 → 4.05 |
+| s_eff 8 → 5, n̄ matched (pooled) | 1.03 | 1.02 | 1.02 | 1.02 | 1.00 | .98 | .97 | .94 | .91 | .88 | .89 | .92 | tilt, pivot ≈ n 5 |
+| B2 → B3, E_bind 0.0482 + a 19.8 (pooled) | .97 | .98 | .98 | .99 | 1.00 | 1.02 | 1.04 | 1.09 | 1.12 | 1.17 | 1.25 | 1.28 | opposite tilt |
+
+(The E₀ and τ rows are at the A5 cell under `post_pickup`, baseline
+`g5lqpps1`; n̄ is not matched there.)
+
+- What the misfit needs: the B2 ratio is 0.51 / 0.78 / 0.94 / 1.05 at
+  n = 1–4, 1.15–1.21 at n = 5–8 and 1.03 → 0.63 at n = 9–12 — a hump.
+  The correction is a **U** (heat n ≤ 4, cool n 5–8 by ≈ 13 %, heat
+  n ≥ 9), the same diagnosis as `TIER2_MASS_SCENARIOS.md` §5 ("the
+  required correction is a U, not a boost").
+- c, E₀ and τ scale the hump; s_eff and the shallow well tilt it. No
+  measured lever makes a local dip. s_eff 5 comes closest: n ≤ 4 +2–3 %
+  (KE₁ +0.019 eV), n 7–8 −3 to −6 %, but n ≥ 9 cools most (−9 to −12 %,
+  sizes already too cold); W₁ +0.10; χ²_med 350 → 241 (the scorer
+  weights the well-populated small sizes). Combinations multiply tilts
+  (e.g. s_eff 5 × B3 well mainly repairs the deep tail, not n 5–8;
+  c ↑ × B3 well cools n ≤ 6 uniformly) and the shallow well is not
+  Tier-0-consistent (G10.5).
+- Why: the detected n is set by the emission chord (§1; n 5–8 ⇔ chord
+  ≈ 45–55 Å), and every measured map lever acts smoothly along the whole
+  chord axis — as a level (drag strength, evaporation) or as a tilt
+  (s_eff, well + drag). A local correction needs structure at
+  intermediate chords or sizes.
+
+**Statement for the thesis.** The remaining KE-per-n misfit is a shape —
+too cold at small and large n, too hot at n = 5–8 — and none of the
+measured levers (c on the TDDFT ridge, E₀, τ, s_eff, well depth) changes
+that shape locally; they scale or tilt it. The KE misfit is therefore not
+a drag-calibration problem. On the corrected reference the experiment
+would place c at ≈ 1.7–1.8 on the ridge (interpolated) instead of 1.6;
+the identifiability argument is unchanged.
+
+### 14.3 Untested candidates for a local correction (future investigation; no runs)
+
+1. **Binding ladder D₀(n) at rungs 5–8.** The ladder sets at which chord
+   an ion ends at a given n. Weaker binding at n ≈ 5–8 would let those
+   ions shed one or two more He, so the n 5–8 bins fill from longer,
+   slower chords and come out cooler. Unmeasured; it also moves the size
+   histogram, and the neighbouring bins receive faster ions. The current
+   ladder (rq4graded) only modifies rungs 1–3; the ladder shape is one of
+   the two genuinely free knobs (Tier 2). First test: a ladder replay on
+   frozen trajectories as in G9b (those are the c 2.0 `raw` trajectories,
+   not B2).
+2. **Flight mass / shell stripping** (`TIER2_MASS_SCENARIOS.md`). The
+   existing explanation for a U-shaped correction; gated by M1 (a
+   sourced I⁺–He D₀), open.
+3. **Pickup rate λ₀ (+ Langmuir p).** Acts at shallow chords (small n);
+   could lift n = 1–4 and ease the hump from below. Never swept at lq
+   (D0 §7, §15.9).
+4. **Combined c ≈ 1.7 pool on v2** (interpolation check, not a shape
+   fix). Would turn the c ≈ 1.7 projection into a measured candidate:
+   6 × N = 1000 MD runs with E₀ from the twin-line rule. Only if the
+   G12.2 no-re-selection decision is revisited.

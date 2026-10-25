@@ -4,8 +4,7 @@ Four figures, rendered from the pooled N = 6000 B2 container
 (``…g5lqppc160e3297pooled_th500``, s1-s5 + r6) at the thesis text width
 (``TEXTWIDTH_CM``) and written to ``data/figures/thesis_tier2/``. Pipeline
 vocabulary (scored / detected read, median anchor provenance, chi^2,
-smoothing window) lives in the captions, not on the figures
-(``THESIS_DISCUSSION.md`` §14):
+smoothing window) lives in the captions, not on the figures:
 
 * **B2-1 size distribution** -- (a) scored histogram (droplet-retained
   excluded; suppressed ions in the bare n = 0 bin, hatched), (b) solvated
@@ -176,7 +175,7 @@ FIG_B2_2_SPLIT: dict = {
 FIG_B2_3: dict = {
     # The plot_detection_summary ihe_ked curve section for n = 1..6 (3 x 2)
     # with the speed axis in Å/ps; n = 0 (suppressed vs bare I+) is a
-    # different population and is left out (THESIS_DISCUSSION §14).
+    # different population and is left out.
     "stem": "b2_3_ked_shapes",
     "representation": "3d",              # "3d" (P(v)) | "2d" (detector projection)
     "n_values": (1, 2, 3, 4, 5, 6),      # n 5-7: extended exports, not verified
