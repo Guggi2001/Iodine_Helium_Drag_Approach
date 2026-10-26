@@ -194,6 +194,24 @@ class TestBuilders:
         finally:
             plt.close(fig)
 
+    def test_b2_1_bare_bin_is_a_plain_bar_with_bare_fraction(self, mod, inputs):
+        # G13: n = 0 is bare I+ -- drawn like every other bar (no hatch, no
+        # legend entry) and annotated as the n = 0 share of the scored ions
+        d = mod.size_data(inputs["read"], inputs["abundance"])
+        assert d.bare_frac == pytest.approx(d.frac_scored[d.n_scored == 0].sum())
+        assert d.bare_frac > 0.0
+        fig = mod.build_b2_1(d)
+        try:
+            ax = fig.axes[0]
+            assert all(not p.get_hatch() for p in ax.patches)   # bars + landing band
+            labels = ax.get_legend_handles_labels()[1]
+            assert not any("Suppressed" in lab or "n = 0" in lab for lab in labels)
+            texts = [t.get_text() for t in ax.texts]
+            assert any(f"Bare fraction {100.0 * d.bare_frac:.1f} %" in t for t in texts)
+            assert not any("Suppressed" in t for t in texts)
+        finally:
+            plt.close(fig)
+
     def test_b2_2_split_matches_section(self, mod, sections):
         assert mod.FIG_B2_2["split_n"] == sections.IHE_KED_MEAN_ENERGY_SPLIT_N
 

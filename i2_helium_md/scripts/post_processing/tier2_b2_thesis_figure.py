@@ -1,13 +1,14 @@
 """Tier-2 thesis figures for the production law B2 (detected ensemble).
 
-Four figures, rendered from the pooled N = 6000 B2 container
-(``…g5lqppc160e3297pooled_th500``, s1-s5 + r6) at the thesis text width
+Four figures, rendered from the pooled N = 6000 B2 thesis container
+(``B2_N6000_pooled``, s1-s6, ``self_bound_gate_release = decoupled``,
+THESIS_FINAL_GOALS G13) at the thesis text width
 (``TEXTWIDTH_CM``) and written to ``data/figures/thesis_tier2/``. Pipeline
 vocabulary (scored / detected read, median anchor provenance, chi^2,
 smoothing window) lives in the captions, not on the figures:
 
 * **B2-1 size distribution** -- (a) scored histogram (droplet-retained
-  excluded; suppressed ions in the bare n = 0 bin, hatched), (b) solvated
+  excluded; bare I+ in the n = 0 bin, bare fraction annotated), (b) solvated
   branch (n >= 1 renormalized, RQ8) vs the experimental abundance, with
   n̄ against the MD landing band, n₁, W₁ and the n >= 15 mass annotated.
 * **B2-2 mean KE vs n** -- (a) n = 1-4 and (b) n = 5-17, linear, each on
@@ -37,9 +38,9 @@ B2-3); an override wins key by key
 Anchor guard: before drawing, every quoted scalar (n̄, suppressed, n₁,
 W₁, n >= 15 mass, midHot, deepKE, chi^2_med, KE₁, number of chi^2 bins,
 scored count) is
-checked against the committed B2 row of
-``data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv`` (scored
-against the corrected ihe_ked reference v2, G12) to 4 dp; a mismatch raises.
+checked against the decoupled B2 row of
+``data/runs/h2b_forward_model/g13_decoupled_table.csv`` (v2 scorer, the
+corrected ihe_ked reference, G12) to 4 dp; a mismatch raises.
 
 Edit the ``USER SETTINGS`` block and run::
 
@@ -65,13 +66,10 @@ for _p in (PROJECT_ROOT, _SCRIPT_DIR):
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-RUN_DIR: Path = (
-    PROJECT_ROOT / "data" / "runs"
-    / "9A_drag_srho3p5A18A_linear_quadratic_N6000_detfix_conf270_g5lqppc160e3297pooled_th500"
-)
-# G12: scored against the corrected ihe_ked reference (v2, 2026-10-23)
-WINNERS_CSV: Path = PROJECT_ROOT / "data" / "runs" / "h2b_forward_model" / "g5_winners_table_ihekedv2.csv"
-WINNERS_LABEL: str = "B2_pp_c160"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "B2_N6000_pooled"
+# G13: decoupled rows, v2 scorer (corrected ihe_ked reference, G12)
+WINNERS_CSV: Path = PROJECT_ROOT / "data" / "runs" / "h2b_forward_model" / "g13_decoupled_table.csv"
+WINNERS_LABEL: str = "B2"
 ANCHOR_CHECK: bool = True
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
@@ -109,7 +107,6 @@ FIG_B2_1: dict = {
     "n_xlim": (-0.7, 21.0),
     "bar_width_scored": 0.8,
     "bar_width_pair": 0.4,
-    "suppressed_hatch": "///",
     "show_landing_band": True,
     "annot_scored": True,
     "annot_solvated": True,
@@ -174,8 +171,8 @@ FIG_B2_2_SPLIT: dict = {
 
 FIG_B2_3: dict = {
     # The plot_detection_summary ihe_ked curve section for n = 1..6 (3 x 2)
-    # with the speed axis in Å/ps; n = 0 (suppressed vs bare I+) is a
-    # different population and is left out.
+    # with the speed axis in Å/ps; n = 0 (bare I+) is a different
+    # population and is left out.
     "stem": "b2_3_ked_shapes",
     "representation": "3d",              # "3d" (P(v)) | "2d" (detector projection)
     "n_values": (1, 2, 3, 4, 5, 6),      # n 5-7: extended exports, not verified
@@ -308,6 +305,7 @@ class SizeData:
     frac_ref_solv: np.ndarray
     n_mean: float
     suppressed_frac: float
+    bare_frac: float
     num_scored: int
     num_ions: int
     w1_solvated: float
@@ -320,16 +318,19 @@ class SizeData:
 def size_data(read, abundance, tail_n: int = FIG_B2_1["tail_n"]) -> SizeData:
     """Scorer read path of ``_section_detected_size_distribution``; the tail
     mass is the solvated share at ``n >= tail_n`` (the
-    ``mass_n15plus_solv`` column of ``tier2_g5_winners_table``)."""
+    ``mass_n15plus_solv`` column of ``tier2_g5_winners_table``); the bare
+    fraction is the n = 0 share of the scored histogram."""
     score = score_histogram_vs_reference(read, abundance)
     sim_n, sim_f = solvated_renormalized(read.n_values, read.fraction, n_min=score.n_min)
     ref_n, ref_f = solvated_renormalized(abundance.n, abundance.ion_fraction, n_min=score.n_min)
     sim_n, sim_f = np.asarray(sim_n), np.asarray(sim_f, dtype=float)
     ref_n, ref_f = np.asarray(ref_n), np.asarray(ref_f, dtype=float)
+    n_scored, frac_scored = np.asarray(read.n_values), np.asarray(read.fraction, dtype=float)
     return SizeData(
-        n_scored=np.asarray(read.n_values), frac_scored=np.asarray(read.fraction),
+        n_scored=n_scored, frac_scored=frac_scored,
         n_sim_solv=sim_n, frac_sim_solv=sim_f, n_ref_solv=ref_n, frac_ref_solv=ref_f,
         n_mean=float(read.n_mean), suppressed_frac=float(read.suppressed_frac),
+        bare_frac=float(frac_scored[n_scored == 0].sum()),
         num_scored=int(read.num_scored), num_ions=int(read.num_ions),
         w1_solvated=float(score.w1_solvated), sim_n1=float(score.sim_n1),
         ref_n1=float(score.ref_n1),
@@ -365,7 +366,7 @@ class KEData:
 def ke_data(read, ked_ref) -> KEData:
     """Same scorer kwargs as ``summary_sections._detected_ke_scores``;
     midHot / deepKE at their committed conventions (geometric / arithmetic,
-    ``min_count = 1``) -- the values in ``g5_winners_table.csv``."""
+    ``min_count = 1``) -- the values in ``g13_decoupled_table.csv``."""
     ke = read.ke_by_n(min_count=1)
     keep = ke.n >= DETECTED_KE_N_MIN
     chi2 = score_ke_curve_vs_reference(
@@ -454,7 +455,7 @@ def pv_data(view, ked_dir: Path, ked_ref, n: int, representation: str) -> PvData
 # Anchor guard
 # =============================================================================
 def anchor_values(size: SizeData, ke: KEData) -> dict[str, float]:
-    """The scalars the figures quote, keyed by ``g5_winners_table.csv`` column."""
+    """The scalars the figures quote, keyed by ``g13_decoupled_table.csv`` column."""
     ke1 = ke.mean_eV[ke.n == 1]
     return {
         "num_scored": size.num_scored,
@@ -498,18 +499,14 @@ def _annot(ax, text: str, st: dict, loc, ha="right", va="top") -> None:
 
 
 def draw_size_scored(ax, d: SizeData, st: dict) -> None:
-    """Scored histogram; the n = 0 (suppressed / bare-candidate) bar hatched."""
-    bare = d.n_scored == 0
-    ax.bar(d.n_scored[~bare], 100.0 * d.frac_scored[~bare], width=st["bar_width_scored"],
+    """Scored histogram, n = 0 (bare I+) included; bare fraction annotated."""
+    ax.bar(d.n_scored, 100.0 * d.frac_scored, width=st["bar_width_scored"],
            edgecolor="black", linewidth=0.4, **st["sim"])
-    ax.bar(d.n_scored[bare], 100.0 * d.frac_scored[bare], width=st["bar_width_scored"],
-           facecolor="white", edgecolor=st["sim"]["color"], hatch=st["suppressed_hatch"],
-           linewidth=0.8, label="Suppressed (n = 0)")
     if st["annot_scored"]:
         lo, hi = NBAR_LANDING
         flag = "∈" if lo <= d.n_mean <= hi else "∉"
         _annot(ax, rf"$\bar n$ = {d.n_mean:.2f} {flag} [{lo:.2f}, {hi:.2f}]" "\n"
-                   f"Suppressed {100.0 * d.suppressed_frac:.1f} %", st, st["annot_loc"])
+                   f"Bare fraction {100.0 * d.bare_frac:.1f} %", st, st["annot_loc"])
     if st["show_landing_band"]:
         ax.axvspan(*NBAR_LANDING, zorder=0, alpha=2 * st["band_shade_alpha"], linewidth=0,
                    label=r"$\bar n$ landing band", **st["band"])
