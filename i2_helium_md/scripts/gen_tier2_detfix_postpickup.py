@@ -61,6 +61,13 @@ Pools: ``--target g5_lq_s1s5`` (raw A5 arm, N = 5000), ``g5_lqpp`` (A) and,
 once the B2 cell is set, ``g5_lqppb2`` (N = 6000). Scorer:
 ``scripts/post_processing/tier2_g5_postpickup_table.py``.
 
+**Thesis production (THESIS_FINAL_GOALS G13, 2026-10-26).** ``--b2`` / ``--b3``
+now run under ``self_bound_gate_release="decoupled"`` (:data:`THESIS_GATE_RELEASE`)
+into ``data/runs/B2_N1000_s1`` ... ``_s6`` (``B3_…``; r6 -> s6), ion.npz kept;
+the A5 oracle is unchanged and the release is the one field added on top.
+The committed ``never`` B2 / B3 batteries keep their long names (history).
+Pools: ``gen_tier2_g13_decoupled.py --pool`` -> ``B2_N6000_pooled`` / ``B3_N6000_pooled``.
+
 Max two concurrent MD runs (``--concurrency`` is capped at 2).
 """
 
@@ -176,6 +183,14 @@ B1W_DE0_DA = 0.002185
 #: B3 (user, 2026-10-09): the B1w a 19.8 cell (s1: midHot 1.004, n >= 15
 #: 0.0085, W1 0.767) at all six production members, pooled N = 6000.
 B3_A = 19.8
+#: Thesis production (THESIS_FINAL_GOALS G13, user 2026-10-26): B2 / B3
+#: (``--b2`` / ``--b3``) and the re-landed h405 contrast law
+#: (``gen_tier2_h405_pp35.py --scan-pool``) run with the self-bound gate lifted
+#: outside the droplet, into plain run dirs ``<law>_N1000_s1`` ... ``_s6``
+#: (member r6 -> s6; every other detail is in the run's cfg.json), ion.npz
+#: kept. The exploratory columns (A5, B1, B1', B1c, B1w) keep the committed
+#: ``never`` release and their long run-dir names.
+THESIS_GATE_RELEASE = "decoupled"
 LQ_DROP_REASON = ("G5 lq post_pickup: disk (T: full); scorer reads cfg.json + "
                   "neutral.npz + detection.npz")
 
@@ -389,6 +404,75 @@ def run_lq(job: tuple) -> str:
     return label
 
 
+#: Thesis lq laws: name -> job tail after the member (e0, tau, c[, a, e_bind]).
+THESIS_LQ_JOBS: dict[str, tuple] = {
+    "B2": (B2_E0_EV, B2_TAU_PS, B2_C),
+    "B3": (b1w_e0(B3_A), None, B1W_C, B3_A, B1W_E_BIND_EV),
+}
+
+
+def thesis_member_label(member: str) -> str:
+    """Thesis run-dir member label: ``s1``-``s5`` unchanged, ``r6`` -> ``s6``."""
+    if member not in MEMBER_SEEDS:
+        raise KeyError(f"unknown member {member!r}")
+    return "s6" if member == "r6" else member
+
+
+def thesis_run_dir(law: str, member: str) -> Path:
+    """Thesis production member dir, e.g. ``data/runs/B2_N1000_s1``."""
+    return PROJECT_ROOT / "data" / "runs" / f"{law}_N{N}_{thesis_member_label(member)}"
+
+
+def thesis_pool_dir(law: str) -> Path:
+    """Thesis pooled figures container, e.g. ``data/runs/B2_N6000_pooled``."""
+    return PROJECT_ROOT / "data" / "runs" / f"{law}_N{N * len(MEMBER_SEEDS)}_pooled"
+
+
+def build_thesis_lq(law: str, member: str) -> SimConfig:
+    """Thesis B2 / B3 member: the lq post_pickup cell under
+    :data:`THESIS_GATE_RELEASE`."""
+    cfg = dataclasses.replace(build_lq_member(member, *THESIS_LQ_JOBS[law]),
+                              self_bound_gate_release=THESIS_GATE_RELEASE)
+    cfg.validate()
+    return cfg
+
+
+def run_thesis_member(cfg: SimConfig, run_dir: Path, label: str) -> str:
+    """neutral -> ion (to t_h) -> detection into ``run_dir``, ion.npz kept.
+
+    A complete dir is skipped if its cfg.json equals ``cfg`` and refused
+    otherwise (never silently accepts a different model)."""
+    steps, stride = verify_handover_alignment(cfg)
+    if all((run_dir / f).exists() for f in _REQUIRED_ARTIFACTS):
+        if RunDirectory(run_dir).load_cfg() != cfg:
+            raise RuntimeError(f"[{label}] existing {run_dir.name} has a different cfg")
+        print(f"[{label}] skip (complete) -> {run_dir.name}", flush=True)
+        return label
+    run = RunDirectory(run_dir)
+    run.save_cfg(cfg)
+    print(f"[{label}] seed {cfg.seed}, {steps} steps (stride {stride}) -> {run_dir.name}",
+          flush=True)
+    neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
+    ion = run_ion_propagation(cfg, neutral, run_dir=run, verbose=False,
+                              max_bytes=MAX_BYTES_ION)
+    t_last = float(np.asarray(ion.time_ps)[-1])
+    if not math.isclose(t_last, T_HANDOVER_PS, abs_tol=1e-9):
+        raise AssertionError(f"[{label}] ion.npz last column at {t_last} ps, not t_h")
+    det = run_detection_stage(ion, cfg, save_path=run.root / "detection.npz")
+    print(f"[{label}] done: scored {int(det.detected_mask.sum())}/{det.detected_mask.size}",
+          flush=True)
+    return label
+
+
+def run_thesis_lq(job: tuple[str, str]) -> str:
+    """Thesis B2 / B3 member: A5 oracle, then :func:`run_thesis_member`.
+    ``job`` = (law, member)."""
+    law, member = job
+    verify_lq_member(member, *THESIS_LQ_JOBS[law])
+    return run_thesis_member(build_thesis_lq(law, member), thesis_run_dir(law, member),
+                             f"{law} {member}")
+
+
 def _run_is_complete(run_dir: Path) -> bool:
     return all((run_dir / name).exists() for name in _REQUIRED_ARTIFACTS)
 
@@ -458,17 +542,28 @@ def main(argv: Optional[list[str]] = None) -> int:
                   f"post_pickup <N> {mean_N:.0f} -> {member_run_dir_name(member)}",
                   flush=True)
         fn, jobs = run_one, members
-    else:
+    elif args.b2 or args.b3:
+        # Thesis production: decoupled release, plain run dirs (THESIS_GATE_RELEASE).
         if args.b2 and B2_E0_EV is None and B2_TAU_PS is None and B2_C is None:
             raise SystemExit("B2 cell not set: choose from B1 / B1' / B1c first")
         if args.b2 and B2_C is not None and B2_E0_EV != b1c_e0(B2_C):
             raise SystemExit(f"B2_E0_EV {B2_E0_EV} != b1c_e0({B2_C}) = {b1c_e0(B2_C)}")
+        law = "B2" if args.b2 else "B3"
+        jobs = [(law, m) for m in _select(args.labels, tuple(MEMBER_SEEDS))]
+        for _, m in jobs:
+            diff = verify_lq_member(m, *THESIS_LQ_JOBS[law])
+            cfg = build_thesis_lq(law, m)
+            steps, stride = verify_handover_alignment(cfg)
+            mean_N = verify_postpickup_sizes(cfg)
+            print(f"[{law} {m}] guards PASSED: seed {cfg.seed}, diff vs A5 {diff} + "
+                  f"self_bound_gate_release={THESIS_GATE_RELEASE}, {steps} steps, "
+                  f"stride {stride}, post_pickup <N> {mean_N:.0f} -> "
+                  f"{thesis_run_dir(law, m).name}", flush=True)
+        fn = run_thesis_lq
+    else:
         if args.b1:
             jobs = [(m, e0, None) for m in _select(args.labels, (B1_MEMBER,))
                     for e0 in B1_E0_EV]
-        elif args.b3:
-            jobs = [(m, b1w_e0(B3_A), None, B1W_C, B3_A, B1W_E_BIND_EV)
-                    for m in _select(args.labels, tuple(MEMBER_SEEDS))]
         elif args.b1w:
             jobs = [(m, b1w_e0(a), None, B1W_C, a, B1W_E_BIND_EV)
                     for m in _select(args.labels, (B1_MEMBER,)) for a in B1W_A]
@@ -478,9 +573,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         elif args.b1tau:
             jobs = [(m, None, t) for m in _select(args.labels, (B1_MEMBER,))
                     for t in B1_TAU_PS]
-        elif args.b2:
-            jobs = [(m, B2_E0_EV, B2_TAU_PS, B2_C)
-                    for m in _select(args.labels, tuple(MEMBER_SEEDS))]
         else:
             jobs = [(m, None, None) for m in _select(args.labels, POOL_MEMBERS)]
         for job in jobs:

@@ -152,6 +152,16 @@ DetectionDropletRetainedPolicy = Literal[
 # ~0.5 ns, E2 skipped). Valid only under the ``co_moving`` shed convention.
 DetectionCoulombClosure = Literal["none", "partner_aware"]
 
+# THESIS_FINAL_GOALS G13 (RQ3, user 2026-10-26): where the self-bound gate
+# (shedding suppressed while E_int >= Sigma(n)) stops acting. The gate is
+# argued from droplet confinement, which ends once the complex is outside.
+# ``never`` (byte-inert default): the gate acts everywhere; an ion ejected net
+# self-unbound rides to the detector intact (state ``suppressed``).
+# ``decoupled``: lifted wherever the ion is outside the nominal droplet
+# surface (depth > 0, memoryless, every step) -- in Stage I, E2 and the
+# detection stage alike. epsilon = 0, so a lifted cascade runs to bare I+.
+SelfBoundGateRelease = Literal["never", "decoupled"]
+
 # Slice T7 (Tier-2 plan §I.11): birth-position law for the molecule centre.
 # ``boltzmann`` is the delivered thermal sampler (byte-inert default);
 # ``uniform_volume`` is the 1D twin's L1 ensemble law — p(r) ∝ r² on
@@ -707,6 +717,9 @@ class SimConfig:
     # Residual pair-Coulomb closure at handover (DetectionCoulombClosure above;
     # TIER2_DetectorStageFix.md §5.4). "none" = byte-inert default.
     detection_coulomb_closure: DetectionCoulombClosure = "none"
+    # Where the self-bound gate is lifted (SelfBoundGateRelease above;
+    # THESIS_FINAL_GOALS G13). "never" = byte-inert default.
+    self_bound_gate_release: SelfBoundGateRelease = "never"
 
     # ------------------------------------------------------------------
     # Output
@@ -1962,6 +1975,7 @@ def check_relaxation_config(cfg: "SimConfig") -> None:
 
 _KNOWN_DETECTION_RETAINED_POLICIES = ("refuse", "exclude", "exclude_all_coupled")
 _KNOWN_DETECTION_COULOMB_CLOSURES = ("none", "partner_aware")
+_KNOWN_SELF_BOUND_GATE_RELEASES = ("never", "decoupled")
 
 
 def check_detection_config(cfg: "SimConfig") -> None:
@@ -2004,8 +2018,10 @@ def check_detection_config(cfg: "SimConfig") -> None:
     from ``ion.npz`` and the P1-P3 handover guard is the sole defense.
 
     Always (stage enabled or not): an unknown ``detection_droplet_retained_policy``
-    or ``detection_coulomb_closure`` is rejected, and ``partner_aware`` with the
-    stage disabled is refused (it would be silently inert).
+    or ``detection_coulomb_closure`` is rejected, ``partner_aware`` with the
+    stage disabled is refused (it would be silently inert), and the
+    ``self_bound_gate_release`` surface is checked
+    (:func:`check_self_bound_gate_release`).
 
     Raises
     ------
@@ -2022,6 +2038,7 @@ def check_detection_config(cfg: "SimConfig") -> None:
         _KNOWN_DETECTION_COULOMB_CLOSURES,
         field="detection_coulomb_closure",
     )
+    check_self_bound_gate_release(cfg)
     if not cfg.detection_stage_enabled:
         if cfg.detection_coulomb_closure != "none":
             raise ValueError(
@@ -2080,6 +2097,50 @@ def check_detection_config(cfg: "SimConfig") -> None:
             "integrated flight only when later sheds leave v unchanged; under "
             f"{cfg.evaporation_shed_convention!r} every shed rescales v "
             "(TIER2_DetectorStageFix.md §5.4 D1)."
+        )
+
+
+def check_self_bound_gate_release(cfg: "SimConfig") -> None:
+    """Validate ``cfg.self_bound_gate_release`` (THESIS_FINAL_GOALS G13).
+
+    Rejects an unknown value; otherwise ``never`` (the default) always
+    passes. ``decoupled`` requires
+
+    1. ``mass_scenario == "biphasic"`` -- the self-bound gate exists only in
+       the biphasic evaporation channel; elsewhere the field is inert;
+    2. ``gate_onset_override_eV is None`` -- the release lifts the gate where
+       the ion is outside, so a diagnostic threshold would act in one region
+       and be silently ignored in the other.
+
+    It acts in Stage I / E2 as well, so it does not need the detection stage.
+
+    Raises
+    ------
+    ValueError
+        On any failed check (fail-loud; CLAUDE.md principle 4).
+    """
+    _reject_unknown_enum(
+        cfg.self_bound_gate_release,
+        _KNOWN_SELF_BOUND_GATE_RELEASES,
+        field="self_bound_gate_release",
+    )
+    release = cfg.self_bound_gate_release
+    if release == "never":
+        return
+    if cfg.mass_scenario != "biphasic":
+        raise ValueError(
+            f"self_bound_gate_release={release!r} requires mass_scenario="
+            "'biphasic': the self-bound gate exists only in the biphasic "
+            f"evaporation channel; got mass_scenario={cfg.mass_scenario!r} "
+            "(the release would be silently inert)."
+        )
+    if cfg.gate_onset_override_eV is not None:
+        raise ValueError(
+            f"self_bound_gate_release={release!r} requires "
+            "gate_onset_override_eV=None: the release lifts the self-bound "
+            "gate outside the droplet, so the diagnostic threshold "
+            f"{cfg.gate_onset_override_eV!r} eV would act inside but be "
+            "silently ignored outside (THESIS_FINAL_GOALS G13)."
         )
 
 

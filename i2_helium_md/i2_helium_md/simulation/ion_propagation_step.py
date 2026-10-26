@@ -631,12 +631,17 @@ def biphasic_step(
     E_dissip = state.E_dissip_eV + (state.E_int_eV - E_int)   # cooling drain >= 0
 
     # 2. Evaporation draw FIRST (frozen order), on the post-cooling E_int.
+    #    G13 ``decoupled``: the self-bound gate is argued from droplet
+    #    confinement, so it is lifted wherever the ion is outside the nominal
+    #    surface (depth > 0, pre-step positions, memoryless). The draw is
+    #    unconditional, so the stream is unchanged; "never" -> False.
+    gate_lifted = (depth > 0.0) if cfg.self_bound_gate_release == "decoupled" else False
     n_e, m_e, vx_e, vy_e, vz_e, dE_int_e, dE_mt_e, _fired_e = evaporation_step_components(
         rng=rng, E_int_eV=E_int, n=n, vx=state.vx, vy=state.vy, vz=state.vz,
         m_amu=m_amu, nu=cfg.evap_rate_prefactor_per_ps, picture=picture, kappa=kappa,
         dt_ps=dt, evap_rrk_dof=cfg.evap_rrk_dof,
         gate_onset_eV=cfg.gate_onset_override_eV, ladder=ladder,
-        shed_convention=cfg.evaporation_shed_convention,
+        shed_convention=cfg.evaporation_shed_convention, gate_lifted=gate_lifted,
     )
     E_int = E_int + dE_int_e                                  # K1 drain (-D_0(n)) on fire
     E_mass_transfer = state.E_mass_transfer_eV + _amu_ang2_ps2_to_eV(dE_mt_e)

@@ -1,4 +1,4 @@
-# THESIS_FINAL_GOALS — agreed changes and tests before thesis completion
+DrN# THESIS_FINAL_GOALS — agreed changes and tests before thesis completion
 
 Settled in the final discussion round (2026-10-02). This document holds
 only agreed goals. Results go to the migration log and D0 as usual.
@@ -122,12 +122,20 @@ log (`drag_migration_log_tier2.md`).
     only, docs. **Executed 2026-10-23:** reference v2 adopted; B2 midHot
     1.050, deepKE 0.499, χ² 350 (v1: 1.002 / 0.477 / 527). See G12.3.
 
-20. **G13 opened (2026-10-25, nothing run):** resolve the fate of the
+20. **G13 opened (2026-10-25):** resolve the fate of the
     suppressed (net self-unbound) complexes, RQ3. The scorer counts them
     as bare I⁺ (n = 0) while the model carries them intact (I⁺He₂₁);
-    the fate is a lever on the n₁ misfit. Plan: zero-MD convention
-    rescore first, no simulation change. **The "COMPLETED" status below
-    predates G12 / G13; G13 is the one open goal.** See G13.
+    the fate is a lever on the n₁ misfit. **Decided 2026-10-26 (user):**
+    route 2 — the self-bound gate is lifted wherever the complex is
+    outside the droplet (depth > 0, memoryless, in Stage I and the
+    detection stage: `self_bound_gate_release = decoupled`); the
+    in-droplet gate stays. Zero-MD stall check: a lifted cascade reaches
+    bare I⁺ in ≲ 0.3 ns ≪ 8.5 µs. **Executed 2026-10-26** (G13.7): B2, B3
+    and re-landed h405 re-run (ion.npz kept); every suppressed ion ends
+    bare; B2 scores move ≤ 3 × 10⁻⁴ (χ² +0.03), B3 / h405 ≤ 0.003
+    (χ² ≤ +0.16), suppressed share → 0;
+    G6 panel (b) redrawn. **The "COMPLETED" status below predates
+    G12 / G13; G13 is closed.** See G13.5–G13.7.
 
 **COMPLETED (user, 2026-10-13).** All goals executed, dropped or moved
 to the outlook; no open gate. G11.4 complete (steps 2–3, 6 done; 4–5
@@ -1948,7 +1956,7 @@ slow-aligned / fast-isotropic trend (n 4: +0.64 / +0.40 / −0.01) is not
 an inversion artefact. Background-subtraction structure is not yet
 excluded (`THESIS_DISCUSSION.md` §13.3, §13.8).
 
-## G13. Fate of the suppressed complexes (RQ3) (opened 2026-10-25; nothing run)
+## G13. Fate of the suppressed complexes (RQ3) (opened 2026-10-25; decided and executed 2026-10-26 — closed)
 
 Trigger: the G6 chord map (panel b). Near the suppressed / n = 1 edge
 the detected KE drops sharply. A scratch read of the B2 pool (not
@@ -2002,7 +2010,7 @@ the 3.83–4.31 band); KE₁ would move little (≈ 0.65 eV co-moving, still
 misfit, not a neutral convention — choosing either extreme by fiat is
 unjustified.
 
-### G13.4 Plan (proposed 2026-10-25; to be agreed before any step runs)
+### G13.4 Plan (proposed 2026-10-25; superseded 2026-10-26 by G13.5–G13.7 — steps 1–3 not run)
 
 1. **Zero-MD convention rescore** of the B2 pool (existing
    `detection.npz`, no simulation change): the full observable vector
@@ -2035,6 +2043,165 @@ plan + `[PROCEED TO IMPLEMENTATION]`); re-selection of c / E₀.
 keeps the suppressed branch at intact-complex KE, labelled so, with
 the binned mean drawn per branch (2026-10-25); if step 4 adopts a
 fragmentation convention, panel (b) follows it.
+
+### G13.5 Decision (user, 2026-10-26)
+
+The suppressed class is removed by **route 2: the self-bound gate is
+lifted once the complex is outside the droplet**, i.e. **wherever the
+ion is outside the nominal droplet surface** (below). Considered and
+rejected:
+
+- **ε-terminated cascades** (an RQ2 per-shed release ending the
+  boil-off at small n, the n = 1 feeder of G13.3 item 2): dropped. ε ≈ 0
+  stays adjudicated (RQ2, 2026-07-10).
+- **Route 1 — remove the gate everywhere** (shedding open from t = 0):
+  rejected as a different model, not a fix. At B2, E_int(0) = E₀ =
+  0.3297 eV exceeds Σ(21) ≈ 0.206 eV, so every ion born at n = 21 starts
+  net self-unbound; the gate plus the density-scaled Newton cooling
+  (τ 6.4 ps) sets when mass loss begins relative to the drag phase —
+  the timing E₀ / τ were selected on. Removing it moves all ions, voids
+  the c / E₀ selection (out of scope here) and withdraws the confinement
+  argument. Outlook item at most.
+
+**Rationale for route 2.** The gate is argued from confinement: while
+the complex remains coupled to the droplet, the helium environment can
+transiently confine the over-energised structure, so immediate removal
+of the complete shell is suppressed. Outside the droplet that premise
+no longer holds, so the argument itself implies that the gate opens. The
+thesis sentence gains its second half: once decoupled, the confinement
+ends and the shell boils off.
+
+**Where "outside" begins (user, 2026-10-26):** wherever the ion is
+outside the nominal droplet surface, depth = r − R > 0 (ρ/ρ_bulk < ½ on
+the erf gate; the code's existing "outside" definition, no new
+parameter). Memoryless — evaluated every step, no new checkpoint state;
+ejected ions do not return, and trapped ions crossing the surface are
+excluded from scoring. Acts in Stage I / E2 (`biphasic_step`) and the
+detection stage alike (`self_bound_gate_release = decoupled`). Rejected
+alternatives: a density threshold ρ < ρ_c (a new free value; kept as a
+possible sensitivity arm only); a latch (a checkpoint schema change).
+
+### G13.6 Stall check (zero-MD, 2026-10-26)
+
+Question: once the gate is lifted, does the cascade reach bare I⁺ within
+the flight, or does it stall at small n (which would feed n = 1)?
+
+Method: for each of the 1261 B2 suppressed ions (pooled
+`detection.npz`; all at handover n = 21, margin G = E_int − Σ(21) in
+0–45 meV, median 8 meV), the cascade 21 → 0 under the production
+`rrk_rate` with the self-bound gate lifted (`gate_onset_eV` set
+unreachable), ε = 0 (a shed drains exactly D₀(n)), no cooling outside
+(P3), B2 parameters: ν = 2.42 ps⁻¹, s = 8 (the n ≥ 2 override),
+tabulated ladder. Sanity check: the gated production rate is exactly 0
+for every one of these ions. Waits drawn as exponentials (2000 draws per
+ion) against the flight t_detect − t_h = 8.53 × 10⁶ ps. The script and
+its CSV were not kept (user, 2026-10-26): the check is superseded by the
+full `decoupled` runs (G13.7), in which every formerly suppressed ion
+arrives bare (B2 1260 / 1261, B3 and h405 all) and no `time_exhausted`
+count changes. The numbers below are the recorded result.
+
+| rung n | slowest k [ps⁻¹] | longest mean wait 1/k [ps] |
+|---|---|---|
+| 21 | 1.97 | 0.5 |
+| 4 | 0.68 | 1.5 |
+| 3 | 0.29 | 3.4 |
+| 2 | 0.064 | 15.7 (bottleneck) |
+| 1 | 2.42 (direct, k = ν) | 0.4 |
+
+- Mean cascade time per ion: median 22.5 ps, maximum 33.4 ps.
+- Monte Carlo: median 20.9 ps, 99th percentile 61.6 ps, slowest of all
+  draws 265 ps. **No cascade is unfinished at the detector** — more
+  than four orders of magnitude of margin.
+- The margin G barely affects the rates: along the ε = 0 cascade
+  E_int = Σ(n) + G, so the RRK bracket is set by the ladder
+  (≈ Σ(n−1)/Σ(n)), not by G. Near-zero-margin ions are not slower.
+
+**Consequences.**
+
+1. Route 2 yields exactly convention (a) — every suppressed ion ends
+   at n = 0 — as a model result instead of a scorer assumption.
+2. All size and KE scores of the committed B2 row
+   (`g5_winners_table_ihekedv2.csv`, `B2_pp_c160`) should be reproduced
+   unchanged; only the suppressed share goes 0.1105 → 0. That row is the
+   oracle of the implementation (4 dp).
+3. The n₁ lever of G13.3 is closed: at ε = 0 route 2 cannot feed
+   n = 1. The n₁ misfit (0.211 vs 0.310) stays in the outlook unchanged.
+4. Panel (b): the former suppressed ions land at the bare mass at the
+   same speed; the KE step at the suppressed / n = 1 edge drops from
+   ≈ 0.62 (m(I⁺He)/m(I⁺He₂₁)) to ≈ 0.97 (m(I⁺)/m(I⁺He)) — no longer
+   an artefact of the convention.
+
+### G13.7 Execution of the decoupled release (2026-10-26)
+
+Trigger: user 2026-10-26 — "outside" means the ion is decoupled from the
+droplet, so the gate lifts in Stage I as well as in the detection stage;
+re-run B2, B3 and the re-landed h405 keeping `ion.npz`.
+`[PROCEED TO IMPLEMENTATION]` including the Stage-I physics change (ion
+propagation, evaporation gate).
+
+- **Code:**
+  - `SimConfig.self_bound_gate_release: "never" | "decoupled"` (default
+    `never`, byte-inert); `check_self_bound_gate_release` (unknown value;
+    `decoupled` needs `mass_scenario = biphasic` and no
+    `gate_onset_override_eV`).
+  - `physics/evaporation.rrk_rate(..., gate_lifted=...)` — per-ion mask,
+    default `False` (bit-identical); threaded through
+    `evaporation_step(_components)`. In-band, n = 1 and n = 0 rates are
+    unaffected.
+  - `biphasic_step`: `gate_lifted = depth > 0` under `decoupled` (pre-step
+    positions). The evaporation draw is unconditional
+    (`rng.random(2N)`), so the RNG draw order is unchanged.
+  - Detection stage: the main loop passes `gate_lifted = depth > 0` under
+    `decoupled` (depth at handover).
+  - Tests: `tests/test_self_bound_gate_release.py` (18: the rate switch,
+    the Stage-I wiring — inside ions identical to `never`, outside ions on
+    the lifted rate with the expected fire pattern — the detection-stage
+    endpoint, ledger, time-exhausted lane, the `never` default and the
+    config surface).
+- **Generator:** `scripts/gen_tier2_g13_decoupled.py` (`--oracle`,
+  `--run`, `--pool`). Each member cfg is the law's committed builder output
+  (its pre-registered diff guard passes; all 18 equal the on-disk
+  `cfg.json`) with only the release changed. Run directories
+  `data/runs/{B2,B3,h405}_N1000_s1` … `_s6` (s6 = committed member r6;
+  every other detail is in each run's `cfg.json`), `ion.npz` kept; pools
+  `{B2,B3,h405}_N6000_pooled`. The oracle run (`B2_N1000_s1_never_oracle`)
+  was deleted after it passed; `--oracle` recreates it.
+- **Oracles:** B2 s1 re-run under `never` reproduces the committed
+  `detection.npz` array for array (57 s; the pipeline is deterministic, so
+  every difference below is the release alone); the intact B2 / B3 pools
+  reproduce their committed v2 rows to 4 dp.
+- **Outcome** (`data/runs/h2b_forward_model/g13_decoupled_table.csv`):
+  - No `suppressed` ion remains; retained and `time_exhausted` counts are
+    unchanged in all three laws. The formerly suppressed ions end bare
+    (B2 1260 of 1261, one at n = 1; B3 1763/1763; h405 2301/2301). They
+    shed during the remaining Coulomb push and arrive ≈ 1.3 % faster
+    (median speed ratio 1.013, range 0.99–1.03).
+  - Score changes (4 dp; all others identical):
+
+    | law | supp | n̄ | n₁_solv | W₁ | KE₁ [eV] | deepKE | χ²_med | S |
+    |---|---|---|---|---|---|---|---|---|
+    | B2 | 0.1105 → 0 | = | = | = | = | 0.4987 → 0.4986 | 349.65 → 349.69 | 2.0443 → 2.0440 |
+    | B3 | 0.1511 → 0 | 3.9562 → 3.9559 | 0.2113 → 0.2111 | 0.7947 → 0.7952 | 0.5899 → 0.5898 | 0.6278 → 0.6276 | 365.89 → 365.98 | 1.8440 → 1.8445 |
+    | h405 | 0.2199 → 0 | 3.9408 → 3.9404 | 0.1893 → 0.1888 | 0.9337 → 0.9355 | 0.6358 → 0.6356 | 0.5605 → 0.5603 | 422.09 → 422.25 | 2.0271 → 2.0297 |
+
+    No gate or law ranking moves. The committed B2 / B3 rows stay the
+    record of the `never` model; the thesis states the release and cites
+    this table for its (negligible) effect on the scores.
+- **G6 figure:** reads the `B2_N1000_s…` / `h405_N1000_s…` members (same chords ion by ion,
+  checked); anchors stay on the committed `never` members. Panel (b) is
+  one continuous KE curve across the bare / n = 1 edge (step ≈ 0.97).
+  `g6_chord_stats.csv` / `g7_ke_width.csv` are now computed from the
+  decoupled read: KE₁ mean 0.60879 → 0.60876 eV, KE₁ SD 0.0379 → 0.0379,
+  n = 1 window unchanged (34.5–39.9 Å); the n = 4 width ratio 8.2 → 8.1.
+- **Production default (user, 2026-10-26):** `decoupled` is the thesis
+  production setting. `gen_tier2_detfix_postpickup.py --cell lq --b2` /
+  `--b3` and `gen_tier2_h405_pp35.py --scan-pool` build with
+  `THESIS_GATE_RELEASE = "decoupled"` and write to the plain directories
+  above (`ion.npz` kept); a complete directory with a different `cfg.json`
+  is refused, never silently accepted. The exploratory columns (A5, B1, B1′,
+  B1c, B1w, the h405 column / scan) and the committed `never` batteries keep
+  their release and long names (history). The `SimConfig` default stays
+  `never` (byte-inert for every other caller).
 
 ## Thesis framing implied
 

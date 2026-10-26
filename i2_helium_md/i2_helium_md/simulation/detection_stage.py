@@ -37,6 +37,15 @@ suppressed or frozen ion is suppressed/frozen **forever** (permanent states,
 §2.3) -- a claim that is true precisely because the guard has verified the
 cooling and exposure channels are dead.
 
+Self-bound gate release (THESIS_FINAL_GOALS G13)
+------------------------------------------------
+``cfg.self_bound_gate_release`` sets where the self-bound gate (argued from
+droplet confinement) stops acting. ``"never"`` (default) is the permanent
+``suppressed`` state above. ``"decoupled"`` lifts it wherever the ion is
+outside the nominal surface (depth > 0) -- in Stage I/E2 (``biphasic_step``)
+and here in the event loop -- so with epsilon = 0 a net self-unbound complex
+boils off to bare I+ and no ``suppressed`` state arises.
+
 Event loop (per ion, exact; design §2.2)
 ----------------------------------------
 ``k = rrk_rate(E_int, n)``; ``k == 0`` -> permanent state (reason recorded);
@@ -260,7 +269,9 @@ class DetectionResult:
     state_reason : np.ndarray, shape (2N,), unicode
         Per-ion terminal reason: ``"frozen"`` (energetic floor -- converged
         terminal), ``"suppressed"`` (ejected net-self-unbound complex, rides
-        to the detector at its handover ``n``; OQ-B untouched),
+        to the detector at its handover ``n``; OQ-B untouched; only under
+        ``self_bound_gate_release="never"`` -- ``"decoupled"`` continues it
+        to ``frozen`` / ``time_exhausted``, G13),
         ``"time_exhausted"`` (cascade live at the detector -- the physical
         in-flight snapshot), ``"droplet_retained"`` (well-trapped ion
         under ``detection_droplet_retained_policy="exclude"``), or
@@ -352,8 +363,11 @@ class DetectionResult:
 
 
 def _permanent_reason(E_int_eV: float, n: int, *, picture: str, kappa: float,
-                      gate_onset_eV, ladder=None) -> str:
+                      gate_onset_eV, ladder=None, gate_lifted: bool = False) -> str:
     """Classify a ``k == 0`` ion into its permanent state (design §2.3).
+
+    With ``gate_lifted`` (G13) the ``"suppressed"`` lane does not exist: the
+    rate ignored the self-bound gate, so ``k == 0`` is a frozen lane.
 
     Called only when :func:`rrk_rate` returned exactly 0, so with ``nu > 0``
     (enforced at config-load) the lanes are: ``n <= 0`` or ``E_int`` at/below
@@ -374,7 +388,7 @@ def _permanent_reason(E_int_eV: float, n: int, *, picture: str, kappa: float,
     d0 = float(d0_of_n(n, picture=picture, kappa=kappa, ladder=ladder))
     if E_int_eV <= d0:
         return "frozen"
-    if n >= 2 and float(gate_margin_eV(
+    if n >= 2 and not gate_lifted and float(gate_margin_eV(
         E_int_eV, n, picture=picture, kappa=kappa, gate_onset_eV=gate_onset_eV,
         ladder=ladder,
     )) >= 0.0:
@@ -488,6 +502,9 @@ def run_detection_stage(
     # byte-inert) vs "co_moving" (velocity unchanged, positive carried-KE
     # ledger). Guarded at config-load; the jump chain is convention-invariant.
     shed_convention = cfg.evaporation_shed_convention
+    # G13 "decoupled": the self-bound gate is lifted wherever the ion is
+    # outside the nominal surface (depth > 0) -- the same rule as Stage I.
+    lift_outside = cfg.self_bound_gate_release == "decoupled"
     tau_ps = float(cfg.internal_energy_cooling_tau_ps)
 
     n0 = np.rint(np.asarray(seed.n_shell, dtype=float)).astype(int)
@@ -660,17 +677,19 @@ def run_detection_stage(
         E_i = float(E_int_out[i])
         m_i = float(m_amu_out[i])
         v_i = np.array([vx_out[i], vy_out[i], vz_out[i]], dtype=float)
+        gate_lifted = bool(lift_outside and depth[i] > 0.0)
 
         while True:
             k = float(rrk_rate(
                 E_i, n_i, nu=nu, picture=picture, kappa=kappa,
                 evap_rrk_dof=s_override, gate_onset_eV=gate_onset,
-                ladder=ladder,
+                ladder=ladder, gate_lifted=gate_lifted,
             ))
             if k == 0.0:
                 reasons.append(_permanent_reason(
                     E_i, n_i, picture=picture, kappa=kappa,
                     gate_onset_eV=gate_onset, ladder=ladder,
+                    gate_lifted=gate_lifted,
                 ))
                 break
             u = float(rng.random())

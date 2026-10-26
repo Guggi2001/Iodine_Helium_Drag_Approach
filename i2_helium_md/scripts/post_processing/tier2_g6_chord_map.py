@@ -8,21 +8,25 @@ gate, v_c 5.40, tau 4.4, E0 0.424 -- ``gen_tier2_h405_pp35.SCAN_POOL_CELL``,
 THESIS_DISCUSSION §11; per ion from its s1-s5 + r6 member directories, binned
 on the B2 chord bins):
 
-(a) scored n vs emission-axis chord [A] (per-ion scatter + binned mean n),
-    in the scorer's convention: ``suppressed`` ions (ejected net-self-unbound
-    complexes, raw ``n_detected`` = 21) count as n = 0, the bare-candidate
-    class (``tier2_confirmation``: bin 0; excluded from the solvated read,
-    RQ8). The committed B2 chord CSV carries the raw n = 21; its mean n is
-    converted where the bin holds only n = 1 and n = 21 ions (checked
-    exactly; chord < 35 A) and must equal the per-ion binned curve;
-(b) detected KE [eV] vs chord, n = 1 ions highlighted, suppressed ions
-    marked (KE of the intact complex -- their fragmentation is open, RQ3);
-    the binned mean KE is drawn per energy branch (suppressed at the I+He21
-    mass | n >= 1 at the detected complex mass), not joined: across the
-    suppressed / n = 1 edge the speed is continuous and the KE step is the
-    mass ratio (~0.62), not extra stopping. The B2 n = 1 window
-    (chord q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median
-    as horizontal lines;
+Both laws are plotted under ``self_bound_gate_release="decoupled"``
+(THESIS_FINAL_GOALS G13): the self-bound gate is lifted wherever the ion is
+outside the droplet (depth > 0), so an ion that leaves net self-unbound boils
+off to bare I+ in flight. The panels read the thesis production members
+(``B2_N1000_s1`` ... ``_s6``, ``h405_N1000_s…``; same seeds, so the same
+chords -- checked); the anchors read the committed ``never`` members.
+
+(a) scored n vs emission-axis chord [A] (per-ion scatter + binned mean n);
+    the boiled-off ions sit at n = 0 (bare, excluded from the solvated read,
+    RQ8). The committed B2 chord CSV (``never``) carries the suppressed raw
+    n = 21; its mean n is converted where the bin holds only n = 1 and n = 21
+    ions (checked exactly; chord < 35 A) and must equal the per-ion binned
+    curve of the ``never`` read;
+(b) detected KE [eV] vs chord, n = 1 ions highlighted, bare ions marked
+    (co-moving sheds keep the speed); one binned mean KE per law over all
+    scored ions: across the bare / n = 1 edge the speed is continuous and
+    the KE step is only m(I+)/m(I+He) ~ 0.97. The B2 n = 1 window (chord
+    q05-q95 of the n = 1 ions) shaded, experimental KE1 mean / median as
+    horizontal lines;
 (c) chord distribution: geometry reweights the chord axis only; the law
     does not enter (B2 and the re-landed h405 share seeds and sampler, so
     their chords coincide ion by ion). (The raw-sampler A5 overlay and the
@@ -34,14 +38,14 @@ droplet surface (``emission_chords``; ignores deflection and the soft erf
 edge). "Scored" = the detection stage's ``detected_mask`` (same selection as
 ``chord_rows``).
 
-Pure scorer + plot -- runs no MD. Anchors (fail loudly): ``chord_rows`` over
-the B2 member dirs reproduces the committed ``lqppb2`` rows of
-``g5_postpickup_chord.csv`` to 4 dp; the pooled re-landed h405 read (scored
-count, n̄, suppressed share) reproduces its committed ``h405_pp35_table.csv``
-row to 4 dp.
+Pure scorer + plot -- runs no MD. Anchors (fail loudly, on the intact
+``detection.npz``): ``chord_rows`` over the B2 member dirs reproduces the
+committed ``lqppb2`` rows of ``g5_postpickup_chord.csv`` to 4 dp; the pooled
+re-landed h405 read (scored count, n̄, suppressed share) reproduces its
+committed ``h405_pp35_table.csv`` row to 4 dp.
 
-Also writes the G7 numbers (n = 1 window, KE1 spread, KE slope along the
-chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv`` and the KE
+Also writes the G7 numbers (from the decoupled B2 read: n = 1 window, KE1
+spread, KE slope along the chord) to ``data/runs/h2b_forward_model/g6_chord_stats.csv`` and the KE
 width at fixed n = 1-6 (model vs experiment, IQR / median; the B2-3 KED
 panels) to ``g7_ke_width.csv``. Experimental quantiles come from the
 unsmoothed 3-D P(E) of the corrected (v2, G12) ``IHe_KED_curves_n{n}.csv``
@@ -92,7 +96,13 @@ from matplotlib.ticker import MaxNLocator  # noqa: E402
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
-from scripts.gen_tier2_detfix_postpickup import B2_C, B2_E0_EV, B2_TAU_PS, lq_run_dir  # noqa: E402
+from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    B2_C,
+    B2_E0_EV,
+    B2_TAU_PS,
+    lq_run_dir,
+    thesis_run_dir,
+)
 from scripts.gen_tier2_h405_pp35 import SCAN_POOL_CELL, run_dir_for  # noqa: E402
 from scripts.post_processing.tier2_detfix_postpickup_table import (  # noqa: E402
     chord_rows,
@@ -166,19 +176,6 @@ def _binned_from_ions(d: dict[str, np.ndarray], edges: list[float]
     return np.asarray(x), np.asarray(mn), np.asarray(mk)
 
 
-def _ke_branches(d: dict[str, np.ndarray], edges: list[float]
-                 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    """Binned mean detected KE per energy branch: ``"supp"`` (suppressed,
-    KE at the intact I+He21 mass) and ``"solv"`` (n >= 1, KE at the detected
-    complex mass). Kept apart because at equal speed the two masses give KE
-    ratios of ~0.62, so a joint mean across the edge mixes two quantities."""
-    out = {}
-    for branch, keep in (("supp", d["supp"]), ("solv", ~d["supp"])):
-        x, _, k = _binned_from_ions({**d, "scored": d["scored"] & keep}, edges)
-        out[branch] = (x, k)
-    return out
-
-
 def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
     """Pooled per-ion chord [A], detected n, scored mask, detected KE [eV],
     suppressed mask, and the scorer's n (suppressed -> 0)."""
@@ -196,6 +193,19 @@ def _per_ion(run_dirs: list[Path]) -> dict[str, np.ndarray]:
          "scored": np.concatenate(ok).astype(bool), "ke": np.concatenate(ke),
          "supp": np.concatenate(sup)}
     d["n_scorer"] = np.where(d["supp"], 0.0, d["n"])
+    return d
+
+
+def _decoupled_read(law: str, never: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Per-ion read of the thesis production members of ``law`` (G13
+    ``decoupled``), checked against the ``never`` read: same seeds, so the
+    same chords ion by ion; no ``suppressed`` ion left (the gate is lifted
+    outside)."""
+    d = _per_ion([thesis_run_dir(law, m) for m in MEMBER_SEEDS])
+    if not np.array_equal(d["chord"], never["chord"]):
+        raise RuntimeError("decoupled re-runs: chords differ from the never members")
+    if d["supp"].any():
+        raise RuntimeError("decoupled re-runs still carry suppressed ions")
     return d
 
 
@@ -310,26 +320,27 @@ def main() -> int:
     warnings.simplefilter("ignore", RuntimeWarning)   # documented pairing warning
     b2_dirs = _b2_dirs()
     _check_anchor(b2_dirs)
-    b2 = _per_ion(b2_dirs)
-    s_all = b2["scored"]
-    if not (np.array_equal(b2["supp"] & s_all, s_all & (b2["n"] == N_START))
-            and b2["chord"][b2["supp"]].max() < SUPP_MAX_CHORD_A):
+    b2_intact = _per_ion(b2_dirs)
+    s_all = b2_intact["scored"]
+    if not (np.array_equal(b2_intact["supp"] & s_all, s_all & (b2_intact["n"] == N_START))
+            and b2_intact["chord"][b2_intact["supp"]].max() < SUPP_MAX_CHORD_A):
         raise RuntimeError("B2: scored n = 21 is not exactly the suppressed class "
                            "below the conversion edge")
     b2_rows = _read_chord_csv(G5_CHORD_CSV, "lqppb2")
     ked = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
     edges_csv = [float(r["chord_lo_A"]) for r in b2_rows] + [float(b2_rows[-1]["chord_hi_A"])]
-    binned = {"B2": _binned_from_ions(b2, edges_csv)}
-    xc, nc = _binned_n_scorer(b2_rows)          # per-ion B2 curves vs committed CSV
+    xc, nc = _binned_n_scorer(b2_rows)          # per-ion intact B2 curves vs committed CSV
     _, kc = _binned(b2_rows, "mean_KE_eV")
-    xb, nb, kb = binned["B2"]
+    xb, nb, kb = _binned_from_ions(b2_intact, edges_csv)
     if not (np.array_equal(xb, xc) and np.array_equal(nb.round(4), nc.round(4))
             and np.array_equal(kb.round(4), kc.round(4))):
         raise RuntimeError("per-ion B2 binned curves differ from the committed chord CSV")
-    h405 = _per_ion(_h405_dirs())
-    _check_h405_anchor(h405)
-    binned["h405"] = _binned_from_ions(h405, edges_csv)
-    ke_branches = {"B2": _ke_branches(b2, edges_csv), "h405": _ke_branches(h405, edges_csv)}
+    h405_intact = _per_ion(_h405_dirs())
+    _check_h405_anchor(h405_intact)
+    b2 = _decoupled_read("B2", b2_intact)
+    h405 = _decoupled_read("h405", h405_intact)
+    binned = {"B2": _binned_from_ions(b2, edges_csv),
+              "h405": _binned_from_ions(h405, edges_csv)}
 
     stats = _g7_stats(b2)
     stats["exp_KE1_sigma_eV"] = _exp_ke1(ked)[2]
@@ -354,7 +365,7 @@ def main() -> int:
     ke1 = _exp_ke1(ked)[:2]
     win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
     for stem, with_h405 in VARIANTS:
-        fig = _draw(b2, h405 if with_h405 else None, binned, ke_branches, win, ke1)
+        fig = _draw(b2, h405 if with_h405 else None, binned, win, ke1)
         jpg = OUT_DIR / f"{stem}.jpg"
         fig.savefig(jpg, dpi=200, pil_kwargs={"quality": 95})   # high quality: fine scatter dots
         print(f"figure -> {jpg}")
@@ -365,11 +376,9 @@ def main() -> int:
 
 def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
           binned: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]],
-          ke_branches: dict[str, dict[str, tuple[np.ndarray, np.ndarray]]],
           win: tuple[float, float], ke1: tuple[float, float]) -> plt.Figure:
-    """The three-panel chord map; ``h405 = None`` leaves the overlay out.
-    Panel (b) draws the binned mean KE per energy branch (``_ke_branches``),
-    two unconnected segments per law."""
+    """The three-panel chord map (G13 decoupled reads); ``h405 = None`` leaves
+    the overlay out. Panel (b) draws one binned mean KE per law."""
     arms = ("B2",) if h405 is None else ("B2", "h405")
     s = b2["scored"] & np.isfinite(b2["ke"])
     idx = np.flatnonzero(s)
@@ -377,7 +386,7 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
     if idx.size > SCATTER_MAX:
         idx = np.sort(rng.choice(idx, SCATTER_MAX, replace=False))
     is1 = b2["n"][idx] == 1
-    isS = b2["supp"][idx]
+    isS = b2["n"][idx] == 0
     lo, hi = CHORD_RANGE_A
 
     fig, (axn, axk, axc) = plt.subplots(1, 3, figsize=(15.0, 4.6), constrained_layout=True)
@@ -389,7 +398,7 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
                 s=3, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
     axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=3,
                 alpha=0.35, color="0.35", lw=0, rasterized=True,
-                label="B2 suppressed → scored n = 0")
+                label="B2 bare I⁺ (shell boiled off outside)")
     for arm in arms:
         x, y, _ = binned[arm]
         axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
@@ -401,18 +410,16 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
 
     axk.scatter(b2["chord"][idx][isS], b2["ke"][idx][isS], s=3, alpha=0.35,
                 color="0.35", lw=0, rasterized=True,
-                label="B2 suppressed (intact-complex KE)")
+                label="B2 bare I⁺")
     rest = ~is1 & ~isS
     axk.scatter(b2["chord"][idx][rest], b2["ke"][idx][rest], s=3, alpha=0.2,
                 color=STYLE["B2"]["color"], lw=0, rasterized=True, label="B2 ions, n ≥ 2")
     axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=4, alpha=0.6,
                 color="#ff7f0e", lw=0, rasterized=True, label="B2 ions, n = 1")
     for arm in arms:
-        for branch in ("solv", "supp"):
-            x, y = ke_branches[arm][branch]
-            axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
-                     label=f"{NAMES[arm]} binned mean KE (per branch)"
-                     if branch == "solv" else None)
+        x, _, y = binned[arm]
+        axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
+                 label=f"{NAMES[arm]} binned mean KE")
     ke1_mean, ke1_med = ke1
     axk.axhline(ke1_mean, color=EXP_COLOR, lw=1.2,
                 label=f"Experiment KE₁ mean {ke1_mean:.2f} eV")

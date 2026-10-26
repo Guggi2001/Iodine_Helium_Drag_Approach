@@ -231,7 +231,8 @@ def is_self_bound(E_int_eV, n, *, picture: str = "statistical_mixture", kappa: f
 
 
 def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
-             kappa: float, evap_rrk_dof=None, gate_onset_eV=None, ladder=None):
+             kappa: float, evap_rrk_dof=None, gate_onset_eV=None, ladder=None,
+             gate_lifted=False):
     r"""Energy-gated RRK shed rate ``k(E_int, n)`` [ps^-1] -- the full fire-path rate.
 
     Encodes **all** gating so a downstream draw fires on ``rng.random() < P_shed`` alone:
@@ -264,6 +265,13 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
     ladder : TabulatedLadder, optional
         Injected tabulated ladder (Slice T2, §I.10) threaded to ``d0_of_n`` /
         ``ladder_cumsum``; ``picture``/``kappa`` are ignored when set.
+    gate_lifted : bool or array_like of bool, optional
+        Where True, the ``n >= 2`` self-bound gate is lifted: ``k`` is the RRK
+        bracket above the top rung whatever ``Sigma(n)`` (THESIS_FINAL_GOALS
+        G13 -- the gate is argued from droplet confinement, so the caller lifts
+        it outside). Broadcast with ``E_int_eV``/``n``. Default ``False`` ->
+        the delivered gating, bit-identical. ``n = 1`` and ``n <= 0`` lanes
+        are unaffected (they carry no self-bound gate).
 
     Returns
     -------
@@ -323,8 +331,9 @@ def rrk_rate(E_int_eV, n, *, nu: float, picture: str = "statistical_mixture",
     base_safe = np.where(base > 0.0, base, 1.0)
     k_rrk = nu * np.where(base > 0.0, base_safe ** (s - 1.0), 0.0)
 
-    # Self-bound gate (n>=2): shed only while E_int < threshold (== is_self_bound).
-    k_ge2 = np.where(E < thresh, k_rrk, 0.0)
+    # Self-bound gate (n>=2): shed only while E_int < threshold (== is_self_bound),
+    # unless the caller lifted it (G13: outside the droplet).
+    k_ge2 = np.where((E < thresh) | np.asarray(gate_lifted, dtype=bool), k_rrk, 0.0)
     # n=1 direct dissociation: k = nu once E_int > D_0(1) (the inverted gate).
     k_direct = np.where(E > d0, nu, 0.0)
 
@@ -364,6 +373,7 @@ def evaporation_step(
     ladder=None,
     m_he_amu: float = MASS_HE_AMU,
     shed_convention: str = "cold",
+    gate_lifted: bool = False,
 ) -> EvaporationResult:
     """Draw one Bernoulli evaporation for a single ion; on fire, shed + drain K1.
 
@@ -384,6 +394,7 @@ def evaporation_step(
     ledger books the (positive) KE the co-moving He carries away. The
     ``(E_int, n)`` jump chain is convention-invariant (it reads neither v nor
     m), so the fire pattern under a fixed seed is identical across arms.
+    ``gate_lifted`` is passed to :func:`rrk_rate` (G13; default ``False``).
 
     Returns
     -------
@@ -393,6 +404,7 @@ def evaporation_step(
     k = rrk_rate(
         E_int_eV, n, nu=nu, picture=picture, kappa=kappa,
         evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV, ladder=ladder,
+        gate_lifted=gate_lifted,
     )
     p_shed = shed_probability(k, dt_ps)
     fired = bool(float(rng.random()) < p_shed)
@@ -440,6 +452,7 @@ def evaporation_step_components(
     ladder=None,
     m_he_amu: float = MASS_HE_AMU,
     shed_convention: str = "cold",
+    gate_lifted=False,
 ):
     """Vectorized per-ion evaporation over ``(M,)`` ensemble arrays (one draw per step).
 
@@ -466,6 +479,10 @@ def evaporation_step_components(
         Per-ion velocity components [A/ps].
     m_amu : np.ndarray, shape (M,)
         Per-ion complex mass [amu].
+    gate_lifted : bool or np.ndarray of bool, shape (M,), optional
+        Per-ion self-bound gate release passed to :func:`rrk_rate` (G13);
+        default ``False``. The draw is unconditional, so the stream is
+        unchanged by it.
     (remaining kwargs)
         As :func:`evaporation_step`.
 
@@ -483,6 +500,7 @@ def evaporation_step_components(
     k = rrk_rate(
         E_int_eV, n_arr, nu=nu, picture=picture, kappa=kappa,
         evap_rrk_dof=evap_rrk_dof, gate_onset_eV=gate_onset_eV, ladder=ladder,
+        gate_lifted=gate_lifted,
     )
     p_shed = np.asarray(shed_probability(k, dt_ps), dtype=float)
     draws = rng.random(size=p_shed.shape)

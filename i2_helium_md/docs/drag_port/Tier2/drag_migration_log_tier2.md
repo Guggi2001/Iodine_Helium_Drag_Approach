@@ -14489,3 +14489,49 @@ THESIS_DISCUSSION §13):
 - Code: figure script `tier2_b2_thesis_figure.py` (B2-1…B2-4, anchor on
   the v2 table), loader `CURVE_N_MAX` 7, tests updated (I⁺ ⟨E⟩ 3.59357,
   gold set). Open: β(v) artefact test.
+
+## 2026-10-26 — G13: self-bound gate lifted outside the droplet (`self_bound_gate_release = decoupled`); B2 / B3 / h405 re-run
+
+Decision (user, THESIS_FINAL_GOALS G13.5): route 2 — the self-bound gate
+is argued from droplet confinement, so it lifts wherever the ion is
+outside the nominal surface (depth > 0, memoryless), in Stage I / E2 and
+the detection stage; the in-droplet gate stays. ε-terminated cascades
+dropped (ε ≈ 0 stays adjudicated); removing the gate everywhere rejected
+(every B2 ion is born at E₀ 0.3297 > Σ(21) ≈ 0.206 eV, so the gate +
+cooling set the timing c / E₀ were selected on). Trigger included the
+Stage-I physics change (THESIS_FINAL_GOALS G13.5 / G13.7).
+- Stall check (zero MD; script and CSV not kept, superseded by the re-runs
+  below, THESIS_FINAL_GOALS G13.6): with
+  the gate lifted, the B2 suppressed cascade 21 → 0 takes median 20.9 ps,
+  q99 61.6 ps, max 265 ps (2000 draws per ion) vs an 8.53 × 10⁶ ps flight;
+  none unfinished. Bottleneck rung n = 2 (1/k ≤ 15.7 ps).
+- Code: `SimConfig.self_bound_gate_release` (`never` default, byte-inert |
+  `decoupled`) + config-load guard (`decoupled` needs `biphasic`, no
+  `gate_onset_override_eV`); `rrk_rate(gate_lifted=...)` threaded through
+  the evaporation step; `biphasic_step` lifts at depth > 0; the
+  detection-stage event loop uses the same switch. RNG draw order
+  unchanged (unconditional `rng.random(2N)`).
+  Tests: `tests/test_self_bound_gate_release.py` (18).
+- Oracle: B2 s1 re-run under `never` reproduces the committed
+  `detection.npz` array for array (57 s per member).
+- Re-runs (`gen_tier2_g13_decoupled.py`, `data/runs/{B2,B3,h405}_N1000_s1`
+  … `_s6` with s6 = r6, pools `…_N6000_pooled`, ion.npz kept):
+  B2, B3, h405 re-landed × 6 members. No suppressed ion left; retained
+  and time-exhausted counts unchanged; formerly suppressed ions end bare
+  (one B2 ion at n = 1), ≈ 1.3 % faster. Scores
+  (`g13_decoupled_table.csv`): B2 deepKE −0.0001, χ² +0.03, S −0.0003;
+  B3 n₁ −0.0002, χ² +0.08; h405 n₁ −0.0005, W₁ +0.0018, χ² +0.15,
+  S +0.0026. No gate or ranking moves.
+- G6 chord map now reads the decoupled members; `g6_chord_stats.csv` /
+  `g7_ke_width.csv` recomputed from them (KE₁ 0.60879 → 0.60876 eV).
+- n₁ misfit (0.211 vs 0.310) stays in the outlook; the n₁ lever of the
+  fate question is closed at ε = 0.
+- Production default (user): `--b2` / `--b3` (`gen_tier2_detfix_postpickup.py`)
+  and `--scan-pool` (`gen_tier2_h405_pp35.py`) now build under
+  `THESIS_GATE_RELEASE = "decoupled"` into the plain run dirs (ion.npz kept;
+  a complete dir with a different cfg is refused). Exploratory columns and
+  the committed `never` batteries unchanged; `SimConfig` default stays
+  `never`. The renamed runs' cfg.json equal the production builders' output
+  (all 18 + the oracle); re-pooling reproduces `g13_decoupled_table.csv`
+  number for number (only label / container renamed); `g6_chord_stats.csv` /
+  `g7_ke_width.csv` byte-identical.

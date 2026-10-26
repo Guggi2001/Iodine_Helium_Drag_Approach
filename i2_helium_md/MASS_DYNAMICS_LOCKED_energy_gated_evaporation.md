@@ -316,6 +316,14 @@ channel, both leaving the two-channel structure intact:
    *integrated ladder* already constrained by §6.5.1, **not** a free
    `evap_gate_onset_eV` knob. The several-ps self-unbound window ([GAH25])
    becomes a prediction, not a fit.
+   *Amendment 2026-10-26 (THESIS_FINAL_GOALS G13, user):* the gate is
+   argued from droplet confinement, so it acts only inside the droplet. It
+   is lifted wherever the ion is outside the nominal droplet surface
+   (depth $r-R>0$, memoryless, every step, Stage I and detection stage),
+   selected by `SimConfig.self_bound_gate_release = "decoupled"`, the
+   thesis production setting. With $\varepsilon = 0$ a lifted cascade
+   boils off to bare I⁺ in ≲ 0.3 ns. The `SimConfig` default `"never"`
+   keeps the gate everywhere (the committed runs).
 2. **RRK rate-limited shedding (R5 reframed, gate-open burst removed).**
    Once self-bound, the top rung sheds as a stochastic unimolecular
    (classical-RRK) process with a *saturating* rate, replacing the
@@ -848,7 +856,10 @@ point-mass MD does not natively have. Its **structure is locked**; the
   event consumes one rung $D_0^{\,\mathrm{I^+}}(n)$ from $E_\text{int}$
   (energy spent breaking the bond); shed He leaves cold (≈ 0 KE, per
   [Nat23]). Shedding is suppressed while the complex is net self-unbound
-  ($E_\text{int} > \sum_i D_0^{\,\mathrm{I^+}}(i)$) and otherwise proceeds
+  ($E_\text{int} > \sum_i D_0^{\,\mathrm{I^+}}(i)$) inside the droplet
+  (outside it the gate is lifted under the production release
+  `decoupled`, amendment 2026-10-26 in the revision list above) and
+  otherwise proceeds
   at the saturating RRK rate $k(E_\text{int},n)$ (§4) — bounded per step,
   so $E_\text{int}$ drains through this channel gradually rather than in a
   single-step cascade.

@@ -1,5 +1,12 @@
 # Thesis discussion points (final discussion round, 2026-10-02)
 
+> **Status: COMPLETED (user, 2026-10-26).** The last model change
+> (THESIS_FINAL_GOALS G13: self-bound gate lifted outside the droplet,
+> `self_bound_gate_release = decoupled`, the thesis production setting) is
+> folded in, and §15 holds the final observable table of B2 / B3 / h405
+> against the v2 experimental reference. Any change after this date is a
+> correction, not new material.
+
 Material for the discussion chapter of the thesis. These are physical
 arguments and open questions, **not** goals: the Q = 3 / channel-mixture
 line is out of scope for the thesis (user decision, 2026-10-02) and appears
@@ -23,7 +30,8 @@ runs. §13 (over-alignment: model β = 2 vs experiment ≈ 0.3, the 2-D /
 `THESIS_FINAL_GOALS.md` G12) is zero-MD. §14 (improved landing over B2:
 the c lever on the v2 reference, the per-n shape of every measured lever,
 untested candidates for a local n = 5–8 correction, 2026-10-25) is
-zero-MD.
+zero-MD. §15 (final observable table, 2026-10-26) reads the G13
+`decoupled` pools (`data/runs/{B2,B3,h405}_N6000_pooled`).
 
 ---
 
@@ -80,7 +88,7 @@ non-uniqueness is reported as a finding.
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
 `data/figures/thesis_tier2/g6_chord_map_b2_only.jpg` and
 `g6_chord_map_with_h405.jpg` (not committed): (a) scored n
-vs chord (suppressed → n = 0, scorer convention), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments),
+vs chord (formerly suppressed ions boiled off → n = 0, G13; the panels read the `decoupled` re-runs), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments),
 (c) chord distribution; the `with_h405` variant overlays the **re-landed**
 h405 (§11; `post_pickup`, 3.5 Å, v_c 5.40, τ 4.4, E₀ 0.424; per ion from its
 s1–s5 + r6 members, B2 chord bins) in all three panels (changed 2026-10-25;
@@ -97,26 +105,37 @@ window, KE₁ spread).
   not depend on the size sampler (h405: `raw` vs `post_pickup` bin by bin
   within ≈ 0.01 eV and 0.1 in n; A5 likewise, G5 step A).
 - Structure of the B2 map:
-  - chord < 34 Å: the **suppressed** class (11 % of scored ions) — the
-    complex is ejected net-self-unbound (E_int > Σ(n)) with its full shell.
-    The code carries it at n_detected = 21; the scorer counts it as
-    **n = 0** (bare candidate, RQ3; excluded from the solvated read, RQ8),
-    and the figure follows the scorer. Physically such a complex
-    fragments; how (and so its final KE) is open, so panel (b) shows the
-    intact-complex KE;
-  - 33–35 Å: the edge between suppressed and n = 1 (mixed bin: n = 1
-    share 0.42, mean KE 0.90 eV);
+  - chord < 34 Å: the formerly **suppressed** class (11 % of scored
+    ions) — the complex is ejected net-self-unbound (E_int > Σ(n)) with its
+    full shell. Inside the droplet the self-bound gate holds the shell
+    (confinement); once the complex is outside the droplet surface the
+    confinement ends and the shell boils off (G13,
+    `self_bound_gate_release = decoupled`): ε = 0, so the cascade reaches
+    **bare I⁺** in ≲ 0.3 ns ≪ 8.5 µs (THESIS_FINAL_GOALS G13.6), co-moving
+    sheds. The scorer already counted these ions at n = 0 (RQ8: excluded
+    from the solvated read); re-running B2 with the release moves every
+    score by ≤ 3 × 10⁻⁴ (`g13_decoupled_table.csv`). Panel (b) shows
+    their bare-I⁺ KE;
+  - 33–35 Å: the edge between the bare (boiled-off) class and n = 1
+    (mixed bin: n = 1 share 0.42; mean KE 0.90 eV on the committed
+    chord CSV, the gated read). Across it the speed is continuous and
+    the KE step is only m(I⁺)/m(I⁺He) ≈ 0.97;
   - **n = 1 window 34.5–39.9 Å** (q05–q95 of the n = 1 ions, median
     37.2 Å, width 5.3 Å); KE₁ 0.609 eV;
   - beyond ≈ 40 Å: n rises again (2 → 13) — **re-pickup after
     stripping**, not partial evaporation;
   - > 80 Å: mostly retained (0.89).
-- **Old vs new bundle** (h405 → B2, panels a–b): the suppressed / n = 1 edge and the
-  n = 1 window sit at the same chord (h405 window ≈ 35–39 Å) with nearly
-  the same KE₁ (0.67 vs 0.63 eV in the 35–37 Å bin); the bundle change acts
-  on the long-chord branch: under B2 KE falls more slowly with chord
-  (60 Å: 0.26 vs 0.10 eV) and re-pickup is slower (mean n at 60 Å: 6.9 vs
-  10.3).
+- **Old vs new bundle (historical, 2026-10-13).** These numbers compare
+  B2 with the *old* h405 at its own settings (`raw` sampler, 14.2 Å gate,
+  gated `never` read), the overlay used before 2026-10-25. The figure now
+  overlays the re-landed h405 instead, and its chord numbers (n = 1
+  window, KE per bin) are not in `g6_chord_stats.csv`, which holds only
+  B2. Do not quote these as the re-landed comparison. Old reading: the
+  suppressed / n = 1 edge and the n = 1 window sit at the same chord
+  (h405 window ≈ 35–39 Å) with nearly the same KE₁ (0.67 vs 0.63 eV in
+  the 35–37 Å bin); the bundle change acts on the long-chord branch:
+  under B2 KE falls more slowly with chord (60 Å: 0.26 vs 0.10 eV) and
+  re-pickup is slower (mean n at 60 Å: 6.9 vs 10.3).
 - **Correction to a tempting reading:** the ion does not "choose the
   closest path to exit". The I–I axis at ionization fixes the direction and
   the partner's Coulomb push drives the fragment along it; the relevant
@@ -136,8 +155,8 @@ window, KE₁ spread).
     the map itself (Tier-3 noise or a channel mixture), not geometry. Scope
     of the claim: G7 caveat below.
   - Projection (not measured): on the B2 map KE ≈ 1.0 eV sits at a chord of
-    ≈ 32–34 Å, at the suppressed / n = 1 edge where most ions are still
-    suppressed.
+    ≈ 32–34 Å, at the bare / n = 1 edge where most ions leave
+    net self-unbound and boil off to bare I⁺.
     The ≈ 0.5–0.7 eV deficit (exp KE₁ median 1.13 / mean 1.30 eV) is
     equivalent to stripping completing ≈ 3–5 Å of chord earlier, or to KE
     falling less steeply along the chord.
@@ -827,7 +846,9 @@ The two readouts are different comparisons:
   `droplet_retained_marginal` (`RETAINED_REASONS`); their fractions are
   reported separately (B2: trapped 0.049, no D4 firing).
 - `suppressed` ions are included in both; they keep their exit n only if
-  no shed occurs after exit.
+  no shed occurs after exit. (These reads are on the committed gated
+  runs; under the G13 release, `self_bound_gate_release = decoupled`, the
+  same ions boil off to bare I⁺ once outside the droplet.)
 
 ### 12.4 What is compared
 
@@ -1215,3 +1236,120 @@ the identifiability argument is unchanged.
    fix). Would turn the c ≈ 1.7 projection into a measured candidate:
    6 × N = 1000 MD runs with E₀ from the twin-line rule. Only if the
    G12.2 no-re-selection decision is revisited.
+
+## 15. Final observable table: B2, B3, h405 vs experiment (MEASURED; added 2026-10-26; the thesis numbers)
+
+The final state of all three laws, after the last model change
+(THESIS_FINAL_GOALS G13: self-bound gate lifted outside the droplet,
+`self_bound_gate_release = decoupled`). Every simulated value is a pooled
+N = 6000 run (members s1–s6), `post_pickup` sampler, 3.5 Å density gate,
+Stage I to 500 ps, partner-aware Coulomb closure:
+
+| law | role | drag law | E_bind [eV] | E₀ [eV] | τ [ps] | pool |
+|---|---|---|---|---|---|---|
+| B2 | thesis production law | `linear_quadratic` a 18.007, c 1.6 | 0.1173 | 0.3297 | 6.4 | `data/runs/B2_N6000_pooled` |
+| B3 | effective high-tail variant (not Tier-0-consistent) | `linear_quadratic` a 19.8, c 1.6 | 0.0482 | 0.3389 | 6.4 | `data/runs/B3_N6000_pooled` |
+| h405 | re-landed contrast law | `capped_cubic` b 2.515, v_c 5.40 | 0.1168 | 0.424 | 4.4 | `data/runs/h405_N6000_pooled` |
+
+Experiment = the v2 references the scorer reads: the size distribution
+`integrated_i_he_abundance.csv` and the kinetic energies `IHe_KED_reference.csv`
+(v2, 2026-10-23, G12). Sources: §15.1 = `g13_decoupled_table.csv` (the
+decoupled rows, v2 scorer `tier2_g12_ihekedv2_table._score`), except the
+rows marked † and the experimental KE medians / modes. Those, and all of
+§15.2, come from `scripts/post_processing/tier2_thesis_observable_table.py`
+→ `data/runs/h2b_forward_model/thesis_observables_extra.csv` and
+`thesis_observables_per_n.csv`. That script reads the same pooled
+`detection.npz` with the scorer's reader (`read_confirmation_detection`,
+`solvated_renormalized`), and its oracle requires f(1) and KE(1) of every
+law to reproduce `g13_decoupled_table.csv` to 4 dp. "—" means there is no
+like-for-like experimental value.
+
+### 15.1 Scalar observables
+
+| group | observable | definition | experiment (v2) | B2 | B3 | h405 |
+|---|---|---|---|---|---|---|
+| sample | scored ions | ions reaching the detector, of 12 000 | — | 11 415 | 11 668 | 10 462 |
+| sample | trapped fraction | droplet-retained (bound + marginal), not scored | — | 0.0488 | 0.0277 | 0.1282 |
+| sample | — bound | conservatively bound (physics) | — | 0.0488 | 0.0277 | 0.1243 |
+| sample | — marginal | still-coupled unbound (modelling exclusion) | — | 0 | 0 | 0.0039 |
+| sample | suppressed share | intact net self-unbound complexes | — | 0 | 0 | 0 |
+| sample | bare I⁺ share † | n = 0 among scored ions | 0.4352 ‡ | 0.1105 | 0.1514 | 0.2204 |
+| size | n̄ (scored) | mean n over scored ions incl. bare | — (pre-registered band 3.77–4.37) | 3.9028 | 3.9559 | 3.9404 |
+| size | n̄ solvated † | mean n over n ≥ 1 | 4.8886 | 4.3875 | 4.6615 | 5.0544 |
+| size | n₁ solvated | n = 1 share of n ≥ 1 | 0.3103 | 0.2110 | 0.2111 | 0.1888 |
+| size | W₁ solvated | Wasserstein-1 distance to experiment, n ≥ 1 | 0 | 0.9672 | 0.7952 | 0.9355 |
+| size | n ≥ 15 mass | share of n ≥ 15 among n ≥ 1 | 0.0569 | 0.0008 | 0.0075 | 0.0040 |
+| size | n_max | largest scored n | ≥ 20 (reference ends at 20) | 17 | 18 | 16 |
+| KE | KE₁ mean [eV] | mean KE at n = 1 | 1.1975 | 0.6088 | 0.5898 | 0.6356 |
+| KE | KE₁ median [eV] | | 1.0527 | 0.6086 | 0.5898 | 0.6367 |
+| KE | KE₁ mode [eV] § | | 0.8516 | 0.5688 | 0.5688 | 0.6563 |
+| KE | KE₂ mean [eV] | mean KE at n = 2 | 0.6687 | 0.5212 | 0.5085 | 0.5541 |
+| KE | KE₂ median [eV] | | 0.6202 | 0.5212 | 0.5085 | 0.5538 |
+| KE | KE₂ mode [eV] § | | 0.5701 | 0.4813 | 0.4813 | 0.5688 |
+| KE | midHot | mid-n KE ratio sim / experiment (bins) | 1 | 1.0502 (7) | 1.0652 (7) | 1.0562 (7) |
+| KE | deepKE | deep-bin KE ratio sim / experiment (bins) | 1 | 0.4986 (8) | 0.6276 (8) | 0.5603 (7) |
+| KE | KE n = 10–14 / ref | mean of per-n KE ratios, bins with > 3 ions | 1 | 0.6705 | 0.8063 | 0.5638 |
+| fit | χ²_med | profiled KE-curve χ² vs experiment (points) | — | 349.69 (15) | 365.98 (17) | 422.25 (16) |
+| fit | S | joint score on W₁, midHot, deepKE (provisional norms) | 0 | 2.0440 | 1.8445 | 2.0297 |
+| fit | MD gate | n₁ in 0.19–0.30 and n̄ in 3.77–4.37 | — | pass | pass | fail (n₁ 0.1888) |
+
+† From `thesis_observables_extra.csv` (see above); not a column of
+`g13_decoupled_table.csv`.
+‡ Not like-for-like: the experimental n = 0 bin carries the
+channel-external bare peak (RQ8), which the model does not produce. That
+is why every size score uses the solvated (n ≥ 1) distribution.
+§ The modes differ in method: model = midpoint of the tallest of 40 bins
+on 0–3.5 eV; experiment = the reference's own `mode_KE_eV`. They are a
+display diagnostic, not a scored quantity.
+
+### 15.2 Per-n profile (solvated size distribution and mean KE)
+
+f(n) = share of n among n ≥ 1. KE(n) = mean kinetic energy at that n [eV],
+with the number of scored ions in brackets where it is below 30; "—" = fewer
+than 2 ions (the scorer's minimum bin count). The experimental KE ends at
+n = 17.
+
+| n | f exp | f B2 | f B3 | f h405 | KE exp | KE B2 | KE B3 | KE h405 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 0.3103 | 0.2110 | 0.2111 | 0.1888 | 1.1975 | 0.6088 | 0.5898 | 0.6356 |
+| 2 | 0.1422 | 0.1623 | 0.1545 | 0.1420 | 0.6687 | 0.5212 | 0.5085 | 0.5541 |
+| 3 | 0.0918 | 0.1345 | 0.1277 | 0.1157 | 0.4811 | 0.4512 | 0.4444 | 0.4825 |
+| 4 | 0.0705 | 0.0892 | 0.0868 | 0.0837 | 0.3778 | 0.3971 | 0.3944 | 0.4206 |
+| 5 | 0.0576 | 0.0850 | 0.0806 | 0.0760 | 0.3058 | 0.3505 | 0.3505 | 0.3635 |
+| 6 | 0.0494 | 0.0730 | 0.0695 | 0.0720 | 0.2522 | 0.3041 | 0.3105 | 0.3027 |
+| 7 | 0.0388 | 0.0603 | 0.0567 | 0.0671 | 0.2142 | 0.2529 | 0.2629 | 0.2350 |
+| 8 | 0.0362 | 0.0511 | 0.0483 | 0.0549 | 0.1823 | 0.2047 | 0.2232 | 0.1845 |
+| 9 | 0.0299 | 0.0422 | 0.0438 | 0.0505 | 0.1587 | 0.1638 | 0.1830 | 0.1371 |
+| 10 | 0.0295 | 0.0344 | 0.0351 | 0.0413 | 0.1345 | 0.1241 | 0.1453 | 0.1016 |
+| 11 | 0.0262 | 0.0273 | 0.0295 | 0.0378 | 0.1174 | 0.0900 | 0.1126 | 0.0751 |
+| 12 | 0.0222 | 0.0175 | 0.0238 | 0.0345 | 0.1033 | 0.0650 | 0.0835 | 0.0560 |
+| 13 | 0.0197 | 0.0086 | 0.0163 | 0.0222 | 0.0916 | 0.0531 | 0.0590 | 0.0420 |
+| 14 | 0.0187 | 0.0029 | 0.0090 | 0.0094 | 0.0793 | 0.0360 (29) | 0.0428 | 0.0335 |
+| 15 | 0.0162 | 0.0006 | 0.0049 | 0.0034 | 0.0717 | 0.0175 (6) | 0.0302 | 0.0392 (28) |
+| 16 | 0.0144 | 0.0001 | 0.0019 | 0.0006 | 0.0666 | — (1) | 0.0196 (19) | 0.0371 (5) |
+| 17 | 0.0087 | 0.0001 | 0.0005 | 0 | 0.0623 | — (1) | 0.0171 (5) | — (0) |
+| 18 | 0.0072 | 0 | 0.0001 | 0 | — | — (0) | — (1) | — (0) |
+| 19 | 0.0058 | 0 | 0 | 0 | — | — (0) | — (0) | — (0) |
+| 20 | 0.0047 | 0 | 0 | 0 | — | — (0) | — (0) | — (0) |
+
+### 15.3 Reading
+
+- **Size.** All three laws hit the scored mean n̄ ≈ 3.9 by construction:
+  E₀ was placed on it. Against the experiment they share the same shape
+  misfit. There are too few n = 1 (0.19–0.21 vs 0.31). The bulk at
+  n = 3–10 is over-populated in all three. The tail at n ≥ 14 is depleted
+  (n ≥ 15 mass 0.001–0.008 vs 0.057). B3 is closest in W₁ and in the tail,
+  the reason it is kept as the effective high-tail variant.
+- **KE.** midHot (mid-n KE) lands within 7 % for all three laws. KE₁ and
+  KE₂ are low: KE₁ is about half of the experimental value, which is the
+  KE₁ deficit that `TIER2_MASS_SCENARIOS.md` attributes to the flight mass
+  (gated by M1). The per-n curve is too flat. From n = 3–4 to n ≈ 9 the
+  model is faster than the experiment; above n ≈ 10–11 it is slower, so
+  deepKE and the n = 10–14 ratio lie well below 1.
+- **G13 effect.** Against the committed `never` rows the release changed
+  the suppressed share (to 0). It moved every other observable by ≤ 0.003
+  and χ²_med by ≤ +0.16 (`g13_decoupled_table.csv`; THESIS_FINAL_GOALS
+  G13.7). The misfits above are therefore not caused by the release.
+- **Ranking.** B2 and B3 pass the MD gate; h405 fails it on n₁ (0.1888 <
+  0.19). The ranking by S (B3 1.84 < h405 2.03 ≈ B2 2.04) and by χ²_med
+  (B2 < B3 < h405) is unchanged from the `never` rows.

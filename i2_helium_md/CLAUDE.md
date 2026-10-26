@@ -51,7 +51,8 @@ Repo root:
   2026-10-13**: agreed changes and tests before thesis completion; its top
   status block is the entry point
 - `THESIS_DISCUSSION.md` — thesis-writing source (storyline §0, chord map
-  + G7 caveat §1, sampler §2, mass influence §8, discussion / outlook)
+  + G7 caveat §1, sampler §2, mass influence §8, discussion / outlook,
+  final observable table §15) — **completed 2026-10-26**
 - `TIER2_SENSITIVITY_ATLAS_PLAN.md` — the sensitivity-atlas study program
   (goal document 2026-07-23 → 2026-10-02)
 - `TIER2_PARAMETER_INFLUENCE.md` — per-lever influence reference keyed to
@@ -72,15 +73,25 @@ Compact state — **pointers only; results and history do not belong here.**
 droplet sampler, uncapped TDDFT-tied ridge `linear_quadratic`
 F = a·v + c·v² at c 1.6 (bundle `srho3p5A18A_linear_quadratic`, which
 carries B2), 3.5 Å density gate, τ 6.4 ps, E₀ 0.3297 eV; generator
-`gen_tier2_detfix_postpickup.py --cell lq --b2`; reference = pooled
-N = 6000 B2 battery (`…g5lqppc160e3297pooled_th500`; THESIS_FINAL_GOALS
-G5 Outcome). Effective high-tail variant B3 (`--b3`; not
-Tier-0-consistent). h405 (`shared_pure_cubic` + `capped_cubic` tail
-v_c 5.5, 14.2 Å gate, `raw` sampler; standing point 2026-09-30 → 10-08)
-is the **contrast law** for the identifiability argument only.
-Repo defaults are **not** switched: the presets stay wired to the
+`gen_tier2_detfix_postpickup.py --cell lq --b2`. Effective high-tail
+variant B3 (`--b3`; not Tier-0-consistent). h405 (`shared_pure_cubic` +
+`capped_cubic` tail v_c 5.5, 14.2 Å gate, `raw` sampler; standing point
+2026-09-30 → 10-08) is the **contrast law** for the identifiability
+argument only; its re-landed form (`gen_tier2_h405_pp35.py --scan-pool`)
+is the thesis contrast run.
+**Self-bound gate release `decoupled` is the production standard**
+(user, 2026-10-26; THESIS_FINAL_GOALS G13): the self-bound gate is argued
+from droplet confinement, so it is lifted wherever the ion is outside the
+droplet surface (depth > 0), in Stage I and the detection stage; with
+ε = 0 a lifted cascade boils off to bare I⁺. `--b2` / `--b3` /
+`--scan-pool` build with it (`THESIS_GATE_RELEASE`) into plain run dirs
+`data/runs/{B2,B3,h405}_N1000_s1…s6`, pools `…_N6000_pooled` = the thesis
+numbers (`THESIS_DISCUSSION.md` §15). The `SimConfig` default stays
+`never`; the committed long-named `never` batteries
+(`…g5lqppc160e3297pooled_th500` = the G5 selection reference) are history.
+Other repo defaults are **not** switched: the presets stay wired to the
 `shared_pure_cubic` bundle and `gen_tier2_detfix_battery.py` still builds
-h405 — B2 runs go through the post-pickup generator.
+h405.
 **Production pipeline** (since 2026-09-30, unchanged for B2): Stage I to
 500 ps, E2 skipped, partner-aware Coulomb closure
 (`TIER2_DetectorStageFix.md` §5.7).
@@ -93,9 +104,10 @@ status, every result and all open gates:** `drag_migration_log_tier2.md`
 before relying on anything summarised here.
 
 **Current arm: thesis writing** (since 2026-10-13; `THESIS_FINAL_GOALS.md`
-completed, source = `THESIS_DISCUSSION.md`). Thesis production law **B2**
-(`post_pickup`, lq ridge c 1.6; `gen_tier2_detfix_postpickup.py --b2`),
-effective variant B3, h405 = contrast law (G5 Outcome).
+completed, source = `THESIS_DISCUSSION.md`, completed 2026-10-26). Thesis
+production law **B2** (`post_pickup`, lq ridge c 1.6, `decoupled`;
+`gen_tier2_detfix_postpickup.py --b2`), effective variant B3, h405 =
+contrast law (G5 Outcome).
 `TIER2_MASS_SCENARIOS.md` — the flight mass, not the
 drag, carries the KE₁ deficit; **M1 (a sourced I⁺–He D₀) gates it.** The
 free-form linear counterfactual (`TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md`)

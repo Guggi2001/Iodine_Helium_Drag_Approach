@@ -29,18 +29,29 @@ from scripts.gen_tier2_detfix_postpickup import (
     B2_TAU_PS,
     POOL_MEMBERS,
     POSTPICKUP_MEAN_BAND,
+    THESIS_GATE_RELEASE,
+    THESIS_LQ_JOBS,
     a5_member_cell,
     build_lq_member,
     build_postpickup_member,
+    build_thesis_lq,
     lq_label,
     lq_run_dir,
     main as postpickup_main,
     member_run_dir_name,
     production_run_dir,
+    thesis_member_label,
+    thesis_pool_dir,
+    thesis_run_dir,
     verify_member_vs_production,
     verify_postpickup_sizes,
 )
 from scripts.gen_tier2_g413_ridge_battery import _E0_KEY, _TAU_KEY
+from scripts.gen_tier2_h405_pp35 import (
+    SCAN_POOL_CELL,
+    build as build_h405,
+    build_thesis as build_h405_thesis,
+)
 from scripts.gen_tier2_g414_tauline import build as a5_build
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV
 from scripts.gen_tier2atlas_linclone import cfg_field_diff
@@ -165,3 +176,37 @@ def test_lq_tau_column_replaces_only_tau():
     assert getattr(pp, _TAU_KEY) == B1_TAU_PS[0]
     assert lq_label("s1", None, 6.8) == "g5lqppt68s1"
     assert lq_run_dir("s1", None, 6.8) != lq_run_dir("s1")
+
+
+# --- Thesis production (THESIS_FINAL_GOALS G13): decoupled, plain run dirs ---
+
+@pytest.mark.parametrize("law", sorted(THESIS_LQ_JOBS))
+def test_thesis_lq_adds_only_the_decoupled_release(law):
+    """B2 / B3 production = the committed lq cell + the gate release, nothing else."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        thesis = build_thesis_lq(law, "s1")
+        cell = build_lq_member("s1", *THESIS_LQ_JOBS[law])
+    assert THESIS_GATE_RELEASE == "decoupled"
+    assert cfg_field_diff(thesis, cell) == ["self_bound_gate_release"]
+    assert (cell.self_bound_gate_release, thesis.self_bound_gate_release) == (
+        "never", "decoupled")
+
+
+def test_thesis_h405_adds_only_the_decoupled_release():
+    v_c, tau, e0 = SCAN_POOL_CELL
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        thesis, cell = build_h405_thesis("s1"), build_h405("s1", e0, v_c, tau)
+    assert cfg_field_diff(thesis, cell) == ["self_bound_gate_release"]
+    assert thesis.self_bound_gate_release == "decoupled"
+
+
+def test_thesis_run_dirs_are_plain_and_r6_is_s6():
+    assert [thesis_run_dir("B2", m).name for m in MEMBERS] == [
+        f"B2_N1000_s{k}" for k in range(1, 7)]
+    assert thesis_run_dir("h405", "r6").name == "h405_N1000_s6"
+    assert thesis_pool_dir("B3").name == "B3_N6000_pooled"
+    assert thesis_run_dir("B2", "s1") != lq_run_dir("s1", *THESIS_LQ_JOBS["B2"])
+    with pytest.raises(KeyError):
+        thesis_member_label("s6")   # only the generator's member keys are accepted

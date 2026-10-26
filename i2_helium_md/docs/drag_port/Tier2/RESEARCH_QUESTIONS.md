@@ -397,6 +397,19 @@ gaps; item (2)'s in-flight part migrates to RQ5.
 
 ### RQ3 — Fate of a net self-unbound complex (= findings OQ-B, fragmentation hypothesis)
 
+> **Status update (2026-10-26, THESIS_FINAL_GOALS G13 — model fate
+> adopted):** the self-bound gate is argued from droplet confinement, so
+> it is lifted wherever the complex is outside the droplet surface
+> (`self_bound_gate_release = decoupled`, depth > 0, Stage I and the
+> detection stage; the in-droplet gate stays). With ε ≈ 0 (RQ2
+> adjudication) the cascade reaches bare I⁺ in ≲ 0.3 ns ≪ 8.5 µs at B2
+> (zero-MD stall check, THESIS_FINAL_GOALS G13.6). B2 / B3 / re-landed h405 re-run: every formerly
+> suppressed ion ends bare (one B2 ion at n = 1); scores move ≤ 0.003
+> (`g13_decoupled_table.csv`). The bare scoring of this class is now a
+> model result. Still open: the
+> channel-external bare peak (RQ8) and whether a nonzero ε would end some
+> cascades at small n (the n = 1 lever; not pursued, user 2026-10-26).
+
 > **Status update (2026-07-11, two-channel adjudication — log entry same
 > day): partially UN-ANCHORED.** The experimental bare-I⁺ KE (~3 eV,
 > channel-distinct from the snowballs) removes the experimental anchor

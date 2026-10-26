@@ -36,7 +36,11 @@ were fitted under raw / 14.2 A. Grid at s1, E0 POOL_E0_EV:
 v_c in :data:`SCAN_VC` x tau in :data:`SCAN_TAU_PS` (dmidHot/dv_c ~ -1.48
 per A/ps, D0 R5; lower tau raises midHot weakly and nbar). Oracle diff
 adds ``drag_coefficients`` (v_c only; b, p_tail checked unchanged) and the
-tau key. ``--scan-pool`` then runs :data:`SCAN_POOL_CELL` at s1-s5 + r6.
+tau key. ``--scan-pool`` then runs :data:`SCAN_POOL_CELL` at s1-s5 + r6 --
+since THESIS_FINAL_GOALS G13 (2026-10-26) as thesis production: under
+``self_bound_gate_release="decoupled"`` into ``data/runs/h405_N1000_s1`` ...
+``_s6`` (r6 -> s6), ion.npz kept (oracle 1 unchanged; the release is the one
+field added on top). The committed ``never`` pool keeps its long names.
 
 Usage::
 
@@ -78,7 +82,9 @@ import numpy as np  # noqa: E402
 from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     MAX_BYTES_ION, MEMBER_SEEDS, T_HANDOVER_PS, build_member, verify_handover_alignment,
 )
-from scripts.gen_tier2_detfix_postpickup import LQ_DROP_REASON  # noqa: E402
+from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
+    LQ_DROP_REASON, THESIS_GATE_RELEASE, run_thesis_member, thesis_run_dir,
+)
 from scripts.gen_tier2_g413_ridge_battery import (  # noqa: E402
     H405_GATE_LABEL, _E0_KEY, _H405G35_KEYS, _TAU_KEY, build as g413_build,
 )
@@ -170,6 +176,25 @@ def verify(member: str, e0_eV: float, v_c: Optional[float] = None,
     return diff
 
 
+def build_thesis(member: str) -> SimConfig:
+    """Thesis re-landed h405 member: :data:`SCAN_POOL_CELL` under
+    ``THESIS_GATE_RELEASE`` (THESIS_FINAL_GOALS G13)."""
+    v_c, tau, e0 = SCAN_POOL_CELL
+    cfg = dataclasses.replace(build(member, e0, v_c, tau),
+                              self_bound_gate_release=THESIS_GATE_RELEASE)
+    cfg.validate()
+    return cfg
+
+
+def run_thesis(member: str) -> str:
+    """Thesis h405 member: oracle 1, then ``run_thesis_member`` into
+    ``data/runs/h405_N1000_s<k>`` (ion.npz kept)."""
+    v_c, tau, e0 = SCAN_POOL_CELL
+    verify(member, e0, v_c, tau)
+    return run_thesis_member(build_thesis(member), thesis_run_dir("h405", member),
+                             f"h405 {member}")
+
+
 def run_one(job: tuple) -> str:
     """Guard, neutral -> ion (to t_h) -> detection, drop ion.npz.
     ``job`` = (member, E0[, v_c, tau])."""
@@ -218,23 +243,32 @@ def main(argv: Optional[list[str]] = None) -> int:
     elif args.scan:
         jobs = [(COLUMN_MEMBER, POOL_E0_EV, v, t) for v in SCAN_VC for t in SCAN_TAU_PS]
     elif args.scan_pool:
+        # Thesis production: decoupled release, plain run dirs (G13).
         if SCAN_POOL_CELL is None:
             raise SystemExit("SCAN_POOL_CELL not set: run --scan and set it first")
         v, t, e0 = SCAN_POOL_CELL
-        jobs = [(m, e0, v, t) for m in MEMBER_SEEDS]
+        jobs = list(MEMBER_SEEDS)
+        for m in jobs:
+            diff = verify(m, e0, v, t)
+            steps, stride = verify_handover_alignment(build_thesis(m))
+            print(f"[h405 {m}] guards PASSED: diff {diff} + self_bound_gate_release="
+                  f"{THESIS_GATE_RELEASE}, {steps} steps, stride {stride} -> "
+                  f"{thesis_run_dir('h405', m).name}", flush=True)
     else:
         jobs = [(COLUMN_MEMBER, e0, None, None) for e0 in COLUMN_E0_EV]
-    for m, e0, v, t in jobs:
-        diff = verify(m, e0, v, t)
-        steps, stride = verify_handover_alignment(build(m, e0, v, t))
-        print(f"[{m} E0 {e0} v_c {v} tau {t}] guards PASSED: diff {diff}, {steps} steps, "
-              f"stride {stride} -> {run_dir_for(m, e0, v, t).name}", flush=True)
+    if not args.scan_pool:
+        for m, e0, v, t in jobs:
+            diff = verify(m, e0, v, t)
+            steps, stride = verify_handover_alignment(build(m, e0, v, t))
+            print(f"[{m} E0 {e0} v_c {v} tau {t}] guards PASSED: diff {diff}, {steps} "
+                  f"steps, stride {stride} -> {run_dir_for(m, e0, v, t).name}", flush=True)
     if args.dry_run:
         return 0
+    fn = run_thesis if args.scan_pool else run_one
     from concurrent.futures import ProcessPoolExecutor, as_completed
     failures = 0
     with ProcessPoolExecutor(max_workers=min(MAX_CONCURRENCY, len(jobs))) as pool:
-        futures = {pool.submit(run_one, j): j for j in jobs}
+        futures = {pool.submit(fn, j): j for j in jobs}
         for fut in as_completed(futures):
             try:
                 fut.result()
