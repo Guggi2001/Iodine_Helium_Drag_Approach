@@ -15,6 +15,9 @@ off to bare I+ in flight. The panels read the thesis production members
 (``B2_N1000_s1`` ... ``_s6``, ``h405_N1000_s…``; same seeds, so the same
 chords -- checked); the anchors read the committed ``never`` members.
 
+Binned curves in (a) / (b) are plotted at the mean chord of each bin's ions
+(the anchor checks compare bin midpoints).
+
 (a) scored n vs emission-axis chord [A] (per-ion scatter + binned mean n);
     the boiled-off ions sit at n = 0 (bare, excluded from the solvated read,
     RQ8). The committed B2 chord CSV (``never``) carries the suppressed raw
@@ -126,7 +129,7 @@ ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 H405_ANCHOR_COLS = ("num_scored", "nbar_det", "supp")
 # tier2_b2_thesis_figure colours: experiment tab:blue, B2 simulation tab:red
 STYLE = {"B2": dict(color="tab:red", ls="-"),
-         "h405": dict(color="tab:green", ls="-.")}
+         "h405": dict(color="tab:green", ls="-")}
 EXP_COLOR = "tab:blue"
 NAMES = {"B2": "B2", "h405": "Re-landed h405"}
 VARIANTS = (("g6_chord_map_b2_only", False), ("g6_chord_map_with_h405", True))
@@ -159,18 +162,25 @@ def _check_h405_anchor(d: dict[str, np.ndarray]) -> None:
             raise RuntimeError(f"anchor: h405 {k} {got[k]:.4f} vs committed {rows[0][k]}")
 
 
-def _binned_from_ions(d: dict[str, np.ndarray], edges: list[float]
+def _binned_from_ions(d: dict[str, np.ndarray], edges: list[float], *,
+                      x_at_mean_chord: bool = False
                       ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Bin midpoints [A], mean scorer-n and mean detected KE [eV] over scored
-    ions per chord bin (empty bins dropped; open last bin plotted at its lower
-    edge + 10 A, as in ``_binned``)."""
+    """Bin x [A], mean scorer-n and mean detected KE [eV] over scored ions per
+    chord bin (empty bins dropped). x is the bin midpoint (open last bin at
+    its lower edge + 10 A, as in ``_binned`` -- the anchor convention) or,
+    with ``x_at_mean_chord``, the mean chord of the bin's ions (the plotted
+    convention: the wide 0-25 A bin would otherwise sit at 12.5 A, off the
+    axis, although its ions lie at 20-25 A)."""
     s = d["scored"] & np.isfinite(d["ke"])
     x, mn, mk = [], [], []
     for lo_e, hi_e in zip(edges[:-1], edges[1:]):
         sel = s & (d["chord"] >= lo_e) & (d["chord"] < hi_e)
         if not sel.any():
             continue
-        x.append(0.5 * (lo_e + hi_e) if hi_e - lo_e < 50 else lo_e + 10.0)
+        if x_at_mean_chord:
+            x.append(float(d["chord"][sel].mean()))
+        else:
+            x.append(0.5 * (lo_e + hi_e) if hi_e - lo_e < 50 else lo_e + 10.0)
         mn.append(float(d["n_scorer"][sel].mean()))
         mk.append(float(d["ke"][sel].mean()))
     return np.asarray(x), np.asarray(mn), np.asarray(mk)
@@ -339,8 +349,8 @@ def main() -> int:
     _check_h405_anchor(h405_intact)
     b2 = _decoupled_read("B2", b2_intact)
     h405 = _decoupled_read("h405", h405_intact)
-    binned = {"B2": _binned_from_ions(b2, edges_csv),
-              "h405": _binned_from_ions(h405, edges_csv)}
+    binned = {"B2": _binned_from_ions(b2, edges_csv, x_at_mean_chord=True),
+              "h405": _binned_from_ions(h405, edges_csv, x_at_mean_chord=True)}
 
     stats = _g7_stats(b2)
     stats["exp_KE1_sigma_eV"] = _exp_ke1(ked)[2]
@@ -432,9 +442,9 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
     axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.6,
              **STYLE["B2"], label=f"B2 (post_pickup), N = {b2['chord'].size}")
-    if h405 is not None:
+    if h405 is not None:   # coincides with B2 bin for bin: dash-dot keeps B2 visible
         axc.hist(h405["chord"], bins=edges, density=True, histtype="step", lw=1.6,
-                 **STYLE["h405"], label=f"{NAMES['h405']} (post_pickup), N = {h405['chord'].size}")
+                 **{**STYLE["h405"], "ls": "-."}, label=f"{NAMES['h405']} (post_pickup), N = {h405['chord'].size}")
     axc.axvspan(*win, color="0.92", zorder=0)
     axc.set_ylim(0, 1.25 * axc.get_ylim()[1])
     axc.set(xlim=CHORD_RANGE_A, xlabel="Emission-axis chord / Å",
