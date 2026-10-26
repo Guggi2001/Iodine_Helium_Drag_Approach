@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
+from pathlib import Path
 
 import pytest
 
@@ -23,6 +24,7 @@ from scripts.gen_tier2atlas_linclone import (
     CRN_MEMBER,
     MEMBER_SEEDS,
     PARTNER_DIFF_KEYS,
+    PARTNER_RUN,
     build_member,
     cfg_field_diff,
     clone_run_dir_name,
@@ -31,7 +33,17 @@ from scripts.gen_tier2atlas_linclone import (
     verify_member,
     verify_seed_only_vs_crn_member,
 )
-from scripts.gen_tier2atlas_linring import EBIND_EV, N
+from scripts.gen_tier2atlas_linring import EBIND_EV, N, REFERENCE_RUN
+
+_RUNS = Path(__file__).resolve().parents[1] / "data" / "runs"
+needs_partner = pytest.mark.skipif(
+    not (_RUNS / PARTNER_RUN / "cfg.json").exists(),
+    reason="CRN partner run dir not present (data/runs is uncommitted)",
+)
+needs_reference = pytest.mark.skipif(
+    not (_RUNS / REFERENCE_RUN / "cfg.json").exists(),
+    reason="standing reference run dir not present (data/runs is uncommitted)",
+)
 
 
 def _build(member: str):
@@ -101,6 +113,7 @@ class TestMemberBuild:
             build_member("s9")
 
 
+@needs_partner
 class TestCrnGuard:
     """The pairing IS the guard (plan §6.5 oracle 2)."""
 
@@ -125,6 +138,7 @@ class TestCrnGuard:
         with pytest.raises(AssertionError, match="CRN guard FAILED"):
             verify_crn_pairing(cfg, CRN_MEMBER)
 
+    @needs_reference
     def test_full_member_verification_passes(self):
         for member in MEMBER_SEEDS:
             with warnings.catch_warnings():

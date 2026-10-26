@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
+from pathlib import Path
 
 import pytest
 
@@ -26,7 +27,18 @@ from scripts.gen_tier2atlas_linjoint import (
     verify_joint_cell,
     verify_joint_preregistration,
 )
-from scripts.gen_tier2atlas_linring import N, SEED
+from scripts.gen_tier2atlas_linjoint import PARTNER_RUN
+from scripts.gen_tier2atlas_linring import N, REFERENCE_RUN, SEED
+
+_RUNS = Path(__file__).resolve().parents[1] / "data" / "runs"
+needs_partner = pytest.mark.skipif(
+    not (_RUNS / PARTNER_RUN / "cfg.json").exists(),
+    reason="CRN partner run dir not present (data/runs is uncommitted)",
+)
+needs_reference = pytest.mark.skipif(
+    not (_RUNS / REFERENCE_RUN / "cfg.json").exists(),
+    reason="standing reference run dir not present (data/runs is uncommitted)",
+)
 
 
 def _build(label: str):
@@ -101,6 +113,7 @@ class TestCellBuild:
             build_joint_cell("nope")
 
 
+@needs_partner
 class TestCrnGuard:
     """Shared-seed posture: neither key may differ (plan §6.6 oracle 2)."""
 
@@ -120,6 +133,7 @@ class TestCrnGuard:
         with pytest.raises(AssertionError, match="CRN guard FAILED"):
             verify_crn_pairing(cfg, "s40")
 
+    @needs_reference
     def test_full_cell_verification_passes(self):
         for cell in JOINT_MATRIX:
             with warnings.catch_warnings():
@@ -225,6 +239,7 @@ class TestShortTauPair:
         # the coincidence must not licence any OTHER key to drop
         assert t1_keys - t2_keys == {"internal_energy_cooling_tau_ps"}
 
+    @needs_partner
     def test_crn_guard_still_forbids_seed_and_n(self):
         import dataclasses
         import warnings

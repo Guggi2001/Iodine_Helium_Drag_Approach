@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -36,6 +37,8 @@ from scripts.gen_tier2atlas_ebindmd import (
     verify_partner_pairing,
 )
 from scripts.post_processing.tier2atlas_ebindmd_table import band_mean_ke_eV
+
+_PARTNER_CFG = Path(__file__).resolve().parents[1] / "data" / "runs" / PARTNER_RUN / "cfg.json"
 
 
 @pytest.fixture(scope="module")
@@ -69,6 +72,8 @@ class TestCellConstruction:
         assert EXPECTED_DIFF_KEYS == {
             "binding_energy_I_ion_eV", "allow_unvalidated_binding_pairing"}
 
+    @pytest.mark.skipif(not _PARTNER_CFG.exists(),
+                        reason="CRN partner run dir not present (data/runs is uncommitted)")
     def test_cfg_differs_from_the_crn_partner_in_exactly_those_keys(self, cfg):
         """The CRN validity condition, checked against the committed run."""
         with warnings.catch_warnings():

@@ -158,16 +158,13 @@ def drag_bundle_label(cfg: SimConfig) -> str:
     """One-line description of the drag law a run was simulated with.
 
     Read from the run's own ``cfg.json`` (not the USER SETTINGS), e.g.
-    ``"srho3p5A18A_cubic: linear_cubic a=0, b=2.229 | E_bind 0.1214 eV |
-    gate 3.5 A"`` -- for figure titles, so every plot names its bundle.
+    ``"linear_cubic: a=0, b=2.229 | E_bind 0.1214 eV"`` -- the drag form, its
+    coefficients and the binding energy, for figure titles (thesis format,
+    2026-10: no bundle name, no gate).
     """
     coeffs = cfg.drag_coefficients
     terms = ", ".join(f"{k}={v:.4g}" for k, v in coeffs.coefficients.items())
-    return (
-        f"{coeffs.form}: {terms} | "
-        f"E_bind {cfg.binding_energy_I_ion_eV:.4g} eV | "
-        #f"gate {drag_gate_steepness(cfg):.3g} Å"
-    )
+    return f"{coeffs.form}: {terms} | E_bind {cfg.binding_energy_I_ion_eV:.4g} eV"
 
 
 def read_drag_window(coeff_dir: Path) -> tuple[float, float, float]:
