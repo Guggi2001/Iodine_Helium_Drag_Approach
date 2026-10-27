@@ -68,6 +68,7 @@ from .ion_propagation_step import (
     IonStepState,
     baoab_propagation_step,
     biphasic_step,
+    biphasic_step_fired,
     exit_strip_step,
     ion_propagation_step,
     ion_state_from_checkpoint_column,
@@ -77,6 +78,11 @@ from .ion_propagation_step import (
     _depth,
 )
 from .run_directory import RunDirectory
+from .stage1_events import (
+    STAGE1_EVENTS_FILENAME,
+    Stage1EventRecorder,
+    save_stage1_events,
+)
 
 # Fixed module-level key for the ion driver's exit-strip Bernoulli stream via
 # SeedSequence((cfg.seed, EXIT_STRIP_ION_STREAM_KEY)) -- dedicated, appended
@@ -114,6 +120,7 @@ def run_ion_propagation(
     run_dir: Optional[RunDirectory] = None,
     max_bytes: int = DEFAULT_MAX_CHECKPOINT_BYTES_ION,
     verbose: bool = False,
+    record_events: bool = False,
 ) -> IonCheckpoint:
     """Run ion propagation and return the resulting checkpoint.
 
@@ -140,6 +147,11 @@ def run_ion_propagation(
     verbose : bool, optional
         If True, print progress messages (number of steps, stride,
         memory estimate).
+    record_events : bool, optional
+        If True, write the per-step shed / pickup / surface-crossing record
+        to ``run_dir / stage1_events.npz`` (:mod:`.stage1_events`). RNG-free:
+        the checkpoint is byte-identical either way. Biphasic drag path only;
+        requires ``run_dir``. Default False.
 
     Returns
     -------
@@ -153,12 +165,25 @@ def run_ion_propagation(
         If ``cfg.single_pulse`` is False (the MATLAB dt-switching
         non-single-pulse branch is pump-probe scope and out of scope
         for this stage of the project).
+    ValueError
+        If ``record_events`` is set without ``run_dir``, for a run that is
+        not the biphasic drag path (no discrete occupancy events), or with
+        the exit strip on (an n-changing channel the log does not book).
     """
     if rng is None:
         rng = np.random.default_rng(cfg.seed)
 
     # 1. Driver-level scope check.
     _check_scope_ion_driver(cfg)
+    if record_events and (run_dir is None or cfg.mass_scenario != "biphasic"
+                          or cfg.drag_coefficients is None
+                          or cfg.exit_strip_mode != "off"):
+        # The exit strip is a third n-changing channel the log does not book.
+        raise ValueError(
+            "record_events=True needs run_dir and the biphasic drag path with "
+            f"exit_strip_mode='off' (got run_dir={run_dir!r}, mass_scenario="
+            f"{cfg.mass_scenario!r}, exit_strip_mode={cfg.exit_strip_mode!r})"
+        )
 
     # 2. Decide internal step count.
     num_internal_steps = _internal_step_count_ion(cfg)
@@ -274,6 +299,8 @@ def run_ion_propagation(
     next_storage_idx = 1
     if strip_live:
         prev_depth = _depth(state.x, state.y, state.z, droplet_radii)
+    recorder = (Stage1EventRecorder(2 * cfg.num_molecules, dt)
+                if record_events else None)
 
     for internal_id in range(1, num_internal_steps):
         if use_drag:
@@ -283,10 +310,24 @@ def run_ion_propagation(
                 # bookings, at the step seam BEFORE the closure rebuild -- so the
                 # rebuild reads the post-jump mass m+ for both the conservative kicks
                 # and the O-step (jump-then-O). Threads rng (the channel draws).
-                state = biphasic_step(
-                    state, rng=rng, cfg=cfg, droplet_radii=droplet_radii,
-                    gate_steepness=gate_steepness,
-                )
+                if recorder is None:
+                    state = biphasic_step(
+                        state, rng=rng, cfg=cfg, droplet_radii=droplet_radii,
+                        gate_steepness=gate_steepness,
+                    )
+                else:
+                    # Same draws; the fire flags and pre-step positions go to the
+                    # stage-1 event log (RNG-free bookkeeping).
+                    pre = state
+                    pre_depth = _depth(pre.x, pre.y, pre.z, droplet_radii)
+                    state, fired_shed, fired_pickup = biphasic_step_fired(
+                        state, rng=rng, cfg=cfg, droplet_radii=droplet_radii,
+                        gate_steepness=gate_steepness,
+                    )
+                    recorder.record_step(
+                        internal_id, pre.time_ps, pre.n_shell, fired_shed,
+                        fired_pickup, pre.x, pre.y, pre.z, pre_depth,
+                    )
             elif schedule is not None:
                 # SQ2/SQ3 (anchored_discrete only): apply at most one scheduled cold
                 # shed BEFORE rebuilding the closure, so the rebuild reads the
@@ -346,6 +387,11 @@ def run_ion_propagation(
                         prev_depth_angstrom=prev_depth, ladder=ladder,
                     )
                     strip_counts += knocks
+                if recorder is not None:
+                    recorder.record_crossings(
+                        internal_id, pre.time_ps, pre_depth,
+                        _depth(new_state.x, new_state.y, new_state.z, droplet_radii),
+                    )
         else:
             new_state = ion_propagation_step(
                 state,
@@ -391,6 +437,8 @@ def run_ion_propagation(
     # 7. Save if run_dir given.
     if run_dir is not None:
         _save_with_cfg_ion(ckpt, cfg, run_dir)
+    if recorder is not None:
+        save_stage1_events(recorder.finish(), run_dir.root / STAGE1_EVENTS_FILENAME)
 
     return ckpt
 

@@ -10,9 +10,30 @@ import pytest
 
 from scripts.post_processing.tier2_g13_shed_timing import (
     exit_columns,
+    exit_from_crossings,
     ke_log_split,
     window_events,
 )
+
+
+def test_exit_from_crossings_takes_last_outward_crossing():
+    # ion 0: out at step 5; ion 1: out 3, in 7, out 9; ion 2: born outside, no
+    # crossing; ion 3: out 2, in 4 (inside at the end); rows deliberately unsorted.
+    ion = np.array([1, 0, 1, 3, 1, 3])
+    step = np.array([9, 5, 3, 4, 7, 2])
+    time = step * 0.01 - 0.004
+    direc = np.array([1, 1, 1, -1, -1, 1])
+    start = np.array([False, False, True, False])
+    es, et = exit_from_crossings(ion, step, time, direc, start)
+    np.testing.assert_array_equal(es, [5, 9, 0, -1])
+    np.testing.assert_allclose(et[:3], [0.046, 0.086, 0.0])
+    assert np.isnan(et[3])
+
+
+def test_exit_from_crossings_rejects_non_alternating_record():
+    with pytest.raises(ValueError):
+        exit_from_crossings(np.array([0, 0]), np.array([1, 2]), np.array([0.0, 0.01]),
+                            np.array([1, 1]), np.array([False]))
 
 
 def test_ke_log_split_terms_sum_to_log_ke_ratio():

@@ -14535,3 +14535,47 @@ Stage-I physics change (THESIS_FINAL_GOALS G13.5 / G13.7).
   (all 18 + the oracle); re-pooling reproduces `g13_decoupled_table.csv`
   number for number (only label / container renamed); `g6_chord_stats.csv` /
   `g7_ke_width.csv` byte-identical.
+
+## 2026-10-27 — §16 shed timing (zero MD) + Stage I event log; B2 / B3 / h405 re-run bit-identical
+
+Request (user): when and where ions shed He over the whole flight, inside
+vs outside the droplet, by detected class, against Albrechtsen et al. 2023
+(`THESIS_DISCUSSION.md` §16; §10.4 superseded, §12 readout executed).
+- Analysis (commit `7d5e7fd`): `scripts/post_processing/tier2_g13_shed_timing.py`
+  → `g13_shed_timing.csv`, `g13_exit_vs_detection.csv`,
+  `g13_exit_detection_hist.csv`, `g13_shed_chord.csv`, `g13_ke_readouts.csv`;
+  figures `g13_shed_timing.png`, `g13_exit_vs_detection.png`. Anchored to
+  `g13_decoupled_table.csv` / `thesis_observables_extra.csv` (4 dp) and to
+  exact per-ion identities (n_h − Stage II events = n_det; KE = ½mv² at
+  exit / handover / detection; closure and Stage II KE changes, ≤ 3·10⁻¹⁶ eV).
+  First version read Stage I events from n_shell changes between stored
+  columns (0.16 ps grid; same-interval shed + pickup cancel).
+- Event log (user, [PROCEED TO IMPLEMENTATION]): `simulation/stage1_events.py`
+  — sidecar `stage1_events.npz` (own schema v1; IonCheckpoint schema
+  unchanged). Rows per shed / pickup (ion, step, pre-step time, kind, n
+  before / after, pre-step position and r − R; same-step shed + pickup =
+  two rows, shed first) and per surface crossing (ion, step, interpolated
+  time, direction). `run_ion_propagation(record_events=True)` (biphasic drag
+  path, run_dir, exit strip off; else ValueError); `biphasic_step_fired`
+  returns the two fire flags, `biphasic_step` wraps it. RNG-free: draw
+  order, physics and checkpoint unchanged. `run_thesis_member` now always
+  records it. Tests: `tests/test_stage1_events.py` (9; checkpoint
+  bit-identical with / without log, replay of every stored n_shell column,
+  crossings vs stored depth signs).
+- Re-run (`scripts/regen_tier2_stage1_events.py`): all 18 thesis members
+  (`{B2,B3,h405}_N1000_s1` … `_s6`) re-run into a scratch dir after a
+  backup; cfg.json and every array of neutral / ion / detection.npz
+  bit-identical to the committed members (18 / 18); only
+  `stage1_events.npz` copied in (≈ 33–35 k events, 2.0–2.1 k crossings per
+  member; not committed, run dirs). Backups and scratch removed. §15
+  numbers untouched by construction.
+- §16 now reads the log (frame reconstruction kept only as the undercount
+  measure; fail-loud: log replays n_shell, log exit in the stored-depth
+  exit interval). Frames hid 0.25 % of Stage I sheds and 19 % of Stage I
+  pickups at B2 (B3 17 %, h405 20 %). Every scored ion crosses the surface
+  exactly once at the 0.01 ps step. B2: before exit 16.3 % (was the
+  15.5–16.7 % bracket; geometric booking now identical), exit median
+  4.4 ps (was 4.5, 0–0.16 ps late), n_exit 18.4, median shed 9.0 ps,
+  4.8 / 3.3 / 2.1 % after 50 / 100 / 400 ps, 36 % of ions after 400 ps;
+  bare ions exit at 2.7 ps with n = 21 (no in-droplet shed). KE at exit
+  still read at the first stored column after exit (`n_exit_col_mean`).

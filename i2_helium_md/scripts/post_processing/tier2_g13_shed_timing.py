@@ -5,23 +5,29 @@ Reads the thesis production members (``{law}_N1000_s1`` ... ``_s6``,
 kept) of B2 and, as contrast, B3 and the re-landed h405. Runs no MD.
 THESIS_DISCUSSION §16.
 
-Every He shed of every scored ion over the whole flight is timed:
+Every He shed of every scored ion over the whole flight is timed, from two
+complete event records:
 
-* MD window (0-500 ps): from the stored ``n_shell`` history, one shed per
-  unit decrease between stored columns (stride 0.16 ps). A pickup and a
-  shed inside the same interval cancel -- a small undercount of both,
-  disclosed (as ``tier2_b2_seff_timing.py``, §10.4);
+* MD window (0-500 ps): ``stage1_events.npz`` (``simulation/stage1_events``),
+  one row per shed / pickup at the internal step dt_ion = 0.01 ps, with the
+  pre-step time and position at which the channels fire. Anchored: it
+  replays the stored ``n_shell`` at every column. The frame reconstruction
+  (one event per unit change between stored columns, 0.16 ps; a pickup and
+  a shed in one interval cancel) is kept only as the measured undercount
+  (``frac_stage1_*_hidden_by_frames``);
 * detection stage (500 ps - 8.53 us): one shed per recorded event.
 
-Droplet exit follows the §12.2 definition: depth d = |r| - R (per-atom
-sharp radius ``droplet_radii_angstrom``, the half-density point of the
-3.5 A erf profile), exit = the **last** outward crossing d <= 0 -> d > 0
-in [0, t_h], exit state = the first stored column after it. A shed is
-booked **before exit** when its stored column is <= the exit column (the
-state convention: n_exit = n at that column, so n_exit - n_det = sheds
-after exit - pickups after exit exactly). The geometric alternative
-(depth <= 0 at the shed column) differs only for sheds in the crossing
-interval; it is written as its own column.
+Droplet exit follows the §12.2 definition: depth = |r| - R (per-atom sharp
+radius ``droplet_radii_angstrom``, the half-density point of the 3.5 A erf
+profile), exit = the **last** outward crossing depth <= 0 -> depth > 0 in
+[0, t_h], from the log's crossing rows at the internal step, time linearly
+interpolated inside the step. A Stage I shed is **before exit** when its
+step is <= the exit step (it fires at the pre-step seam, before the motion
+across the surface); n_exit = n right after the exit step, so n_exit - n_h
+= sheds after exit - pickups after exit exactly. The geometric booking
+(depth <= 0 where the shed is applied) is written as its own column.
+Anchored: the log's exit falls in the stored interval of the stored-depth
+exit column for every scored ion.
 
 Classes by detected n: bare (n = 0), n = 1, n >= 2 (every row over the
 scored ions, ``detected_mask``). Where the committed ``never`` members of
@@ -31,7 +37,8 @@ the same seeds are on disk (B2, h405), the ions those runs flagged
 Kinetic energy at four points per ion (all laws run ``co_moving`` sheds:
 a shed changes m, not v -- required, checked from cfg):
 
-* **exit**: the stored Stage I state at the exit column;
+* **exit**: the stored Stage I state at the first stored column after the
+  exit (0-0.16 ps late; its n is ``n_exit_col``);
 * **handover** (t_h, = just before the Coulomb closure, which acts before
   the Stage II event loop at handover masses and positions): the last
   stored column;
@@ -44,7 +51,8 @@ The exact kinematic split ln(KE_det / KE_exit) = ln(m_det / m_exit)
 Coulomb, well, drag tail, pickup recoil] is written per class. No
 per-force split.
 
-Anchors (fail loudly): per member, n(t_h) - #detection events == n_det for
+Anchors (fail loudly): per member, the event-log replay and exit-column
+checks above; n(t_h) - #detection events == n_det for
 every scored ion; every scored ion has an exit; stored KE == ½mv² at exit,
 handover and detection; closure KE_pc - KE_h == -(E_pot_det - E_pot_h -
 Σ fold) (the per-ion closure amount, ``detection_stage`` docstring); Stage
@@ -145,6 +153,9 @@ from matplotlib.ticker import MaxNLocator  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from i2_helium_md.simulation.ion_propagation_step import _E_kin_eV  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+from i2_helium_md.simulation.stage1_events import (  # noqa: E402
+    KIND_SHED, STAGE1_EVENTS_FILENAME, load_stage1_events, replay_n_shell,
+)
 from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
 from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
     B2_C, B2_E0_EV, B2_TAU_PS, lq_run_dir, thesis_run_dir,
@@ -232,6 +243,43 @@ def window_events(n_shell: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarr
     return si, sc, pi, pc
 
 
+def exit_from_crossings(crossing_ion: np.ndarray, crossing_step: np.ndarray,
+                        crossing_time_ps: np.ndarray, crossing_direction: np.ndarray,
+                        outside_at_start: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Droplet exit per ion from the exact surface-crossing record (§12.2).
+
+    Parameters
+    ----------
+    crossing_ion, crossing_step, crossing_time_ps, crossing_direction : (C,)
+        The ``stage1_events.npz`` crossing rows (direction +1 outward).
+    outside_at_start : (M,) bool
+        depth > 0 at t = 0.
+
+    Returns
+    -------
+    exit_step : (M,) int
+        Internal step of the **last** outward crossing; 0 for an ion born
+        outside that never re-enters; -1 for an ion inside at the end.
+    exit_time_ps : (M,) float
+        Its interpolated crossing time; 0.0 / NaN for those two cases.
+    """
+    start = np.asarray(outside_at_start, dtype=bool)
+    ion = np.asarray(crossing_ion, dtype=int)
+    direc = np.asarray(crossing_direction, dtype=int)
+    m = start.size
+    outside_end = start.astype(int) + np.bincount(ion, direc, minlength=m).astype(int)
+    if not np.isin(outside_end, (0, 1)).all():
+        raise ValueError("crossings do not alternate in direction per ion")
+    step = np.where(start, 0, -1).astype(int)
+    time = np.where(start, 0.0, np.nan)
+    out = np.flatnonzero(direc == 1)
+    order = out[np.argsort(np.asarray(crossing_step)[out], kind="stable")]
+    step[ion[order]] = np.asarray(crossing_step)[order]        # later rows overwrite
+    time[ion[order]] = np.asarray(crossing_time_ps)[order]
+    inside_end = outside_end == 0
+    return np.where(inside_end, -1, step), np.where(inside_end, np.nan, time)
+
+
 def ke_log_split(m0_kg: np.ndarray, v0: np.ndarray, m1_kg: np.ndarray,
                  v1: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Exact split of ln(KE1 / KE0) for KE = ½ m v², per ion.
@@ -263,18 +311,23 @@ class LawRead:
     """Pooled per-ion and per-shed arrays of one law (all 2N ions per member)."""
 
     scored: np.ndarray          # (I,) bool
-    n_birth: np.ndarray         # (I,) shell size at column 0
-    n_exit: np.ndarray          # (I,)
+    n_birth: np.ndarray         # (I,) shell size at t = 0
+    n_exit: np.ndarray          # (I,) right after the exit step (exact, from the log)
+    n_exit_col: np.ndarray      # (I,) at the KE exit column (first stored column after exit)
     n_det: np.ndarray           # (I,)
-    t_exit_ps: np.ndarray       # (I,)
+    t_exit_ps: np.ndarray       # (I,) interpolated last outward crossing
     t_last_ps: np.ndarray       # (I,) last shed time (0 if none)
     pickups_after_exit: np.ndarray   # (I,)
+    stage1_sheds: np.ndarray    # (I,) Stage I sheds, log
+    stage1_pickups: np.ndarray  # (I,) Stage I pickups, log
+    frame_sheds: np.ndarray     # (I,) Stage I sheds seen between stored columns
+    frame_pickups: np.ndarray   # (I,) Stage I pickups seen between stored columns
     chord_A: np.ndarray         # (I,)
     supp_never: np.ndarray | None    # (I,) bool, None without never members
     shed_ion: np.ndarray        # (K,) pooled ion index
     shed_t_ps: np.ndarray       # (K,)
-    shed_before_exit: np.ndarray     # (K,) bool, state convention
-    shed_depth_A: np.ndarray    # (K,) depth at the shed column; +inf in detection stage
+    shed_before_exit: np.ndarray     # (K,) bool: Stage I step <= exit step
+    shed_depth_A: np.ndarray    # (K,) r - R where applied; +inf in detection stage
     shed_in_detection: np.ndarray    # (K,) bool
     n_h: np.ndarray             # (I,) shell size at handover (last stored column)
     ke_exit_eV: np.ndarray      # (I,) KE at the exit column
@@ -359,10 +412,23 @@ def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
     n_det = np.asarray(det.n_detected, dtype=float)
     n_ions = n.shape[0]
 
-    j_exit = exit_columns(depth)
-    if np.any(scored & (j_exit < 0)):
-        raise RuntimeError(f"{rd.name}: {np.sum(scored & (j_exit < 0))} scored ions without exit")
-    je = np.where(j_exit >= 0, j_exit, t.size - 1)
+    log = load_stage1_events(rd / STAGE1_EVENTS_FILENAME)
+    steps = np.rint(t / log.dt_ps).astype(int)          # internal step of each stored column
+    if not np.array_equal(replay_n_shell(log, n[:, 0], steps), n.astype(int)):
+        raise RuntimeError(f"{rd.name}: event log does not replay the stored n_shell")
+
+    exit_step, t_exit = exit_from_crossings(log.crossing_ion, log.crossing_step,
+                                            log.crossing_time_ps, log.crossing_direction,
+                                            depth[:, 0] > 0)
+    if np.any(scored & (exit_step < 0)):
+        raise RuntimeError(f"{rd.name}: {np.sum(scored & (exit_step < 0))} scored ions without exit")
+    # KE exit column: first stored column at or after the exit step; it must be
+    # the frame-based §12.2 exit column (the crossing lies in its interval).
+    je = np.where(exit_step >= 0, np.searchsorted(steps, exit_step), t.size - 1)
+    j_frames = exit_columns(depth)
+    if np.any(scored & (je != j_frames)):
+        raise RuntimeError(f"{rd.name}: log exit column != stored-depth exit column for "
+                           f"{np.sum(scored & (je != j_frames))} scored ions")
 
     off = np.asarray(det.event_offsets)
     n_ev = np.diff(off)
@@ -372,26 +438,37 @@ def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
     ev_ion = np.repeat(np.arange(n_ions), n_ev)
     ev_t = np.asarray(det.event_time_ps, dtype=float)
 
-    si, sc, pi, pc = window_events(n)
+    is_shed = log.event_kind == KIND_SHED
+    si, s_step = log.event_ion[is_shed], log.event_step[is_shed]
+    pi, p_step = log.event_ion[~is_shed], log.event_step[~is_shed]
     shed_ion = np.concatenate([si, ev_ion])
-    shed_t = np.concatenate([t[sc], ev_t])
+    shed_t = np.concatenate([log.event_time_ps[is_shed], ev_t])
     t_last = np.zeros(n_ions)
     np.maximum.at(t_last, shed_ion, shed_t)
+    up_to_exit = log.event_step <= exit_step[log.event_ion]
+    net_to_exit = np.bincount(log.event_ion[up_to_exit],
+                              np.where(is_shed, -1, 1)[up_to_exit], minlength=n_ions)
+    fsi, _, fpi, _ = window_events(n)
 
     supp = None
     if never_rd is not None:
         nv = load_detection_result(never_rd / "detection.npz")
         supp = np.asarray(nv.state_reason).astype(str) == SUPPRESSED
     return {
-        "scored": scored, "n_birth": n[:, 0], "n_exit": n[np.arange(n_ions), je],
-        "n_det": n_det, "t_exit_ps": np.where(j_exit >= 0, t[je], np.nan),
-        "t_last_ps": t_last,
-        "pickups_after_exit": np.bincount(pi[pc > je[pi]], minlength=n_ions),
+        "scored": scored, "n_birth": n[:, 0], "n_exit": n[:, 0] + net_to_exit,
+        "n_exit_col": n[np.arange(n_ions), je],
+        "n_det": n_det, "t_exit_ps": t_exit, "t_last_ps": t_last,
+        "pickups_after_exit": np.bincount(pi[p_step > exit_step[pi]], minlength=n_ions),
+        "stage1_sheds": np.bincount(si, minlength=n_ions),
+        "stage1_pickups": np.bincount(pi, minlength=n_ions),
+        "frame_sheds": np.bincount(fsi, minlength=n_ions),
+        "frame_pickups": np.bincount(fpi, minlength=n_ions),
         "chord_A": emission_chords(rd), "supp_never": supp,
         "shed_ion": shed_ion, "shed_t_ps": shed_t,
-        "shed_before_exit": np.concatenate([sc <= je[si], np.zeros(ev_t.size, bool)]),
-        "shed_depth_A": np.concatenate([depth[si, sc], np.full(ev_t.size, np.inf)]),
-        "shed_in_detection": np.concatenate([np.zeros(sc.size, bool), np.ones(ev_t.size, bool)]),
+        "shed_before_exit": np.concatenate([s_step <= exit_step[si], np.zeros(ev_t.size, bool)]),
+        "shed_depth_A": np.concatenate([log.event_depth_angstrom[is_shed],
+                                        np.full(ev_t.size, np.inf)]),
+        "shed_in_detection": np.concatenate([np.zeros(si.size, bool), np.ones(ev_t.size, bool)]),
         **ke_readouts(rd, ion, det, je, scored),
     }
 
@@ -470,6 +547,8 @@ def timing_row(law: str, cls: str, r: LawRead, m: np.ndarray) -> dict[str, Any]:
     for g in DEPTH_MARKS_A:
         row[f"frac_sheds_depth_gt_{g:g}A"] = float(np.mean(depth > g)) if t.size else np.nan
     row["frac_sheds_detection_stage"] = float(np.mean(r.shed_in_detection[sel])) if t.size else np.nan
+    n1 = r.stage1_sheds[m].sum()
+    row["frac_stage1_sheds_hidden_by_frames"] = (1.0 - r.frame_sheds[m].sum() / n1) if n1 else np.nan
     after = ~r.shed_before_exit[sel]
     row["t_after_exit_median_ps"] = _q(t[after] - r.t_exit_ps[ion[after]], 50)
     return row
@@ -487,6 +566,10 @@ def exit_row(law: str, cls: str, r: LawRead, m: np.ndarray) -> dict[str, Any]:
         "sheds_before_exit_per_ion": np.sum(r.shed_before_exit[sel]) / n_ions,
         "sheds_after_exit_per_ion": np.sum(~r.shed_before_exit[sel]) / n_ions,
         "pickups_after_exit_per_ion": r.pickups_after_exit[m].sum() / n_ions,
+        "stage1_pickups_per_ion": r.stage1_pickups[m].sum() / n_ions,
+        "frac_stage1_pickups_hidden_by_frames": (
+            1.0 - r.frame_pickups[m].sum() / r.stage1_pickups[m].sum()
+            if r.stage1_pickups[m].sum() else np.nan),
         "frac_ions_n_changed_after_exit": float(np.mean(r.n_exit[m] != r.n_det[m])),
         "t_exit_q10_ps": _q(r.t_exit_ps[m], 10), "t_exit_median_ps": _q(r.t_exit_ps[m], 50),
         "t_exit_q90_ps": _q(r.t_exit_ps[m], 90),
@@ -530,7 +613,7 @@ def ke_row(law: str, cls: str, r: LawRead, m: np.ndarray) -> dict[str, Any]:
     mass_term, speed_term = ke_log_split(r.m_exit_kg[m], r.v_exit[m], r.m_det_kg[m], r.v_det[m])
     return {
         "law": law, "class": cls, "ions": int(m.sum()),
-        "n_exit_mean": r.n_exit[m].mean(), "n_h_mean": r.n_h[m].mean(),
+        "n_exit_col_mean": r.n_exit_col[m].mean(), "n_h_mean": r.n_h[m].mean(),
         "n_det_mean": r.n_det[m].mean(),
         "KE_exit_mean_eV": r.ke_exit_eV[m].mean(), "KE_h_mean_eV": r.ke_h_eV[m].mean(),
         "KE_postclosure_mean_eV": r.ke_pc_eV[m].mean(), "KE_det_mean_eV": r.ke_det_eV[m].mean(),

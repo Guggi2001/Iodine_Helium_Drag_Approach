@@ -438,7 +438,8 @@ def build_thesis_lq(law: str, member: str) -> SimConfig:
 
 
 def run_thesis_member(cfg: SimConfig, run_dir: Path, label: str) -> str:
-    """neutral -> ion (to t_h) -> detection into ``run_dir``, ion.npz kept.
+    """neutral -> ion (to t_h) -> detection into ``run_dir``, ion.npz kept,
+    plus the RNG-free Stage-I event log ``stage1_events.npz`` (§16).
 
     A complete dir is skipped if its cfg.json equals ``cfg`` and refused
     otherwise (never silently accepts a different model)."""
@@ -454,7 +455,7 @@ def run_thesis_member(cfg: SimConfig, run_dir: Path, label: str) -> str:
           flush=True)
     neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
     ion = run_ion_propagation(cfg, neutral, run_dir=run, verbose=False,
-                              max_bytes=MAX_BYTES_ION)
+                              max_bytes=MAX_BYTES_ION, record_events=True)
     t_last = float(np.asarray(ion.time_ps)[-1])
     if not math.isclose(t_last, T_HANDOVER_PS, abs_tol=1e-9):
         raise AssertionError(f"[{label}] ion.npz last column at {t_last} ps, not t_h")

@@ -503,6 +503,25 @@ def biphasic_step(
     droplet_radii: np.ndarray,
     gate_steepness: float,
 ) -> IonStepState:
+    """Apply one biphasic generative pre-step; the state only.
+
+    Thin wrapper over :func:`biphasic_step_fired` (full contract there) that
+    drops the per-channel fire flags. Same draws, same result.
+    """
+    return biphasic_step_fired(
+        state, rng=rng, cfg=cfg, droplet_radii=droplet_radii,
+        gate_steepness=gate_steepness,
+    )[0]
+
+
+def biphasic_step_fired(
+    state: IonStepState,
+    *,
+    rng: np.random.Generator,
+    cfg: SimConfig,
+    droplet_radii: np.ndarray,
+    gate_steepness: float,
+) -> tuple[IonStepState, np.ndarray, np.ndarray]:
     r"""Apply one biphasic generative pre-step (K2 cooling + <=1 mass event). Pure.
 
     The Tier-2 production analog of :func:`shed_step`: a per-ion **pre-step seam**
@@ -551,9 +570,12 @@ def biphasic_step(
 
     Returns
     -------
-    IonStepState
+    state : IonStepState
         Advanced ``vx/vy/vz``, ``mass_kg``, ``n_shell``, ``E_int_eV``, ``E_dissip_eV``,
         ``E_mass_transfer_eV`` at the **same** ``time_ps`` and positions.
+    fired_shed, fired_pickup : np.ndarray of bool, shape (2N,)
+        Which ions shed / picked up one He this step (both True = shed then
+        pickup, net ``n`` unchanged). Read off the existing draws, no extra RNG.
 
     Raises
     ------
@@ -636,7 +658,7 @@ def biphasic_step(
     #    surface (depth > 0, pre-step positions, memoryless). The draw is
     #    unconditional, so the stream is unchanged; "never" -> False.
     gate_lifted = (depth > 0.0) if cfg.self_bound_gate_release == "decoupled" else False
-    n_e, m_e, vx_e, vy_e, vz_e, dE_int_e, dE_mt_e, _fired_e = evaporation_step_components(
+    n_e, m_e, vx_e, vy_e, vz_e, dE_int_e, dE_mt_e, fired_e = evaporation_step_components(
         rng=rng, E_int_eV=E_int, n=n, vx=state.vx, vy=state.vy, vz=state.vz,
         m_amu=m_amu, nu=cfg.evap_rate_prefactor_per_ps, picture=picture, kappa=kappa,
         dt_ps=dt, evap_rrk_dof=cfg.evap_rrk_dof,
@@ -682,7 +704,7 @@ def biphasic_step(
             "in lockstep (the capture / shed operators are the single mass source)."
         )
 
-    return replace(
+    new_state = replace(
         state,
         vx=np.asarray(vx_p, dtype=float),
         vy=np.asarray(vy_p, dtype=float),
@@ -693,6 +715,7 @@ def biphasic_step(
         E_dissip_eV=E_dissip,
         E_mass_transfer_eV=E_mass_transfer,
     )
+    return new_state, np.asarray(fired_e, dtype=bool), np.asarray(fired_p, dtype=bool)
 
 
 # ===========================================================================

@@ -1376,36 +1376,42 @@ Sources: `scripts/post_processing/tier2_g13_shed_timing.py` →
 `g13_shed_chord.csv`; figures `data/figures/thesis_tier2/g13_shed_timing.png`
 and `g13_exit_vs_detection.png` (B2). Reads the thesis production members
 (`{B2,B3,h405}_N1000_s1` … `_s6`, `decoupled`, ion.npz kept), i.e. the same
-ions as §15. Anchors (fail loudly): per member, n(t_h) − #detection events
-= n_det for every scored ion; pooled scored count, n̄ and bare share
-reproduce §15 to 4 dp. This section **executes the §12 exit-vs-detection
+ions as §15, plus their Stage I event log `stage1_events.npz` (added
+2026-10-27, see 16.1). Anchors (fail loudly): per member, the event log
+replays the stored `n_shell` at every column, its exit falls in the
+stored-depth exit interval, and n(t_h) − #detection events = n_det for
+every scored ion; pooled scored count, n̄ and bare share reproduce §15 to
+4 dp. This section **executes the §12 exit-vs-detection
 readout** and **replaces the single-seed `never` shed-timing table of
 §10.4** for the thesis.
 
 ### 16.1 Method
 
 - **Shed events over the whole flight**, scored ions only (the §15
-  sample). Two different sources:
-  - *Stage I (0–500 ps): reconstructed, not recorded.* The ion checkpoint
-    stores no event log, only the state every 16th step (dt 0.01 ps →
-    stored grid 0.16 ps, 3126 columns). Events are read from the net
-    change of `n_shell` between consecutive stored columns: Δn < 0 →
-    |Δn| sheds, Δn > 0 → Δn pickups. Each event is timed at the end of its
-    interval, t[col]; the true time lies in (t[col] − 0.16, t[col]].
-    Every Stage I event time is therefore a multiple of 0.16 ps; reported
-    quantiles are linearly interpolated (`np.percentile`) and can fall
-    between grid points (e.g. on the 0.08 ps midpoints).
-  - *Stage II (500 ps – 8.53 µs): recorded.* One row per shed in the
-    detection-stage event record, with a continuous (Gillespie) time.
-  - *Undercount.* Only the net change per interval is visible, so a pickup
-    and a shed in the same interval cancel (and 2 sheds + 1 pickup read as
-    1 shed): both Stage I counts are lower bounds, the net balance per ion
-    is exact. Rough estimate, not measured: inside the droplet an ion sheds
-    ≈ 0.1 He per interval, so ≈ 10 % of the pickups (≈ 0.02 per ion,
-    against 0.16 observed before exit) and the same number of sheds
-    (≈ 0.1 % of 17.3 per ion) can be hidden, if pickups and sheds are
-    uncorrelated. The timing shares and the inside / outside split are
-    unaffected at the quoted precision; pickup counts may be ≈ 10 % low.
+  sample). Both stages now have a complete event record:
+  - *Stage I (0–500 ps): `stage1_events.npz`.* The ion checkpoint stores
+    the state only every 16th step (dt 0.01 ps → 0.16 ps grid, 3126
+    columns), so the 18 thesis members were re-run with an RNG-free event
+    log (`simulation/stage1_events.py`, written by `run_ion_propagation(…,
+    record_events=True)`; `scripts/regen_tier2_stage1_events.py`). Every
+    re-run reproduced cfg.json and every array of neutral.npz, ion.npz and
+    detection.npz bit for bit, so the §15 numbers are untouched. One row
+    per shed and per pickup at the internal step: ion, step, time, kind,
+    n before and after, and the position at which the event is applied.
+    The biphasic channels fire at the pre-step seam of step k (time
+    t_{k−1}, positions x(t_{k−1}), which the gate and pickup density read);
+    a same-step shed + pickup gives two rows, shed first (the frozen draw
+    order). Event times are therefore exact on the 0.01 ps grid.
+  - *Stage II (500 ps – 8.53 µs).* One row per shed in the detection-stage
+    event record, with a continuous (Gillespie) time.
+  - *What the old frame reconstruction missed* (measured, `frac_stage1_*
+    _hidden_by_frames`). Reading events from the net change of `n_shell`
+    between stored columns cancels a pickup and a shed in the same
+    0.16 ps interval. At B2 this hid **0.25 % of the Stage I sheds** and
+    **19 % of the Stage I pickups** (B3 17 %, h405 20 %; the earlier
+    estimate of ≈ 10 % was too low). Timing shares changed by ≤ 0.1
+    percentage points; the frame reconstruction is kept only for this
+    count.
 - **Sign convention.** §16 and its figures use the signed radial
   coordinate **r − R** (positive outside; r from the droplet centre, R =
   the per-atom static radius `droplet_radii_angstrom`, the half-density
@@ -1415,23 +1421,23 @@ readout** and **replaces the single-seed `never` shed-timing table of
   CSV column names `shed_depth_A`, `frac_sheds_depth_le_0`, … keep the
   code sign, i.e. they are r − R.)
 - **Exit** as fixed in §12.2: last outward crossing of r − R = 0
-  (r − R = 0 counts as inside). Every scored ion of all three laws crosses
-  **exactly once** (no fall-back), so "last" never has to choose. The
-  crossing is **not interpolated**: t_exit = the first stored column
-  after the crossing, i.e. 0–0.16 ps late (≤ 4 % of the 4.5 ps median).
-  **n_exit is read after the crossing step** (the state at that column),
-  so it includes any event in the crossing interval.
-- **Booking before / after exit.** A shed is *before exit* if its stored
-  column is ≤ the exit column (state convention: then n_exit − n_det =
-  sheds after exit − pickups after exit exactly). The geometric
-  alternative (r − R ≤ 0 at the shed's column) books the crossing
-  interval as outside. Event times within an interval are unknown, so
-  neither is preferred and interpolating the crossing would not resolve
-  it: the in-droplet share is given as the bracket **15.5–16.7 %** (B2;
-  bare 0–0.75 %). Single numbers below use the state convention.
-- **Position of an event.** *Stage I:* r − R at the event's stored column
-  (end of the interval, same frame as its time), so it is biased outward
-  by up to one interval of travel (≈ 1–2 Å at ≈ 7 Å/ps). *Stage II:* the
+  (r − R = 0 counts as inside), taken from the log's crossing rows (every
+  sign change of r − R at the internal step, time linearly interpolated
+  inside the step). Every scored ion of all three laws crosses **exactly
+  once**, now confirmed at the 0.01 ps step (no re-entry hidden between
+  stored columns). **n_exit is the occupancy right after the exit step.**
+  The log's exit lies inside the 0.16 ps interval of the old stored-column
+  exit for every scored ion (anchor); the old t_exit was 0–0.16 ps late
+  (median 0.08 ps).
+- **Booking before / after exit.** A Stage I shed is *before exit* if its
+  step is ≤ the exit step: it fires at the pre-step seam, before the
+  motion across the surface. Then n_exit − n_det = sheds after exit −
+  pickups after exit exactly. The geometric booking (r − R ≤ 0 where the
+  shed is applied) gives **the same number** for every class and law,
+  because each ion crosses once. The former bracket 15.5–16.7 % is
+  replaced by **16.3 %** (B2).
+- **Position of an event.** *Stage I:* r − R at the position where the
+  event is applied (the pre-step position, exact). *Stage II:* the
   event record has no positions and positions are not advanced; no
   handover position is reused and no ballistic position reconstructed.
   The events are booked as outside every threshold (r − R = +∞).
@@ -1450,51 +1456,50 @@ readout** and **replaces the single-seed `never` shed-timing table of
 
 | class | share | n at exit | n at detection | exit time (median) | sheds per ion | before exit | median shed | sheds after 50 / 100 / 400 ps | ions with a shed after 400 ps | last shed (median) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **all** | 1 | **18.3** | **3.90** | **4.5 ps** | 17.3 | **16.7 %** | **9.1 ps** | **4.8 / 3.4 / 2.1 %** | **36 %** | 144 ps |
-| bare | 0.110 | 20.8 | 0 | 2.9 ps | 21.0 | 0.8 % | 9.3 ps | 0.3 / 0 / 0 % | 0 % | 24 ps |
-| n = 1 | 0.188 | 20.3 | 1 | 3.4 ps | 20.0 | 3.5 % | 9.4 ps | 3.9 / 2.7 / 1.8 % | 36 % | 123 ps |
-| n ≥ 2 | 0.702 | 17.3 | 5.29 | 5.1 ps | 16.0 | 24.5 % | 9.0 ps | 6.1 / 4.3 / 2.6 % | 42 % | 228 ps |
+| **all** | 1 | **18.4** | **3.90** | **4.4 ps** | 17.3 | **16.3 %** | **9.0 ps** | **4.8 / 3.3 / 2.1 %** | **36 %** | 143 ps |
+| bare | 0.110 | 21.0 | 0 | 2.7 ps | 21.0 | 0 % | 9.1 ps | 0.3 / 0 / 0 % | 0 % | 24 ps |
+| n = 1 | 0.188 | 20.4 | 1 | 3.3 ps | 20.0 | 2.8 % | 9.4 ps | 3.9 / 2.7 / 1.8 % | 36 % | 123 ps |
+| n ≥ 2 | 0.702 | 17.4 | 5.29 | 5.1 ps | 16.0 | 24.1 % | 8.8 ps | 6.0 / 4.3 / 2.6 % | 42 % | 228 ps |
 
-"Before exit" uses the state convention (§16.1); the geometric booking
-gives 15.5 / 0 / 2.2 / 23.2 % (all / bare / n = 1 / n ≥ 2,
-`frac_sheds_depth_le_0`). Exit times are the first stored column after
-the crossing (0–0.16 ps late).
+From the Stage I event log (§16.1): exact event times and positions,
+interpolated exit. The geometric booking (`frac_sheds_depth_le_0`)
+equals "before exit" in every class.
 
 Further numbers (all scored ions):
 
-- Shed-time quantiles: q10 4.0 ps, q90 24 ps, q99 5.4 ns. 2.0 % of the
+- Shed-time quantiles: q10 3.9 ps, q90 24 ps, q99 5.3 ns. 2.0 % of the
   sheds fall in the detection stage (their median 5.8 ns).
 - Per ion the slow tail is long: 27 / 15 / 7.3 / 2.9 % of the ions still
   shed after 1 ns / 10 ns / 100 ns / 1 µs.
-- Exit: 10–90 % at 3.0–7.8 ps, born at r − R = −35 Å (median; thesis depth d = 35 Å).
+- Exit: 10–90 % at 3.0–7.7 ps, born at r − R = −35 Å (median; thesis depth d = 35 Å).
   Outside sheds come a median 6.2 ps after exit.
-- Position at shed: 80.6 % of all sheds lie more than 3.5 Å (one erf gate
-  width) outside the sharp radius, 73.0 % more than 10.5 Å.
-- n changes after exit for all but 4 of the 11 415 ions. Per ion, 14.4
-  sheds and 0.016 pickups come after exit, against 2.9 sheds and 0.16
-  pickups before it (mean n_exit − n_det = 14.4; n_exit ≥ 9 for every
+- Position at shed: 79.7 % of all sheds lie more than 3.5 Å (one erf gate
+  width) outside the sharp radius, 72.2 % more than 10.5 Å.
+- n changes after exit for all but 3 of the 11 415 ions. Per ion, 14.5
+  sheds and 0.023 pickups come after exit, against 2.8 sheds and 0.20
+  pickups before it (mean n_exit − n_det = 14.5; n_exit ≥ 9 for every
   ion).
 - Chord (`g13_shed_chord.csv`): the in-droplet share of the sheds rises
-  with the emission-axis chord, 0.7 % (< 30 Å), 2.5 % (30–40), 12 %
-  (40–50), 26 % (50–60), 45 % (60–70), 65 % (> 70 Å); the exit time rises
-  from 2.6 to 9.4 ps along it. Bare ions come only from chords < 40 Å.
+  with the emission-axis chord, 0 % (< 30 Å), 1.8 % (30–40), 12 %
+  (40–50), 25 % (50–60), 45 % (60–70), 65 % (> 70 Å); the exit time rises
+  from 2.5 to 9.4 ps along it. Bare ions come only from chords < 40 Å.
 - **Formerly suppressed = bare.** 1260 of the 1261 B2 bare ions are the
   ions the `never` run flagged `suppressed` (the remaining formerly
-  suppressed ion ends at n = 1, as logged for G13). They leave at 2.9 ps
-  with an almost intact shell (n_exit 20.8) and boil off completely
-  outside (last shed: median 24 ps); none sheds after 100 ps.
+  suppressed ion ends at n = 1, as logged for G13). They leave at 2.7 ps
+  with the full shell (n_exit 21.0, no shed inside) and boil off
+  completely outside (last shed: median 24 ps); none sheds after 100 ps.
 
-Contrast laws (all scored ions): B3: median 9.3 ps, 4.6 / 3.2 / 2.0 %
-after 50 / 100 / 400 ps, 34 % of ions after 400 ps, 16.8 % before exit,
-n_exit 18.3. h405: median 9.1 ps, 4.3 / 3.1 / 1.9 %, 32 %, 12.1 % before
-exit, n_exit 19.0 (2301 of its 2306 bare ions formerly suppressed). The
+Contrast laws (all scored ions): B3: median 9.1 ps, 4.6 / 3.2 / 2.0 %
+after 50 / 100 / 400 ps, 34 % of ions after 400 ps, 16.3 % before exit,
+n_exit 18.4. h405: median 9.1 ps, 4.3 / 3.1 / 1.9 %, 32 %, 11.5 % before
+exit, n_exit 19.1 (2301 of its 2306 bare ions formerly suppressed). The
 timing and the place of shedding are a property of the RRK cascade, not
 of the drag law.
 
-Against §10.4 (s1 only, `never`, all ions incl. suppressed): 9.0 ps and
-5.2 / 3.7 / 2.3 % there, 9.1 ps and 4.8 / 3.4 / 2.1 % here. The G13
-release and the pooling change the timing by less than its single-seed
-spread.
+Against §10.4 (s1 only, `never`, all ions incl. suppressed, frame
+reconstruction): 9.0 ps and 5.2 / 3.7 / 2.3 % there, 9.0 ps and
+4.8 / 3.3 / 2.1 % here. The G13 release and the pooling change the
+timing by less than its single-seed spread.
 
 ### 16.3 Reading
 
@@ -1512,13 +1517,12 @@ spread.
    s_eff shows in n₁ (§10.4).
 3. **In the model the shell boils off outside the droplet.** The ion
    leaves within ~3–8 ps, faster than the cascade (median 9 ps), carrying
-   18 of its 21 He on average. 83–85 % of all sheds happen after the exit
-   (the 16.1 booking bracket) and
-   81 % more than one gate width outside; the internal energy loaded in the
+   18 of its 21 He on average. 83.7 % of all sheds happen after the exit
+   and 80 % more than one gate width outside; the internal energy loaded in the
    droplet drives the cascade in vacuum. Only the long-chord ions (> 60 Å),
    which stay inside for 7–10 ps, lose a large part of their shell inside.
 4. **The bare class is a post-exit product.** The bare ions are the
-   short-chord, formerly suppressed ions; they exit first (2.9 ps) with
+   short-chord, formerly suppressed ions; they exit first (2.7 ps) with
    the full shell and lose it within tens of ps outside. No bare ion is
    made inside the droplet.
 5. **Consequence for the readout (§12):** the detected size distribution
@@ -1534,12 +1538,9 @@ pickup, drag and cooling are (§12.1), so an ion that leaves hot keeps
 shedding and stops cooling. No observable here tests whether the real
 complex sheds inside or outside. (ii) "Outside" refers to the sharp
 radius (half-density point); the r − R numbers show it is not an
-edge-of-profile artefact (73 % beyond three gate widths). (iii) Stage I
-events are reconstructed from net changes on the 0.16 ps grid
-(undercount, quantized times, end-of-interval depth, un-interpolated
-exit), and Stage II depths are bounded, not measured; see §16.1. A
-direct measurement of the undercount needs a stride-1 re-run of one
-member or a Stage I event log (not done).
+edge-of-profile artefact (72 % beyond three gate widths). (iii) Stage I
+events, positions and the exit come from the complete event log at the
+0.01 ps step; Stage II depths are bounded, not measured; see §16.1.
 (iv) The literature comparison carries the transfer caveats of §10.2
 (Na⁺ vs I⁺, classical MD, complexes well above threshold).
 
@@ -1559,7 +1560,9 @@ member or a Stage I event log (not done).
 ### 16.5 Kinetic energy at exit, handover, after the closure and at detection (MEASURED; added 2026-10-27)
 
 Source: same script → `g13_ke_readouts.csv`. KE at four points per ion:
-exit (stored state at the exit column), handover t_h (last stored column,
+exit (stored state at the first stored column after the exit, 0–0.16 ps
+late: the log gives the exit time, not the state; `n_exit_col_mean` is n
+there), handover t_h (last stored column,
 = just before the partner-aware Coulomb closure, which acts before the
 Stage II event loop), post-closure (½ m_h |v_det|²: the closure changes v
 at fixed m, and the `co_moving` Stage II sheds keep v), detection. Anchors
@@ -1596,12 +1599,12 @@ the whole flight on logarithmic bins (59 bins from 0.1 ps to 9 µs; ≈ 0.13
 decade each). The height is a density per decade, dF/dlog₁₀ t: the
 fraction of all events in the bin divided by the bin width in decades, so
 the area over log₁₀ t is 1 (and heights can exceed 1). The stack is split
-by readout, not by position: Stage I events booked before the droplet
-exit (16.7 %), Stage I events after the exit (81.3 %), and Stage II
-events (500 ps – 8.53 µs, 2.0 %). Stage I times are reconstructed from
-the shell size on the stored 0.16 ps grid; Stage II times are recorded.
+by readout, not by position: Stage I events before the droplet exit
+(16.3 %), Stage I events after the exit (81.8 %), and Stage II events
+(500 ps – 8.53 µs, 2.0 %). Both stages are complete event records: Stage
+I times on the 0.01 ps MD step, Stage II times continuous.
 (b) Cumulative fraction of events versus time, for all scored ions and by
-detected occupancy n_det = 0, 1, ≥ 2 (median 9.1 ps; 2.1 % of the events
+detected occupancy n_det = 0, 1, ≥ 2 (median 9.0 ps; 2.1 % of the events
 after 400 ps). (c) Cumulative fraction of ions versus the time of their
 last recorded evaporation event: 36.3 % of the ions have their last event
 after 400 ps and 2.9 % after 1 µs. In (b) and (c), the grey band and the
@@ -1613,16 +1616,16 @@ detector arrival (8.53 µs).
 
 **`g13_exit_vs_detection`.** Shell size at droplet exit versus at
 detection, B2 (pooled N = 6000, 11 415 scored ions). (a) Distribution of
-n at the droplet exit (light; the first stored state after the last
-outward crossing of r = R, median 4.5 ps) and at detection (dark), both
+n at the droplet exit (light; right after the last outward crossing of
+r = R, median 4.4 ps) and at detection (dark), both
 as fractions of the scored ions; the readout gives the mean n at exit,
 at the 500 ps handover and at detection. (b) Per-ion map of n at exit against n at
 detection (log colour scale; dotted line n_det = n_exit). (c) Radial
 position r − R of each shed (positive outside the droplet; R = sharp
 radius at half density); solid line r − R = 0, dotted lines at one and
 three density-gate widths (3.5, 10.5 Å). The histogram is normalised to
-all sheds but drawn only up to r − R = 150 Å: the 10.9 % of sheds
+all sheds but drawn only up to r − R = 150 Å: the 10.8 % of sheds
 beyond 150 Å are not shown (annotated in the panel). These include all detection-stage sheds
 (2.0 %), which carry no stored position and lie beyond 230 Å at handover.
-Ion-stage positions are read at the stored frame after each shed
-(0.16 ps grid).
+Ion-stage positions are those at which each shed is applied (MD event
+log, 0.01 ps step).
