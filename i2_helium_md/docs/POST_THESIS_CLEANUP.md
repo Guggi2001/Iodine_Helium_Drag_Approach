@@ -329,3 +329,50 @@ an implementation plan written from this entry.
 **Done when.** P1–P5 gates passed; `scripts/` holds only the keep list +
 the driver; `SimConfig()` has no drag default; manifest committed;
 CLAUDE.md updated.
+
+### C5.7 Amendment after G13 (2026-10-27) — the design above predates the release
+
+The spec above was written on the `never` model. Since G13
+(`THESIS_FINAL_GOALS.md` G13.5–G13.7, 2026-10-26) the thesis numbers come
+from different run directories and generators. Fold the points below into
+the implementation plan before P1.
+
+**How the thesis runs are produced today** (three-script chain; each
+imports from the one above it):
+
+| script | origin | role today |
+|---|---|---|
+| `gen_tier2_detfix_battery.py` | 2026-09-30 | h405 `raw` / 14.2 Å battery (history). Still imported for the shared basics: `MEMBER_SEEDS`, `T_HANDOVER_PS`, `MAX_BYTES_ION`, `verify_handover_alignment`. |
+| `gen_tier2_detfix_postpickup.py` | 2026-10-02 | Default `--cell h405`: sampler A/B (history). `--cell lq --b1/--b1tau/--b1c/--b1w`: G5 exploration (history). **`--cell lq --b2` / `--b3`: the thesis runs** (`build_thesis_lq` + `run_thesis_member`, `THESIS_GATE_RELEASE = "decoupled"`, `ion.npz` kept) → `data/runs/B2_N1000_s1…s6`, `B3_…`. |
+| `gen_tier2_g13_decoupled.py` | 2026-10-26 | One-off G13 driver. `--oracle` (B2 s1 under `never` = committed `detection.npz`), `--run` (calls the builders above; same dirs), **`--pool` → `{B2,B3,h405}_N6000_pooled` + `g13_decoupled_table.csv`**. |
+
+h405 thesis runs: `gen_tier2_h405_pp35.py --scan-pool` → `h405_N1000_s…`.
+On 2026-10-26 the B2 / B3 dirs were written through `gen_tier2_g13_decoupled.py
+--run`; `gen_tier2_detfix_postpickup.py --cell lq --b2` builds the identical
+cfg (an existing dir with a different `cfg.json` is refused).
+
+**Changes to the C5 design:**
+
+- **Presets (C5.1):** set `self_bound_gate_release="decoupled"` in the
+  three drag presets (the `SimConfig` default stays `never`). The h405
+  preset is the **re-landed** contrast law (`post_pickup`, erf 3.5 Å,
+  capped cubic b 2.515 / v_c 5.40, E_bind 0.1168, τ 4.4, E₀ 0.424;
+  `THESIS_DISCUSSION.md` §15), not the `raw` / 14.2 Å row in the C5.1
+  table. Oracles: every member = the `cfg.json` of `{B2,B3,h405}_N1000_s1…s6`
+  (s6 = seed of r6); the `never` batteries stay as history only.
+- **Battery / driver (C5.2):** naming = the plain thesis dirs
+  (`{law}_N1000_s{k}`, pools `{law}_N6000_pooled`), not the long
+  `…_th500` tags; `keep_ion=True` is the thesis default (the shed-timing
+  and exit reads need `ion.npz`). Score oracle = the decoupled rows of
+  `g13_decoupled_table.csv` (4 dp), not `g5_winners_table`.
+- **Cleanup (C5.4):** add `gen_tier2_g13_decoupled.py` and
+  `gen_tier2_h405_pp35.py` to the delete list (absorbed by the driver;
+  the G13 `--oracle` check becomes a driver test or a manifest note).
+  Plot scripts `tier2_b2_thesis_figure.py` and `tier2_g6_chord_map.py`
+  (both read the decoupled dirs since 2026-10-26/27) go on the keep list,
+  rewired to the driver's naming.
+- **Shared basics first:** move `MEMBER_SEEDS`, `T_HANDOVER_PS`,
+  `MAX_BYTES_ION` / `STORAGE_STRIDE` and the handover-alignment check out of
+  `gen_tier2_detfix_battery.py` into the battery module **before** deleting
+  any generator; the thesis path imports them today.
+- Scale for the manifest: 35 `scripts/gen_*.py` files as of 2026-10-27.
