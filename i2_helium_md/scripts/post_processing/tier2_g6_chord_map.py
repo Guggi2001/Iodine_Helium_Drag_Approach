@@ -111,6 +111,17 @@ from scripts.post_processing.tier2_detfix_postpickup_table import (  # noqa: E40
     chord_rows,
     emission_chords,
 )
+from scripts.post_processing.thesis_style import (  # noqa: E402
+    CONTRAST_COLOR,
+    EXP_COLOR,
+    FIG_RC,
+    FONT,
+    SIM_COLOR,
+    TEXTWIDTH_IN,
+    VIRIDIS,
+    panel_letter,
+    style_axis,
+)
 from scripts.post_processing.tier2_g5_postpickup_table import CHORD_CSV as G5_CHORD_CSV  # noqa: E402
 from scripts.post_processing.tier2_h405_pp35_table import OUT_CSV as H405_TABLE_CSV  # noqa: E402
 from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
@@ -127,10 +138,12 @@ N_START = 21                        # intact shell size of a suppressed ion
 SUPP_MAX_CHORD_A = 35.0             # bins entirely below this may hold suppressed ions
 ANCHOR_COLS = ("ions", "retained_frac", "n1_frac", "mean_n", "mean_KE_eV")
 H405_ANCHOR_COLS = ("num_scored", "nbar_det", "supp")
-# tier2_b2_thesis_figure colours: experiment tab:blue, B2 simulation tab:red
-STYLE = {"B2": dict(color="tab:red", ls="-"),
-         "h405": dict(color="tab:green", ls="-")}
-EXP_COLOR = "tab:blue"
+# shared thesis palette (thesis_style); experiment = thesis_style.EXP_COLOR
+STYLE = {"B2": dict(color=SIM_COLOR, ls="-"),
+         "h405": dict(color=CONTRAST_COLOR, ls="-")}
+BARE_COLOR = VIRIDIS[0.00]
+N1_COLOR = VIRIDIS[1.00]                               # on top of the B2 cloud
+FIG_HEIGHT_IN = 5.4
 NAMES = {"B2": "B2", "h405": "Re-landed h405"}
 VARIANTS = (("g6_chord_map_b2_only", False), ("g6_chord_map_with_h405", True))
 
@@ -375,9 +388,10 @@ def main() -> int:
     ke1 = _exp_ke1(ked)[:2]
     win = (stats["n1_chord_q05_A"], stats["n1_chord_q95_A"])
     for stem, with_h405 in VARIANTS:
-        fig = _draw(b2, h405 if with_h405 else None, binned, win, ke1)
-        jpg = OUT_DIR / f"{stem}.jpg"
-        fig.savefig(jpg, dpi=200, pil_kwargs={"quality": 95})   # high quality: fine scatter dots
+        with plt.rc_context(FIG_RC):       # g13 thesis font (Palatino)
+            fig = _draw(b2, h405 if with_h405 else None, binned, win, ke1)
+            jpg = OUT_DIR / f"{stem}.jpg"
+            fig.savefig(jpg, dpi=200, pil_kwargs={"quality": 95})   # high quality: fine scatter dots
         print(f"figure -> {jpg}")
     if SHOW_FIGURE:
         plt.show()
@@ -387,7 +401,8 @@ def main() -> int:
 def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
           binned: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]],
           win: tuple[float, float], ke1: tuple[float, float]) -> plt.Figure:
-    """The three-panel chord map (G13 decoupled reads); ``h405 = None`` leaves
+    """The three-panel chord map plus a shared legend cell, at thesis text
+    width (G13 decoupled reads); ``h405 = None`` leaves
     the overlay out. Panel (b) draws one binned mean KE per law."""
     arms = ("B2",) if h405 is None else ("B2", "h405")
     s = b2["scored"] & np.isfinite(b2["ke"])
@@ -399,57 +414,73 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
     isS = b2["n"][idx] == 0
     lo, hi = CHORD_RANGE_A
 
-    fig, (axn, axk, axc) = plt.subplots(1, 3, figsize=(15.0, 4.6), constrained_layout=True)
+    # thesis text width (as g13): (a) chord -> n, (b) chord -> KE, (c) chord
+    # distribution, one shared legend in the fourth cell
+    fig, ax = plt.subplot_mosaic([["a", "b"], ["c", "legend"]],
+                                 figsize=(TEXTWIDTH_IN, FIG_HEIGHT_IN),
+                                 constrained_layout=True)
+    axn, axk, axc = ax["a"], ax["b"], ax["c"]
+    xlabel = r"Emission-axis chord $\ell$ / Å"
+    line = dict(marker="o", ms=3, lw=1.3)
 
-    for ax in (axn, axk):
-        ax.axvspan(*win, color="0.92", zorder=0, label="B2 n = 1 window (q05–q95)")
+    for a in (axn, axk, axc):
+        a.axvspan(*win, color="0.92", zorder=0, lw=0, label="B2 $n = 1$ window (q05–q95)")
     jit = rng.uniform(-0.25, 0.25, idx.size)
     axn.scatter(b2["chord"][idx][~isS], b2["n_scorer"][idx][~isS] + jit[~isS],
-                s=3, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
-    axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=3,
-                alpha=0.35, color="0.35", lw=0, rasterized=True,
-                label="B2 bare I⁺ (shell boiled off outside)")
+                s=2, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
+    axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=2,
+                alpha=0.35, color=BARE_COLOR, lw=0, rasterized=True,
+                label=r"B2 bare $\mathrm{I}^+$ (shell boiled off outside)")
     for arm in arms:
         x, y, _ = binned[arm]
-        axn.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
-                 label=f"{NAMES[arm]} binned mean n")
-    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel="Emission-axis chord / Å",
-            ylabel="Scored n", title="(a) Chord → n")
+        axn.plot(x, y, **line, **STYLE[arm], label=f"{NAMES[arm]} binned mean")
+    axn.set(xlim=CHORD_RANGE_A, ylim=(-0.7, 18), xlabel=xlabel, ylabel="Scored $n$")
     axn.yaxis.set_major_locator(MaxNLocator(integer=True))   # n is an integer
-    axn.legend(fontsize=8, loc="upper left")
 
-    axk.scatter(b2["chord"][idx][isS], b2["ke"][idx][isS], s=3, alpha=0.35,
-                color="0.35", lw=0, rasterized=True,
-                label="B2 bare I⁺")
+    axk.scatter(b2["chord"][idx][isS], b2["ke"][idx][isS], s=2, alpha=0.35,
+                color=BARE_COLOR, lw=0, rasterized=True)
     rest = ~is1 & ~isS
-    axk.scatter(b2["chord"][idx][rest], b2["ke"][idx][rest], s=3, alpha=0.2,
-                color=STYLE["B2"]["color"], lw=0, rasterized=True, label="B2 ions, n ≥ 2")
-    axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=4, alpha=0.6,
-                color="#ff7f0e", lw=0, rasterized=True, label="B2 ions, n = 1")
+    axk.scatter(b2["chord"][idx][rest], b2["ke"][idx][rest], s=2, alpha=0.2,
+                color=STYLE["B2"]["color"], lw=0, rasterized=True, label=r"B2 ions, $n \geq 2$")
+    axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=3, alpha=0.6,
+                color=N1_COLOR, lw=0, rasterized=True, label="B2 ions, $n = 1$")
     for arm in arms:
         x, _, y = binned[arm]
-        axk.plot(x, y, marker="o", ms=4, lw=1.8, **STYLE[arm],
-                 label=f"{NAMES[arm]} binned mean KE")
+        axk.plot(x, y, **line, **STYLE[arm])
     ke1_mean, ke1_med = ke1
-    axk.axhline(ke1_mean, color=EXP_COLOR, lw=1.2,
-                label=f"Experiment KE₁ mean {ke1_mean:.2f} eV")
-    axk.axhline(ke1_med, color=EXP_COLOR, lw=1.2, ls="--",
-                label=f"Experiment KE₁ median {ke1_med:.2f} eV")
-    axk.set(xlim=CHORD_RANGE_A, ylim=(0, 1.6), xlabel="Emission-axis chord / Å",
-            ylabel="Detected KE / eV", title="(b) Chord → KE")
-    axk.legend(fontsize=7.5, loc="upper right")
+    axk.axhline(ke1_mean, color=EXP_COLOR, lw=1.0,
+                label=rf"Experiment $\mathrm{{KE}}_1$ mean ({ke1_mean:.2f} eV)")
+    axk.axhline(ke1_med, color=EXP_COLOR, lw=1.0, ls="--",
+                label=rf"Experiment $\mathrm{{KE}}_1$ median ({ke1_med:.2f} eV)")
+    axk.set(xlim=CHORD_RANGE_A, ylim=(0, 1.4), xlabel=xlabel, ylabel="Detected KE / eV")
 
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
-    axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.6,
-             **STYLE["B2"], label=f"B2 (post_pickup), N = {b2['chord'].size}")
+    axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.2,
+             **STYLE["B2"], label=f"B2 chord distribution ($N = {b2['chord'].size}$)")
     if h405 is not None:   # coincides with B2 bin for bin: dash-dot keeps B2 visible
-        axc.hist(h405["chord"], bins=edges, density=True, histtype="step", lw=1.6,
-                 **{**STYLE["h405"], "ls": "-."}, label=f"{NAMES['h405']} (post_pickup), N = {h405['chord'].size}")
-    axc.axvspan(*win, color="0.92", zorder=0)
-    axc.set_ylim(0, 1.25 * axc.get_ylim()[1])
-    axc.set(xlim=CHORD_RANGE_A, xlabel="Emission-axis chord / Å",
-            ylabel=r"Probability density / Å$^{-1}$", title="(c) Chord distribution")
-    axc.legend(fontsize=8)
+        axc.hist(h405["chord"], bins=edges, density=True, histtype="step", lw=1.2,
+                 **{**STYLE["h405"], "ls": "-."},
+                 label=f"{NAMES['h405']} chord distribution ($N = {h405['chord'].size}$)")
+    axc.set_ylim(0, 1.1 * axc.get_ylim()[1])
+    axc.set(xlim=CHORD_RANGE_A, xlabel=xlabel, ylabel=r"Probability density / Å$^{-1}$")
+
+    handles: dict[str, object] = {}
+    for a in (axn, axk, axc):
+        for h, lab in zip(*a.get_legend_handles_labels()):
+            handles.setdefault(lab, h)            # the n = 1 window is drawn in every panel
+    groups = ("window", "bare", "ions", "binned", "Experiment", "distribution")
+    labels = sorted(handles, key=lambda lab: next(i for i, g in enumerate(groups) if g in lab))
+    ax["legend"].axis("off")
+    leg = ax["legend"].legend([handles[lab] for lab in labels], labels, loc="center",
+                              fontsize=FONT["legend_fontsize"], frameon=False,
+                              handlelength=2.2)
+    for h in leg.legend_handles:                  # scatter keys opaque and visible, not the faint cloud
+        if hasattr(h, "set_sizes"):
+            h.set_alpha(1.0)
+            h.set_sizes([16.0])
+    for k in ("a", "b", "c"):
+        style_axis(ax[k])
+        panel_letter(ax[k], k)
     return fig
 
 

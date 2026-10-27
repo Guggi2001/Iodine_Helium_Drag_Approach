@@ -81,20 +81,17 @@ DPI: int = 200
 SHOW_FIGURE: bool = False
 MPLSTYLE: Path | None = None     # optional .mplstyle applied to every figure
 
-TEXTWIDTH_CM: float = 16.6              # thesis \textwidth; every figure spans it
-TEXTWIDTH_IN: float = TEXTWIDTH_CM / 2.54
+from scripts.post_processing.thesis_style import (  # noqa: E402  (shared thesis style)
+    EXP_COLOR, FIG_RC, FONT, SIM_COLOR, TEXTWIDTH_CM, TEXTWIDTH_IN, VIRIDIS,
+)
 
 # Shared defaults; each FIG_* dict below overrides key by key.
 COMMON_STYLE: dict = {
-    "exp": dict(color="tab:blue"),
-    "sim": dict(color="tab:red"),        # blue / red pair of the detection summary
+    "exp": dict(color=EXP_COLOR),        # thesis_style: experiment warm accent,
+    "sim": dict(color=SIM_COLOR),        # simulation viridis blue
     "band": dict(color="0.80"),          # landing-band shading
     "band_shade_alpha": 0.25,
-    "label_fontsize": 9,
-    "tick_fontsize": 8,
-    "title_fontsize": 9,
-    "legend_fontsize": 7.5,
-    "annot_fontsize": 7.5,
+    **FONT,
     "panel_letters": True,
     "panel_letter_fmt": "({})",
     "legend_frameon": False,
@@ -114,8 +111,8 @@ FIG_B2_1: dict = {
     "annot_loc": (0.97, 0.95),           # axes fraction, top-right anchor
     "legend_loc": "center right",
     "ylabel_scored": "Fraction / %",
-    "ylabel_solvated": "Fraction (n ≥ 1) / %",
-    "xlabel": "n (attached He atoms)",
+    "ylabel_solvated": r"Fraction ($n \geq 1$) / %",
+    "xlabel": r"Shell size $n$",
 }
 
 FIG_B2_2: dict = {
@@ -130,7 +127,7 @@ FIG_B2_2: dict = {
     "height_ratios": (1.2, 1.0),
     "figsize_split": (TEXTWIDTH_IN, 4.6),
     "height_ratios_split": (1.15, 1.0),
-    "anchor": dict(color="tab:purple"),
+    "anchor": dict(color=EXP_COLOR),     # experimental n = 1 median: experiment colour, own marker
     "split_n": 5,                        # = summary_sections.IHE_KED_MEAN_ENERGY_SPLIT_N
     "yscale_stacked": "log",
     "yscale": "linear",                  # split layout
@@ -145,18 +142,18 @@ FIG_B2_2: dict = {
     "annot_chi2": False,
     "annot_loc": (0.03, 0.05),
     "legend_loc": "upper right",
-    "titles": ("n = 1–{hi}", "n = {lo}–{n_max}", None),
+    "titles": ("$n$ = 1–{hi}", "$n$ = {lo}–{n_max}", None),
     "lower_panel": "ratio",              # "ratio" | "z"
     "ratio_ylim": None,
     "annot_band_means": True,            # midHot / deepKE segments + values (legend)
     "legend_loc_ratio": "upper right",
-    "ylabel_ratio": r"$\langle E\rangle_\mathrm{sim} / \langle E\rangle_\mathrm{exp}$",
+    "ylabel_ratio": r"$\bar{E}_\mathrm{sim} / \bar{E}_\mathrm{exp}$",
     "z_guides": (-2.0, 2.0),
-    "z_colors": ("tab:red", "tab:blue"),  # (sim hot, sim cold)
+    "z_colors": (SIM_COLOR, VIRIDIS[0.85]),  # (sim hot, sim cold)
     "annot_z": True,
     "ylabel": "Mean kinetic energy / eV",
-    "ylabel_z": r"z (sim − ref, per-point $\sigma$)",
-    "xlabel": "n (attached He atoms)",
+    "ylabel_z": r"$z$ (sim − ref, per-point $\sigma$)",
+    "xlabel": r"Shell size $n$",
 }
 
 # B2-2 split variant: linear n = 1-4 | 5-17 over the same lower panel, at
@@ -167,6 +164,7 @@ FIG_B2_2_SPLIT: dict = {
     "layout": "split",
     "figsize_split": FIG_B2_2["figsize"],
     "height_ratios_split": FIG_B2_2["height_ratios"],
+    "legend_loc_ratio": "lower center",  # the shorter (c) has no room above the 1.0 band
 }
 
 FIG_B2_3: dict = {
@@ -185,16 +183,17 @@ FIG_B2_3: dict = {
                     4: (0.0, 14.0), 5: (0.0, 14.0), 6: (0.0, 12.0)},
     "ylim": (0.0, 1.35),
     "show_exp_raw": True,
+    "exp_raw_alpha": 0.15,               # raw trace stays in the background of the smoothed one
     "show_v_of_mean_E": True,
     "show_counts": True,                 # per-panel N text
     "annot_ke_n": (),                    # panels that print <E> sim / exp
-    "titles": "n = {n}",
+    "titles": "$n = {n}$",
     "suptitle": None,
     "legend_panel": "figure",            # "figure" | panel index | None
     "legend_ncols": 3,                   # figure legend only
     "legend_loc": "best",
     "outer_labels_only": True,
-    "xlabel": r"v / Å ps$^{-1}$",
+    "xlabel": r"Speed $v$ / Å ps$^{-1}$",
     "ylabel": "Signal / arb. units",
 }
 
@@ -495,7 +494,7 @@ def check_anchor(values: dict[str, float], csv_path: Path, label: str,
 # =============================================================================
 def _annot(ax, text: str, st: dict, loc, ha="right", va="top") -> None:
     ax.text(*loc, text, transform=ax.transAxes, ha=ha, va=va, fontsize=st["annot_fontsize"],
-            bbox=dict(boxstyle="round", facecolor="white", edgecolor="0.7", alpha=0.9))
+            bbox=dict(boxstyle="square,pad=0.2", facecolor="white", edgecolor="none", alpha=0.85))
 
 
 def draw_size_scored(ax, d: SizeData, st: dict) -> None:
@@ -504,8 +503,8 @@ def draw_size_scored(ax, d: SizeData, st: dict) -> None:
            edgecolor="black", linewidth=0.4, **st["sim"])
     if st["annot_scored"]:
         lo, hi = NBAR_LANDING
-        flag = "∈" if lo <= d.n_mean <= hi else "∉"
-        _annot(ax, rf"$\bar n$ = {d.n_mean:.2f} {flag} [{lo:.2f}, {hi:.2f}]" "\n"
+        flag = r"\in" if lo <= d.n_mean <= hi else r"\notin"
+        _annot(ax, rf"$\bar n = {d.n_mean:.2f} {flag} [{lo:.2f}, {hi:.2f}]$" "\n"
                    f"Bare fraction {100.0 * d.bare_frac:.1f} %", st, st["annot_loc"])
     if st["show_landing_band"]:
         ax.axvspan(*NBAR_LANDING, zorder=0, alpha=2 * st["band_shade_alpha"], linewidth=0,
@@ -523,9 +522,9 @@ def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
            **st["exp"])
     ax.bar(d.n_sim_solv + w / 2, 100.0 * d.frac_sim_solv, width=w, label="B2", **st["sim"])
     if st["annot_solvated"]:
-        _annot(ax, rf"$n_1$ = {d.sim_n1:.3f} (exp {d.ref_n1:.3f})" "\n"
-                   rf"$W_1$ = {d.w1_solvated:.3f} bins" "\n"
-                   rf"n ≥ {st['tail_n']}: {d.sim_tail_mass:.4f} (exp {d.ref_tail_mass:.4f})",
+        _annot(ax, rf"$n_1 = {d.sim_n1:.3f}$ (exp {d.ref_n1:.3f})" "\n"
+                   rf"$W_1 = {d.w1_solvated:.3f}$ bins" "\n"
+                   rf"$n \geq {st['tail_n']}$: {d.sim_tail_mass:.4f} (exp {d.ref_tail_mass:.4f})",
                st, st["annot_loc"])
     ax.set(xlim=st["n_xlim"], xlabel=st["xlabel"], ylabel=st["ylabel_solvated"])
     _legend(ax, st, st["legend_loc"])
@@ -555,17 +554,17 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
             ax.fill_between(n_ref, mean * (1.0 - frac), mean * (1.0 + frac), linewidth=0,
                             alpha=alpha, label=label, **st["exp"])
     ax.errorbar(n_ref, mean, yerr=np.asarray(ref.point_err_eV)[sel], fmt="o", markersize=4,
-                capsize=2, label=r"Experiment $\langle E\rangle$", **st["exp"])
+                capsize=2, label=r"Experiment $\bar{E}$", **st["exp"])
     hit = n_ref == 1
     if st["show_median_anchor"] and np.any(hit):
         ax.plot(n_ref[hit], np.asarray(ref.median_KE_eV)[sel][hit], "D", markersize=6,
                 markerfacecolor="none", markeredgecolor=st["anchor"]["color"],
-                markeredgewidth=1.3, label="Experiment median (n = 1)")
+                markeredgewidth=1.3, label="Experiment median ($n = 1$)")
     in_panel = (d.n >= n_lo) & (d.n <= n_hi)
     ok = in_panel & d.scored_mask
     if np.any(ok):
         ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", linestyle="none",
-                    markersize=4, capsize=2, label=r"Simulation (B2) $\langle E\rangle$",
+                    markersize=4, capsize=2, label=r"Simulation (B2) $\bar{E}$",
                     **st["sim"])
     thin = in_panel & ~d.scored_mask
     if st["show_thin_bins"] and np.any(thin):
@@ -573,7 +572,7 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
                 color=st["sim"]["color"],
                 label=f"Simulation, < {DETECTED_KE_MIN_BIN_COUNT} ions")
     if show_chi2 and st["annot_chi2"]:
-        _annot(ax, rf"$\chi^2$_med = {d.chi2_score.chi2_profiled:.1f}; "
+        _annot(ax, rf"$\chi^2_\mathrm{{med}} = {d.chi2_score.chi2_profiled:.1f}$; "
                    f"{d.chi2_score.n_points} bins", st, st["annot_loc"], ha="left", va="bottom")
     ax.set(yscale=st["yscale"], xlabel=st["xlabel"], ylabel=st["ylabel"])
     if show_legend:
@@ -607,7 +606,7 @@ def draw_ke_ratio(ax, d: KEData, st: dict) -> None:
             if band.n_bins == 0:
                 continue
             ax.hlines(band.value, band.n.min() - 0.4, band.n.max() + 0.4, linestyles=ls,
-                      linewidth=1.4, label=f"{name} (n {band.n.min()}–{band.n.max()}) = "
+                      linewidth=1.4, label=f"{name} ($n$ = {band.n.min()}–{band.n.max()}): "
                                            f"{band.value:.3f}", **st["sim"])
         _legend(ax, st, st["legend_loc_ratio"])
     if st["ratio_ylim"] is not None:
@@ -627,8 +626,8 @@ def draw_ke_residual(ax, d: KEData, st: dict) -> None:
     for lvl in st["z_guides"]:
         ax.axhline(lvl, color="gray", linewidth=0.8, linestyle="--")
     if st["annot_z"]:
-        _annot(ax, rf"$\chi^2$_med = {s.chi2_profiled:.1f}, {s.n_points} bins" "\n"
-                   f"a_calib = {s.a_calib:.2f}, b_cond = {s.b_condition:.2f}",
+        _annot(ax, rf"$\chi^2_\mathrm{{med}} = {s.chi2_profiled:.1f}$, {s.n_points} bins" "\n"
+                   rf"$a_\mathrm{{calib}} = {s.a_calib:.2f}$, $b_\mathrm{{cond}} = {s.b_condition:.2f}$",
                st, st["annot_loc"], ha="left", va="bottom")
     ax.set(xlim=(DETECTED_KE_N_MIN - 0.6, int(np.asarray(d.ref.n).max()) + 0.6),
            xlabel=st["xlabel"], ylabel=st["ylabel_z"])
@@ -638,7 +637,8 @@ def draw_ke_residual(ax, d: KEData, st: dict) -> None:
 def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
     """One KED-shape panel -- the ``_section_ihe_ked_curves`` panel in Å/ps."""
     if st["show_exp_raw"]:
-        ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.5, linewidth=0.5, alpha=0.30,
+        ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.0, linewidth=0.5,
+                alpha=st["exp_raw_alpha"],
                 label="Experiment (raw)", **st["exp"])
     ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="Experiment (smoothed)",
             **st["exp"])
@@ -646,19 +646,19 @@ def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
         ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4, label="Simulation (B2)",
                 **st["sim"])
     else:
-        ax.annotate("sim: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
-                    ha="right", fontsize=8, color=st["sim"]["color"])
+        ax.annotate("Simulation: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
+                    ha="right", fontsize=st["annot_fontsize"], color=st["sim"]["color"])
     if st["show_v_of_mean_E"]:
         ax.axvline(d.v_mean_E_exp_Aps, linestyle=":", linewidth=1.0,
-                   label=r"Experiment $v(\langle E\rangle)$", **st["exp"])
+                   label=r"Experiment $v(\bar{E})$", **st["exp"])
         if d.v_mean_E_sim_Aps is not None:
             ax.axvline(d.v_mean_E_sim_Aps, linestyle=":", linewidth=1.0,
-                       label=r"Simulation $v(\langle E\rangle)$", **st["sim"])
+                       label=r"Simulation $v(\bar{E})$", **st["sim"])
     lines = []
     if st["show_counts"]:
-        lines.append(f"N = {d.num_sim}")
+        lines.append(f"$N = {d.num_sim}$")
     if d.n in st["annot_ke_n"] and d.mean_E_sim_eV is not None:
-        lines.append(rf"$\langle E\rangle$ {d.mean_E_sim_eV:.3f} / exp {d.mean_E_exp_eV:.3f} eV")
+        lines.append(rf"$\bar{{E}}$ {d.mean_E_sim_eV:.3f} / exp {d.mean_E_exp_eV:.3f} eV")
     if lines:
         ax.text(0.97, 0.95, "\n".join(lines), transform=ax.transAxes, ha="right", va="top",
                 fontsize=st["annot_fontsize"])
@@ -788,7 +788,7 @@ def main() -> int:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     style_ctx = plt.style.context(str(MPLSTYLE)) if MPLSTYLE else plt.style.context({})
-    with style_ctx:
+    with style_ctx, plt.rc_context(FIG_RC):      # thesis_style font (Palatino)
         if "b2_1" in FIGURES:
             _save(build_b2_1(size), FIG_B2_1["stem"])
         if "b2_2" in FIGURES:

@@ -253,7 +253,9 @@ class TestBuilders:
     def test_b2_2_split_variant_matches_stacked_footprint(self, mod, inputs):
         v = mod.FIG_B2_2_SPLIT
         diff = {k for k in mod.FIG_B2_2 if mod.FIG_B2_2[k] != v[k]}
-        assert diff == {"stem", "layout", "figsize_split", "height_ratios_split"}
+        # legend_loc_ratio: the shorter split (c) panel needs the legend below the 1.0 band
+        assert diff == {"stem", "layout", "figsize_split", "height_ratios_split",
+                        "legend_loc_ratio"}
         fig = mod.build_b2_2(mod.ke_data(inputs["read"], inputs["ked_ref"]), v)
         try:
             assert len(fig.axes) == 3

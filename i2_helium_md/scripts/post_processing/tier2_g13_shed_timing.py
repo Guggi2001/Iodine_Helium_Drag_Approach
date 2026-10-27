@@ -129,15 +129,17 @@ OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
 SHOW_FIGURE: bool = False
-TEXTWIDTH_CM: float = 16.6                # thesis \textwidth (tier2_b2_thesis_figure)
-TEXTWIDTH_IN: float = TEXTWIDTH_CM / 2.54
-STYLE: dict = {
-    "sim": "tab:red", "lit": "0.55",
-    "before_exit": "#8b0000", "after_exit_stage1": "#f08080", "stage2": "0.65",
-    "class": {"all": ("tab:red", "-"), "bare": ("0.25", "--"),
-              "n1": ("#ff7f0e", "-"), "n2plus": ("tab:brown", "-.")},
-    "label_fontsize": 9, "tick_fontsize": 8, "legend_fontsize": 7.5,
-    "annot_fontsize": 7.5,
+from scripts.post_processing.thesis_style import (  # noqa: E402  (shared thesis style)
+    FIG_RC, FONT, LIT_COLOR, SIM_COLOR, TEXTWIDTH_IN, VIRIDIS, panel_letter, style_axis,
+)
+
+STYLE: dict = {                          # data colours: thesis_style.VIRIDIS samples
+    "sim": SIM_COLOR, "sim_exit": VIRIDIS[0.70], "lit": LIT_COLOR,
+    "before_exit": VIRIDIS[0.10], "after_exit_stage1": VIRIDIS[0.50],
+    "stage2": VIRIDIS[0.85], "cmap": "viridis",
+    "class": {"all": (VIRIDIS[0.00], "-"), "bare": (VIRIDIS[0.33], "--"),
+              "n1": (VIRIDIS[0.60], "-"), "n2plus": (VIRIDIS[0.85], "-.")},
+    **FONT, "fig_height_in": 5.4,
 }
 
 # =============================================================================
@@ -177,7 +179,7 @@ SHED_CONVENTION = "co_moving"            # the post-closure read needs v unchang
 G13_TABLE_CSV = OUT_ROOT / "g13_decoupled_table.csv"
 EXTRA_CSV = OUT_ROOT / "thesis_observables_extra.csv"
 SUPPRESSED = "suppressed"
-CLASS_NAMES = {"all": "all scored ions", "bare": r"$n_\mathrm{det} = 0$",
+CLASS_NAMES = {"all": "All scored ions", "bare": r"$n_\mathrm{det} = 0$",
                "n1": r"$n_\mathrm{det} = 1$", "n2plus": r"$n_\mathrm{det} \geq 2$",
                "supp_never": "formerly suppressed"}
 
@@ -630,26 +632,22 @@ def ke_row(law: str, cls: str, r: LawRead, m: np.ndarray) -> dict[str, Any]:
 # =============================================================================
 # Figures
 # =============================================================================
-def _style_ax(ax) -> None:
-    ax.tick_params(labelsize=STYLE["tick_fontsize"])
-    ax.xaxis.label.set_size(STYLE["label_fontsize"])
-    ax.yaxis.label.set_size(STYLE["label_fontsize"])
+TIME_MARK_LABELS: tuple[str, ...] = ("Handover (500 ps)", "Detector (8.53 µs)",
+                                     "Literature bound (400 ps)")
 
 
-def _letter(ax, s: str) -> None:
-    ax.text(0.01, 0.98, f"({s})", transform=ax.transAxes, va="top", ha="left",
-            fontsize=STYLE["label_fontsize"], fontweight="bold")
-
-
-def _time_marks(ax, t_h: float, t_det: float, *, label: bool, literature: bool) -> None:
-    """Handover and detector lines; with ``literature`` also the grey
-    Albrechtsen 2023 band (tens of ps) and the 400 ps line."""
-    if literature:
+def _time_marks(ax, t_h: float, t_det: float, *, label: bool, band: bool,
+                ymax: float = 1.0) -> None:
+    """Handover, detector and Albrechtsen 2023 400 ps lines (legend labels in
+    ``TIME_MARK_LABELS`` order when ``label``); with ``band`` also the grey
+    tens-of-ps band. ``ymax`` (axes fraction) stops the lines below a legend."""
+    if band:
         lo, hi = LIT_TENS_OF_PS
         ax.axvspan(lo, hi, color=STYLE["lit"], alpha=0.15, lw=0)
-        ax.axvline(LIT_BOUND_PS, color=STYLE["lit"], lw=1.0, ls=":")
-    ax.axvline(t_h, color="k", lw=0.8, ls="--", label="handover 500 ps" if label else None)
-    ax.axvline(t_det, color="k", lw=0.8, ls="-.", label="detector 8.53 µs" if label else None)
+    for x, color, lw, ls, lab in ((t_h, "k", 0.8, "--", TIME_MARK_LABELS[0]),
+                                  (t_det, "k", 0.8, "-.", TIME_MARK_LABELS[1]),
+                                  (LIT_BOUND_PS, STYLE["lit"], 1.0, ":", TIME_MARK_LABELS[2])):
+        ax.axvline(x, ymax=ymax, color=color, lw=lw, ls=ls, label=lab if label else None)
 
 
 def _ecdf(ax, x: np.ndarray, color: str, ls: str, label: str) -> None:
@@ -662,9 +660,10 @@ def plot_timing(r: LawRead, t_h: float, t_det: float) -> plt.Figure:
     """(a) shed-time density per decade, stacked by readout (Stage I before
     exit / Stage I after exit / Stage II); (b) shed-time ECDF per detected
     class; (c) per-ion ECDF of the last recorded evaporation event."""
-    fig, ax = plt.subplot_mosaic([["a", "a"], ["b", "c"]], figsize=(TEXTWIDTH_IN, 4.8),
+    fig, ax = plt.subplot_mosaic([["a", "a"], ["b", "c"]],
+                                 figsize=(TEXTWIDTH_IN, STYLE["fig_height_in"]),
                                  constrained_layout=True)
-    edges = np.logspace(-1, np.log10(t_det * 1.05), 60)
+    edges =np.logspace(-1, np.log10(t_det * 1.05), 60)
     width = np.diff(np.log10(edges))
     n_sh = r.shed_t_ps.size
     groups = [
@@ -680,16 +679,16 @@ def plot_timing(r: LawRead, t_h: float, t_det: float) -> plt.Figure:
         ax["a"].bar(edges[:-1], h, width=np.diff(edges), bottom=bottom, align="edge",
                     color=color, lw=0, label=f"{lab} ({np.mean(g) * 100:.1f} %)")
         bottom += h
-    _time_marks(ax["a"], t_h, t_det, label=True, literature=False)
+    _time_marks(ax["a"], t_h, t_det, label=True, band=False, ymax=0.68)  # lines end below legend
     ax["a"].set_xscale("log")
     ax["a"].set_yscale("log")
     ax["a"].set_ylim(1e-5, 1e3)        # headroom for the legend
     ax["a"].set_xlim(*T_XLIM_PS)
-    ax["a"].set_xlabel("shed time t [ps]")
-    ax["a"].set_ylabel("fraction of sheds per decade")
+    ax["a"].set_xlabel(r"Shed time $t$ / ps")
+    ax["a"].set_ylabel("Fraction of sheds per decade")
     handles, labels = ax["a"].get_legend_handles_labels()
-    order = [labels.index(x) for x in labels if not x.startswith(("handover", "detector"))]
-    order += [labels.index(x) for x in labels if x.startswith(("handover", "detector"))]
+    order = [labels.index(x) for x in labels if x not in TIME_MARK_LABELS]
+    order += [labels.index(x) for x in TIME_MARK_LABELS]     # second legend column
     ax["a"].legend([handles[i] for i in order], [labels[i] for i in order],
                    fontsize=STYLE["legend_fontsize"], ncol=2, loc="upper right",
                    frameon=True, facecolor="white", edgecolor="none", framealpha=1.0)
@@ -702,29 +701,29 @@ def plot_timing(r: LawRead, t_h: float, t_det: float) -> plt.Figure:
               f"{CLASS_NAMES[key]} ({m.sum()})")
         _ecdf(ax["c"], r.t_last_ps[m], color, ls, CLASS_NAMES[key])
     for k in ("b", "c"):
-        _time_marks(ax[k], t_h, t_det, label=False, literature=True)
+        _time_marks(ax[k], t_h, t_det, label=False, band=True)
         ax[k].set_xscale("log")
         ax[k].set_xlim(*T_XLIM_PS)
         ax[k].set_ylim(0, 1.02)
-    med = np.median(r.shed_t_ps)
-    ax["b"].text(0.93, 0.50, f"median {med:.1f} ps\n> 400 ps: "
+    ax["b"].text(0.93, 0.50, f"Median: {np.median(r.shed_t_ps):.1f} ps\n$t > 400$ ps: "
                  f"{np.mean(r.shed_t_ps > 400) * 100:.1f} % of sheds",
                  transform=ax["b"].transAxes, ha="right", va="center",
                  fontsize=STYLE["annot_fontsize"])
-    ax["b"].set_xlabel("shed time t [ps]")
-    ax["b"].set_ylabel("cumulative fraction of sheds")
+    ax["b"].set_xlabel(r"Shed time $t$ / ps")
+    ax["b"].set_ylabel("Cumulative fraction of sheds")
     s = r.scored
-    ax["c"].text(0.93, 0.30, "last event\n"
-                 f"> 400 ps: {np.mean(r.t_last_ps[s] > 400) * 100:.1f} % of ions\n"
-                 f"> 1 µs: {np.mean(r.t_last_ps[s] > 1e6) * 100:.1f} % of ions",
+    ax["c"].text(0.93, 0.30,
+                 rf"$t_\mathrm{{last}} > 400$ ps: {np.mean(r.t_last_ps[s] > 400) * 100:.1f} % of ions"
+                 "\n"
+                 rf"$t_\mathrm{{last}} > 1$ µs: {np.mean(r.t_last_ps[s] > 1e6) * 100:.1f} % of ions",
                  transform=ax["c"].transAxes, ha="right", va="center",
                  fontsize=STYLE["annot_fontsize"])
-    ax["c"].set_xlabel("last recorded evaporation event [ps]")
-    ax["c"].set_ylabel("cumulative fraction of ions")
+    ax["c"].set_xlabel(r"Last recorded evaporation event $t_\mathrm{last}$ / ps")
+    ax["c"].set_ylabel("Cumulative fraction of ions")
     ax["b"].legend(fontsize=STYLE["legend_fontsize"], frameon=False, loc="lower right")
     for k, a in ax.items():
-        _style_ax(a)
-        _letter(a, k)
+        style_axis(a)
+        panel_letter(a, k)
     return fig
 
 
@@ -732,60 +731,63 @@ def plot_exit(r: LawRead, law: str) -> plt.Figure:
     """(a) n at droplet exit vs n at detection (scored ions, both bars on
     the same normalisation) with the mean-n readout at exit / handover /
     detection; (b) per-ion n_exit vs n_det; (c) r - R at shed."""
-    fig, ax = plt.subplot_mosaic([["a", "a"], ["b", "c"]], figsize=(TEXTWIDTH_IN, 4.8),
+    fig, ax = plt.subplot_mosaic([["a", "a"], ["b", "c"]],
+                                 figsize=(TEXTWIDTH_IN, STYLE["fig_height_in"]),
                                  constrained_layout=True)
     s = r.scored
     rows = hist_rows(law, r)
     n = np.array([x["n"] for x in rows])
-    fe = np.array([x["frac_at_exit"] for x in rows])
-    fd = np.array([x["frac_at_detection"] for x in rows])
+    fe = np.array([x["frac_at_exit"] for x in rows]) * 100      # percent of scored ions
+    fd = np.array([x["frac_at_detection"] for x in rows]) * 100
     ax["a"].bar(n - 0.2, fd, width=0.4, color=STYLE["sim"], label=f"{law}, at detection")
-    ax["a"].bar(n + 0.2, fe, width=0.4, color=STYLE["sim"], alpha=0.35,
+    ax["a"].bar(n + 0.2, fe, width=0.4, color=STYLE["sim_exit"],
                 label=f"{law}, at droplet exit")
-    ax["a"].set_xlabel("shell size n")
-    ax["a"].set_ylabel("fraction of scored ions")
+    ax["a"].set_xlabel(r"Shell size $n$")
+    ax["a"].set_ylabel("Fraction of scored ions / %")
     ax["a"].set_xlim(-0.7, n.max() + 0.7)
+    ax["a"].set_ylim(0, 1.3 * max(fe.max(), fd.max()))      # headroom for legend + readout
     ax["a"].xaxis.set_major_locator(MaxNLocator(integer=True))
-    lines = ((f"exit (median {np.median(r.t_exit_ps[s]):.1f} ps)", r.n_exit[s].mean()),
-             ("handover (500 ps)", r.n_h[s].mean()),
-             ("detection (8.53 µs)", r.n_det[s].mean()))
-    width = max(len(lab) for lab, _ in lines)
-    readout = "mean n\n" + "\n".join(f"{lab:<{width}}  {val:5.2f}" for lab, val in lines)
+    readout = "\n".join((
+        rf"$\bar{{n}}_\mathrm{{exit}} = {r.n_exit[s].mean():.2f}$"
+        f"  (median exit {np.median(r.t_exit_ps[s]):.1f} ps)",
+        rf"$\bar{{n}}_\mathrm{{handover}} = {r.n_h[s].mean():.2f}$  (500 ps)",
+        rf"$\bar{{n}}_\mathrm{{det}} = {r.n_det[s].mean():.2f}$  (8.53 µs)",
+    ))
     ax["a"].text(0.36, 0.95, readout, transform=ax["a"].transAxes, va="top",
-                 family="monospace", fontsize=STYLE["annot_fontsize"])
+                 linespacing=1.5, fontsize=STYLE["annot_fontsize"])
     ax["a"].legend(fontsize=STYLE["legend_fontsize"], frameon=False, loc="upper right")
 
     hi = int(max(r.n_exit[s].max(), r.n_det[s].max())) + 1
     h, xe, ye = np.histogram2d(r.n_exit[s], r.n_det[s], bins=[np.arange(-0.5, hi + 0.5)] * 2)
     h = np.where(h > 0, h, np.nan)
-    im = ax["b"].pcolormesh(xe, ye, h.T, cmap="Reds", norm=matplotlib.colors.LogNorm())
+    im = ax["b"].pcolormesh(xe, ye, h.T, cmap=STYLE["cmap"],norm=matplotlib.colors.LogNorm())
     ax["b"].plot([0, hi], [0, hi], color="0.5", lw=0.8, ls=":")
     cb = fig.colorbar(im, cax=ax["b"].inset_axes([1.03, 0.0, 0.05, 1.0]))
-    cb.set_label("ions", fontsize=STYLE["label_fontsize"])
+    cb.set_label("Ions", fontsize=STYLE["label_fontsize"])
     cb.ax.tick_params(labelsize=STYLE["tick_fontsize"])
-    ax["b"].set_xlabel("n at droplet exit")
-    ax["b"].set_ylabel("n at detection")
+    ax["b"].set_xlabel(r"Shell size at droplet exit $n_\mathrm{exit}$")
+    ax["b"].set_ylabel(r"Shell size at detection $n_\mathrm{det}$")
 
     d = r.shed_depth_A[np.isfinite(r.shed_depth_A)]
     bins = np.arange(np.floor(d.min() / 2) * 2, min(d.max(), DEPTH_XMAX_A) + 2, 2.0)
-    ax["c"].hist(d, bins=bins, color=STYLE["sim"], alpha=0.8, lw=0,
+    ax["c"].hist(d, bins=bins, color=STYLE["sim"], lw=0,
                  weights=np.full(d.size, 1.0 / r.shed_depth_A.size))
     ax["c"].axvline(0, color="k", lw=0.8)
     for g in DEPTH_MARKS_A:
         ax["c"].axvline(g, color="k", lw=0.8, ls=":")
     ax["c"].text(0.97, 0.95,
-                 f"before exit: {np.mean(r.shed_before_exit) * 100:.1f} %\n"
-                 + "\n".join(f"$r-R$ > {g:g} Å: {np.mean(r.shed_depth_A > g) * 100:.1f} %"
+                 f"Before exit: {np.mean(r.shed_before_exit) * 100:.1f} %\n"
+                 + "\n".join(f"$r-R > {g:g}$ Å: {np.mean(r.shed_depth_A > g) * 100:.1f} %"
                              for g in DEPTH_MARKS_A)
-                 + f"\n$r-R$ > {DEPTH_XMAX_A:g} Å: "
+                 + f"\n$r-R > {DEPTH_XMAX_A:g}$ Å: "
                  f"{np.mean(r.shed_depth_A > DEPTH_XMAX_A) * 100:.1f} %\n(not shown)",
                  transform=ax["c"].transAxes, ha="right", va="top",
                  fontsize=STYLE["annot_fontsize"])
-    ax["c"].set_xlabel(r"$r-R$ at shed [Å]")
-    ax["c"].set_ylabel("fraction of all sheds per bin")
+    ax["c"].set_xlabel(r"$r-R$ at shed / Å")
+    ax["c"].set_ylabel("Fraction of all sheds per bin")
     for k, a in ax.items():
-        _style_ax(a)
-        _letter(a, k)
+        style_axis(a)
+        panel_letter(a, k)
     return fig
 
 
@@ -825,12 +827,13 @@ def main() -> int:
     cfg = RunDirectory(thesis_run_dir(FIG_LAW, next(iter(MEMBER_SEEDS)))).load_cfg()
     t_h, t_det = float(cfg.ion_simulation_time), float(cfg.detection_time_ps)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for stem, fig in (("g13_shed_timing", plot_timing(reads[FIG_LAW], t_h, t_det)),
-                      ("g13_exit_vs_detection", plot_exit(reads[FIG_LAW], FIG_LAW))):
-        for ext in FORMATS:
-            path = OUT_DIR / f"{stem}.{ext}"
-            fig.savefig(path, dpi=DPI)
-            print(f"figure -> {path}")
+    with plt.rc_context(FIG_RC):
+        for stem, fig in (("g13_shed_timing", plot_timing(reads[FIG_LAW], t_h, t_det)),
+                          ("g13_exit_vs_detection", plot_exit(reads[FIG_LAW], FIG_LAW))):
+            for ext in FORMATS:
+                path = OUT_DIR / f"{stem}.{ext}"
+                fig.savefig(path, dpi=DPI)
+                print(f"figure -> {path}")
     if SHOW_FIGURE:
         plt.show()
     return 0

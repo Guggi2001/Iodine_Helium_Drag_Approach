@@ -65,9 +65,9 @@ def test_renders_two_panels_without_a_run_directory(script_module, ked_ref):
         # Left panel carries the experiment series and both correlated
         # bands -- and no simulation series at all.
         labels = fig.axes[0].get_legend_handles_labels()[1]
-        assert any("experiment" in lbl for lbl in labels)
+        assert any("experiment" in lbl.lower() for lbl in labels)
         assert sum("band (correlated)" in lbl for lbl in labels) == 2
-        assert not any("simulation" in lbl for lbl in labels)
+        assert not any("simulation" in lbl.lower() for lbl in labels)
     finally:
         plt.close(fig)
 

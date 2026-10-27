@@ -47,6 +47,7 @@ from summary_sections import (  # noqa: E402
     DETECTED_KE_N_MIN,
     IHE_KED_MEAN_ENERGY_SPLIT_N,
 )
+from thesis_style import EXP_COLOR, FIG_RC, FONT, TEXTWIDTH_IN, style_axis  # noqa: E402
 
 # =============================================================================
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
@@ -69,11 +70,11 @@ N_MIN: int = DETECTED_KE_N_MIN
 # Draw the n = 1 median-KE marker (I77 operative anchor) alongside <E>.
 SHOW_MEDIAN_ANCHOR: bool = True
 
-# Figure title; set to None for an untitled figure (thesis captions often
-# carry the title instead).
-TITLE: str | None = r"Experimental I$^+$He$_n$ mean kinetic energy (ihe_ked reference)"
+# Figure title; None = untitled (the thesis caption carries the title).
+TITLE: str | None = None
 
-FIGSIZE: tuple[float, float] = (12.5, 5.0)
+# Thesis text width (thesis_style), so the fonts print at their set size.
+FIGSIZE: tuple[float, float] = (TEXTWIDTH_IN, 3.0)
 DPI: int = 300
 # =============================================================================
 
@@ -85,7 +86,7 @@ def build_reference_mean_energy_figure(
     split: int = IHE_KED_MEAN_ENERGY_SPLIT_N,
     show_median_anchor: bool = True,
     title: str | None = None,
-    figsize: tuple[float, float] = (12.5, 5.0),
+    figsize: tuple[float, float] = FIGSIZE,
 ) -> plt.Figure:
     """Experiment-only split-panel mean-KE figure of the ihe_ked reference.
 
@@ -125,8 +126,8 @@ def build_reference_mean_energy_figure(
 
     fig, axes = plt.subplots(1, 2, figsize=figsize, constrained_layout=True)
     panel_specs = (
-        (axes[0], ked_ref.n < split, f"n = {n_min}–{split - 1}", True),
-        (axes[1], ked_ref.n >= split, f"n = {split}–{n_max}", False),
+        (axes[0], ked_ref.n < split, f"$n$ = {n_min}–{split - 1}", True),
+        (axes[1], ked_ref.n >= split, f"$n$ = {split}–{n_max}", False),
     )
     for ax, subset, panel_title, show_legend in panel_specs:
         subset = subset & selected
@@ -134,53 +135,55 @@ def build_reference_mean_energy_figure(
             ax.set_axis_off()
             continue
         for frac, label, alpha in (
-            (ked_ref.calib_syst_frac, "calibration band (correlated)", 0.20),
-            (ked_ref.condition_syst_frac, "condition band (correlated)", 0.12),
+            (ked_ref.calib_syst_frac, "Calibration band (correlated)", 0.20),
+            (ked_ref.condition_syst_frac, "Condition band (correlated)", 0.12),
         ):
             ax.fill_between(
                 ked_ref.n[subset],
                 mean[subset] * (1.0 - frac[subset]),
                 mean[subset] * (1.0 + frac[subset]),
-                color="tab:blue", alpha=alpha, linewidth=0, label=label,
+                color=EXP_COLOR, alpha=alpha, linewidth=0, label=label,
             )
         ax.errorbar(
             ked_ref.n[subset], mean[subset],
             yerr=ked_ref.point_err_eV[subset], fmt="o",
-            color="tab:blue", markersize=4, capsize=2,
-            label=r"experiment $\langle E\rangle$ (stat $\oplus$ sys)")
+            color=EXP_COLOR, markersize=4, capsize=2,
+            label=r"Experiment $\bar{E}$ (stat $\oplus$ sys)")
         anchor_hit = subset & (ked_ref.n == 1)
         if show_median_anchor and np.any(anchor_hit):
             ax.plot(ked_ref.n[anchor_hit], ked_ref.median_KE_eV[anchor_hit],
-                    "D", markersize=7, markerfacecolor="none",
-                    markeredgecolor="tab:purple", markeredgewidth=1.5,
-                    label="n = 1 median anchor (I77, operative)")
-        ax.set(title=panel_title, xlabel="n (attached He atoms)",
-               ylabel="mean kinetic energy / eV")
+                    "D", markersize=6, markerfacecolor="none",
+                    markeredgecolor=EXP_COLOR, markeredgewidth=1.3,
+                    label="Experiment median ($n = 1$)")
+        ax.set(xlabel=r"Shell size $n$", ylabel="Mean kinetic energy / eV")
+        ax.set_title(panel_title, fontsize=FONT["title_fontsize"])
         # n is an integer count -- suppress matplotlib's fractional ticks
         # (visible on the narrow left panel, where only a few n are shown).
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        style_axis(ax)
         if show_legend:
-            ax.legend(frameon=False, fontsize=8)
+            ax.legend(frameon=False, fontsize=FONT["legend_fontsize"], loc="upper right")
     if title is not None:
-        fig.suptitle(title, fontsize=11)
+        fig.suptitle(title, fontsize=FONT["title_fontsize"])
     return fig
 
 
 def main() -> None:
     ked_ref = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
-    fig = build_reference_mean_energy_figure(
-        ked_ref,
-        n_min=N_MIN,
-        show_median_anchor=SHOW_MEDIAN_ANCHOR,
-        title=TITLE,
-        figsize=FIGSIZE,
-    )
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     written = []
-    for suffix in (".pdf", ".png"):
-        out_path = OUT_DIR / f"{OUT_BASENAME}{suffix}"
-        fig.savefig(out_path, dpi=DPI)
-        written.append(out_path)
+    with plt.rc_context(FIG_RC):                 # thesis_style font (Palatino)
+        fig = build_reference_mean_energy_figure(
+            ked_ref,
+            n_min=N_MIN,
+            show_median_anchor=SHOW_MEDIAN_ANCHOR,
+            title=TITLE,
+            figsize=FIGSIZE,
+        )
+        for suffix in (".pdf", ".png"):
+            out_path = OUT_DIR / f"{OUT_BASENAME}{suffix}"
+            fig.savefig(out_path, dpi=DPI)
+            written.append(out_path)
     plt.close(fig)
     print(f"reference: {ked_ref.source_path}")
     print(f"fragments shown: n = {N_MIN}..{int(ked_ref.n.max())}")
