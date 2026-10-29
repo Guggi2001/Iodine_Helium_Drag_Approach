@@ -96,7 +96,9 @@ log (`drag_migration_log_tier2.md`).
 
 15. **G11.4 steps 2–3 executed (2026-10-09/10):** Tier-0 ridge refit at
     m = I⁺ + 21 He + 9 Å exit bound — B2 / A5 pass unchanged (step 4
-    re-landing dropped); h405 fails the 9 Å bound (−1.21 Å/ps). Tier-0
+    re-landing dropped); h405 fails the 9 Å bound (−1.15 Å/ps
+    re-landed at v_c 5.40 / 3.5 Å / m = 21, 2026-10-22; −1.21 as
+    fitted at v_c 5.5 / 14.2 Å / m = 19). Tier-0
     figures: `tier0_drag_comparison.py` (thesis trace + R(t), B2 at
     m = 21) and `tier0_thesis_figure.py` (B2 / B3 / h405). The lq bundle
     `srho3p5A18A_linear_quadratic` now carries B2. Records: G11.4 status.
@@ -1721,7 +1723,11 @@ Steps 3 and 5 can run in parallel with 4. Code for 2, 4, 5 requires
   (production coefficients, m = 21, 3.5 Å gate) and h405 (capped cubic,
   bundle m = 19, 14.2 Å gate); anchors bit-exact (B2 / A5 check JSONs,
   h405 bundle per_case RMSE). 18 Å RMSE 0.118 / 0.118 / 0.134 (all
-  pass). **9 Å exit margin +0.82 / +0.74 / −1.21 Å/ps: h405 fails** — it
+  pass). **9 Å exit margin +0.82 / +0.74 / −1.21 Å/ps: h405 fails**
+  (**re-run 2026-10-22, `ff06e0c`:** h405 re-landed at v_c 5.40,
+  3.5 Å gate, m = 21 He — 18 Å RMSE 0.127, 9 Å margin **−1.15 Å/ps**,
+  still fails; b / E_bind from the 14.2 Å bundle, not refit;
+  `tier0_B2_B3_h405_scores.csv`) — it
   over-dissipates and tracks the transverse atom 2 (same reading as the
   cubic in G4.11); the lq laws under-dissipate vs atom 1 (one-sided bound).
   **Revised (user, 2026-10-09):** A5 replaced by B3 in the figure

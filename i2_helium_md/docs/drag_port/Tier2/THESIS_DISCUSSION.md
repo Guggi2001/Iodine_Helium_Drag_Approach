@@ -62,7 +62,8 @@ Outcome and G11.4 status. Tier 1 does not appear (retired, G11.3).
    experiment selects depends on the droplet description (raw → 2.0,
    `post_pickup` → 1.6). (b) A differently shaped law, h405 (capped
    cubic, v_c 5.5), lands comparably (W₁ 0.755, KE₁ 0.640, midHot 0.948)
-   but fails the 9 Å bound (−1.21 Å/ps). Neither TDDFT nor the detected
+   but fails the 9 Å bound (−1.15 Å/ps re-landed: v_c 5.40, 3.5 Å
+   gate, m = 21 He; −1.21 as fitted: v_c 5.5, 14.2 Å, m = 19). Neither TDDFT nor the detected
    I⁺(He)ₙ data identify a unique drag function in He nanodroplets.
    Caveat: h405 is not a controlled A/B partner (gate 14.2 Å, τ 4.4 ps,
    bundle fitted at the old gate).
@@ -492,6 +493,24 @@ G11.3); what remains is model scope.
 | extraction | sensitivity of the fitted law to the fit mass | 19 → 21 He: a −1.4 to −2.3 % per c, E_bind +0.0004 eV, 9 Å margin −0.00 to −0.04 Å/ps; B2 / A5 pass unchanged | G11.4 step 2, D0 §1.G4.12 |
 | transfer | fixed-mass law under production's variable mass | exact at birth (n₀ = 21 = fit mass); afterwards rests on the mass-agnostic force law — **stated assumption:** the drag force does not depend on the shell size n (untestable: no small-n TDDFT trace) | G11.2 (3) |
 | initial shell | ions born bare (n₀ = 0) | below (outlook) | G8, D0 §1.G8 |
+
+**Full-shell start (JUSTIFICATION; added 2026-10-27).** Ionization
+occurs at the ground-state geometry, where HeDFT shows a well-defined
+first solvation shell around the neutral (García-Alfonso et al., I₂
+working notes). The single-atom shell counts, ≈20 He for I and 21 for
+the relaxed I⁺, motivate starting each ion at the full I⁺ first shell,
+n₀ = 21. How the molecular shell divides between the two fragments is
+not computed, so n₀ = 21 is an upper estimate. Caveats:
+- single pulse, R₀ = 2.666 Å: no neutral flight before ionization, so
+  the ion inherits the equilibrium neutral shell (the TDDFT ion run
+  instead ionizes after A-state flight to 9 Å, effectively pump–probe);
+- the match is in count, not structure: the neutral shell is looser
+  (first density peak ≈0.055 Å⁻³ for I vs ≈0.165 Å⁻³ for I⁺) and is
+  compressed after ionization;
+- at 2.666 Å the shell surrounds the molecule, not each atom; 21 per
+  ion = 42 He at birth likely exceeds the uncounted I₂ first shell.
+The extraction row above bounds the consequence: the drag fit is
+insensitive to the 19 ↔ 21 fit mass (G11.4).
 
 **Bare start (OUTLOOK).** The drag law is extracted for one complex
 only, I⁺ + 21 He. G8 applies it unchanged to ions born bare (n₀ = 0,
