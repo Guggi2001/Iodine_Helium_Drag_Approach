@@ -59,7 +59,7 @@ them; central values stay the reference columns.
 
 Writes ``data/figures/thesis_tier2/g6_chord_map_b2_only.jpg`` and
 ``g6_chord_map_with_h405.jpg`` (not committed). Colours follow
-``tier2_b2_thesis_figure`` (experiment blue, B2 red).
+``thesis_style`` (experiment crimson, B2 / h405 viridis).
 
 Usage::
 
@@ -112,6 +112,7 @@ from scripts.post_processing.tier2_detfix_postpickup_table import (  # noqa: E40
     emission_chords,
 )
 from scripts.post_processing.thesis_style import (  # noqa: E402
+    THESIS_NAMES,
     CONTRAST_COLOR,
     EXP_COLOR,
     FIG_RC,
@@ -144,7 +145,7 @@ STYLE = {"B2": dict(color=SIM_COLOR, ls="-"),
 BARE_COLOR = VIRIDIS[0.00]
 N1_COLOR = VIRIDIS[1.00]                               # on top of the B2 cloud
 FIG_HEIGHT_IN = 5.4
-NAMES = {"B2": "B2", "h405": "Re-landed h405"}
+NAMES = {k: THESIS_NAMES[k] for k in ("B2", "h405")}   # printed names (B2 -> LQ, h405 -> CC5.4)
 VARIANTS = (("g6_chord_map_b2_only", False), ("g6_chord_map_with_h405", True))
 
 
@@ -424,13 +425,13 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
     line = dict(marker="o", ms=3, lw=1.3)
 
     for a in (axn, axk, axc):
-        a.axvspan(*win, color="0.92", zorder=0, lw=0, label="B2 $n = 1$ window (q05–q95)")
+        a.axvspan(*win, color="0.92", zorder=0, lw=0, label=f"{NAMES['B2']} $n = 1$ window (q05–q95)")
     jit = rng.uniform(-0.25, 0.25, idx.size)
     axn.scatter(b2["chord"][idx][~isS], b2["n_scorer"][idx][~isS] + jit[~isS],
                 s=2, alpha=0.25, color=STYLE["B2"]["color"], lw=0, rasterized=True)
     axn.scatter(b2["chord"][idx][isS], b2["n_scorer"][idx][isS] + jit[isS], s=2,
                 alpha=0.35, color=BARE_COLOR, lw=0, rasterized=True,
-                label=r"B2 bare $\mathrm{I}^+$ (shell boiled off outside)")
+                label=NAMES["B2"] + r" bare $\mathrm{I}^+$ (shell boiled off outside)")
     for arm in arms:
         x, y, _ = binned[arm]
         axn.plot(x, y, **line, **STYLE[arm], label=f"{NAMES[arm]} binned mean")
@@ -441,9 +442,9 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
                 color=BARE_COLOR, lw=0, rasterized=True)
     rest = ~is1 & ~isS
     axk.scatter(b2["chord"][idx][rest], b2["ke"][idx][rest], s=2, alpha=0.2,
-                color=STYLE["B2"]["color"], lw=0, rasterized=True, label=r"B2 ions, $n \geq 2$")
+                color=STYLE["B2"]["color"], lw=0, rasterized=True, label=NAMES["B2"] + r" ions, $n \geq 2$")
     axk.scatter(b2["chord"][idx][is1], b2["ke"][idx][is1], s=3, alpha=0.6,
-                color=N1_COLOR, lw=0, rasterized=True, label="B2 ions, $n = 1$")
+                color=N1_COLOR, lw=0, rasterized=True, label=f"{NAMES['B2']} ions, $n = 1$")
     for arm in arms:
         x, _, y = binned[arm]
         axk.plot(x, y, **line, **STYLE[arm])
@@ -456,7 +457,7 @@ def _draw(b2: dict[str, np.ndarray], h405: dict[str, np.ndarray] | None,
 
     edges = np.arange(lo, hi + HIST_BIN_A, HIST_BIN_A)
     axc.hist(b2["chord"], bins=edges, density=True, histtype="step", lw=1.2,
-             **STYLE["B2"], label=f"B2 chord distribution ($N = {b2['chord'].size}$)")
+             **STYLE["B2"], label=f"{NAMES['B2']} chord distribution ($N = {b2['chord'].size}$)")
     if h405 is not None:   # coincides with B2 bin for bin: dash-dot keeps B2 visible
         axc.hist(h405["chord"], bins=edges, density=True, histtype="step", lw=1.2,
                  **{**STYLE["h405"], "ls": "-."},

@@ -130,7 +130,8 @@ FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
 SHOW_FIGURE: bool = False
 from scripts.post_processing.thesis_style import (  # noqa: E402  (shared thesis style)
-    FIG_RC, FONT, LIT_COLOR, SIM_COLOR, TEXTWIDTH_IN, VIRIDIS, panel_letter, style_axis,
+    FIG_RC, FONT, LIT_COLOR, SIM_COLOR, TEXTWIDTH_IN, THESIS_NAMES, VIRIDIS, panel_letter,
+    style_axis,
 )
 
 STYLE: dict = {                          # data colours: thesis_style.VIRIDIS samples
@@ -739,9 +740,10 @@ def plot_exit(r: LawRead, law: str) -> plt.Figure:
     n = np.array([x["n"] for x in rows])
     fe = np.array([x["frac_at_exit"] for x in rows]) * 100      # percent of scored ions
     fd = np.array([x["frac_at_detection"] for x in rows]) * 100
-    ax["a"].bar(n - 0.2, fd, width=0.4, color=STYLE["sim"], label=f"{law}, at detection")
+    name = THESIS_NAMES[law]                                     # printed name (B2 -> LQ)
+    ax["a"].bar(n - 0.2, fd, width=0.4, color=STYLE["sim"], label=f"{name}, at detection")
     ax["a"].bar(n + 0.2, fe, width=0.4, color=STYLE["sim_exit"],
-                label=f"{law}, at droplet exit")
+                label=f"{name}, at droplet exit")
     ax["a"].set_xlabel(r"Shell size $n$")
     ax["a"].set_ylabel("Fraction of scored ions / %")
     ax["a"].set_xlim(-0.7, n.max() + 0.7)

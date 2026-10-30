@@ -26,7 +26,17 @@ VIRIDIS: dict[float, str] = {             # viridis(x) as hex
 }
 SIM_COLOR: str = VIRIDIS[0.30]            # production law B2 (simulation)
 CONTRAST_COLOR: str = VIRIDIS[0.70]       # contrast law h405 / second simulation series
+B3_COLOR: str = VIRIDIS[0.50]             # effective high-tail variant B3 (between B2 and h405)
 EXP_COLOR: str = "#b2182b"                # experiment: crimson, outside viridis
+
+# Law names as printed in the thesis figures. Keys are the repo / file-name
+# labels (B2, B3, h405 stay in code, run dirs and file stems; they are
+# historical); values are what a reader sees.
+THESIS_NAMES: dict[str, str] = {
+    "B2": "LQ",                           # production law: linear-quadratic ridge, c 1.6
+    "B3": r"LQ$_\mathrm{eff}$",           # effective high-tail variant of LQ
+    "h405": r"CC$_{5.4}$",                # re-landed contrast law: capped cubic, v_c 5.40 A/ps
+}
 LIT_COLOR: str = "0.55"                   # literature marks, shaded windows
 
 FONT: dict[str, float] = {

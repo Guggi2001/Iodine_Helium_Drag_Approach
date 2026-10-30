@@ -82,18 +82,20 @@ SHOW_FIGURE: bool = False
 MPLSTYLE: Path | None = None     # optional .mplstyle applied to every figure
 
 from scripts.post_processing.thesis_style import (  # noqa: E402  (shared thesis style)
-    EXP_COLOR, FIG_RC, FONT, SIM_COLOR, TEXTWIDTH_CM, TEXTWIDTH_IN, VIRIDIS,
+    EXP_COLOR, FIG_RC, FONT, SIM_COLOR, TEXTWIDTH_CM, TEXTWIDTH_IN, THESIS_NAMES, VIRIDIS,
 )
 
 # Shared defaults; each FIG_* dict below overrides key by key.
 COMMON_STYLE: dict = {
     "exp": dict(color=EXP_COLOR),        # thesis_style: experiment warm accent,
     "sim": dict(color=SIM_COLOR),        # simulation viridis blue
+    "sim_label": THESIS_NAMES["B2"],     # law name in the simulation legend entries
     "band": dict(color="0.80"),          # landing-band shading
     "band_shade_alpha": 0.25,
     **FONT,
     "panel_letters": True,
     "panel_letter_fmt": "({})",
+    "panel_letter_start": "a",           # first letter (a later subfigure continues the run)
     "legend_frameon": False,
 }
 
@@ -281,7 +283,7 @@ def _panel_letters(axes, st: dict) -> None:
     if not st["panel_letters"]:
         return
     for i, ax in enumerate(axes):
-        ax.text(0.0, 1.02, st["panel_letter_fmt"].format(chr(ord("a") + i)),
+        ax.text(0.0, 1.02, st["panel_letter_fmt"].format(chr(ord(st["panel_letter_start"]) + i)),
                 transform=ax.transAxes, ha="left", va="bottom",
                 fontsize=st["label_fontsize"], fontweight="bold")
 
@@ -486,7 +488,7 @@ def check_anchor(values: dict[str, float], csv_path: Path, label: str,
     bad = [f"{k}: figure {v:.4f} vs committed {float(row[k]):.4f}"
            for k, v in values.items() if round(float(v), 4) != round(float(row[k]), 4)]
     if bad:
-        raise ValueError("anchor mismatch vs committed B2 row:\n  " + "\n  ".join(bad))
+        raise ValueError(f"anchor mismatch vs committed {label!r} row:\n  " + "\n  ".join(bad))
 
 
 # =============================================================================
@@ -516,11 +518,12 @@ def draw_size_scored(ax, d: SizeData, st: dict) -> None:
 
 
 def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
-    """Solvated branch, experiment vs B2, side-by-side bars."""
+    """Solvated branch, experiment vs the simulation (``sim_label``), side-by-side bars."""
     w = st["bar_width_pair"]
     ax.bar(d.n_ref_solv - w / 2, 100.0 * d.frac_ref_solv, width=w, label="Experiment",
            **st["exp"])
-    ax.bar(d.n_sim_solv + w / 2, 100.0 * d.frac_sim_solv, width=w, label="B2", **st["sim"])
+    ax.bar(d.n_sim_solv + w / 2, 100.0 * d.frac_sim_solv, width=w, label=st["sim_label"],
+           **st["sim"])
     if st["annot_solvated"]:
         _annot(ax, rf"$n_1 = {d.sim_n1:.3f}$ (exp {d.ref_n1:.3f})" "\n"
                    rf"$W_1 = {d.w1_solvated:.3f}$ bins" "\n"
@@ -564,7 +567,8 @@ def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
     ok = in_panel & d.scored_mask
     if np.any(ok):
         ax.errorbar(d.n[ok], d.mean_eV[ok], yerr=d.se_eV[ok], fmt="s", linestyle="none",
-                    markersize=4, capsize=2, label=r"Simulation (B2) $\bar{E}$",
+                    markersize=4, capsize=2,
+                    label=rf"Simulation ({st['sim_label']}) $\bar{{E}}$",
                     **st["sim"])
     thin = in_panel & ~d.scored_mask
     if st["show_thin_bins"] and np.any(thin):
@@ -643,7 +647,8 @@ def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
     ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="Experiment (smoothed)",
             **st["exp"])
     if d.sim_trace is not None:
-        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4, label="Simulation (B2)",
+        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4,
+                label=f"Simulation ({st['sim_label']})",
                 **st["sim"])
     else:
         ax.annotate("Simulation: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
