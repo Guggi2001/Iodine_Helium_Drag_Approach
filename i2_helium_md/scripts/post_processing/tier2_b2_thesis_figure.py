@@ -609,13 +609,16 @@ def draw_size_solvated(ax, d: SizeData, st: dict) -> None:
 
 
 def draw_ke_mean(ax, d: KEData, st: dict, n_lo: int, n_hi: int, *,
-                 show_legend: bool, show_chi2: bool) -> None:
+                 show_legend: bool, show_chi2: bool,
+                 n_min: int = DETECTED_KE_N_MIN) -> None:
     """Mean KE vs n over ``n_lo..n_hi`` -- the ``_section_detected_ked_mean_energy``
     panel: correlated bands as envelopes, per-point stat (+) sys bars, n = 1
-    median anchor, scored sim bins (chi^2 min-count) with SE bars."""
+    median anchor, scored sim bins (chi^2 min-count) with SE bars. The
+    experiment starts at ``n_min`` (default the scorer's n = 1; 0 adds the
+    bare-ion row, a display quantity)."""
     ref = d.ref
     n_all = np.asarray(ref.n)
-    sel = (n_all >= max(n_lo, DETECTED_KE_N_MIN)) & (n_all <= n_hi)
+    sel = (n_all >= max(n_lo, n_min)) & (n_all <= n_hi)
     n_ref = n_all[sel]
     mean = np.asarray(ref.mean_KE_eV)[sel]
     for show, (b_lo, b_hi) in ((st["show_midhot_band"], MIDHOT_BAND),

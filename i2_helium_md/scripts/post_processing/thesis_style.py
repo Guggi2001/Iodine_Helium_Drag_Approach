@@ -27,6 +27,7 @@ VIRIDIS: dict[float, str] = {             # viridis(x) as hex
 SIM_COLOR: str = VIRIDIS[0.30]            # production law B2 (simulation)
 CONTRAST_COLOR: str = VIRIDIS[0.70]       # contrast law h405 / second simulation series
 B3_COLOR: str = VIRIDIS[0.50]             # effective high-tail variant B3 (between B2 and h405)
+LEGACY_COLOR: str = VIRIDIS[0.10]         # legacy hard-sphere model (thesis_legacy figures)
 EXP_COLOR: str = "#b2182b"                # experiment: crimson, outside viridis
 
 # Law names as printed in the thesis figures. Keys are the repo / file-name
