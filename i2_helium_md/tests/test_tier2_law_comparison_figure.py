@@ -43,7 +43,7 @@ def laws(mod, inputs):  # noqa: F811
     size = mod.size_data(inputs["read"], inputs["abundance"])
     ke = mod.ke_data(inputs["read"], inputs["ked_ref"])
     return [mod.LawData(key=key, name=name, color=color, marker=marker, dash=dash, slot=slot,
-                        size=size, ke=ke, view=inputs["view"])
+                        size=size, ke=ke, view=inputs["view"], read=inputs["read"])
             for key, (_, name, color, marker, dash, slot) in mod.LAWS.items()]
 
 
@@ -76,10 +76,56 @@ class TestSettings:
         assert mod._short_label(label, mod.FIG_L_2) == short
 
     def test_variants_lead_with_b2_at_slot_zero(self, mod):
-        assert mod.VARIANTS == {"h405": ("B2", "h405"), "h405_b3": ("B2", "B3", "h405")}
+        assert mod.VARIANTS == {"lq": ("B2",), "h405": ("B2", "h405"),
+                                "h405_b3": ("B2", "B3", "h405")}
         for keys in mod.VARIANTS.values():
             assert keys[0] == "B2" and mod.LAWS["B2"][5] == 0
             assert set(keys) <= set(mod.LAWS)
+
+    def test_figure_variants(self, mod):
+        # the n = 0 figures are LQ-only; L-1 to L-3 keep the law pairs
+        assert set(mod.FIGURE_VARIANTS) == set(mod.FIGURES)
+        for fig_key, suffixes in mod.FIGURE_VARIANTS.items():
+            assert set(suffixes) <= set(mod.VARIANTS)
+            if fig_key in ("l_4", "l_5"):
+                assert suffixes == ("lq",)
+            else:
+                assert "lq" not in suffixes
+
+
+class TestBareIonInputs:
+    def _cfg(self, tmp_path, scale: float) -> Path:
+        path = tmp_path / "cfg.json"
+        path.write_text(f'{{"R0_GS_angstrom": 2.666, "E_coulomb_scale": {scale}}}',
+                        encoding="utf-8")
+        return path
+
+    def test_benchmark_matches_the_documented_value(self, mod, tmp_path):
+        # pair budget e^2/(4 pi eps0 2.666 A) = 5.4015 eV, half per fragment
+        v = mod.coulomb_benchmarks_eV(self._cfg(tmp_path, 1.0))
+        assert v == {"symmetric": pytest.approx(5.4015 / 2, abs=1e-3)}
+        mod.check_benchmarks(v)                       # 2.70 to 2 dp
+
+    def test_benchmark_guard_raises_off_the_production_budget(self, mod, tmp_path):
+        with pytest.raises(ValueError, match="benchmark mismatch"):
+            mod.check_benchmarks(mod.coulomb_benchmarks_eV(self._cfg(tmp_path, 0.8)))
+
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    def test_ke_moments_are_the_scored_mean_and_median(self, mod, inputs, n):  # noqa: F811
+        read = inputs["read"]
+        sel = read.ke_scored_eV[read.n_scored == n]
+        mean, median = mod.ke_moments(read, n)
+        assert mean == pytest.approx(sel.mean(), rel=1e-12)
+        assert median == pytest.approx(np.median(sel), rel=1e-12)
+
+    def test_exp_moments_come_from_the_reference(self, mod, inputs):  # noqa: F811
+        # current v2 reference (IHe_KED_reference.csv), not the v1 log numbers
+        assert mod.exp_ke_moments(inputs["ked_ref"], 0) == pytest.approx((3.59357, 3.63925))
+        assert mod.exp_ke_moments(inputs["ked_ref"], 1) == pytest.approx((1.19751, 1.05270))
+
+    def test_ke_moments_raise_on_an_empty_bin(self, mod, inputs):  # noqa: F811
+        with pytest.raises(ValueError, match="n = 19"):
+            mod.ke_moments(inputs["read"], 19)
 
 
 class TestBuilders:
@@ -135,5 +181,66 @@ class TestBuilders:
             t = mod.ked_traces(panels["h405"][0], "E", mod.FIG_B2_3["e_min_eV"])
             assert ax.get_xlim() == mod.FIG_B2_3["e_xlim_by_n"][1]
             np.testing.assert_array_equal(ax.lines[-1].get_xdata(), t.x_sim)
+        finally:
+            plt.close(fig)
+
+    def test_l_4_shows_bare_unrenormalised_beside_the_solvated_branch(self, mod, laws,
+                                                                      inputs):  # noqa: F811
+        fig = mod.build_l_4(laws, inputs["abundance"])
+        try:
+            bare_ax, solv_ax = fig.axes
+            ab = inputs["abundance"]
+            heights = sorted(round(p.get_height(), 9) for p in bare_ax.patches)
+            assert heights == sorted(round(100.0 * f, 9) for f in ab.ion_fraction)
+            hatched = [p for p in bare_ax.patches if p.get_hatch()]
+            assert len(hatched) == 1 and hatched[0].get_x() < 0 < hatched[0].get_x() + 1
+            assert bare_ax.get_xlim()[0] < 0 < solv_ax.get_xlim()[0]
+            assert solv_ax.get_yscale() == "linear"          # L-1 (a)
+            # per law: an open n = 0 marker, joined to n = 1 by a line
+            zero = [ln for ln in bare_ax.lines if list(ln.get_xdata()) == [0]]
+            joint = [ln for ln in bare_ax.lines if list(ln.get_xdata()) == [0, 1]]
+            assert len(zero) == len(joint) == len(laws)
+            assert any("not scored" in t.get_text() for t in bare_ax.texts)
+            assert _labels(fig)[0] == "Experiment"
+        finally:
+            plt.close(fig)
+
+    def _l5(self, mod, laws, inputs):  # noqa: F811
+        panels = {law.key: [mod.pv_data(law.view, IHE_KED_DIR, inputs["ked_ref"], n, "3d")
+                            for n in mod.FIG_L_5["n_values"]] for law in laws}
+        return mod.build_l_5(laws, panels, inputs["ked_ref"], {"symmetric": 2.7})
+
+    def test_l_5_benchmark_only_in_the_bare_panel(self, mod, laws, inputs):  # noqa: F811
+        fig = self._l5(mod, laws, inputs)
+        try:
+            def vlines(ax):
+                return {round(ln.get_xdata()[0], 2) for ln in ax.lines
+                        if ln.get_xdata()[0] == ln.get_xdata()[-1] and len(ln.get_xdata()) == 2}
+            a, b, c = fig.axes
+            assert 2.7 in vlines(a)
+            assert 2.7 not in (vlines(b) | vlines(c))
+            labels = _labels(fig)
+            assert "Mean" in labels and "Median" in labels
+            assert sum(lab.startswith("Symmetric") for lab in labels) == 1
+            assert [ax.get_xlim() for ax in fig.axes] == [
+                mod.FIG_L_5["e_xlim_by_n"][n] for n in mod.FIG_L_5["n_values"]]
+        finally:
+            plt.close(fig)
+
+    def test_l_5_benchmark_switch(self, mod, laws, inputs, monkeypatch):  # noqa: F811
+        monkeypatch.setitem(mod.FIG_L_5, "show_symmetric_line", False)
+        fig = self._l5(mod, laws, inputs)
+        try:
+            assert not any(lab.startswith("Symmetric") for lab in _labels(fig))
+        finally:
+            plt.close(fig)
+
+    @pytest.mark.parametrize("count,boxed", [(1, True), (3, False)])
+    def test_l_5_value_box_only_for_few_series(self, mod, laws, inputs, count,
+                                               boxed):  # noqa: F811
+        fig = self._l5(mod, laws[:count], inputs)
+        try:
+            for ax in fig.axes:
+                assert any(t.get_text().startswith("Mean / median") for t in ax.texts) == boxed
         finally:
             plt.close(fig)

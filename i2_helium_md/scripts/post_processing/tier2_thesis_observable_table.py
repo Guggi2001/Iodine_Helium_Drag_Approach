@@ -10,12 +10,14 @@ that are not columns of ``g13_decoupled_table.csv``:
 * per n = 1-20: solvated share f(n) (share of n among n >= 1) and mean KE(n)
   [eV] with the scored-ion count; KE is blank below the scorer's minimum bin
   count ``MIN_KE_BIN_COUNT``;
-* per law: bare I+ share of scored ions, solvated mean n (n >= 1), and the
-  reference KE1 / KE2 median and mode.
+* per law: bare I+ share of scored ions, solvated mean n (n >= 1), the
+  KE1 / KE2 median (reference: also the mode), and the bare-ion (n = 0)
+  mean / median KE [eV] -- a display quantity (n = 0 is not scored).
+  Simulated medians: ``np.median`` of the scored-ion KE at that n.
 
 Oracle (before anything is written): each law's f(1) and KE(1) reproduce the
 ``n1_solv`` / ``KE1_mean`` of its decoupled row in ``g13_decoupled_table.csv``
-to 4 dp.
+to 4 dp, and its KE1 / KE2 median the ``KE1_med`` / ``KE2_med`` columns.
 
 Output (commit with ``git add -f``):
 ``data/runs/h2b_forward_model/thesis_observables_per_n.csv`` and
@@ -85,6 +87,23 @@ def _check_oracle(per_n: list[dict[str, Any]]) -> None:
         raise RuntimeError("oracle vs g13_decoupled_table.csv FAILED: " + "; ".join(bad))
 
 
+def scored_ke_median(read, n: int) -> float:
+    """Median detected KE [eV] of the scored ions at ``n`` -- the
+    ``lowke_columns`` recipe behind the committed ``KE{n}_med`` columns."""
+    return float(np.median(np.asarray(read.ke_scored_eV)[np.asarray(read.n_scored) == n]))
+
+
+def _check_median_oracle(extra: list[dict[str, Any]]) -> None:
+    with SCORE_TABLE_CSV.open(newline="") as f:
+        scored = {r["label"]: r for r in csv.DictReader(f)}
+    bad = [f"{r['label']} KE{n}_med: {r[f'KE{n}_median_eV']:.4f} vs "
+           f"{float(scored[r['label']][f'KE{n}_med']):.4f}"
+           for r in extra if r["label"] in LAWS for n in (1, 2)
+           if round(r[f"KE{n}_median_eV"], 4) != round(float(scored[r["label"]][f"KE{n}_med"]), 4)]
+    if bad:
+        raise RuntimeError("median oracle vs g13_decoupled_table.csv FAILED: " + "; ".join(bad))
+
+
 def main() -> int:
     warnings.simplefilter("ignore", RuntimeWarning)   # documented pairing warning
     ab = load_he_abundance_reference(ABUNDANCE_REFERENCE_CSV)
@@ -117,12 +136,19 @@ def main() -> int:
         "mean_n_solvated": float((exp_n * exp_f).sum()),
         "KE1_median_eV": ref["median_KE_eV"][1], "KE1_mode_eV": ref["mode_KE_eV"][1],
         "KE2_median_eV": ref["median_KE_eV"][2], "KE2_mode_eV": ref["mode_KE_eV"][2],
+        "KE0_mean_eV": ref["mean_KE_eV"][0], "KE0_median_eV": ref["median_KE_eV"][0],
     }]
     for law, r in reads.items():
         ns = np.asarray(r.n_scored)
         sn, sf = _solvated(r.n_values, r.fraction)
-        extra.append({"label": law, "bare_share": float((ns == 0).mean()),
-                      "mean_n_solvated": float((sn * sf).sum())})
+        row = {"label": law, "bare_share": float((ns == 0).mean()),
+               "mean_n_solvated": float((sn * sf).sum())}
+        for n in (1, 2):
+            row[f"KE{n}_median_eV"] = scored_ke_median(r, n)
+        row["KE0_mean_eV"] = float(np.asarray(r.ke_scored_eV)[ns == 0].mean())
+        row["KE0_median_eV"] = scored_ke_median(r, 0)
+        extra.append(row)
+    _check_median_oracle(extra)
     keys = list(dict.fromkeys(k for r in extra for k in r))
     extra = [{k: r.get(k, "") for k in keys} for r in extra]
 
