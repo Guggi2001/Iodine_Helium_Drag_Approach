@@ -24,8 +24,9 @@ effective high-tail variant B3):
   (``legend_short``). Laws are offset in n by ``slot x n_offset`` (fixed per
   law, so h405 sits at the same place in both variants; display only, the
   values are at integer n).
-* **L-3 KED shapes** -- the B2-3 panels for n = 1-6 (3-D P(v), peak-
-  normalized), every law's trace over the experiment.
+* **L-3 KED shapes** -- the B2-3 panels for n = 1-6 (3-D P(E) on the
+  kinetic-energy axis, B2-3's ``x_axis``; peak-normalized), every law's
+  trace over the experiment.
 
 Every recipe is the B2 script's data layer (``size_data``, ``ke_data``,
 ``pv_data`` -- the ``tier2_confirmation`` scorers); the draw layer is reused
@@ -133,7 +134,7 @@ FIG_L_3: dict = {
     "representation": "3d",
     "n_values": (1, 2, 3, 4, 5, 6),
     "linewidth": 1.3,
-    "show_v_of_mean_E": False,           # four v(E) marks per panel do not read; caption
+    "show_mean_E_marker": False,         # four E-bar marks per panel do not read; caption
     "show_counts": False,
     "legend_ncols": 3,
 }
@@ -171,6 +172,7 @@ from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     draw_ke_ratio,
     draw_pv,
     ke_data,
+    ked_traces,
     merged_style,
     pv_data,
     size_data,
@@ -359,9 +361,9 @@ def build_l_3(laws: list[LawData], panels: dict[str, list[PvData]]) -> plt.Figur
     for k, ax in enumerate(flat[:len(st["n_values"])]):
         draw_pv(ax, panels[first.key][k], _law_style(st, first))
         for law in laws[1:]:
-            d = panels[law.key][k]
-            if d.sim_trace is not None:
-                ax.plot(d.v_sim_Aps, d.sim_trace, law.dash, linewidth=st["linewidth"],
+            t = ked_traces(panels[law.key][k], st["x_axis"], st["e_min_eV"])
+            if t.sim is not None:
+                ax.plot(t.x_sim, t.sim, law.dash, linewidth=st["linewidth"],
                         color=law.color, label=f"Simulation ({law.name})")
         if st["outer_labels_only"]:
             if k % ncols:

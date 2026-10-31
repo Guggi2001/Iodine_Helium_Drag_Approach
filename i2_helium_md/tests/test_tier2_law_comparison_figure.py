@@ -18,6 +18,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 import pytest  # noqa: E402
 
 from tests.test_tier2_b2_thesis_figure import inputs  # noqa: E402,F401  (shared fixture)
@@ -129,5 +130,10 @@ class TestBuilders:
             labels = _labels(fig)
             for law in laws:
                 assert f"Simulation ({law.name})" in labels
+            # every law on B2-3's kinetic-energy axis (P(E) via ked_traces)
+            ax = fig.axes[0]
+            t = mod.ked_traces(panels["h405"][0], "E", mod.FIG_B2_3["e_min_eV"])
+            assert ax.get_xlim() == mod.FIG_B2_3["e_xlim_by_n"][1]
+            np.testing.assert_array_equal(ax.lines[-1].get_xdata(), t.x_sim)
         finally:
             plt.close(fig)

@@ -20,10 +20,13 @@ smoothing window) lives in the captions, not on the figures:
   (n 2-8, geometric) and deepKE (n 10-17, arithmetic) band means as
   segments. ``lower_panel = "z"`` restores the profiled-residual panel.
 * **B2-3 KED shapes** -- the detection-summary curve panels for n = 1-6
-  (3 x 2), 3-D P(v), experiment raw + movmean vs simulation,
-  peak-normalized, v(<E>) markers; speed axis in Å/ps, per-n range.
+  (3 x 2), experiment raw + movmean vs simulation, peak-normalized, drawn
+  as the 3-D P(E) on a kinetic-energy axis (the committed P(v) recipe
+  through the Jacobian P(E) = P(v) / (m v), ``ked_traces``), <E> markers,
+  per-n range. ``x_axis = "v"`` restores P(v) in Å/ps with v(<E>) markers.
 * **B2-4** -- B2-3 on the 2-D detector projection (discussion figure,
-  ``THESIS_DISCUSSION.md`` §13; 2-D is a diagnostic, not a score).
+  ``THESIS_DISCUSSION.md`` §13; 2-D is a diagnostic, not a score); stays
+  on the speed axis (the 2-D P(E) is centre-fill dominated at low E).
 
 Structure: a **data layer** (``*_data`` functions; numbers only, every
 recipe imported -- ``tier2_confirmation`` scorers, the ``postprocess``
@@ -170,11 +173,13 @@ FIG_B2_2_SPLIT: dict = {
 }
 
 FIG_B2_3: dict = {
-    # The plot_detection_summary ihe_ked curve section for n = 1..6 (3 x 2)
-    # with the speed axis in Å/ps; n = 0 (bare I+) is a different
-    # population and is left out.
+    # The plot_detection_summary ihe_ked curve section for n = 1..6 (3 x 2),
+    # drawn as P(E) on a kinetic-energy axis (``x_axis`` "E", the Jacobian of
+    # the committed P(v) recipe, ``ked_traces``) or as P(v) in Å/ps ("v");
+    # n = 0 (bare I+) is a different population and is left out.
     "stem": "b2_3_ked_shapes",
     "representation": "3d",              # "3d" (P(v)) | "2d" (detector projection)
+    "x_axis": "E",                       # "E" (P(E), eV; 3-D only) | "v" (P(v), Å/ps)
     "n_values": (1, 2, 3, 4, 5, 6),      # n 5-7: extended exports, not verified
     "ncols": 2,
     "figsize": (TEXTWIDTH_IN, 7.0),
@@ -183,10 +188,16 @@ FIG_B2_3: dict = {
     "v_xlim_Aps": (0.0, 31.0),           # IHE_KED_PLOT_V_MAX_MPS / 100 (fallback)
     "v_xlim_by_n": {1: (0.0, 26.0), 2: (0.0, 20.0), 3: (0.0, 16.0),
                     4: (0.0, 14.0), 5: (0.0, 14.0), 6: (0.0, 12.0)},
+    "e_xlim_eV": (0.0, 4.0),             # fallback
+    "e_xlim_by_n": {1: (0.0, 3.5), 2: (0.0, 2.0), 3: (0.0, 1.5),
+                    4: (0.0, 1.2), 5: (0.0, 1.2), 6: (0.0, 1.0)},
+    # above the 3-D columns' own 0.01 eV cut (COLUMNS.md): P(E) = P(v)/(m v)
+    # amplifies the Abel-centre residual below ~0.05 eV (state in the caption)
+    "e_min_eV": 0.05,
     "ylim": (0.0, 1.35),
     "show_exp_raw": True,
     "exp_raw_alpha": 0.15,               # raw trace stays in the background of the smoothed one
-    "show_v_of_mean_E": True,
+    "show_mean_E_marker": True,          # at E-bar ("E") or v(E-bar) ("v")
     "show_counts": True,                 # per-panel N text
     "annot_ke_n": (),                    # panels that print <E> sim / exp
     "titles": "$n = {n}$",
@@ -195,16 +206,19 @@ FIG_B2_3: dict = {
     "legend_ncols": 3,                   # figure legend only
     "legend_loc": "best",
     "outer_labels_only": True,
-    "xlabel": r"Speed $v$ / Å ps$^{-1}$",
+    "xlabel_E": r"Kinetic energy $E$ / eV",
+    "xlabel_v": r"Speed $v$ / Å ps$^{-1}$",
     "ylabel": "Signal / arb. units",
 }
 
 # B2-4: B2-3 on the 2-D detector projection (sim: sqrt(vx^2 + vy^2));
-# starts as a copy of FIG_B2_3, override keys here.
+# starts as a copy of FIG_B2_3, override keys here. Stays on the speed axis:
+# the 2-D P(E) carries the VMI centre-fill rise at low E (COLUMNS.md).
 FIG_B2_4: dict = {
     **copy.deepcopy(FIG_B2_3),
     "stem": "b2_4_ked_shapes_2d",
     "representation": "2d",
+    "x_axis": "v",
 }
 
 # =============================================================================
@@ -221,6 +235,7 @@ from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
 from i2_helium_md.postprocess import (  # noqa: E402
     compute_final_velocity_histogram,
     detected_ensemble_view,
+    energy_eV_of_speed_mps,
     fragment_mean_kinetic_energy,
     load_he_abundance_reference,
     load_ihe_ked_curve,
@@ -400,6 +415,8 @@ def ke_data(read, ked_ref) -> KEData:
 class PvData:
     """One n-panel of B2-3; speeds in Å/ps, traces peak-normalized."""
     n: int
+    representation: str
+    mass_amu: float
     v_exp_Aps: np.ndarray
     exp_raw: np.ndarray
     exp_smooth: np.ndarray
@@ -438,6 +455,8 @@ def pv_data(view, ked_dir: Path, ked_ref, n: int, representation: str) -> PvData
         sim_mean = None
     return PvData(
         n=n,
+        representation=representation,
+        mass_amu=mass_amu,
         v_exp_Aps=np.asarray(curve.v_mps, dtype=float) / MPS_PER_APS,
         exp_raw=raw,
         exp_smooth=_nan_aware_moving_mean(raw, IHE_KED_EXP_SMOOTHING_WINDOW),
@@ -450,6 +469,61 @@ def pv_data(view, ked_dir: Path, ked_ref, n: int, representation: str) -> PvData
         mean_E_exp_eV=mean_exp,
         mean_E_sim_eV=None if sim_mean is None else float(sim_mean.mean_KE_eV),
     )
+
+
+def _energy_density(v_Aps, signal, mass_amu: float, e_min_eV: float):
+    """A P(v) trace on a speed grid [Å/ps] as (E [eV], P(E)) on the mapped grid.
+
+    P(E) = P(v) dv/dE = P(v) / (m v), the Jacobian of E = m v^2 / 2 -- the
+    convention of the ihe_ked ``signal_3d_PE`` column (COLUMNS.md). The
+    constant 1/m is dropped (the traces are peak-normalised by the caller);
+    E < ``e_min_eV`` is NaN, where 1/v amplifies the near-zero bins.
+    """
+    v = np.asarray(v_Aps, dtype=float)
+    energy = energy_eV_of_speed_mps(v * MPS_PER_APS, mass_amu)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        density = np.asarray(signal, dtype=float) / v
+    return energy, np.where(energy >= e_min_eV, density, np.nan)
+
+
+@dataclass(frozen=True)
+class KedTraces:
+    """What one KED-shape panel draws, on the panel's x axis (eV or Å/ps)."""
+    x_exp: np.ndarray
+    exp_raw: np.ndarray
+    exp_smooth: np.ndarray
+    x_sim: np.ndarray | None
+    sim: np.ndarray | None
+    mark_exp: float               # E-bar ("E") or v(E-bar) ("v"), experiment
+    mark_sim: float | None
+
+
+def ked_traces(d: PvData, x_axis: str, e_min_eV: float) -> KedTraces:
+    """``d`` on the speed axis (``x_axis`` "v", unchanged) or as P(E) ("E").
+
+    "E" maps the committed P(v) traces through :func:`_energy_density` --
+    smoothed in v as the recipe does, then transformed -- and re-normalises
+    each to a unit maximum (the raw experiment shares the smoothed one's
+    factor). Only the 3-D representation is allowed: the 2-D P(E) rises at
+    low E from the VMI centre fill (fast ions projected inward).
+    """
+    if x_axis == "v":
+        return KedTraces(d.v_exp_Aps, d.exp_raw, d.exp_smooth, d.v_sim_Aps, d.sim_trace,
+                         d.v_mean_E_exp_Aps, d.v_mean_E_sim_Aps)
+    if x_axis != "E":
+        raise ValueError(f"x_axis must be 'E' or 'v', got {x_axis!r}")
+    if d.representation != "3d":
+        raise ValueError("the energy axis needs the 3-D representation "
+                         f"(2-D P(E) is centre-fill dominated at low E), got {d.representation!r}")
+    x_exp, raw = _energy_density(d.v_exp_Aps, d.exp_raw, d.mass_amu, e_min_eV)
+    _, smooth = _energy_density(d.v_exp_Aps, d.exp_smooth, d.mass_amu, e_min_eV)
+    scale = np.nanmax(smooth)
+    x_sim = sim = None
+    if d.sim_trace is not None:
+        x_sim, sim = _energy_density(d.v_sim_Aps, d.sim_trace, d.mass_amu, e_min_eV)
+        sim = sim / np.nanmax(sim)
+    return KedTraces(x_exp, raw / scale, smooth / scale, x_sim, sim,
+                     d.mean_E_exp_eV, d.mean_E_sim_eV)
 
 
 # =============================================================================
@@ -639,26 +713,30 @@ def draw_ke_residual(ax, d: KEData, st: dict) -> None:
 
 
 def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
-    """One KED-shape panel -- the ``_section_ihe_ked_curves`` panel in Å/ps."""
+    """One KED-shape panel -- the ``_section_ihe_ked_curves`` panel as P(E)
+    in eV (``st["x_axis"]`` "E") or P(v) in Å/ps ("v")."""
+    energy = st["x_axis"] == "E"
+    t = ked_traces(d, st["x_axis"], st["e_min_eV"])
     if st["show_exp_raw"]:
-        ax.plot(d.v_exp_Aps, d.exp_raw, ".-", markersize=2.0, linewidth=0.5,
+        ax.plot(t.x_exp, t.exp_raw, ".-", markersize=2.0, linewidth=0.5,
                 alpha=st["exp_raw_alpha"],
                 label="Experiment (raw)", **st["exp"])
-    ax.plot(d.v_exp_Aps, d.exp_smooth, linewidth=1.4, label="Experiment (smoothed)",
+    ax.plot(t.x_exp, t.exp_smooth, linewidth=1.4, label="Experiment (smoothed)",
             **st["exp"])
-    if d.sim_trace is not None:
-        ax.plot(d.v_sim_Aps, d.sim_trace, "--", linewidth=1.4,
+    if t.sim is not None:
+        ax.plot(t.x_sim, t.sim, "--", linewidth=1.4,
                 label=f"Simulation ({st['sim_label']})",
                 **st["sim"])
     else:
         ax.annotate("Simulation: no atoms in gate", (0.97, 0.9), xycoords="axes fraction",
                     ha="right", fontsize=st["annot_fontsize"], color=st["sim"]["color"])
-    if st["show_v_of_mean_E"]:
-        ax.axvline(d.v_mean_E_exp_Aps, linestyle=":", linewidth=1.0,
-                   label=r"Experiment $v(\bar{E})$", **st["exp"])
-        if d.v_mean_E_sim_Aps is not None:
-            ax.axvline(d.v_mean_E_sim_Aps, linestyle=":", linewidth=1.0,
-                       label=r"Simulation $v(\bar{E})$", **st["sim"])
+    if st["show_mean_E_marker"]:
+        mark = r"$\bar{E}$" if energy else r"$v(\bar{E})$"
+        ax.axvline(t.mark_exp, linestyle=":", linewidth=1.0,
+                   label=f"Experiment {mark}", **st["exp"])
+        if t.mark_sim is not None:
+            ax.axvline(t.mark_sim, linestyle=":", linewidth=1.0,
+                       label=f"Simulation {mark}", **st["sim"])
     lines = []
     if st["show_counts"]:
         lines.append(f"$N = {d.num_sim}$")
@@ -667,12 +745,15 @@ def draw_pv(ax, d: PvData, st: dict, *, show_legend: bool = False) -> None:
     if lines:
         ax.text(0.97, 0.95, "\n".join(lines), transform=ax.transAxes, ha="right", va="top",
                 fontsize=st["annot_fontsize"])
-    xlim = st.get("v_xlim_by_n", {}).get(d.n, st["v_xlim_Aps"])
+    if energy:
+        xlim = st.get("e_xlim_by_n", {}).get(d.n, st["e_xlim_eV"])
+    else:
+        xlim = st.get("v_xlim_by_n", {}).get(d.n, st["v_xlim_Aps"])
     ax.set(title=st["titles"].format(n=d.n), xlim=xlim, ylim=st["ylim"],
-           xlabel=st["xlabel"], ylabel=st["ylabel"])
+           xlabel=st["xlabel_E" if energy else "xlabel_v"], ylabel=st["ylabel"])
     if show_legend:
         _legend(ax, st, st["legend_loc"])
-    _finish_axis(ax, st, integer_x=True)
+    _finish_axis(ax, st, integer_x=not energy)
 
 
 # =============================================================================

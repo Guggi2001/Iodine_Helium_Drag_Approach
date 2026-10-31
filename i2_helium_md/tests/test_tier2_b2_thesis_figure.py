@@ -154,6 +154,54 @@ class TestRecipeParity:
             mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "1d")
 
 
+class TestKedEnergyAxis:
+    """``ked_traces``: P(E) = P(v) / (m v) of the committed P(v) recipe."""
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 4])
+    def test_experiment_transform_is_the_committed_pe_column(self, mod, inputs, n):
+        # the exporter's signal_3d_PE is the same Jacobian of signal_3d_Pv: the
+        # transformed raw trace is proportional to it, on the CSV's E grid
+        from i2_helium_md.postprocess import load_ihe_ked_curve
+        d = mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")
+        t = mod.ked_traces(d, "E", e_min_eV=0.0)
+        curve = load_ihe_ked_curve(IHE_KED_DIR, n)
+        # E grid: CSV mass convention = complex_mass_amu to ~1e-5 (export rounding)
+        np.testing.assert_allclose(t.x_exp, curve.E_eV, rtol=1e-4, atol=1e-4)
+        ok = np.isfinite(t.exp_raw) & np.isfinite(curve.signal_3d_PE) & (curve.signal_3d_PE > 0.05)
+        ratio = t.exp_raw[ok] / curve.signal_3d_PE[ok]
+        assert np.std(ratio) / np.mean(ratio) < 1e-3     # CSV is 5-significant-figure
+
+    def test_traces_are_unit_peak_and_cut_below_e_min(self, mod, inputs):
+        d = mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "3d")
+        t = mod.ked_traces(d, "E", e_min_eV=0.05)
+        assert np.nanmax(t.exp_smooth) == pytest.approx(1.0)
+        assert np.nanmax(t.sim) == pytest.approx(1.0)
+        assert np.all(np.isnan(t.sim[t.x_sim < 0.05]))
+        assert np.all(np.isnan(t.exp_raw[t.x_exp < 0.05]))
+        # sim grid is the Å/ps histogram grid mapped through E = m v^2 / 2
+        from i2_helium_md.postprocess import energy_eV_of_speed_mps
+        np.testing.assert_allclose(t.x_sim, energy_eV_of_speed_mps(100.0 * d.v_sim_Aps,
+                                                                   d.mass_amu))
+        # markers sit at E-bar itself, not at v(E-bar)
+        assert (t.mark_exp, t.mark_sim) == (d.mean_E_exp_eV, d.mean_E_sim_eV)
+
+    def test_speed_axis_is_the_unchanged_pv_data(self, mod, inputs):
+        d = mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "3d")
+        t = mod.ked_traces(d, "v", e_min_eV=0.01)
+        assert t.x_exp is d.v_exp_Aps and t.sim is d.sim_trace
+        assert t.mark_exp == d.v_mean_E_exp_Aps
+
+    def test_energy_axis_refuses_the_2d_projection(self, mod, inputs):
+        d = mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "2d")
+        with pytest.raises(ValueError, match="3-D"):
+            mod.ked_traces(d, "E", e_min_eV=0.01)
+
+    def test_unknown_axis_raises(self, mod, inputs):
+        d = mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], 1, "3d")
+        with pytest.raises(ValueError, match="x_axis"):
+            mod.ked_traces(d, "p", e_min_eV=0.01)
+
+
 class TestAnchorGuard:
     def _csv(self, tmp_path, values, label="B2_pp_c160", container="c"):
         path = tmp_path / "winners.csv"
@@ -272,17 +320,30 @@ class TestBuilders:
             assert len(fig.axes) == 6
             assert len(fig.legends) == 1
             assert all(ax.get_legend() is None for ax in fig.axes)
-            # per-n speed range; inner column / upper rows carry no axis labels
-            assert fig.axes[0].get_xlim() == mod.FIG_B2_3["v_xlim_by_n"][1]
+            # per-n energy range; inner column / upper rows carry no axis labels
+            assert mod.FIG_B2_3["x_axis"] == "E"
+            assert fig.axes[0].get_xlim() == mod.FIG_B2_3["e_xlim_by_n"][1]
             assert fig.axes[1].get_ylabel() == "" and fig.axes[0].get_xlabel() == ""
-            assert fig.axes[4].get_xlabel() and fig.axes[4].get_ylabel()
+            assert fig.axes[4].get_xlabel() == mod.FIG_B2_3["xlabel_E"]
+            assert fig.axes[4].get_ylabel()
         finally:
             plt.close(fig)
 
-    def test_b2_4_is_b2_3_on_the_2d_projection(self, mod):
+    def test_b2_4_is_b2_3_on_the_2d_projection_in_speed(self, mod):
+        # the 2-D P(E) is centre-fill dominated at low E: B2-4 keeps the speed axis
         diff = {k for k in mod.FIG_B2_3 if mod.FIG_B2_3[k] != mod.FIG_B2_4[k]}
-        assert diff == {"stem", "representation"}
-        assert mod.FIG_B2_4["representation"] == "2d"
+        assert diff == {"stem", "representation", "x_axis"}
+        assert mod.FIG_B2_4["representation"] == "2d" and mod.FIG_B2_4["x_axis"] == "v"
+
+    def test_b2_4_draws_on_the_speed_axis(self, mod, inputs):
+        panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "2d")
+                  for n in (1, 2)]
+        fig = mod.build_b2_3(panels, mod.FIG_B2_4)
+        try:
+            assert fig.axes[0].get_xlim() == mod.FIG_B2_4["v_xlim_by_n"][1]
+            assert fig.axes[0].get_xlabel() == mod.FIG_B2_4["xlabel_v"]
+        finally:
+            plt.close(fig)
 
     def test_b2_3_grid_hides_spare_axes_and_figure_legend(self, mod, inputs):
         panels = [mod.pv_data(inputs["view"], IHE_KED_DIR, inputs["ked_ref"], n, "3d")
