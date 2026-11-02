@@ -10,7 +10,7 @@ thesis container (``{B2,B3,h405}_N6000_pooled``, s1-s6,
 (side-by-side subfigures, equal height), L-3 to L-5 at the full width --
 once per ``FIGURE_VARIANTS`` entry of that figure: ``…_lq`` (B2 alone; the
 n = 0 figures L-4 / L-5, written only so), ``…_h405`` (B2 vs the re-landed
-h405, the discussion pair) and ``…_h405_b3`` (plus the effective high-tail
+h405, the discussion pair) and ``…_b3`` (B2 vs the effective high-tail
 variant B3; both L-1 to L-3):
 
 * **L-1 size distribution** -- solvated branch (n >= 1 renormalized, RQ8),
@@ -97,13 +97,13 @@ LAWS: dict[str, tuple[str, str, str, str, str, int]] = {
 VARIANTS: dict[str, tuple[str, ...]] = {
     "lq": ("B2",),                        # production law alone
     "h405": ("B2", "h405"),               # discussion: B2 vs the contrast law
-    "h405_b3": ("B2", "B3", "h405"),      # with the effective high-tail variant
+    "b3": ("B2", "B3"),                   # B2 vs the effective high-tail variant
 }
 # figure -> the variants it is written for
 FIGURE_VARIANTS: dict[str, tuple[str, ...]] = {
-    "l_1": ("h405", "h405_b3"),
-    "l_2": ("h405", "h405_b3"),
-    "l_3": ("h405", "h405_b3"),
+    "l_1": ("h405", "b3"),
+    "l_2": ("h405", "b3"),
+    "l_3": ("h405", "b3"),
     "l_4": ("lq",),                       # n = 0 discussion: production law only
     "l_5": ("lq",),
 }

@@ -51,7 +51,7 @@ def data(mod):
 class TestData:
     def test_variants(self, mod):
         assert mod.VARIANTS == {"tier2_B2_h405": ("B2", "h405"),
-                                "tier2_B2_B3_h405": ("B2", "B3", "h405")}
+                                "tier2_B2_B3": ("B2", "B3")}
 
     def test_exit_bound_is_the_committed_atom1_exit_speed(self, mod, data):
         bound = mod.exit_bound_Aps(data["scores"], ("B2", "B3", "h405"))

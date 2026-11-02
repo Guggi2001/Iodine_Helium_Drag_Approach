@@ -77,7 +77,7 @@ class TestSettings:
 
     def test_variants_lead_with_b2_at_slot_zero(self, mod):
         assert mod.VARIANTS == {"lq": ("B2",), "h405": ("B2", "h405"),
-                                "h405_b3": ("B2", "B3", "h405")}
+                                "b3": ("B2", "B3")}
         for keys in mod.VARIANTS.values():
             assert keys[0] == "B2" and mod.LAWS["B2"][5] == 0
             assert set(keys) <= set(mod.LAWS)

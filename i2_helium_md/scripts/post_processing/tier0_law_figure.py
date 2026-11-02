@@ -18,7 +18,7 @@ Laws as in ``tier0_thesis_figure`` (m = I+ + 21 He, 3.5 Å gate): B2, B3 and
 the re-landed h405 under its thesis name CC5.4 (legend names and colours as
 ``tier2_law_comparison_figure``). Written once per ``VARIANTS`` entry to
 ``data/figures/thesis_tier2/``: ``tier2_B2_h405`` (B2 vs CC5.4) and
-``tier2_B2_B3_h405`` (all three).
+``tier2_B2_B3`` (B2 vs B3).
 
 Anchors (fail loudly): the B2 18 Å RMSE in the scores CSV equals the committed
 ``g11_ridge_m21/check_B2.json`` and its 9 Å margin the committed
@@ -57,7 +57,7 @@ OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
 # file stem -> laws drawn (draw order)
 VARIANTS: dict[str, tuple[str, ...]] = {
     "tier2_B2_h405": ("B2", "h405"),
-    "tier2_B2_B3_h405": ("B2", "B3", "h405"),
+    "tier2_B2_B3": ("B2", "B3"),
 }
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
