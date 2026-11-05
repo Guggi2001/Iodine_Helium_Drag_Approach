@@ -15,7 +15,7 @@ reference was re-exported; the radial-invariant comparison still scores only
 ``R``, ``|v1|``, ``|v2|``, but the full vectors let the t*-seeded harness read
 a real radial seed and report the true radial/transverse split at t*.
 
-Two reference files exist under ``data/reference/``:
+Two reference files exist under ``data/reference/TDDFT/``:
 
     9A_All_Data.csv    -- 9 angstrom droplet
     18A_All_Data.csv   -- 18 angstrom droplet

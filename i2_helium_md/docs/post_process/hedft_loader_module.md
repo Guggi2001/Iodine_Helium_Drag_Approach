@@ -16,8 +16,8 @@ The Python port consolidates the reference data into a single normalised
 8-column CSV per droplet size:
 
 ```
-data/reference/9A_All_Data.csv
-data/reference/18A_All_Data.csv
+data/reference/TDDFT/9A_All_Data.csv
+data/reference/TDDFT/18A_All_Data.csv
 ```
 
 Header (identical for both):
@@ -37,7 +37,7 @@ from i2_helium_md.postprocess import (
     HedftTrajectory, load_hedft_trajectory,
 )
 
-traj = load_hedft_trajectory("data/reference/9A_All_Data.csv")
+traj = load_hedft_trajectory("data/reference/TDDFT/9A_All_Data.csv")
 # traj.time_ps         -> shape (T,)  picoseconds
 # traj.distance_A      -> shape (T,)  angstrom
 # traj.v1_magnitude_Aps, traj.v2_magnitude_Aps  -> angstrom/ps

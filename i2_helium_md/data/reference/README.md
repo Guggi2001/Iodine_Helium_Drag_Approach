@@ -20,6 +20,10 @@ ihe_ked/        <- export_IHe_KED_reference.m in the VMI repo (fragment scan
                    171024): per-fragment I+He_n (n=0..17) kinetic-energy
                    reference with full error budget, for the H.2b forward
                    model. See ihe_ked/COLUMNS.md for the data dictionary.
+TDDFT/          <- HeDFT trajectory references: 9A_All_Data.csv (9 angstrom
+                   droplet), 18A_All_Data.csv (normalized 18 angstrom droplet).
+                   Figure: scripts/visualize_trajectory_velocity.py ->
+                   ../figures/thesis_rest/TDDFT_Reference.png.
 scripts/        <- the MATLAB exporters that generate the above CSV/MAT files,
                    plus optional Python verification helpers.
 ```
@@ -27,8 +31,6 @@ scripts/        <- the MATLAB exporters that generate the above CSV/MAT files,
 Top-level files:
 
 ```text
-9A_All_Data.csv                 <- HeDFT trajectory reference (9 angstrom droplet)
-18A_All_Data.csv                <- HeDFT trajectory reference (normalized 18 angstrom droplet)
 integrated_i_he_abundance.csv   <- experimental I+He_n size distribution (Tier-2 arbiter)
 ```
 
@@ -61,7 +63,9 @@ ionPercent                %        ionCounts as a percentage of the column
 while the simulation's legal support runs to n = 21 (Langmuir cap n* = 21); the
 E4 comparison zero-fills the union support, it does not clip.
 
-Consumer (in-repo): `data/reference/scripts/plotting_histogram.py`.
+Figure: `data/reference/scripts/plotting_histogram.py` ->
+`../figures/thesis_rest/I+He_n_Abundance.png` and
+`../figures/thesis_rest/I+He_n_Abundance_with_bare.png`.
 
 **Provenance: to be completed.** This file ships without a documented producer
 (no MATLAB/Python exporter under `scripts/` generates it, and no measurement-ID
@@ -98,9 +102,9 @@ README.md                         <- full conventions, error model, and
 
 Overview plot: `scripts/experimental_reference_fragments.py` renders all five
 trusted fragment curves in the four representation/measure combinations
-(2-D/3-D × per-v/per-E) → `ihe_ked/experimental_reference_fragments.png`,
+(2-D/3-D × per-v/per-E) → `../figures/thesis_rest/experimental_reference_fragments.png`,
 plus the two velocity panels alone (2-D projection | 3-D P(v)) →
-`ihe_ked/experimental_reference_fragments_velocity.png` (PNG only).
+`../figures/thesis_rest/experimental_reference_fragments_velocity.png` (PNG only).
 
 Key contract points: the reference value is the **mean** of the 3-D KED
 (pyabel rIbeta speed distribution, proper dE weighting) in the droplet rest

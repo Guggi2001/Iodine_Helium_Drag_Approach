@@ -57,7 +57,7 @@ unsmoothed 3-D P(E) of the corrected (v2, G12) ``IHe_KED_curves_n{n}.csv``
 applies cuts not re-done here), so only the relative width is taken from
 them; central values stay the reference columns.
 
-Writes ``data/figures/thesis_tier2/g6_chord_map_b2_only.jpg`` and
+Writes ``data/figures/thesis_results_discussion/g6_chord_map_b2_only.jpg`` and
 ``g6_chord_map_with_h405.jpg`` (not committed). Colours follow
 ``thesis_style`` (experiment crimson, B2 / h405 viridis).
 
@@ -82,7 +82,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
+OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_results_discussion"
 SHOW_FIGURE = False
 CHORD_RANGE_A = (20.0, 90.0)        # plotted chord axis [A]
 HIST_BIN_A = 1.0                    # panel (c) chord bin width [A]

@@ -2,7 +2,7 @@
 
 Runs the Tier-0 integrations and writes their series + scores; the thesis
 figure is drawn from those CSVs by ``tier0_law_figure`` (plot-only, called at
-the end) as ``data/figures/thesis_tier2/tier2_B2*.png``. The three panels:
+the end) as ``data/figures/thesis_results_discussion/tier2_B2*.png``. The three panels:
 
 (a) 18 A: ensemble-mean |v| of I2 (the Method-B scored atom) vs the smoothed
     TDDFT reference (raw TDDFT |v1|, |v2| in the background), scoring window
@@ -30,7 +30,7 @@ Anchors (fail loudly): the B2 18 A RMSE equals the committed
 ``g11_exit_bound_m21/B2.json``. B3 and the re-landed h405 have no committed
 Tier-0 value (new numbers, reported as measured).
 
-Writes the series ``data/figures/thesis_tier0/tier0_B2_B3_h405_series.csv`` +
+Writes the series ``data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv`` +
 ``tier0_B2_B3_h405_scores.csv`` (the inputs of ``tier0_law_figure``, which
 also draws ``tier0_ridge_m21_laws.png`` from the committed ``ridge_m21.csv``).
 
@@ -53,7 +53,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_tier0"
+OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
 H405_V_C_APS = 5.40         # re-landed h405 cap [A/ps] (gen_tier2_h405_pp35 SCAN_POOL_CELL)
 H405_P_TAIL = -1.0          # gen_tier2atlas_g4finals.P_TAIL
 GATE_A = 3.5                # density-gate width of every law here [A]
@@ -79,7 +79,7 @@ from scripts.post_processing.tier0_drag_comparison import ensemble_mean_series  
 from scripts.tier0_common import M_EFF_AMU, build_drag_cfg, run_dir_name  # noqa: E402
 
 
-HEDFT_18A_PATH = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
+HEDFT_18A_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "18A_All_Data.csv"
 H405_VARIANT = "shared_pure_cubic"
 _B2 = _committed_point(1.6)
 #: lq laws at m = 21 / 3.5 A gate: label -> (a [amu/ps], c [amu/A], E_bind [eV], anchored).

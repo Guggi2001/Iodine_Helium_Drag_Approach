@@ -239,7 +239,7 @@ validation: a held-out *case* (fit 18 Å, predict 9 Å) and a held-out
 
 **The two references and the non-radial finding.** The traces are TD-He-DFT
 Coulomb-explosion trajectories of I₂²⁺ in droplets of radius 9 Å and 18 Å
-(`data/reference/9A_All_Data.csv`, `18A_All_Data.csv`). They differ physically,
+(`data/reference/TDDFT/9A_All_Data.csv`, `18A_All_Data.csv`). They differ physically,
 and that difference is the entire leverage:
 
 | case | window | in-window speed range | character |

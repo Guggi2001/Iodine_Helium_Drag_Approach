@@ -6,7 +6,7 @@ The discussion-chapter twins of the B2 thesis figures
 and §15 (final observable table). Every law is read from its pooled N = 6000
 thesis container (``{B2,B3,h405}_N6000_pooled``, s1-s6,
 ``self_bound_gate_release = decoupled``), written to
-``data/figures/thesis_tier2/`` -- L-1 and L-2 at half the thesis text width
+``data/figures/thesis_results_discussion/`` -- L-1 and L-2 at half the thesis text width
 (side-by-side subfigures, equal height), L-3 to L-5 at the full width --
 once per ``FIGURE_VARIANTS`` entry of that figure: ``…_lq`` (B2 alone; the
 n = 0 figures L-4 / L-5, written only so), ``…_h405`` (B2 vs the re-landed
@@ -114,7 +114,7 @@ ANCHOR_CHECK: bool = True
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
-OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
+OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_results_discussion"
 FIGURES: tuple[str, ...] = ("l_1", "l_2", "l_3", "l_4", "l_5")
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200

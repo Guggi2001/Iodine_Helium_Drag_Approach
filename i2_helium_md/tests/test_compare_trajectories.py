@@ -20,7 +20,7 @@ from i2_helium_md.postprocess.hedft_loader import HedftTrajectory
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
 ION_NPZ = RUN_DIR / "ion.npz"
-REF_9A = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+REF_9A = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 
 
 # ===========================================================================

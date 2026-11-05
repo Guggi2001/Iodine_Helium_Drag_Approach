@@ -96,7 +96,7 @@ from scripts.tier0_common import (  # noqa: E402
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / run_dir_name(CASE, VARIANT, N, RUN_TAG)
 
 # HeDFT reference trace for the same case.
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / f"{CASE}_All_Data.csv"
+HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / f"{CASE}_All_Data.csv"
 
 # The scored window [t_start, t_end] + m_eff are read from the PER-CASE
 # trajectory_matching bundle -- NOT the (possibly shared) variant being run: a

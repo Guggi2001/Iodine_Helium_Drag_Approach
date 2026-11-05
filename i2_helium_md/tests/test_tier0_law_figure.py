@@ -1,7 +1,7 @@
 """``tier0_law_figure.py`` — the thesis-style Tier-0 law figure (plot-only).
 
 Runs no MD: it reads the committed Tier-0 series / scores CSVs
-(``data/figures/thesis_tier0/``), the TDDFT references and the drag bundles.
+(``data/figures/thesis_microscopic_calibration/``), the TDDFT references and the drag bundles.
 Locks the anchor guard (B2 RMSE / 9 Å margin bit-exact vs the committed G11
 JSONs), the variant table, the bulk-law coefficients and that the builder
 draws one trace per law in every panel. Agg backend, figures closed, nothing

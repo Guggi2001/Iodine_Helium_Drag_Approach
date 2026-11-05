@@ -113,7 +113,7 @@ FAMILY_VARIANT = {
     "cubic": SHARED_CUBIC,
     "linear_cubic": SHARED_LINEAR_CUBIC,
 }
-HEDFT_9A_RAW = REFERENCE_DRAG_ROOT.parent / "9A_All_Data.csv"
+HEDFT_9A_RAW = REFERENCE_DRAG_ROOT.parent / "TDDFT" / "9A_All_Data.csv"
 
 
 def bundle_id(family: str) -> str:

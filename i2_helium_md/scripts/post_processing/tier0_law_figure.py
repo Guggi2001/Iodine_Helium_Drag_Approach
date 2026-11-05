@@ -2,7 +2,7 @@
 
 Plot-only twin of ``tier0_thesis_figure`` (THESIS_FINAL_GOALS G11.4 step 3):
 it runs **no MD**. It reads the Tier-0 series and scores that script writes
-(committed ``data/figures/thesis_tier0/tier0_B2_B3_h405_{series,scores}.csv``),
+(committed ``data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_{series,scores}.csv``),
 the TDDFT references and the drag-law coefficients, and draws three panels at
 the thesis text width with the shared ``thesis_style``:
 
@@ -17,7 +17,7 @@ the thesis text width with the shared ``thesis_style``:
 Laws as in ``tier0_thesis_figure`` (m = I+ + 21 He, 3.5 Å gate): B2, B3 and
 the re-landed h405 under its thesis name CC5.4 (legend names and colours as
 ``tier2_law_comparison_figure``). Written once per ``VARIANTS`` entry to
-``data/figures/thesis_tier2/``: ``tier2_B2_h405`` (B2 vs CC5.4) and
+``data/figures/thesis_results_discussion/``: ``tier2_B2_h405`` (B2 vs CC5.4) and
 ``tier2_B2_B3`` (B2 vs B3).
 
 Anchors (fail loudly): the B2 18 Å RMSE in the scores CSV equals the committed
@@ -50,10 +50,10 @@ from scripts.post_processing.thesis_style import FIG_RC, TEXTWIDTH_IN, VIRIDIS  
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-TIER0_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier0"
+TIER0_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
 SERIES_CSV: Path = TIER0_DIR / "tier0_B2_B3_h405_series.csv"
 SCORES_CSV: Path = TIER0_DIR / "tier0_B2_B3_h405_scores.csv"
-OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
+OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_results_discussion"
 # file stem -> laws drawn (draw order)
 VARIANTS: dict[str, tuple[str, ...]] = {
     "tier2_B2_h405": ("B2", "h405"),

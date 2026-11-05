@@ -128,7 +128,7 @@ RIDGE_DIR = TM_ROOT / "g412_ridge"
 BOUND_DIR = REFERENCE_DRAG_ROOT / "9A" / "g412_exit_bound"
 G49_LINEAR_SUMMARY = TM_ROOT / "linear" / "fit_summary.json"
 G411_QUADRATIC_SUMMARY = TM_ROOT / "quadratic" / "fit_summary.json"
-HEDFT_9A_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+HEDFT_9A_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 RUNS_ROOT = PROJECT_ROOT / "data" / "runs"
 GATE_WIDTH_A = float(GATE_OVERRIDES["drag_gate_steepness"])
 

@@ -89,7 +89,7 @@ non-uniqueness is reported as a finding.
 ## 1. The chord → (n, KE) map (MEASURED; refreshed at B2 by G6, 2026-10-13)
 
 Figure: `scripts/post_processing/tier2_g6_chord_map.py` →
-`data/figures/thesis_tier2/g6_chord_map_b2_only.jpg` and
+`data/figures/thesis_results_discussion/g6_chord_map_b2_only.jpg` and
 `g6_chord_map_with_h405.jpg` (not committed): (a) scored n
 vs chord (formerly suppressed ions boiled off → n = 0, G13; the panels read the `decoupled` re-runs), (b) KE vs chord, B2 per ion (N = 6000 pool, 12 000 fragments),
 (c) chord distribution; the `with_h405` variant overlays the **re-landed**
@@ -1392,7 +1392,7 @@ n = 17.
 Sources: `scripts/post_processing/tier2_g13_shed_timing.py` →
 `data/runs/h2b_forward_model/g13_shed_timing.csv`,
 `g13_exit_vs_detection.csv`, `g13_exit_detection_hist.csv`,
-`g13_shed_chord.csv`; figures `data/figures/thesis_tier2/g13_shed_timing.png`
+`g13_shed_chord.csv`; figures `data/figures/thesis_results_discussion/g13_shed_timing.png`
 and `g13_exit_vs_detection.png` (B2). Reads the thesis production members
 (`{B2,B3,h405}_N1000_s1` … `_s6`, `decoupled`, ion.npz kept), i.e. the same
 ions as §15, plus their Stage I event log `stage1_events.npz` (added

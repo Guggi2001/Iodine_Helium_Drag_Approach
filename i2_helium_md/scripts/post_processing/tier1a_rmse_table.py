@@ -221,7 +221,7 @@ def _load_references(
     case: str,
 ) -> tuple[HedftTrajectory, SmoothedSpeedReference]:
     hedft = load_hedft_trajectory(
-        project_root / "data" / "reference" / f"{case}_All_Data.csv"
+        project_root / "data" / "reference" / "TDDFT" / f"{case}_All_Data.csv"
     )
     smoothed = load_smoothed_speed_reference(
         project_root

@@ -188,7 +188,9 @@ def main() -> None:
     variants = _variants(base)
     data = {}
     for case in CASES:
-        traj = load_hedft_trajectory(REPO_ROOT / "data" / "reference" / f"{case}_All_Data.csv")
+        traj = load_hedft_trajectory(
+            REPO_ROOT / "data" / "reference" / "TDDFT" / f"{case}_All_Data.csv"
+        )
         ref = load_smoothed_speed_reference(
             DRAG_ROOT / case / "velocity_smoothed" / "cleaned_data_long.csv"
         )

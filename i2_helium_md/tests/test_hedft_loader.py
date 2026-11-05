@@ -16,8 +16,8 @@ from i2_helium_md.postprocess.hedft_loader import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-REF_9A = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
-REF_18A = PROJECT_ROOT / "data" / "reference" / "18A_All_Data.csv"
+REF_9A = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
+REF_18A = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "18A_All_Data.csv"
 CLEANED_9A = (
     PROJECT_ROOT / "data" / "reference" / "drag" / "9A"
     / "velocity_smoothed" / "cleaned_data.csv"
@@ -246,7 +246,7 @@ class TestRealCleaned9A:
 # Real reference data
 # ===========================================================================
 @pytest.mark.skipif(
-    not REF_9A.exists(), reason="data/reference/9A_All_Data.csv not present"
+    not REF_9A.exists(), reason="data/reference/TDDFT/9A_All_Data.csv not present"
 )
 class TestReal9A:
     def test_load_real_9A_reference_shape(self):
@@ -280,7 +280,7 @@ class TestReal9A:
 
 
 @pytest.mark.skipif(
-    not REF_18A.exists(), reason="data/reference/18A_All_Data.csv not present"
+    not REF_18A.exists(), reason="data/reference/TDDFT/18A_All_Data.csv not present"
 )
 class TestReal18A:
     def test_load_real_18A_reference_shape(self):

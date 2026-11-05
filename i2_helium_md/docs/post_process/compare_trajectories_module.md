@@ -41,7 +41,7 @@ from i2_helium_md.postprocess import (
 )
 
 ion = RunDirectory("data/runs/single_pulse_N_2000").load_ion()
-hedft = load_hedft_trajectory("data/reference/9A_All_Data.csv")
+hedft = load_hedft_trajectory("data/reference/TDDFT/9A_All_Data.csv")
 
 r = compare_distance(ion, hedft)
 print(r.rmse, r.mean_ratio, r.overlap_t_min_ps, r.overlap_t_max_ps)

@@ -178,7 +178,7 @@ PAPER_V2_MASS_AMU: float = 131.0
 # Typical 9 A HeDFT comparison configuration (uncomment and comment out the
 # experimental block above to switch):
 # RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
-# HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+# HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 # IHE_KED_REFERENCE_DIR = None
 # ABUNDANCE_REF_PATH = None
 

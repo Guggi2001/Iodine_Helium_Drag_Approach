@@ -360,7 +360,8 @@ inversion, pump-probe, effusive comparison, full VMI image interpretation).
 ## Data Contracts
 
 Normalized reference data lives in `data/reference/`. Expected files:
-`9A_All_Data.csv`, `18A_All_Data.csv`, `vmi_iplus_he.csv`, `vmi_iplus_gas.csv`.
+`TDDFT/9A_All_Data.csv`, `TDDFT/18A_All_Data.csv`, `vmi_iplus_he.csv`,
+`vmi_iplus_gas.csv`.
 HeDFT trajectory CSV header:
 `Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance`. (The earlier split 9 A
 files `data_vabs2.csv` / `R1-R2.csv` are provenance, not the loader contract.)

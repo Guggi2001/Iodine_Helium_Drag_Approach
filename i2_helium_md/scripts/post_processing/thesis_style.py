@@ -1,4 +1,4 @@
-"""Shared style of the Tier-2 thesis figures (``data/figures/thesis_tier2/``).
+"""Shared style of the Tier-2 thesis figures (``data/figures/thesis_results_discussion/``).
 
 One palette, font and size for every thesis figure script
 (``tier2_g13_shed_timing``, ``tier2_g6_chord_map``, ``tier2_b2_thesis_figure``):

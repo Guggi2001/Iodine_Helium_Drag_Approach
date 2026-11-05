@@ -46,7 +46,7 @@ VARIANT = "shared_pure_cubic"
 N = 50
 
 RUN_DIR = None  # None -> data/runs/<tier2_bridge_run_dir_name(CASE, VARIANT, N)>
-HEDFT_CSV_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+HEDFT_CSV_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 
 T_STAR_FAMILY_PS = (0.5, 5.0, 9.0)
 PRIMARY_T_STAR_PS = 5.0

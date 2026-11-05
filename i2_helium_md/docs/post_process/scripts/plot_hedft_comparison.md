@@ -29,7 +29,7 @@ editor and rerun, not driven from the command line.
 | Setting | Default | Effect |
 |---|---|---|
 | `RUN_DIR` | `data/runs/single_pulse_N_2000` | which MD run to read |
-| `HEDFT_PATH` | `data/reference/9A_All_Data.csv` | HeDFT reference (use `18A_All_Data.csv` for the 18 Å droplet) |
+| `HEDFT_PATH` | `data/reference/TDDFT/9A_All_Data.csv` | HeDFT reference (use `18A_All_Data.csv` for the 18 Å droplet) |
 | `VMI_HE_PATH`, `VMI_GAS_PATH` | the two existing references | only loaded when `SHOW_VMI_TILE=True` |
 | `SHOW_VMI_TILE` | `True` | `False` mirrors `simulation_image_only_trajectories.m` (no bottom tile) |
 | `MD_DISTANCE_STRIDE` | 50 | every Nth molecule on Figure 1 |

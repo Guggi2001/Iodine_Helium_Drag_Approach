@@ -65,7 +65,7 @@ reference; every VMI panel is drawn.
 
 ```python
 RUN_DIR        = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
-HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "9A_All_Data.csv"
+HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 VMI_REF_HE_PATH         = None
 VMI_REF_GAS_PATH        = None
 VMI_REF_HE_HIGH_SNR_PATH = None

@@ -121,7 +121,7 @@ def _ion_from_mean_series(t, dist, v1, v2) -> IonCheckpoint:
 def _score(case: str):
     t, dist, v1, v2 = _load_mean_series(case)
     ion = _ion_from_mean_series(t, dist, v1, v2)
-    hedft = load_hedft_trajectory(REF_ROOT / f"{case}_All_Data.csv")
+    hedft = load_hedft_trajectory(REF_ROOT / "TDDFT" / f"{case}_All_Data.csv")
     window = _read_window(case)
     d = compare_distance(ion, hedft, window=window)
     a = compare_velocity_magnitude(ion, hedft, atom="I1", window=window)

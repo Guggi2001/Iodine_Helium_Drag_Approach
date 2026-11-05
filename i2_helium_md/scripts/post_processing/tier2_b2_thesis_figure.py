@@ -3,7 +3,7 @@
 Four figures, rendered from the pooled N = 6000 B2 thesis container
 (``B2_N6000_pooled``, s1-s6, ``self_bound_gate_release = decoupled``,
 THESIS_FINAL_GOALS G13) at the thesis text width
-(``TEXTWIDTH_CM``) and written to ``data/figures/thesis_tier2/``. Pipeline
+(``TEXTWIDTH_CM``) and written to ``data/figures/thesis_results_discussion/``. Pipeline
 vocabulary (scored / detected read, median anchor provenance, chi^2,
 smoothing window) lives in the captions, not on the figures:
 
@@ -77,7 +77,7 @@ ANCHOR_CHECK: bool = True
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
-OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
+OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_results_discussion"
 FIGURES: tuple[str, ...] = ("b2_1", "b2_2", "b2_2_split", "b2_3", "b2_4")
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200

@@ -74,7 +74,7 @@ Outputs (commit with ``git add -f``):
 * ``g13_ke_readouts.csv`` -- law x class: mean n and KE at exit /
   handover / post-closure / detection, closure and Stage II KE changes,
   the log split into mass and speed terms, speed ratios;
-* figures ``data/figures/thesis_tier2/g13_shed_timing.png`` and
+* figures ``data/figures/thesis_results_discussion/g13_shed_timing.png`` and
   ``g13_exit_vs_detection.png`` (``FIG_LAW`` only; not committed; style
   of ``tier2_b2_thesis_figure``: text width, B2 red). No experimental
   curve: these figures compare readout times within the model; the
@@ -125,7 +125,7 @@ LIT_BOUND_PS: float = 400.0                           # "vast majority finished"
 T_XLIM_PS: tuple[float, float] = (1.0, 1.5e7)         # first shed > 1 ps; detector 8.53e6
 DEPTH_XMAX_A: float = 150.0               # panel (c) cut; the share beyond is annotated
 
-OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_tier2"
+OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_results_discussion"
 FORMATS: tuple[str, ...] = ("png",)
 DPI: int = 200
 SHOW_FIGURE: bool = False
