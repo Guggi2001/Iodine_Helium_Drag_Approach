@@ -34,7 +34,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # Inputs
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
+HEDFT_CASE = "9A"  # TDDFT reference case: "9A" or "18A"
 
 # Subset stride for the individual MD trajectories overlaid on Figure 1.
 # With the default 2000-molecule production run this gives ~40 distance
@@ -61,6 +61,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from i2_helium_md.postprocess import (  # noqa: E402
     HedftTrajectory,
     load_hedft_trajectory,
@@ -77,7 +78,7 @@ _MD_VELOCITY_COLOR = (0.2, 0.2, 0.6, 0.1)   # dark blue with alpha=0.1
 
 def main() -> int:
     ion = RunDirectory(RUN_DIR).load_ion()
-    hedft = load_hedft_trajectory(HEDFT_PATH)
+    hedft = load_hedft_trajectory(tddft_reference_path(HEDFT_CASE))
 
     print(
         f"Loaded HeDFT-comparison ion checkpoint: N={ion.num_molecules}, "

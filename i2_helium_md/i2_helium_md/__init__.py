@@ -2,6 +2,7 @@ from .config import SimConfig
 from .presets import (
     DRAG_BUNDLE_CATALOG,
     REFERENCE_DRAG_ROOT,
+    REFERENCE_TDDFT_ROOT,
     load_drag_bundle,
     load_drag_coefficients,
     load_capped_cc,
@@ -11,6 +12,7 @@ from .presets import (
     single_pulse_N2000_18Angst_drag,
     single_pulse_N2000_drag,
     single_pulse_droplet_distribution,
+    tddft_reference_path,
 )
 
 __all__ = [
@@ -26,5 +28,7 @@ __all__ = [
     "resolve_drag_bundle_dir",
     "DRAG_BUNDLE_CATALOG",
     "REFERENCE_DRAG_ROOT",
+    "REFERENCE_TDDFT_ROOT",
+    "tddft_reference_path",
 ]
 __version__ = "0.1.0"

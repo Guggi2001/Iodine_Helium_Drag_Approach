@@ -80,6 +80,7 @@ colors = [plasma_colors(i) for i in np.linspace(0, 1,10)]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from scripts.tier0_common import TIER0_WINDOWS_PS, run_dir_name  # noqa: E402
 
 # --- Paths resolved from CASE + VARIANT (no hand-edited path triple) ---
@@ -87,7 +88,7 @@ from scripts.tier0_common import TIER0_WINDOWS_PS, run_dir_name  # noqa: E402
 RUN_DIR = PROJECT_ROOT / "data" / "runs" / run_dir_name(CASE, VARIANT, N, RUN_TAG)
 
 # HeDFT reference trace for the same case.
-HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / f"{CASE}_All_Data.csv"
+HEDFT_PATH = tddft_reference_path(CASE)
 
 # Optional: write the ensemble-mean series to this path (free-to-churn
 # diagnostic). None skips the export.
@@ -95,8 +96,7 @@ EXPORT_MEAN_SERIES_PATH = None
 
 def smoothed_reference_path(case: str) -> Path:
     """The CEEMDAN + SG smoothed speed trace of ``case`` (``cleaned_data_long.csv``)."""
-    return (PROJECT_ROOT / "data" / "reference" / "drag" / case / "velocity_smoothed"
-            / "cleaned_data_long.csv")
+    return tddft_reference_path(case, "cleaned_data_long.csv")
 
 
 import numpy as np  # noqa: E402

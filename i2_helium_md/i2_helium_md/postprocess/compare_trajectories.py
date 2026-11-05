@@ -206,7 +206,7 @@ def compare_speed_to_reference(
     Generalises :func:`compare_velocity_magnitude` to a reference that is *not*
     a full :class:`HedftTrajectory` -- e.g. the CEEMDAN+SG-denoised |v2| trace
     used by the Tier-0 same-smoothed consistency comparison
-    (``data/reference/drag/<case>/velocity_smoothed/cleaned_data.csv``). The MD
+    (``data/reference/TDDFT/<case>/cleaned_data.csv``). The MD
     speed is reduced exactly as in :func:`compare_velocity_magnitude`, then
     scored against ``(t_ref_ps, ref_speed_Aps)`` through the same
     :func:`_compare_series` machinery, so the finite-mask / window / ratio-guard

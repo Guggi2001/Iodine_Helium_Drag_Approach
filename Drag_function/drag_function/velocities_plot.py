@@ -153,19 +153,14 @@ plt.show()
 
 if home:
     import numpy as np
-    base_path_clean = r"C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md\data\reference\drag\9A\velocity_smoothed"
-    cleaned = base_path_clean + r"\mean_velocity.csv"
-    structured = np.genfromtxt(cleaned, delimiter=",", names=True, dtype=float)
-    time_ps = np.atleast_1d(np.asarray(structured["time_ps"], dtype=float))
-    speed_Aps = np.atleast_1d(np.asarray(structured["mean_velocity_Aps"], dtype=float))
-    cleaned_SG = base_path_clean + r"\cleaned_data_long.csv"
+    base_path_clean = C.TDDFT_9A_DIR
+    cleaned_SG = base_path_clean + "/cleaned_data_long.csv"
     structured_SG = np.genfromtxt(cleaned_SG, delimiter=",", names=True, dtype=float)
     time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
     velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
 
 
     plt.figure(figsize=(12,8))
-    plt.plot(time_ps, speed_Aps, label = r'$mean velocity MD$')
     plt.plot(time_SG, velocity_SG, label = r'$mean velocity SG$')
     plt.plot(t_9, v_9, label = r'$v_magn$')
     plt.title('9A Top Atom')

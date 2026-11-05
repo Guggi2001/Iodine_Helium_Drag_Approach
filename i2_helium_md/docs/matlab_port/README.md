@@ -115,8 +115,8 @@ The current post-processing code expects normalized reference CSVs:
 
 | File | Purpose |
 |------|---------|
-| `9A_All_Data.csv` | normalized 8-column 9 A HeDFT trajectory reference |
-| `18A_All_Data.csv` | normalized 8-column 18 A HeDFT trajectory reference |
+| `TDDFT/9A/9A_All_Data.csv` | normalized 8-column 9 A HeDFT trajectory reference |
+| `TDDFT/18A/18A_All_Data.csv` | normalized 8-column 18 A HeDFT trajectory reference |
 | `vmi_summary/vmi_iplus_gas.csv` | exported experimental gas-phase VMI reference |
 | `vmi_summary/vmi_iplus_he.csv` | exported experimental droplet VMI reference |
 | `vmi_summary/vmi_iplus_he_high_snr.csv` | exported high-SNR experimental droplet VMI reference |
@@ -167,7 +167,7 @@ ion_result = run_ion_propagation(cfg, neutral_result)
 Build the consolidated post-processing PDF for the 9 A HeDFT comparison run:
 
 ```bash
-python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison --hedft-ref data/reference/9A_All_Data.csv --no-show
+python scripts/post_processing/plot_run_summary.py data/runs/9A_hedft_comparison --hedft-ref data/reference/TDDFT/9A/9A_All_Data.csv --no-show
 ```
 
 Build the consolidated PDF for the experimental-condition droplet run:
@@ -195,7 +195,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory
 
 run = RunDirectory("data/runs/9A_hedft_comparison")
 ion = run.load_ion()
-hedft = load_hedft_trajectory("data/reference/9A_All_Data.csv")
+hedft = load_hedft_trajectory("data/reference/TDDFT/9A/9A_All_Data.csv")
 distance_result = compare_distance(ion, hedft)
 print(distance_result.rmse, distance_result.mean_ratio)
 ```

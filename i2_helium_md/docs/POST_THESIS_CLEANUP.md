@@ -378,7 +378,7 @@ cfg (an existing dir with a different `cfg.json` is refused).
 
 ---
 
-## C6. Drag reference tree and Tier-0 scripts — DONE 2026-11-05, follow-ups OPEN
+## C6. Drag reference tree and Tier-0 scripts — DONE 2026-11-05 (`1a84092`), follow-ups OPEN
 
 **What was done.** `data/reference/drag/` went from 12 MB and 171 tracked files
 to 1.2 MB and 38 files, keeping only what the thesis uses. Everything removed is
@@ -414,7 +414,9 @@ Three steps, in this order:
 | `CC/` | h405: the shared cubic b plus a `cap` block. `load_drag_bundle("CC")` is uncapped (presets); `load_capped_cc()` is the thesis law |
 | `calibration_ridge/ridge/` | m = 21 ridge, `check_B2.json`, `check_A5.json`, `ridge_m21.csv` |
 | `calibration_ridge/exit_bound_9A/` | 9 Å exit bound of those points |
-| `{9A,18A}/velocity_smoothed/` | smoothed TDDFT traces, unchanged |
+
+The smoothed TDDFT traces listed here at `1a84092` moved to
+`data/reference/TDDFT/{9A,18A}/` (C7).
 
 `ridge_m21.csv` and `c1p600.json` stay unedited: the row and file for c = 1.6 hold
 the fitted m = 21 point, and `tier0_law_figure.py` draws B2 in its place. The
@@ -467,8 +469,8 @@ not on disk, so those guards are not exercised by the suite.
 4. **Remove the `force_balance` branch** of `load_drag_coefficients` and its tests;
    no such bundle remains. `DragCoefficients.extraction_method` still needs the
    value for old `cfg.json` files, so keep that.
-5. **Decide on `Drag_function/`.** It reads `velocity_smoothed`, but a rerun would
-   recreate `power/`, `linear_and_cubic/` and `linear_and_quadratic/`.
+5. **Decide on `Drag_function/`.** DONE in C7: exports go to the gitignored
+   `Drag_function/output/`.
 6. **Tidy `tier0_drag_comparison.py`.** It still has commented-out plot blocks,
    the unused `positions_figure` path and a few invalid-escape warnings.
 7. **Retire the id map only with the runs.** `HISTORICAL_DRAG_BUNDLE_IDS` goes when
@@ -484,4 +486,78 @@ not on disk, so those guards are not exercised by the suite.
 11. **Undecided placement.** `tier2_B2_B3.png` and `tier2_B2_h405.png` show Tier-0
     content but sit in `thesis_results_discussion/`.
 
-**Done when.** Items 1–6 are closed by C5; 7–11 each by their own decision.
+**Done when.** Items 1–4 and 6 are closed by C5; 7–11 each by their own decision.
+
+---
+
+## C7. TDDFT reference folders — DONE 2026-11-05, follow-ups OPEN
+
+**What was done.** All TDDFT traces now sit in one folder per droplet. The method
+was C6's: survey, additive copy, rewire, prove, then remove. Every tracked file
+removed is in git tag `pre-tddft-move` (commit `1a84092`):
+
+```powershell
+git checkout pre-tddft-move -- data/reference/TDDFT data/reference/drag/9A data/reference/drag/18A
+```
+
+1. **All_Data.** `TDDFT/{9A,18A}_All_Data.csv` moved to `TDDFT/{9A,18A}/`. The
+   filenames stay: `hedft_loader.py` reads the droplet radius from the stem.
+2. **Smoothed traces.** The files of `drag/{9A,18A}/velocity_smoothed/` moved flat
+   into the same folders, and `drag/9A` and `drag/18A` are gone.
+3. **One path source.** `presets.py` has `REFERENCE_TDDFT_ROOT`, `TDDFT_CASES` and
+   `tddft_reference_path(case, filename=None)`, which raises on an unknown case.
+   Settings changed with it: `plot_hedft_comparison.py` `HEDFT_PATH` is now
+   `HEDFT_CASE`, and `tier2_bridge_report.py` lost `HEDFT_CSV_PATH` and uses `CASE`.
+4. **`Drag_function/`.** The stale snapshot `i2_helium_md/Drag_function/` (one commit,
+   2026-10-25) is deleted; its ignored `.claude/`, `.idea/` and caches are not in the
+   tag. The repo-root tree is the live one. There, repo paths
+   derive from `__file__`, `smoothing_ceemdam.py` and `velocities_plot.py` use
+   `TDDFT/9A/`, and the six `drag_calculation.py` exports go to the gitignored
+   `Drag_function/output/`, so a rerun cannot recreate `drag/9A` or `drag/18A`.
+5. **`reference_file`.** Updated in `LQ_eff/fit_parameters.json` only. `LQ/` and `CC/`
+   keep the old path as the record of their fits; the loader never reads the file.
+6. **`mean_velocity.csv` deleted** (user decision, after the move): an MD mean
+   speed, not TDDFT data. Its only reader was the last plot of
+   `velocities_plot.py`, which no longer draws it. It stays in the tag at
+   `drag/9A/velocity_smoothed/`.
+
+**Current state.**
+
+| Path | Content |
+|---|---|
+| `TDDFT/9A/` | `9A_All_Data.csv`, `cleaned_data.csv`, `cleaned_data_long.csv` |
+| `TDDFT/18A/` | `18A_All_Data.csv`, `cleaned_data.csv`, `cleaned_data_long.csv` |
+
+**Finished runs** are not affected: no `cfg.json` holds these paths.
+
+**Verified 2026-11-05.** Suite 3291 passed, 44 skipped (was 3287 / 44; the +4 are
+the `tddft_reference_path` tests; the skip list is identical by test name). A
+Python audit hook over the suite and the renders logged 0 reads of the old paths
+and no writes under `data/reference`. All 7 files kept their pre-move SHA-256
+through the move. 9 of 9 PNGs (`TDDFT_Reference`, `tier2_B2_B3`, `tier2_B2_h405`,
+`tier0_ridge_m21_laws`, the five calibration figures) re-render pixel-identical,
+and the two `tier0_B2_B3_h405_*.csv` byte-identical, drawn to a temp folder before
+and after. **Not run end to end:** `plot_hedft_comparison.py`,
+`tier2_bridge_report.py`, `tier0_drag_comparison.py` and
+`method_b_g412_ridge.py` (imported, paths resolve), and the `Drag_function/`
+scripts (config imports, paths resolve; they execute on import).
+
+**Left to do.** All OPEN; none blocks the thesis.
+
+1. **Staging line endings.** `9A/cleaned_data.csv` and `18A/cleaned_data.csv` are
+   LF blobs in git and CRLF on disk; the other four are CRLF in both. For a clean
+   R100, stage the four with `git hash-object -w --no-filters`, and the two with
+   their existing HEAD blob.
+2. **Stale writer docstrings.** `trajectory_matching.py` still names
+   `REFERENCE_DRAG_ROOT / case / "trajectory_matching"` as the output folder of the
+   old bundle writers. Goes with C6 item 3.
+3. **Machine-local raw data.** `Drag_function` `BASE_PATH` and `reference_data.py`
+   keep their `home` / `T:\` switch: they point at the raw files outside the repo,
+   whose `*_All_Data.csv` are byte-identical to the repo copies today.
+4. **Rerunning `smoothing_ceemdam.py` overwrites** `TDDFT/9A/cleaned_data_long.csv`,
+   a thesis reference, as it did at the old path.
+5. **Unread file.** Nothing reads `18A/cleaned_data.csv`; kept for the layout.
+6. **Push the tag.** `pre-tddft-move` is local only, like `pre-drag-cleanup`.
+
+**Done when.** Item 1 with the commit, item 2 with C6 item 3, the rest each by
+their own decision.

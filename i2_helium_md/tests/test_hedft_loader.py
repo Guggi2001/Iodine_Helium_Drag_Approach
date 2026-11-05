@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from i2_helium_md import REFERENCE_TDDFT_ROOT, tddft_reference_path
 from i2_helium_md.postprocess.hedft_loader import (
     HedftTrajectory,
     SmoothedSpeedReference,
@@ -15,13 +16,9 @@ from i2_helium_md.postprocess.hedft_loader import (
 )
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-REF_9A = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
-REF_18A = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "18A_All_Data.csv"
-CLEANED_9A = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / "9A"
-    / "velocity_smoothed" / "cleaned_data.csv"
-)
+REF_9A = tddft_reference_path("9A")
+REF_18A = tddft_reference_path("18A")
+CLEANED_9A = tddft_reference_path("9A", "cleaned_data.csv")
 
 
 # ===========================================================================
@@ -243,10 +240,33 @@ class TestRealCleaned9A:
 
 
 # ===========================================================================
+# Path helper
+# ===========================================================================
+class TestTddftReferencePath:
+    def test_default_is_the_raw_export_in_the_case_folder(self):
+        assert tddft_reference_path("9A") == (
+            REFERENCE_TDDFT_ROOT / "9A" / "9A_All_Data.csv")
+        assert tddft_reference_path("18A") == (
+            REFERENCE_TDDFT_ROOT / "18A" / "18A_All_Data.csv")
+
+    def test_named_file_stays_in_the_case_folder(self):
+        assert tddft_reference_path("18A", "cleaned_data.csv") == (
+            REFERENCE_TDDFT_ROOT / "18A" / "cleaned_data.csv")
+
+    def test_unknown_case_raises(self):
+        with pytest.raises(ValueError, match="unknown TDDFT case"):
+            tddft_reference_path("12A")
+
+    def test_stem_still_gives_the_droplet_radius(self):
+        """The loader reads the radius from the stem, not from the folder."""
+        assert load_hedft_trajectory(REF_18A).droplet_radius_A == 18.0
+
+
+# ===========================================================================
 # Real reference data
 # ===========================================================================
 @pytest.mark.skipif(
-    not REF_9A.exists(), reason="data/reference/TDDFT/9A_All_Data.csv not present"
+    not REF_9A.exists(), reason="data/reference/TDDFT/9A/9A_All_Data.csv not present"
 )
 class TestReal9A:
     def test_load_real_9A_reference_shape(self):
@@ -280,7 +300,7 @@ class TestReal9A:
 
 
 @pytest.mark.skipif(
-    not REF_18A.exists(), reason="data/reference/TDDFT/18A_All_Data.csv not present"
+    not REF_18A.exists(), reason="data/reference/TDDFT/18A/18A_All_Data.csv not present"
 )
 class TestReal18A:
     def test_load_real_18A_reference_shape(self):

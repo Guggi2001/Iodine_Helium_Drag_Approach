@@ -37,12 +37,13 @@ def mod():
 
 @pytest.fixture(scope="module")
 def data(mod):
+    from i2_helium_md import tddft_reference_path
     from i2_helium_md.postprocess import load_hedft_trajectory
     from i2_helium_md.postprocess.hedft_loader import load_smoothed_speed_reference
     return dict(
         series=mod.read_series(), scores=mod.read_scores(), coeffs=mod.law_coefficients(),
         ref18=load_smoothed_speed_reference(
-            mod.REFERENCE_DRAG_ROOT / "18A" / "velocity_smoothed" / mod.REFERENCE_FILENAME),
+            tddft_reference_path("18A", mod.REFERENCE_FILENAME)),
         hedft18=load_hedft_trajectory(mod.HEDFT_18A_PATH),
         hedft9=load_hedft_trajectory(mod.HEDFT_9A_PATH),
     )

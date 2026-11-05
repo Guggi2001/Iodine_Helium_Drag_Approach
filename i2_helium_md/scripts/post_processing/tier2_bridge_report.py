@@ -46,7 +46,6 @@ VARIANT = "CC"
 N = 50
 
 RUN_DIR = None  # None -> data/runs/<tier2_bridge_run_dir_name(CASE, VARIANT, N)>
-HEDFT_CSV_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
 
 T_STAR_FAMILY_PS = (0.5, 5.0, 9.0)
 PRIMARY_T_STAR_PS = 5.0
@@ -83,6 +82,7 @@ from i2_helium_md.postprocess.derived_diagnostics import (  # noqa: E402
     mean_shell_count,
     regime_parameter,
 )
+from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 
 
@@ -351,7 +351,7 @@ def main() -> int:
             f"tier2 bridge run, not a fixed/anchored one)."
         )
     ion = run.load_ion(cfg)
-    hedft = load_hedft_trajectory(HEDFT_CSV_PATH)
+    hedft = load_hedft_trajectory(tddft_reference_path(CASE))
 
     lines, payload = build_summary_lines(cfg, ion, hedft)
 

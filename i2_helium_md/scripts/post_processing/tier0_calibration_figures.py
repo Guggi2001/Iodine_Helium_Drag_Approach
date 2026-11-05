@@ -67,6 +67,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
+from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier0_runs import run_tier0  # noqa: E402
 from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
@@ -101,8 +102,7 @@ def ensure_run(run: Run) -> RunDirectory:
 def draw(run: Run, directory: RunDirectory, out_dir: Path) -> None:
     """Write the figures of ``run`` into ``out_dir``."""
     ion, cfg = directory.load_ion(), directory.load_cfg()
-    hedft = load_hedft_trajectory(
-        PROJECT_ROOT / "data" / "reference" / "TDDFT" / f"{run.case}_All_Data.csv")
+    hedft = load_hedft_trajectory(tddft_reference_path(run.case))
     window = TIER0_WINDOWS_PS[run.case]
     figures = {run.velocity_png: build_figure(
         ion, hedft, window, False, float(ion.droplet_radii_angstrom[0]),

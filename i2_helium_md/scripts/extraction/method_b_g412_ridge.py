@@ -79,14 +79,14 @@ from i2_helium_md.physics.constants import MASS_HE_AMU, MASS_I_ION_AMU  # noqa: 
 from i2_helium_md.physics.drag import LINEAR_QUADRATIC  # noqa: E402
 from i2_helium_md.physics.helium_density import rho_he_ratio  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
-from i2_helium_md.presets import CALIBRATION_RIDGE_ROOT  # noqa: E402
+from i2_helium_md.presets import CALIBRATION_RIDGE_ROOT, tddft_reference_path  # noqa: E402
 
 CASE = "18A"
 N = 50                   # ensemble size per forward integration (Tier-0)
 SEED = 20260604          # neutral-stage seed (ion drag path is RNG-free)
 ION_TIME_PS = 20.0       # covers the [t*, ~14 ps] windows with escape margin
 DT_ION_PS = 0.01
-HEDFT_9A_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A_All_Data.csv"
+HEDFT_9A_PATH = tddft_reference_path("9A")
 RUNS_ROOT = PROJECT_ROOT / "data" / "runs"
 GATE_WIDTH_A = float(GATE_OVERRIDES["drag_gate_steepness"])
 

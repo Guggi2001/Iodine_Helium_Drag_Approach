@@ -56,7 +56,7 @@ if str(PROJECT_ROOT) not in sys.path:
 OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
 GATE_A = 3.5                # density-gate width of every law here [A]
 
-from i2_helium_md import load_capped_cc, load_drag_bundle  # noqa: E402
+from i2_helium_md import load_capped_cc, load_drag_bundle, tddft_reference_path  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     build_case_setup,
     evaluate_form_objective,
@@ -76,7 +76,7 @@ from scripts.post_processing.tier0_drag_comparison import ensemble_mean_series  
 from scripts.tier0_common import M_EFF_AMU, build_tier0_cfg, run_dir_name  # noqa: E402
 
 
-HEDFT_18A_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "18A_All_Data.csv"
+HEDFT_18A_PATH = tddft_reference_path("18A")
 _B2 = check_point("B2")
 _B3 = load_drag_bundle("LQ_eff", expected_m_eff_amu=M_EFF_AMU)
 #: lq laws at m = 21 / 3.5 A gate: label -> (a [amu/ps], c [amu/A], E_bind [eV], anchored).

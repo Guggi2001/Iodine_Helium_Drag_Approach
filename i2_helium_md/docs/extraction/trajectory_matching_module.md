@@ -18,7 +18,7 @@ named, provenance-stamped extraction method:
   METHOD_B §5.5 / `TIER0_FINDINGS.md` "Correct drag traps the ions"),
 - by minimizing the **forward-integrated, from-onset, in-window RMSE** of
   the ensemble-mean clean-atom speed `|v2|` against the same-smoothed long
-  reference (`data/reference/drag/<case>/velocity_smoothed/cleaned_data_long.csv`),
+  reference (`data/reference/TDDFT/<case>/cleaned_data_long.csv`),
 - plus an **escape penalty** that steers the optimizer away from binding
   depths that trap the ions.
 

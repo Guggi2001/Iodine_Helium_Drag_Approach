@@ -25,7 +25,7 @@ def reconstruct_R_from_v(v_w, t_w, R0):
     return (R0 + cumulative_trapezoid(v_w, t_w, initial=0))
 t_exit_9 = 6
 
-BASE_PATH_SAVE_RESULTS = C.BASE_PATH_i2_helium_md
+BASE_PATH_SAVE_RESULTS = C.DRAG_OUTPUT_DIR
 
 test = True
 if test:
@@ -774,16 +774,16 @@ R_recon = reconstruct_R_from_v(2 * v_9_IMF, t_9_w, R0=R_9_w[0])
 
 out = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, plot_only_drag_with_fit = True), export = False,
-                        export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\power',
+                        export_dir = BASE_PATH_SAVE_RESULTS + '/9A/power',
                        t_start = 2.67, t_end = 6)
 out_fit_2 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, fit_variant = 2, plot_only_drag_with_fit = True), export = False,
-                             export_dir =BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\linear_and_cubic',
+                             export_dir =BASE_PATH_SAVE_RESULTS + '/9A/linear_and_cubic',
                              t_start = 2.67, t_end = 6)
 
 out_fit_3 = main_calculation(t_9_w, R_9_w, v_9_SG, DragExtractionSettings(case = 9,
                               truncate_points=500, fit_variant = 3, plot_only_drag_with_fit = True), export = True,
-                             export_dir =BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\9A\linear_and_quadratic',
+                             export_dir =BASE_PATH_SAVE_RESULTS + '/9A/linear_and_quadratic',
                              t_start = 2.67, t_end = 6)
 
 
@@ -810,16 +810,16 @@ print(f"Data exported to cleaned_data.csv")
 
 out_18 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                                   plot_only_drag_with_fit = True), export = False,
-                             export_dir =  BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\power',
+                             export_dir =  BASE_PATH_SAVE_RESULTS + '/18A/power',
                           t_start = 4.54, t_end = 8)
 out_18_fit_2 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                  fit_variant = 2, plot_only_drag_with_fit = True), export = False,
-                             export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\linear_and_cubic',
+                             export_dir = BASE_PATH_SAVE_RESULTS + '/18A/linear_and_cubic',
                                 t_start = 4.54, t_end = 8)
 
 out_18_fit_3 = main_calculation(t_18_w, R_18_w, v_18_SG, DragExtractionSettings(case = 18, truncate_points=500,
                                  fit_variant = 3, plot_only_drag_with_fit = True), export = True,
-                             export_dir = BASE_PATH_SAVE_RESULTS + r'\data\reference\drag\18A\linear_and_quadratic',
+                             export_dir = BASE_PATH_SAVE_RESULTS + '/18A/linear_and_quadratic',
                                 t_start = 4.54, t_end = 8)
 
 a = 3

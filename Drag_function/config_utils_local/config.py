@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 home = True
 if home:
@@ -11,7 +12,9 @@ PATH18A = os.path.join(BASE_PATH, "18A", "18A_All_Data.csv")
 PATH18A_OLD = os.path.join(BASE_PATH, "18A")
 
 
-if home:
-    BASE_PATH_i2_helium_md = r"C:\Users\paulg\Dokumente\GitHub\Iodine_Helium_Drag_Approach\i2_helium_md"
-else:
-    BASE_PATH_i2_helium_md = r"T:\github synchronized\Iodine_Helium_Drag_Approach\i2_helium_md"
+# Repo paths follow this file, so they hold on every machine.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+TDDFT_9A_DIR = str(_REPO_ROOT / "i2_helium_md" / "data" / "reference" / "TDDFT" / "9A")
+
+# Fit exports of drag_calculation.py: scratch output, gitignored, not reference data.
+DRAG_OUTPUT_DIR = str(_REPO_ROOT / "Drag_function" / "output")

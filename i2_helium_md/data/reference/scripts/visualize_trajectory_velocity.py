@@ -8,8 +8,8 @@ Atom 1 of the CSVs is the bottom iodine, atom 2 the top one.
 Drawn at the thesis text width with the shared ``thesis_style``; lines as in the
 microscopic-calibration figures (``tier0_drag_comparison``).
 
-Reads ``data/reference/TDDFT/{9A,18A}_All_Data.csv`` and
-``data/reference/drag/18A/velocity_smoothed/cleaned_data_long.csv``.
+Reads ``data/reference/TDDFT/{9A,18A}/{9A,18A}_All_Data.csv`` and
+``data/reference/TDDFT/18A/cleaned_data_long.csv``.
 
 Usage:  python data/reference/scripts/visualize_trajectory_velocity.py
 Writes: data/figures/thesis_rest/TDDFT_Reference.png
@@ -39,6 +39,7 @@ from i2_helium_md.postprocess.hedft_loader import (  # noqa: E402
     HedftTrajectory,
     SmoothedSpeedReference,
 )
+from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from scripts.post_processing.thesis_style import (  # noqa: E402
     FIG_RC,
     FONT,
@@ -47,12 +48,9 @@ from scripts.post_processing.thesis_style import (  # noqa: E402
     style_axis,
 )
 
-REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference"
-HEDFT_9A_PATH: Path = REFERENCE_DIR / "TDDFT" / "9A_All_Data.csv"
-HEDFT_18A_PATH: Path = REFERENCE_DIR / "TDDFT" / "18A_All_Data.csv"
-SMOOTHED_18A_PATH: Path = (
-    REFERENCE_DIR / "drag" / "18A" / "velocity_smoothed" / "cleaned_data_long.csv"
-)
+HEDFT_9A_PATH: Path = tddft_reference_path("9A")
+HEDFT_18A_PATH: Path = tddft_reference_path("18A")
+SMOOTHED_18A_PATH: Path = tddft_reference_path("18A", "cleaned_data_long.csv")
 OUT_PATH: Path = PROJECT_ROOT / "data" / "figures" / "thesis_rest" / "TDDFT_Reference.png"
 
 EXIT_WINDOW_PS: tuple[float, float] = (13.0, 14.0)  # 9 A exit-speed window

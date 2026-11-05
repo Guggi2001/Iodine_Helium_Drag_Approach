@@ -4,7 +4,7 @@ Fits the ``linear_cubic`` drag coefficients **jointly with the effective
 droplet binding energy** by minimizing the forward-integrated, from-onset,
 in-window trajectory RMSE of the ensemble-mean clean-atom speed ``|v2|``
 against the same-smoothed long reference
-(``data/reference/drag/<case>/velocity_smoothed/cleaned_data_long.csv``),
+(``data/reference/TDDFT/<case>/cleaned_data_long.csv``),
 plus an escape penalty that steers the optimizer away from trapping binding
 depths (``TIER0_FINDINGS.md`` -> "Correct drag traps the ions").
 
@@ -74,6 +74,7 @@ from ..presets import (
     REFERENCE_DRAG_ROOT,
     single_pulse_N2000_18Angst_drag,
     single_pulse_N2000_drag,
+    tddft_reference_path,
 )
 from ..postprocess.compare_trajectories import compare_speed_to_reference
 from ..postprocess.hedft_loader import load_smoothed_speed_reference
@@ -186,7 +187,7 @@ def build_case_setup(
         Ion-stage duration / timestep [ps]. 20 ps covers the [t*, ~14 ps]
         window with escape margin at the production dt of 0.01 ps.
     reference_filename : str
-        File under ``data/reference/drag/<case>/velocity_smoothed/``; the
+        File under ``data/reference/TDDFT/<case>/``; the
         extended same-smoothed reference by default.
     cfg_overrides : mapping, optional
         Extra ``SimConfig`` fields applied to the case preset before
@@ -231,9 +232,7 @@ def build_case_setup(
         )
     cfg.validate()
 
-    ref_path = (
-        REFERENCE_DRAG_ROOT / case / "velocity_smoothed" / reference_filename
-    )
+    ref_path = tddft_reference_path(case, reference_filename)
     ref = load_smoothed_speed_reference(ref_path)
     window = (float(ref.time_ps[0]), float(ref.time_ps[-1]))
     if window[1] > ion_time_ps:

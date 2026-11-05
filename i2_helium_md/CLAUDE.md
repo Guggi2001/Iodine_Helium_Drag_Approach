@@ -97,8 +97,8 @@ uncapped, `load_capped_cc` gives the thesis law). Finished runs keep their old
 ids in `cfg.json` and in their directory names, so never rewrite those:
 `config.HISTORICAL_DRAG_BUNDLE_IDS` is the one map, used by `validate`,
 `run_dir_name` and `cfg_diff_vs_reference`. `data/reference/drag/` holds
-`LQ/`, `LQ_eff/`, `CC/`, `calibration_ridge/` (m = 21 ridge + 9 Å exit bound)
-and `{9A,18A}/velocity_smoothed/`.
+`LQ/`, `LQ_eff/`, `CC/` and `calibration_ridge/` (m = 21 ridge + 9 Å exit
+bound); the raw and smoothed TDDFT traces are in `data/reference/TDDFT/{9A,18A}/`.
 **Production pipeline** (since 2026-09-30, unchanged for B2): Stage I to
 500 ps, E2 skipped, partner-aware Coulomb closure
 (`TIER2_DetectorStageFix.md` §5.7).
@@ -367,8 +367,8 @@ inversion, pump-probe, effusive comparison, full VMI image interpretation).
 ## Data Contracts
 
 Normalized reference data lives in `data/reference/`. Expected files:
-`TDDFT/9A_All_Data.csv`, `TDDFT/18A_All_Data.csv`, `vmi_iplus_he.csv`,
-`vmi_iplus_gas.csv`.
+`TDDFT/9A/9A_All_Data.csv`, `TDDFT/18A/18A_All_Data.csv`, `vmi_iplus_he.csv`,
+`vmi_iplus_gas.csv`. Build TDDFT paths with `presets.tddft_reference_path`.
 HeDFT trajectory CSV header:
 `Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance`. (The earlier split 9 A
 files `data_vabs2.csv` / `R1-R2.csv` are provenance, not the loader contract.)

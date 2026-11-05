@@ -23,11 +23,43 @@ from .physics.drag import (
     _REQUIRED_COEFF_KEYS,
 )
 
-# Anchor for the frozen drag-coefficient layout (data/reference/drag/<case>/...).
+# Anchor for the frozen drag-coefficient layout (data/reference/drag/<bundle>/...).
 # ``parents[1]`` is the project root: this file is i2_helium_md/i2_helium_md/
 # presets.py, so parents[0] = the package dir, parents[1] = the repo root that
 # holds ``data/``. Defined once here so the directory is not a scattered literal.
 REFERENCE_DRAG_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference" / "drag"
+
+# Anchor for the TDDFT references: one folder per droplet case, holding the raw
+# trajectory export ``<case>_All_Data.csv`` and its smoothed speed traces.
+REFERENCE_TDDFT_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference" / "TDDFT"
+TDDFT_CASES = ("9A", "18A")
+
+
+def tddft_reference_path(case: str, filename: str | None = None) -> Path:
+    """Path of a TDDFT reference file of one droplet case.
+
+    Parameters
+    ----------
+    case : str
+        Droplet case, one of ``TDDFT_CASES``.
+    filename : str, optional
+        File inside the case folder. ``None`` selects the raw trajectory
+        export ``<case>_All_Data.csv``.
+
+    Returns
+    -------
+    Path
+        ``REFERENCE_TDDFT_ROOT / case / filename``; existence is not checked,
+        the loaders do that.
+
+    Raises
+    ------
+    ValueError
+        If ``case`` is not one of ``TDDFT_CASES``.
+    """
+    if case not in TDDFT_CASES:
+        raise ValueError(f"unknown TDDFT case {case!r}; expected one of {TDDFT_CASES}")
+    return REFERENCE_TDDFT_ROOT / case / (filename or f"{case}_All_Data.csv")
 
 # Required keys in a fit_parameters.json, per realised form: the form's
 # coefficients (from the drag module's single-source key table) plus their
@@ -75,7 +107,7 @@ def load_drag_coefficients(
     ----------
     coeff_dir : Path
         Directory containing ``fit_parameters.json`` (e.g.
-        ``REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic"``).
+        ``REFERENCE_DRAG_ROOT / "LQ"``).
     expected_m_eff_amu : float
         The reference mass the *caller* (preset) expects this case to carry.
         Compared **exactly** (float-eps) against the JSON ``meff_amu`` -- a

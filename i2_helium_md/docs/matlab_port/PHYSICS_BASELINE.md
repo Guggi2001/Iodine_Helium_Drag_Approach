@@ -776,7 +776,7 @@ diagnostic, bump `_ION_SCHEMA_VERSION` to 6 and add the field to
 ### Trajectory comparison
 - `i2_helium_md/postprocess/compare_trajectories.py` — `compare_distance`,
   `compare_velocity_magnitude`. References:
-  `data/reference/9A_All_Data.csv`, `data/reference/18A_All_Data.csv`.
+  `data/reference/TDDFT/9A/9A_All_Data.csv`, `data/reference/TDDFT/18A/18A_All_Data.csv`.
   Header convention `Time_ps,V1_mag,V2_mag,V1_z,V2_z,V1_x,V2_x,R_distance`
   (CLAUDE.md → "Data Contracts").
 
@@ -874,7 +874,7 @@ Documentation cross-references (the existing per-module docs):
 
 Reference data inventory:
 
-- `data/reference/9A_All_Data.csv`, `18A_All_Data.csv` — HeDFT trajectories.
+- `data/reference/TDDFT/9A/9A_All_Data.csv`, `TDDFT/18A/18A_All_Data.csv` — HeDFT trajectories.
 - `data/reference/vmi_summary/vmi_iplus_he.csv`, `vmi_iplus_gas.csv` —
   experimental VMI references.
 - `data/reference/paper_v2/`, `paper_v3/`, `paper_v4/`, `paper_cov/` —

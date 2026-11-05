@@ -116,8 +116,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.cm import ScalarMappable  # noqa: E402
 from matplotlib.colors import ListedColormap, Normalize  # noqa: E402
 
-from i2_helium_md import load_capped_cc, load_drag_bundle  # noqa: E402
-from i2_helium_md.extraction.trajectory_matching import REFERENCE_DRAG_ROOT  # noqa: E402
+from i2_helium_md import load_capped_cc, load_drag_bundle, tddft_reference_path  # noqa: E402
 from i2_helium_md.physics.drag import drag_force  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
 from i2_helium_md.postprocess.hedft_loader import load_smoothed_speed_reference  # noqa: E402
@@ -336,8 +335,7 @@ def main() -> int:
     check_anchor(scores, series)
     print("[tier0_law] anchor OK: B2 RMSE / 9 Å margin vs committed G11 JSONs")
     coeffs = law_coefficients()
-    ref18 = load_smoothed_speed_reference(
-        REFERENCE_DRAG_ROOT / "18A" / "velocity_smoothed" / REFERENCE_FILENAME)
+    ref18 = load_smoothed_speed_reference(tddft_reference_path("18A", REFERENCE_FILENAME))
     hedft18, hedft9 = load_hedft_trajectory(HEDFT_18A_PATH), load_hedft_trajectory(HEDFT_9A_PATH)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

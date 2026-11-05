@@ -17,8 +17,8 @@ a real radial seed and report the true radial/transverse split at t*.
 
 Two reference files exist under ``data/reference/TDDFT/``:
 
-    9A_All_Data.csv    -- 9 angstrom droplet
-    18A_All_Data.csv   -- 18 angstrom droplet
+    9A/9A_All_Data.csv     -- 9 angstrom droplet
+    18A/18A_All_Data.csv   -- 18 angstrom droplet
 
 This module supersedes the split legacy importers
 ``9Angstroem/importfile_v2.m``, ``9Angstroem/importfile_R1_R2.m``, and
@@ -207,7 +207,7 @@ _SMOOTHED_SPEED_COLUMNS: tuple[str, ...] = ("time", "cleaned_SG", "IMF_cleaned")
 class SmoothedSpeedReference:
     """A CEEMDAN+SG-denoised single-atom speed reference over the extraction window.
 
-    Loaded from ``data/reference/drag/<case>/velocity_smoothed/cleaned_data.csv``
+    Loaded from ``data/reference/TDDFT/<case>/cleaned_data.csv``
     (header ``time,cleaned_SG``). This is the denoised |v2| trace of the clean
     iodine atom the drag law was fit to -- the instrument for the Tier-0
     same-smoothed consistency comparison (``TIER0_FINDINGS.md``). The 9 A file

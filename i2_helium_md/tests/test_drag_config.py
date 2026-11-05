@@ -501,7 +501,7 @@ _METHOD_B_JSON = {
     "effective_binding_energy_I_ion_eV": 0.21,
     "t_start": 2.67,
     "t_end": 14.0,
-    "reference_file": "data/reference/drag/9A/velocity_smoothed/cleaned_data_long.csv",
+    "reference_file": "data/reference/TDDFT/9A/cleaned_data_long.csv",
 }
 
 
