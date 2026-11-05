@@ -8,12 +8,16 @@ is needed. Only ``data/reference/ihe_ked/IHe_KED_reference.csv`` is read.
 
 Recipe parity (rule 1 -- this script re-uses the plot-tuning constants of
 ``summary_sections.py`` rather than restating them): identical split
-layout (left ``n = N_MIN..split-1``, right ``n = split..n_max``, each on
+layout (left ``n = n_min..split-1``, right ``n = split..n_max``, each on
 its own linear scale), identical error model -- per-point
 ``sqrt(stat^2 + sys^2)`` error bars, the two *correlated* fractional
 scale bands (calibration, condition) drawn as multiplicative envelopes,
 never folded into the per-point bars -- and the same n = 1 median anchor
 (I77) marker.
+
+Two versions are written: ``ihe_ked_reference_mean_energy`` from ``n = 1``, as the
+detection-summary panel, and ``ihe_ked_reference_mean_energy_with_bare`` from
+``n = 0``, with the bare I+ point in the left panel.
 
 Units: energies in eV, ``n`` = number of attached He atoms.
 
@@ -57,15 +61,16 @@ IHE_KED_REFERENCE_CSV: Path = (
     PROJECT_ROOT / "data" / "reference" / "ihe_ked" / "IHe_KED_reference.csv"
 )
 
-# Output directory and basename; PDF (vector, for LaTeX) + PNG are written.
-OUT_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
-OUT_BASENAME: str = "ihe_ked_reference_mean_energy"
+OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_rest"
 
-# Lowest fragment shown. 1 reproduces the detection-summary panel, whose
-# n = 0 bare bin is excluded by a *scoring* convention (DETECTED_KE_N_MIN).
-# Set to 0 to also show the bare I+ reference point -- it is measured data
-# and legitimate in an experiment-only figure.
-N_MIN: int = DETECTED_KE_N_MIN
+# PNG file stem -> lowest fragment shown. DETECTED_KE_N_MIN reproduces the
+# detection-summary panel, whose n = 0 bare bin is excluded by a *scoring*
+# convention; 0 adds the bare I+ point -- measured data, legitimate in an
+# experiment-only figure.
+VARIANTS: dict[str, int] = {
+    "ihe_ked_reference_mean_energy": DETECTED_KE_N_MIN,
+    "ihe_ked_reference_mean_energy_with_bare": 0,
+}
 
 # Draw the n = 1 median-KE marker (I77 operative anchor) alongside <E>.
 SHOW_MEDIAN_ANCHOR: bool = True
@@ -171,24 +176,20 @@ def build_reference_mean_energy_figure(
 def main() -> None:
     ked_ref = load_ihe_ked_reference(IHE_KED_REFERENCE_CSV)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    written = []
-    with plt.rc_context(FIG_RC):                 # thesis_style font (Palatino)
-        fig = build_reference_mean_energy_figure(
-            ked_ref,
-            n_min=N_MIN,
-            show_median_anchor=SHOW_MEDIAN_ANCHOR,
-            title=TITLE,
-            figsize=FIGSIZE,
-        )
-        for suffix in (".pdf", ".png"):
-            out_path = OUT_DIR / f"{OUT_BASENAME}{suffix}"
-            fig.savefig(out_path, dpi=DPI)
-            written.append(out_path)
-    plt.close(fig)
     print(f"reference: {ked_ref.source_path}")
-    print(f"fragments shown: n = {N_MIN}..{int(ked_ref.n.max())}")
-    for out_path in written:
-        print(f"wrote {out_path}")
+    with plt.rc_context(FIG_RC):                 # thesis_style font (Palatino)
+        for stem, n_min in VARIANTS.items():
+            fig = build_reference_mean_energy_figure(
+                ked_ref,
+                n_min=n_min,
+                show_median_anchor=SHOW_MEDIAN_ANCHOR,
+                title=TITLE,
+                figsize=FIGSIZE,
+            )
+            out_path = OUT_DIR / f"{stem}.png"
+            fig.savefig(out_path, dpi=DPI)
+            plt.close(fig)
+            print(f"wrote {out_path} (n = {n_min}..{int(ked_ref.n.max())})")
 
 
 if __name__ == "__main__":

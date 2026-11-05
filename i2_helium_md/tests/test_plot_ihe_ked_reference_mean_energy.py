@@ -81,6 +81,13 @@ def test_n_min_zero_adds_the_bare_fragment(script_module, ked_ref):
     assert x_with_bare.size == x_default.size + 1
 
 
+def test_variants_are_the_summary_panel_and_the_with_bare_figure(script_module):
+    assert script_module.VARIANTS == {
+        "ihe_ked_reference_mean_energy": 1,
+        "ihe_ked_reference_mean_energy_with_bare": 0,
+    }
+
+
 def test_rejects_an_empty_fragment_selection(script_module, ked_ref):
     with pytest.raises(ValueError, match="no reference rows"):
         script_module.build_reference_mean_energy_figure(
