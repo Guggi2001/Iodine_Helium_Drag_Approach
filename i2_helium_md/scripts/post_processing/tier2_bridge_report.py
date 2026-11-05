@@ -42,7 +42,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 50
 
 RUN_DIR = None  # None -> data/runs/<tier2_bridge_run_dir_name(CASE, VARIANT, N)>

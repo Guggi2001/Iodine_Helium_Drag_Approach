@@ -48,7 +48,7 @@ def _default_cfg() -> SimConfig:
 def test_bridge_call_rides_config_defaults_and_stays_reproducible():
     """A call with only the bridge kwargs must be byte-identical to the bridge:
     picture/kappa/tau ride the config defaults; relaxation stays off; budget 0.80."""
-    cfg = build_biphasic_cfg("9A", "shared_pure_cubic", **_COMMON)
+    cfg = build_biphasic_cfg("9A", "CC", **_COMMON)
     defaults = _default_cfg()
 
     cfg.validate()
@@ -70,7 +70,7 @@ def test_bridge_call_rides_config_defaults_and_stays_reproducible():
 def test_campaign_knobs_override_config_defaults():
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         picture="x2_only",
         kappa=4.0,
         tau_ps=12.5,
@@ -89,7 +89,7 @@ def test_campaign_knobs_override_config_defaults():
 
 def test_production_budget_stamp():
     cfg = build_biphasic_cfg(
-        "9A", "shared_pure_cubic", coulomb_available_eV=PRODUCTION_BUDGET_EV, **_COMMON
+        "9A", "CC", coulomb_available_eV=PRODUCTION_BUDGET_EV, **_COMMON
     )
     assert cfg.coulomb_available_eV == 2.70
 
@@ -97,7 +97,7 @@ def test_production_budget_stamp():
 def test_relaxation_time_enables_stage_and_stamps_cap():
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         relaxation_time_ps=EXPERIMENTAL_RELAXATION_TIME_PS,
         **_COMMON,
     )
@@ -111,7 +111,7 @@ def test_relaxation_time_enables_stage_and_stamps_cap():
 def test_relaxation_forces_override():
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         relaxation_time_ps=5.0,
         relaxation_forces="free_flight",
         **_COMMON,
@@ -184,7 +184,7 @@ def test_run_dir_name_carries_s_eff():
         f_ret=0.1, tau_ps=6.55, budget_eV=0.80,
     )
     dirs = {
-        tier2_run_dir_name("9A", "shared_pure_cubic", 500, **common, evap_rrk_dof=s)
+        tier2_run_dir_name("9A", "CC", 500, **common, evap_rrk_dof=s)
         for s in (None, 5.0, 8.0, 12.0)
     }
     assert len(dirs) == 4
@@ -229,7 +229,7 @@ def test_picture_tags_stay_in_lockstep_with_config_enum():
 def test_run_dir_name_shares_tier0_convention():
     name = tier2_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         500,
         picture="statistical_mixture",
         kappa=2.0,
@@ -255,7 +255,7 @@ def test_every_grid_point_builds_with_floor_f_int(budget_eV, picture, kappa):
     assert 0.0 < floor <= 1.0
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         picture=picture,
         kappa=kappa,
         f_int=floor,
@@ -272,7 +272,7 @@ def test_bridge_tag_reserved_and_unchanged():
     """Regression lock: F1 must not repurpose the reserved Phase-D bridge tag."""
     assert TIER2_BRIDGE_TAG == "tier2_bridge_biphasic"
     assert (
-        tier2_bridge_run_dir_name("9A", "shared_pure_cubic", 50)
+        tier2_bridge_run_dir_name("9A", "CC", 50)
         == "9A_drag_shared_pure_cubic_N50_tier2_bridge_biphasic"
     )
     # The campaign tag namespace ("tier2_bNNN_...") never collides with it.
@@ -291,10 +291,10 @@ def test_bridge_tag_reserved_and_unchanged():
 def test_t3_kwargs_default_none_is_byte_inert():
     """All Slice-T3 kwargs are None-sentinel: passing them explicitly as None
     must produce a config equal to the pre-T3 bridge call (byte-inert lock)."""
-    base = build_biphasic_cfg("9A", "shared_pure_cubic", **_COMMON)
+    base = build_biphasic_cfg("9A", "CC", **_COMMON)
     explicit = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         drag_form=None,
         drag_coefficient_overrides=None,
         dissociation_ladder=None,
@@ -322,10 +322,10 @@ def test_drag_form_override_builds_capped_cubic_inheriting_bundle_b():
     from the overrides (v_c, p_tail) plus the bundle (b) -- structurally the T1
     'same b as the locked pure-cubic bundle' premise. Provenance and the stamped
     effective binding ride the bundle unchanged (the §6.5.1 identity)."""
-    base = build_biphasic_cfg("9A", "shared_pure_cubic", **_COMMON)
+    base = build_biphasic_cfg("9A", "CC", **_COMMON)
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         drag_form="capped_cubic",
         drag_coefficient_overrides={"v_c": 7.5, "p_tail": -1.0},
         **_COMMON,
@@ -351,7 +351,7 @@ def test_drag_coefficient_overrides_require_drag_form():
     with pytest.raises(ValueError, match="drag_form"):
         build_biphasic_cfg(
             "9A",
-            "shared_pure_cubic",
+            "CC",
             drag_coefficient_overrides={"v_c": 7.5},
             **_COMMON,
         )
@@ -361,7 +361,7 @@ def test_drag_form_override_rejects_unknown_coefficient_key():
     with pytest.raises(ValueError, match="not coefficients of"):
         build_biphasic_cfg(
             "9A",
-            "shared_pure_cubic",
+            "CC",
             drag_form="capped_cubic",
             drag_coefficient_overrides={"v_c": 7.5, "p_tail": 0.0, "a": 1.0},
             **_COMMON,
@@ -374,7 +374,7 @@ def test_drag_form_override_missing_key_not_in_bundle_rejected():
     with pytest.raises(ValueError, match="p_tail"):
         build_biphasic_cfg(
             "9A",
-            "shared_pure_cubic",
+            "CC",
             drag_form="capped_cubic",
             drag_coefficient_overrides={"v_c": 7.5},
             **_COMMON,
@@ -387,7 +387,7 @@ def test_ladder_kwargs_stamp_tabulated_table():
     rungs = tuple(0.0092 for _ in range(N_STAR + 11))
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         dissociation_ladder="tabulated",
         tabulated_ladder_rungs_eV=rungs,
         **_COMMON,
@@ -401,7 +401,7 @@ def test_ladder_kwargs_stamp_tabulated_table():
 def test_production_kinematics_kwargs_stamped():
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         R0_GS_angstrom=2.666,
         E_coulomb_scale=1.0,
         single_initial_position=False,
@@ -420,7 +420,7 @@ def test_detection_time_enables_stage_and_stamps():
     the stage and stamps the Sourced t_detect; None leaves the stage off."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         relaxation_time_ps=1000.0,
         detection_time_ps=EXPERIMENTAL_RELAXATION_TIME_PS,
         **_COMMON,
@@ -452,7 +452,7 @@ def test_confirmation_dir_in_probe_namespace_but_distinct():
     by the F3 campaign glob *_tier2_*) and can never collide with a delivered
     probe tag (those continue 'tier2probe_b...', conf tags 'tier2probe_conf...')."""
     name = tier2_confirmation_run_dir_name(
-        "9A", "shared_pure_cubic", 50, config_label="c1", budget_eV=2.70
+        "9A", "CC", 50, config_label="c1", budget_eV=2.70
     )
     assert name == "9A_drag_shared_pure_cubic_N50_tier2probe_conf270_c1"
     assert "_tier2probe_" in name
@@ -460,7 +460,7 @@ def test_confirmation_dir_in_probe_namespace_but_distinct():
     assert not fnmatch(name, "*_tier2probe_b*")  # the delivered probe tags
     labels = {
         tier2_confirmation_run_dir_name(
-            "9A", "shared_pure_cubic", 50, config_label=lab, budget_eV=2.70
+            "9A", "CC", 50, config_label=lab, budget_eV=2.70
         )
         for lab in ("c1", "c2", "c3", "c4")
     }
@@ -470,7 +470,7 @@ def test_confirmation_dir_in_probe_namespace_but_distinct():
 def test_grid_points_get_distinct_run_dirs():
     def name(picture, kappa, budget):
         return tier2_run_dir_name(
-            "9A", "shared_pure_cubic", 500,
+            "9A", "CC", 500,
             picture=picture, kappa=kappa, lambda0_per_ps=0.9, f_int=0.24, f_ret=0.1,
             tau_ps=6.55, budget_eV=budget,
         )

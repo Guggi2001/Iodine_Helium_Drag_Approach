@@ -180,8 +180,7 @@ DRAG_PRESETS = {"B2": ..., "B3": ..., "h405": ...}
 
 - E₀ written in eV; `internal_energy_partition_fraction = E₀ /
   coulomb_available_eV` derived and commented. Coefficients from the drag
-  bundle catalog (B2 = `srho3p5A18A_linear_quadratic`; B3 overrides a and
-  E_bind and states the departure in its docstring); ladder rungs from the
+  bundle catalog (B2 = `LQ`, B3 = `LQ_eff`); ladder rungs from the
   ladder source, not literals. Unknown member → `KeyError`; `**overrides`
   as in the legacy presets.
 - **Oracle tests (exact):** B2 every member = committed
@@ -244,7 +243,7 @@ def pool_battery(run_dirs, out_dir) -> Path
 - Principle: no default implies a drag law; `SimConfig()` and the legacy
   presets stay the hard-sphere MATLAB port.
 - To `None`: `drag_form` (was `"linear_cubic"`), `drag_bundle`
-  (`"shared_pure_cubic"`), `drag_spatial_gate` (`"density_proportional"`),
+  (`"CC"`), `drag_spatial_gate` (`"density_proportional"`),
   `drag_gate_steepness` (14.2). Unchanged: `mass_scenario="fixed"`,
   `allow_*`, `m_eff_amu` / `mass_initial_amu`, Tier-1a fields.
 - Guard (config load), all-or-nothing: coefficients set → all four set +
@@ -255,8 +254,8 @@ def pool_battery(run_dirs, out_dir) -> Path
   combination → error. Drag cfgs load unchanged. Checkpoint schema, RNG
   draw order, constants untouched (user approval for the default-scope
   change: 2026-10-14).
-- Not here: bundle-catalog pruning (reference data stays), the Tier-1a
-  `anchored_discrete` code path, `run_single_pulse.py`.
+- Not here: the Tier-1a `anchored_discrete` code path, `run_single_pulse.py`.
+  (Bundle-catalog pruning is done, see C6.)
 
 ### C5.4 Cleanup + manifest
 
@@ -272,17 +271,17 @@ thesis number / figure from data still on disk; committed results under
   `plot_neutral_energy_balance.py`, `plot_ion_temperature_diagnostic.py`,
   `plot_ihe_ked_reference_mean_energy.py`, `plot_paper_cov.py`,
   `plot_paper_v2–v4.py`; Tier 0: `gen_tier0_runs.py`, `tier0_common.py`,
-  `tier0_thesis_figure.py`, `tier0_drag_comparison.py`, extraction
-  `method_b_g412_ridge.py` + `form_phase_common.py` +
-  `method_b_srho3p5_refit.py`, `method_b_18A_only_refit.py` (G4.9),
-  `method_a_g411_cross_case.py` (G4.11 caveat).
+  `tier0_thesis_figure.py`, `tier0_drag_comparison.py`,
+  `tier0_calibration_figures.py`, extraction `method_b_g412_ridge.py`.
 - **Rewire:** `tier2_g6_chord_map.py` → presets + battery naming; the 4
   physics tests → configs from `drag_production_B2()` / a test fixture.
 - **Delete** (≈ 85 files + ≈ 40 script-level tests): all `gen_tier2*` /
-  `gen_tier2atlas_*` (28), `gen_tier1a*`, `gen_detstagefix_validation.py`,
-  `tier1a_common.py`, `tier2_common.py`, `build_pooled_detection_container.py`
-  (absorbed), every `tier2*` / `tier2atlas_*` / `tier1a_*` table / report
-  script except G6, the other 11 extraction scripts, `plot_shell_schedule.py`.
+  `gen_tier2atlas_*`, `gen_detstagefix_validation.py`,
+  `tier2_common.py`, `build_pooled_detection_container.py`
+  (absorbed), every `tier2*` / `tier2atlas_*` table / report
+  script except G6, `plot_shell_schedule.py`. (The Tier-1a scripts and the
+  other extraction scripts already went in the 2026-11-05 drag cleanup, git
+  tag `pre-drag-cleanup`.)
 - **Manifest** `docs/SCRIPT_REMOVAL_MANIFEST.md`: per deleted script →
   study → doc section → committed results → last commit containing it;
   header: `git checkout <sha> -- <path>`. Deleted tests listed with the
@@ -376,3 +375,113 @@ cfg (an existing dir with a different `cfg.json` is refused).
   `gen_tier2_detfix_battery.py` into the battery module **before** deleting
   any generator; the thesis path imports them today.
 - Scale for the manifest: 35 `scripts/gen_*.py` files as of 2026-10-27.
+
+---
+
+## C6. Drag reference tree and Tier-0 scripts — DONE 2026-11-05, follow-ups OPEN
+
+**What was done.** `data/reference/drag/` went from 12 MB and 171 tracked files
+to 1.2 MB and 38 files, keeping only what the thesis uses. Everything removed is
+in git tag `pre-drag-cleanup` (commit `52e4e2c`):
+
+```powershell
+git checkout pre-drag-cleanup -- data/reference/drag scripts/extraction
+```
+
+Three steps, in this order:
+
+1. **Tree and ids.** New layout (below). The bundle catalog went from 17 ids to
+   `LQ`, `LQ_eff`, `CC`. Deleted 23 scripts (the Method-A / Method-B extraction
+   drivers, the Tier-1a scripts, `gen_tier2atlas_{ebindscan,ebindseeds,spotcheck}`)
+   and 8 test files. The m = 19 ridge is gone too (user decision): B2 is that
+   ridge's c = 1.6 point, and `calibration_ridge/ridge/check_B2.json` keeps it,
+   re-scored unchanged at m = 21.
+2. **Simplification.** `gen_tier0_runs.py` selects a `LAW` or a `RIDGE_C` point.
+   `load_drag_bundle` / `resolve_drag_bundle_dir` lost their `case` argument, and
+   `tier0_common` lost `resolve_bundle_dir`, `CATALOG`, `window_source_dir` and
+   `reference_export_dir_name`. `form_phase_common.py` was folded into
+   `method_b_g412_ridge.py`, which now has only the `ridge_m21` / `bound_m21` modes.
+3. **Figures.** `tier0_calibration_figures.py` regenerates the five
+   `thesis_microscopic_calibration/` figures. The stuck pair now uses the
+   intended 0.308 eV; the hand-saved PNGs were at 0.306 eV.
+
+**Current state.**
+
+| Path | Content |
+|---|---|
+| `LQ/` | B2. `fit_summary.json` is the earlier free G4.11 fit and keeps its old id |
+| `LQ_eff/` | B3, new file, hand-placed law |
+| `CC/` | h405: the shared cubic b plus a `cap` block. `load_drag_bundle("CC")` is uncapped (presets); `load_capped_cc()` is the thesis law |
+| `calibration_ridge/ridge/` | m = 21 ridge, `check_B2.json`, `check_A5.json`, `ridge_m21.csv` |
+| `calibration_ridge/exit_bound_9A/` | 9 Å exit bound of those points |
+| `{9A,18A}/velocity_smoothed/` | smoothed TDDFT traces, unchanged |
+
+`ridge_m21.csv` and `c1p600.json` stay unedited: the row and file for c = 1.6 hold
+the fitted m = 21 point, and `tier0_law_figure.py` draws B2 in its place. The
+`_m19` columns of that CSV are the only remaining m = 19 grid, and
+`tier2_h2b_forward_model.py` reads them.
+
+**How finished runs keep working.** A run stores its coefficients inline in
+`cfg.json`, so it never reads this tree; only the id strings matter.
+`config.HISTORICAL_DRAG_BUNDLE_IDS` maps `LQ` →
+`srho3p5A18A_linear_quadratic` and `CC` → `shared_pure_cubic`. It is used in
+exactly three places: `validate` accepts the stored ids, `run_dir_name` keeps
+them in directory names, and `cfg_diff_vs_reference` /
+`with_current_bundle_ids` compare on the current ids. **Never patch a `cfg.json`
+by hand.** `CC` must stay unstamped: stamping it fails `validate` on the old runs
+that have no `drag_bundle` key.
+
+**Verified 2026-11-05.** Suite 3287 passed, 44 skipped (was 3453 / 64; no new
+skip; the drop is the removed tests). All 165 runs give the same load and
+validate result, with identical physics fields; the 10 runs without a
+`drag_bundle` key now read as `CC`. The 18 B2 / B3 / h405 members rebuild exactly
+from the generators, and their oracle guards pass. 16 of 16 results figures
+(`b2_*`, `laws_*`, `tier2_B2_*`, ridge) re-render pixel-identical. **Not
+re-rendered:** `g6_*`, `g13_*` (their scripts write to `data/runs`; their input
+runs pass the checks above). Most of the 44 skips need run directories that are
+not on disk, so those guards are not exercised by the suite.
+
+**Tests removed with their code or data.** The 7 files of the deleted scripts,
+`test_tier0_drag_comparison.py` (pinned the June law; the current anchor is in
+`test_tier0_law_figure.py`), the two Method-A force-balance reproduction tests in
+`test_drag.py`, the `lqbattery` rebuild tests, `TestWinnerRule`.
+
+**Left to do.** All OPEN; none blocks the thesis.
+
+1. **Remove the historical scripts** (C5.4). Until then these stop with an error
+   when run: the fixed-well arm of `gen_tier2_g415_well.py` (`WELL_JSON` is gone),
+   `build_cell` of `gen_tier2atlas_lqbattery.py` (`shared_lq` is gone),
+   `--b1c` at c = 1.8 and the g414 fine cells (`ridge_point` keeps only c 1.6 and
+   2.0). The `g414twin` stage of `tier2_h2b_forward_model.py` is already removed.
+2. **Replace the B3 and CC wiring when the presets land** (C5.1). `--b3` still
+   builds through `LQ` with overrides, so new B3 runs carry the `LQ` label; the
+   values also live in `gen_tier2_detfix_postpickup.py` (a test pins them to
+   `LQ_eff`). The CC cap is duplicated in `gen_tier2_h405_pp35.py`
+   `SCAN_POOL_CELL`, and the Tier-2 chain applies it without `load_capped_cc`.
+   The C5.3 change of the `drag_bundle` default to `None` must keep the old runs
+   without that key valid: they read as `CC` today.
+3. **Prune the extraction code.** `i2_helium_md/extraction/trajectory_matching.py`
+   still holds every old fit variant and bundle writer, with their tests, though
+   only the `lq_fixed_c` path is used. Decide with C5.4 ("keep only what the
+   thesis cites").
+4. **Remove the `force_balance` branch** of `load_drag_coefficients` and its tests;
+   no such bundle remains. `DragCoefficients.extraction_method` still needs the
+   value for old `cfg.json` files, so keep that.
+5. **Decide on `Drag_function/`.** It reads `velocity_smoothed`, but a rerun would
+   recreate `power/`, `linear_and_cubic/` and `linear_and_quadratic/`.
+6. **Tidy `tier0_drag_comparison.py`.** It still has commented-out plot blocks,
+   the unused `positions_figure` path and a few invalid-escape warnings.
+7. **Retire the id map only with the runs.** `HISTORICAL_DRAG_BUNDLE_IDS` goes when
+   no run with an old id is needed any more, and not before.
+8. **Four runs do not load, and did not before this cleanup:**
+   `{9A,18A}_drag_tier0_N{50,2000}` have the unknown field
+   `mass_rate_coefficient`. Delete them or leave them.
+9. **Stale pointers stay.** Logs, frozen JSONs (`LQ/fit_parameters.json` anchors,
+   `check_*.json` `source`) and completed plans name the old paths on purpose.
+   Resolve them through the tag.
+10. **Push the tag.** `pre-drag-cleanup` is local only until `git push origin
+    pre-drag-cleanup`; do this before relying on it anywhere else.
+11. **Undecided placement.** `tier2_B2_B3.png` and `tier2_B2_h405.png` show Tier-0
+    content but sit in `thesis_results_discussion/`.
+
+**Done when.** Items 1–6 are closed by C5; 7–11 each by their own decision.

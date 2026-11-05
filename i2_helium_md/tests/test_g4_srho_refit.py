@@ -255,7 +255,7 @@ class TestBundleStamps:
         )
         fit.a_err, fit.b_err, fit.e_bind_err_eV, fit.uncertainty_model = 0, 0.1, 0.01, "x"
         out = write_shared_fit_parameters(
-            fit, tmp_path, bundle_id="srho3p5A_shared_cubic",
+            fit, tmp_path, bundle_id="LQ",
             density_width_source="src", held_out_axis="none (stage-2 only)",
         )
         raw = json.loads(out.read_text(encoding="utf-8"))
@@ -263,14 +263,14 @@ class TestBundleStamps:
         assert raw["drag_spatial_gate"] == "erf_independent"
         assert raw["drag_gate_steepness_angstrom"] == 3.5
         assert raw["potential_steepness_angstrom"] == 14.2
-        assert raw["bundle_id"] == "srho3p5A_shared_cubic"
+        assert raw["bundle_id"] == "LQ"
         assert raw["held_out_axis"] == "none (stage-2 only)"
         coeffs = load_drag_coefficients(tmp_path, expected_m_eff_amu=_M_EFF)
         assert coeffs.extraction_gate_steepness_angstrom == 3.5
-        assert coeffs.bundle_id == "srho3p5A_shared_cubic"
+        assert coeffs.bundle_id == "LQ"
 
     def test_legacy_bundle_loads_unstamped(self):
-        coeffs = load_drag_bundle("shared_pure_cubic", "9A", expected_m_eff_amu=_M_EFF)
+        coeffs = load_drag_bundle("CC", expected_m_eff_amu=_M_EFF)
         assert coeffs.extraction_gate_steepness_angstrom is None
         assert coeffs.bundle_id is None
 
@@ -318,18 +318,18 @@ class TestGateGuard:
 class TestBundleIdGuard:
     def test_matching_id_passes(self):
         coeffs = _stamped_coeffs(extraction_gate_steepness_angstrom=3.5,
-                                 bundle_id="srho3p5A_shared_cubic")
-        _drag_cfg(coeffs, drag_bundle="srho3p5A_shared_cubic", **_GATE_3P5).validate()
+                                 bundle_id="LQ")
+        _drag_cfg(coeffs, drag_bundle="LQ", **_GATE_3P5).validate()
 
     def test_mismatched_id_refused(self):
         coeffs = _stamped_coeffs(extraction_gate_steepness_angstrom=3.5,
-                                 bundle_id="srho3p5A_shared_cubic")
+                                 bundle_id="LQ")
         with pytest.raises(ValueError, match="bundle_id"):
             _drag_cfg(coeffs, **_GATE_3P5).validate()  # drag_bundle = legacy default
 
     def test_unstamped_coefficients_with_new_selector_refused(self):
         with pytest.raises(ValueError, match="no bundle_id stamp"):
-            _drag_cfg(_stamped_coeffs(), drag_bundle="srho3p5A_shared_cubic").validate()
+            _drag_cfg(_stamped_coeffs(), drag_bundle="LQ").validate()
 
     def test_unknown_selector_refused_even_without_drag(self):
         with pytest.raises(ValueError, match="drag_bundle"):
@@ -341,26 +341,20 @@ class TestBundleIdGuard:
 # ---------------------------------------------------------------------------
 class TestSelector:
     def test_catalog_matches_config_enum(self):
-        assert set(DRAG_BUNDLE_CATALOG) == set(config_mod._KNOWN_DRAG_BUNDLES)
-        assert set(config_mod._UNSTAMPED_LEGACY_DRAG_BUNDLES) < set(DRAG_BUNDLE_CATALOG)
+        assert set(DRAG_BUNDLE_CATALOG) == set(config_mod._DRAG_BUNDLES)
+        assert "CC" in config_mod._UNSTAMPED_LEGACY_DRAG_BUNDLES
 
     @pytest.mark.parametrize("bundle_id", sorted(DRAG_BUNDLE_CATALOG))
-    @pytest.mark.parametrize("case", ["9A", "18A"])
-    def test_every_id_resolves_with_geometry_guard(self, bundle_id, case):
-        path = resolve_drag_bundle_dir(bundle_id, case)
-        other = "18A" if case == "9A" else "9A"
-        if "{case}" in DRAG_BUNDLE_CATALOG[bundle_id]:
-            assert case in path.parts and other not in path.parts
+    def test_every_id_resolves_to_a_bundle(self, bundle_id):
+        assert (resolve_drag_bundle_dir(bundle_id) / "fit_parameters.json").is_file()
 
-    def test_unknown_id_and_case_refused(self):
+    def test_unknown_id_refused(self):
         with pytest.raises(ValueError, match="drag bundle"):
-            resolve_drag_bundle_dir("nope", "9A")
-        with pytest.raises(ValueError, match="case"):
-            resolve_drag_bundle_dir("shared_pure_cubic", "12A")
+            resolve_drag_bundle_dir("nope")
 
     def _write_stamped_bundle(self, root: Path, bundle_id: str, stamp_id: str):
         legacy = json.loads(
-            (presets_mod.REFERENCE_DRAG_ROOT / DRAG_BUNDLE_CATALOG["shared_pure_cubic"]
+            (presets_mod.REFERENCE_DRAG_ROOT / DRAG_BUNDLE_CATALOG["CC"]
              / "fit_parameters.json").read_text(encoding="utf-8")
         )
         legacy.update(drag_gate_steepness_angstrom=3.5, bundle_id=stamp_id)
@@ -371,7 +365,7 @@ class TestSelector:
     def test_build_drag_cfg_brings_the_stamped_gate(self, tmp_path, monkeypatch):
         from scripts.tier0_common import build_drag_cfg
 
-        bid = "srho3p5A_shared_cubic"
+        bid = "LQ"
         self._write_stamped_bundle(tmp_path, bid, bid)
         monkeypatch.setattr(presets_mod, "REFERENCE_DRAG_ROOT", tmp_path)
         cfg = build_drag_cfg("9A", bid, num_molecules=2, ion_time_ps=1.0,
@@ -385,28 +379,18 @@ class TestSelector:
     def test_build_drag_cfg_legacy_unchanged(self):
         from scripts.tier0_common import build_drag_cfg
 
-        cfg = build_drag_cfg("9A", "shared_pure_cubic", num_molecules=2,
+        cfg = build_drag_cfg("9A", "CC", num_molecules=2,
                              ion_time_ps=1.0, dt_ion_ps=0.01, seed=1)
-        assert cfg.drag_bundle == "shared_pure_cubic"
+        assert cfg.drag_bundle == "CC"
         assert cfg.drag_spatial_gate == SimConfig().drag_spatial_gate
         cfg.validate()
 
     def test_misplaced_bundle_refused(self, tmp_path, monkeypatch):
-        self._write_stamped_bundle(tmp_path, "srho3p5A_shared_cubic",
-                                   "srho3p5A_shared_linear")
+        self._write_stamped_bundle(tmp_path, "LQ",
+                                   "LQ_eff")
         monkeypatch.setattr(presets_mod, "REFERENCE_DRAG_ROOT", tmp_path)
         with pytest.raises(ValueError, match="stamped"):
-            load_drag_bundle("srho3p5A_shared_cubic", "9A", expected_m_eff_amu=_M_EFF)
-
-    def test_export_folder_names(self):
-        from scripts.tier0_common import reference_export_dir_name
-
-        assert reference_export_dir_name("tier0", "shared_pure_cubic") == "tier0"
-        assert reference_export_dir_name("tier1a", "percase_lq") == "tier1a"
-        assert (reference_export_dir_name("tier0", "srho3p5A_shared_cubic")
-                == "tier0_srho3p5A")
-        with pytest.raises(ValueError):
-            reference_export_dir_name("tier0", "nope")
+            load_drag_bundle("LQ", expected_m_eff_amu=_M_EFF)
 
 
 # ---------------------------------------------------------------------------
@@ -436,11 +420,11 @@ class TestCfgDiffNested:
         ref_path = self._legacy_reference(cfg, tmp_path)
         # Unstamped legacy id: carries no information beyond drag_coefficients.
         assert cfg_diff_vs_reference(
-            replace(cfg, drag_bundle="shared_lq"), ref_path) == []
+            replace(cfg, drag_bundle="shared_pure_cubic"), ref_path) == []
         # Stamped (post-G4) id: not witnessable by a pre-G4 reference.
         with pytest.raises(AssertionError, match="drag_bundle"):
             cfg_diff_vs_reference(
-                replace(cfg, drag_bundle="srho3p5A_shared_cubic"), ref_path)
+                replace(cfg, drag_bundle="LQ"), ref_path)
 
     def test_non_default_nested_stamp_refused(self, tmp_path):
         from scripts.tier2_common import cfg_diff_vs_reference
@@ -451,48 +435,3 @@ class TestCfgDiffNested:
             cfg.drag_coefficients, extraction_gate_steepness_angstrom=3.5))
         with pytest.raises(AssertionError, match="extraction_gate_steepness"):
             cfg_diff_vs_reference(stamped, ref_path)
-
-
-# ---------------------------------------------------------------------------
-# 8. The pre-registered winner rule (driver, pure function)
-# ---------------------------------------------------------------------------
-class TestWinnerRule:
-    @staticmethod
-    def _sel(obj_lin, obj_cub, obj_lc, passes=(True, True, True)):
-        from scripts.extraction.method_b_srho3p5_refit import select_winner
-
-        objectives = {SHARED_LINEAR: obj_lin, SHARED_CUBIC: obj_cub,
-                      SHARED_LINEAR_CUBIC: obj_lc}
-        return select_winner(objectives, dict(zip(
-            (SHARED_LINEAR, SHARED_CUBIC, SHARED_LINEAR_CUBIC), passes)))
-
-    def test_both_equivalent_cubic_wins(self):
-        assert self._sel(0.104, 0.103, 0.100)["winner"] == SHARED_CUBIC
-
-    def test_only_cubic_equivalent(self):
-        assert self._sel(0.200, 0.104, 0.100)["winner"] == SHARED_CUBIC
-
-    def test_only_linear_equivalent(self):
-        assert self._sel(0.104, 0.200, 0.100)["winner"] == SHARED_LINEAR
-
-    def test_neither_equivalent_full_law(self):
-        assert self._sel(0.200, 0.200, 0.100)["winner"] == SHARED_LINEAR_CUBIC
-
-    def test_threshold_is_inclusive_at_0p005(self):
-        sel = self._sel(0.300, 0.1050, 0.1000)
-        assert sel["T_a0_Aps"] == pytest.approx(0.005)
-        # 0.105 - 0.100 is 0.005 up to float rounding; inclusive by rule.
-        assert sel["winner"] in (SHARED_CUBIC, SHARED_LINEAR_CUBIC)
-
-    def test_equivalent_but_band_failing_family_is_out(self):
-        sel = self._sel(0.200, 0.101, 0.100, passes=(True, False, True))
-        assert sel["winner"] == SHARED_LINEAR_CUBIC
-
-    def test_negative_difference_noted_and_counts_equivalent(self):
-        sel = self._sel(0.300, 0.099, 0.100)
-        assert sel["winner"] == SHARED_CUBIC
-        assert sel["T_a0_Aps"] < 0 and sel["notes"]
-
-    def test_no_admissible_family(self):
-        sel = self._sel(0.3, 0.3, 0.1, passes=(False, False, False))
-        assert sel["winner"] is None

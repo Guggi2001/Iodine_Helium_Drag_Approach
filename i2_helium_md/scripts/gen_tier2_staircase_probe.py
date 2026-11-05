@@ -64,7 +64,7 @@ import sys
 # =============================================================================
 
 CASE = "9A"                     # the staircase anchor is 9 A-only
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 50                          # bridge scale: mean n(t) is stable here
 
 # Run parameters inherit the Phase-D bridge exactly (wiring-oracle point).

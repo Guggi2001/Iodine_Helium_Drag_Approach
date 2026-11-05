@@ -11,14 +11,13 @@ import itertools
 
 import pytest
 
-from i2_helium_md.config import _UNSTAMPED_LEGACY_DRAG_BUNDLES
+from i2_helium_md import DRAG_BUNDLE_CATALOG, load_capped_cc, resolve_drag_bundle_dir
 from scripts.tier0_common import (
-    CATALOG,
     M_EFF_AMU,
+    TIER0_WINDOWS_PS,
     build_drag_cfg,
-    resolve_bundle_dir,
+    build_tier0_cfg,
     run_dir_name,
-    window_source_dir,
 )
 
 _CASES = ("9A", "18A")
@@ -26,20 +25,15 @@ _BUILD_KW = dict(num_molecules=2, ion_time_ps=0.02, dt_ion_ps=0.01, seed=123)
 
 
 @pytest.mark.parametrize(
-    "case,variant", list(itertools.product(_CASES, sorted(CATALOG)))
+    "case,variant", list(itertools.product(_CASES, sorted(DRAG_BUNDLE_CATALOG)))
 )
 def test_every_catalog_variant_builds_and_validates(case, variant):
     """Each catalog bundle wires onto either geometry and validates.
 
     Pins the section-6.5.1 pairing identity: the cfg's binding equals the
     bundle's stamped effective binding, so ``validate()`` passes with no escape
-    hatch, and the cfg form matches the bundle's stamped form. A G4 catalog id
-    whose bundle has not been produced yet (or whose fit trapped and wrote no
-    loadable bundle) is skipped, not failed.
+    hatch, and the cfg form matches the bundle's stamped form.
     """
-    if (variant not in _UNSTAMPED_LEGACY_DRAG_BUNDLES
-            and not (resolve_bundle_dir(case, variant) / "fit_parameters.json").is_file()):
-        pytest.skip(f"bundle {variant!r} not produced (G4 refit pending/trapped)")
     cfg = build_drag_cfg(case, variant, **_BUILD_KW)
     cfg.validate()  # raises on any guard failure
 
@@ -60,10 +54,10 @@ def test_default_build_matches_committed_bundle_coefficients():
     from i2_helium_md import load_drag_coefficients
 
     coeffs = load_drag_coefficients(
-        resolve_bundle_dir("18A", "shared_pure_cubic"),
+        resolve_drag_bundle_dir("CC"),
         expected_m_eff_amu=M_EFF_AMU,
     )
-    cfg = build_drag_cfg("18A", "shared_pure_cubic", **_BUILD_KW)
+    cfg = build_drag_cfg("18A", "CC", **_BUILD_KW)
     assert cfg.drag_coefficients.coefficients == coeffs.coefficients
     assert (
         cfg.drag_coefficients.effective_binding_energy_I_ion_eV
@@ -74,11 +68,11 @@ def test_default_build_matches_committed_bundle_coefficients():
 def test_coeff_override_lands_in_cfg():
     """A coefficient override replaces just that key; the rest stay committed."""
     cfg = build_drag_cfg(
-        "18A", "shared_pure_cubic", coeff_overrides={"b": 9.99}, **_BUILD_KW
+        "18A", "CC", coeff_overrides={"b": 9.99}, **_BUILD_KW
     )
     assert cfg.drag_form == "linear_cubic"
     assert cfg.drag_coefficients.coefficients["b"] == 9.99
-    # a is untouched (still the committed a = 0 of shared_pure_cubic).
+    # a is untouched (still the committed a = 0 of CC).
     assert cfg.drag_coefficients.coefficients["a"] == 0.0
     cfg.validate()
 
@@ -86,14 +80,14 @@ def test_coeff_override_lands_in_cfg():
 def test_e_bind_override_ties_both_fields_and_validates():
     """An E_bind override is wired into both the cfg and the bundle identity."""
     cfg = build_drag_cfg(
-        "9A", "shared_pure_cubic", e_bind_override=0.222, **_BUILD_KW
+        "9A", "CC", e_bind_override=0.222, **_BUILD_KW
     )
     assert cfg.binding_energy_I_ion_eV == 0.222
     assert cfg.drag_coefficients.effective_binding_energy_I_ion_eV == 0.222
     cfg.validate()  # identity holds, no escape hatch needed
 
 
-_LQ = "srho3p5A18A_linear_quadratic"
+_LQ = "LQ"
 _M21_AMU = 126.90 + 21 * 4.0026   # I+ + 21 He, constants.py m(n) convention
 
 
@@ -133,27 +127,58 @@ def test_unknown_override_key_for_form_raises():
     with pytest.raises(ValueError, match="not coefficients of form"):
         # 'c' is a linear_quadratic key, not valid for linear_cubic.
         build_drag_cfg(
-            "18A", "shared_pure_cubic", coeff_overrides={"c": 1.0}, **_BUILD_KW
+            "18A", "CC", coeff_overrides={"c": 1.0}, **_BUILD_KW
         )
 
 
 def test_unknown_case_and_variant_raise():
     with pytest.raises(ValueError, match="CASE must be one of"):
-        resolve_bundle_dir("12A", "shared_pure_cubic")
+        build_drag_cfg("12A", "CC", **_BUILD_KW)
     with pytest.raises(ValueError, match="VARIANT must be one of"):
-        resolve_bundle_dir("9A", "nope")
+        build_drag_cfg("9A", "nope", **_BUILD_KW)
 
 
-def test_per_case_variant_resolves_to_own_geometry():
-    """The geometry guard: a per-case key only ever points at its own case."""
-    assert resolve_bundle_dir("9A", "percase_pl").parts[-3] == "9A"
-    assert resolve_bundle_dir("18A", "percase_pl").parts[-3] == "18A"
+def test_tier0_lq_laws_are_the_bundles():
+    for law in ("LQ", "LQ_eff"):
+        assert build_tier0_cfg("18A", law, **_BUILD_KW) == build_drag_cfg("18A", law, **_BUILD_KW)
 
 
-def test_run_dir_name_and_window_source():
-    assert run_dir_name("18A", "shared_pl", 50) == "18A_drag_shared_pl_N50"
+def test_tier0_cc_runs_capped_at_the_3p5_gate():
+    cfg = build_tier0_cfg("9A", "CC", m_eff_amu=_M21_AMU, **_BUILD_KW)
+    assert cfg.drag_form == "capped_cubic"
+    assert cfg.drag_coefficients.coefficients == load_capped_cc().coefficients
+    assert cfg.drag_coefficients.extraction_mass_amu == _M21_AMU
+    assert (cfg.drag_spatial_gate, cfg.drag_gate_steepness) == ("erf_independent", 3.5)
+    assert cfg.allow_inconsistent_gate_pairing
+
+
+def test_tier0_ridge_point_is_the_committed_m21_fit():
+    cfg = build_tier0_cfg("18A", "LQ", ridge_c=1.6, m_eff_amu=_M21_AMU, **_BUILD_KW)
+    assert cfg.drag_coefficients.coefficients == {"a": 17.75706787001758, "c": 1.6}
+    assert cfg.binding_energy_I_ion_eV == 0.11766211392031967
+    override = build_tier0_cfg("18A", "LQ", ridge_c=1.6, e_bind_override=0.3,
+                               m_eff_amu=_M21_AMU, **_BUILD_KW)
+    assert override.binding_energy_I_ion_eV == 0.3
+
+
+def test_tier0_ridge_needs_lq_and_an_existing_point():
+    with pytest.raises(ValueError, match="ridge_c needs"):
+        build_tier0_cfg("18A", "CC", ridge_c=1.6, **_BUILD_KW)
+    with pytest.raises(FileNotFoundError):
+        build_tier0_cfg("18A", "LQ", ridge_c=1.8, **_BUILD_KW)
+
+
+def test_run_dir_name_keeps_the_stored_id_of_renamed_bundles():
+    """Run names keep the id on disk, so generators still find finished runs."""
     assert (
-        run_dir_name("9A", "shared_pure_cubic", 50, run_tag="tuned")
+        run_dir_name("9A", "CC", 50, run_tag="tuned")
         == "9A_drag_shared_pure_cubic_N50_tuned"
     )
-    assert window_source_dir("9A").parts[-2:] == ("9A", "trajectory_matching")
+    assert (run_dir_name("18A", "LQ", 50, run_tag="B2m21")
+            == "18A_drag_srho3p5A18A_linear_quadratic_N50_B2m21")
+    assert run_dir_name("18A", "LQ_eff", 50) == "18A_drag_LQ_eff_N50"
+
+
+def test_tier0_windows_are_the_extraction_windows():
+    """The values the per-case fit_parameters.json files stamped (spec section 3.1)."""
+    assert TIER0_WINDOWS_PS == {"9A": (2.67, 14.081), "18A": (4.54, 14.768)}

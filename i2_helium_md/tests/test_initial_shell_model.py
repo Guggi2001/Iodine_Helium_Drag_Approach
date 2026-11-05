@@ -369,7 +369,7 @@ class TestBuildBiphasicCfgPassThrough:
 
         return build_biphasic_cfg(
             "9A",
-            "shared_pure_cubic",
+            "CC",
             num_molecules=2,
             ion_time_ps=0.02,
             dt_ion_ps=0.01,

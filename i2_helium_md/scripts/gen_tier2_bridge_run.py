@@ -22,7 +22,7 @@ import sys
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 50
 
 # Run parameters inherit Tier-1a exactly (gen_tier1a_runs.py).

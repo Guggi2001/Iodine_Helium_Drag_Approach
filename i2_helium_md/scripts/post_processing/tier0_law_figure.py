@@ -21,8 +21,8 @@ the re-landed h405 under its thesis name CC5.4 (legend names and colours as
 ``tier2_B2_B3`` (B2 vs B3).
 
 Anchors (fail loudly): the B2 18 Å RMSE in the scores CSV equals the committed
-``g11_ridge_m21/check_B2.json`` and its 9 Å margin the committed
-``g11_exit_bound_m21/B2.json``, bit-exactly; every law of a variant must have
+``calibration_ridge/ridge/check_B2.json`` and its 9 Å margin the committed
+``calibration_ridge/exit_bound_9A/B2.json``, bit-exactly; every law of a variant must have
 a series in both cases.
 
 Usage::
@@ -87,7 +87,7 @@ FIG_T0: dict = {
 }
 
 # The ridge figure: bulk F(v) of every m = 21 ridge point (committed
-# ``g11_ridge_m21/ridge_m21.csv``), the c = 1.6 point replaced by B2.
+# ``calibration_ridge/ridge/ridge_m21.csv``), the c = 1.6 point replaced by B2.
 RIDGE_PNG: Path = TIER0_DIR / "tier0_ridge_m21_laws.png"
 FIG_RIDGE: dict = {
     "figsize": (TEXTWIDTH_IN, 2.9),
@@ -116,18 +116,17 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.cm import ScalarMappable  # noqa: E402
 from matplotlib.colors import ListedColormap, Normalize  # noqa: E402
 
-from i2_helium_md import load_drag_bundle  # noqa: E402
+from i2_helium_md import load_capped_cc, load_drag_bundle  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import REFERENCE_DRAG_ROOT  # noqa: E402
 from i2_helium_md.physics.drag import drag_force  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
 from i2_helium_md.postprocess.hedft_loader import load_smoothed_speed_reference  # noqa: E402
-from scripts.extraction.form_phase_common import load_json  # noqa: E402
 from scripts.extraction.method_b_g412_ridge import (  # noqa: E402
     BOUND_VARIANT, EXIT_WINDOW_PS, G11_BOUND_DIR, G11_RIDGE_DIR, HEDFT_9A_PATH,
-    REFERENCE_FILENAME,
+    REFERENCE_FILENAME, load_json,
 )
 from scripts.post_processing.tier0_thesis_figure import (  # noqa: E402
-    GATE_A, H405_VARIANT, HEDFT_18A_PATH, LQ_LAWS, _capped,
+    GATE_A, HEDFT_18A_PATH, LQ_LAWS,
 )
 from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     _annot, _finish_axis, _panel_letters, merged_style,
@@ -161,10 +160,10 @@ def read_scores(path: Path = SCORES_CSV) -> dict[str, dict[str, str]]:
 def law_coefficients() -> dict[str, object]:
     """The bulk drag coefficients per law, built as ``tier0_thesis_figure`` scores
     them: B2 / B3 = the lq bundle with their (a, c); h405 = its bundle capped."""
-    lq = load_drag_bundle(BOUND_VARIANT, "18A", expected_m_eff_amu=M_EFF_AMU)
+    lq = load_drag_bundle(BOUND_VARIANT, expected_m_eff_amu=M_EFF_AMU)
     out = {label: replace(lq, coefficients={"a": a, "c": c})
            for label, (a, c, _, _) in LQ_LAWS.items()}
-    out["h405"] = _capped(load_drag_bundle(H405_VARIANT, "18A", expected_m_eff_amu=M_EFF_AMU))
+    out["h405"] = load_capped_cc(expected_m_eff_amu=M_EFF_AMU)
     return out
 
 

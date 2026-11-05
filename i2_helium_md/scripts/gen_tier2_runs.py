@@ -43,7 +43,7 @@ import sys
 # =============================================================================
 
 CASE = "9A"                     # 9 A only (no 18 A reference shell evolution)
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 500                         # larger-N single-seed for a stable size histogram
 
 # Run parameters inherit Tier-1a/the bridge exactly.

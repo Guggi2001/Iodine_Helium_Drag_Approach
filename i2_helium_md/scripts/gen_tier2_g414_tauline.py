@@ -67,7 +67,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 )
 from scripts.gen_tier2_g413_ridge_battery import (  # noqa: E402
     DRAG_FIELDS, H405_GATE_LABEL, LQ_BUNDLE, S_RHO_A, STAGE_B_MEMBERS,
-    _E0_KEY, _LAW_KEYS, _TAU_KEY, run_one as g413_run_one,
+    _E0_KEY, _LAW_KEYS, _TAU_KEY, ridge_point, run_one as g413_run_one,
     verify_cell as g413_verify_cell,
 )
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV, CASE, N  # noqa: E402
@@ -82,7 +82,6 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 # USER SETTINGS (pre-registered G4.14; FIXED)
 # =============================================================================
-RIDGE_DIR = PROJECT_ROOT / "data/reference/drag/18A/trajectory_matching_srho3p5A/g412_ridge"
 TWIN_DIR = PROJECT_ROOT / "data/runs/h2b_forward_model"
 LINE_CSV = TWIN_DIR / "atlas_g414_twin_line.csv"
 FILTER_CSV = TWIN_DIR / "atlas_g414_filter.csv"
@@ -184,15 +183,6 @@ def confirm_cells() -> list[Cell]:
     tag = cell_label(CONFIRM_C, CONFIRM_TAU_PS, CONFIRM_NBAR).split("n")[0]
     return [Cell(f"{tag}conf{m}", CONFIRM_C, CONFIRM_TAU_PS, CONFIRM_NBAR, e0, seed)
             for m, seed in MEMBER_SEEDS.items()]
-
-
-def ridge_point(c: float) -> dict:
-    """A committed ridge point (read, never retyped); must pass its bands."""
-    path = RIDGE_DIR / f"c{c:.3f}".replace(".", "p")
-    rec = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
-    if rec["c_amu_per_A"] != c or not rec["bands_pass"]:
-        raise AssertionError(f"{path}.json is not a passing c = {c} point")
-    return {"a": float(rec["a_amu_per_ps"]), "c": c, "e_bind_eV": float(rec["e_bind_eV"])}
 
 
 def run_dir_for(cell: Cell) -> Path:

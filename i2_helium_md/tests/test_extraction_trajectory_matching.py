@@ -649,29 +649,23 @@ class TestSharedBundleArtifacts:
     """The committed §9 shared-form bundles (2026-06-11 refit, verdict PASS)
     stay loadable through the Slice-3 loader and well-formed."""
 
-    @pytest.mark.parametrize(
-        "variant", ["shared_3param", "shared_pure_cubic"]
-    )
-    def test_shared_variant_bundle_loads(self, variant):
+    def test_shared_variant_bundle_loads(self):
         import json
 
         from i2_helium_md.presets import REFERENCE_DRAG_ROOT
 
-        coeff_dir = (
-            REFERENCE_DRAG_ROOT / "shared" / "trajectory_matching" / variant
-        )
+        coeff_dir = REFERENCE_DRAG_ROOT / "CC"
         coeffs = load_drag_coefficients(coeff_dir, expected_m_eff_amu=_M_EFF)
         assert coeffs.extraction_method == "trajectory_matching"
         assert coeffs.coefficients["a"] >= 0.0  # a >= 0 (§9.5 relaxed guard)
         assert coeffs.coefficients["b"] > 0.0
         assert coeffs.effective_binding_energy_I_ion_eV > 0.0
-        if variant == "shared_pure_cubic":
-            assert coeffs.coefficients["a"] == 0.0  # fixed, not fitted
+        assert coeffs.coefficients["a"] == 0.0  # fixed, not fitted
         with open(
             coeff_dir / "fit_parameters.json", "r", encoding="utf-8"
         ) as fh:
             raw = json.load(fh)
-        assert raw["variant"] == variant
+        assert raw["variant"] == "shared_pure_cubic"
         assert raw["calibration_cases"] == ["18A", "9A"]
         assert raw["stage"] == "stage2_joint"
 

@@ -66,7 +66,7 @@ def test_probe_dir_namespace_disjoint_from_campaign():
     dir, and the probe glob must never match a campaign dir."""
     probe_name = tier2_probe_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         50,
         picture="x2_only",
         kappa=4.0,
@@ -78,7 +78,7 @@ def test_probe_dir_namespace_disjoint_from_campaign():
     )
     campaign_name = tier2_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         500,
         picture="x2_only",
         kappa=4.0,
@@ -97,7 +97,7 @@ def test_f3_discovery_ignores_complete_probe_dir(tmp_path):
     """A *complete* probe run dir must not enter the campaign scoreboard."""
     probe_dir = tmp_path / tier2_probe_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         50,
         picture="statistical_mixture",
         kappa=1.0,
@@ -304,7 +304,7 @@ def test_run_one_writes_valid_run_dir(tmp_path):
     """Tiny-N end-to-end: neutral -> ion -> relaxation writes the four artifacts."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -357,7 +357,7 @@ def test_build_biphasic_cfg_stamps_evap_rrk_dof():
     None -> rides the config default (None = per-n)."""
     cfg_set = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -371,7 +371,7 @@ def test_build_biphasic_cfg_stamps_evap_rrk_dof():
 
     cfg_default = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -393,7 +393,7 @@ def test_s_eff_points_yield_distinct_run_dirs():
         budget_eV=0.80,
     )
     names = {
-        tier2_probe_run_dir_name("9A", "shared_pure_cubic", 50, **common, evap_rrk_dof=s)
+        tier2_probe_run_dir_name("9A", "CC", 50, **common, evap_rrk_dof=s)
         for s in (None, 30, 20, 12, 8, 5)
     }
     assert len(names) == 6
@@ -445,10 +445,10 @@ def test_cooling_gate_points_yield_distinct_run_dirs():
         evap_rrk_dof=5.0,
     )
     none_dir = tier2_probe_run_dir_name(
-        "9A", "shared_pure_cubic", 50, **common, cooling_spatial_gate="none"
+        "9A", "CC", 50, **common, cooling_spatial_gate="none"
     )
     ds_dir = tier2_probe_run_dir_name(
-        "9A", "shared_pure_cubic", 50, **common, cooling_spatial_gate="density_scaled"
+        "9A", "CC", 50, **common, cooling_spatial_gate="density_scaled"
     )
     assert none_dir != ds_dir
     assert ds_dir.endswith("_cgds")
@@ -459,7 +459,7 @@ def test_build_biphasic_cfg_stamps_cooling_spatial_gate():
     validated; None -> rides the config default ('none', ungated cooling)."""
     cfg_set = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -470,7 +470,7 @@ def test_build_biphasic_cfg_stamps_cooling_spatial_gate():
 
     cfg_default = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,

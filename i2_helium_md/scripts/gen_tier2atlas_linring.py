@@ -71,7 +71,7 @@ for _stream in (sys.stdout, sys.stderr):
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 500                         # fragments per cell (plan §6.1, N adjudicated)
 SEED = 20260731                 # ONE fresh seed shared by every cell (CRN)
 ION_TIME_PS = 30.0

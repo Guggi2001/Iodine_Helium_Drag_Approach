@@ -77,7 +77,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 LABEL = "ebmdh405s"          # h405 pins, shallow well
 WELL_TAG = "eb0482"
 BUDGET_EV = 2.70             # namespace tag only (matches the ring)
-CASE, VARIANT = "9A", "shared_pure_cubic"   # run_dir_name prepends "drag_"
+CASE, VARIANT = "9A", "CC"   # run_dir_name prepends "drag_"
 
 # The committed CRN partner: the free-form ring's h405 incumbent cell.
 PARTNER_RUN = "9A_drag_shared_pure_cubic_N500_tier2atlas_conf270_linrh405p"

@@ -112,7 +112,9 @@ from scripts.gen_tier2_g414_tauline import (  # noqa: E402
 )
 from scripts.gen_tier2atlas_g4finals import BUDGET_EV, CASE, N, VARIANT  # noqa: E402
 from scripts.tier0_common import build_drag_cfg, run_dir_name  # noqa: E402
-from scripts.tier2_common import cfg_diff_vs_reference  # noqa: E402
+from scripts.tier2_common import (  # noqa: E402
+    cfg_diff_vs_reference, with_current_bundle_ids,
+)
 from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.sampling.droplet_sizes import sample_droplet_sizes  # noqa: E402
 from i2_helium_md.simulation.detection_stage import run_detection_stage  # noqa: E402
@@ -445,7 +447,7 @@ def run_thesis_member(cfg: SimConfig, run_dir: Path, label: str) -> str:
     otherwise (never silently accepts a different model)."""
     steps, stride = verify_handover_alignment(cfg)
     if all((run_dir / f).exists() for f in _REQUIRED_ARTIFACTS):
-        if RunDirectory(run_dir).load_cfg() != cfg:
+        if with_current_bundle_ids(RunDirectory(run_dir).load_cfg()) != cfg:
             raise RuntimeError(f"[{label}] existing {run_dir.name} has a different cfg")
         print(f"[{label}] skip (complete) -> {run_dir.name}", flush=True)
         return label

@@ -14,27 +14,15 @@ Shared style (fonts, colours, text width, printed law names):
 Inputs under `data/runs/` are not in git, so those figures can only be regenerated
 where the runs exist. Figures marked *committed data* need only files in this repo.
 
-## Next step
-
-**`tier0_B2_18A.png` and `tier0_B2_9A.png` are not yet cleanly connected to a
-script.** [`tier0_drag_comparison.py`](../../scripts/post_processing/tier0_drag_comparison.py)
-draws this figure type (one `CASE = "18A"` or `"9A"` per run), but:
-
-- it has no `savefig`, so both PNGs were saved by hand from the plot window;
-- the code has changed since: the panel title and the smoothed-curve colour no
-  longer match the saved PNGs, so a rerun does not reproduce them;
-- both PNGs are still in the default matplotlib style at 720 × 540 px.
-
-To connect them, the script needs to save into `thesis_microscopic_calibration/`
-and draw them in `thesis_style`. `TDDFT_Reference.png` already uses their line
-styles (see `thesis_rest/`), so it should stay in step with any change.
-
 ## `thesis_microscopic_calibration/`
 
 | File | Script | Inputs |
 |---|---|---|
-| [`tier0_B2_18A.png`](thesis_microscopic_calibration/tier0_B2_18A.png) | **Not cleanly connected, see [Next step](#next-step)** | `data/runs/`, tag `B2m21` |
-| [`tier0_B2_9A.png`](thesis_microscopic_calibration/tier0_B2_9A.png) | **Not cleanly connected, see [Next step](#next-step)** | `data/runs/`, tag `B2m21` |
+| [`18A_Stuck_Velocity_R.png`](thesis_microscopic_calibration/18A_Stuck_Velocity_R.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21stuck`) |
+| [`18A_Stuck_Force_Energy.png`](thesis_microscopic_calibration/18A_Stuck_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21stuck`) |
+| [`18A_B2.png`](thesis_microscopic_calibration/18A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
+| [`18A_B2_Force_Energy.png`](thesis_microscopic_calibration/18A_B2_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
+| [`9A_B2.png`](thesis_microscopic_calibration/9A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
 | [`tier0_B2_B3_h405_series.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | Committed data (runs the Tier-0 integrations) |
 | [`tier0_B2_B3_h405_scores.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_scores.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | Committed data (runs the Tier-0 integrations) |
 | [`tier0_ridge_m21_laws.png`](thesis_microscopic_calibration/tier0_ridge_m21_laws.png) | [`tier0_law_figure.py`](../../scripts/post_processing/tier0_law_figure.py) | Committed data |

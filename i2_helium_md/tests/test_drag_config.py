@@ -18,7 +18,6 @@ import pytest
 
 from i2_helium_md import (
     SimConfig,
-    REFERENCE_DRAG_ROOT,
     load_drag_coefficients,
     single_pulse_N2000,
     single_pulse_N2000_18Angst,
@@ -438,29 +437,36 @@ class TestBindingPairingGuard:
 # ---------------------------------------------------------------------------
 # Coefficient loader (§4)
 # ---------------------------------------------------------------------------
+def _force_balance_dir(root):
+    """A legacy Method-A coefficient directory: no form or method stamps."""
+    (root / "fit_parameters.json").write_text(json.dumps(
+        {"a": 14.555626399148123, "b": 2.0534044239692157, "a_err": 0.1, "b_err": 0.01,
+         "meff_amu": _M_EFF, "t_start": 4.54, "t_end": 14.768}), encoding="utf-8")
+    return root
+
+
 class TestLoader:
-    @pytest.mark.parametrize("case", ["9A", "18A"])
-    def test_loads_real_case_to_valid_bundle(self, case):
+    def test_loads_legacy_file_to_valid_bundle(self, tmp_path):
         coeffs = load_drag_coefficients(
-            REFERENCE_DRAG_ROOT / case / "linear_and_cubic",
+            _force_balance_dir(tmp_path),
             expected_m_eff_amu=_M_EFF,
         )
         assert coeffs.form == LINEAR_CUBIC
         assert set(coeffs.coefficients) == {"a", "b"}
         assert coeffs.extraction_mass_model == "constant"
 
-    def test_stamps_extraction_mass_from_json(self):
+    def test_stamps_extraction_mass_from_json(self, tmp_path):
         coeffs = load_drag_coefficients(
-            REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic",
+            _force_balance_dir(tmp_path),
             expected_m_eff_amu=_M_EFF,
         )
         # stamped from the JSON, not the caller's expected value
         assert coeffs.extraction_mass_amu == _M_EFF
 
-    def test_provenance_mismatch_refused(self):
+    def test_provenance_mismatch_refused(self, tmp_path):
         with pytest.raises(ValueError, match="provenance mismatch"):
             load_drag_coefficients(
-                REFERENCE_DRAG_ROOT / "9A" / "linear_and_cubic",
+                _force_balance_dir(tmp_path),
                 expected_m_eff_amu=_M_EFF + 1.0,
             )
 

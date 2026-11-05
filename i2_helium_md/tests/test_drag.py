@@ -5,15 +5,14 @@ The killer test (``TestForceBalanceReproduction``) confirms the module *is* the
 extracted law: re-evaluating ``drag_force`` with the in-hand 9 A {a, b} on the
 extraction's own trusted-interior (v, F_drag) scatter reproduces it.
 
-Reference values are plumbed in from the user-exported artifacts under
-``data/reference/drag/`` (see ``SLICE1_GOALS_gated_drag_module.md`` §6-§7).
+Reference values are the Method-A force-balance coefficients of both bubble sizes
+(``SLICE1_GOALS_gated_drag_module.md`` §6-§7), kept here as literals; their export
+is in git tag ``pre-drag-cleanup``.
 """
 
 from __future__ import annotations
 
 import inspect
-import json
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -32,110 +31,36 @@ from i2_helium_md.physics.drag import (
     spatial_gate,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DRAG_REF_DIR = PROJECT_ROOT / "data" / "reference" / "drag"
-
-# Both extracted bubble sizes; each has linear_and_cubic/ and power/ subdirs
-# with fit_parameters.json (a, b, meff_amu) + drag_data.csv.
+# Both extracted bubble sizes: Method-A linear_cubic (a [amu/ps], b [amu*ps/A^2]).
 CASES = ("9A", "18A")
+_METHOD_A_AB = {
+    "9A": (36.79962487165992, 1.3872804179164857),
+    "18A": (14.555626399148123, 2.0534044239692157),
+}
+_METHOD_A_MEFF_AMU = 202.953908
 
 # cfg.potential_steepness (Angstrom): the gate reuses the confining-potential
 # erf width (§5.5 G4->G2).
 STEEPNESS_A = 14.2
-
-# Extraction trusted-interior truncation: the exported drag_data.csv is the
-# FULL window; the fit used only the interior after dropping first/last N points
-# (DragExtractionSettings.truncate_points = 500).
-TRUNCATE_POINTS = 500
 
 
 # ===========================================================================
 # Fixtures / loaders
 # ===========================================================================
 def _load_linear_cubic_bundle(case: str) -> DragCoefficients:
-    """Build the ``case`` linear_cubic bundle from the exported fit parameters.
-
-    The extraction mass is read from the JSON's ``meff_amu`` (provenance), so
-    the bundle's stamped mass tracks the export rather than being hand-coded.
-    """
-    fit_json = DRAG_REF_DIR / case / "linear_and_cubic" / "fit_parameters.json"
-    params = json.loads(fit_json.read_text())
+    """Build the ``case`` Method-A linear_cubic bundle."""
+    a, b = _METHOD_A_AB[case]
     return DragCoefficients(
         form=LINEAR_CUBIC,
-        coefficients={"a": params["a"], "b": params["b"]},
+        coefficients={"a": a, "b": b},
         extraction_mass_model="constant",
-        extraction_mass_amu=params["meff_amu"],
+        extraction_mass_amu=_METHOD_A_MEFF_AMU,
     )
 
 
-def _load_trusted_interior(case: str) -> tuple[np.ndarray, np.ndarray]:
-    """Load the ``case`` (v, F_drag) scatter, truncated to the trusted interior.
-
-    Mirrors the extraction's own masking: drop first/last ``TRUNCATE_POINTS``
-    points, then keep finite samples with ``v > 0``.
-    """
-    csv = DRAG_REF_DIR / case / "linear_and_cubic" / "drag_data.csv"
-    data = np.genfromtxt(csv, delimiter=",", names=True)
-    v = np.asarray(data["v_spline_Aps"], dtype=float)
-    F = np.asarray(data["F_drag_amuAps2"], dtype=float)
-    n = TRUNCATE_POINTS
-    interior = slice(n, v.size - n)
-    v, F = v[interior], F[interior]
-    keep = np.isfinite(v) & np.isfinite(F) & (v > 0.0)
-    return v[keep], F[keep]
-
-
-# ===========================================================================
-# Killer test: force-balance reproduction (SLICE1 §7)
-# ===========================================================================
-@pytest.mark.parametrize("case", CASES)
-class TestForceBalanceReproduction:
-    def test_module_is_the_extracted_law_refit_recovers_ab(self, case):
-        """The module IS the extracted law: an independent least-squares refit
-        of a*v + b*v^3 to the trusted-interior scatter recovers the stored
-        {a,b} to which drag_force evaluates.
-
-        This is the tight, model-correctness half of the killer test: the
-        stored coefficients are the unique lstsq solution on this scatter, so
-        recovering them (to ~1e-4) proves drag_force reproduces the extraction
-        rather than merely fitting within noise. Tolerance is tight because
-        we are comparing two solutions of the *same* linear least-squares
-        problem (only float round-off separates them).
-        """
-        coeffs = _load_linear_cubic_bundle(case)
-        v, F_ref = _load_trusted_interior(case)
-        # a*v + b*v^3 is linear in (a, b): recover via lstsq on [v, v^3].
-        design = np.vstack([v, v**3]).T
-        (a_refit, b_refit), *_ = np.linalg.lstsq(design, F_ref, rcond=None)
-        assert a_refit == pytest.approx(coeffs.coefficients["a"], rel=1e-4)
-        assert b_refit == pytest.approx(coeffs.coefficients["b"], rel=1e-4)
-
-    def test_linear_cubic_within_fit_residual_of_scatter(self, case):
-        """drag_force with the in-hand {a,b} reproduces the case scatter within
-        the genuine fit residual.
-
-        The CSV ``F_drag_amuAps2`` column is the *noisy* force-balance scatter
-        the curve_fit was fit TO, not the fitted curve, so the agreement band
-        is the fit residual, not machine precision. The fits are high-R^2
-        (9 A: ~0.974); a 7% relative-RMS band covers both cases' diagnosed
-        residuals with a small margin, which is the meaningful "within fit
-        tolerance" check of §7.
-        """
-        coeffs = _load_linear_cubic_bundle(case)
-        v, F_ref = _load_trusted_interior(case)
-        # Deep inside the droplet => gate g = 1, so the gated force equals the
-        # raw extracted law a*v + b*v^3 the scatter was fit to.
-        depth = np.full_like(v, -1.0e3)
-        F_model = drag_force(v, depth, coeffs, STEEPNESS_A)
-
-        resid = F_model - F_ref
-        rms = float(np.sqrt(np.mean(resid**2)))
-        scale = float(np.sqrt(np.mean(F_ref**2)))
-        assert rms / scale < 0.07
-
-    def test_deep_inside_gate_is_unity(self, case):
-        """Sanity: the killer test's depth choice really gives g = 1."""
-        assert spatial_gate(-1.0e3, STEEPNESS_A) == pytest.approx(1.0)
+def test_deep_inside_gate_is_unity():
+    """Sanity: a depth of -1000 A really gives g = 1."""
+    assert spatial_gate(-1.0e3, STEEPNESS_A) == pytest.approx(1.0)
 
 
 # ===========================================================================

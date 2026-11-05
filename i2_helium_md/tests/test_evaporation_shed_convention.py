@@ -309,7 +309,7 @@ class TestDetectionStageConvention:
 # Script surface: build_biphasic_cfg None-sentinel pass-through
 # ---------------------------------------------------------------------------
 class TestBuildBiphasicCfgKwarg:
-    _ARGS = ("9A", "shared_pure_cubic")
+    _ARGS = ("9A", "CC")
     _COMMON = dict(num_molecules=2, ion_time_ps=0.02, dt_ion_ps=0.01, seed=123)
 
     def test_none_sentinel_rides_default(self):

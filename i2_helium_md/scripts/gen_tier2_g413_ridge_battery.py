@@ -54,6 +54,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import numpy as np  # noqa: E402
 
+from i2_helium_md.presets import CALIBRATION_RIDGE_ROOT  # noqa: E402
 from scripts.gen_tier2_detfix_battery import (  # noqa: E402
     MAX_BYTES_ION, MEMBER_SEEDS, build_member, member_run_dir_name,
     verify_handover_alignment,
@@ -70,9 +71,9 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 # USER SETTINGS (pre-registered G4.13; FIXED)
 # =============================================================================
-RIDGE_POINT_JSON = (PROJECT_ROOT / "data/reference/drag/18A/"
-                    "trajectory_matching_srho3p5A/g412_ridge/c2p000.json")
-LQ_BUNDLE = "srho3p5A18A_linear_quadratic"   # stamped gate 3.5 A; {a,c,E} overridden
+#: The committed production laws (their check JSONs carry a, c, E_bind unchanged).
+CHECK_POINT_JSON = {1.6: "check_B2.json", 2.0: "check_A5.json"}
+LQ_BUNDLE = "LQ"   # stamped gate 3.5 A; {a,c,E} overridden
 S_RHO_A = 3.5
 STAGE_A_MEMBER = "s1"                        # seed 20260730, CRN with h405 detfix s1
 STAGE_B_MEMBERS = ("s2", "s3", "s4", "s5", "r6")
@@ -120,17 +121,23 @@ CELLS: dict[str, Cell] = {
 }
 
 
-def ridge_point() -> dict:
-    """The committed G4.12 c = 2.0 ridge point (read, never retyped)."""
-    rec = json.loads(RIDGE_POINT_JSON.read_text(encoding="utf-8"))
-    if rec["c_amu_per_A"] != 2.0 or not rec["bands_pass"]:
-        raise AssertionError(f"{RIDGE_POINT_JSON} is not the passing c = 2.0 point")
-    return {"a": float(rec["a_amu_per_ps"]), "c": 2.0,
-            "e_bind_eV": float(rec["e_bind_eV"])}
+def ridge_point(c: float = 2.0) -> dict:
+    """A committed production law (read, never retyped): c 1.6 = B2, c 2.0 = A5.
+
+    Raises ``ValueError`` for any other ``c``: only these two laws are kept.
+    """
+    if c not in CHECK_POINT_JSON:
+        raise ValueError(f"no committed law at c = {c}: only {sorted(CHECK_POINT_JSON)} "
+                         "(the other m = 19 points are in git tag pre-drag-cleanup)")
+    path = CALIBRATION_RIDGE_ROOT / "ridge" / CHECK_POINT_JSON[c]
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    if rec["c_amu_per_A"] != c or not rec["bands_pass"]:
+        raise AssertionError(f"{path} is not a passing c = {c} point")
+    return {"a": float(rec["a_amu_per_ps"]), "c": c, "e_bind_eV": float(rec["e_bind_eV"])}
 
 
 def run_dir_for(cell: str, member: str) -> Path:
-    variant = LQ_BUNDLE if CELLS[cell].ridge_law else "shared_pure_cubic"
+    variant = LQ_BUNDLE if CELLS[cell].ridge_law else "CC"
     name = run_dir_name(CASE, variant, N,
                         run_tag=f"detfix_conf270_g413{cell}{member}_th500")
     if "_tier2_" in name or "tier2probe" in name:

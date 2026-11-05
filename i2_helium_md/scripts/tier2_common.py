@@ -46,6 +46,7 @@ from i2_helium_md.config import (
     LadderElectronicPicture,
     SimConfig,
     _UNSTAMPED_LEGACY_DRAG_BUNDLES,
+    current_drag_bundle_id,
 )
 from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS, DragCoefficients
 from i2_helium_md.physics.shell_schedule import complex_mass_amu
@@ -425,6 +426,21 @@ def build_biphasic_cfg(
     return cfg
 
 
+def with_current_bundle_ids(cfg: SimConfig) -> SimConfig:
+    """``cfg`` with historical bundle ids replaced by the current ones.
+
+    For comparing a finished run's loaded config with a freshly built one; the
+    ids are labels, every other field is returned unchanged.
+    """
+    coeffs = cfg.drag_coefficients
+    if coeffs is not None:
+        coeffs = dataclasses.replace(
+            coeffs, bundle_id=current_drag_bundle_id(coeffs.bundle_id))
+    return dataclasses.replace(
+        cfg, drag_bundle=current_drag_bundle_id(cfg.drag_bundle),
+        drag_coefficients=coeffs)
+
+
 def cfg_diff_vs_reference(
     cfg: SimConfig,
     reference_cfg_path: "Path",
@@ -480,6 +496,12 @@ def cfg_diff_vs_reference(
             f"(the config surface lost a field?)"
         )
     fields = SimConfig.__dataclass_fields__
+    # A finished run stores its historical bundle ids: compare on the current ones.
+    if "drag_bundle" in ref:
+        ref["drag_bundle"] = current_drag_bundle_id(ref["drag_bundle"])
+    if isinstance(ref.get("drag_coefficients"), dict):
+        ref["drag_coefficients"]["bundle_id"] = current_drag_bundle_id(
+            ref["drag_coefficients"].get("bundle_id"))
     # ``drag_bundle`` (G4 selector) on a pre-G4 reference: for an UNSTAMPED
     # legacy id the selector is only a label for the coefficients, which are
     # diffed directly under ``drag_coefficients`` -- so it is not a separate

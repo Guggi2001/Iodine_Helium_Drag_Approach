@@ -71,10 +71,9 @@ Repo root:
 Compact state — **pointers only; results and history do not belong here.**
 **Final thesis production law: B2** (user, 2026-10-09) — `post_pickup`
 droplet sampler, uncapped TDDFT-tied ridge `linear_quadratic`
-F = a·v + c·v² at c 1.6 (bundle `srho3p5A18A_linear_quadratic`, which
-carries B2), 3.5 Å density gate, τ 6.4 ps, E₀ 0.3297 eV; generator
+F = a·v + c·v² at c 1.6 (bundle `LQ`), 3.5 Å density gate, τ 6.4 ps, E₀ 0.3297 eV; generator
 `gen_tier2_detfix_postpickup.py --cell lq --b2`. Effective high-tail
-variant B3 (`--b3`; not Tier-0-consistent). h405 (`shared_pure_cubic` +
+variant B3 (`--b3`, bundle `LQ_eff`; not Tier-0-consistent). h405 (bundle `CC` +
 `capped_cubic` tail v_c 5.5, 14.2 Å gate, `raw` sampler; standing point
 2026-09-30 → 10-08) is the **contrast law** for the identifiability
 argument only; its re-landed form (`gen_tier2_h405_pp35.py --scan-pool`)
@@ -89,9 +88,17 @@ droplet surface (depth > 0), in Stage I and the detection stage; with
 numbers (`THESIS_DISCUSSION.md` §15). The `SimConfig` default stays
 `never`; the committed long-named `never` batteries
 (`…g5lqppc160e3297pooled_th500` = the G5 selection reference) are history.
-Other repo defaults are **not** switched: the presets stay wired to the
-`shared_pure_cubic` bundle and `gen_tier2_detfix_battery.py` still builds
+Other repo defaults are **not** switched: the presets stay on the uncapped
+`CC` law and `gen_tier2_detfix_battery.py` still builds
 h405.
+**Bundle ids** (cleanup 2026-11-05; old tree in git tag `pre-drag-cleanup`):
+the catalog holds only `LQ` (B2), `LQ_eff` (B3), `CC` (h405; the plain load is
+uncapped, `load_capped_cc` gives the thesis law). Finished runs keep their old
+ids in `cfg.json` and in their directory names, so never rewrite those:
+`config.HISTORICAL_DRAG_BUNDLE_IDS` is the one map, used by `validate`,
+`run_dir_name` and `cfg_diff_vs_reference`. `data/reference/drag/` holds
+`LQ/`, `LQ_eff/`, `CC/`, `calibration_ridge/` (m = 21 ridge + 9 Å exit bound)
+and `{9A,18A}/velocity_smoothed/`.
 **Production pipeline** (since 2026-09-30, unchanged for B2): Stage I to
 500 ps, E2 skipped, partner-aware Coulomb closure
 (`TIER2_DetectorStageFix.md` §5.7).

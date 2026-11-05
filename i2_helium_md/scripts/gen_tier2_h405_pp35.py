@@ -134,7 +134,7 @@ def run_dir_for(member: str, e0_eV: float, v_c: Optional[float] = None,
           + ("" if tau_ps is None else f"t{round(tau_ps * 10):d}"))
     tag = f"h405pp35{vt}e{round(e0_eV * 1e4):04d}{member}"
     return PROJECT_ROOT / "data" / "runs" / run_dir_name(
-        CASE, "shared_pure_cubic", N, run_tag=f"detfix_conf270_{tag}_th500")
+        CASE, "CC", N, run_tag=f"detfix_conf270_{tag}_th500")
 
 
 def build(member: str, e0_eV: float, v_c: Optional[float] = None,

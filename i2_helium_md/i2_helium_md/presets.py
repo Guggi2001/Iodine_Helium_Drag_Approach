@@ -17,6 +17,7 @@ from pathlib import Path
 from .config import SimConfig
 from .physics.drag import (
     DragCoefficients,
+    CAPPED_CUBIC,
     LINEAR_CUBIC,
     REALIZED_FORMS,
     _REQUIRED_COEFF_KEYS,
@@ -307,52 +308,26 @@ _DRAG_M_EFF_AMU = 202.953908
 
 # Named drag-bundle catalog (THESIS_FINAL_GOALS G4.3 change 6): bundle id ->
 # directory relative to ``REFERENCE_DRAG_ROOT``. The id is what
-# ``SimConfig.drag_bundle`` selects (key set == ``config._KNOWN_DRAG_BUNDLES``,
-# enforced by a test). ``{case}`` is substituted with the run's case for per-case
-# ids, which makes cross-geometry application impossible by construction (the
-# geometry guard). Shared ids carry no ``{case}`` and run on either geometry.
+# ``SimConfig.drag_bundle`` selects (key set == ``config._DRAG_BUNDLES``, enforced
+# by a test). The three thesis laws: LQ = B2 (production), LQ_eff = B3 (effective
+# variant), CC = h405 (contrast law; the file holds the uncapped cubic b, see
+# :func:`load_capped_cc`).
 DRAG_BUNDLE_CATALOG: dict[str, str] = {
-    # --- pre-G4 shared joint-refit bundles (density gate = potential, 14.2 A) ---
-    "shared_pure_cubic": "shared/trajectory_matching/shared_pure_cubic",
-    "shared_3param": "shared/trajectory_matching/shared_3param",
-    "shared_pl": "shared/trajectory_matching/pl_shared_3param",
-    "shared_lq": "shared/trajectory_matching/lq_shared_3param",
-    "shared_lq_pq": "shared/trajectory_matching/lq_shared_pure_quadratic",
-    # --- pre-G4 per-case single-curve bundles (resolve against the run's case) ---
-    "percase_linear_cubic": "{case}/trajectory_matching",
-    "percase_pl": "{case}/trajectory_matching/pl_shared_3param",
-    "percase_lq": "{case}/trajectory_matching/lq_shared_3param",
-    "percase_lq_pq": "{case}/trajectory_matching/lq_shared_pure_quadratic",
-    # --- G4 Stage-2 refit at the sourced density width s_rho = 3.5 A ---
-    "srho3p5A_shared_linear": "shared/trajectory_matching_srho3p5A/shared_linear",
-    "srho3p5A_shared_cubic": "shared/trajectory_matching_srho3p5A/shared_cubic",
-    "srho3p5A_shared_linear_cubic": (
-        "shared/trajectory_matching_srho3p5A/shared_linear_cubic"
-    ),
-    # --- G4.9 18 A-only refit at s_rho = 3.5 A (9 A held out as non-radial);
-    # calibrated on 18 A, applied to either geometry (no ``{case}``) ---
-    "srho3p5A18A_linear": "18A/trajectory_matching_srho3p5A/linear",
-    "srho3p5A18A_cubic": "18A/trajectory_matching_srho3p5A/cubic",
-    "srho3p5A18A_linear_cubic": "18A/trajectory_matching_srho3p5A/linear_cubic",
-    # --- G4.11 18 A-only quadratic families at s_rho = 3.5 A (diagnostic;
-    # selectable for Tier-0 runs, not preset-wired) ---
-    "srho3p5A18A_quadratic": "18A/trajectory_matching_srho3p5A/quadratic",
-    "srho3p5A18A_linear_quadratic": "18A/trajectory_matching_srho3p5A/linear_quadratic",
+    "LQ": "LQ",
+    "LQ_eff": "LQ_eff",
+    "CC": "CC",
 }
 
-_DRAG_BUNDLE_CASES = ("9A", "18A")
+# The Tier-0 ridge at m = I+ + 21 He and its 9 A exit bound.
+CALIBRATION_RIDGE_ROOT = REFERENCE_DRAG_ROOT / "calibration_ridge"
 
-
-def resolve_drag_bundle_dir(bundle_id: str, case: str) -> Path:
-    """Resolve a (``bundle_id``, ``case``) selection to its bundle directory.
+def resolve_drag_bundle_dir(bundle_id: str) -> Path:
+    """Resolve a catalog id to its bundle directory.
 
     Parameters
     ----------
     bundle_id : str
         A key of :data:`DRAG_BUNDLE_CATALOG`.
-    case : str
-        Droplet geometry, ``"9A"`` or ``"18A"``; substituted into per-case ids
-        (the geometry guard), ignored by shared ids.
 
     Returns
     -------
@@ -362,41 +337,35 @@ def resolve_drag_bundle_dir(bundle_id: str, case: str) -> Path:
     Raises
     ------
     ValueError
-        On an unknown ``bundle_id`` or ``case``.
+        On an unknown ``bundle_id``.
     """
-    if case not in _DRAG_BUNDLE_CASES:
-        raise ValueError(
-            f"case must be one of {sorted(_DRAG_BUNDLE_CASES)}, got {case!r}"
-        )
     if bundle_id not in DRAG_BUNDLE_CATALOG:
         raise ValueError(
             f"drag bundle must be one of {sorted(DRAG_BUNDLE_CATALOG)}, "
             f"got {bundle_id!r}"
         )
-    return REFERENCE_DRAG_ROOT / Path(DRAG_BUNDLE_CATALOG[bundle_id].format(case=case))
+    return REFERENCE_DRAG_ROOT / DRAG_BUNDLE_CATALOG[bundle_id]
 
 
-def load_drag_bundle(
-    bundle_id: str, case: str, *, expected_m_eff_amu: float
-) -> DragCoefficients:
+def load_drag_bundle(bundle_id: str, *, expected_m_eff_amu: float) -> DragCoefficients:
     """Load a catalog drag bundle by id (the ``SimConfig.drag_bundle`` selector).
 
     Thin wrapper over :func:`resolve_drag_bundle_dir` +
     :func:`load_drag_coefficients` that also enforces the id identity: a bundle
     whose JSON stamps a ``bundle_id`` must stamp exactly the requested id
-    (a misplaced or copied bundle fails loudly). Unstamped (pre-G4) bundles
-    keep ``bundle_id=None``; the config guard then requires
-    ``cfg.drag_bundle`` to be a legacy id.
+    (a misplaced or copied bundle fails loudly). The unstamped CC bundle keeps
+    ``bundle_id=None``; the config guard then requires ``cfg.drag_bundle`` to be
+    an unstamped id. Every bundle applies to either droplet geometry.
 
     Raises
     ------
     ValueError
-        On an unknown id/case, a bundle-id mismatch, or any loader refusal.
+        On an unknown id, a bundle-id mismatch, or any loader refusal.
     FileNotFoundError
         If the bundle directory has no ``fit_parameters.json``.
     """
     coeffs = load_drag_coefficients(
-        resolve_drag_bundle_dir(bundle_id, case),
+        resolve_drag_bundle_dir(bundle_id),
         expected_m_eff_amu=expected_m_eff_amu,
     )
     if coeffs.bundle_id is not None and coeffs.bundle_id != bundle_id:
@@ -407,19 +376,56 @@ def load_drag_bundle(
     return coeffs
 
 
-# Validated production drag bundle (METHOD_B §9.7 verdict + §10 decision,
+def load_capped_cc(*, expected_m_eff_amu: float = _DRAG_M_EFF_AMU) -> DragCoefficients:
+    """Load the thesis law CC: the CC bundle's cubic ``b`` with its stamped cap.
+
+    :func:`load_drag_bundle` returns the file's uncapped ``linear_cubic`` law,
+    which the frozen drag presets use; this adds the ``cap`` block (``v_c``
+    [A/ps], ``p_tail``) to give the ``capped_cubic`` law of the thesis runs.
+    Thesis runs pair it with the 3.5 A gate under
+    ``allow_inconsistent_gate_pairing``, because the bundle was extracted at the
+    legacy 14.2 A gate.
+
+    Parameters
+    ----------
+    expected_m_eff_amu : float
+        Provenance mass the loader cross-checks [amu].
+
+    Returns
+    -------
+    DragCoefficients
+        Form ``capped_cubic`` with coefficients ``{b, v_c, p_tail}``; binding and
+        provenance as stamped in the bundle.
+
+    Raises
+    ------
+    KeyError
+        If the bundle file has no ``cap`` block.
+    """
+    bundle = load_drag_bundle("CC", expected_m_eff_amu=expected_m_eff_amu)
+    path = resolve_drag_bundle_dir("CC") / "fit_parameters.json"
+    cap = json.loads(path.read_text(encoding="utf-8"))["cap"]
+    return replace(
+        bundle,
+        form=CAPPED_CUBIC,
+        coefficients={"b": float(bundle.coefficients["b"]),
+                      "v_c": float(cap["v_c"]), "p_tail": float(cap["p_tail"])},
+    )
+
+
+# Validated preset drag bundle (METHOD_B §9.7 verdict + §10 decision,
 # 2026-06-12): the cross-case shared-form joint refit passed every
 # pre-registered band, and the pure-cubic variant (a = 0 exactly,
 # gamma = g*b*v**2) is the chosen production candidate. One size-independent
 # bundle serves both droplet cases; the spatial gate handles the surface.
-# The frozen drag presets stay on it until a G4 bundle is adopted.
-_SHARED_DRAG_BUNDLE_ID = "shared_pure_cubic"
+# The frozen drag presets stay on this law.
+_SHARED_DRAG_BUNDLE_ID = "CC"
 
 
 def single_pulse_N2000_drag(**overrides) -> SimConfig:
     """:func:`single_pulse_N2000` (9 A) wired with the validated drag law.
 
-    Loads the shared Method-B ``shared_pure_cubic`` bundle (trajectory-matching
+    Loads the shared Method-B ``CC`` bundle, uncapped (trajectory-matching
     joint refit over both HeDFT cases, METHOD_B §9.7) and exposes it via
     ``drag_coefficients`` + the mass surface; the ion stage dispatches to the
     BAOAB drag path. The jointly calibrated effective binding stamped in the
@@ -434,9 +440,7 @@ def single_pulse_N2000_drag(**overrides) -> SimConfig:
     **overrides
         Any ``SimConfig`` field to override from the preset default.
     """
-    coeffs = load_drag_bundle(
-        _SHARED_DRAG_BUNDLE_ID, "9A", expected_m_eff_amu=_DRAG_M_EFF_AMU,
-    )
+    coeffs = load_drag_bundle(_SHARED_DRAG_BUNDLE_ID, expected_m_eff_amu=_DRAG_M_EFF_AMU)
     cfg = single_pulse_N2000(
         drag_form="linear_cubic",
         drag_coefficients=coeffs,
@@ -452,7 +456,7 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
     """:func:`single_pulse_N2000_18Angst` (18 A) wired with the validated drag law.
 
     The 18 A analog of :func:`single_pulse_N2000_drag`: same shared
-    ``shared_pure_cubic`` Method-B bundle (the law is size-independent by the
+    ``CC`` Method-B bundle (the law is size-independent by the
     §9.7 verdict), same stamped-binding wiring, on the 18 A base preset.
 
     Parameters
@@ -460,9 +464,7 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
     **overrides
         Any ``SimConfig`` field to override from the preset default.
     """
-    coeffs = load_drag_bundle(
-        _SHARED_DRAG_BUNDLE_ID, "18A", expected_m_eff_amu=_DRAG_M_EFF_AMU,
-    )
+    coeffs = load_drag_bundle(_SHARED_DRAG_BUNDLE_ID, expected_m_eff_amu=_DRAG_M_EFF_AMU)
     cfg = single_pulse_N2000_18Angst(
         drag_form="linear_cubic",
         drag_coefficients=coeffs,

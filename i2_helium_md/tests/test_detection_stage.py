@@ -1068,14 +1068,14 @@ class TestArtifactAndIntegration:
         # handover (a 1 ps cap would leave suppressed ions in-bubble, which
         # the review-hardened guard rightly refuses).
         cfg = build_biphasic_cfg(
-            "9A", "shared_pure_cubic", num_molecules=2, ion_time_ps=0.02,
+            "9A", "CC", num_molecules=2, ion_time_ps=0.02,
             dt_ion_ps=0.01, seed=123, picture="statistical_mixture", kappa=1.0,
             tau_ps=6.55, f_int=0.5, f_ret=0.1, coulomb_available_eV=0.80,
             relaxation_time_ps=40.0,
         )
         cfg = replace(cfg, t_max_neutral=0.1, dt_neutral=0.01)
         run_dir = tmp_path_factory.mktemp("ds_probe") / tier2_probe_run_dir_name(
-            "9A", "shared_pure_cubic", 2, picture="statistical_mixture",
+            "9A", "CC", 2, picture="statistical_mixture",
             kappa=1.0, lambda0_per_ps=0.9, f_int=0.5, f_ret=0.1, tau_ps=6.55,
             budget_eV=0.80,
         )

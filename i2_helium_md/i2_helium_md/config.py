@@ -294,31 +294,42 @@ _KNOWN_DRAG_FORMS = (
     PURE_LINEAR,
 )
 
-# Drag-bundle selector enum (THESIS_FINAL_GOALS G4.3 change 6). The id -> directory
-# mapping lives in ``presets.DRAG_BUNDLE_CATALOG`` (the config layer does no I/O);
-# a test asserts the two key sets are identical. The unstamped legacy ids are the
-# pre-G4 bundles, which carry neither a ``bundle_id`` nor a gate stamp.
-_UNSTAMPED_LEGACY_DRAG_BUNDLES = (
-    "shared_pure_cubic",
-    "shared_3param",
-    "shared_pl",
-    "shared_lq",
-    "shared_lq_pq",
-    "percase_linear_cubic",
-    "percase_pl",
-    "percase_lq",
-    "percase_lq_pq",
-)
-_KNOWN_DRAG_BUNDLES = _UNSTAMPED_LEGACY_DRAG_BUNDLES + (
-    "srho3p5A_shared_linear",
-    "srho3p5A_shared_cubic",
-    "srho3p5A_shared_linear_cubic",
-    "srho3p5A18A_linear",
-    "srho3p5A18A_cubic",
-    "srho3p5A18A_linear_cubic",
-    "srho3p5A18A_quadratic",
-    "srho3p5A18A_linear_quadratic",
-)
+# Drag-bundle selector enum (THESIS_FINAL_GOALS G4.3 change 6): the three thesis
+# laws. The id -> directory mapping lives in ``presets.DRAG_BUNDLE_CATALOG`` (the
+# config layer does no I/O); a test asserts the two key sets are identical.
+_DRAG_BUNDLES = ("LQ", "LQ_eff", "CC")
+
+# Current id -> the id finished runs carry in their cfg.json and directory names.
+# Those runs stay as written: ``validate`` accepts the stored ids, but they are
+# not catalog ids, so no new run can select one.
+HISTORICAL_DRAG_BUNDLE_IDS: dict[str, str] = {
+    "LQ": "srho3p5A18A_linear_quadratic",
+    "CC": "shared_pure_cubic",
+}
+_KNOWN_DRAG_BUNDLES = _DRAG_BUNDLES + tuple(HISTORICAL_DRAG_BUNDLE_IDS.values())
+
+# CC is the pre-G4 bundle: it carries neither a ``bundle_id`` nor a gate stamp.
+_UNSTAMPED_LEGACY_DRAG_BUNDLES = ("CC", HISTORICAL_DRAG_BUNDLE_IDS["CC"])
+
+
+def current_drag_bundle_id(bundle_id: Optional[str]) -> Optional[str]:
+    """The current catalog id of ``bundle_id``, which may be a stored historical id.
+
+    Parameters
+    ----------
+    bundle_id : str or None
+        A ``drag_bundle`` / ``bundle_id`` value, as built or as read from a
+        finished run's ``cfg.json``.
+
+    Returns
+    -------
+    str or None
+        The current id for a historical id; any other value unchanged.
+    """
+    for current, historical in HISTORICAL_DRAG_BUNDLE_IDS.items():
+        if bundle_id == historical:
+            return current
+    return bundle_id
 
 # The density/drag-gate width every pre-G4 (unstamped) bundle was extracted under:
 # the gate was tied to the solvation-potential width, 14.2 A (§5.5). A bundle
@@ -466,8 +477,8 @@ class SimConfig:
     allow_inconsistent_mass_pairing: bool = False        # refuse -> warn downgrade
     allow_unvalidated_binding_pairing: bool = False      # §6.5.1 refuse -> warn downgrade
     # Bundle selector (G4.3 change 6): the catalog id the drag_coefficients came
-    # from; resolved to a directory in presets. Default = the legacy production id.
-    drag_bundle: str = "shared_pure_cubic"
+    # from; resolved to a directory in presets. Default = the frozen preset law.
+    drag_bundle: str = "CC"
     allow_inconsistent_gate_pairing: bool = False        # §6.5.2 refuse -> warn downgrade
     drag_low_v_floor: float = 0.0         # A/ps; inert for linear_cubic (power_law n<0 only)
 

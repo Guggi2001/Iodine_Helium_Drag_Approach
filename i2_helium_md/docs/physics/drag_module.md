@@ -208,13 +208,9 @@ silent wrong answer.
 
 ## Calibration data and provenance
 
-The `linear_cubic` coefficients come from the upstream TD-DFT extraction
-and are frozen under `data/reference/drag/<case>/linear_and_cubic/`:
-
-```
-data/reference/drag/9A/linear_and_cubic/{fit_parameters.json, drag_data.csv}
-data/reference/drag/18A/linear_and_cubic/{fit_parameters.json, drag_data.csv}
-```
+The `linear_cubic` coefficients came from the upstream TD-DFT extraction. The
+Method-A exports below are in git tag `pre-drag-cleanup`, no longer in the tree
+(the thesis laws are in `data/reference/drag/{LQ,LQ_eff,CC}/`):
 
 - `fit_parameters.json`: `{a, b, a_err, b_err, meff_amu}`.
 - `drag_data.csv`: `t_ps, v_spline_Aps, F_drag_amuAps2` — the **full**

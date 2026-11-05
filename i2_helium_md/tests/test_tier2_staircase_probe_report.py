@@ -96,7 +96,7 @@ def tiny_probe_run(tmp_path_factory):
     """One genuine tiny-N probe run dir (module-scoped: built once)."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -112,7 +112,7 @@ def tiny_probe_run(tmp_path_factory):
     cfg = replace(cfg, t_max_neutral=0.1, dt_neutral=0.01)
     run_dir = tmp_path_factory.mktemp("probe_runs") / tier2_probe_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         2,
         picture="statistical_mixture",
         kappa=1.0,
@@ -162,7 +162,7 @@ def test_score_probe_run_row(tiny_probe_run, schedule):
 
 
 def _fake_complete_probe_dir(root, **kwargs):
-    d = root / tier2_probe_run_dir_name("9A", "shared_pure_cubic", 50, **kwargs)
+    d = root / tier2_probe_run_dir_name("9A", "CC", 50, **kwargs)
     d.mkdir(parents=True)
     for name in ("cfg.json", "ion.npz", "relaxation.npz"):
         (d / name).write_text("x", encoding="utf-8")
@@ -220,7 +220,7 @@ def test_score_probe_run_reads_s_eff_override(tmp_path_factory, schedule):
     (read from the authoritative cfg.json, not the tag)."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -237,7 +237,7 @@ def test_score_probe_run_reads_s_eff_override(tmp_path_factory, schedule):
     cfg = replace(cfg, t_max_neutral=0.1, dt_neutral=0.01)
     run_dir = tmp_path_factory.mktemp("probe_seff") / tier2_probe_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         2,
         picture="statistical_mixture",
         kappa=1.0,
@@ -260,7 +260,7 @@ def test_score_probe_run_reads_cooling_gate(tmp_path_factory, schedule):
     cooling_gate column (read from the authoritative cfg.json, not the tag)."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -278,7 +278,7 @@ def test_score_probe_run_reads_cooling_gate(tmp_path_factory, schedule):
     cfg = replace(cfg, t_max_neutral=0.1, dt_neutral=0.01)
     run_dir = tmp_path_factory.mktemp("probe_cg") / tier2_probe_run_dir_name(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         2,
         picture="statistical_mixture",
         kappa=1.0,
@@ -417,7 +417,7 @@ def test_select_best_case_row_empty_and_nonfinite():
 
 def _matcher_cfg(gate=None):
     return build_biphasic_cfg(
-        "9A", "shared_pure_cubic", num_molecules=2, ion_time_ps=0.02,
+        "9A", "CC", num_molecules=2, ion_time_ps=0.02,
         dt_ion_ps=0.01, seed=1, cooling_spatial_gate=gate,
     )
 

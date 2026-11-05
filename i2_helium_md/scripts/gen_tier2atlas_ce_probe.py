@@ -101,7 +101,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 
 H405_RUN = finals_run_dir_name("h405")
 

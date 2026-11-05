@@ -76,6 +76,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
+# Not in the tree any more (git tag pre-drag-cleanup): the fixed-well arm cannot rerun.
 WELL_JSON = (PROJECT_ROOT / "data/reference/drag/18A/trajectory_matching_srho3p5A"
              / "g415_fixed_well/c2p000_e0p0800.json")
 MEMBER = "s1"   # default member (the committed s1 runs; the scorer reads it)

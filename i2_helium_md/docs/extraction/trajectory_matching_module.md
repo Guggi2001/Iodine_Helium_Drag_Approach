@@ -51,9 +51,9 @@ postprocess/hedft_loader.load_smoothed_speed_reference
    ↓
 THIS MODULE: objective → Nelder-Mead fit → provenance-stamped bundle
    ↑
-driven by: scripts/extraction/method_b_extraction.py        (per-case, B4)
-           scripts/extraction/method_b_shared_refit.py      (§9 shared)
-           (see scripts/extraction/scripts_explained.md)
+driven by: scripts/extraction/method_b_g412_ridge.py        (m = 21 ridge)
+           (the June drivers are in git tag pre-drag-cleanup;
+            see scripts/extraction/scripts_explained.md)
 ```
 
 The written bundles load back through
@@ -142,7 +142,7 @@ the reference window outruns the ion duration).
 > the case preset's `drag_coefficients` — at delivery time that was the
 > per-case **Method-A** bundle, which is what made them usable as
 > optimizer normalization anchors. Since the preset re-wiring (METHOD_B
-> §10.1) the presets load the shared `shared_pure_cubic` bundle, so a
+> §10.1) the presets load the shared `CC` bundle, so a
 > fresh `build_case_setup` now yields `a0 = 0.0` — unusable as an anchor
 > (`fit_trajectory_matching`'s bounds collapse; the shared fit's anchor
 > check raises). The recorded extraction runs are complete and are not to
@@ -328,8 +328,8 @@ the §9 results) and `SharedFormTrajectoryMatchingFit`.
   `pivot` block (`v_ref_Aps`, `gamma_ref`) for re-derivability. Refuses
   single-case (Stage-1) fits, trapped fits, and unfilled uncertainty.
 
-Drivers: `scripts/extraction/form_phase_common.py` +
-`method_b_form_refit_{linear_quadratic,power_law}.py`.
+Drivers: in git tag `pre-drag-cleanup` (`scripts/extraction/form_phase_common.py`,
+`method_b_form_refit_{linear_quadratic,power_law}.py`).
 
 ## Provenance helpers
 

@@ -38,7 +38,7 @@ physics/constants.py        physics/drag.py  (DragCoefficients, form tags)
         ↓                          ↓
 config.py  ←──────────────────────┘     SimConfig + DragForm/... aliases + check_drag_config
         ↓
-presets.py  ←── data/reference/drag/<case>/   load_drag_coefficients + drag presets
+presets.py  ←── data/reference/drag/{LQ,LQ_eff,CC}/   load_drag_bundle + drag presets
         ↓
 simulation drivers (neutral / ion stages), scripts, tests
 ```
@@ -297,10 +297,9 @@ REFERENCE_DRAG_ROOT = Path(__file__).resolve().parents[1] / "data" / "reference"
 
 `parents[1]` is the repo root (this file is `i2_helium_md/i2_helium_md/`).
 Encoded **once** here so the `data/reference/drag/` layout is not a scattered
-literal. There is deliberately **no `DragCase` enum and no `drag_case_dir`
-helper**: the case (9 Å vs 18 Å) is the droplet geometry the *preset* already
-encodes, so each drag preset builds its own `REFERENCE_DRAG_ROOT/<case>/...`
-path — the case→dir fact lives once, in which preset you call.
+literal. The three bundles (`LQ`, `LQ_eff`, `CC`) apply to either droplet
+geometry, so `DRAG_BUNDLE_CATALOG` is keyed by law alone; the case (9 Å vs 18 Å)
+is the droplet geometry the *preset* already encodes.
 
 ## `load_drag_coefficients(coeff_dir, *, expected_m_eff_amu)` → `DragCoefficients`
 
@@ -336,8 +335,8 @@ the fit ran under.
 Two new presets wire the real coefficients (the only place coefficients are
 actually loaded in production):
 
-- `single_pulse_N2000_drag` — builds on `single_pulse_N2000`, loads the **9 Å**
-  `linear_and_cubic` coefficients, sets `drag_coefficients`, `m_eff_amu`,
+- `single_pulse_N2000_drag` — builds on `single_pulse_N2000`, loads the uncapped
+  `CC` bundle, sets `drag_coefficients`, `m_eff_amu`,
   `mass_initial_amu`.
 - `single_pulse_N2000_18Angst_drag` — the **18 Å** analog.
 

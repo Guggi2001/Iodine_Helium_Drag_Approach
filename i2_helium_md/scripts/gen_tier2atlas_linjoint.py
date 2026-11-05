@@ -226,7 +226,7 @@ def verify_joint_preregistration() -> None:
 def joint_run_dir_name(label: str) -> str:
     """Run-dir basename in the atlas namespace (no ``_tier2_`` substring)."""
     name = run_dir_name(
-        "9A", "shared_pure_cubic", N,
+        "9A", "CC", N,
         run_tag=f"tier2atlas_conf270_linj{label}",
     )
     if "_tier2_" in name or "tier2probe" in name:

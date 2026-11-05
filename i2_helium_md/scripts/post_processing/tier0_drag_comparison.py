@@ -10,10 +10,9 @@ What this script does
 ---------------------
 1. Loads a finished drag run (``RunDirectory``) and the matching HeDFT
    reference CSV (``9A_All_Data.csv`` / ``18A_All_Data.csv``).
-2. Reads the scored window ``[t_start, t_end]`` and ``m_eff`` from the drag
-   ``fit_parameters.json`` -- the *same provenance source* as the coefficients
-   (spec §3.1), so the scored region can never drift from the extraction's
-   actual ``[t*, t_end]``. No hard-coded 2.67 / 8.5.
+2. Takes the scored window ``[t_start, t_end]`` from
+   ``scripts.tier0_common.TIER0_WINDOWS_PS`` (per droplet case) and ``m_eff``
+   from the run's ``cfg.json``.
 3. Asserts MD<->HeDFT time-origin alignment (spec §3.2) as a hard safeguard.
 4. Scores, **in-window only** (spec §4):
      * distance RMSE (angstrom),
@@ -24,10 +23,8 @@ What this script does
    scored window shaded.
 6. Optionally exports the ensemble-mean trajectories
    ``{time_ps, mean_distance_A, mean_speed_I1_Aps, mean_speed_I2_Aps}`` to a
-   small CSV -- the committed regression reference for
-   ``tests/test_tier0_drag_comparison.py`` (spec §7). These four series fully
-   reproduce every scored + diagnostic number, since the comparisons reduce to
-   means over molecules.
+   small CSV. These four series fully reproduce every scored + diagnostic
+   number, since the comparisons reduce to means over molecules.
 
 Interpretation guard (spec §2): a mid-window-good / ends-poorer residual is the
 *expected signature of the constant-m_eff approximation*, NOT a ``linear_cubic``
@@ -43,7 +40,6 @@ Edit USER SETTINGS, then::
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import sys
 import matplotlib.pyplot as plt
@@ -57,10 +53,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 CASE = "18A"      # droplet geometry: "9A" or "18A"
 
-# Drag law to score: a key of scripts.tier0_common.CATALOG. Must match the
-# VARIANT (and CASE / N / RUN_TAG) the run was generated with by
-# scripts/gen_tier0_runs.py.
-VARIANT = "srho3p5A18A_linear_quadratic"
+# Drag law to score: "LQ", "LQ_eff" or "CC". Must match the LAW (and CASE / N /
+# RUN_TAG) the run was generated with by scripts/gen_tier0_runs.py.
+VARIANT = "LQ"
 N = 50
 RUN_TAG = "B2m21"  # set to the same marker used in gen_tier0_runs.py for a tuned run
 
@@ -85,11 +80,7 @@ colors = [plasma_colors(i) for i in np.linspace(0, 1,10)]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.tier0_common import (  # noqa: E402
-    reference_export_dir_name,
-    run_dir_name,
-    window_source_dir,
-)
+from scripts.tier0_common import TIER0_WINDOWS_PS, run_dir_name  # noqa: E402
 
 # --- Paths resolved from CASE + VARIANT (no hand-edited path triple) ---
 # The finished drag run to score (produced by scripts/gen_tier0_runs.py).
@@ -98,31 +89,15 @@ RUN_DIR = PROJECT_ROOT / "data" / "runs" / run_dir_name(CASE, VARIANT, N, RUN_TA
 # HeDFT reference trace for the same case.
 HEDFT_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / f"{CASE}_All_Data.csv"
 
-# The scored window [t_start, t_end] + m_eff are read from the PER-CASE
-# trajectory_matching bundle -- NOT the (possibly shared) variant being run: a
-# shared bundle stamps the 9A onset t_start=2.67 for both cases, so the 18A
-# window must come from the per-case source (9A [2.67,14.081], 18A [4.54,14.768]).
-DRAG_COEFF_DIR = window_source_dir(CASE)
+# Optional: write the ensemble-mean series to this path (free-to-churn
+# diagnostic). None skips the export.
+EXPORT_MEAN_SERIES_PATH = None
 
-# Optional: write the ensemble-mean series here (free-to-churn diagnostic; NOT
-# the committed md_mean_trajectory_N50.csv). Set to None to skip the export.
-# A G4 bundle (e.g. srho3p5A_*) exports to its own folder (tier0_srho3p5A).
-EXPORT_MEAN_SERIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / CASE
-    / reference_export_dir_name("tier0", VARIANT)
-    / (f"md_mean_trajectory_{RUN_TAG}.csv" if RUN_TAG else "md_mean_trajectory.csv")
-)
+def smoothed_reference_path(case: str) -> Path:
+    """The CEEMDAN + SG smoothed speed trace of ``case`` (``cleaned_data_long.csv``)."""
+    return (PROJECT_ROOT / "data" / "reference" / "drag" / case / "velocity_smoothed"
+            / "cleaned_data_long.csv")
 
-# Optional figure overlays, CASE-derived. mean_velocity.csv exists for 9A only;
-# build_figure guards each by existence before plotting.
-CLEANED_VELOCITIES_PATH = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "velocity_smoothed"
-    / "mean_velocity.csv"
-)
-CLEANED_VELOCITIES_PATH_2 = (
-    PROJECT_ROOT / "data" / "reference" / "drag" / CASE / "velocity_smoothed"
-    / "cleaned_data_long.csv"
-)
 
 import numpy as np  # noqa: E402
 
@@ -165,30 +140,6 @@ def drag_bundle_label(cfg: SimConfig) -> str:
     coeffs = cfg.drag_coefficients
     terms = ", ".join(f"{k}={v:.4g}" for k, v in coeffs.coefficients.items())
     return f"{coeffs.form}: {terms} | E_bind {cfg.binding_energy_I_ion_eV:.4g} eV"
-
-
-def read_drag_window(coeff_dir: Path) -> tuple[float, float, float]:
-    """Read ``(t_start, t_end, meff_amu)`` from ``coeff_dir/fit_parameters.json``.
-
-    The window and the extraction mass share the coefficients' provenance file
-    (spec §3.1), so the scored region travels with the calibration.
-    """
-    params_path = coeff_dir / "fit_parameters.json"
-    data = json.loads(params_path.read_text(encoding="utf-8"))
-    for key in ("t_start", "t_end", "meff_amu"):
-        if key not in data:
-            raise KeyError(
-                f"{params_path} is missing required key {key!r}; "
-                f"present keys: {sorted(data)}"
-            )
-    t_start = float(data["t_start"])
-    t_end = float(data["t_end"])
-    if not t_end > t_start:
-        raise ValueError(
-            f"degenerate extraction window from {params_path}: "
-            f"t_start={t_start}, t_end={t_end}"
-        )
-    return t_start, t_end, float(data["meff_amu"])
 
 
 def assert_time_origin_aligned(
@@ -355,6 +306,9 @@ def build_figure(
     positions_figure: bool,
     droplet_radius = None,
     bundle_label: str | None = None,
+    *,
+    case: str = CASE,
+    t_max: float | None = T_MAX,
 ):
     """Create two figures:
 
@@ -362,8 +316,9 @@ def build_figure(
     - bottom figure: distance + velocity panels (ax_d, ax_v) with the
       scored window shaded.
 
-    Returns a tuple (fig_top, fig_bottom). The caller (main) shows all
-    open figures with ``plt.show()``.
+    ``case`` is the droplet geometry ("9A" or "18A"), ``t_max`` the x-axis limit
+    [ps] (None: auto). Returns the bottom figure, or the tuple (fig_bottom,
+    fig_top) with ``positions_figure``.
     """
     global fig_top
     import matplotlib.pyplot as plt
@@ -382,18 +337,11 @@ def build_figure(
     r1_mean = np.mean(np.sqrt(x1*x1 + y1*y1 + z1*z1), axis=0)
     r2_mean = np.mean(np.sqrt(x2*x2 + y2*y2 + z2*z2), axis=0)
 
-    # Optional reference overlays, each guarded by existence (mean_velocity.csv
-    # is 9A-only; cleaned_data_long.csv exists for both cases).
-    time_ps = speed_Aps = None
-    if CLEANED_VELOCITIES_PATH.is_file():
-        structured = np.genfromtxt(CLEANED_VELOCITIES_PATH, delimiter=",", names=True, dtype=float)
-        time_ps = np.atleast_1d(np.asarray(structured["time_ps"], dtype=float))
-        speed_Aps = np.atleast_1d(np.asarray(structured["mean_velocity_Aps"], dtype=float))
-    time_SG = velocity_SG = None
-    if CLEANED_VELOCITIES_PATH_2.is_file():
-        structured_SG = np.genfromtxt(CLEANED_VELOCITIES_PATH_2, delimiter=",", names=True, dtype=float)
-        time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
-        velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
+    # Smoothed reference trace of this case.
+    structured_SG = np.genfromtxt(smoothed_reference_path(case), delimiter=",",
+                                  names=True, dtype=float)
+    time_SG = np.atleast_1d(np.asarray(structured_SG["time"], dtype=float))
+    velocity_SG = np.atleast_1d(np.asarray(structured_SG["cleaned_SG"], dtype=float))
 
     if positions_figure:
         # Top figure: mean x, y, z positions for both atoms (3 stacked subplots)
@@ -433,10 +381,7 @@ def build_figure(
     ax_d.spines["right"].set_visible(False)
 
     if droplet_radius is not None:
-        if T_MAX == None:
-            x_max = hedft.time_ps[-1]
-        else:
-            x_max = T_MAX
+        x_max = hedft.time_ps[-1] if t_max is None else t_max
         ax_d.hlines(2*droplet_radius, xmin=hedft.time_ps[0], xmax=x_max,
                     color="tab:gray", lw=1.2, ls="--",
                     label=f"$d_{{\\mathrm{{droplet}}}}$ ={2*droplet_radius:.0f} Å")
@@ -444,9 +389,7 @@ def build_figure(
 
     ax_v.plot(t_md, v1_md, color=colors[7], ls='-', lw=1.5, label="MD mean |v$_1$|")
     ax_v.plot(t_md, v2_md, color=colors[6], ls='--', dashes=(10, 5), lw=1.5, label="MD mean |v$_2$|")
-    #if time_ps is not None:
-   #     ax_v.plot(time_ps, speed_Aps, label = r'$mean velocity MD$', color="tab:pink", lw=1.2)
-    if time_SG is not None and CASE == "18A":
+    if case == "18A":
         ax_v.plot(time_SG, velocity_SG, label = r'Smoothed |v$_1$|', color=colors[4], lw=1.2)
         ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
                      label="scored window")
@@ -456,7 +399,7 @@ def build_figure(
     ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1, alpha = 0.8,
               ls=":", label="HeDFT |v$_2$|")
 
-    if CASE == "9A":
+    if case == "9A":
         ax_v.axhline(y=4.236575, color='green', linestyle='--', alpha=0.3, label='Lower bound exit velocity')
 
     ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
@@ -468,10 +411,10 @@ def build_figure(
     ax_v.set_title(f"Fragment speed comparison")
     ax_d.set_title(f"Internuclear separation; $R_0 = {hedft.droplet_radius_A:.0f}$ Å")
      
-    # Apply T_MAX to both bottom figure axes
-    if T_MAX is not None:
-        ax_d.set_xlim(0, T_MAX)
-        ax_v.set_xlim(0, T_MAX)
+    # Apply t_max to both bottom figure axes
+    if t_max is not None:
+        ax_d.set_xlim(0, t_max)
+        ax_v.set_xlim(0, t_max)
 
     # title = f"$R_0 = {hedft.droplet_radius_A:.0f}$ Å"
     # # if bundle_label:
@@ -608,7 +551,7 @@ def _reconstruct_radial_forces(ion, cfg, *, atom_index):
     return drag_r, coul_r, drop_r
 
 
-def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
+def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX):
     """Plot the radial-projected force evolution for the clean atom (atom 2).
 
     Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
@@ -618,7 +561,8 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
     the visual counterpart of the model-dimensionality residual.
 
     ``atom_index`` defaults to 1 = atom 2 (single-molecule 2N layout), the clean
-    extraction atom the drag law was fit to.
+    extraction atom the drag law was fit to. ``t_max`` is the x-axis limit [ps]
+    (None: auto).
 
     Returns a 2x1 subplot figure with individual forces on top and net force on
     the bottom.
@@ -677,9 +621,9 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1):
     ax_bottom.set_title(f"Fragment kinetic energy")
 
 
-    if T_MAX is not None:
-        ax_top.set_xlim(0, T_MAX)
-        ax_bottom.set_xlim(0, T_MAX)
+    if t_max is not None:
+        ax_top.set_xlim(0, t_max)
+        ax_bottom.set_xlim(0, t_max)
 
 
     # fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8 * scale_figure, 7 * scale_figure))
@@ -723,8 +667,7 @@ def main() -> int:
     ion = run.load_ion()
     cfg = run.load_cfg()
     hedft = load_hedft_trajectory(HEDFT_PATH)
-    t_start, t_end, meff_amu = read_drag_window(DRAG_COEFF_DIR)
-    window = (t_start, t_end)
+    window = t_start, t_end = TIER0_WINDOWS_PS[CASE]
     droplet_radius = float(ion.droplet_radii_angstrom[0])
 
     print(
@@ -737,8 +680,8 @@ def main() -> int:
         f"time=[{hedft.time_ps[0]:.3f}, {hedft.time_ps[-1]:.3f}] ps "
         f"({hedft.time_ps.size} samples)"
     )
-    print(f"Drag window from fit_parameters.json: "
-          f"[{t_start:.3f}, {t_end:.3f}] ps, m_eff={meff_amu:.6f} amu")
+    print(f"Scoring window: [{t_start:.3f}, {t_end:.3f}] ps, "
+          f"m_eff={cfg.m_eff_amu:.6f} amu")
 
     assert_time_origin_aligned(ion, hedft, window)
 
@@ -746,7 +689,7 @@ def main() -> int:
     # trajectory-matching extraction minimised against (cleaned_data_long.csv,
     # column cleaned_SG). Loader accepts both the 2-col (18A) and 3-col (9A,
     # +IMF_cleaned) layouts.
-    smoothed = load_smoothed_speed_reference(CLEANED_VELOCITIES_PATH_2)
+    smoothed = load_smoothed_speed_reference(smoothed_reference_path(CASE))
 
     metrics = score(ion, hedft, window, smoothed)
     print_summary(metrics, label=f"r0={hedft.droplet_radius_A:.0f}A N={ion.num_molecules}")

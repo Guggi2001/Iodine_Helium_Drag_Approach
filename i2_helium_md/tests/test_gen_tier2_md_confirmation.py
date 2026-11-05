@@ -166,7 +166,7 @@ def test_build_confirmation_per_config_knobs(tmp_path):
     }
     control = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=script.N,
         ion_time_ps=script.ION_TIME_PS,
         dt_ion_ps=script.DT_ION_PS,
@@ -431,7 +431,7 @@ def test_unknown_leg_rejected(tmp_path, monkeypatch):
 def test_f3_discovery_ignores_complete_conf_dir(tmp_path):
     """A complete conf run dir must not enter the F3 campaign scoreboard."""
     conf_dir = tmp_path / tier2_confirmation_run_dir_name(
-        "9A", "shared_pure_cubic", 50, config_label="c1", budget_eV=2.70
+        "9A", "CC", 50, config_label="c1", budget_eV=2.70
     )
     conf_dir.mkdir()
     for name in ("cfg.json", "ion.npz", "relaxation.npz", "detection.npz"):
@@ -451,7 +451,7 @@ def _tiny_capped_tabulated_cfg():
     detection, small windows so pytest stays cheap."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,

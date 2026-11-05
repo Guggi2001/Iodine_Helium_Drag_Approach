@@ -189,7 +189,7 @@ def verify_tau_preregistration() -> None:
 
 def tau_run_dir_name(label: str) -> str:
     """Run-dir basename in the atlas namespace."""
-    name = run_dir_name("9A", "shared_pure_cubic", N,
+    name = run_dir_name("9A", "CC", N,
                         run_tag=f"tier2atlas_conf270_lint{label}")
     if "_tier2_" in name or "tier2probe" in name:
         raise AssertionError(f"atlas namespace violated by {name!r}")

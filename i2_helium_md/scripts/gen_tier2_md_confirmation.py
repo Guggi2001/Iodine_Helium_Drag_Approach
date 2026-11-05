@@ -62,7 +62,7 @@ from typing import Mapping, NamedTuple, Optional
 # =============================================================================
 
 CASE = "9A"                     # fixed N = 2000 droplet (S2-D4; §6.6 defense)
-VARIANT = "shared_pure_cubic"   # the locked Tier-0 bundle (supplies b)
+VARIANT = "CC"   # the locked Tier-0 bundle (supplies b)
 N = 50                          # S2-D2 pilot scale; winner -> N = 500 (T4)
 
 ION_TIME_PS = 30.0              # probe convention (Tier-0 dt bundle)

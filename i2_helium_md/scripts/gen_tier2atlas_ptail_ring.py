@@ -75,7 +75,7 @@ from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 
 # The committed h405 run this ring is CRN-paired against (its cfg.json is
 # the cfg-diff oracle reference; its seed is inherited via build_cell).

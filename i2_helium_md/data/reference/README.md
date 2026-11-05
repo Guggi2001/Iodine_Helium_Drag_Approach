@@ -34,6 +34,19 @@ Top-level files:
 integrated_i_he_abundance.csv   <- experimental I+He_n size distribution (Tier-2 arbiter)
 ```
 
+## `drag/` — the thesis drag laws and their calibration
+
+| Path | Content |
+|---|---|
+| `drag/LQ/` | B2, the production law: `linear_quadratic`, a 18.007, c 1.6, E_bind 0.11727 eV, 3.5 Å gate. `fit_summary.json` records the earlier free G4.11 fit and keeps its old id. |
+| `drag/LQ_eff/` | B3, the effective variant: a 19.8, c 1.6, E_bind 0.0482 eV. Placed by hand, not a fit. |
+| `drag/CC/` | h405, the contrast law: cubic b plus a `cap` block (v_c 5.40, p_tail −1). `load_drag_bundle("CC")` is uncapped; `load_capped_cc()` is the thesis law. |
+| `drag/calibration_ridge/ridge/` | 18 Å ridge at m = I⁺ + 21 He. `check_B2.json` / `check_A5.json` are the m = 19 fits re-scored unchanged at m = 21; `ridge_m21.csv` also carries the m = 19 values in its `_m19` columns. Frozen. |
+| `drag/calibration_ridge/exit_bound_9A/` | 9 Å exit bound of those points. |
+| `drag/{9A,18A}/velocity_smoothed/` | Smoothed TDDFT speed traces. |
+
+Everything else that lived here is in git tag `pre-drag-cleanup`.
+
 ## `integrated_i_he_abundance.csv` — I+He_n size distribution (Tier-2 arbiter)
 
 The measured I+He_n integer-n abundance the Tier-2 generative mass mechanism is

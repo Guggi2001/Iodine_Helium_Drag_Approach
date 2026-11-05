@@ -71,7 +71,7 @@ for _stream in (sys.stdout, sys.stderr):
 # =============================================================================
 
 CASE = "9A"
-VARIANT = "shared_pure_cubic"
+VARIANT = "CC"
 N = 1000                        # fragments per cell (plan §3.5e Block 3)
 SEED = 20260729                 # ONE fresh seed shared by every cell (CRN);
 #                               # distinct from the ring's 20260728 so the

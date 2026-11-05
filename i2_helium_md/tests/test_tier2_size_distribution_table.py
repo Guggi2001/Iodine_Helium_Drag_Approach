@@ -69,7 +69,7 @@ def _write_tiny_run(run_dir, *, budget_eV=VALIDATION_BUDGET_EV, evap_rrk_dof=Non
     """Build one genuine tiny-N biphasic run dir (neutral -> ion -> relaxation)."""
     cfg = build_biphasic_cfg(
         "9A",
-        "shared_pure_cubic",
+        "CC",
         num_molecules=2,
         ion_time_ps=0.02,
         dt_ion_ps=0.01,
@@ -121,7 +121,7 @@ def _copy_run(canonical_run, dest):
 def test_freeze_side_expected_true_at_validation_budget():
     """Decision #2: freeze-side expected at 0.80 eV (Pi>1 is a wiring smell)."""
     cfg = build_biphasic_cfg(
-        "9A", "shared_pure_cubic", num_molecules=1, ion_time_ps=0.02,
+        "9A", "CC", num_molecules=1, ion_time_ps=0.02,
         dt_ion_ps=0.01, seed=1, coulomb_available_eV=VALIDATION_BUDGET_EV,
     )
     assert _freeze_side_expected(cfg) is True
@@ -130,7 +130,7 @@ def test_freeze_side_expected_true_at_validation_budget():
 def test_freeze_side_expected_false_at_production_budget():
     """Decision #2: NOT freeze-side at 2.70 eV (Pi>1 is legitimate physics)."""
     cfg = build_biphasic_cfg(
-        "9A", "shared_pure_cubic", num_molecules=1, ion_time_ps=0.02,
+        "9A", "CC", num_molecules=1, ion_time_ps=0.02,
         dt_ion_ps=0.01, seed=1, coulomb_available_eV=PRODUCTION_BUDGET_EV,
     )
     assert _freeze_side_expected(cfg) is False
@@ -284,7 +284,7 @@ def test_freeze_side_expected_false_for_total_strip_at_validation():
     """Finding 1: a 0.80 eV total_strip run sheds by construction, so Pi>1 is
     legitimate physics there -- it must NOT be flagged freeze-side."""
     cfg = build_biphasic_cfg(
-        "9A", "shared_pure_cubic", num_molecules=1, ion_time_ps=0.02,
+        "9A", "CC", num_molecules=1, ion_time_ps=0.02,
         dt_ion_ps=0.01, seed=1, coulomb_available_eV=VALIDATION_BUDGET_EV,
     )
     assert _freeze_side_expected(cfg, total_strip=True) is False
