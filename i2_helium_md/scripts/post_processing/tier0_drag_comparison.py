@@ -81,6 +81,14 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from i2_helium_md.presets import tddft_reference_path  # noqa: E402
+from scripts.post_processing.thesis_style import (  # noqa: E402
+    FONT,
+    HEDFT_V1_LINE,
+    HEDFT_V2_LINE,
+    TEXTWIDTH_IN,
+    panel_letter,
+    style_axis,
+)
 from scripts.tier0_common import TIER0_WINDOWS_PS, run_dir_name  # noqa: E402
 
 # --- Paths resolved from CASE + VARIANT (no hand-edited path triple) ---
@@ -123,6 +131,54 @@ from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.simulation.checkpoint import IonCheckpoint  # noqa: E402
 from i2_helium_md.simulation.ion_propagation_step import _E_kin_eV  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+
+
+# The calibration figures sit side by side in the thesis: half the text width,
+# so the thesis_style font sizes are the printed sizes.
+CAL_FIGSIZE_IN: tuple[float, float] = (TEXTWIDTH_IN / 2, 3.9)
+CAL_ALONE_FIGSIZE_IN: tuple[float, float] = (TEXTWIDTH_IN, 3.2)  # a figure not in a pair
+CAL_LW: float = 1.4
+CAL_XLABEL: str = r"Time $t$ / ps"
+CAL_Y_MARGINS: tuple[float, float] = (0.06, 0.22)  # of the y span; top: the panel letter
+CAL_ZERO_PAD: float = 0.02  # below 0, of the axis top: a line touching 0 stays whole
+
+
+def _finish_calibration_axis(ax, title: str, ylabel: str, letter: str, *,
+                             from_zero: bool = False) -> None:
+    """Title, label, thesis style, panel letter and y limits of one calibration panel.
+
+    The y limits fit the lines inside the current x limits, so set those first.
+    ``from_zero`` is for quantities that cannot be negative: the axis ends just
+    below 0 (``CAL_ZERO_PAD``), so a line that touches 0 is not clipped.
+    """
+    ax.set_title(title, fontsize=FONT["title_fontsize"])
+    ax.set_ylabel(ylabel)
+    style_axis(ax)
+    panel_letter(ax, letter)
+
+    # Fit y to the lines inside the x limits, not to the whole run.
+    x_min, x_max = ax.get_xlim()
+    visible = [np.asarray(line.get_ydata(), dtype=float)[
+                   (np.asarray(line.get_xdata(), dtype=float) >= x_min)
+                   & (np.asarray(line.get_xdata(), dtype=float) <= x_max)]
+               for line in ax.get_lines()]
+    y_min = min(float(np.min(y)) for y in visible if y.size)
+    y_max = max(float(np.max(y)) for y in visible if y.size)
+    span = y_max - y_min
+    top = y_max + CAL_Y_MARGINS[1] * span
+    bottom = -CAL_ZERO_PAD * top if from_zero else y_min - CAL_Y_MARGINS[0] * span
+    ax.set_ylim(bottom, top)
+
+
+def _calibration_legend(fig, axes, *, right: bool = False) -> None:
+    """One legend above the panels, or beside them with ``right``; each label once."""
+    entries: dict[str, object] = {}
+    for ax in axes:
+        for handle, label in zip(*ax.get_legend_handles_labels()):
+            entries.setdefault(label, handle)
+    loc, ncols = ("outside center right", 1) if right else ("outside upper center", 2)
+    fig.legend(entries.values(), entries.keys(), loc=loc, ncols=ncols,
+               frameon=False, fontsize=FONT["legend_fontsize"])
 
 
 # Tolerance for the MD<->HeDFT time-origin alignment safeguard (spec §3.2).
@@ -309,6 +365,7 @@ def build_figure(
     *,
     case: str = CASE,
     t_max: float | None = T_MAX,
+    letters: tuple[str, str] = ("a", "b"),
 ):
     """Create two figures:
 
@@ -317,11 +374,13 @@ def build_figure(
       scored window shaded.
 
     ``case`` is the droplet geometry ("9A" or "18A"), ``t_max`` the x-axis limit
-    [ps] (None: auto). Returns the bottom figure, or the tuple (fig_bottom,
-    fig_top) with ``positions_figure``.
+    [ps] (None: auto), ``letters`` the panel letters of the bottom figure.
+    Returns the bottom figure, or the tuple (fig_bottom, fig_top) with
+    ``positions_figure``.
     """
     global fig_top
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MultipleLocator
 
     t_md, dist_md, v1_md, v2_md = ensemble_mean_series(ion)
     t_start, t_end = window
@@ -367,54 +426,45 @@ def build_figure(
 
     # Bottom figure: distance and velocity panels (share x-axis)
 
-    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=(8.0*scale_figure, 6.0*scale_figure), sharex=True, constrained_layout=True)
+    fig_bottom, (ax_d, ax_v) = plt.subplots(2, 1, figsize=CAL_FIGSIZE_IN, sharex=True, constrained_layout=True)
 
-    ax_d.plot(t_md, dist_md, color=colors[1], lw=1.5, label="MD mean")
-    # ax_d.plot(t_md, r1_mean, color="tab:red", lw=1.5, label="R$_1$ mean")
-    # ax_d.plot(t_md, r2_mean, color="tab:green", ls='--', dashes=(10, 5), lw=1.5, label="R$_2$ mean")
-    ax_d.plot(hedft.time_ps, hedft.distance_A, color="black", lw=1.5,
-              label="HeDFT / TDDFT")
-
-    ax_d.set_ylabel(r"$R_1 - R_2$ / $\mathrm{\AA}$")
-    ax_d.legend(frameon=False)
-    ax_d.spines["top"].set_visible(False)
-    ax_d.spines["right"].set_visible(False)
+    hedft_label = r"HeDFT $R$, $|v_1|$"          # one line style in both panels
+    ax_d.plot(t_md, dist_md, color=colors[1], lw=CAL_LW, label=r"MD mean $R$")
+    ax_d.plot(hedft.time_ps, hedft.distance_A, **HEDFT_V1_LINE, label=hedft_label)
 
     if droplet_radius is not None:
         x_max = hedft.time_ps[-1] if t_max is None else t_max
         ax_d.hlines(2*droplet_radius, xmin=hedft.time_ps[0], xmax=x_max,
-                    color="tab:gray", lw=1.2, ls="--",
-                    label=f"$d_{{\\mathrm{{droplet}}}}$ ={2*droplet_radius:.0f} Å")
-        ax_d.legend(frameon=False)
+                    color="tab:gray", lw=1.0, ls="--",
+                    label=f"Droplet diameter {2*droplet_radius:.0f} Å")
 
-    ax_v.plot(t_md, v1_md, color=colors[7], ls='-', lw=1.5, label="MD mean |v$_1$|")
-    ax_v.plot(t_md, v2_md, color=colors[6], ls='--', dashes=(10, 5), lw=1.5, label="MD mean |v$_2$|")
+    ax_v.plot(t_md, v1_md, color=colors[7], lw=CAL_LW, label=r"MD mean $|v_1|$")
+    ax_v.plot(t_md, v2_md, color=colors[6], ls="--", lw=CAL_LW, label=r"MD mean $|v_2|$")
     if case == "18A":
-        ax_v.plot(time_SG, velocity_SG, label = r'Smoothed |v$_1$|', color=colors[4], lw=1.2)
-        ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
-                     label="scored window")
-        ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12)
-    ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, color="black", lw=1, alpha = 0.8,
-              ls="-", label="HeDFT |v$_1$|")
-    ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, color="dimgray", lw=1, alpha = 0.8,
-              ls=":", label="HeDFT |v$_2$|")
+        ax_v.plot(time_SG, velocity_SG, color=colors[4], lw=1.2, label=r"Smoothed $|v_1|$")
+        ax_d.axvspan(t_start, t_end, color="tab:green", alpha=0.12, zorder=0, lw=0,
+                     label="Scored window")
+        ax_v.axvspan(t_start, t_end, color="tab:green", alpha=0.12, zorder=0, lw=0)
+    ax_v.plot(hedft.time_ps, hedft.v1_magnitude_Aps, **HEDFT_V1_LINE, label=hedft_label)
+    ax_v.plot(hedft.time_ps, hedft.v2_magnitude_Aps, **HEDFT_V2_LINE, label=r"HeDFT $|v_2|$")
 
     if case == "9A":
-        ax_v.axhline(y=4.236575, color='green', linestyle='--', alpha=0.3, label='Lower bound exit velocity')
+        ax_v.axhline(y=4.236575, color="green", ls="--", label="Exit-speed bound")
 
-    ax_v.set_ylabel(r"$|v|$ / $\mathrm{\AA}/\mathrm{ps}$")
-    ax_v.set_xlabel("t / ps")
-    ax_v.legend(frameon=False, ncol=2)
-    ax_v.spines["top"].set_visible(False)
-    ax_v.spines["right"].set_visible(False)
+    ax_v.set_xlabel(CAL_XLABEL)
 
-    ax_v.set_title(f"Fragment speed comparison")
-    ax_d.set_title(f"Internuclear separation; $R_0 = {hedft.droplet_radius_A:.0f}$ Å")
-     
     # Apply t_max to both bottom figure axes
     if t_max is not None:
         ax_d.set_xlim(0, t_max)
         ax_v.set_xlim(0, t_max)
+
+    _finish_calibration_axis(
+        ax_d, f"Internuclear separation, $R_0 = {hedft.droplet_radius_A:.0f}$ Å",
+        r"Separation $R$ / Å", letters[0])
+    _finish_calibration_axis(
+        ax_v, "Fragment speed", r"Speed $|v|$ / Å ps$^{-1}$", letters[1], from_zero=True)
+    ax_v.yaxis.set_major_locator(MultipleLocator(2.0))
+    _calibration_legend(fig_bottom, (ax_d, ax_v))
 
     # title = f"$R_0 = {hedft.droplet_radius_A:.0f}$ Å"
     # # if bundle_label:
@@ -551,7 +601,8 @@ def _reconstruct_radial_forces(ion, cfg, *, atom_index):
     return drag_r, coul_r, drop_r
 
 
-def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX):
+def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX,
+                       letters=("c", "d"), alone=False):
     """Plot the radial-projected force evolution for the clean atom (atom 2).
 
     Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
@@ -562,12 +613,14 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX):
 
     ``atom_index`` defaults to 1 = atom 2 (single-molecule 2N layout), the clean
     extraction atom the drag law was fit to. ``t_max`` is the x-axis limit [ps]
-    (None: auto).
+    (None: auto), ``letters`` the panel letters. ``alone`` is for a figure not
+    in a side-by-side pair: full text width, legend to the right of the panels.
 
     Returns a 2x1 subplot figure with individual forces on top and net force on
     the bottom.
     """
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MultipleLocator
 
     drag_r, coul_r, drop_r = _reconstruct_radial_forces(
         ion, cfg, atom_index=atom_index,
@@ -589,41 +642,41 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX):
 
 
 
-    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8 * scale_figure, 6 * scale_figure), sharex=True)
+    figsize = CAL_ALONE_FIGSIZE_IN if alone else CAL_FIGSIZE_IN
+    fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=figsize, sharex=True,
+                                            constrained_layout=True)
     ax_top.axhline(0.0, color="0.6", lw=0.8)
-    ax_top.plot(t, coul_r, color="tab:red", label="Coulomb")
-    ax_top.plot(t, net_force, color="tab:purple", label="Net force", lw=2)
-    ax_top.plot(t, drop_r, color="tab:blue", label="Droplet (confining)")
-    ax_top.plot(t, drag_r, color="tab:green", label="Drag")
-    ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12,
+    ax_top.plot(t, coul_r, color="tab:red", lw=CAL_LW, label="Coulomb")
+    ax_top.plot(t, net_force, color="tab:purple", lw=1.8, label="Net force")
+    ax_top.plot(t, drop_r, color="tab:blue", lw=CAL_LW, label="Droplet")
+    ax_top.plot(t, drag_r, color="tab:green", lw=CAL_LW, label="Drag")
+    ax_top.axvspan(t_start, t_end, color="tab:green", alpha=0.12, zorder=0, lw=0,
                    label="Scored window")
-    ax_top.set_ylabel(r"$F \cdot \hat{r}$ / $\mathrm{amu}\,\mathrm{\AA}/\mathrm{ps}^2$")
-    ax_top.set_title(
-        f"Radial-projected forces, Fragment {atom_index + 1}"
-        #f"\n{drag_bundle_label(cfg)}"
-    )
-    ax_top.legend(frameon=False, ncol=2)
-    ax_top.spines["top"].set_visible(False)
-    ax_top.spines["right"].set_visible(False)
 
-    ax_bottom.plot(t_md, ke_i1, color=colors[5], lw=1.5, label="MD mean KE $\mathrm{I}_1$")
-    ax_bottom.plot(t_md, ke_i2, color=colors[6], ls='--', dashes=(10, 5), lw=1.5, label="MD mean KE $\mathrm{I}_2$")
+    ax_bottom.plot(t_md, ke_i1, color=colors[5], lw=CAL_LW, label=r"MD mean $\mathrm{I}_1$")
+    ax_bottom.plot(t_md, ke_i2, color=colors[6], ls="--", lw=CAL_LW, label=r"MD mean $\mathrm{I}_2$")
     ax_bottom.axhline(
         cfg.binding_energy_I_ion_eV, color=colors[7], lw=1.2, ls=":",
-        label=f"Droplet binding depth = {cfg.binding_energy_I_ion_eV:.3g} eV",
+        label=f"Binding depth {cfg.binding_energy_I_ion_eV:.3g} eV",
     )
-    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12, label="Scored window")
-    ax_bottom.set_xlabel("t / ps")
-    ax_bottom.set_ylabel(r"$E_\mathrm{kin}$ / eV")
-    ax_bottom.legend(frameon=False)
-    ax_bottom.spines["top"].set_visible(False)
-    ax_bottom.spines["right"].set_visible(False)
-    ax_bottom.set_title(f"Fragment kinetic energy")
+    ax_bottom.axvspan(t_start, t_end, color="tab:green", alpha=0.12, zorder=0, lw=0)
+    ax_bottom.set_xlabel(CAL_XLABEL)
 
 
     if t_max is not None:
         ax_top.set_xlim(0, t_max)
         ax_bottom.set_xlim(0, t_max)
+
+    _finish_calibration_axis(
+        ax_top, f"Radial forces, fragment {atom_index + 1}",
+        r"Force $F \cdot \hat{r}$ / amu Å ps$^{-2}$", letters[0])
+    _finish_calibration_axis(
+        ax_bottom, "Fragment kinetic energy", r"Energy $E_\mathrm{kin}$ / eV", letters[1],
+        from_zero=True)
+    if alone:                                    # the wider axes tick too finely in t
+        ax_top.xaxis.set_major_locator(MultipleLocator(5.0))
+        ax_bottom.yaxis.set_major_locator(MultipleLocator(0.05))
+    _calibration_legend(fig, (ax_top, ax_bottom), right=alone)
 
 
     # fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(8 * scale_figure, 7 * scale_figure))
@@ -658,7 +711,6 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX):
     # if T_MAX is not None:
     #     ax_top.set_xlim(0, T_MAX)
     #     ax_bottom.set_xlim(0, T_MAX)
-    fig.tight_layout()
     return fig
 
 

@@ -41,6 +41,8 @@ from i2_helium_md.postprocess.hedft_loader import (  # noqa: E402
 )
 from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from scripts.post_processing.thesis_style import (  # noqa: E402
+    HEDFT_V1_LINE,
+    HEDFT_V2_LINE,
     FIG_RC,
     FONT,
     TEXTWIDTH_IN,
@@ -63,8 +65,6 @@ T_XLIM_PS: tuple[float, float] = (0.0, 15.0)
 T_TICK_STEP_PS: float = 5.0
 V_YLIM_9A_APS: tuple[float, float] = (0.0, 6.5)     # headroom for the panel letter
 V_YLIM_18A_APS: tuple[float, float] = (0.0, 4.0)
-BOTTOM_LINE: dict = dict(color="black", ls="-", lw=1.0, alpha=0.8)
-TOP_LINE: dict = dict(color="dimgray", ls=":", lw=1.0, alpha=0.8)
 SMOOTHED_LINE: dict = dict(color="tab:purple", lw=1.2)
 EXIT_BOUND_LINE: dict = dict(color="green", ls="--", lw=1.2)
 BUBBLE_EXIT_LINE: dict = dict(color="black", ls="--", lw=0.8)
@@ -101,8 +101,8 @@ def exit_speed_bound_Aps(hedft: HedftTrajectory) -> float:
 
 def _plot_atom_speeds(ax: plt.Axes, hedft: HedftTrajectory) -> None:
     """Draw |v|(t) of the bottom and top iodine on ``ax``."""
-    ax.plot(hedft.time_ps, hedft.v1_magnitude_Aps, **BOTTOM_LINE, label=r"HeDFT $|v_1|$")
-    ax.plot(hedft.time_ps, hedft.v2_magnitude_Aps, **TOP_LINE, label=r"HeDFT $|v_2|$")
+    ax.plot(hedft.time_ps, hedft.v1_magnitude_Aps, **HEDFT_V1_LINE, label=r"HeDFT $|v_1|$")
+    ax.plot(hedft.time_ps, hedft.v2_magnitude_Aps, **HEDFT_V2_LINE, label=r"HeDFT $|v_2|$")
 
 
 def _finish_axis(ax: plt.Axes, title: str, ylim: tuple[float, float], letter: str) -> None:

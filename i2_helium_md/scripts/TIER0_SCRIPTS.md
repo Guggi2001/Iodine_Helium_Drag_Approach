@@ -42,6 +42,6 @@ figures in a window. It does not save them.
 ## `scripts/post_processing/tier0_calibration_figures.py`
 
 No settings to edit: its `RUNS` table holds the three runs and five figures. A run
-is reused if its `cfg.json` matches and regenerated otherwise. PNGs are 600 × 450 px
+is reused if its `cfg.json` matches and regenerated otherwise. PNGs are half the text width, in thesis style,
 and go to `data/figures/thesis_microscopic_calibration/`; pass another folder as
 the first argument to try something out without touching them.

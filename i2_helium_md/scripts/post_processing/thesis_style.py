@@ -40,6 +40,10 @@ THESIS_NAMES: dict[str, str] = {
 }
 LIT_COLOR: str = "0.55"                   # literature marks, shaded windows
 
+# The TDDFT traces, drawn alike in every figure that shows them.
+HEDFT_V1_LINE: dict = dict(color="black", ls="-", lw=1.0, alpha=0.8)
+HEDFT_V2_LINE: dict = dict(color="dimgray", ls=":", lw=1.0, alpha=0.8)
+
 FONT: dict[str, float] = {
     "label_fontsize": 10, "tick_fontsize": 9, "title_fontsize": 10,
     "legend_fontsize": 8.5, "annot_fontsize": 8.5,

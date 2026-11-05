@@ -1,13 +1,30 @@
-"""The run table of the five Tier-0 calibration figures (config only, no propagation)."""
+"""The five Tier-0 calibration figures: run table (no propagation) and thesis layout."""
 
 from __future__ import annotations
 
 import struct
 
-import pytest
+import matplotlib
 
-from scripts.post_processing.tier0_calibration_figures import OUT_DIR, RUNS, build_cfg
-from scripts.tier0_common import run_dir_name
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import pytest  # noqa: E402
+
+from scripts.post_processing.thesis_style import TEXTWIDTH_IN  # noqa: E402
+from scripts.post_processing.tier0_calibration_figures import (  # noqa: E402
+    DPI,
+    OUT_DIR,
+    RUNS,
+    build_cfg,
+)
+from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
+    CAL_ALONE_FIGSIZE_IN,
+    CAL_FIGSIZE_IN,
+    CAL_Y_MARGINS,
+    CAL_ZERO_PAD,
+    _finish_calibration_axis,
+)
+from scripts.tier0_common import run_dir_name  # noqa: E402
 
 
 def _png_size(path):
@@ -22,10 +39,39 @@ def test_the_five_figures():
 
 
 def test_committed_pngs_keep_the_paired_size():
-    """Each pair sits side by side in the thesis, so every PNG must be 600 x 450 px."""
+    """Pairs sit side by side in the thesis: half the text width, same size."""
+    assert CAL_FIGSIZE_IN[0] == TEXTWIDTH_IN / 2
+    paired = tuple(int(side * DPI) for side in CAL_FIGSIZE_IN)
+    alone = tuple(int(side * DPI) for side in CAL_ALONE_FIGSIZE_IN)
     for run in RUNS:
-        for name in filter(None, (run.velocity_png, run.force_png)):
-            assert _png_size(OUT_DIR / name) == (600, 450)
+        assert _png_size(OUT_DIR / run.velocity_png) == paired
+        if run.force_png:
+            assert _png_size(OUT_DIR / run.force_png) == (alone if run.force_alone else paired)
+
+
+def test_only_the_18A_B2_force_figure_stands_alone():
+    assert [r.force_png for r in RUNS if r.force_alone] == ["18A_B2_Force_Energy.png"]
+
+
+def _panel_ylim(**kwargs):
+    """y limits of a panel with a line reaching 100 only outside its x limits."""
+    fig, ax = plt.subplots()
+    ax.plot([0.0, 1.0, 2.0, 3.0], [1.0, 2.0, 3.0, 100.0])
+    ax.set_xlim(0.0, 2.0)
+    _finish_calibration_axis(ax, "title", "label", "a", **kwargs)
+    ylim = ax.get_ylim()
+    plt.close(fig)
+    return ylim
+
+
+def test_panel_y_limits_fit_only_the_visible_lines():
+    low, high = CAL_Y_MARGINS
+    assert _panel_ylim() == pytest.approx((1.0 - 2.0 * low, 3.0 + 2.0 * high))
+
+
+def test_zero_based_panel_keeps_a_line_at_zero_whole():
+    bottom, top = _panel_ylim(from_zero=True)
+    assert bottom == pytest.approx(-CAL_ZERO_PAD * top)
 
 
 def test_stuck_and_b2_runs_get_distinct_directories():

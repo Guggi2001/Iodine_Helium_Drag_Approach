@@ -9,8 +9,9 @@ Three LQ (B2) runs at m = I+ + 21 He, each drawn with the builders of
 * ``9A_B2.png`` -- 9 A at the B2 binding.
 
 A run is reused when its ``cfg.json`` matches and regenerated otherwise (N = 50,
-about a minute each). The PNGs are 600 x 450 px and go side by side in pairs at
-0.5 \\linewidth, so their sizes must stay identical.
+about a minute each). The PNGs are half the text width, in thesis style, and go
+side by side in pairs at 0.5 \\linewidth, so their sizes must stay identical. The
+exception is ``18A_B2_Force_Energy.png``, which stands alone at the full text width.
 
 Usage::
 
@@ -28,7 +29,7 @@ from typing import NamedTuple, Optional
 # =============================================================================
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
-DPI = 100                 # with figsize 6 x 4.5 in: the 600 x 450 px of the thesis pairs
+DPI = 200                 # as the other thesis figures
 N = 50
 SEED = 20260604
 DT_ION_PS = 0.01
@@ -45,12 +46,14 @@ class Run(NamedTuple):
     velocity_png: str           # distance + speed figure
     force_png: Optional[str]    # force + energy figure, or None
     e_bind_eV: Optional[float] = None   # binding [eV]; None = the LQ bundle's
+    force_alone: bool = False   # force figure not in a pair: full width, side legend
 
 
 RUNS = (
     Run("18A", "B2m21stuck", 50.0, 50.0, "18A_Stuck_Velocity_R.png",
         "18A_Stuck_Force_Energy.png", e_bind_eV=0.308),
-    Run("18A", "B2m21", 30.0, 20.0, "18A_B2.png", "18A_B2_Force_Energy.png"),
+    Run("18A", "B2m21", 30.0, 20.0, "18A_B2.png", "18A_B2_Force_Energy.png",
+        force_alone=True),
     Run("9A", "B2m21", 30.0, 20.0, "9A_B2.png", None),
 )
 
@@ -70,6 +73,7 @@ from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
 from i2_helium_md.presets import tddft_reference_path  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.gen_tier0_runs import run_tier0  # noqa: E402
+from scripts.post_processing.thesis_style import FIG_RC  # noqa: E402
 from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
     build_figure,
     build_force_figure,
@@ -104,16 +108,18 @@ def draw(run: Run, directory: RunDirectory, out_dir: Path) -> None:
     ion, cfg = directory.load_ion(), directory.load_cfg()
     hedft = load_hedft_trajectory(tddft_reference_path(run.case))
     window = TIER0_WINDOWS_PS[run.case]
-    figures = {run.velocity_png: build_figure(
-        ion, hedft, window, False, float(ion.droplet_radii_angstrom[0]),
-        case=run.case, t_max=run.t_max_ps)}
-    if run.force_png is not None:
-        figures[run.force_png] = build_force_figure(
-            ion, cfg, window, hedft, atom_index=FORCE_ATOM_INDEX, t_max=run.t_max_ps)
-    for name, fig in figures.items():
-        fig.savefig(out_dir / name, dpi=DPI)
-        plt.close(fig)
-        print(f"[tier0_figures] wrote {out_dir / name}", flush=True)
+    with plt.rc_context(FIG_RC):              # thesis_style font (Palatino)
+        figures = {run.velocity_png: build_figure(
+            ion, hedft, window, False, float(ion.droplet_radii_angstrom[0]),
+            case=run.case, t_max=run.t_max_ps)}
+        if run.force_png is not None:
+            figures[run.force_png] = build_force_figure(
+                ion, cfg, window, hedft, atom_index=FORCE_ATOM_INDEX, t_max=run.t_max_ps,
+                alone=run.force_alone, letters=("a", "b") if run.force_alone else ("c", "d"))
+        for name, fig in figures.items():
+            fig.savefig(out_dir / name, dpi=DPI)
+            plt.close(fig)
+            print(f"[tier0_figures] wrote {out_dir / name}", flush=True)
 
 
 def main(out_dir: Path = OUT_DIR) -> int:
