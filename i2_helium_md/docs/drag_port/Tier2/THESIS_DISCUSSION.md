@@ -827,9 +827,10 @@ production setting, not a Tier-0 refit (as for `h405g35`).
 ## 12. Exit versus detection: the readout definition (DESIGN DECISION, future work; added 2026-10-16; no runs)
 
 > **Executed 2026-10-27 in §16** on the thesis runs (ion.npz kept, no
-> re-runs needed), with this definition unchanged. §12.3 (suppressed
-> class) and §12.5 (cost) describe the state before G13 and are
-> historical.
+> re-runs needed). The boundary, the last-outward-crossing rule and the
+> unit are unchanged, but the exit time and n_exit now come from the
+> event log (see the note in §12.2). §12.3 (suppressed class) and §12.5
+> (cost) describe the state before G13 and are historical.
 
 Decision (user, 2026-10-16): "droplet exit" for the exit-versus-detection
 comparison is the state at an **actual outward crossing of the sharp
@@ -866,6 +867,18 @@ The two readouts are different comparisons:
   that crossing; time resolution = the ion stage's stored stride.
 - **Unit:** each iodine fragment separately (2N rows), not the
   per-molecule OR rule of `b_ion_outside`.
+
+> **Superseded in part by §16 (note added 2026-11-05).** The stored-column
+> exit above was the first definition. The thesis analysis reads the same
+> last outward crossing from `stage1_events.npz` at the 0.01 ps internal
+> step: t_exit is linearly interpolated inside that step, and n_exit is the
+> occupancy right after it, from the complete event record. n_exit is set
+> by the step, not by the interpolated time; events fire at the pre-step
+> seam, so this is the occupancy at the crossing. Only KE, m and v are still
+> read at the first stored column after the crossing, 0–0.16 ps late.
+> Checked on the six B2 members (11 415 scored ions): no ion crosses outward
+> more than once; t_exit moved by 0.08 ps at the median; n_exit differs from
+> the stored column for 1250 ions (10.95 %), mean 18.38 against 18.27.
 
 ### 12.3 Which fragments enter both samples
 
