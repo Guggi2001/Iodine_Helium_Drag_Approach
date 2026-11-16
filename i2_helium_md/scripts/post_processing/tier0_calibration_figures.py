@@ -6,7 +6,8 @@ Three LQ (B2) runs at m = I+ + 21 He, each drawn with the builders of
 * ``18A_Stuck_Velocity_R.png``, ``18A_Stuck_Force_Energy.png`` -- 18 A at the
   TDDFT binding 0.308 eV: the ion is recaptured on the longer 50 ps timescale.
 * ``18A_B2.png``, ``18A_B2_Force_Energy.png`` -- 18 A at the B2 binding.
-* ``9A_B2.png`` -- 9 A at the B2 binding.
+* ``9A_B2.png`` -- 9 A at the B2 binding; panels (c), (d), since it sits next
+  to ``18A_B2.png`` (a), (b) in the thesis.
 
 A run is reused when its ``cfg.json`` matches and regenerated otherwise (N = 50,
 about a minute each). The PNGs are half the text width, in thesis style, and go
@@ -47,14 +48,17 @@ class Run(NamedTuple):
     force_png: Optional[str]    # force + energy figure, or None
     e_bind_eV: Optional[float] = None   # binding [eV]; None = the LQ bundle's
     force_alone: bool = False   # force figure not in a pair: full width, side legend
+    velocity_letters: tuple[str, str] = ("a", "b")   # panel letters of the velocity figure
+    mark_surface: bool = False  # force figure: dashed line at the droplet surface crossing
 
 
 RUNS = (
     Run("18A", "B2m21stuck", 50.0, 50.0, "18A_Stuck_Velocity_R.png",
         "18A_Stuck_Force_Energy.png", e_bind_eV=0.308),
     Run("18A", "B2m21", 30.0, 20.0, "18A_B2.png", "18A_B2_Force_Energy.png",
-        force_alone=True),
-    Run("9A", "B2m21", 30.0, 20.0, "9A_B2.png", None),
+        force_alone=True, mark_surface=True),
+    # 9A_B2.png sits next to 18A_B2.png (a, b) in the thesis, so it continues with (c, d).
+    Run("9A", "B2m21", 30.0, 20.0, "9A_B2.png", None, velocity_letters=("c", "d")),
 )
 
 # =============================================================================
@@ -111,11 +115,11 @@ def draw(run: Run, directory: RunDirectory, out_dir: Path) -> None:
     with plt.rc_context(FIG_RC):              # thesis_style font (Palatino)
         figures = {run.velocity_png: build_figure(
             ion, hedft, window, False, float(ion.droplet_radii_angstrom[0]),
-            case=run.case, t_max=run.t_max_ps)}
+            case=run.case, t_max=run.t_max_ps, letters=run.velocity_letters)}
         if run.force_png is not None:
             figures[run.force_png] = build_force_figure(
                 ion, cfg, window, hedft, atom_index=FORCE_ATOM_INDEX, t_max=run.t_max_ps,
-                alone=run.force_alone, letters=("a", "b") if run.force_alone else ("c", "d"))
+                alone=run.force_alone, mark_surface=run.mark_surface, letters=("a", "b") if run.force_alone else ("c", "d"))
         for name, fig in figures.items():
             fig.savefig(out_dir / name, dpi=DPI)
             plt.close(fig)

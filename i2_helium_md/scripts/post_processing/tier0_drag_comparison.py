@@ -601,8 +601,30 @@ def _reconstruct_radial_forces(ion, cfg, *, atom_index):
     return drag_r, coul_r, drop_r
 
 
+def surface_crossing_time_ps(ion, *, atom_index: int) -> float | None:
+    """Median time [ps] at which the fragment of ``atom_index`` reaches the droplet surface.
+
+    The fragment is the atom block of ``atom_index`` in the 2N layout (first N
+    atoms = fragment 1, last N = fragment 2). Each ion's crossing is the first
+    stored step with depth ``r - R_drop >= 0`` [Å]; an ion that never crosses
+    counts as +inf. Returns None if the median is +inf, i.e. at least half of
+    the ions stay inside the droplet (the recaptured "stuck" runs).
+    """
+    n = int(ion.num_molecules)
+    if not 0 <= atom_index < 2 * n:
+        raise ValueError(f"atom_index must lie in [0, {2 * n}), got {atom_index}")
+    block = slice(0, n) if atom_index < n else slice(n, 2 * n)
+    r = np.sqrt(ion.positions_x[block] ** 2 + ion.positions_y[block] ** 2
+                + ion.positions_z[block] ** 2)                     # (N, T) [Å]
+    outside = r - np.asarray(ion.droplet_radii_angstrom)[block, None] >= 0.0
+    time = np.asarray(ion.time_ps, dtype=float)
+    t_first = np.where(outside.any(axis=1), time[np.argmax(outside, axis=1)], np.inf)
+    t_median = float(np.median(t_first))
+    return None if np.isinf(t_median) else t_median
+
+
 def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX,
-                       letters=("c", "d"), alone=False):
+                       letters=("c", "d"), alone=False, mark_surface=False):
     """Plot the radial-projected force evolution for the clean atom (atom 2).
 
     Complements :func:`tier0_drag_comparison.build_figure`: it shows *how the
@@ -615,6 +637,9 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX,
     extraction atom the drag law was fit to. ``t_max`` is the x-axis limit [ps]
     (None: auto), ``letters`` the panel letters. ``alone`` is for a figure not
     in a side-by-side pair: full text width, legend to the right of the panels.
+    ``mark_surface`` draws the fragment's droplet surface crossing
+    (:func:`surface_crossing_time_ps`) in both panels when it falls inside the
+    plotted range.
 
     Returns a 2x1 subplot figure with individual forces on top and net force on
     the bottom.
@@ -676,6 +701,14 @@ def build_force_figure(ion, cfg, window, hedft, *, atom_index=1, t_max=T_MAX,
     if alone:                                    # the wider axes tick too finely in t
         ax_top.xaxis.set_major_locator(MultipleLocator(5.0))
         ax_bottom.yaxis.set_major_locator(MultipleLocator(0.05))
+    # Droplet surface crossing of the plotted fragment: E_b above is the asymptotic
+    # well depth, and the droplet force peaks here (erf potential), not at E_kin = E_b.
+    # Drawn after the axis limits, which would otherwise stretch to the line's 0..1 span.
+    t_surface = surface_crossing_time_ps(ion, atom_index=atom_index) if mark_surface else None
+    if t_surface is not None and (t_max is None or t_surface <= t_max):
+        ax_top.axvline(t_surface, color="0.35", ls="--", lw=1.0)
+        ax_bottom.axvline(t_surface, color="0.35", ls="--", lw=1.0,
+                          label="Droplet surface crossing")   # bottom: last legend entry
     _calibration_legend(fig, (ax_top, ax_bottom), right=alone)
 
 

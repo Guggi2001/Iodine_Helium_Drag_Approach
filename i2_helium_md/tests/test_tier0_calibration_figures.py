@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import struct
+from types import SimpleNamespace
 
 import matplotlib
 
@@ -23,7 +24,9 @@ from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
     CAL_Y_MARGINS,
     CAL_ZERO_PAD,
     _finish_calibration_axis,
+    surface_crossing_time_ps,
 )
+import numpy as np  # noqa: E402
 from scripts.tier0_common import run_dir_name  # noqa: E402
 
 
@@ -87,3 +90,32 @@ def test_run_configs(run):
     assert (cfg.num_molecules, cfg.seed) == (50, 20260604)
     assert cfg.ion_simulation_time == run.ion_time_ps
     assert cfg.binding_energy_I_ion_eV == (run.e_bind_eV or 0.11727328616561973)
+
+
+def _radial_ion(r_frag1, r_frag2, radius=10.0):
+    """Synthetic 2N checkpoint stand-in: atoms on the +x axis at radii r [Å], t = 0, 1, ... ps."""
+    r = np.vstack([r_frag1, r_frag2]).astype(float)
+    return SimpleNamespace(num_molecules=len(r_frag1), time_ps=np.arange(r.shape[1], dtype=float),
+                           positions_x=r, positions_y=np.zeros_like(r),
+                           positions_z=np.zeros_like(r),
+                           droplet_radii_angstrom=np.full(r.shape[0], radius))
+
+
+def test_surface_crossing_is_the_median_first_step_at_or_past_the_surface():
+    # fragment 1 crosses R_drop = 10 at t = 1, 2, 3 ps -> median 2; fragment 2 at 3 ps
+    frag1 = [[5, 10, 12, 13], [5, 8, 11, 13], [5, 6, 9, 10]]
+    frag2 = [[5, 6, 7, 10]] * 3
+    ion = _radial_ion(frag1, frag2)
+    assert surface_crossing_time_ps(ion, atom_index=0) == 2.0
+    assert surface_crossing_time_ps(ion, atom_index=4) == 3.0
+
+
+def test_surface_crossing_is_none_when_most_ions_stay_inside():
+    frag1 = [[5, 12, 13], [5, 6, 7], [5, 6, 7]]   # one of three escapes: median = inf
+    assert surface_crossing_time_ps(_radial_ion(frag1, frag1), atom_index=0) is None
+    with pytest.raises(ValueError):
+        surface_crossing_time_ps(_radial_ion(frag1, frag1), atom_index=6)
+
+
+def test_only_the_18A_B2_force_figure_marks_the_surface_crossing():
+    assert [r.force_png for r in RUNS if r.mark_surface] == ["18A_B2_Force_Energy.png"]
