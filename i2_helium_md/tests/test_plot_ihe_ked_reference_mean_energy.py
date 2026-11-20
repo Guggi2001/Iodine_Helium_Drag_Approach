@@ -58,11 +58,12 @@ def ked_ref():
     return load_ihe_ked_reference(_REFERENCE_CSV)
 
 
-def test_renders_two_panels_without_a_run_directory(script_module, ked_ref):
+def test_renders_one_log_panel_without_a_run_directory(script_module, ked_ref):
     fig = script_module.build_reference_mean_energy_figure(ked_ref)
     try:
-        assert len(fig.axes) == 2
-        # Left panel carries the experiment series and both correlated
+        assert len(fig.axes) == 1
+        assert fig.axes[0].get_yscale() == "log"   # default YSCALE, as b2_2_mean_ke (a)
+        # The panel carries the experiment series and both correlated
         # bands -- and no simulation series at all.
         labels = fig.axes[0].get_legend_handles_labels()[1]
         assert any("experiment" in lbl.lower() for lbl in labels)
@@ -70,6 +71,16 @@ def test_renders_two_panels_without_a_run_directory(script_module, ked_ref):
         assert not any("simulation" in lbl.lower() for lbl in labels)
     finally:
         plt.close(fig)
+
+
+def test_linear_scale_option_and_bad_scale(script_module, ked_ref):
+    fig = script_module.build_reference_mean_energy_figure(ked_ref, yscale="linear")
+    try:
+        assert fig.axes[0].get_yscale() == "linear"
+    finally:
+        plt.close(fig)
+    with pytest.raises(ValueError, match="yscale"):
+        script_module.build_reference_mean_energy_figure(ked_ref, yscale="symlog")
 
 
 def test_n_min_zero_adds_the_bare_fragment(script_module, ked_ref):
@@ -96,7 +107,7 @@ def test_rejects_an_empty_fragment_selection(script_module, ked_ref):
 
 
 def _scatter_x(script_module, ked_ref, *, n_min: int) -> np.ndarray:
-    """x values of every errorbar-plotted point across both panels."""
+    """x values of every errorbar-plotted point in the figure."""
     fig = script_module.build_reference_mean_energy_figure(
         ked_ref, n_min=n_min
     )
