@@ -1,0 +1,337 @@
+{
+ "head": "fbf9f9957a8e69baa0a61ff576137aad6f7a9a46",
+ "versions": {
+  "python": "3.13.0",
+  "numpy": "2.4.2",
+  "scipy": "1.16.3",
+  "matplotlib": "3.10.7",
+  "pillow": "12.0.0"
+ },
+ "figures": {
+  "data/figures/thesis_microscopic_calibration/18A_Stuck_Velocity_R.png": {
+   "script": "scripts/post_processing/tier0_calibration_figures.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "f46a5dd56aa5a6d4081430ac28706ea4ec867d61d2d37fff802b49ba46ee08ac",
+   "sha256_new": "f46a5dd56aa5a6d4081430ac28706ea4ec867d61d2d37fff802b49ba46ee08ac"
+  },
+  "data/figures/thesis_microscopic_calibration/18A_Stuck_Force_Energy.png": {
+   "script": "scripts/post_processing/tier0_calibration_figures.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "3f78937f8d61f1d8a6db21e1e90a7c22d26aef6af767a1d3f6ba53937c17419a",
+   "sha256_new": "3f78937f8d61f1d8a6db21e1e90a7c22d26aef6af767a1d3f6ba53937c17419a"
+  },
+  "data/figures/thesis_microscopic_calibration/18A_B2.png": {
+   "script": "scripts/post_processing/tier0_calibration_figures.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "9b039a0b8a9aed5df92dff98af0b5243bfc92805e391cc7dda1700a99ae7cec1",
+   "sha256_new": "9b039a0b8a9aed5df92dff98af0b5243bfc92805e391cc7dda1700a99ae7cec1"
+  },
+  "data/figures/thesis_microscopic_calibration/18A_B2_Force_Energy.png": {
+   "script": "scripts/post_processing/tier0_calibration_figures.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "23d09f132a42c096fc38d30432d14474e97dd65f95fbd77083fc58f56e21833b",
+   "sha256_new": "23d09f132a42c096fc38d30432d14474e97dd65f95fbd77083fc58f56e21833b"
+  },
+  "data/figures/thesis_microscopic_calibration/9A_B2.png": {
+   "script": "scripts/post_processing/tier0_calibration_figures.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "5be5b57793d9ff5fbd99045bfd5ff4270f663c9f4690af653d7fe531bddea410",
+   "sha256_new": "5be5b57793d9ff5fbd99045bfd5ff4270f663c9f4690af653d7fe531bddea410"
+  },
+  "data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv": {
+   "script": "scripts/post_processing/tier0_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "a2f22b2556b576cca197295a133a66b1f0014224b7292f84fb23f118bbde5a21",
+   "sha256_new": "a2f22b2556b576cca197295a133a66b1f0014224b7292f84fb23f118bbde5a21"
+  },
+  "data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_scores.csv": {
+   "script": "scripts/post_processing/tier0_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "0ecebcb1105dcb78b12697f7fe6d711bd835774af058687fcee96e5d994cc13d",
+   "sha256_new": "0ecebcb1105dcb78b12697f7fe6d711bd835774af058687fcee96e5d994cc13d"
+  },
+  "data/figures/thesis_microscopic_calibration/tier0_ridge_m21_laws.png": {
+   "script": "scripts/post_processing/tier0_law_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "62a375298c5b17b57fe51ab12f2009dfd404d72617aa6dad09a0fbe65ce66ebd",
+   "sha256_new": "62a375298c5b17b57fe51ab12f2009dfd404d72617aa6dad09a0fbe65ce66ebd"
+  },
+  "data/figures/thesis_results_discussion/tier2_B2_B3.png": {
+   "script": "scripts/post_processing/tier0_law_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "e00de1a52358ef095f91c25d032c012bbba68bc00d5011e6a90f1699c96cf86b",
+   "sha256_new": "e00de1a52358ef095f91c25d032c012bbba68bc00d5011e6a90f1699c96cf86b"
+  },
+  "data/figures/thesis_results_discussion/tier2_B2_h405.png": {
+   "script": "scripts/post_processing/tier0_law_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "446b55ea76200de282a8fd1ecfcc6584886ecf10d0971608cff7138d6c30871d",
+   "sha256_new": "446b55ea76200de282a8fd1ecfcc6584886ecf10d0971608cff7138d6c30871d"
+  },
+  "data/figures/thesis_results_discussion/b2_1_size_distribution.png": {
+   "script": "scripts/post_processing/tier2_b2_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "4a22ab2abdefbc519430a7893d491fb3113c740bfa6771224d08f8b14293bb3e",
+   "sha256_new": "4a22ab2abdefbc519430a7893d491fb3113c740bfa6771224d08f8b14293bb3e"
+  },
+  "data/figures/thesis_results_discussion/b2_2_mean_ke.png": {
+   "script": "scripts/post_processing/tier2_b2_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "13361b5c697486de6169c485e34bbecd8aa06b6b14bcee9fbea2121c05c3439c",
+   "sha256_new": "13361b5c697486de6169c485e34bbecd8aa06b6b14bcee9fbea2121c05c3439c"
+  },
+  "data/figures/thesis_results_discussion/b2_2_mean_ke_split.png": {
+   "script": "scripts/post_processing/tier2_b2_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "3f9a1946bef727275da0b96d4587c6367170bb9802cba84f1e5179fb2eeb7d31",
+   "sha256_new": "3f9a1946bef727275da0b96d4587c6367170bb9802cba84f1e5179fb2eeb7d31"
+  },
+  "data/figures/thesis_results_discussion/b2_3_ked_shapes.png": {
+   "script": "scripts/post_processing/tier2_b2_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "55fd3c1eb4aa5cd311d62a8887cb599d6b886cd1bab9a694628fef076cd97eaf",
+   "sha256_new": "55fd3c1eb4aa5cd311d62a8887cb599d6b886cd1bab9a694628fef076cd97eaf"
+  },
+  "data/figures/thesis_results_discussion/b2_4_ked_shapes_2d.png": {
+   "script": "scripts/post_processing/tier2_b2_thesis_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "530cb1d1bf833b7551146e64b95cb7508938645c225e35a7389ea28a383d7bc5",
+   "sha256_new": "530cb1d1bf833b7551146e64b95cb7508938645c225e35a7389ea28a383d7bc5"
+  },
+  "data/figures/thesis_results_discussion/b2_5_anisotropy.png": {
+   "script": "scripts/post_processing/tier2_anisotropy_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "8b917618e7c0d590fda5cd7d210f67e83d3a13668d7ab5cc0ce7a198c611a307",
+   "sha256_new": "8b917618e7c0d590fda5cd7d210f67e83d3a13668d7ab5cc0ce7a198c611a307"
+  },
+  "data/figures/thesis_results_discussion/laws_1_size_distribution_b3.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "12613f690b3741236e44e283c64bbe4ead145f4ccf3b65138080370bba196593",
+   "sha256_new": "12613f690b3741236e44e283c64bbe4ead145f4ccf3b65138080370bba196593"
+  },
+  "data/figures/thesis_results_discussion/laws_1_size_distribution_h405.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "a98f1ac6fe165d2666c6cfca12f99648fc2a1fc480e3f35736184ac8abf53f56",
+   "sha256_new": "a98f1ac6fe165d2666c6cfca12f99648fc2a1fc480e3f35736184ac8abf53f56"
+  },
+  "data/figures/thesis_results_discussion/laws_2_mean_ke_b3.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "0ab74b49a4165a55117a5a4ef2277966e953b1dfc477417fcd5e9f5bad5a165a",
+   "sha256_new": "0ab74b49a4165a55117a5a4ef2277966e953b1dfc477417fcd5e9f5bad5a165a"
+  },
+  "data/figures/thesis_results_discussion/laws_2_mean_ke_h405.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "57c3a0f831e06d4ad38ff8a3c5e33af5f1c8fb706cee62ac4b9000e294c8bf06",
+   "sha256_new": "57c3a0f831e06d4ad38ff8a3c5e33af5f1c8fb706cee62ac4b9000e294c8bf06"
+  },
+  "data/figures/thesis_results_discussion/laws_3_ked_shapes_b3.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "94cd86a58ebcf96f715ee42b1aa0287c717cd9d29582163f5303159cd9373cdd",
+   "sha256_new": "94cd86a58ebcf96f715ee42b1aa0287c717cd9d29582163f5303159cd9373cdd"
+  },
+  "data/figures/thesis_results_discussion/laws_3_ked_shapes_h405.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "689c26cd1f7031a7beed5a6c8d5791ac89c95bc2fe6913af0d1112753c50bb30",
+   "sha256_new": "689c26cd1f7031a7beed5a6c8d5791ac89c95bc2fe6913af0d1112753c50bb30"
+  },
+  "data/figures/thesis_results_discussion/laws_4_size_with_bare_lq.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "dec02c4f88047adafb3c20f36ae6f232e6f5d47b3d6dbf8338da3926ad0dae5c",
+   "sha256_new": "dec02c4f88047adafb3c20f36ae6f232e6f5d47b3d6dbf8338da3926ad0dae5c"
+  },
+  "data/figures/thesis_results_discussion/laws_5_ked_n012_lq.png": {
+   "script": "scripts/post_processing/tier2_law_comparison_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "5dfc5720ec68faf8e766f98b80ed26e1e95d47114125ee903aac8efd5c094de9",
+   "sha256_new": "5dfc5720ec68faf8e766f98b80ed26e1e95d47114125ee903aac8efd5c094de9"
+  },
+  "data/figures/thesis_results_discussion/g13_shed_timing.png": {
+   "script": "scripts/post_processing/tier2_g13_shed_timing.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "8d76fdc13d84450734c9c4e6381abdc5974adad8879b991326492bca19acd6b2",
+   "sha256_new": "8d76fdc13d84450734c9c4e6381abdc5974adad8879b991326492bca19acd6b2"
+  },
+  "data/figures/thesis_results_discussion/g13_exit_vs_detection.png": {
+   "script": "scripts/post_processing/tier2_g13_shed_timing.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "fe7c32c0844b6d4a4e5261e1ad9ccaf4bf482ff61b236f9dd4a0e5797ce2a957",
+   "sha256_new": "fe7c32c0844b6d4a4e5261e1ad9ccaf4bf482ff61b236f9dd4a0e5797ce2a957"
+  },
+  "data/figures/thesis_results_discussion/g6_chord_map_b2_only.jpg": {
+   "script": "scripts/post_processing/tier2_g6_chord_map.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "dcfdc550ed998b801591abf960181aeb02e1ec07d445b68b0bed6f4c63d9e802",
+   "sha256_new": "dcfdc550ed998b801591abf960181aeb02e1ec07d445b68b0bed6f4c63d9e802"
+  },
+  "data/figures/thesis_results_discussion/g6_chord_map_with_h405.jpg": {
+   "script": "scripts/post_processing/tier2_g6_chord_map.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "96d825e1410cdbb9389d78f4394b02176ecf73517c0825db5e47dafb2d96e42b",
+   "sha256_new": "96d825e1410cdbb9389d78f4394b02176ecf73517c0825db5e47dafb2d96e42b"
+  },
+  "data/figures/thesis_rest/I+He_n_Abundance.png": {
+   "script": "data/reference/scripts/plotting_histogram.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "2ca3b53e06c43dd660be607ba51f7191add70c28610dd53e5e813db698e94987",
+   "sha256_new": "2ca3b53e06c43dd660be607ba51f7191add70c28610dd53e5e813db698e94987"
+  },
+  "data/figures/thesis_rest/I+He_n_Abundance_with_bare.png": {
+   "script": "data/reference/scripts/plotting_histogram.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "c402a0ec1eb458a651b4d95e221029adcbdeb8e531dcafbc9a51715509f4efea",
+   "sha256_new": "c402a0ec1eb458a651b4d95e221029adcbdeb8e531dcafbc9a51715509f4efea"
+  },
+  "data/figures/thesis_rest/TDDFT_Reference.png": {
+   "script": "data/reference/scripts/visualize_trajectory_velocity.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "b23c42b00e481df6aec6b39a5cb7ac3a5a4c94c625a989ccbf394c696e723f04",
+   "sha256_new": "b23c42b00e481df6aec6b39a5cb7ac3a5a4c94c625a989ccbf394c696e723f04"
+  },
+  "data/figures/thesis_rest/experimental_reference_fragments.png": {
+   "script": "data/reference/scripts/experimental_reference_fragments.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "338c12c827a1d4e4c43f20f64bdad1e4064f2711eac75660df0cf1b6b46a5f67",
+   "sha256_new": "338c12c827a1d4e4c43f20f64bdad1e4064f2711eac75660df0cf1b6b46a5f67"
+  },
+  "data/figures/thesis_rest/experimental_reference_fragments_velocity.png": {
+   "script": "data/reference/scripts/experimental_reference_fragments.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "22a8cc3972bc9fb49e020847884b01acb21567cd777ff729e155f96a11d6da6b",
+   "sha256_new": "22a8cc3972bc9fb49e020847884b01acb21567cd777ff729e155f96a11d6da6b"
+  },
+  "data/figures/thesis_rest/ihe_ked_reference_mean_energy.png": {
+   "script": "scripts/post_processing/plot_ihe_ked_reference_mean_energy.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "a3a51d6d0ac27fc8885c79d7c0c80366e77dac47a41093bd0734442ca765443f",
+   "sha256_new": "a3a51d6d0ac27fc8885c79d7c0c80366e77dac47a41093bd0734442ca765443f"
+  },
+  "data/figures/thesis_rest/ihe_ked_reference_mean_energy_with_bare.png": {
+   "script": "scripts/post_processing/plot_ihe_ked_reference_mean_energy.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "40712665cd27554ba9201a53e2fe1fff8ac82ceec05f9c76bca467a26519cfae",
+   "sha256_new": "40712665cd27554ba9201a53e2fe1fff8ac82ceec05f9c76bca467a26519cfae"
+  },
+  "data/figures/thesis_legacy/fig_continuum_drag.png": {
+   "script": "scripts/post_processing/legacy_continuum_drag_figure.py",
+   "status": "differs",
+   "reason": "",
+   "sha256_head": "b29a467968a9a9263da04083a4de01bfa2ad45c093721f5cd1605c7bde14ac8f",
+   "sha256_new": "9dcebe4d1b5a4a15405f12b760296adfaf26b304b3ca58a3f770eb75fcdbe781"
+  },
+  "data/figures/thesis_legacy/fig_continuum_drag.pdf": {
+   "script": "scripts/post_processing/legacy_continuum_drag_figure.py",
+   "status": "differs",
+   "reason": "",
+   "sha256_head": "c510358c9bb0bb352857b79dc6a1c00d23b7cb03eccbf88e77460d237b5eafc9",
+   "sha256_new": "19e57c688fcc511bae08dfbe45baa319f2da627d75503a364d4d9c6c0cb1bccf"
+  },
+  "data/figures/thesis_legacy/fig_continuum_drag_points.csv": {
+   "script": "scripts/post_processing/legacy_continuum_drag_figure.py",
+   "status": "differs",
+   "reason": "",
+   "sha256_head": "ba1b76a9e84c76ed40142233111ab9e0e2c186e42e83fafb9dfd3e9d794e9874",
+   "sha256_new": "ed60043d8a6bcf8f235aba055bedb1135e88bdaeb7e039e2ca6ffd64ae38d83e"
+  },
+  "data/figures/thesis_legacy/legacy_ke_and_size.png": {
+   "script": "scripts/post_processing/legacy_ke_size_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "c8d675e5459a8c17c4e0239af683d4c5c6475ff7c2b992a6c8bf7075649caef7",
+   "sha256_new": "c8d675e5459a8c17c4e0239af683d4c5c6475ff7c2b992a6c8bf7075649caef7"
+  },
+  "data/figures/thesis_legacy/legacy_ke_split_and_size.png": {
+   "script": "scripts/post_processing/legacy_ke_size_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "b1f705aa4821b6060bd4a6cac9ba4e4e740b3471ae159713dcf359f0ba487e55",
+   "sha256_new": "b1f705aa4821b6060bd4a6cac9ba4e4e740b3471ae159713dcf359f0ba487e55"
+  },
+  "data/figures/thesis_legacy/legacy_ke_and_size_points.csv": {
+   "script": "scripts/post_processing/legacy_ke_size_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "9d824d948dedf5c1138de4fab5e978f7fad9249040424c402e86f74a3ee4ee39",
+   "sha256_new": "9d824d948dedf5c1138de4fab5e978f7fad9249040424c402e86f74a3ee4ee39"
+  },
+  "data/figures/thesis_legacy/legacy_ked_shapes.png": {
+   "script": "scripts/post_processing/legacy_ked_shapes_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "10ec918ace95ed8c240aaf321683b9c53b3ac6510a6efa6fd9e3a4475ccf5115",
+   "sha256_new": "10ec918ace95ed8c240aaf321683b9c53b3ac6510a6efa6fd9e3a4475ccf5115"
+  },
+  "data/figures/thesis_legacy/legacy_ked_shapes_points.csv": {
+   "script": "scripts/post_processing/legacy_ked_shapes_figure.py",
+   "status": "identical",
+   "reason": "",
+   "sha256_head": "badfee211d6d99bb8608ac88234bf12ef9714e7743d90ff5be41d6cd8f009aa6",
+   "sha256_new": "badfee211d6d99bb8608ac88234bf12ef9714e7743d90ff5be41d6cd8f009aa6"
+  }
+ },
+ "run_dir_changes": [],
+ "suite": {
+  "command": "python -m pytest -q -rs (without the two handover test files)",
+  "summary": "3298 passed, 44 skipped, 199 warnings in 245.42s (0:04:05)",
+  "skipped": [
+   "SKIPPED [11] tests\\test_gen_tier2atlas_geometry.py:174: standing battery run dir absent (data/runs uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2_detfix_postpickup.py:162: B2 already chosen",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_ebindmd.py:75: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_geometry.py:186: standing battery run dir absent (data/runs uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linclone.py:129: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linclone.py:136: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linclone.py:141: standing reference run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linjoint.py:126: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linjoint.py:131: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linjoint.py:136: standing reference run dir not present (data/runs is uncommitted)",
+   "SKIPPED [1] tests\\test_gen_tier2atlas_linjoint.py:242: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [2] tests\\test_gen_detstagefix_validation.py:73: committed finals run dir not present (gitignored data/runs)",
+   "SKIPPED [3] tests\\test_gen_tier2atlas_linclone.py:120: CRN partner run dir not present (data/runs is uncommitted)",
+   "SKIPPED [6] tests\\test_gen_tier2_detfix_battery.py:87: E2-era twin run dir not present (gitignored data/runs)",
+   "SKIPPED [6] tests\\test_gen_tier2_detfix_postpickup.py:120: production run dir not present",
+   "SKIPPED [6] tests\\test_gen_tier2atlas_linjoint.py:120: CRN partner run dir not present (data/runs is uncommitted)"
+  ],
+  "failed": []
+ }
+}

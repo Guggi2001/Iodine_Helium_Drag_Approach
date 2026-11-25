@@ -1,0 +1,805 @@
+item,kind,needed_by,inputs,decision,note
+../.claude/settings.local.json,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.gitignore,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/.gitignore,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/Iodine_Helium_Drag_Approach.iml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/inspectionProfiles/Project_Default.xml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/inspectionProfiles/profiles_settings.xml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/misc.xml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/modules.xml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../.idea/vcs.xml,doc,,,keep,"[U] outside i2_helium_md, left alone"
+../README.md,doc,,,keep,"[U] outside i2_helium_md, left alone"
+.claudeignore,doc,,,delete,editor / tool settings
+.gitignore,doc,,,rewire,
+CALIBRATION_MAP.md,doc,,,delete,content to the six handover documents first (P6)
+CLAUDE.md,doc,,,rewire,P6
+DRAG_PORT_DESIGN_DECISIONS.md,doc,,,delete,content to the six handover documents first (P6)
+IMPLEMENTATION_ION_STAGE.md,doc,,,delete,content to the six handover documents first (P6)
+MASS_DYNAMICS_LOCKED_energy_gated_evaporation.md,doc,,,delete,content to the six handover documents first (P6)
+PROJECT_OVERVIEW.md,doc,,,delete,content to the six handover documents first (P6)
+data/figures/README.md,data,,,keep,
+data/figures/thesis_legacy/fig_continuum_drag.pdf,figure,,"scripts/post_processing/legacy_continuum_drag_figure.py; `data/runs/{9A,18A}_hedft_comparison`",keep,
+data/figures/thesis_legacy/fig_continuum_drag.png,figure,,"scripts/post_processing/legacy_continuum_drag_figure.py; `data/runs/{9A,18A}_hedft_comparison`",keep,
+data/figures/thesis_legacy/fig_continuum_drag_points.csv,figure,,"scripts/post_processing/legacy_continuum_drag_figure.py; `data/runs/{9A,18A}_hedft_comparison`",keep,
+data/figures/thesis_legacy/legacy_ke_and_size.png,figure,,scripts/post_processing/legacy_ke_size_figure.py; `data/runs/single_pulse_droplet_long`,keep,
+data/figures/thesis_legacy/legacy_ke_and_size_points.csv,figure,,scripts/post_processing/legacy_ke_size_figure.py; `data/runs/single_pulse_droplet_long`,keep,
+data/figures/thesis_legacy/legacy_ke_split_and_size.png,figure,,scripts/post_processing/legacy_ke_size_figure.py; `data/runs/single_pulse_droplet_long`,keep,
+data/figures/thesis_legacy/legacy_ked_shapes.png,figure,,scripts/post_processing/legacy_ked_shapes_figure.py; `data/runs/single_pulse_droplet_long`,keep,
+data/figures/thesis_legacy/legacy_ked_shapes_points.csv,figure,,scripts/post_processing/legacy_ked_shapes_figure.py; `data/runs/single_pulse_droplet_long`,keep,
+data/figures/thesis_microscopic_calibration/18A_B2.png,figure,,scripts/post_processing/tier0_calibration_figures.py; Runs it generates itself (tag `B2m21`),keep,
+data/figures/thesis_microscopic_calibration/18A_B2_Force_Energy.png,figure,,scripts/post_processing/tier0_calibration_figures.py; Runs it generates itself (tag `B2m21`),keep,
+data/figures/thesis_microscopic_calibration/18A_Stuck_Force_Energy.png,figure,,scripts/post_processing/tier0_calibration_figures.py; Runs it generates itself (tag `B2m21stuck`),keep,
+data/figures/thesis_microscopic_calibration/18A_Stuck_Velocity_R.png,figure,,scripts/post_processing/tier0_calibration_figures.py; Runs it generates itself (tag `B2m21stuck`),keep,
+data/figures/thesis_microscopic_calibration/9A_B2.png,figure,,scripts/post_processing/tier0_calibration_figures.py; Runs it generates itself (tag `B2m21`),keep,
+data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_scores.csv,figure,,scripts/post_processing/tier0_thesis_figure.py; Committed data (runs the Tier-0 integrations),keep,
+data/figures/thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv,figure,,scripts/post_processing/tier0_thesis_figure.py; Committed data (runs the Tier-0 integrations),keep,
+data/figures/thesis_microscopic_calibration/tier0_ridge_m21_laws.png,figure,,scripts/post_processing/tier0_law_figure.py; Committed data,keep,
+data/figures/thesis_rest/I+He_n_Abundance.png,figure,,data/reference/scripts/plotting_histogram.py; Committed data,keep,
+data/figures/thesis_rest/I+He_n_Abundance_with_bare.png,figure,,data/reference/scripts/plotting_histogram.py; Committed data,keep,
+data/figures/thesis_rest/TDDFT_Reference.png,figure,,data/reference/scripts/visualize_trajectory_velocity.py; Committed data,keep,
+data/figures/thesis_rest/experimental_reference_fragments.png,figure,,data/reference/scripts/experimental_reference_fragments.py; Committed data,keep,
+data/figures/thesis_rest/experimental_reference_fragments_velocity.png,figure,,data/reference/scripts/experimental_reference_fragments.py; Committed data,keep,
+data/figures/thesis_rest/ihe_ked_reference_mean_energy.png,figure,,scripts/post_processing/plot_ihe_ked_reference_mean_energy.py; Committed data,keep,
+data/figures/thesis_rest/ihe_ked_reference_mean_energy_with_bare.png,figure,,scripts/post_processing/plot_ihe_ked_reference_mean_energy.py; Committed data,keep,
+data/figures/thesis_results_discussion/b2_1_size_distribution.png,figure,,scripts/post_processing/tier2_b2_thesis_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/b2_2_mean_ke.png,figure,,scripts/post_processing/tier2_b2_thesis_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/b2_2_mean_ke_split.png,figure,,scripts/post_processing/tier2_b2_thesis_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/b2_3_ked_shapes.png,figure,,scripts/post_processing/tier2_b2_thesis_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/b2_4_ked_shapes_2d.png,figure,,scripts/post_processing/tier2_b2_thesis_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/b2_5_anisotropy.png,figure,,"scripts/post_processing/tier2_anisotropy_figure.py; `data/runs/B2_N6000_pooled`, `data/reference/ihe_ked/IHe_KED_beta.csv`",keep,
+data/figures/thesis_results_discussion/g13_exit_vs_detection.png,figure,,scripts/post_processing/tier2_g13_shed_timing.py; `data/runs/{law}_N1000_s1…s6`,keep,
+data/figures/thesis_results_discussion/g13_shed_timing.png,figure,,scripts/post_processing/tier2_g13_shed_timing.py; `data/runs/{law}_N1000_s1…s6`,keep,
+data/figures/thesis_results_discussion/g6_chord_map_b2_only.jpg,figure,,scripts/post_processing/tier2_g6_chord_map.py; `data/runs/B2_N1000_s1…s6`,keep,
+data/figures/thesis_results_discussion/g6_chord_map_with_h405.jpg,figure,,"scripts/post_processing/tier2_g6_chord_map.py; `data/runs/{B2,h405}_N1000_s1…s6`",keep,
+data/figures/thesis_results_discussion/laws_1_size_distribution_b3.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,B3}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_1_size_distribution_h405.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,h405}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_2_mean_ke_b3.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,B3}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_2_mean_ke_h405.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,h405}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_3_ked_shapes_b3.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,B3}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_3_ked_shapes_h405.png,figure,,"scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/{B2,h405}_N6000_pooled`",keep,
+data/figures/thesis_results_discussion/laws_4_size_with_bare_lq.png,figure,,scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/laws_5_ked_n012_lq.png,figure,,scripts/post_processing/tier2_law_comparison_figure.py; `data/runs/B2_N6000_pooled`,keep,
+data/figures/thesis_results_discussion/tier2_B2_B3.png,figure,,scripts/post_processing/tier0_law_figure.py; Committed data,keep,
+data/figures/thesis_results_discussion/tier2_B2_h405.png,figure,,scripts/post_processing/tier0_law_figure.py; Committed data,keep,
+data/reference/README.md,data,,,keep,
+data/reference/TDDFT/18A/18A_All_Data.csv,data,,,keep,
+data/reference/TDDFT/18A/cleaned_data.csv,data,,,keep,
+data/reference/TDDFT/18A/cleaned_data_long.csv,data,,,keep,
+data/reference/TDDFT/9A/9A_All_Data.csv,data,,,keep,
+data/reference/TDDFT/9A/cleaned_data.csv,data,,,keep,
+data/reference/TDDFT/9A/cleaned_data_long.csv,data,,,keep,
+data/reference/drag/CC/fit_parameters.json,data,,,keep,
+data/reference/drag/LQ/fit_parameters.json,data,,,keep,
+data/reference/drag/LQ/fit_summary.json,data,,,keep,
+data/reference/drag/LQ_eff/fit_parameters.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/A5.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/B2.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c0p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c0p400.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c0p800.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c1p200.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c1p600.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c2p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c2p500.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c3p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c3p500.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c4p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c5p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/exit_bound_9A/c7p224.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c0p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c0p400.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c0p800.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c1p200.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c1p600.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c2p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c2p500.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c3p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c3p500.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c4p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c5p000.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/c7p224.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/check_A5.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/check_B2.json,data,,,keep,
+data/reference/drag/calibration_ridge/ridge/ridge_m21.csv,data,,,keep,
+data/reference/ihe_ked/COLUMNS.md,data,,,keep,
+data/reference/ihe_ked/IHe_KED_beta.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_beta_vs_v.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_crosscheck_300mW.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n0.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n1.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n2.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n3.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n4.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n5.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n6.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_curves_n7.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_reference.csv,data,,,keep,
+data/reference/ihe_ked/IHe_KED_reference.provenance.json,data,,,keep,
+data/reference/ihe_ked/IHe_KED_spectra_n0_n1.csv,data,,,keep,
+data/reference/ihe_ked/README.md,data,,,keep,
+data/reference/ihe_ked/archive_v1_2026-07-14/IHe_KED_reference.csv,data,,,delete,superseded by v2 (G12)
+data/reference/ihe_ked/archive_v1_2026-07-14/IHe_KED_reference.provenance.json,data,,,delete,superseded by v2 (G12)
+data/reference/integrated_i_he_abundance.csv,data,,,keep,
+data/reference/paper_cov/README.md,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_cov/iplus_he_cov_angular_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_cov/iplus_he_cov_radial_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_cov/iplus_he_covariance.json,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_cov/iplus_he_covariance.mat,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_cov/iplus_he_phi.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/README.md,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_image.json,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_image.mat,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_image_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_polar_image.json,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_polar_image.mat,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he2_high_snr_vmi_polar_image_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_image.json,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_image.mat,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_image_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_polar_image.json,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_polar_image.mat,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/images/iplus_he_high_snr_vmi_polar_image_preview.png,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_gas_300mw_43562_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he2_high_snr_phi.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he2_high_snr_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he_160mw_43556_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he_300mw_45668_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he_600mw_43569_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he_high_snr_phi.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v2/iplus_he_high_snr_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v3/README.md,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v3/iplus_he_high_snr_phi.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v3/iplus_he_high_snr_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v3/timescan_296_297_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/README.md,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_drop_160mw_43554_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_drop_600mw_43567_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_gas_160mw_43555_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_gas_600mw_43568_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_he_160mw_43556_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/paper_v4/iplus_he_300mw_43563_radial.csv,data,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/experimental_reference_fragments.py,script,experimental_reference_fragments.png experimental_reference_fragments_velocity.png,,keep,
+data/reference/scripts/export_paper_cov_reference_data.m,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/export_paper_v2_reference_data.asv,script,,,delete,MATLAB autosave
+data/reference/scripts/export_paper_v2_reference_data.m,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/export_paper_v3_reference_data.m,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/export_paper_v4_reference_data.m,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/export_vmi_reference_data.m,script,,,keep,
+data/reference/scripts/generate_high_snr_iplus_he_mat.m,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/imported_vmi_reference.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+data/reference/scripts/plotting_histogram.py,script,I+He_n_Abundance.png I+He_n_Abundance_with_bare.png,,keep,
+data/reference/scripts/visualize_trajectory_velocity.py,script,TDDFT_Reference.png,,keep,
+data/reference/vmi_summary/README.md,data,,,keep,
+data/reference/vmi_summary/vmi_iplus_gas.csv,data,,,keep,
+data/reference/vmi_summary/vmi_iplus_he.csv,data,,,keep,
+data/reference/vmi_summary/vmi_iplus_he_high_snr.csv,data,,,keep,
+data/runs/b2_coulomb_dt_benchmark/b2_coulomb_dt_benchmark.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ce_p3_forecast.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ce_probe.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ce_strip_p1.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g3ring_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_anchor.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_gated_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_h405_surface.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_refine.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_refine_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_twin.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g412_twin_wells.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g414_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g414_filter.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g414_twin_line.csv,data,,,delete,study table; LINE_CSV is imported by the B2 builder today: cut at P2 first
+data/runs/h2b_forward_model/atlas_g415_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g415_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g415_twin.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g4finals_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g4step2_battery.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_g4step2_w1_anatomy.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ke1_authority.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ke1_authority_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ke_lown_scan.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linclone_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linjoint_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linqsweep.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linqsweep_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linqsweep_gated_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linqsweep_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linring_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linsweep.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linsweep_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linsweep_gated_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_linsweep_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_lintau.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_lintau_summary.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_lintauring_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_lq_ke1_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/atlas_ptail_ring.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/b2_seff_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/b2_seff_timing.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/detfix_battery_paired.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/detfix_battery_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/detfix_postpickup_chord.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/detfix_postpickup_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/g13_decoupled_table.csv,data,,,keep,THESIS_DISCUSSION 15.1 source; P2 score oracle
+data/runs/h2b_forward_model/g13_exit_detection_hist.csv,data,,,keep,THESIS_DISCUSSION 16
+data/runs/h2b_forward_model/g13_exit_vs_detection.csv,data,,,keep,THESIS_DISCUSSION 16
+data/runs/h2b_forward_model/g13_ke_readouts.csv,data,,,keep,THESIS_DISCUSSION 16.5
+data/runs/h2b_forward_model/g13_shed_chord.csv,data,,,keep,THESIS_DISCUSSION 16
+data/runs/h2b_forward_model/g13_shed_timing.csv,data,,,keep,THESIS_DISCUSSION 16
+data/runs/h2b_forward_model/g413_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g413_transfer.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g413_verdict.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g414_candidates.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g414_confirm.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g414_fit.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g414_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g414_tradeoff.csv,data,,,delete,study table; confirm_cells() reads it in every B2 build today: values go into the presets first (P2)
+data/runs/h2b_forward_model/g415_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/g5_postpickup_chord.csv,data,,,keep,THESIS_DISCUSSION read by tier2_g6_chord_map
+data/runs/h2b_forward_model/g5_postpickup_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/g5_winners_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/g6_chord_stats.csv,data,,,keep,THESIS_DISCUSSION 1; written by tier2_g6_chord_map
+data/runs/h2b_forward_model/g7_ke_width.csv,data,,,keep,THESIS_DISCUSSION 1; written by tier2_g6_chord_map
+data/runs/h2b_forward_model/g8_bare_by_n.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g8_bare_table.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/g9_columns.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
+data/runs/h2b_forward_model/g9_mixtures.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3_corrected_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3_corrected_landmarks.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3_corrected_row.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3_grid_twin.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3_grid_twin_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3scan_chords.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3scan_gated_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3scan_gated_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3scan_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g3scan_prescan.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g4_transfer.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g4scan_gated_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g4scan_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_g4scan_ridge.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_leg_d_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_leg_d_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_repilot_s1_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_repilot_s1_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_repilot_s2_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_repilot_s2_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s4_c4_final_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s4_c4_final_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s4_c4scan_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s4_c4scan_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s6_final_ke.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h2b_s6_final_predictions.csv,data,,,delete,"study table, off the allowlist"
+data/runs/h2b_forward_model/h405_pp35_table.csv,data,,,keep,THESIS_DISCUSSION read by tier2_g6_chord_map
+data/runs/h2b_forward_model/thesis_observables_extra.csv,data,,,keep,THESIS_DISCUSSION 15 source
+data/runs/h2b_forward_model/thesis_observables_per_n.csv,data,,,keep,THESIS_DISCUSSION 15.2 source
+docs/POST_THESIS_CLEANUP.md,doc,,,delete,content to the six handover documents first (P6)
+docs/config_and_preset.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/METHOD_B_trajectory_matching_extraction.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/SLICE1_GOALS_gated_drag_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/SLICE2_GOALS_baoab_ion_stepper.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/SLICE3_GOALS_config_and_guard.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/SLICE4_GOALS_ion_driver_rewiring.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/TIER0_FINDINGS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier0/drag_migration_log_tier0.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier1/TIER1A_IMPLEMENTATION_PLAN.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier1/drag_migration_log_tier1a.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/B2_COULOMB_DT_BENCHMARK.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/RESEARCH_QUESTIONS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/THESIS_DISCUSSION.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/THESIS_FINAL_GOALS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_CE_CHANNEL_EXIT_STRIP_DESIGN.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_DetectorStageFix.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_FREEFORM_LINEAR_TWIN_SWEEP_PLAN.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_MASS_SCENARIOS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_PARAMETER_INFLUENCE.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_PARAMETER_INFLUENCE_h405_finc1v725.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_SENSITIVITY_ATLAS_FINDINGS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_SENSITIVITY_ATLAS_PLAN.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_STAIRCASE_PROBE_FINDINGS.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TIER2_STAIRCASE_PROBE_PLAN.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/TWIN_FORWARD_MODEL.md,doc,,,delete,content to the six handover documents first (P6)
+docs/drag_port/Tier2/drag_migration_log_tier2.md,doc,,,delete,content to the six handover documents first (P6)
+docs/extraction/trajectory_matching_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/handover/baseline.json,doc,,,keep,temporary; removed in P6
+docs/matlab_port/PHYSICS_BASELINE.md,doc,,,delete,content to the six handover documents first (P6)
+docs/matlab_port/README.md,doc,,,delete,content to the six handover documents first (P6)
+docs/matlab_port/migration_log.md,doc,,,delete,content to the six handover documents first (P6)
+docs/physics/How the potentials work.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/baoab.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/collisions_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/constants_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/drag_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/interactions_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/leapfrog_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/physics_background.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/physics/potentials_visualization.png,doc,,,rewire,update or fold into docstrings (P6)
+docs/post_process/compare_trajectories_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/energy_balance_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/hedft_loader_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/post_processing_strategy.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/ancestor_script_decisions.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_hedft_comparison.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_paper_cov.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_paper_v2.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_paper_v3.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_paper_v4.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/scripts/plot_run_summary.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/smaller_helper_modules.md,doc,,,delete,content to the six handover documents first (P6)
+docs/post_process/velocity_distribution_module.md,doc,,,delete,content to the six handover documents first (P6)
+docs/run_single_pulse_script.md,doc,,,delete,content to the six handover documents first (P6)
+docs/sampling/droplet_sizes_diagnostics_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/sampling/droplet_sizes_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/sampling/droplet_sizes_visualization.png,doc,,,rewire,update or fold into docstrings (P6)
+docs/sampling/orientations_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/sampling/radial_positions_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/sampling/radial_positions_visualization.png,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/checkpoint_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/initial_state_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/ion_initial_state_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/ion_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/ion_propagation_step_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/neutral_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/propagation_step_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/simulation/run_directory_module.md,doc,,,rewire,update or fold into docstrings (P6)
+docs/superpowers/plans/2026-07-14-ihe-ked-run-summary.md,doc,,,delete,content to the six handover documents first (P6)
+docs/superpowers/plans/2026-11-25-handover-p0-p1.md,doc,,,keep,temporary; removed in P6
+docs/superpowers/specs/2026-07-14-ihe-ked-run-summary-design.md,doc,,,delete,content to the six handover documents first (P6)
+docs/superpowers/specs/2026-11-25-handover-cleanup-design.md,doc,,,keep,temporary; removed in P6
+i2_helium_md/__init__.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,exports follow
+i2_helium_md/config.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,"prune options, defaults, migration, split (P5); needs deleted: state_coupling"
+i2_helium_md/extraction/__init__.py,module,,,rewire,exports follow
+i2_helium_md/extraction/force_balance.py,module,,,delete,C6.4; reached by one test only
+i2_helium_md/extraction/trajectory_matching.py,module,tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,keep lq_fixed_c path only (C6.3)
+i2_helium_md/physics/__init__.py,module,,,rewire,exports follow
+i2_helium_md/physics/_gates.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/baoab.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/collisions.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/constants.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/coulomb_closure.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/dissociation_ladder.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: dissociation_ladder
+i2_helium_md/physics/drag.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop unused forms
+i2_helium_md/physics/evaporation.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/exit_strip.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,on-branch off in every thesis run
+i2_helium_md/physics/helium_density.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/interactions.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: single_charge_ionization_allowed
+i2_helium_md/physics/internal_energy_budget.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/leapfrog.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/mass_jump.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/pickup.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: he_capture_velocity pickup_rate_form
+i2_helium_md/physics/potentials.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/shell_schedule.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,helpers are used by many modules; anchored schedule goes
+i2_helium_md/physics/solvation_cooling.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/physics/state_coupling.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,on-branch off in every thesis run
+i2_helium_md/postprocess/__init__.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png I+He_n_Abundance.png I+He_n_Abundance_with_bare.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,exports follow
+i2_helium_md/postprocess/_smoothing.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/abundance_loader.py,module,I+He_n_Abundance.png I+He_n_Abundance_with_bare.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/boltzmann_overlay.py,module,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/compare_trajectories.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/csv_contract.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png I+He_n_Abundance.png I+He_n_Abundance_with_bare.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/derived_diagnostics.py,module,,,delete,[U] not needed
+i2_helium_md/postprocess/detected_view.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/distribution_compare.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/energy_balance.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] energy balance stays in plot_run_summary
+i2_helium_md/postprocess/hedft_loader.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/ihe_ked.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/pair_correlation.py,module,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_cov.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_cov_plotting.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_v2.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_v2_plotting.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_v3.py,module,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/paper_v4.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/polar_velocity.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/size_distribution.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/postprocess/tier2_confirmation.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop channel reader; needs deleted: ce_channels
+i2_helium_md/postprocess/time_resolved.py,module,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/velocity_2d.py,module,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+i2_helium_md/postprocess/velocity_distribution.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/presets.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,"thesis presets, seeds (P2)"
+i2_helium_md/sampling/ce_channels.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,on-branch off in every thesis run
+i2_helium_md/sampling/droplet_sizes.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: droplet_prior_delta droplet_prior_mean_N droplet_size_prior
+i2_helium_md/sampling/droplet_sizes_diagnostics.py,module,,,delete,reached by its own test only
+i2_helium_md/sampling/orientations.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+i2_helium_md/sampling/radial_positions.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: birth_position_law
+i2_helium_md/simulation/checkpoint.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop E2 hooks; schema version unchanged
+i2_helium_md/simulation/detection_stage.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop the E2 and channel branches; needs deleted: ce_channels
+i2_helium_md/simulation/initial_state.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: droplet_size_prior droplet_size_sampler_mode effusive_dynamics
+i2_helium_md/simulation/ion.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop E2 / channel / coupling branches; needs deleted: ce_channels state_coupling
+i2_helium_md/simulation/ion_initial_state.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,drop channel branch; needs deleted: ce_channels
+i2_helium_md/simulation/ion_propagation_step.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,"drop exit strip, anchored_discrete; needs deleted: exit_strip"
+i2_helium_md/simulation/neutral.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: custom_DFT_start
+i2_helium_md/simulation/propagation_step.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: hard_sphere_collision_mode
+i2_helium_md/simulation/relaxation_stage.py,module,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,C1
+i2_helium_md/simulation/run_directory.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: ce_channel_sigma_eV ce_channel_weights ce_internal_energy_partition_fractions
+i2_helium_md/simulation/stage1_events.py,module,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+pyproject.toml,doc,,,rewire,
+scripts/TIER0_SCRIPTS.md,script,,,delete,content to docs (P6)
+scripts/bench_b2_coulomb_dt.py,script,,,delete,"study script, off the allowlist"
+scripts/build_pooled_detection_container.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,pooling -> battery (C5.2); inline or cut before deleting: gen_tier2_b2_seff_scan gen_tier2_g414_tauline gen_tier2_g415_well gen_tier2atlas_lqbattery
+scripts/extraction/method_b_g412_ridge.py,script,tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: drag_bundle drag_gate_steepness drag_spatial_gate
+scripts/extraction/scripts_explained.md,script,,,delete,content to docs (P6)
+scripts/gen_detstagefix_validation.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier0_runs.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png,,rewire,reads options that change: drag_form
+scripts/gen_tier2_b2_seff_scan.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,delete,"study script, off the allowlist"
+scripts/gen_tier2_bare_screen.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2_bridge_run.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2_detfix_battery.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"MEMBER_SEEDS, handover check, byte limits -> battery module (C5.7); inline or cut before deleting: gen_tier2atlas_g4finals gen_tier2atlas_g4step2_battery gen_tier2atlas_linclone"
+scripts/gen_tier2_detfix_postpickup.py,script,g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"B2/B3 builders, thesis_run_dir, thesis_pool_dir -> presets / battery (C5.1, C5.2); inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline gen_tier2atlas_g4finals"
+scripts/gen_tier2_g13_decoupled.py,script,,,move,--pool and the decoupled table -> battery (C5.7)
+scripts/gen_tier2_g413_ridge_battery.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2_g414_tauline.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2_g415_well.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,delete,"study script, off the allowlist"
+scripts/gen_tier2_g9_cold_onset.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2_h405_pp35.py,script,g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,re-landed h405 cell -> preset (C5.7); inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline gen_tier2atlas_g4finals gen_tier2atlas_linclone
+scripts/gen_tier2_md_confirmation.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2_runs.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2_staircase_probe.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_budget_probe.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_ce_probe.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_ebindmd.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_g3ring.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_g4finals.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_g4step2_battery.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_geometry.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_linclone.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_linjoint.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_linring.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_lintauring.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_lqbattery.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_ptail_ring.py,script,,,delete,"study script, off the allowlist"
+scripts/gen_tier2atlas_sn_probe.py,script,,,delete,"study script, off the allowlist"
+scripts/handover/allowlist.py,script,,,keep,temporary; removed in P6
+scripts/handover/baseline.py,script,,,keep,temporary; removed in P6
+scripts/post_processing/legacy_continuum_drag_figure.py,script,fig_continuum_drag.pdf fig_continuum_drag.png fig_continuum_drag_points.csv,,rewire,reads options that change: hard_sphere_collision_mode
+scripts/post_processing/legacy_ke_size_figure.py,script,legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png,,keep,
+scripts/post_processing/legacy_ked_shapes_figure.py,script,legacy_ked_shapes.png legacy_ked_shapes_points.csv,,keep,
+scripts/post_processing/plot_detection_summary.py,script,,,keep,
+scripts/post_processing/plot_experimental_comparison.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+scripts/post_processing/plot_hedft_comparison.py,script,,,keep,
+scripts/post_processing/plot_histogram_comparison.py,script,,,delete,[U] not needed
+scripts/post_processing/plot_ihe_ked_reference_mean_energy.py,script,ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png,,keep,
+scripts/post_processing/plot_ion_energy_balance.py,script,,,delete,[U] not needed
+scripts/post_processing/plot_ion_temperature_diagnostic.py,script,,,delete,[U] not needed
+scripts/post_processing/plot_mean_kinetic_comparison.py,script,,,delete,[U] not needed
+scripts/post_processing/plot_neutral_energy_balance.py,script,,,delete,[U] not needed
+scripts/post_processing/plot_paper_cov.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+scripts/post_processing/plot_paper_v2.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+scripts/post_processing/plot_paper_v3.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+scripts/post_processing/plot_paper_v4.py,script,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+scripts/post_processing/plot_run_summary.py,script,,,rewire,energy balance stays (Q2)
+scripts/post_processing/plot_shell_schedule.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/plot_speed_distribution_comparison.py,script,,,delete,[U] not needed
+scripts/post_processing/summary_sections.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,energy balance stays (Q2)
+scripts/post_processing/thesis_style.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png I+He_n_Abundance.png I+He_n_Abundance_with_bare.png TDDFT_Reference.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png b2_5_anisotropy.png experimental_reference_fragments.png experimental_reference_fragments_velocity.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg ihe_ked_reference_mean_energy.png ihe_ked_reference_mean_energy_with_bare.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+scripts/post_processing/tier0_calibration_figures.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png,,rewire,imports tier2_common
+scripts/post_processing/tier0_drag_comparison.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: drag_gate_steepness
+scripts/post_processing/tier0_law_figure.py,script,tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+scripts/post_processing/tier0_thesis_figure.py,script,tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+scripts/post_processing/tier2_anisotropy_figure.py,script,b2_5_anisotropy.png,,keep,
+scripts/post_processing/tier2_b2_seff_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_b2_seff_timing.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_b2_thesis_figure.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,imports tier2_g414_table
+scripts/post_processing/tier2_bare_screen_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_bridge_report.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_confirmation_score.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"format_table, write_rows_csv -> package"
+scripts/post_processing/tier2_detfix_battery_table.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,_row -> score_pool (C5.2); inline or cut before deleting: gen_detstagefix_validation tier2atlas_g4step2_battery_table
+scripts/post_processing/tier2_detfix_postpickup_table.py,script,g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,"emission_chords, chord_rows -> package"
+scripts/post_processing/tier2_g12_ihekedv2_table.py,script,,,move,_score -> score_pool (source of the 15.1 table)
+scripts/post_processing/tier2_g13_shed_timing.py,script,g13_exit_vs_detection.png g13_shed_timing.png,,rewire,imports gen_tier2_detfix_battery gen_tier2_detfix_postpickup gen_tier2_h405_pp35 tier2_confirmation_score tier2_detfix_postpickup_table tier2atlas_geometry_table
+scripts/post_processing/tier2_g413_table.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,ANCHOR_COLS only; inline or cut before deleting: gen_tier2_g413_ridge_battery; needs deleted: tier2_h2b_forward_model
+scripts/post_processing/tier2_g414_table.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,NBAR_LANDING only; inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline
+scripts/post_processing/tier2_g415_table.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,tail_columns -> score_pool; inline or cut before deleting: gen_tier2_g414_tauline gen_tier2_g415_well
+scripts/post_processing/tier2_g5_postpickup_table.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,CHORD_CSV only; inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline
+scripts/post_processing/tier2_g5_winners_table.py,script,,,move,"_law_columns, experiment_row -> score_pool"
+scripts/post_processing/tier2_g6_chord_map.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,rewire,imports gen_tier2_detfix_battery gen_tier2_detfix_postpickup gen_tier2_h405_pp35 tier2_detfix_postpickup_table tier2_g5_postpickup_table tier2_h405_pp35_table tier2atlas_geometry_table
+scripts/post_processing/tier2_g9_cold_onset_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_h405_pp35_table.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,OUT_CSV only; inline or cut before deleting: gen_tier2_g413_ridge_battery
+scripts/post_processing/tier2_identifiability_report.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_law_comparison_figure.py,script,laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,keep,
+scripts/post_processing/tier2_size_distribution_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_staircase_probe_report.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2_thesis_observable_table.py,script,laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,imports gen_tier2_detfix_postpickup tier2_confirmation_score tier2atlas_geometry_table
+scripts/post_processing/tier2atlas_budget_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ce_gas_widths.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ce_p3_forecast.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ce_probe_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ce_strip_prior.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ebindmd_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_g3ring_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_g4_transfer.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_g4finals_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_g4step2_battery_table.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_g4step2_w1_anatomy.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_geometry_reweight.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_geometry_table.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"reference paths, MIN_KE_BIN_COUNT -> package"
+scripts/post_processing/tier2atlas_ke_lown_scan.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_linclone_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_linjoint_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_linring_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_lintauring_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_lq_ke1_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_ptail_table.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_retained_bracket.py,script,,,delete,"study script, off the allowlist"
+scripts/post_processing/tier2atlas_sn_table.py,script,,,delete,"study script, off the allowlist"
+scripts/regen_tier2_stage1_events.py,script,,,rewire,imports gen_tier2_detfix_battery gen_tier2_detfix_postpickup gen_tier2_h405_pp35
+scripts/run_single_pulse.py,script,,,keep,
+scripts/tier0_common.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: drag_bundle drag_form drag_gate_steepness drag_spatial_gate mass_scenario
+scripts/tier2_common.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"with_current_bundle_ids, cfg_diff -> package; rest deleted"
+scripts/tier2_h2b_forward_model.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/__init__.py,test,,,keep,
+tests/ladder_feeds.py,test,,,rewire,reads options that change: ladder_electronic_picture
+tests/test_abundance_loader.py,test,,,keep,
+tests/test_baoab.py,test,,,keep,
+tests/test_baoab_propagation_step.py,test,,,rewire,reads options that change: drag_gate_steepness drag_spatial_gate
+tests/test_bimodal_gaussian_fit.py,test,,,keep,
+tests/test_biphasic_config.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_biphasic_step.py,test,,,rewire,reads options that change: allow_gate_onset_override cooling_spatial_gate dissociation_ladder gate_onset_override_eV he_capture_velocity helium_density_profile ladder_electronic_picture mass_scenario noise_form pickup_occupancy_cap pickup_rate_form
+tests/test_birth_position_law.py,test,,,rewire,reads options that change: birth_position_law
+tests/test_boltzmann_overlay.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_ce_channel_exit_strip.py,test,,,delete,tests deleted code
+tests/test_checkpoint.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_collisions.py,test,,,keep,
+tests/test_compare_neutral_to_hedft.py,test,,,keep,
+tests/test_compare_trajectories.py,test,,,keep,
+tests/test_cooling_spatial_gate_config.py,test,,,rewire,reads options that change: cooling_spatial_gate
+tests/test_derived_diagnostics.py,test,,,delete,[U] not needed
+tests/test_detected_view.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_detection_coulomb_closure.py,test,,,rewire,imports ce_channels
+tests/test_detection_stage.py,test,,,rewire,"covers kept and removed code, or imports a moved script; needs deleted: gen_tier2_staircase_probe relaxation_stage tier2_staircase_probe_report"
+tests/test_dissociation_ladder.py,test,,,rewire,reads options that change: dissociation_ladder
+tests/test_distribution_compare.py,test,,,rewire,reads options that change: validation_histogram_metric
+tests/test_drag.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_drag_bundle_ids.py,test,,,rewire,"covers kept and removed code, or imports a moved script; needs deleted: gen_tier2_g413_ridge_battery"
+tests/test_drag_config.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_droplet_prior_config.py,test,,,rewire,reads options that change: droplet_prior_delta droplet_prior_mean_N droplet_size_prior droplet_size_sampler_mode
+tests/test_droplet_prior_sampler.py,test,,,rewire,loads the twin by path; needs deleted: tier2_h2b_forward_model
+tests/test_droplet_sizes.py,test,,,keep,
+tests/test_droplet_sizes_diagnostics.py,test,,,delete,tests deleted code
+tests/test_energy_balance.py,test,,,keep,[U] energy balance stays in plot_run_summary
+tests/test_evaporation.py,test,,,keep,
+tests/test_evaporation_config.py,test,,,rewire,reads options that change: allow_gate_onset_override gate_onset_override_eV
+tests/test_evaporation_shed_convention.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_extraction_trajectory_matching.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_foundations.py,test,,,rewire,reads options that change: additional_droplet_charges custom_DFT_start effusive_dynamics hard_sphere_collision_mode highly_charged_iodine single_charge_ionization_allowed v_limit_m_per_s
+tests/test_g410_force_balance.py,test,,,delete,tests deleted code
+tests/test_g412_ridge.py,test,,,keep,
+tests/test_g4_srho_refit.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_g9_cold_onset_mixture.py,test,,,delete,tests deleted code
+tests/test_gen_detstagefix_validation.py,test,,,delete,tests deleted code
+tests/test_gen_tier2_detfix_battery.py,test,,,move,cfg oracles / cfg_diff tests move with the code (P2); the study-only tests go; inline or cut before deleting: gen_tier2atlas_g4finals gen_tier2atlas_g4step2_battery gen_tier2atlas_linclone
+tests/test_gen_tier2_detfix_postpickup.py,test,,,move,cfg oracles / cfg_diff tests move with the code (P2); the study-only tests go; inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline gen_tier2atlas_g4finals gen_tier2atlas_linclone
+tests/test_gen_tier2_md_confirmation.py,test,,,delete,tests deleted code
+tests/test_gen_tier2_runs.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_budget_probe.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_ce_probe.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_ebindmd.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_geometry.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_linclone.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_linjoint.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_linring.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_lqbattery.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_ptail_ring.py,test,,,delete,tests deleted code
+tests/test_gen_tier2atlas_sn_probe.py,test,,,delete,tests deleted code
+tests/test_handover_allowlist.py,test,,,keep,temporary; removed in P6
+tests/test_handover_baseline.py,test,,,keep,temporary; removed in P6
+tests/test_hedft_loader.py,test,,,keep,
+tests/test_helium_density.py,test,,,keep,
+tests/test_helium_density_config.py,test,,,rewire,reads options that change: helium_density_profile
+tests/test_ihe_ked.py,test,,,rewire,loads deleted plot scripts by path; needs deleted: plot_histogram_comparison plot_mean_kinetic_comparison plot_speed_distribution_comparison
+tests/test_initial_shell_model.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_initial_state.py,test,,,rewire,reads options that change: droplet_size_sampler_mode effusive_dynamics
+tests/test_interactions.py,test,,,rewire,reads options that change: single_charge_ionization_allowed
+tests/test_internal_energy_budget.py,test,,,keep,
+tests/test_internal_energy_budget_config.py,test,,,keep,
+tests/test_internal_energy_partition_law.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_ion.py,test,,,rewire,reads options that change: additional_droplet_charges effusive_dynamics hard_sphere_collision_mode highly_charged_iodine single_charge_ionization_allowed
+tests/test_ion_drag_smoke.py,test,,,rewire,reads options that change: anchor_mode anchor_n_final drag_form mass_scenario noise_form t_star_ps
+tests/test_ion_initial_state.py,test,,,rewire,reads options that change: additional_droplet_charges effusive_dynamics highly_charged_iodine mass_scenario single_charge_ionization_allowed t_star_ps
+tests/test_ion_propagation_step.py,test,,,rewire,reads options that change: additional_droplet_charges effusive_dynamics hard_sphere_collision_mode mass_scenario single_charge_ionization_allowed
+tests/test_ion_variable_mass.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_ladder_config.py,test,,,rewire,reads options that change: dissociation_ladder ladder_electronic_picture
+tests/test_leapfrog.py,test,,,keep,
+tests/test_legacy_ke_size_figure.py,test,,,keep,
+tests/test_legacy_ked_shapes_figure.py,test,,,keep,
+tests/test_mass_jump.py,test,,,keep,
+tests/test_neutral.py,test,,,rewire,reads options that change: custom_DFT_start
+tests/test_orientations.py,test,,,keep,
+tests/test_pair_correlation.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_paper_cov.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_paper_v2.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_paper_v3.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_paper_v4.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_pickup.py,test,,,rewire,reads options that change: he_capture_velocity pickup_rate_form
+tests/test_pickup_config.py,test,,,rewire,reads options that change: he_capture_velocity pickup_occupancy_cap pickup_rate_form
+tests/test_plot_detection_summary.py,test,,,rewire,; reads options that change: dissociation_ladder drag_form
+tests/test_plot_ihe_ked_reference_mean_energy.py,test,,,keep,
+tests/test_plot_legacy_debug_smoke.py,test,,,rewire,loads deleted energy / temperature scripts by path; needs deleted: plot_ion_energy_balance plot_ion_temperature_diagnostic plot_neutral_energy_balance
+tests/test_plot_paper_cov_smoke.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_plot_run_summary_detection.py,test,,,keep,
+tests/test_polar_velocity.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_potentials.py,test,,,keep,
+tests/test_propagation_step.py,test,,,rewire,reads options that change: hard_sphere_collision_mode
+tests/test_radial_positions.py,test,,,keep,
+tests/test_reference_thesis_figures.py,test,,,keep,
+tests/test_relaxation_dissipation_config.py,test,,,delete,tests deleted code
+tests/test_relaxation_landau_gamma.py,test,,,delete,tests deleted code
+tests/test_relaxation_stage.py,test,,,delete,tests deleted code
+tests/test_run_directory.py,test,,,rewire,reads options that change: dissociation_ladder drag_gate_steepness
+tests/test_run_single_pulse.py,test,,,keep,
+tests/test_self_bound_gate_release.py,test,,,rewire,reads options that change: cooling_spatial_gate evaporation_shed_convention gate_onset_override_eV mass_scenario self_bound_gate_release
+tests/test_shell_schedule.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_size_distribution.py,test,,,keep,
+tests/test_solvation_cooling.py,test,,,keep,
+tests/test_solvation_cooling_config.py,test,,,rewire,reads options that change: ladder_electronic_picture
+tests/test_stage1_events.py,test,,,rewire,reads options that change: mass_scenario self_bound_gate_release
+tests/test_state_coupling.py,test,,,delete,tests deleted code
+tests/test_tier0_calibration_figures.py,test,,,keep,
+tests/test_tier0_common.py,test,,,rewire,reads options that change: drag_form drag_gate_steepness drag_spatial_gate mass_scenario
+tests/test_tier0_law_figure.py,test,,,keep,
+tests/test_tier2_b2_thesis_figure.py,test,,,keep,
+tests/test_tier2_common.py,test,,,move,cfg oracles / cfg_diff tests move with the code (P2); the study-only tests go
+tests/test_tier2_confirmation.py,test,,,rewire,loads tier2_confirmation_score by path
+tests/test_tier2_g13_shed_timing.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
+tests/test_tier2_g412_twin.py,test,,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/test_tier2_g413.py,test,,,delete,tests deleted code
+tests/test_tier2_g414.py,test,,,delete,tests deleted code
+tests/test_tier2_h2b_forward_model.py,test,,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/test_tier2_h2b_refund_probe.py,test,,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/test_tier2_identifiability_report.py,test,,,delete,tests deleted code
+tests/test_tier2_law_comparison_figure.py,test,,,keep,
+tests/test_tier2_linsweep.py,test,,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/test_tier2_size_distribution_table.py,test,,,delete,tests deleted code
+tests/test_tier2_staircase_probe.py,test,,,delete,tests deleted code
+tests/test_tier2_staircase_probe_report.py,test,,,delete,tests deleted code
+tests/test_tier2atlas_g4_transfer.py,test,,,delete,tests deleted code
+tests/test_tier2atlas_g4step2_anatomy.py,test,,,delete,tests deleted code
+tests/test_tier2atlas_ke1auth.py,test,,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
+tests/test_tier2atlas_ke_lown_scan.py,test,,,delete,tests deleted code
+tests/test_tier2atlas_linring_table.py,test,,,delete,tests deleted code
+tests/test_tier2atlas_reweight.py,test,,,delete,tests deleted code
+tests/test_time_resolved.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_velocity_2d.py,test,,,keep,[U] 2026-11-25: future work (VMI / covariance)
+tests/test_velocity_distribution.py,test,,,keep,
+../Drag_function/,script,,,keep,"[U] outside i2_helium_md, left alone"
+../molecular_dynamics_lammps/,script,,,keep,"[U] outside i2_helium_md, left alone"
+old_data/,data,,,delete,"no thesis figure or number, no reader in the package"
+.crossnote/,doc,,,delete,"no thesis figure or number, no reader in the package"
+i2_helium_md.egg-info/,doc,,,delete,"no thesis figure or number, no reader in the package"
+scripts/cross_reference/,script,,,delete,MATLAB/Python port checks; no test file mentions the folder
+data/tier2_probe_figures/,data,,,delete,"no thesis figure or number, no reader in the package"
+SimConfig.seed,option,,B2=20260730; B3=20260730; h405=20260730; T0_18A=20260604; T0_18A_stuck=20260604; T0_9A=20260604; T0_9A_h405=20260604; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
+SimConfig.single_pulse,option,,B2=True; B3=True; h405=True; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=True,keep,
+SimConfig.effusive_dynamics,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,rewire,"out of scope, always False"
+SimConfig.debug,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,keep,
+SimConfig.t_max_neutral,option,,B2=200.0; B3=200.0; h405=200.0; T0_18A=200.0; T0_18A_stuck=200.0; T0_9A=200.0; T0_9A_h405=200.0; HS_9A=200.0; HS_18A=200.0; HS_long_preset=200.0,keep,
+SimConfig.dt_neutral,option,,B2=0.01; B3=0.01; h405=0.01; T0_18A=0.01; T0_18A_stuck=0.01; T0_9A=0.01; T0_9A_h405=0.01; HS_9A=0.01; HS_18A=0.01; HS_long_preset=0.01,keep,
+SimConfig.ion_simulation_time,option,,B2=500.005; B3=500.005; h405=500.005; T0_18A=30.0; T0_18A_stuck=50.0; T0_9A=30.0; T0_9A_h405=30.0; HS_9A=20.0; HS_18A=20.0; HS_long_preset=20.0,keep,
+SimConfig.dt_ion,option,,B2=0.01; B3=0.01; h405=0.01; T0_18A=0.01; T0_18A_stuck=0.01; T0_9A=0.01; T0_9A_h405=0.01; HS_9A=0.01; HS_18A=0.01; HS_long_preset=0.01,keep,
+SimConfig.num_neutral_export_timesteps,option,,B2=40; B3=40; h405=40; T0_18A=40; T0_18A_stuck=40; T0_9A=40; T0_9A_h405=40; HS_9A=40; HS_18A=40; HS_long_preset=40,keep,
+SimConfig.lambda_pump_nm,option,,B2=630.0; B3=630.0; h405=630.0; T0_18A=630.0; T0_18A_stuck=630.0; T0_9A=630.0; T0_9A_h405=630.0; HS_9A=630.0; HS_18A=630.0; HS_long_preset=630.0,keep,
+SimConfig.fwhm_lambda_nm,option,,B2=33.0; B3=33.0; h405=33.0; T0_18A=33.0; T0_18A_stuck=33.0; T0_9A=33.0; T0_9A_h405=33.0; HS_9A=33.0; HS_18A=33.0; HS_long_preset=33.0,keep,
+SimConfig.E_diss_eV,option,,B2=1.556; B3=1.556; h405=1.556; T0_18A=1.556; T0_18A_stuck=1.556; T0_9A=1.556; T0_9A_h405=1.556; HS_9A=1.556; HS_18A=1.556; HS_long_preset=1.556,keep,
+SimConfig.num_molecules,option,,B2=1000; B3=1000; h405=1000; T0_18A=50; T0_18A_stuck=50; T0_9A=50; T0_9A_h405=50; HS_9A=2000; HS_18A=2000; HS_long_preset=20000,keep,
+SimConfig.R0_GS_angstrom,option,,B2=2.666; B3=2.666; h405=2.666; T0_18A=18.0; T0_18A_stuck=18.0; T0_9A=9.0; T0_9A_h405=9.0; HS_9A=9.0; HS_18A=18.0; HS_long_preset=2.666,keep,
+SimConfig.deltaR0_angstrom,option,,B2=0.0; B3=0.0; h405=0.0; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.T_particles_K,option,,B2=0.4; B3=0.4; h405=0.4; T0_18A=0.4; T0_18A_stuck=0.4; T0_9A=0.4; T0_9A_h405=0.4; HS_9A=0.4; HS_18A=0.4; HS_long_preset=0.4,keep,
+SimConfig.single_initial_position,option,,B2=False; B3=False; h405=False; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=False,keep,
+SimConfig.birth_position_law,option,,B2=boltzmann; B3=boltzmann; h405=boltzmann; T0_18A=boltzmann; T0_18A_stuck=boltzmann; T0_9A=boltzmann; T0_9A_h405=boltzmann; HS_9A=boltzmann; HS_18A=boltzmann; HS_long_preset=boltzmann,rewire,single value: field goes
+SimConfig.initial_position_margin_angstrom,option,,B2=0.0; B3=0.0; h405=0.0; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.partner_interaction,option,,B2=True; B3=True; h405=True; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=True,keep,
+SimConfig.use_single_droplet_size,option,,B2=False; B3=False; h405=False; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=False,keep,
+SimConfig.single_droplet_size,option,,B2=2000; B3=2000; h405=2000; T0_18A=2000; T0_18A_stuck=2000; T0_9A=2000; T0_9A_h405=2000; HS_9A=2000; HS_18A=2000; HS_long_preset=2000,keep,
+SimConfig.p_source_mbar,option,,B2=40.0; B3=40.0; h405=40.0; T0_18A=40.0; T0_18A_stuck=40.0; T0_9A=40.0; T0_9A_h405=40.0; HS_9A=40.0; HS_18A=40.0; HS_long_preset=40.0,keep,
+SimConfig.T_source_K,option,,B2=14.0; B3=14.0; h405=14.0; T0_18A=14.0; T0_18A_stuck=14.0; T0_9A=14.0; T0_9A_h405=14.0; HS_9A=14.0; HS_18A=14.0; HS_long_preset=14.0,keep,
+SimConfig.droplet_size_prior,option,,B2=legacy; B3=legacy; h405=legacy; T0_18A=legacy; T0_18A_stuck=legacy; T0_9A=legacy; T0_9A_h405=legacy; HS_9A=legacy; HS_18A=legacy; HS_long_preset=legacy,rewire,single value: field goes
+SimConfig.droplet_prior_mean_N,option,,B2=2000.0; B3=2000.0; h405=2000.0; T0_18A=2000.0; T0_18A_stuck=2000.0; T0_9A=2000.0; T0_9A_h405=2000.0; HS_9A=2000.0; HS_18A=2000.0; HS_long_preset=2000.0,rewire,read only by the non-legacy priors; follows droplet_size_prior
+SimConfig.droplet_prior_delta,option,,B2=0.625; B3=0.625; h405=0.625; T0_18A=0.625; T0_18A_stuck=0.625; T0_9A=0.625; T0_9A_h405=0.625; HS_9A=0.625; HS_18A=0.625; HS_long_preset=0.625,rewire,read only by the non-legacy priors; follows droplet_size_prior
+SimConfig.droplet_size_sampler_mode,option,,B2=post_pickup; B3=post_pickup; h405=post_pickup; T0_18A=post_pickup; T0_18A_stuck=post_pickup; T0_9A=post_pickup; T0_9A_h405=post_pickup; HS_9A=post_pickup; HS_18A=post_pickup; HS_long_preset=post_pickup,rewire,single value post_pickup: field goes
+SimConfig.potential_steepness,option,,B2=14.2; B3=14.2; h405=14.2; T0_18A=14.2; T0_18A_stuck=14.2; T0_9A=14.2; T0_9A_h405=14.2; HS_9A=14.2; HS_18A=14.2; HS_long_preset=14.2,keep,
+SimConfig.potential_steepness_molecule,option,,B2=14.3324; B3=14.3324; h405=14.3324; T0_18A=14.3324; T0_18A_stuck=14.3324; T0_9A=14.3324; T0_9A_h405=14.3324; HS_9A=14.3324; HS_18A=14.3324; HS_long_preset=14.3324,keep,
+SimConfig.binding_energy_I_atom_K,option,,B2=318.43; B3=318.43; h405=318.43; T0_18A=318.43; T0_18A_stuck=318.43; T0_9A=318.43; T0_9A_h405=318.43; HS_9A=318.43; HS_18A=318.43; HS_long_preset=318.43,keep,
+SimConfig.binding_energy_molecule_K,option,,B2=313.2; B3=313.2; h405=313.2; T0_18A=573.3; T0_18A_stuck=573.3; T0_9A=573.3; T0_9A_h405=573.3; HS_9A=573.3; HS_18A=573.3; HS_long_preset=573.3,keep,
+SimConfig.Xdip_active,option,,B2=True; B3=True; h405=True; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=True,keep,
+SimConfig.v_limit_m_per_s,option,,B2=58.0; B3=58.0; h405=58.0; T0_18A=40.0; T0_18A_stuck=40.0; T0_9A=40.0; T0_9A_h405=40.0; HS_9A=40.0; HS_18A=40.0; HS_long_preset=40.0,rewire,C4; collision reader stays
+SimConfig.hard_sphere_collision_mode,option,,B2=3; B3=3; h405=3; T0_18A=3; T0_18A_stuck=3; T0_9A=3; T0_9A_h405=3; HS_9A=3; HS_18A=3; HS_long_preset=3,rewire,only mode 3 is used
+SimConfig.scattering_probability,option,,B2=0.004; B3=0.004; h405=0.004; T0_18A=0.004; T0_18A_stuck=0.004; T0_9A=0.004; T0_9A_h405=0.004; HS_9A=0.004; HS_18A=0.004; HS_long_preset=0.004,keep,
+SimConfig.geometric_scattering_crosssection_I,option,,B2=30.0; B3=30.0; h405=30.0; T0_18A=30.0; T0_18A_stuck=30.0; T0_9A=30.0; T0_9A_h405=30.0; HS_9A=30.0; HS_18A=30.0; HS_long_preset=30.0,keep,
+SimConfig.geometric_scattering_crosssection_Iplus,option,,B2=2500.0; B3=2500.0; h405=2500.0; T0_18A=1600.0; T0_18A_stuck=1600.0; T0_9A=2500.0; T0_9A_h405=2500.0; HS_9A=2500.0; HS_18A=1600.0; HS_long_preset=2500.0,keep,
+SimConfig.scatter_mass_neutral_amu,option,,B2=4.0; B3=4.0; h405=4.0; T0_18A=4.0; T0_18A_stuck=4.0; T0_9A=4.0; T0_9A_h405=4.0; HS_9A=4.0; HS_18A=4.0; HS_long_preset=4.0,keep,
+SimConfig.scatter_mass_ion_amu,option,,B2=4.0; B3=4.0; h405=4.0; T0_18A=4.0; T0_18A_stuck=4.0; T0_9A=4.0; T0_9A_h405=4.0; HS_9A=4.0; HS_18A=4.0; HS_long_preset=4.0,keep,
+SimConfig.sigma_dependent_on_v,option,,B2=True; B3=True; h405=True; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=True,keep,
+SimConfig.sigma_ion_exponent,option,,B2=-2.0; B3=-2.0; h405=-2.0; T0_18A=-2.0; T0_18A_stuck=-2.0; T0_9A=-2.0; T0_9A_h405=-2.0; HS_9A=-2.0; HS_18A=-2.0; HS_long_preset=-2.0,keep,
+SimConfig.neutral_scatter_angle_std_deg,option,,B2=0.0; B3=0.0; h405=0.0; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.ion_scatter_angle_std_deg,option,,B2=0.0; B3=0.0; h405=0.0; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.binding_energy_I_ion_eV,option,,B2=0.11727328616561973; B3=0.0482; h405=0.11675778353879479; T0_18A=0.11727328616561973; T0_18A_stuck=0.308; T0_9A=0.11727328616561973; T0_9A_h405=0.11675778353879479; HS_9A=0.3; HS_18A=0.05; HS_long_preset=0.3,keep,
+SimConfig.mass_attach_probability,option,,B2=0.09; B3=0.09; h405=0.09; T0_18A=0.005; T0_18A_stuck=0.005; T0_9A=0.09; T0_9A_h405=0.09; HS_9A=0.09; HS_18A=0.005; HS_long_preset=0.09,keep,
+SimConfig.single_charge_ionization_allowed,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,rewire,always False
+SimConfig.additional_droplet_charges,option,,B2=0; B3=0; h405=0; T0_18A=0; T0_18A_stuck=0; T0_9A=0; T0_9A_h405=0; HS_9A=0; HS_18A=0; HS_long_preset=0,rewire,always 0
+SimConfig.highly_charged_iodine,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,rewire,always False
+SimConfig.E_coulomb_scale,option,,B2=1.0; B3=1.0; h405=1.0; T0_18A=1.0; T0_18A_stuck=1.0; T0_9A=1.0; T0_9A_h405=1.0; HS_9A=1.0; HS_18A=1.0; HS_long_preset=0.8,keep,
+SimConfig.custom_DFT_start,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,rewire,always False
+SimConfig.drag_form,option,,B2=linear_quadratic; B3=linear_quadratic; h405=capped_cubic; T0_18A=linear_quadratic; T0_18A_stuck=linear_quadratic; T0_9A=linear_quadratic; T0_9A_h405=capped_cubic; HS_9A=linear_cubic; HS_18A=linear_cubic; HS_long_preset=linear_cubic,rewire,"keep linear_quadratic, capped_cubic; linear_cubic must stay loadable: CC/fit_parameters.json has it and load_capped_cc caps it, and the hard-sphere cfgs store it inert; default None (C5.3)"
+SimConfig.drag_coefficients,option,,"B2=DragCoefficients(form='linear_quadratic'; B3=DragCoefficients(form='linear_quadratic'; h405=DragCoefficients(form='capped_cubic', co; T0_18A=DragCoefficients(form='linear_quadratic'; T0_18A_stuck=DragCoefficients(form='linear_quadratic'; T0_9A=DragCoefficients(form='linear_quadratic'; T0_9A_h405=DragCoefficients(form='capped_cubic', co; HS_9A=None; HS_18A=None; HS_long_preset=None",keep,
+SimConfig.drag_spatial_gate,option,,B2=erf_independent; B3=erf_independent; h405=erf_independent; T0_18A=erf_independent; T0_18A_stuck=erf_independent; T0_9A=erf_independent; T0_9A_h405=erf_independent; HS_9A=density_proportional; HS_18A=density_proportional; HS_long_preset=density_proportional,rewire,keep erf_independent; the hard-sphere cfgs store density_proportional inert; default None (C5.3)
+SimConfig.drag_gate_steepness,option,,B2=3.5; B3=3.5; h405=3.5; T0_18A=3.5; T0_18A_stuck=3.5; T0_9A=3.5; T0_9A_h405=3.5; HS_9A=14.2; HS_18A=14.2; HS_long_preset=14.2,rewire,default None (C5.3)
+SimConfig.mass_scenario,option,,B2=biphasic; B3=biphasic; h405=biphasic; T0_18A=fixed; T0_18A_stuck=fixed; T0_9A=fixed; T0_9A_h405=fixed; HS_9A=fixed; HS_18A=fixed; HS_long_preset=fixed,rewire,"keep fixed, biphasic"
+SimConfig.m_eff_amu,option,,B2=202.953908; B3=202.953908; h405=202.953908; T0_18A=210.95460000000003; T0_18A_stuck=210.95460000000003; T0_9A=210.95460000000003; T0_9A_h405=210.95460000000003; HS_9A=202.953908; HS_18A=202.953908; HS_long_preset=202.953908,keep,
+SimConfig.mass_initial_amu,option,,B2=210.95460000000003; B3=210.95460000000003; h405=210.95460000000003; T0_18A=210.95460000000003; T0_18A_stuck=210.95460000000003; T0_9A=210.95460000000003; T0_9A_h405=210.95460000000003; HS_9A=202.953908; HS_18A=202.953908; HS_long_preset=202.953908,keep,
+SimConfig.allow_inconsistent_mass_pairing,option,,B2=True; B3=True; h405=True; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,keep,
+SimConfig.allow_unvalidated_binding_pairing,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,rewire,re-check with the guards
+SimConfig.drag_bundle,option,,B2=srho3p5A18A_linear_quadratic; B3=srho3p5A18A_linear_quadratic; h405=shared_pure_cubic; T0_18A=srho3p5A18A_linear_quadratic; T0_18A_stuck=LQ; T0_9A=srho3p5A18A_linear_quadratic; T0_9A_h405=shared_pure_cubic; HS_9A=shared_pure_cubic; HS_18A=CC; HS_long_preset=CC,rewire,default None (C5.3)
+SimConfig.allow_inconsistent_gate_pairing,option,,B2=False; B3=False; h405=True; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=True; HS_9A=False; HS_18A=False; HS_long_preset=False,keep,
+SimConfig.drag_low_v_floor,option,,B2=0.0; B3=0.0; h405=0.0; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.t_star_ps,option,,B2=5.0; B3=5.0; h405=5.0; T0_18A=5.0; T0_18A_stuck=5.0; T0_9A=5.0; T0_9A_h405=5.0; HS_9A=5.0; HS_18A=5.0; HS_long_preset=5.0,delete,"anchored_discrete (Tier 1a, retired)"
+SimConfig.anchor_mode,option,,B2=time; B3=time; h405=time; T0_18A=time; T0_18A_stuck=time; T0_9A=time; T0_9A_h405=time; HS_9A=time; HS_18A=time; HS_long_preset=time,delete,"anchored_discrete (Tier 1a, retired)"
+SimConfig.anchor_n_final,option,,B2=14; B3=14; h405=14; T0_18A=14; T0_18A_stuck=14; T0_9A=14; T0_9A_h405=14; HS_9A=14; HS_18A=14; HS_long_preset=14,delete,"anchored_discrete (Tier 1a, retired)"
+SimConfig.coulomb_available_eV,option,,B2=2.7; B3=2.7; h405=2.7; T0_18A=0.8; T0_18A_stuck=0.8; T0_9A=0.8; T0_9A_h405=0.8; HS_9A=0.8; HS_18A=0.8; HS_long_preset=0.8,keep,
+SimConfig.dissociation_ladder,option,,B2=tabulated; B3=tabulated; h405=tabulated; T0_18A=form_u; T0_18A_stuck=form_u; T0_9A=form_u; T0_9A_h405=form_u; HS_9A=form_u; HS_18A=form_u; HS_long_preset=form_u,rewire,fixed-mass runs store the inert default form_u
+SimConfig.ladder_steepness,option,,B2=1.0; B3=1.0; h405=1.0; T0_18A=1.0; T0_18A_stuck=1.0; T0_9A=1.0; T0_9A_h405=1.0; HS_9A=1.0; HS_18A=1.0; HS_long_preset=1.0,keep,
+SimConfig.ladder_electronic_picture,option,,B2=statistical_mixture; B3=statistical_mixture; h405=statistical_mixture; T0_18A=statistical_mixture; T0_18A_stuck=statistical_mixture; T0_9A=statistical_mixture; T0_9A_h405=statistical_mixture; HS_9A=statistical_mixture; HS_18A=statistical_mixture; HS_long_preset=statistical_mixture,rewire,single value: field goes
+SimConfig.tabulated_ladder_rungs_eV,option,,"B2=(0.020293733600424874, 0.013836636518007; B3=(0.020293733600424874, 0.013836636518007; h405=(0.020293733600424874, 0.013836636518007; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None",keep,
+SimConfig.solv_struct_asymptote_eV,option,,B2=0.308; B3=0.308; h405=0.308; T0_18A=0.308; T0_18A_stuck=0.308; T0_9A=0.308; T0_9A_h405=0.308; HS_9A=0.308; HS_18A=0.308; HS_long_preset=0.308,keep,
+SimConfig.internal_energy_cooling_tau_ps,option,,B2=6.4; B3=6.4; h405=4.4; T0_18A=6.55; T0_18A_stuck=6.55; T0_9A=6.55; T0_9A_h405=6.55; HS_9A=6.55; HS_18A=6.55; HS_long_preset=6.55,keep,
+SimConfig.cooling_spatial_gate,option,,B2=density_scaled; B3=density_scaled; h405=density_scaled; T0_18A=none; T0_18A_stuck=none; T0_9A=none; T0_9A_h405=none; HS_9A=none; HS_18A=none; HS_long_preset=none,rewire,active value density_scaled only
+SimConfig.internal_energy_partition_fraction,option,,B2=0.1221111111111111; B3=0.1255185185185185; h405=0.15703703703703703; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
+SimConfig.internal_energy_retained_fraction,option,,B2=0.1; B3=0.1; h405=0.1; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
+SimConfig.helium_density_profile,option,,B2=erf_complement; B3=erf_complement; h405=erf_complement; T0_18A=erf_complement; T0_18A_stuck=erf_complement; T0_9A=erf_complement; T0_9A_h405=erf_complement; HS_9A=erf_complement; HS_18A=erf_complement; HS_long_preset=erf_complement,rewire,single value: field goes
+SimConfig.pickup_rate_form,option,,B2=density_only; B3=density_only; h405=density_only; T0_18A=density_only; T0_18A_stuck=density_only; T0_9A=density_only; T0_9A_h405=density_only; HS_9A=density_only; HS_18A=density_only; HS_long_preset=density_only,rewire,single value: field goes
+SimConfig.pickup_rate_coefficient,option,,B2=0.9; B3=0.9; h405=0.9; T0_18A=0.0; T0_18A_stuck=0.0; T0_9A=0.0; T0_9A_h405=0.0; HS_9A=0.0; HS_18A=0.0; HS_long_preset=0.0,keep,
+SimConfig.pickup_occupancy_cap,option,,B2=langmuir; B3=langmuir; h405=langmuir; T0_18A=langmuir; T0_18A_stuck=langmuir; T0_9A=langmuir; T0_9A_h405=langmuir; HS_9A=langmuir; HS_18A=langmuir; HS_long_preset=langmuir,rewire,single value: field goes
+SimConfig.pickup_occupancy_exponent,option,,B2=1.0; B3=1.0; h405=1.0; T0_18A=1.0; T0_18A_stuck=1.0; T0_9A=1.0; T0_9A_h405=1.0; HS_9A=1.0; HS_18A=1.0; HS_long_preset=1.0,keep,
+SimConfig.he_capture_velocity,option,,B2=at_rest; B3=at_rest; h405=at_rest; T0_18A=at_rest; T0_18A_stuck=at_rest; T0_9A=at_rest; T0_9A_h405=at_rest; HS_9A=at_rest; HS_18A=at_rest; HS_long_preset=at_rest,rewire,single value: field goes
+SimConfig.evap_rate_prefactor_per_ps,option,,B2=2.42; B3=2.42; h405=2.42; T0_18A=2.42; T0_18A_stuck=2.42; T0_9A=2.42; T0_9A_h405=2.42; HS_9A=2.42; HS_18A=2.42; HS_long_preset=2.42,keep,
+SimConfig.evap_rrk_dof,option,,B2=8.0; B3=8.0; h405=8.0; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
+SimConfig.gate_onset_override_eV,option,,B2=None; B3=None; h405=None; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,delete,override off in every thesis run
+SimConfig.allow_gate_onset_override,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,delete,override off in every thesis run
+SimConfig.evaporation_shed_convention,option,,B2=co_moving; B3=co_moving; h405=co_moving; T0_18A=cold; T0_18A_stuck=cold; T0_9A=cold; T0_9A_h405=cold; HS_9A=cold; HS_18A=cold; HS_long_preset=cold,rewire,active value co_moving only
+SimConfig.initial_shell_model,option,,B2=density_tied; B3=density_tied; h405=density_tied; T0_18A=full; T0_18A_stuck=full; T0_9A=full; T0_9A_h405=full; HS_9A=full; HS_18A=full; HS_long_preset=full,rewire,active value density_tied; bare was the G8 screen
+SimConfig.internal_energy_partition_law,option,,B2=sigma_proportional; B3=sigma_proportional; h405=sigma_proportional; T0_18A=constant; T0_18A_stuck=constant; T0_9A=constant; T0_9A_h405=constant; HS_9A=constant; HS_18A=constant; HS_long_preset=constant,rewire,active value sigma_proportional only
+SimConfig.drag_state_coupling,option,,B2=off; B3=off; h405=off; T0_18A=off; T0_18A_stuck=off; T0_9A=off; T0_9A_h405=off; HS_9A=off; HS_18A=off; HS_long_preset=off,delete,coupling off in every thesis run
+SimConfig.state_coupling_R_core_angstrom,option,,B2=3.2; B3=3.2; h405=3.2; T0_18A=3.2; T0_18A_stuck=3.2; T0_9A=3.2; T0_9A_h405=3.2; HS_9A=3.2; HS_18A=3.2; HS_long_preset=3.2,delete,coupling off in every thesis run
+SimConfig.state_coupling_rho_shell_per_A3,option,,B2=0.03; B3=0.03; h405=0.03; T0_18A=0.03; T0_18A_stuck=0.03; T0_9A=0.03; T0_9A_h405=0.03; HS_9A=0.03; HS_18A=0.03; HS_long_preset=0.03,delete,coupling off in every thesis run
+SimConfig.ce_channel_mode,option,,B2=off; B3=off; h405=off; T0_18A=off; T0_18A_stuck=off; T0_9A=off; T0_9A_h405=off; HS_9A=off; HS_18A=off; HS_long_preset=off,delete,channel off in every thesis run
+SimConfig.ce_channel_weights,option,,"B2=(0.3, 0.5, 0.2); B3=(0.3, 0.5, 0.2); h405=(0.3, 0.5, 0.2); T0_18A=(0.3, 0.5, 0.2); T0_18A_stuck=(0.3, 0.5, 0.2); T0_9A=(0.3, 0.5, 0.2); T0_9A_h405=(0.3, 0.5, 0.2); HS_9A=(0.3, 0.5, 0.2); HS_18A=(0.3, 0.5, 0.2); HS_long_preset=(0.3, 0.5, 0.2)",delete,channel off in every thesis run
+SimConfig.ce_fraction_f,option,,B2=0.8; B3=0.8; h405=0.8; T0_18A=0.8; T0_18A_stuck=0.8; T0_9A=0.8; T0_9A_h405=0.8; HS_9A=0.8; HS_18A=0.8; HS_long_preset=0.8,delete,channel off in every thesis run
+SimConfig.ce_channel_sigma_eV,option,,"B2=(0.42, 0.31, 0.55); B3=(0.42, 0.31, 0.55); h405=(0.42, 0.31, 0.55); T0_18A=(0.42, 0.31, 0.55); T0_18A_stuck=(0.42, 0.31, 0.55); T0_9A=(0.42, 0.31, 0.55); T0_9A_h405=(0.42, 0.31, 0.55); HS_9A=(0.42, 0.31, 0.55); HS_18A=(0.42, 0.31, 0.55); HS_long_preset=(0.42, 0.31, 0.55)",delete,channel off in every thesis run
+SimConfig.ce_single_ker_eV,option,,B2=0.53; B3=0.53; h405=0.53; T0_18A=0.53; T0_18A_stuck=0.53; T0_9A=0.53; T0_9A_h405=0.53; HS_9A=0.53; HS_18A=0.53; HS_long_preset=0.53,delete,channel off in every thesis run
+SimConfig.ce_q3_partner_mask,option,,B2=True; B3=True; h405=True; T0_18A=True; T0_18A_stuck=True; T0_9A=True; T0_9A_h405=True; HS_9A=True; HS_18A=True; HS_long_preset=True,delete,channel off in every thesis run
+SimConfig.ce_internal_energy_partition_fractions,option,,B2=None; B3=None; h405=None; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,delete,channel off in every thesis run
+SimConfig.exit_strip_mode,option,,B2=off; B3=off; h405=off; T0_18A=off; T0_18A_stuck=off; T0_9A=off; T0_9A_h405=off; HS_9A=off; HS_18A=off; HS_long_preset=off,delete,strip off in every thesis run
+SimConfig.exit_strip_v_ref,option,,B2=9.9; B3=9.9; h405=9.9; T0_18A=9.9; T0_18A_stuck=9.9; T0_9A=9.9; T0_9A_h405=9.9; HS_9A=9.9; HS_18A=9.9; HS_long_preset=9.9,delete,strip off in every thesis run
+SimConfig.exit_strip_exponent,option,,B2=2.0; B3=2.0; h405=2.0; T0_18A=2.0; T0_18A_stuck=2.0; T0_9A=2.0; T0_9A_h405=2.0; HS_9A=2.0; HS_18A=2.0; HS_long_preset=2.0,delete,strip off in every thesis run
+SimConfig.exit_strip_protect_j0,option,,B2=1.75; B3=1.75; h405=1.75; T0_18A=1.75; T0_18A_stuck=1.75; T0_9A=1.75; T0_9A_h405=1.75; HS_9A=1.75; HS_18A=1.75; HS_long_preset=1.75,delete,strip off in every thesis run
+SimConfig.exit_strip_width_rungs,option,,B2=0.75; B3=0.75; h405=0.75; T0_18A=0.75; T0_18A_stuck=0.75; T0_9A=0.75; T0_9A_h405=0.75; HS_9A=0.75; HS_18A=0.75; HS_long_preset=0.75,delete,strip off in every thesis run
+SimConfig.exit_strip_carry_eV,option,,B2=0.025; B3=0.025; h405=0.025; T0_18A=0.025; T0_18A_stuck=0.025; T0_9A=0.025; T0_9A_h405=0.025; HS_9A=0.025; HS_18A=0.025; HS_long_preset=0.025,delete,strip off in every thesis run
+SimConfig.noise_form,option,,B2=none; B3=none; h405=none; T0_18A=none; T0_18A_stuck=none; T0_9A=none; T0_9A_h405=none; HS_9A=none; HS_18A=none; HS_long_preset=none,delete,"Tier-3 stub, read by nothing in a thesis run"
+SimConfig.noise_calibration,option,,B2=hard_sphere_variance; B3=hard_sphere_variance; h405=hard_sphere_variance; T0_18A=hard_sphere_variance; T0_18A_stuck=hard_sphere_variance; T0_9A=hard_sphere_variance; T0_9A_h405=hard_sphere_variance; HS_9A=hard_sphere_variance; HS_18A=hard_sphere_variance; HS_long_preset=hard_sphere_variance,delete,"Tier-3 stub, read by nothing in a thesis run"
+SimConfig.noise_geometry,option,,B2=longitudinal; B3=longitudinal; h405=longitudinal; T0_18A=longitudinal; T0_18A_stuck=longitudinal; T0_9A=longitudinal; T0_9A_h405=longitudinal; HS_9A=longitudinal; HS_18A=longitudinal; HS_long_preset=longitudinal,delete,"Tier-3 stub, read by nothing in a thesis run"
+SimConfig.noise_low_v_behavior,option,,B2=vanish; B3=vanish; h405=vanish; T0_18A=vanish; T0_18A_stuck=vanish; T0_9A=vanish; T0_9A_h405=vanish; HS_9A=vanish; HS_18A=vanish; HS_long_preset=vanish,delete,"Tier-3 stub, read by nothing in a thesis run"
+SimConfig.validation_histogram_metric,option,,B2=wasserstein; B3=wasserstein; h405=wasserstein; T0_18A=wasserstein; T0_18A_stuck=wasserstein; T0_9A=wasserstein; T0_9A_h405=wasserstein; HS_9A=wasserstein; HS_18A=wasserstein; HS_long_preset=wasserstein,delete,"Tier-3 stub, read by nothing in a thesis run"
+SimConfig.relaxation_stage_enabled,option,,B2=False; B3=False; h405=False; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,delete,E2 (C1)
+SimConfig.relaxation_time_ps,option,,B2=8000.0; B3=8000.0; h405=8000.0; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,delete,E2 (C1)
+SimConfig.relaxation_dt_ps,option,,B2=None; B3=None; h405=None; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,delete,E2 (C1)
+SimConfig.relaxation_forces,option,,B2=coulomb; B3=coulomb; h405=coulomb; T0_18A=coulomb; T0_18A_stuck=coulomb; T0_9A=coulomb; T0_9A_h405=coulomb; HS_9A=coulomb; HS_18A=coulomb; HS_long_preset=coulomb,delete,E2 (C1)
+SimConfig.relaxation_dissipation,option,,B2=landau_gated_drag; B3=landau_gated_drag; h405=landau_gated_drag; T0_18A=zero_gamma; T0_18A_stuck=zero_gamma; T0_9A=zero_gamma; T0_9A_h405=zero_gamma; HS_9A=zero_gamma; HS_18A=zero_gamma; HS_long_preset=zero_gamma,delete,E2 (C1)
+SimConfig.detection_stage_enabled,option,,B2=True; B3=True; h405=True; T0_18A=False; T0_18A_stuck=False; T0_9A=False; T0_9A_h405=False; HS_9A=False; HS_18A=False; HS_long_preset=False,keep,
+SimConfig.detection_time_ps,option,,B2=8530000.0; B3=8530000.0; h405=8530000.0; T0_18A=None; T0_18A_stuck=None; T0_9A=None; T0_9A_h405=None; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
+SimConfig.detection_droplet_retained_policy,option,,B2=exclude_all_coupled; B3=exclude_all_coupled; h405=exclude_all_coupled; T0_18A=refuse; T0_18A_stuck=refuse; T0_9A=refuse; T0_9A_h405=refuse; HS_9A=refuse; HS_18A=refuse; HS_long_preset=refuse,rewire,active value exclude_all_coupled only
+SimConfig.detection_coulomb_closure,option,,B2=partner_aware; B3=partner_aware; h405=partner_aware; T0_18A=none; T0_18A_stuck=none; T0_9A=none; T0_9A_h405=none; HS_9A=none; HS_18A=none; HS_long_preset=none,rewire,active value partner_aware only
+SimConfig.self_bound_gate_release,option,,B2=decoupled; B3=decoupled; h405=decoupled; T0_18A=never; T0_18A_stuck=never; T0_9A=never; T0_9A_h405=never; HS_9A=never; HS_18A=never; HS_long_preset=never,rewire,active value decoupled only; default never differs from production
+SimConfig.output_dir,option,,B2=results; B3=results; h405=results; T0_18A=results; T0_18A_stuck=results; T0_9A=results; T0_9A_h405=results; HS_9A=results; HS_18A=results; HS_long_preset=results,keep,
+SimConfig.data_dir,option,,B2=data/reference; B3=data/reference; h405=data/reference; T0_18A=data/reference; T0_18A_stuck=data/reference; T0_9A=data/reference; T0_9A_h405=data/reference; HS_9A=data/reference; HS_18A=data/reference; HS_long_preset=data/reference,keep,
+THESIS_DISCUSSION 15.1,number,thesis text,g13_decoupled_table.csv; thesis_observables_extra.csv,keep,final thesis numbers
+THESIS_DISCUSSION 15.2,number,thesis text,thesis_observables_per_n.csv,keep,final thesis numbers
+THESIS_DISCUSSION 16,number,thesis text,g13_*.csv; tier2_g13_shed_timing.py,keep,latest
+THESIS_DISCUSSION 1,number,thesis text,g6_chord_stats.csv g7_ke_width.csv; tier2_g6_chord_map.py,keep,"G6 refresh, decoupled"
+THESIS_DISCUSSION 13,number,thesis text,IHe_KED_beta.csv IHe_KED_beta_vs_v.csv; tier2_anisotropy_figure.py,keep,
+THESIS_DISCUSSION 11,number,thesis text,h405_pp35_table.csv,delete,numbers superseded by 15; h405_pp35_table.csv stays because tier2_g6_chord_map reads it
+THESIS_DISCUSSION 2,number,thesis text,droplet samplers (D0 15.8-15.9),keep,[U] not in the thesis text: kept in docs only (P6)
+THESIS_DISCUSSION 7,number,thesis text,g9_columns g415_table detfix_postpickup_table,keep,[U] not in the thesis text: kept in docs only (P6)
+THESIS_DISCUSSION 10,number,thesis text,b2_seff_table b2_seff_timing,keep,[U] not in the thesis text: kept in docs only (P6)
+THESIS_DISCUSSION 14,number,thesis text,g5_postpickup_table g5_winners_table_ihekedv2,keep,[U] not in the thesis text: kept in docs only (P6)
+docs/handover/ALLOWLIST.csv,doc,,,keep,temporary; removed in P6
