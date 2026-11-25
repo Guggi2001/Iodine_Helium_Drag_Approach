@@ -11,7 +11,7 @@ code should have a tunable magic number.
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Literal, Optional
 
 import numpy as np
@@ -2527,3 +2527,18 @@ def check_drag_config(cfg: "SimConfig") -> None:
             "but drag_coefficients carries no bundle_id stamp -- the "
             "coefficients did not come from that bundle"
         )
+
+
+def with_current_bundle_ids(cfg: SimConfig) -> SimConfig:
+    """``cfg`` with historical bundle ids replaced by the current ones.
+
+    For comparing a finished run's loaded config with a freshly built one; the
+    ids are labels, every other field is returned unchanged.
+    """
+    coeffs = cfg.drag_coefficients
+    if coeffs is not None:
+        coeffs = replace(
+            coeffs, bundle_id=current_drag_bundle_id(coeffs.bundle_id))
+    return replace(
+        cfg, drag_bundle=current_drag_bundle_id(cfg.drag_bundle),
+        drag_coefficients=coeffs)

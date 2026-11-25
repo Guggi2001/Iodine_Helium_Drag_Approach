@@ -66,6 +66,9 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    score_row as _row,
+)
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
@@ -88,10 +91,7 @@ from scripts.gen_tier2_detfix_battery import (  # noqa: E402
 )
 from scripts.post_processing.tier2atlas_g4step2_battery_table import (  # noqa: E402
     FINALS_TABLE_CSV,
-    GATE_N1,
-    GATE_NBAR,
     SAVE_CSV_PATH as E2_BATTERY_CSV,
-    _s,
     lowke_columns,
 )
 from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
@@ -141,17 +141,6 @@ def _pipeline(cfg) -> str:
     """The pipeline identity derived from cfg (§5.4 D5; no stamp field)."""
     stage = "E2" if cfg.relaxation_stage_enabled else "skip"
     return f"{stage}+closure:{cfg.detection_coulomb_closure}"
-
-
-def _row(label, member, pipeline, seed, read, ab, ked) -> dict[str, Any]:
-    row: dict[str, Any] = {"label": label, "member": member,
-                           "pipeline": pipeline, "seed": seed}
-    row.update(observable_columns(read, ab, ked))
-    row.update(lowke_columns(read))
-    row["md_gate"] = int(GATE_N1[0] <= float(row["n1_solv"]) <= GATE_N1[1]
-                         and GATE_NBAR[0] <= float(row["nbar_det"]) <= GATE_NBAR[1])
-    row["S"] = _s(row)
-    return row
 
 
 def _csv_row(path: Path, label: str) -> dict[str, str]:

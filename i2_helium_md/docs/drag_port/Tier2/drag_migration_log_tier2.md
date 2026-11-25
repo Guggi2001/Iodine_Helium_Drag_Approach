@@ -14579,3 +14579,37 @@ vs outside the droplet, by detected class, against Albrechtsen et al. 2023
   4.8 / 3.3 / 2.1 % after 50 / 100 / 400 ps, 36 % of ions after 400 ps;
   bare ions exit at 2.7 ps with n = 21 (no in-droplet shed). KE at exit
   still read at the first stored column after exit (`n_exit_col_mean`).
+
+## 2026-11-25 — Handover P2: thesis presets, battery module, regeneration drivers
+
+Plan `docs/superpowers/plans/2026-11-25-handover-p2.md`. Additive; physics, draw
+order, checkpoint schema and `SimConfig` defaults unchanged.
+
+- Presets `drag_production_B2` / `drag_effective_B3` / `drag_contrast_h405`,
+  `THESIS_PRESETS`, `THESIS_MEMBER_SEEDS`, `LEGACY_THESIS_RUNS`, `same_model`.
+  All 18 stored member configs are rebuilt field by field.
+- `simulation/battery.py` (run, skip or refuse; pool): the pools B2 / B3 / h405
+  are rebuilt array for array. `postprocess/battery_score.py`: the `B2`, `B3`,
+  `h405` rows of `g13_decoupled_table.csv` reproduce to 4 dp.
+- `scripts/run_thesis_laws.py`: on the finished runs every member and pool is
+  skipped, no file changes. MD oracle: B2 s1 rerun in a scratch directory; every
+  array of neutral / ion / stage1_events / detection.npz equals the stored run.
+- `scripts/run_legacy_and_tier0.py`: the six Tier-0 runs are recognised (configs
+  equal). Three seeded legacy runs: `legacy_9A_N2000`, `legacy_18A_N2000`,
+  `legacy_droplet_N20000` (git-ignored). Both stages start from `cfg.seed`, so
+  they draw the same stream (existing convention, also of the thesis runs).
+- Seeded legacy runs vs committed figures: force per speed bin chi² 6.5 / 10
+  (9 Å) and 15.5 / 8 (18 Å); mean KE at n = 3 is 0.7490 eV against the committed
+  0.7282 eV (+1.9 combined standard errors; unseeded rerun +3.0). Not a code
+  change: an N = 50 seeded droplet run with the package of 2026-05-20 (`49e48af`)
+  and with today's agrees to rounding. Committed figures stay as submitted.
+- The rung tables, `with_current_bundle_ids`, `pool_members` and the score helpers
+  moved into the package; the old scripts import them back until P4.
+- Run directories are refused when partial, truncated, unreadable, of another
+  model, or claimed by a running process (`.running`, left behind by a crash).
+  Pooling also refuses a detection file of the wrong size and the same ions under
+  two seeds. The three s1 configs are test fixtures (`tests/fixtures/thesis_laws`),
+  so the laws are pinned on a fresh clone.
+- User decisions for P3 (design D8–D10): the `never` members are dropped from g6 /
+  g13, anchors in figure scripts report instead of stopping, and
+  `regen_tier2_stage1_events.py` is deleted in P4.

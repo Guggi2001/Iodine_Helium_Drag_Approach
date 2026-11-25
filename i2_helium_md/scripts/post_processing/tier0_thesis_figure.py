@@ -57,6 +57,7 @@ OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
 GATE_A = 3.5                # density-gate width of every law here [A]
 
 from i2_helium_md import load_capped_cc, load_drag_bundle, tddft_reference_path  # noqa: E402
+from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     build_case_setup,
     evaluate_form_objective,
@@ -134,11 +135,16 @@ def run_18a() -> dict:
     return out, setup21
 
 
+def h405_9a_cfg() -> SimConfig:
+    """Radial 9 A Tier-0 config of the re-landed h405 (G4.12 bound settings, m = 21, 3.5 A)."""
+    return build_tier0_cfg("9A", "CC", num_molecules=BOUND_N,
+                           ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS,
+                           seed=SEED, m_eff_amu=G11_M_EFF_AMU)
+
+
 def _h405_9a_run() -> Path:
-    """Radial 9 A Tier-0 run of the re-landed h405 (G4.12 bound settings, m = 21, 3.5 A)."""
-    cfg = build_tier0_cfg("9A", "CC", num_molecules=BOUND_N,
-                          ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS,
-                          seed=SEED, m_eff_amu=G11_M_EFF_AMU)
+    """The finished :func:`h405_9a_cfg` run, generated if missing."""
+    cfg = h405_9a_cfg()
     run_dir = RUNS_ROOT / run_dir_name("9A", "CC", BOUND_N, "g11fig_h405pp35m21")
     if not (run_dir / "ion.npz").exists():
         run = RunDirectory(run_dir)

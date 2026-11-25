@@ -11,10 +11,13 @@ Start from a preset and override whichever fields you need:
 from __future__ import annotations
 
 import json
-from dataclasses import replace
+from collections.abc import Callable
+from dataclasses import fields, replace
+from functools import partial
 from pathlib import Path
 
 from .config import SimConfig
+from .physics.dissociation_ladder import rq4graded_rungs_eV
 from .physics.drag import (
     DragCoefficients,
     CAPPED_CUBIC,
@@ -22,6 +25,7 @@ from .physics.drag import (
     REALIZED_FORMS,
     _REQUIRED_COEFF_KEYS,
 )
+from .physics.shell_schedule import complex_mass_amu
 
 # Anchor for the frozen drag-coefficient layout (data/reference/drag/<bundle>/...).
 # ``parents[1]`` is the project root: this file is i2_helium_md/i2_helium_md/
@@ -506,3 +510,178 @@ def single_pulse_N2000_18Angst_drag(**overrides) -> SimConfig:
         binding_energy_I_ion_eV=coeffs.effective_binding_energy_I_ion_eV,
     )
     return replace(cfg, **overrides)
+
+
+# =============================================================================
+# Thesis production laws: B2 ("LQ" in the thesis), B3, h405
+# =============================================================================
+
+#: Battery members -> RNG seeds; the three laws share them.
+THESIS_MEMBER_SEEDS: dict[str, int] = {
+    "s1": 20260730, "s2": 20260731, "s3": 20260732,
+    "s4": 20260733, "s5": 20260734, "s6": 20260729,
+}
+
+# Coulomb energy available to one ion [eV]: the normalisation of the birth
+# internal energy E_int(0) = internal_energy_partition_fraction * this value.
+_THESIS_COULOMB_AVAILABLE_EV = 2.7
+
+
+def _thesis_battery_base(member: str) -> SimConfig:
+    """Everything B2, B3 and h405 share: source, mass model, cooling, detection."""
+    if member not in THESIS_MEMBER_SEEDS:
+        raise KeyError(f"unknown member {member!r}; expected one of {list(THESIS_MEMBER_SEEDS)}")
+    return single_pulse_N2000(
+        seed=THESIS_MEMBER_SEEDS[member],
+        num_molecules=1000,
+        ion_simulation_time=500.005,          # [ps]; 50001 steps, the last at t_h = 500 ps
+        # Source and geometry: I2 placed thermally in post-pickup droplets.
+        R0_GS_angstrom=2.666,
+        single_initial_position=False,
+        use_single_droplet_size=False,
+        droplet_size_sampler_mode="post_pickup",
+        binding_energy_molecule_K=313.2,
+        # Drag acts where helium is: 3.5 A density gate.
+        drag_spatial_gate="erf_independent",
+        drag_gate_steepness=3.5,
+        # Mass model: 21 He at birth, pickup + RRK evaporation. The drag
+        # coefficients were extracted at constant mass; B2 passes Tier 0
+        # unchanged at 21 He, hence the accepted mass pairing.
+        mass_scenario="biphasic",
+        mass_initial_amu=complex_mass_amu(21),
+        allow_inconsistent_mass_pairing=True,
+        initial_shell_model="density_tied",
+        pickup_rate_coefficient=0.9,          # [1/ps]
+        evap_rrk_dof=8.0,
+        evaporation_shed_convention="co_moving",
+        dissociation_ladder="tabulated",
+        tabulated_ladder_rungs_eV=rq4graded_rungs_eV(),
+        # Ion internal energy: birth partition and cooling to the helium.
+        coulomb_available_eV=_THESIS_COULOMB_AVAILABLE_EV,
+        internal_energy_partition_law="sigma_proportional",
+        internal_energy_retained_fraction=0.1,
+        cooling_spatial_gate="density_scaled",
+        # Detection after 8.53 us; the self-bound gate is lifted outside the droplet.
+        detection_stage_enabled=True,
+        detection_time_ps=8530000.0,
+        detection_droplet_retained_policy="exclude_all_coupled",
+        detection_coulomb_closure="partner_aware",
+        self_bound_gate_release="decoupled",
+        # Stored by the thesis runs but without effect here (E2 stage off,
+        # hard-sphere path not entered).
+        relaxation_time_ps=8000.0,
+        relaxation_dissipation="landau_gated_drag",
+        v_limit_m_per_s=58.0,
+    )
+
+
+def _with_thesis_law(
+    base: SimConfig, coeffs: DragCoefficients, bundle: str, *,
+    E0_eV: float, tau_ps: float, **extra,
+) -> SimConfig:
+    """``base`` under one drag law, its birth energy ``E0_eV`` and cooling time."""
+    return replace(
+        base,
+        drag_form=coeffs.form,
+        drag_coefficients=coeffs,
+        drag_bundle=bundle,
+        binding_energy_I_ion_eV=coeffs.effective_binding_energy_I_ion_eV,
+        internal_energy_partition_fraction=E0_eV / _THESIS_COULOMB_AVAILABLE_EV,
+        internal_energy_cooling_tau_ps=tau_ps,
+        **extra,
+    )
+
+
+def drag_production_B2(member: str = "s1", **overrides) -> SimConfig:
+    """B2, the thesis production law ("LQ"): the TDDFT ridge point c = 1.6 amu/A.
+
+    Parameters
+    ----------
+    member : str
+        Battery member, a key of :data:`THESIS_MEMBER_SEEDS` (sets the seed).
+    **overrides
+        Any ``SimConfig`` field to override.
+
+    Raises
+    ------
+    KeyError
+        On an unknown member.
+    """
+    coeffs = load_drag_bundle("LQ", expected_m_eff_amu=_DRAG_M_EFF_AMU)
+    cfg = _with_thesis_law(_thesis_battery_base(member), coeffs, "LQ",
+                           E0_eV=0.3297, tau_ps=6.4)
+    return replace(cfg, **overrides)
+
+
+def drag_effective_B3(member: str = "s1", **overrides) -> SimConfig:
+    """B3, the effective high-tail variant (a = 19.8 amu/ps, 48.2 meV well).
+
+    Not a TDDFT (Tier-0) law. Arguments as :func:`drag_production_B2`.
+    """
+    coeffs = load_drag_bundle("LQ_eff", expected_m_eff_amu=_DRAG_M_EFF_AMU)
+    cfg = _with_thesis_law(_thesis_battery_base(member), coeffs, "LQ_eff",
+                           E0_eV=0.3389, tau_ps=6.4)
+    return replace(cfg, **overrides)
+
+
+def drag_contrast_h405(member: str = "s1", **overrides) -> SimConfig:
+    """h405, the capped-cubic contrast law, re-landed at the 3.5 A gate.
+
+    The bundle was extracted at the 14.2 A gate, hence the accepted gate
+    pairing. Arguments as :func:`drag_production_B2`.
+    """
+    coeffs = load_capped_cc()
+    cfg = _with_thesis_law(_thesis_battery_base(member), coeffs, "CC",
+                           E0_eV=0.424, tau_ps=4.4,
+                           allow_inconsistent_gate_pairing=True)
+    return replace(cfg, **overrides)
+
+
+#: Thesis law name -> preset.
+THESIS_PRESETS: dict[str, Callable[..., SimConfig]] = {
+    "B2": drag_production_B2,
+    "B3": drag_effective_B3,
+    "h405": drag_contrast_h405,
+}
+
+
+#: Seeded hard-sphere runs behind the legacy figures: run directory -> builder.
+#: The runs of the submitted figures were unseeded, hence the new names.
+LEGACY_THESIS_RUNS: dict[str, Callable[[], SimConfig]] = {
+    "legacy_9A_N2000": partial(single_pulse_N2000, num_molecules=2000, seed=20261125),
+    "legacy_18A_N2000": partial(
+        single_pulse_N2000_18Angst, num_molecules=2000, seed=20261126),
+    "legacy_droplet_N20000": partial(
+        single_pulse_droplet_distribution, num_molecules=20000, seed=20261127),
+}
+
+
+def same_model(a: SimConfig, b: SimConfig) -> list[str]:
+    """Names of the fields in which two configs differ; empty = the same model.
+
+    The labels ``drag_bundle`` and ``drag_coefficients.bundle_id`` are ignored:
+    the coefficients are stored inline, so the labels carry no physics (the
+    stored B3 runs are labelled ``LQ``, finished runs keep historical ids).
+
+    Parameters
+    ----------
+    a, b : SimConfig
+        Configs to compare, built or loaded from a ``cfg.json``.
+
+    Returns
+    -------
+    list of str
+        Differing field names in declaration order; values compare exactly.
+    """
+    def unlabelled(cfg: SimConfig) -> SimConfig:
+        coeffs = cfg.drag_coefficients
+        if coeffs is not None:
+            coeffs = replace(coeffs, bundle_id=None)
+        return replace(cfg, drag_bundle="CC", drag_coefficients=coeffs)
+
+    def value(cfg: SimConfig, name: str):
+        v = getattr(cfg, name)
+        return tuple(v) if isinstance(v, list) else v    # a run loads lists as tuples
+
+    a, b = unlabelled(a), unlabelled(b)
+    return [f.name for f in fields(SimConfig) if value(a, f.name) != value(b, f.name)]

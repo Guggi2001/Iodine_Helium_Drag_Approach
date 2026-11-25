@@ -53,6 +53,10 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    PROVISIONAL_NORM,
+    joint_score,
+)
 from scripts.gen_tier2atlas_g3ring import (  # noqa: E402
     verify_twin_preregistration,
 )
@@ -97,14 +101,6 @@ BATTERY_RUNS = tuple(
     for i in range(1, 6)
 )
 
-# The design's provisional normalizers (plan §3.5e). Every S is printed under
-# these AND under the measured set until the §1.2 deep-bin item is settled.
-PROVISIONAL_NORM = {
-    "w1_ref": 0.571,
-    "midhot_ln": float(np.log(1.15)),
-    "deepke_ln": float(np.log(1.15)),
-}
-
 # The plan §1.2 record this report checks the measured deep-bin SD against.
 RECORDED_DEEP_READ = (0.0603, 0.0033)
 
@@ -112,44 +108,6 @@ RECORDED_DEEP_READ = (0.0603, 0.0033)
 TWIN_CROSSCHECK_TOL = 1e-6
 
 # ---------------------------------------------------------------------------
-
-
-def joint_score(
-    w1: float,
-    midhot: float,
-    deepke: float,
-    norm: dict[str, float],
-    axes: Sequence[str] = ("w1", "midhot", "deepke"),
-) -> float:
-    """The plan §3.5e joint score. Lower is better; 0 is a perfect cell.
-
-    ``S = W1/w1_ref + |ln midHot|/midhot_ln + |ln deepKE|/deepke_ln``
-
-    Equal weights are a **declared convention, not a truth**: each term is the
-    observable's distance from the experiment divided by a scale that makes the
-    three commensurable. ``axes`` drops any term Block 0 did not license, so an
-    unlicensed observable never silently contributes to a ranking.
-
-    Units: ``w1`` is a Wasserstein distance in He-number bins; ``midhot`` and
-    ``deepke`` are dimensionless sim/ref KE ratios (1.0 = experiment). Returns
-    NaN if any *scored* axis is NaN.
-    """
-    total = 0.0
-    if "w1" in axes:
-        total += w1 / norm["w1_ref"]
-    if "midhot" in axes:
-        total += abs(math.log(midhot)) / norm["midhot_ln"] if midhot > 0 \
-            else float("nan")
-    if "deepke" in axes:
-        total += abs(math.log(deepke)) / norm["deepke_ln"] if deepke > 0 \
-            else float("nan")
-    if any(np.isnan(v) for v in (
-        w1 if "w1" in axes else 0.0,
-        midhot if "midhot" in axes else 1.0,
-        deepke if "deepke" in axes else 1.0,
-    )):
-        return float("nan")
-    return float(total)
 
 
 def _paired(twin_vals: Iterable[float], md_vals: Iterable[float]):

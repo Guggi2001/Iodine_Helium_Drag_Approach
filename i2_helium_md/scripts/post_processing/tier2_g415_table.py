@@ -23,6 +23,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import numpy as np  # noqa: E402
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    tail_columns,
+)
 from i2_helium_md.postprocess.abundance_loader import load_he_abundance_reference  # noqa: E402
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
@@ -46,18 +49,6 @@ from scripts.post_processing.tier2atlas_geometry_table import (  # noqa: E402
 
 OUT_CSV = RUNS_ROOT / "h2b_forward_model" / "g415_table.csv"
 G414_TABLE_CSV = RUNS_ROOT / "h2b_forward_model" / "g414_table.csv"
-
-
-def tail_columns(read, ked) -> dict[str, float]:
-    """High-n tail and deep-bin KE (D0 §1.G4.14): solvated n >= 15 mass, max
-    scored n, and mean KE / reference mean KE over n = 10-14 (bins with > 3 ions)."""
-    ns, ke = np.asarray(read.n_scored), np.asarray(read.ke_scored_eV)
-    solv = ns >= 1
-    ref = dict(zip(np.asarray(ked.n).astype(int), np.asarray(ked.mean_KE_eV, dtype=float)))
-    ratios = [ke[ns == k].mean() / ref[k] for k in range(10, 15) if (ns == k).sum() > 3]
-    return {"mass_n15plus_solv": float((ns[solv] >= 15).mean()),
-            "n_max": int(ns.max()),
-            "KE10_14_over_ref": float(np.mean(ratios)) if ratios else float("nan")}
 
 
 def main() -> int:

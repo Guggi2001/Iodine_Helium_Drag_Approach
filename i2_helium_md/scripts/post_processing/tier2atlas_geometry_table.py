@@ -47,6 +47,15 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    ABUNDANCE_REFERENCE_CSV,
+    IHE_KED_REFERENCE_CSV,
+    INCLUDE_SIM_SE,
+    KE_N_MIN,
+    MIN_KE_BIN_COUNT,
+    N1_ANCHOR,
+    observable_columns,
+)
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
@@ -91,19 +100,6 @@ ORACLE_RECORDED: dict[str, float] = {
 }
 ORACLE_TOL = 0.002
 
-ABUNDANCE_REFERENCE_CSV = (
-    PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
-)
-IHE_KED_REFERENCE_CSV = (
-    PROJECT_ROOT / "data" / "reference" / "ihe_ked" / "IHe_KED_reference.csv"
-)
-
-# KE-curve scoring knobs — the committed §I.11.4.1 / I77 conventions.
-KE_N_MIN = 1
-MIN_KE_BIN_COUNT = 2
-INCLUDE_SIM_SE = True
-N1_ANCHOR = "median"
-
 SAVE_CSV_PATH = None  # e.g. RUNS_ROOT / "atlas_geometry_grid.csv"
 
 # ---------------------------------------------------------------------------
@@ -147,46 +143,6 @@ def geometry_columns(run_dir: Path) -> dict[str, Any]:
         "N_he": cfg["single_droplet_size"],
         "r0_mean_A": float(r0.mean()),
         "depth_mean_A": float((R - r0).mean()),
-    }
-
-
-def observable_columns(read, abundance_ref, ked_ref) -> dict[str, Any]:
-    """The committed observable vector for one reduced read (pure).
-
-    Extracted from :func:`observable_row` (G4 Step 2 Task 2) so pooled
-    in-memory reads (``pool_confirmation_reads``) score through the same
-    code path as run-dir reads — key set and numerics unchanged.
-    """
-    hist = score_histogram_vs_reference(read, abundance_ref)
-    ke = score_ke_curve_vs_reference(
-        read, ked_ref, n_min=KE_N_MIN, min_count=MIN_KE_BIN_COUNT,
-        include_sim_se=INCLUDE_SIM_SE, n1_anchor=N1_ANCHOR,
-    )
-    mid = midhot_ratio(read, ked_ref)
-    deep = deep_bin_ke_ratio(read, ked_ref)
-    return {
-        "num_scored": read.num_scored,
-        "trap": read.trapped_frac,
-        # Decomposed on purpose (plan §3.5b item 2): trap_bound is the exact
-        # conservative verdict (physics — the ion cannot escape at any
-        # relaxation length), trap_marginal is a MODELLING exclusion under
-        # `exclude_all_coupled`, conditional on the drag law and the window.
-        # Never merge them in a table; `trap` is their sum.
-        "trap_bound": read.trap_bound_frac,
-        "trap_marg": read.trap_marginal_frac,
-        "supp": read.suppressed_frac,
-        "nbar_det": read.n_mean,
-        "n1_solv": hist.sim_n1,
-        "w1_solv": hist.w1_solvated,
-        "midHot": mid.value,
-        "midHot_bins": mid.n_bins,
-        "deepKE": deep.value,
-        "deepKE_bins": deep.n_bins,
-        "chi2_med": ke.chi2_profiled,
-        # Reported next to chi2 on purpose: the deep-birth cells vacate the
-        # low-n bins, so their chi2 is a sum over far fewer terms and a smaller
-        # value there is NOT a better KE landing.
-        "ke_npts": ke.n_points,
     }
 
 

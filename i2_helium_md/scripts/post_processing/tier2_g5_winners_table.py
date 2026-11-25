@@ -37,6 +37,9 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    law_columns as _law_columns,
+)
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
@@ -95,16 +98,6 @@ LAWS: dict[str, tuple[str, str, Path, Optional[str]]] = {
 }
 
 # ---------------------------------------------------------------------------
-
-
-def _law_columns(cfg) -> dict[str, Any]:
-    co = cfg.drag_coefficients.coefficients
-    return {"drag_form": cfg.drag_form, "drag_coefficients": dict(co),
-            "e_bind_eV": float(cfg.binding_energy_I_ion_eV),
-            "E0_eV": float(cfg.internal_energy_partition_fraction * cfg.coulomb_available_eV),
-            "tau_ps": float(cfg.internal_energy_cooling_tau_ps),
-            "sampler": cfg.droplet_size_sampler_mode,
-            "gate_A": float(cfg.drag_gate_steepness)}
 
 
 def experiment_row(ab, ked) -> dict[str, Any]:

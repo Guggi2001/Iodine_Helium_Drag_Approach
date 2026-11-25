@@ -152,8 +152,10 @@ from scripts.tier2_common import (  # noqa: E402
     tier2_confirmation_run_dir_name,
 )
 from i2_helium_md.config import SimConfig  # noqa: E402
-from i2_helium_md.physics.constants import N_STAR  # noqa: E402
-from i2_helium_md.physics.dissociation_ladder import d0_of_n  # noqa: E402
+from i2_helium_md.physics.dissociation_ladder import (  # noqa: E402
+    form_u_rungs_eV,
+    rq4graded_rungs_eV,
+)
 from i2_helium_md.simulation.detection_stage import run_detection_stage  # noqa: E402
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
 from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
@@ -179,39 +181,8 @@ _REQUIRED_ARTIFACTS: tuple[str, ...] = (
 # Ladder tables (generator-side; the Slice-T2 boundary)
 # =============================================================================
 
-# Base-table pins: the delivered mixture kappa=1 Form-U ladder (the config
-# defaults, stated explicitly so the tables are self-describing).
-LADDER_PICTURE_PIN = "statistical_mixture"
-LADDER_KAPPA_PIN = 1.0
-# Table height: N_STAR + 11 = 32, the Form-U cache height (T2 convention);
-# out-of-table occupancy above fails loudly at the lookup.
-LADDER_TABLE_HEIGHT = N_STAR + 11
-
-# rq4graded: the RQ4-graded diagnostic taper on rungs 1-3 (findings I51).
-RQ4GRADED_TAPER_MULTIPLIERS = (2.2, 1.5, 1.3)
 # floor1: the knob-free [IHe05] X2/3Pi first-rung depth [eV] (plan L3).
 FLOOR1_RUNG1_EV = 0.0133
-
-
-def form_u_rungs_eV() -> tuple[float, ...]:
-    """The delivered Form-U ladder read through ``d0_of_n(1..32)`` [eV].
-
-    Feeding this table back through ``dissociation_ladder="tabulated"`` is
-    bit-identical to Form-U (the Slice-T2 equivalence oracle) -- it is the
-    base every variant edits.
-    """
-    return tuple(
-        float(d0_of_n(n, picture=LADDER_PICTURE_PIN, kappa=LADDER_KAPPA_PIN))
-        for n in range(1, LADDER_TABLE_HEIGHT + 1)
-    )
-
-
-def rq4graded_rungs_eV() -> tuple[float, ...]:
-    """The rq4graded table [eV]: rungs 1-3 x (2.2, 1.5, 1.3), rest Form-U."""
-    rungs = list(form_u_rungs_eV())
-    for i, mult in enumerate(RQ4GRADED_TAPER_MULTIPLIERS):
-        rungs[i] *= mult
-    return tuple(rungs)
 
 
 def floor1_rungs_eV() -> tuple[float, ...]:

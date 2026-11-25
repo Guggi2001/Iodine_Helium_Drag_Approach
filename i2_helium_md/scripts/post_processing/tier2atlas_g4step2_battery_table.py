@@ -55,6 +55,13 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    GATE_N1,
+    GATE_NBAR,
+    LICENSED_AXES,
+    licensed_score as _s,
+    lowke_columns,
+)
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
@@ -95,16 +102,12 @@ SAVE_CSV_PATH = RUNS_ROOT / "h2b_forward_model" / "atlas_g4step2_battery.csv"
 
 FINALS_TABLE_CSV = RUNS_ROOT / "h2b_forward_model" / "atlas_g4finals_table.csv"
 
-# The finals S convention (Block-0-licensed axes, provisional norms).
-LICENSED_AXES = ("w1", "midhot")
 INCUMBENT = {"w1_solv": 0.5791, "midHot": 1.0108, "deepKE": 0.6327}
 W1_SEED_SD_STANDING = 0.0954    # per-seed SD at N = 1000 (Block 0)
 A037_N1000_S = 1.683            # GV-P3 bar (finals table, a037 at N = 1000)
 H405_BLOCK3_S = 1.559           # proximity reference (finals table)
 
 # Pre-registered GV bands (plan §3.5f).
-GATE_N1 = (0.19, 0.30)
-GATE_NBAR = (3.77, 4.37)
 GV_P2_W1 = (0.64, 0.78)
 
 # Committed-row oracle columns (4-decimal comparison).
@@ -117,35 +120,6 @@ ORACLE_ROW_COLS = ("nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE")
 LOWKE_REF = {1: ("median", 1.128), 2: ("mean", 0.706)}
 
 # ---------------------------------------------------------------------------
-
-
-def _s(row: dict[str, Any]) -> float:
-    """Joint score on the licensed axes, provisional norms (plan §3.5e/§3.5f)."""
-    return joint_score(float(row["w1_solv"]), float(row["midHot"]),
-                       float(row["deepKE"]), PROVISIONAL_NORM,
-                       axes=LICENSED_AXES)
-
-
-def lowke_columns(read) -> dict[str, Any]:
-    """The pre-registered low-n KE observables (mean/median/mode per bin).
-
-    Mode = midpoint of the tallest 40-bin histogram cell on [0, 3.5] eV
-    (display diagnostic; the scored quantities are KE1_mean / KE2_mean).
-    """
-    out: dict[str, Any] = {}
-    for n in (1, 2):
-        sel = read.ke_scored_eV[read.n_scored == n]
-        if sel.size < 5:
-            out[f"KE{n}_mean"] = float("nan")
-            out[f"KE{n}_med"] = float("nan")
-            out[f"KE{n}_mode"] = float("nan")
-            continue
-        hist, edges = np.histogram(sel, bins=40, range=(0.0, 3.5))
-        i = int(np.argmax(hist))
-        out[f"KE{n}_mean"] = float(sel.mean())
-        out[f"KE{n}_med"] = float(np.median(sel))
-        out[f"KE{n}_mode"] = float(0.5 * (edges[i] + edges[i + 1]))
-    return out
 
 
 def committed_h405_row() -> dict[str, str]:

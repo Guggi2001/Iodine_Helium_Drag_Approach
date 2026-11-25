@@ -62,6 +62,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.simulation.battery import pool_members  # noqa: E402
 from i2_helium_md.simulation.detection_stage import (  # noqa: E402
     DetectionResult,
     load_detection_result,
@@ -303,94 +304,6 @@ TARGETS: dict[str, tuple[list[str], list[int], str, str]] = {
     },
 }
 DEFAULT_TARGET = "lq"
-
-PAIR_SPOTCHECK_MOLECULES = 60      # sampled molecules for the pairing oracle
-PAIR_SPOTCHECK_SEED = 20260730
-
-SCALAR_FIELDS = ("num_molecules", "t_handover_ps", "detection_time_ps")
-
-
-def _field_groups() -> tuple[list[str], list[str]]:
-    """(per-ion field names, flat event field names) from the dataclass."""
-    per_ion, events = [], []
-    for f in dataclasses.fields(DetectionResult):
-        if f.name in SCALAR_FIELDS or f.name == "event_offsets":
-            continue
-        (events if f.name.startswith("event_") else per_ion).append(f.name)
-    return per_ion, events
-
-
-def pool_members(members: list[DetectionResult]) -> DetectionResult:
-    """Pair-preserving pool of equal-N members (block layout, CSR rebuild)."""
-    n = int(members[0].num_molecules)
-    if any(int(m.num_molecules) != n for m in members):
-        raise ValueError("members disagree on num_molecules")
-    for name in ("t_handover_ps", "detection_time_ps"):
-        vals = {float(getattr(m, name)) for m in members}
-        if len(vals) != 1:
-            raise ValueError(f"members disagree on scalar {name}: {vals}")
-
-    per_ion_fields, event_fields = _field_groups()
-    pooled: dict[str, object] = {
-        "num_molecules": n * len(members),
-        "t_handover_ps": float(members[0].t_handover_ps),
-        "detection_time_ps": float(members[0].detection_time_ps),
-    }
-    for name in per_ion_fields:
-        blocks_1 = [np.asarray(getattr(m, name))[:n] for m in members]
-        blocks_2 = [np.asarray(getattr(m, name))[n:] for m in members]
-        pooled[name] = np.concatenate(blocks_1 + blocks_2)
-
-    # Event CSR: gather each ion's slice in the pooled ion order.
-    order = [(mi, i) for mi in range(len(members)) for i in range(n)]
-    order += [(mi, i + n) for mi in range(len(members)) for i in range(n)]
-    counts = np.empty(len(order), dtype=np.int64)
-    slices: list[tuple[int, int, int]] = []
-    for row, (mi, i) in enumerate(order):
-        off = members[mi].event_offsets
-        s, e = int(off[i]), int(off[i + 1])
-        counts[row] = e - s
-        slices.append((mi, s, e))
-    offsets = np.zeros(len(order) + 1,
-                       dtype=np.asarray(members[0].event_offsets).dtype)
-    offsets[1:] = np.cumsum(counts)
-    pooled["event_offsets"] = offsets
-    for name in event_fields:
-        flats = [np.asarray(getattr(members[mi], name))[s:e]
-                 for mi, s, e in slices]
-        pooled[name] = np.concatenate(flats)
-
-    result = DetectionResult(**pooled)  # type: ignore[arg-type]
-
-    # Pairing oracle: sampled molecules' rows + event slices must equal the
-    # source member's rows for BOTH fragments at the block-layout indices.
-    rng = np.random.default_rng(PAIR_SPOTCHECK_SEED)
-    total = n * len(members)
-    for mol in rng.choice(total, size=min(PAIR_SPOTCHECK_MOLECULES, total),
-                          replace=False):
-        mi, j = divmod(int(mol), n)
-        for frag, (pool_i, member_i) in enumerate(
-                (((int(mol)), j), (int(mol) + total, j + n))):
-            m = members[mi]
-            for name in per_ion_fields:
-                if not np.array_equal(
-                        np.asarray(getattr(result, name))[pool_i],
-                        np.asarray(getattr(m, name))[member_i]):
-                    raise AssertionError(
-                        f"pairing oracle: {name} mismatch at pooled ion "
-                        f"{pool_i} (member {mi} ion {member_i})")
-            ps, pe = int(result.event_offsets[pool_i]), int(
-                result.event_offsets[pool_i + 1])
-            ms, me = int(m.event_offsets[member_i]), int(
-                m.event_offsets[member_i + 1])
-            for name in event_fields:
-                if not np.array_equal(
-                        np.asarray(getattr(result, name))[ps:pe],
-                        np.asarray(getattr(m, name))[ms:me]):
-                    raise AssertionError(
-                        f"pairing oracle: event {name} mismatch at pooled "
-                        f"ion {pool_i}")
-    return result
 
 
 def _load_members(names: list[str]) -> list[DetectionResult] | None:

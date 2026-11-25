@@ -191,6 +191,9 @@ plans, slice docs, atlas documents and the register are deleted (tag
 | D5 | Legacy MATLAB source | **[U] 2026-11-25:** no action; the successor has access to the MATLAB git. Nothing at run time reads it (it appears only in comments and docstrings) | closed |
 | D6 | Thesis submitted? | **[U] 2026-11-25:** yes; `thesis-final` marks the submitted state. The exact commit is confirmed when tagging | closed |
 | D7 | `fig_continuum_drag` | **[U] 2026-11-25:** no dramatic change; re-render and compare. Done: the committed figure and the render from the runs on disk differ in 0.66 % of pixels; per-bin force chi² 5.8 / 10 (9 Å) and 9.2 / 8 (18 Å); same conclusion. The committed file stays as submitted | closed |
+| D8 | `never` members read by g6 / g13 | **[U] 2026-11-25:** dropped in P3 (class `supp_never`, column `frac_formerly_suppressed`, g6 oracles); the committed tables keep them. The class equals the bare ions to within 2 of 1262 (B2) and 5 of 2306 (h405) | closed |
+| D9 | Committed-number anchors inside figure scripts | **[U] 2026-11-25:** scripts report the difference and continue, the figure driver exits 1; the exact checks move into tests (P3). P0–P7 gates stay exact | closed |
+| D10 | `regen_tier2_stage1_events.py` | **[U] 2026-11-25:** delete in P4; every run records the events | closed |
 
 ## 9. Left to the builder
 

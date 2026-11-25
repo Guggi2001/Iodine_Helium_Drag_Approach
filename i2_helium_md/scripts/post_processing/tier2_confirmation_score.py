@@ -31,7 +31,6 @@ settings are set.
 
 from __future__ import annotations
 
-import csv
 import json
 import sys
 from pathlib import Path
@@ -40,6 +39,10 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.postprocess.battery_score import (  # noqa: E402
+    format_table,
+    write_rows_csv,
+)
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
@@ -108,41 +111,6 @@ SAVE_EXPERIMENT_CSV_PATH = None
 def _nan_if_none(value: float | None) -> float:
     """None -> NaN missing-value stand-in; 0.0 is a value, not missing."""
     return float("nan") if value is None else value
-
-
-def _fmt(value: Any) -> str:
-    if isinstance(value, float):
-        return f"{value:.4g}"
-    return str(value)
-
-
-def format_table(rows: list[dict[str, Any]]) -> str:
-    """Fixed-width text table (the F3 idiom)."""
-    if not rows:
-        return "(no rows)"
-    cols = list(rows[0].keys())
-    cells = [[_fmt(r[c]) for c in cols] for r in rows]
-    widths = [
-        max(len(c), *(len(row[i]) for row in cells))
-        for i, c in enumerate(cols)
-    ]
-    lines = [
-        "  ".join(c.ljust(w) for c, w in zip(cols, widths)),
-        "  ".join("-" * w for w in widths),
-    ]
-    lines += ["  ".join(v.ljust(w) for v, w in zip(row, widths)) for row in cells]
-    return "\n".join(lines)
-
-
-def write_rows_csv(path: str | Path, rows: list[dict[str, Any]]) -> Path:
-    """Write the rows as CSV (the F3 idiom); returns the resolved path."""
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
-        writer.writeheader()
-        writer.writerows(rows)
-    return p.resolve()
 
 
 def _knob_columns(run_dir: Path) -> dict[str, Any]:

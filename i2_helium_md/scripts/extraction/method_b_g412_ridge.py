@@ -68,6 +68,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from i2_helium_md.config import SimConfig  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     LQ_FIXED_C,
     _git_branch,
@@ -319,17 +320,25 @@ def _print_rows(rows: list[dict]) -> None:
               f"less-transverse atom {r['less_transverse_atom']}")
 
 
-def _run_point(c: float, a: float, e_bind: float, *, mass_amu: float, tag: str) -> Path:
-    from scripts.tier0_common import build_drag_cfg, run_dir_name
-    from i2_helium_md.simulation.ion import run_ion_propagation
-    from i2_helium_md.simulation.neutral import run_neutral_propagation
-    from i2_helium_md.simulation.run_directory import RunDirectory
+def point_cfg(c: float, a: float, e_bind: float, *, mass_amu: float) -> SimConfig:
+    """Radial 9 A Tier-0 config of one lq law (c [amu/A], a [amu/ps], E_bind [eV])."""
+    from scripts.tier0_common import build_drag_cfg
 
     cfg = build_drag_cfg("9A", BOUND_VARIANT, num_molecules=BOUND_N,
                          ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS,
                          seed=SEED, coeff_overrides={"a": a, "c": c},
                          e_bind_override=e_bind, m_eff_amu=mass_amu)
     cfg.validate()
+    return cfg
+
+
+def _run_point(c: float, a: float, e_bind: float, *, mass_amu: float, tag: str) -> Path:
+    from scripts.tier0_common import run_dir_name
+    from i2_helium_md.simulation.ion import run_ion_propagation
+    from i2_helium_md.simulation.neutral import run_neutral_propagation
+    from i2_helium_md.simulation.run_directory import RunDirectory
+
+    cfg = point_cfg(c, a, e_bind, mass_amu=mass_amu)
     run_dir = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N, tag)
     run = RunDirectory(run_dir)
     run.save_cfg(cfg)

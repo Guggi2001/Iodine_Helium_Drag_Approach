@@ -47,6 +47,7 @@ from i2_helium_md.config import (
     SimConfig,
     _UNSTAMPED_LEGACY_DRAG_BUNDLES,
     current_drag_bundle_id,
+    with_current_bundle_ids,
 )
 from i2_helium_md.physics.drag import _REQUIRED_COEFF_KEYS, DragCoefficients
 from i2_helium_md.physics.shell_schedule import complex_mass_amu
@@ -424,21 +425,6 @@ def build_biphasic_cfg(
     cfg = replace(fixed_cfg, **overrides)
     cfg.validate()
     return cfg
-
-
-def with_current_bundle_ids(cfg: SimConfig) -> SimConfig:
-    """``cfg`` with historical bundle ids replaced by the current ones.
-
-    For comparing a finished run's loaded config with a freshly built one; the
-    ids are labels, every other field is returned unchanged.
-    """
-    coeffs = cfg.drag_coefficients
-    if coeffs is not None:
-        coeffs = dataclasses.replace(
-            coeffs, bundle_id=current_drag_bundle_id(coeffs.bundle_id))
-    return dataclasses.replace(
-        cfg, drag_bundle=current_drag_bundle_id(cfg.drag_bundle),
-        drag_coefficients=coeffs)
 
 
 def cfg_diff_vs_reference(

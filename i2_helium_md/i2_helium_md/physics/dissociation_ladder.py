@@ -406,3 +406,33 @@ def _resolve_ladder_cached(dissociation_ladder: str, rungs_eV):
         f"unknown dissociation_ladder {dissociation_ladder!r}; expected one of "
         "('form_u', 'tabulated')"
     )
+
+
+# Base pins of the generated rung tables: the mixture, kappa = 1 Form-U ladder.
+LADDER_PICTURE_PIN = "statistical_mixture"
+LADDER_KAPPA_PIN = 1.0
+# Table height = the Form-U cache height; occupancy above it fails at the lookup.
+LADDER_TABLE_HEIGHT = _SIGMA_TABLE_N_TOP
+
+# Taper on rungs 1-3 of the thesis ladder (RQ4, findings I51).
+RQ4GRADED_TAPER_MULTIPLIERS = (2.2, 1.5, 1.3)
+
+
+def form_u_rungs_eV() -> tuple[float, ...]:
+    """The Form-U ladder read through ``d0_of_n(1..LADDER_TABLE_HEIGHT)`` [eV].
+
+    Feeding this table back through ``dissociation_ladder="tabulated"`` is
+    bit-identical to Form-U; it is the base every tabulated variant edits.
+    """
+    return tuple(
+        float(d0_of_n(n, picture=LADDER_PICTURE_PIN, kappa=LADDER_KAPPA_PIN))
+        for n in range(1, LADDER_TABLE_HEIGHT + 1)
+    )
+
+
+def rq4graded_rungs_eV() -> tuple[float, ...]:
+    """The thesis ladder [eV]: Form-U with rungs 1-3 x (2.2, 1.5, 1.3)."""
+    rungs = list(form_u_rungs_eV())
+    for i, mult in enumerate(RQ4GRADED_TAPER_MULTIPLIERS):
+        rungs[i] *= mult
+    return tuple(rungs)
