@@ -64,7 +64,7 @@ RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
 # rerun into the same folder.
-OVERWRITE_EXISTING_RUN = True
+OVERWRITE_EXISTING_RUN = False
 
 # Custom/smoke settings. These are ignored by production mode unless you copy
 # them into the production overrides below.

@@ -434,7 +434,7 @@ scripts/gen_tier2_g414_tauline.py,script,b2_1_size_distribution.png b2_2_mean_ke
 scripts/gen_tier2_g415_well.py,script,g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,delete,"study script, off the allowlist"
 scripts/gen_tier2_g9_cold_onset.py,script,,,delete,"study script, off the allowlist"
 scripts/gen_tier2_h405_pp35.py,script,g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg,,move,re-landed h405 cell -> preset (C5.7); inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline gen_tier2atlas_g4finals gen_tier2atlas_linclone
-scripts/gen_tier2_md_confirmation.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,"study script, off the allowlist"
+scripts/gen_tier2_md_confirmation.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,rq4graded_rungs_eV -> package (P2); rest deleted; inline or cut before deleting: relaxation_stage
 scripts/gen_tier2_runs.py,script,,,delete,"study script, off the allowlist"
 scripts/gen_tier2_staircase_probe.py,script,,,delete,"study script, off the allowlist"
 scripts/gen_tier2atlas_budget_probe.py,script,,,delete,"study script, off the allowlist"
@@ -571,7 +571,7 @@ tests/test_g9_cold_onset_mixture.py,test,,,delete,tests deleted code
 tests/test_gen_detstagefix_validation.py,test,,,delete,tests deleted code
 tests/test_gen_tier2_detfix_battery.py,test,,,move,cfg oracles / cfg_diff tests move with the code (P2); the study-only tests go; inline or cut before deleting: gen_tier2atlas_g4finals gen_tier2atlas_g4step2_battery gen_tier2atlas_linclone
 tests/test_gen_tier2_detfix_postpickup.py,test,,,move,cfg oracles / cfg_diff tests move with the code (P2); the study-only tests go; inline or cut before deleting: gen_tier2_g413_ridge_battery gen_tier2_g414_tauline gen_tier2atlas_g4finals gen_tier2atlas_linclone
-tests/test_gen_tier2_md_confirmation.py,test,,,delete,tests deleted code
+tests/test_gen_tier2_md_confirmation.py,test,,,move,ladder tests move with rq4graded_rungs_eV (P2); rest deleted; inline or cut before deleting: tier2_size_distribution_table
 tests/test_gen_tier2_runs.py,test,,,delete,tests deleted code
 tests/test_gen_tier2atlas_budget_probe.py,test,,,delete,tests deleted code
 tests/test_gen_tier2atlas_ce_probe.py,test,,,delete,tests deleted code
@@ -803,3 +803,4 @@ THESIS_DISCUSSION 7,number,thesis text,g9_columns g415_table detfix_postpickup_t
 THESIS_DISCUSSION 10,number,thesis text,b2_seff_table b2_seff_timing,keep,[U] not in the thesis text: kept in docs only (P6)
 THESIS_DISCUSSION 14,number,thesis text,g5_postpickup_table g5_winners_table_ihekedv2,keep,[U] not in the thesis text: kept in docs only (P6)
 docs/handover/ALLOWLIST.csv,doc,,,keep,temporary; removed in P6
+docs/superpowers/plans/2026-11-25-handover-p2.md,doc,,,keep,temporary; removed in P6

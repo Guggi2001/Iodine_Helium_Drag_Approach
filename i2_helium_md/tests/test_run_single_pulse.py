@@ -147,3 +147,14 @@ def test_unknown_input_preset_raises(monkeypatch):
     monkeypatch.setattr(script, "RUN_SIZE", "production")
     with pytest.raises(ValueError, match="INPUT_PRESET"):
         script.build_config()
+
+
+def test_overwriting_is_off_by_default():
+    """The committed setting must never replace a finished run."""
+    import ast
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[1] / "scripts" / "run_single_pulse.py"
+    values = {t.id: n.value for n in ast.parse(source.read_text(encoding="utf-8")).body
+              if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
+    assert ast.literal_eval(values["OVERWRITE_EXISTING_RUN"]) is False
