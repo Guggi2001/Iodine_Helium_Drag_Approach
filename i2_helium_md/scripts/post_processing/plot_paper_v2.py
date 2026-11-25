@@ -31,7 +31,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS / DEFAULTS
 # =============================================================================
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "legacy_droplet_N20000"
 REFERENCE_DIR = PROJECT_ROOT / "data" / "reference" / "paper_v2"
 MASS_SELECTION_AMU = 131.0
 MASS_SELECTION_AMU_2 = 135.0

@@ -16,7 +16,6 @@ from scripts.post_processing.tier0_calibration_figures import (  # noqa: E402
     DPI,
     OUT_DIR,
     RUNS,
-    build_cfg,
 )
 from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
     CAL_ALONE_FIGSIZE_IN,
@@ -27,7 +26,6 @@ from scripts.post_processing.tier0_drag_comparison import (  # noqa: E402
     surface_crossing_time_ps,
 )
 import numpy as np  # noqa: E402
-from scripts.tier0_common import run_dir_name  # noqa: E402
 
 
 def _png_size(path):
@@ -78,18 +76,8 @@ def test_zero_based_panel_keeps_a_line_at_zero_whole():
 
 
 def test_stuck_and_b2_runs_get_distinct_directories():
-    names = [run_dir_name(r.case, "LQ", 50, r.run_tag) for r in RUNS]
+    names = [r.sim.name for r in RUNS]
     assert len(set(names)) == len(names)
-
-
-@pytest.mark.parametrize("run", RUNS, ids=lambda r: f"{r.case}_{r.run_tag}")
-def test_run_configs(run):
-    cfg = build_cfg(run)
-    assert cfg.drag_coefficients.coefficients == {"a": 18.007189923460135, "c": 1.6}
-    assert cfg.m_eff_amu == 126.90 + 21 * 4.0026
-    assert (cfg.num_molecules, cfg.seed) == (50, 20260604)
-    assert cfg.ion_simulation_time == run.ion_time_ps
-    assert cfg.binding_energy_I_ion_eV == (run.e_bind_eV or 0.11727328616561973)
 
 
 def _radial_ion(r_frag1, r_frag2, radius=10.0):

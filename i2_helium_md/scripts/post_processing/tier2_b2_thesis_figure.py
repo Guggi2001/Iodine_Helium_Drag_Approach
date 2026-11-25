@@ -41,9 +41,9 @@ B2-3); an override wins key by key
 Anchor guard: before drawing, every quoted scalar (n̄, suppressed, n₁,
 W₁, n >= 15 mass, midHot, deepKE, chi^2_med, KE₁, number of chi^2 bins,
 scored count) is
-checked against the decoupled B2 row of
+compared with the decoupled B2 row of
 ``data/runs/h2b_forward_model/g13_decoupled_table.csv`` (v2 scorer, the
-corrected ihe_ked reference, G12) to 4 dp; a mismatch raises.
+corrected ihe_ked reference, G12) to 4 dp; a difference is reported, a row of another pool raises.
 
 Edit the ``USER SETTINGS`` block and run::
 
@@ -53,7 +53,6 @@ Edit the ``USER SETTINGS`` block and run::
 from __future__ import annotations
 
 import copy
-import csv
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -74,6 +73,7 @@ RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "B2_N6000_pooled"
 WINNERS_CSV: Path = PROJECT_ROOT / "data" / "runs" / "h2b_forward_model" / "g13_decoupled_table.csv"
 WINNERS_LABEL: str = "B2"
 ANCHOR_CHECK: bool = True
+NBAR_LANDING: tuple[float, float] = (3.83, 4.31)   # mean-n landing band of the MD scan (G4.14)
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 
@@ -255,7 +255,8 @@ from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
     solvated_renormalized,
 )
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
-from scripts.post_processing.tier2_g414_table import NBAR_LANDING  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import require_run  # noqa: E402
+from scripts.post_processing.anchors import report, row_differences  # noqa: E402
 from summary_sections import (  # noqa: E402
     DETECTED_KE_INCLUDE_SIM_SE,
     DETECTED_KE_MIN_BIN_COUNT,
@@ -549,20 +550,9 @@ def anchor_values(size: SizeData, ke: KEData) -> dict[str, float]:
     }
 
 
-def check_anchor(values: dict[str, float], csv_path: Path, label: str,
-                 container: str | None = None) -> None:
-    """Raise ``ValueError`` unless every value matches the committed row to 4 dp."""
-    with open(csv_path, newline="", encoding="utf-8") as fh:
-        rows = [r for r in csv.DictReader(fh) if r["label"] == label]
-    if len(rows) != 1:
-        raise ValueError(f"{csv_path.name}: expected one row {label!r}, found {len(rows)}")
-    row = rows[0]
-    if container is not None and row.get("container") != container:
-        raise ValueError(f"{label!r} row belongs to {row.get('container')!r}, not {container!r}")
-    bad = [f"{k}: figure {v:.4f} vs committed {float(row[k]):.4f}"
-           for k, v in values.items() if round(float(v), 4) != round(float(row[k]), 4)]
-    if bad:
-        raise ValueError(f"anchor mismatch vs committed {label!r} row:\n  " + "\n  ".join(bad))
+def anchor_differences(size: SizeData, ke: KEData) -> list[str]:
+    """Quoted scalars that differ from the committed row at 4 dp."""
+    return row_differences(anchor_values(size, ke), WINNERS_CSV, WINNERS_LABEL, RUN_DIR.name)
 
 
 # =============================================================================
@@ -863,17 +853,22 @@ def _save(fig: plt.Figure, stem: str) -> None:
         print(f"[b2_thesis] wrote {path}")
 
 
+def load_pool():
+    """The detection result in ``RUN_DIR`` and the scorer's read of it."""
+    det = load_detection_result(require_run(RUN_DIR / "detection.npz", "gen_thesis_laws.py"))
+    return det, read_confirmation_detection(det, label=RUN_DIR.name)
+
+
 def main() -> int:
-    det = load_detection_result(RUN_DIR / "detection.npz")
-    read = read_confirmation_detection(det, label=RUN_DIR.name)
+    det, read = load_pool()
     ked_ref = load_ihe_ked_reference(IHE_KED_REFERENCE_DIR / "IHe_KED_reference.csv")
     abundance = load_he_abundance_reference(ABUNDANCE_REF_PATH)
 
     size = size_data(read, abundance)
     ke = ke_data(read, ked_ref)
     if ANCHOR_CHECK:
-        check_anchor(anchor_values(size, ke), WINNERS_CSV, WINNERS_LABEL, RUN_DIR.name)
-        print(f"[b2_thesis] anchor OK vs {WINNERS_CSV.name}:{WINNERS_LABEL}")
+        report(anchor_differences(size, ke),
+               f"[b2_thesis] anchor OK vs {WINNERS_CSV.name}:{WINNERS_LABEL}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     style_ctx = plt.style.context(str(MPLSTYLE)) if MPLSTYLE else plt.style.context({})

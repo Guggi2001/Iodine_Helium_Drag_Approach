@@ -30,9 +30,7 @@ Anchored: the log's exit falls in the stored interval of the stored-depth
 exit column for every scored ion.
 
 Classes by detected n: bare (n = 0), n = 1, n >= 2 (every row over the
-scored ions, ``detected_mask``). Where the committed ``never`` members of
-the same seeds are on disk (B2, h405), the ions those runs flagged
-``suppressed`` are also read as their own row ("formerly suppressed").
+scored ions, ``detected_mask``).
 
 Kinetic energy at four points per ion (all laws run ``co_moving`` sheds:
 a shed changes m, not v -- required, checked from cfg):
@@ -57,9 +55,9 @@ every scored ion; every scored ion has an exit; stored KE == ½mv² at exit,
 handover and detection; closure KE_pc - KE_h == -(E_pot_det - E_pot_h -
 Σ fold) (the per-ion closure amount, ``detection_stage`` docstring); Stage
 II KE_det - KE_pc == -Σ ``event_dE_mass_transfer_eV`` (all to
-``KE_TOL_EV``, scored ions). Pooled: scored count, n̄ and KE₁ mean
-reproduce the law's row of ``g13_decoupled_table.csv`` and the bare share
-its row of ``thesis_observables_extra.csv`` (4 dp, THESIS_DISCUSSION §15).
+``KE_TOL_EV``, scored ions). Pooled, reported and not stopping: scored count,
+n̄ and KE₁ mean against the law's row of ``g13_decoupled_table.csv`` and the
+bare share against its row of ``thesis_observables_extra.csv`` (4 dp, THESIS_DISCUSSION §15).
 
 Outputs (commit with ``git add -f``):
 
@@ -95,7 +93,6 @@ Usage::
 
 from __future__ import annotations
 
-import csv
 import sys
 import warnings
 from dataclasses import dataclass
@@ -153,24 +150,21 @@ if not SHOW_FIGURE:
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
+from i2_helium_md.postprocess.battery_score import format_table, write_rows_csv  # noqa: E402
+from i2_helium_md.postprocess.emission_chord import emission_chords  # noqa: E402
+from i2_helium_md.presets import THESIS_MEMBER_SEEDS  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
 from i2_helium_md.simulation.ion_propagation_step import _E_kin_eV  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from i2_helium_md.simulation.stage1_events import (  # noqa: E402
     KIND_SHED, STAGE1_EVENTS_FILENAME, load_stage1_events, replay_n_shell,
 )
-from scripts.gen_tier2_detfix_battery import MEMBER_SEEDS  # noqa: E402
-from scripts.gen_tier2_detfix_postpickup import (  # noqa: E402
-    B2_C, B2_E0_EV, B2_TAU_PS, lq_run_dir, thesis_run_dir,
+from i2_helium_md.simulation.thesis_runs import (  # noqa: E402
+    TABLES_ROOT, member_dir, require_run,
 )
-from scripts.gen_tier2_h405_pp35 import SCAN_POOL_CELL, run_dir_for  # noqa: E402
-from scripts.post_processing.tier2_confirmation_score import (  # noqa: E402
-    format_table, write_rows_csv,
-)
-from scripts.post_processing.tier2_detfix_postpickup_table import emission_chords  # noqa: E402
-from scripts.post_processing.tier2atlas_geometry_table import RUNS_ROOT  # noqa: E402
+from scripts.post_processing.anchors import report, row_differences  # noqa: E402
 
-OUT_ROOT = RUNS_ROOT / "h2b_forward_model"
+OUT_ROOT = TABLES_ROOT
 TIMING_CSV = OUT_ROOT / "g13_shed_timing.csv"
 EXIT_CSV = OUT_ROOT / "g13_exit_vs_detection.csv"
 HIST_CSV = OUT_ROOT / "g13_exit_detection_hist.csv"
@@ -179,10 +173,8 @@ KE_CSV = OUT_ROOT / "g13_ke_readouts.csv"
 SHED_CONVENTION = "co_moving"            # the post-closure read needs v unchanged by sheds
 G13_TABLE_CSV = OUT_ROOT / "g13_decoupled_table.csv"
 EXTRA_CSV = OUT_ROOT / "thesis_observables_extra.csv"
-SUPPRESSED = "suppressed"
 CLASS_NAMES = {"all": "All scored ions", "bare": r"$n_\mathrm{det} = 0$",
-               "n1": r"$n_\mathrm{det} = 1$", "n2plus": r"$n_\mathrm{det} \geq 2$",
-               "supp_never": "formerly suppressed"}
+               "n1": r"$n_\mathrm{det} = 1$", "n2plus": r"$n_\mathrm{det} \geq 2$"}
 
 
 # =============================================================================
@@ -326,7 +318,6 @@ class LawRead:
     frame_sheds: np.ndarray     # (I,) Stage I sheds seen between stored columns
     frame_pickups: np.ndarray   # (I,) Stage I pickups seen between stored columns
     chord_A: np.ndarray         # (I,)
-    supp_never: np.ndarray | None    # (I,) bool, None without never members
     shed_ion: np.ndarray        # (K,) pooled ion index
     shed_t_ps: np.ndarray       # (K,)
     shed_before_exit: np.ndarray     # (K,) bool: Stage I step <= exit step
@@ -392,17 +383,7 @@ def ke_readouts(rd: Path, ion, det, je: np.ndarray, scored: np.ndarray) -> dict[
             "v_exit": speed(v_ex), "v_h": speed(v_h), "v_det": speed(v_d)}
 
 
-def never_dirs(law: str) -> list[Path] | None:
-    """The committed ``never`` members of the same seeds, where on disk."""
-    if law == "B2":
-        return [lq_run_dir(m, B2_E0_EV, B2_TAU_PS, B2_C) for m in MEMBER_SEEDS]
-    if law == "h405":
-        v_c, tau, e0 = SCAN_POOL_CELL
-        return [run_dir_for(m, e0, v_c, tau) for m in MEMBER_SEEDS]
-    return None
-
-
-def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
+def read_member(rd: Path) -> dict[str, np.ndarray]:
     """Per-ion and per-shed arrays of one member (anchors checked here)."""
     ion = RunDirectory(rd).load_ion()
     t = np.asarray(ion.time_ps, dtype=float)
@@ -453,10 +434,6 @@ def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
                               np.where(is_shed, -1, 1)[up_to_exit], minlength=n_ions)
     fsi, _, fpi, _ = window_events(n)
 
-    supp = None
-    if never_rd is not None:
-        nv = load_detection_result(never_rd / "detection.npz")
-        supp = np.asarray(nv.state_reason).astype(str) == SUPPRESSED
     return {
         "scored": scored, "n_birth": n[:, 0], "n_exit": n[:, 0] + net_to_exit,
         "n_exit_col": n[np.arange(n_ions), je],
@@ -466,7 +443,7 @@ def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
         "stage1_pickups": np.bincount(pi, minlength=n_ions),
         "frame_sheds": np.bincount(fsi, minlength=n_ions),
         "frame_pickups": np.bincount(fpi, minlength=n_ions),
-        "chord_A": emission_chords(rd), "supp_never": supp,
+        "chord_A": emission_chords(rd),
         "shed_ion": shed_ion, "shed_t_ps": shed_t,
         "shed_before_exit": np.concatenate([s_step <= exit_step[si], np.zeros(ev_t.size, bool)]),
         "shed_depth_A": np.concatenate([log.event_depth_angstrom[is_shed],
@@ -478,48 +455,36 @@ def read_member(rd: Path, never_rd: Path | None) -> dict[str, np.ndarray]:
 
 def read_law(law: str) -> LawRead:
     """Pool the six members of ``law``; sheds of unscored ions dropped."""
-    nv = never_dirs(law)
     parts, offset = [], 0
-    for k, m in enumerate(MEMBER_SEEDS):
-        p = read_member(thesis_run_dir(law, m), nv[k] if nv else None)
+    for m in THESIS_MEMBER_SEEDS:
+        rd = member_dir(law, m)
+        require_run(rd / "detection.npz", "gen_thesis_laws.py")
+        p = read_member(rd)
         p["shed_ion"] = p["shed_ion"] + offset
         offset += p["scored"].size
         parts.append(p)
-    cat = {key: np.concatenate([p[key] for p in parts])
-           for key in parts[0] if key != "supp_never"}
-    cat["supp_never"] = (np.concatenate([p["supp_never"] for p in parts]) if nv else None)
+    cat = {key: np.concatenate([p[key] for p in parts]) for key in parts[0]}
     keep = cat["scored"][cat["shed_ion"]]
     for key in ("shed_ion", "shed_t_ps", "shed_before_exit", "shed_depth_A", "shed_in_detection"):
         cat[key] = cat[key][keep]
     return LawRead(**cat)
 
 
-def check_anchor(law: str, r: LawRead) -> None:
-    """Pooled scored count, n̄, KE₁ mean and bare share vs the committed §15
-    rows (4 dp)."""
-    with open(G13_TABLE_CSV, encoding="utf-8") as fh:
-        row = next(x for x in csv.DictReader(fh) if x["label"] == law)
-    with open(EXTRA_CSV, encoding="utf-8") as fh:
-        extra = next(x for x in csv.DictReader(fh) if x["label"] == law)
+def anchor_differences(law: str, r: LawRead) -> list[str]:
+    """Pooled scored count, n̄, KE₁ mean and bare share that differ from the
+    committed §15 rows at 4 dp."""
     s = r.scored
-    fresh = {"num_scored": float(s.sum()), "nbar_det": r.n_det[s].mean(),
-             "bare_share": np.mean(r.n_det[s] == 0),
-             "KE1_mean": r.ke_det_eV[s & (r.n_det == 1)].mean()}
-    ref = {"num_scored": float(row["num_scored"]), "nbar_det": float(row["nbar_det"]),
-           "bare_share": float(extra["bare_share"]), "KE1_mean": float(row["KE1_mean"])}
-    for k in fresh:
-        if round(fresh[k], 4) != round(ref[k], 4):
-            raise RuntimeError(f"anchor {law} {k}: {fresh[k]} vs committed {ref[k]}")
+    return row_differences(
+        {"num_scored": s.sum(), "nbar_det": r.n_det[s].mean(),
+         "KE1_mean": r.ke_det_eV[s & (r.n_det == 1)].mean()}, G13_TABLE_CSV, law,
+    ) + row_differences({"bare_share": np.mean(r.n_det[s] == 0)}, EXTRA_CSV, law)
 
 
 def class_masks(r: LawRead) -> dict[str, np.ndarray]:
     """Per-ion masks (over the scored ions) of the final-state classes."""
     s = r.scored
-    out = {"all": s.copy(), "bare": s & (r.n_det == 0), "n1": s & (r.n_det == 1),
-           "n2plus": s & (r.n_det >= 2)}
-    if r.supp_never is not None:
-        out["supp_never"] = s & r.supp_never
-    return out
+    return {"all": s.copy(), "bare": s & (r.n_det == 0), "n1": s & (r.n_det == 1),
+            "n2plus": s & (r.n_det >= 2)}
 
 
 def _q(x: np.ndarray, p: float) -> float:
@@ -576,8 +541,6 @@ def exit_row(law: str, cls: str, r: LawRead, m: np.ndarray) -> dict[str, Any]:
         "frac_ions_n_changed_after_exit": float(np.mean(r.n_exit[m] != r.n_det[m])),
         "t_exit_q10_ps": _q(r.t_exit_ps[m], 10), "t_exit_median_ps": _q(r.t_exit_ps[m], 50),
         "t_exit_q90_ps": _q(r.t_exit_ps[m], 90),
-        "frac_formerly_suppressed": (float(np.mean(r.supp_never[m]))
-                                     if r.supp_never is not None else np.nan),
     }
 
 
@@ -800,7 +763,7 @@ def main() -> int:
     for law in LAWS:
         r = read_law(law)
         if ANCHOR_CHECK:
-            check_anchor(law, r)
+            report(anchor_differences(law, r), f"anchor OK: {law}")
         reads[law] = r
         for cls, m in class_masks(r).items():
             timing.append(timing_row(law, cls, r, m))
@@ -826,7 +789,7 @@ def main() -> int:
                        (CHORD_CSV, chords), (KE_CSV, kes)):
         print(f"CSV -> {write_rows_csv(path, rows)}")
 
-    cfg = RunDirectory(thesis_run_dir(FIG_LAW, next(iter(MEMBER_SEEDS)))).load_cfg()
+    cfg = RunDirectory(member_dir(FIG_LAW, next(iter(THESIS_MEMBER_SEEDS)))).load_cfg()
     t_h, t_det = float(cfg.ion_simulation_time), float(cfg.detection_time_ps)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     with plt.rc_context(FIG_RC):

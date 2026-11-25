@@ -14613,3 +14613,48 @@ order, checkpoint schema and `SimConfig` defaults unchanged.
 - User decisions for P3 (design D8–D10): the `never` members are dropped from g6 /
   g13, anchors in figure scripts report instead of stopping, and
   `regen_tier2_stage1_events.py` is deleted in P4.
+
+## 2026-11-25 — Handover P3: figure scripts rewired, figure driver
+
+Plan `docs/superpowers/plans/2026-11-25-handover-p3.md`. No physics, draw order,
+checkpoint schema, `SimConfig` default or drawing code changed.
+
+- `simulation/thesis_runs.py` names the thesis run directories;
+  `postprocess/emission_chord.py` holds the chord geometry; `scripts/tier0_runs.py`
+  holds the Tier-0 configs (moved out of the figure scripts) and reads finished runs.
+  Figure scripts run no MD into `data/runs`; `gen_tier0_runs` and the ridge script's
+  bound mode refuse a directory of another model instead of replacing it.
+- The `never` members are gone from g6 / g13 (design D8). `g13_shed_timing.csv`,
+  `g13_exit_vs_detection.csv`, `g13_ke_readouts.csv` equal the committed bytes once
+  the `supp_never` rows and the column `frac_formerly_suppressed` are removed; the
+  committed files keep them. g6 no longer reads `g5_postpickup_chord.csv` and
+  `h405_pp35_table.csv`; both go in P4 (design D12), the B2 chord rows are now a
+  table in `THESIS_DISCUSSION.md` §1.
+- Committed-number checks report in all seven figure / table scripts (design D9; the
+  plan named three, `scripts/post_processing/anchors.py`); the exact checks are in
+  `tests/test_thesis_anchors.py`. A row of another pool, a missing row or series, the
+  g13 identities and the Coulomb benchmark still raise.
+- Legacy figures and diagnostics read the seeded runs; per-bin comparison as in P2.
+- `run_thesis_laws.py` (P2) is renamed `gen_thesis_laws.py`, behaviour unchanged.
+- `run_legacy_and_tier0.py` (P2) is split and gone (design D15).
+  `scripts/gen_legacy_runs.py`, renamed from `run_single_pulse.py`, makes the three
+  seeded legacy runs (`thesis_legacy`, its default) or a manual run as before;
+  `scripts/gen_tier0_runs.py` makes the five Tier-0 runs (`RUN_SET = "thesis"`, its
+  default) or a custom one. Their directories are renamed (design D16) and generated
+  anew: `tier0_18A_B2_stuck`, `tier0_18A_B2`, `tier0_9A_B2`, `tier0_9A_B3`,
+  `tier0_9A_h405`. Every array of neutral / ion.npz equals the old run
+  (`…B2m21stuck`, `…B2m21` 18 Å, `…B2m21` 9 Å = `…g11m21B2`, `…g11m21B3`,
+  `…g11fig_h405pp35m21`); the old directories stay. Both use `battery.run_neutral_and_ion`, skip the stored
+  runs and refuse others. `run_single_pulse.py` in older entries is this script.
+- `scripts/run_thesis_figures.py` (regeneration driver): draws every figure and
+  table, copies them to `data/figures_regenerated`, puts `data/` back, exits 1 on a
+  failure or a differing number.
+- Gate: 35 figure files identical (hashes equal the P0 render), the 8 legacy files
+  differ, none missing, no run-directory file changed. Suite 3563 passed / 44 skipped
+  (the same skips as P0). Import check: kept scripts reach no moved or deleted script
+  and, in the package, exactly `state_coupling`, `exit_strip`, `ce_channels` (P5;
+  user decision).
+- Independent review: 0 Critical, 2 Important. Fixed test-first: a failed restore
+  left later files modified; a Markdown edit during a run was reverted; an unreadable
+  image stopped the driver; an unfinished run directory did not name its driver.
+  Deferred minors: decided in the P4 plan (Decision D, design D14).

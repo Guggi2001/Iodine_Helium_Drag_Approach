@@ -33,7 +33,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # USER SETTINGS
 # =============================================================================
 # Inputs
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "legacy_9A_N2000"
 HEDFT_CASE = "9A"  # TDDFT reference case: "9A" or "18A"
 
 # Subset stride for the individual MD trajectories overlaid on Figure 1.

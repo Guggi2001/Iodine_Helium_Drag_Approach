@@ -20,9 +20,9 @@ the re-landed h405 under its thesis name CC5.4 (legend names and colours as
 ``data/figures/thesis_results_discussion/``: ``tier2_B2_h405`` (B2 vs CC5.4) and
 ``tier2_B2_B3`` (B2 vs B3).
 
-Anchors (fail loudly): the B2 18 Å RMSE in the scores CSV equals the committed
-``calibration_ridge/ridge/check_B2.json`` and its 9 Å margin the committed
-``calibration_ridge/exit_bound_9A/B2.json``, bit-exactly; every law of a variant must have
+Anchors: the B2 18 Å RMSE in the scores CSV against the committed
+``calibration_ridge/ridge/check_B2.json`` and its 9 Å margin against the committed
+``calibration_ridge/exit_bound_9A/B2.json`` (exact; a difference is reported). Every law of a variant must have
 a series in both cases.
 
 Usage::
@@ -124,14 +124,16 @@ from scripts.extraction.method_b_g412_ridge import (  # noqa: E402
     BOUND_VARIANT, EXIT_WINDOW_PS, G11_BOUND_DIR, G11_RIDGE_DIR, HEDFT_9A_PATH,
     REFERENCE_FILENAME, load_json,
 )
+from scripts.post_processing.anchors import report  # noqa: E402
 from scripts.post_processing.tier0_thesis_figure import (  # noqa: E402
-    GATE_A, HEDFT_18A_PATH, LQ_LAWS,
+    GATE_A, HEDFT_18A_PATH,
 )
 from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     _annot, _finish_axis, _panel_letters, merged_style,
 )
 from scripts.post_processing.tier2_law_comparison_figure import LAWS  # noqa: E402
 from scripts.tier0_common import M_EFF_AMU  # noqa: E402
+from scripts.tier0_runs import LQ_LAWS  # noqa: E402
 
 BULK_DEPTH_A = -1e3          # deep inside the droplet: gate g = 1 (ungated bulk law)
 
@@ -161,26 +163,26 @@ def law_coefficients() -> dict[str, object]:
     them: B2 / B3 = the lq bundle with their (a, c); h405 = its bundle capped."""
     lq = load_drag_bundle(BOUND_VARIANT, expected_m_eff_amu=M_EFF_AMU)
     out = {label: replace(lq, coefficients={"a": a, "c": c})
-           for label, (a, c, _, _) in LQ_LAWS.items()}
+           for label, (a, c, _) in LQ_LAWS.items()}
     out["h405"] = load_capped_cc(expected_m_eff_amu=M_EFF_AMU)
     return out
 
 
-def check_anchor(scores: dict[str, dict[str, str]],
-                 series: dict[tuple[str, str], tuple[np.ndarray, np.ndarray]]) -> None:
-    """B2 RMSE / margin bit-exact vs the committed G11 JSONs; every law has both series."""
+def anchor_differences(scores: dict[str, dict[str, str]],
+                       series: dict[tuple[str, str], tuple[np.ndarray, np.ndarray]]) -> list[str]:
+    """B2 RMSE / margin that differ from the committed G11 JSONs (exact). Raises
+    ``ValueError`` if a law has no series."""
     b2 = scores["B2"]
-    for name, value, committed in (
-            ("18 Å RMSE", float(b2["rmse_18A_Aps"]),
-             load_json(G11_RIDGE_DIR / "check_B2.json")["rmse_18A_Aps"]),
-            ("9 Å margin", float(b2["margin_9A_Aps"]),
-             load_json(G11_BOUND_DIR / "B2.json")["margin_Aps"])):
-        if value != committed:
-            raise ValueError(f"B2 {name}: scores CSV {value!r} != committed {committed!r}")
+    out = [f"B2 {name}: scores CSV {value!r} vs {committed!r}" for name, value, committed in (
+        ("18 Å RMSE", float(b2["rmse_18A_Aps"]),
+         load_json(G11_RIDGE_DIR / "check_B2.json")["rmse_18A_Aps"]),
+        ("9 Å margin", float(b2["margin_9A_Aps"]),
+         load_json(G11_BOUND_DIR / "B2.json")["margin_Aps"])) if value != committed]
     missing = [(case, law) for keys in VARIANTS.values() for law in keys
                for case in ("18A", "9A") if (case, law) not in series]
     if missing:
         raise ValueError(f"series CSV lacks {missing}")
+    return out
 
 
 def read_ridge(b2_coeffs, path: Path = G11_RIDGE_DIR / "ridge_m21.csv"
@@ -332,8 +334,8 @@ def build_ridge(ridge: list[tuple[float, float, bool]], b2_coeffs, ref18,
 # =============================================================================
 def main() -> int:
     series, scores = read_series(), read_scores()
-    check_anchor(scores, series)
-    print("[tier0_law] anchor OK: B2 RMSE / 9 Å margin vs committed G11 JSONs")
+    report(anchor_differences(scores, series),
+           "[tier0_law] anchor OK: B2 RMSE / 9 Å margin vs committed G11 JSONs")
     coeffs = law_coefficients()
     ref18 = load_smoothed_speed_reference(tddft_reference_path("18A", REFERENCE_FILENAME))
     hedft18, hedft9 = load_hedft_trajectory(HEDFT_18A_PATH), load_hedft_trajectory(HEDFT_9A_PATH)

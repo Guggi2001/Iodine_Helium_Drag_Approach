@@ -11,20 +11,25 @@ python data/reference/scripts/plotting_histogram.py
 Shared style (fonts, colours, text width, printed law names):
 [`thesis_style.py`](../../scripts/post_processing/thesis_style.py).
 
-Inputs under `data/runs/` are not in git, so those figures can only be regenerated
-where the runs exist. Figures marked *committed data* need only files in this repo.
+Inputs under `data/runs/` are not in git. Make them first: the laws with
+`scripts/gen_thesis_laws.py`, the legacy hard-sphere runs with
+`scripts/gen_legacy_runs.py`, the Tier-0 runs with `scripts/gen_tier0_runs.py`.
+`scripts/run_thesis_figures.py` then draws every
+figure into `data/figures_regenerated/` and compares it with the one here. The legacy
+runs behind `thesis_legacy/` were unseeded, so those figures agree statistically only.
+Figures marked *committed data* need only files in this repo.
 
 ## `thesis_microscopic_calibration/`
 
 | File | Script | Inputs |
 |---|---|---|
-| [`18A_Stuck_Velocity_R.png`](thesis_microscopic_calibration/18A_Stuck_Velocity_R.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21stuck`) |
-| [`18A_Stuck_Force_Energy.png`](thesis_microscopic_calibration/18A_Stuck_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21stuck`) |
-| [`18A_B2.png`](thesis_microscopic_calibration/18A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
-| [`18A_B2_Force_Energy.png`](thesis_microscopic_calibration/18A_B2_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
-| [`9A_B2.png`](thesis_microscopic_calibration/9A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | Runs it generates itself (tag `B2m21`) |
-| [`tier0_B2_B3_h405_series.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | Committed data (runs the Tier-0 integrations) |
-| [`tier0_B2_B3_h405_scores.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_scores.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | Committed data (runs the Tier-0 integrations) |
+| [`18A_Stuck_Velocity_R.png`](thesis_microscopic_calibration/18A_Stuck_Velocity_R.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | `data/runs/tier0_18A_B2_stuck` |
+| [`18A_Stuck_Force_Energy.png`](thesis_microscopic_calibration/18A_Stuck_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | `data/runs/tier0_18A_B2_stuck` |
+| [`18A_B2.png`](thesis_microscopic_calibration/18A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | `data/runs/tier0_18A_B2` |
+| [`18A_B2_Force_Energy.png`](thesis_microscopic_calibration/18A_B2_Force_Energy.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | `data/runs/tier0_18A_B2` |
+| [`9A_B2.png`](thesis_microscopic_calibration/9A_B2.png) | [`tier0_calibration_figures.py`](../../scripts/post_processing/tier0_calibration_figures.py) | `data/runs/tier0_9A_B2` |
+| [`tier0_B2_B3_h405_series.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_series.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | `data/runs/{tier0_9A_B2,tier0_9A_B3,tier0_9A_h405}` (18 Å is integrated in memory) |
+| [`tier0_B2_B3_h405_scores.csv`](thesis_microscopic_calibration/tier0_B2_B3_h405_scores.csv) | [`tier0_thesis_figure.py`](../../scripts/post_processing/tier0_thesis_figure.py) | `data/runs/{tier0_9A_B2,tier0_9A_B3,tier0_9A_h405}` (18 Å is integrated in memory) |
 | [`tier0_ridge_m21_laws.png`](thesis_microscopic_calibration/tier0_ridge_m21_laws.png) | [`tier0_law_figure.py`](../../scripts/post_processing/tier0_law_figure.py) | Committed data |
 
 ## `thesis_results_discussion/`
@@ -68,11 +73,11 @@ where the runs exist. Figures marked *committed data* need only files in this re
 
 | File | Script | Inputs |
 |---|---|---|
-| [`fig_continuum_drag.png`](thesis_legacy/fig_continuum_drag.png) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{9A,18A}_hedft_comparison` |
-| [`fig_continuum_drag.pdf`](thesis_legacy/fig_continuum_drag.pdf) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{9A,18A}_hedft_comparison` |
-| [`fig_continuum_drag_points.csv`](thesis_legacy/fig_continuum_drag_points.csv) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{9A,18A}_hedft_comparison` |
-| [`legacy_ke_and_size.png`](thesis_legacy/legacy_ke_and_size.png) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/single_pulse_droplet_long` |
-| [`legacy_ke_split_and_size.png`](thesis_legacy/legacy_ke_split_and_size.png) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/single_pulse_droplet_long` |
-| [`legacy_ke_and_size_points.csv`](thesis_legacy/legacy_ke_and_size_points.csv) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/single_pulse_droplet_long` |
-| [`legacy_ked_shapes.png`](thesis_legacy/legacy_ked_shapes.png) | [`legacy_ked_shapes_figure.py`](../../scripts/post_processing/legacy_ked_shapes_figure.py) | `data/runs/single_pulse_droplet_long` |
-| [`legacy_ked_shapes_points.csv`](thesis_legacy/legacy_ked_shapes_points.csv) | [`legacy_ked_shapes_figure.py`](../../scripts/post_processing/legacy_ked_shapes_figure.py) | `data/runs/single_pulse_droplet_long` |
+| [`fig_continuum_drag.png`](thesis_legacy/fig_continuum_drag.png) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{legacy_9A,legacy_18A}_N2000` |
+| [`fig_continuum_drag.pdf`](thesis_legacy/fig_continuum_drag.pdf) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{legacy_9A,legacy_18A}_N2000` |
+| [`fig_continuum_drag_points.csv`](thesis_legacy/fig_continuum_drag_points.csv) | [`legacy_continuum_drag_figure.py`](../../scripts/post_processing/legacy_continuum_drag_figure.py) | `data/runs/{legacy_9A,legacy_18A}_N2000` |
+| [`legacy_ke_and_size.png`](thesis_legacy/legacy_ke_and_size.png) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/legacy_droplet_N20000` |
+| [`legacy_ke_split_and_size.png`](thesis_legacy/legacy_ke_split_and_size.png) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/legacy_droplet_N20000` |
+| [`legacy_ke_and_size_points.csv`](thesis_legacy/legacy_ke_and_size_points.csv) | [`legacy_ke_size_figure.py`](../../scripts/post_processing/legacy_ke_size_figure.py) | `data/runs/legacy_droplet_N20000` |
+| [`legacy_ked_shapes.png`](thesis_legacy/legacy_ked_shapes.png) | [`legacy_ked_shapes_figure.py`](../../scripts/post_processing/legacy_ked_shapes_figure.py) | `data/runs/legacy_droplet_N20000` |
+| [`legacy_ked_shapes_points.csv`](thesis_legacy/legacy_ked_shapes_points.csv) | [`legacy_ked_shapes_figure.py`](../../scripts/post_processing/legacy_ked_shapes_figure.py) | `data/runs/legacy_droplet_N20000` |

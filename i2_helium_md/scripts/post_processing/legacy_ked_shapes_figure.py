@@ -1,7 +1,7 @@
 """Thesis figure: KED shapes of the legacy hard-sphere model, n = 0-3.
 
 The B2-3 figure (``tier2_b2_thesis_figure``, ``b2_3_ked_shapes``) for the
-legacy collision run ``data/runs/single_pulse_droplet_long`` (hard-sphere
+legacy collision run ``data/runs/legacy_droplet_N20000`` (hard-sphere
 Mode 3, sigma ~ v^-2, ``E_coulomb_scale`` 0.8): experiment raw + movmean vs
 simulation, 3-D P(E) on a kinetic-energy axis (the committed P(v) recipe
 through the Jacobian P(E) = P(v) / (m v), ``ked_traces``), peak-normalized,
@@ -43,7 +43,7 @@ from scripts.post_processing.thesis_style import FIG_RC, LEGACY_COLOR, TEXTWIDTH
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "legacy_droplet_N20000"
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_legacy"
 FORMATS: tuple[str, ...] = ("png",)
@@ -75,6 +75,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from i2_helium_md.postprocess import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import require_run  # noqa: E402
 from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     FIG_B2_3,
     PvData,
@@ -101,6 +102,7 @@ def points_rows(panels: list[PvData]) -> list[dict]:
 
 
 def main() -> int:
+    require_run(RUN_DIR / "ion.npz", "gen_legacy_runs.py")
     with warnings.catch_warnings():
         # schema v5 predates the E_int reservoir; the loader zero-fills it (unread here)
         warnings.filterwarnings("ignore", message="ion checkpoint predates")

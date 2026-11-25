@@ -136,7 +136,7 @@ _HANDOVER_NOTE = (
 # USER SETTINGS -- edit these and run the script (e.g. from PyCharm)
 # =============================================================================
 # Path to the run directory holding cfg.json + neutral.npz + ion.npz.
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "legacy_droplet_N20000"
 
 # Optional reference CSVs. Set to ``None`` to skip the matching section.
 # Typical experimental-droplet configuration:
@@ -177,7 +177,7 @@ PAPER_V2_MASS_AMU: float = 131.0
 
 # Typical 9 A HeDFT comparison configuration (uncomment and comment out the
 # experimental block above to switch):
-# RUN_DIR = PROJECT_ROOT / "data" / "runs" / "9A_hedft_comparison"
+# RUN_DIR = PROJECT_ROOT / "data" / "runs" / "legacy_9A_N2000"
 # HEDFT_REF_PATH = PROJECT_ROOT / "data" / "reference" / "TDDFT" / "9A" / "9A_All_Data.csv"
 # IHE_KED_REFERENCE_DIR = None
 # ABUNDANCE_REF_PATH = None

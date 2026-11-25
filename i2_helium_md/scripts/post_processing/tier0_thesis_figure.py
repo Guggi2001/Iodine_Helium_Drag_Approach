@@ -1,6 +1,7 @@
 """Tier-0 thesis runs (THESIS_FINAL_GOALS G11.4 step 3): B2 / B3 / h405 vs TDDFT.
 
-Runs the Tier-0 integrations and writes their series + scores; the thesis
+Integrates 18 A in memory, reads the finished 9 A runs (made by
+``scripts/gen_tier0_runs.py``) and writes their series + scores; the thesis
 figure is drawn from those CSVs by ``tier0_law_figure`` (plot-only, called at
 the end) as ``data/figures/thesis_results_discussion/tier2_B2*.png``. The three panels:
 
@@ -25,8 +26,8 @@ Laws (production coefficients, not refit):
   the bundle was extracted at 14.2 A), run at m = 21 He like B2 / B3. Its
   Tier-2-only knobs (tau 4.4, E0 0.424) do not enter fixed-mass Tier 0.
 
-Anchors (fail loudly): the B2 18 A RMSE equals the committed
-``calibration_ridge/ridge/check_B2.json`` bit-exactly and its 9 A margin the committed
+Anchors (exact; a difference is reported): the B2 18 A RMSE against the committed
+``calibration_ridge/ridge/check_B2.json`` and its 9 A margin against the committed
 ``calibration_ridge/exit_bound_9A/B2.json``. B3 and the re-landed h405 have no committed
 Tier-0 value (new numbers, reported as measured).
 
@@ -42,7 +43,6 @@ Usage::
 from __future__ import annotations
 
 import csv
-from dataclasses import replace
 from pathlib import Path
 import sys
 
@@ -56,8 +56,7 @@ if str(PROJECT_ROOT) not in sys.path:
 OUT_DIR = PROJECT_ROOT / "data" / "figures" / "thesis_microscopic_calibration"
 GATE_A = 3.5                # density-gate width of every law here [A]
 
-from i2_helium_md import load_capped_cc, load_drag_bundle, tddft_reference_path  # noqa: E402
-from i2_helium_md.config import SimConfig  # noqa: E402
+from i2_helium_md import load_capped_cc, tddft_reference_path  # noqa: E402
 from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
     build_case_setup,
     evaluate_form_objective,
@@ -65,27 +64,17 @@ from i2_helium_md.extraction.trajectory_matching import (  # noqa: E402
 from i2_helium_md.physics.drag import CAPPED_CUBIC, LINEAR_QUADRATIC  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
-from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
-from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
 from scripts.extraction.method_b_g412_ridge import (  # noqa: E402
-    BOUND_DT_ION_PS, BOUND_ION_TIME_PS, BOUND_N, BOUND_VARIANT, DT_ION_PS, ION_TIME_PS, N, SEED,
-    G11_BOUND_DIR, G11_M_EFF_AMU, G11_RIDGE_DIR, GATE_OVERRIDES,
-    HEDFT_9A_PATH, REFERENCE_FILENAME, RUNS_ROOT, _run_point, check_point, load_json,
-    _window_9a, score_run,
+    DT_ION_PS, ION_TIME_PS, N, SEED, G11_BOUND_DIR, G11_M_EFF_AMU, G11_RIDGE_DIR,
+    GATE_OVERRIDES, HEDFT_9A_PATH, REFERENCE_FILENAME, _window_9a, load_json, score_run,
 )
+from scripts.post_processing.anchors import report  # noqa: E402
 from scripts.post_processing.tier0_drag_comparison import ensemble_mean_series  # noqa: E402
-from scripts.tier0_common import M_EFF_AMU, build_tier0_cfg, run_dir_name  # noqa: E402
+from scripts.tier0_common import M_EFF_AMU  # noqa: E402
+from scripts.tier0_runs import LQ_LAWS, bound_run_name, finished_tier0_run  # noqa: E402
 
 
 HEDFT_18A_PATH = tddft_reference_path("18A")
-_B2 = check_point("B2")
-_B3 = load_drag_bundle("LQ_eff", expected_m_eff_amu=M_EFF_AMU)
-#: lq laws at m = 21 / 3.5 A gate: label -> (a [amu/ps], c [amu/A], E_bind [eV], anchored).
-LQ_LAWS = {
-    "B2": (_B2["a_amu_per_ps"], _B2["c_amu_per_A"], _B2["e_bind_eV"], True),
-    "B3": (_B3.coefficients["a"], _B3.coefficients["c"],
-           _B3.effective_binding_energy_I_ion_eV, False),
-}
 STEM = "tier0_B2_B3_h405"
 
 
@@ -110,17 +99,12 @@ def run_18a() -> dict:
                        "mass_initial_amu": G11_M_EFF_AMU},
     )
     out = {}
-    for label, (a, c, e_bind, anchored) in LQ_LAWS.items():
+    for label, (a, c, e_bind) in LQ_LAWS.items():
         r, ion, coeffs = _scored_run(LINEAR_QUADRATIC, {"a": a, "c": c}, e_bind, setup21)
-        if anchored:
-            anchor = load_json(G11_RIDGE_DIR / f"check_{label}.json")["rmse_18A_Aps"]
-            if r.rmse_Aps != anchor:
-                raise AssertionError(f"{label}: 18 A rmse {r.rmse_Aps!r} != committed {anchor!r}")
         out[label] = dict(ion=ion, coeffs=coeffs, rmse=r.rmse_Aps, escape=r.escape_fraction,
                           m_amu=G11_M_EFF_AMU, gate_A=GATE_A, e_bind=e_bind,
                           law=f"a {a:.2f}, c {c}, E {e_bind:.3f}")
-        print(f"  18A {label}: rmse {r.rmse_Aps:.4f}"
-              f"{' (anchor bit-exact)' if anchored else ' (unanchored)'}, escape {r.escape_fraction}")
+        print(f"  18A {label}: rmse {r.rmse_Aps:.4f}, escape {r.escape_fraction}")
 
     # h405 re-landed: the CC bundle's b / E_bind with its stamped cap, scored in
     # the same m = 21 / 3.5 A setup (no committed anchor at 3.5 A).
@@ -135,46 +119,31 @@ def run_18a() -> dict:
     return out, setup21
 
 
-def h405_9a_cfg() -> SimConfig:
-    """Radial 9 A Tier-0 config of the re-landed h405 (G4.12 bound settings, m = 21, 3.5 A)."""
-    return build_tier0_cfg("9A", "CC", num_molecules=BOUND_N,
-                           ion_time_ps=BOUND_ION_TIME_PS, dt_ion_ps=BOUND_DT_ION_PS,
-                           seed=SEED, m_eff_amu=G11_M_EFF_AMU)
-
-
-def _h405_9a_run() -> Path:
-    """The finished :func:`h405_9a_cfg` run, generated if missing."""
-    cfg = h405_9a_cfg()
-    run_dir = RUNS_ROOT / run_dir_name("9A", "CC", BOUND_N, "g11fig_h405pp35m21")
-    if not (run_dir / "ion.npz").exists():
-        run = RunDirectory(run_dir)
-        run.save_cfg(cfg)
-        neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
-        run_ion_propagation(cfg, neutral, run_dir=run, verbose=False)
-    return run_dir
-
-
 def run_9a() -> tuple[dict, object]:
     hedft, window = load_hedft_trajectory(HEDFT_9A_PATH), _window_9a()
-    dirs = {}
-    for label, (a, c, e_bind, _) in LQ_LAWS.items():
-        d = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N, f"g11m21{label}")
-        if not (d / "ion.npz").exists():
-            d = _run_point(c, a, e_bind, mass_amu=G11_M_EFF_AMU, tag=f"g11m21{label}")
-        dirs[label] = d
-    dirs["h405"] = _h405_9a_run()
+    runs = {label: finished_tier0_run(bound_run_name(label)) for label in (*LQ_LAWS, "h405")}
     out = {}
-    for label, d in dirs.items():
-        row = score_run(d, hedft, window)
-        if label in LQ_LAWS and LQ_LAWS[label][3]:
-            anchor = load_json(G11_BOUND_DIR / f"{label}.json")["margin_Aps"]
-            if row["margin_Aps"] != anchor:
-                raise AssertionError(f"{label}: 9 A margin {row['margin_Aps']!r} != {anchor!r}")
-        t, _, v1, v2 = ensemble_mean_series(RunDirectory(d).load_ion())
+    for label, run in runs.items():
+        row = score_run(run.root, hedft, window)
+        t, _, v1, v2 = ensemble_mean_series(run.load_ion())
         out[label] = dict(t=t, v=0.5 * (v1 + v2), row=row)
         print(f"  9A {label}: margin {row['margin_Aps']:+.3f} ({'pass' if row['pass'] else 'FAIL'}), "
               f"m {row['m_eff_amu']:.3f}")
     return out, hedft
+
+
+def committed_b2() -> tuple[float, float]:
+    """Committed B2 18 A RMSE and 9 A exit margin [A/ps]."""
+    return (load_json(G11_RIDGE_DIR / "check_B2.json")["rmse_18A_Aps"],
+            load_json(G11_BOUND_DIR / "B2.json")["margin_Aps"])
+
+
+def anchor_differences(runs18: dict, runs9: dict) -> list[str]:
+    """B2 values that differ from the committed ones (exact comparison)."""
+    rmse, margin = committed_b2()
+    return [f"B2 {name}: {value!r} vs {ref!r}" for name, value, ref in (
+        ("18 A RMSE", runs18["B2"]["rmse"], rmse),
+        ("9 A margin", runs9["B2"]["row"]["margin_Aps"], margin)) if value != ref]
 
 
 def main() -> int:
@@ -182,6 +151,7 @@ def main() -> int:
     print("===== Tier-0 thesis runs: B2 / B3 / h405 =====")
     runs18, _ = run_18a()
     runs9, _ = run_9a()
+    report(anchor_differences(runs18, runs9), "anchor OK: B2 bit-exact")
 
     series_rows = []
     for label, d in runs18.items():

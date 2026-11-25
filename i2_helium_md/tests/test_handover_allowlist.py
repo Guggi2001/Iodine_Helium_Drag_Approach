@@ -24,10 +24,35 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # --- imports ---------------------------------------------------------------
 
-def test_closure_finds_the_known_generator_leak():
+#: Package modules to be pruned in P5 that kept scripts still reach through the package.
+PRUNED_IN_P5 = {"i2_helium_md/physics/exit_strip.py", "i2_helium_md/physics/state_coupling.py",
+                "i2_helium_md/sampling/ce_channels.py"}
+
+
+def kept_closure():
+    """Every file the kept scripts (drivers included) import, themselves included."""
+    rows = [r for r in read_rows(ROOT / "docs/handover/ALLOWLIST.csv")
+            if r["kind"] == "script" and r["decision"] in ("keep", "rewire")
+            and r["item"].endswith(".py")]
+    assert "scripts/run_thesis_figures.py" in {r["item"] for r in rows}
+    return set().union(*(import_closure(ROOT / r["item"], ROOT) for r in rows))
+
+
+def test_kept_scripts_reach_no_file_to_be_deleted():
+    decide = decisions(ROOT / "docs/handover/ALLOWLIST.csv")
+    gone = {p for p in kept_closure() if decide(p) in ("move", "delete")}
+    assert gone == PRUNED_IN_P5
+
+
+def test_kept_scripts_reach_no_study_generator():
+    assert {p for p in kept_closure() if Path(p).name.startswith("gen_")} == {
+        "scripts/gen_legacy_runs.py", "scripts/gen_thesis_laws.py",
+        "scripts/gen_tier0_runs.py"}
+
+
+def test_closure_reaches_scripts_and_package():
     c = import_closure(ROOT / "scripts/post_processing/tier2_b2_thesis_figure.py", ROOT)
-    assert "scripts/post_processing/tier2_g414_table.py" in c
-    assert sum(Path(p).name.startswith("gen_") for p in c) == 10
+    assert "scripts/post_processing/anchors.py" in c
     assert any(p.startswith("i2_helium_md/") for p in c)
 
 

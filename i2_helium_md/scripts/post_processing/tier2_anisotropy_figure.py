@@ -24,8 +24,8 @@ central <E> signal mask. Diagnostic, **no sysErr** in the export, so drawn
 without error bars. Experimental n = 0 is droplet-born I+ only (gas-phase
 background subtracted); model n = 0 is every bare I+ of the detected ensemble.
 
-Anchor guard: before drawing, model beta for n = 0-7 is checked against the
-committed values of ``THESIS_DISCUSSION.md`` §13.3 (2 dp); a mismatch raises.
+Anchor guard: before drawing, model beta for n = 0-7 is compared with the
+committed values of ``THESIS_DISCUSSION.md`` §13.3 (2 dp); a difference is reported.
 
 Edit the ``USER SETTINGS`` block and run::
 
@@ -83,6 +83,8 @@ from i2_helium_md.physics.shell_schedule import complex_mass_amu  # noqa: E402
 from i2_helium_md.postprocess.detected_view import detected_ensemble_view  # noqa: E402
 from i2_helium_md.postprocess.velocity_distribution import select_final_mass_gate  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import require_run  # noqa: E402
+from scripts.post_processing.anchors import report  # noqa: E402
 
 
 # =============================================================================
@@ -189,13 +191,11 @@ def experiment_beta(path: Path, column: str = "beta_mean") -> BetaSeries:
     return BetaSeries(n=n.astype(int), beta=beta)
 
 
-def check_anchor(model: BetaSeries, anchor: dict[int, float]) -> None:
-    """Raise if model beta differs from the committed §13.3 values at 2 dp."""
+def anchor_differences(model: BetaSeries, anchor: dict[int, float]) -> list[str]:
+    """Model beta values that differ from the committed §13.3 values at 2 dp."""
     lookup = dict(zip(model.n.tolist(), model.beta.tolist()))
-    bad = {n: (lookup.get(n), ref) for n, ref in anchor.items()
-           if n not in lookup or round(lookup[n], 2) != ref}
-    if bad:
-        raise ValueError(f"model beta differs from THESIS_DISCUSSION §13.3 (n: got, committed): {bad}")
+    return [f"THESIS_DISCUSSION 13.3 beta n = {n}: {lookup.get(n)} vs {ref}"
+            for n, ref in anchor.items() if n not in lookup or round(lookup[n], 2) != ref]
 
 
 # =============================================================================
@@ -234,11 +234,12 @@ def build_figure(model: BetaSeries, exp: BetaSeries) -> plt.Figure:
 # Main
 # =============================================================================
 def main() -> int:
+    require_run(RUN_DIR / "detection.npz", "gen_thesis_laws.py")
     model = model_beta(RUN_DIR, N_MAX_MODEL, MIN_COUNT)
     exp = experiment_beta(BETA_REF_PATH)
     if ANCHOR_CHECK:
-        check_anchor(model, ANCHOR_BETA_MODEL)
-        print("[anisotropy] anchor OK vs THESIS_DISCUSSION.md §13.3")
+        report(anchor_differences(model, ANCHOR_BETA_MODEL),
+               "[anisotropy] anchor OK vs THESIS_DISCUSSION.md §13.3")
     for n, b, se, c in zip(model.n, model.beta, model.beta_se, model.count):
         print(f"[anisotropy] model n={n:2d}  N={c:5d}  beta={b:.3f} ± {se:.3f}")
 

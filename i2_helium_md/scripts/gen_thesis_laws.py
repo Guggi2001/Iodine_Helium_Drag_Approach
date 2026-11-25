@@ -1,6 +1,6 @@
 """Run the thesis laws B2 ("LQ" in the thesis), B3 and h405: members, pool, score.
 
-Set the options below, then: ``python scripts/run_thesis_laws.py``.
+Set the options below, then: ``python scripts/gen_thesis_laws.py``.
 
 A finished run or pool with the same model is skipped; a partial one or one with
 another model is refused. To vary a parameter, set ``OVERRIDES`` and a ``TAG``;
@@ -34,6 +34,8 @@ from i2_helium_md.simulation.battery import (  # noqa: E402
     pool_battery,
     run_battery,
 )
+from i2_helium_md.simulation import thesis_runs  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import RUNS_ROOT  # noqa: E402
 
 # =============================================================================
 # USER SETTINGS
@@ -42,13 +44,12 @@ LAWS = ("B2", "B3", "h405")
 MEMBERS = "all"                              # or a list such as ["s1"]
 RUN_SIZE = "production"                      # "smoke": N = 20, 1 ps, no pool, no score
 CONCURRENCY = 2                              # members at a time
-OUTPUT_ROOT = PROJECT_ROOT / "data" / "runs"
+OUTPUT_ROOT = RUNS_ROOT
 TAG = ""                                     # e.g. "_rrk10"; required with OVERRIDES
 OVERRIDES: dict[str, object] = {}            # e.g. {"evap_rrk_dof": 10.0}
 SCORES_CSV: Path | None = None               # None: OUTPUT_ROOT/thesis_scores{TAG}.csv
 # =============================================================================
 
-PRODUCTION_N = 1000
 SMOKE = {"num_molecules": 20, "ion_simulation_time": 1.0}    # ion time in ps
 SUMMARY_COLUMNS = ("label", "num_scored", "nbar_det", "n1_solv", "w1_solv", "midHot",
                    "deepKE", "KE1_mean", "KE2_mean", "chi2_med", "S", "trap")
@@ -58,12 +59,12 @@ def member_dir(law: str, member: str) -> Path:
     """Run directory of one member."""
     if RUN_SIZE == "smoke":
         return OUTPUT_ROOT / "smoke" / f"{law}{TAG}_N{SMOKE['num_molecules']}_{member}"
-    return OUTPUT_ROOT / f"{law}{TAG}_N{PRODUCTION_N}_{member}"
+    return thesis_runs.member_dir(law, member, root=OUTPUT_ROOT, tag=TAG)
 
 
 def pool_dir(law: str) -> Path:
     """Directory of the six-member pool."""
-    return OUTPUT_ROOT / f"{law}{TAG}_N{PRODUCTION_N * len(THESIS_MEMBER_SEEDS)}_pooled"
+    return thesis_runs.pool_dir(law, root=OUTPUT_ROOT, tag=TAG)
 
 
 def scores_csv() -> Path:

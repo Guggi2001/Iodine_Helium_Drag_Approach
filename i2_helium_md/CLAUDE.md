@@ -197,7 +197,7 @@ in checkpoints (config belongs in `cfg.json`); load with `allow_pickle=False`;
 shape validation uses `cfg` when available.
 
 Avoid changing checkpoint schema, physical constants, neutral propagation, ion
-propagation, collision physics, or `scripts/run_single_pulse.py` behavior unless
+propagation, collision physics, or `scripts/gen_legacy_runs.py` behavior unless
 a focused test reveals a real bug or the user explicitly asks.
 
 ## Drag-Model Port

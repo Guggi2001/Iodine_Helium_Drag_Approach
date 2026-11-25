@@ -98,9 +98,30 @@ s1–s5 + r6 members, B2 chord bins) in all three panels (changed 2026-10-25;
 before, the old h405 at 14.2 Å was overlaid binned from
 `detfix_postpickup_chord.csv`). The raw-sampler A5 overlay was dropped
 2026-10-24 (its runs are no longer on disk). Numbers: `g5_postpickup_chord.csv` (binned,
-`lqppb2`; the script anchors on it to 4 dp), `h405_pp35_table.csv` (the
-re-landed h405 pooled row; anchored to 4 dp), `g6_chord_stats.csv` (n = 1
-window, KE₁ spread).
+`lqppb2`; table below), `h405_pp35_table.csv` (the re-landed h405 pooled row;
+superseded by §15), `g6_chord_stats.csv` (n = 1 window, KE₁ spread). The script
+no longer reads the first two (handover P3); both files are deleted in P4
+(tag `thesis-final`).
+
+B2 per emission-axis chord bin, `g5_postpickup_chord.csv`, arm `lqppb2`, six
+pooled **`never`** members (a suppressed ion counts with its raw n = 21; under
+the production `decoupled` it is bare I⁺), copied 2026-11-25:
+
+| chord / Å | ions | retained | n = 1 share | mean n | mean KE / eV |
+|---|---|---|---|---|---|
+| 0–25 | 10 | 0.0000 | 0.0000 | 21.0000 | 1.4605 |
+| 25–30 | 282 | 0.0000 | 0.0000 | 21.0000 | 1.2639 |
+| 30–33 | 625 | 0.0000 | 0.0000 | 21.0000 | 1.1477 |
+| 33–35 | 597 | 0.0000 | 0.4238 | 12.5243 | 0.9014 |
+| 35–37 | 750 | 0.0000 | 1.0000 | 1.0000 | 0.6346 |
+| 37–39 | 737 | 0.0000 | 0.9946 | 1.0054 | 0.5912 |
+| 39–41 | 749 | 0.0000 | 0.5421 | 1.4579 | 0.5572 |
+| 41–44 | 1139 | 0.0000 | 0.0000 | 2.0176 | 0.5170 |
+| 44–48 | 1356 | 0.0000 | 0.0000 | 2.9019 | 0.4601 |
+| 48–55 | 1978 | 0.0000 | 0.0000 | 4.4242 | 0.3788 |
+| 55–65 | 1775 | 0.0000 | 0.0000 | 6.8868 | 0.2637 |
+| 65–80 | 1370 | 0.0175 | 0.0000 | 10.0981 | 0.1154 |
+| 80–200 | 632 | 0.8877 | 0.0000 | 12.8873 | 0.0236 |
 
 - The detected (n, KE) is a near-deterministic function of the
   **emission-axis chord**: the straight path from the birth point along the

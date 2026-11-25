@@ -55,6 +55,9 @@ _PAIR_SPOTCHECK_SEED = 20260730
 #: Files of a complete member directory, in the order they are written.
 ARTIFACTS = ("cfg.json", "neutral.npz", "ion.npz", STAGE1_EVENTS_FILENAME, "detection.npz")
 
+#: Files of a complete neutral + ion run (legacy and Tier-0 runs).
+TWO_STAGE_ARTIFACTS = ("cfg.json", "neutral.npz", "ion.npz")
+
 
 #: Present while a process writes the directory; a crash leaves it behind.
 LOCK_NAME = ".running"
@@ -158,6 +161,36 @@ def claimed(run_dir: Path, cfg: SimConfig, artifacts: Sequence[str]) -> Iterator
         yield not _holds_finished_run(run_dir, cfg, artifacts)
     finally:
         lock.unlink()
+
+
+def run_neutral_and_ion(cfg: SimConfig, run_dir: Path) -> None:
+    """Neutral and ion stage of ``cfg`` into ``run_dir``, unless finished there.
+
+    Parameters
+    ----------
+    cfg : SimConfig
+        Model to run; validated first.
+    run_dir : Path
+        Gets ``TWO_STAGE_ARTIFACTS``.
+
+    Raises
+    ------
+    RunDirectoryMismatch
+        The directory is partial, damaged, claimed or holds another model; nothing
+        is overwritten.
+    """
+    if is_finished(run_dir, cfg, TWO_STAGE_ARTIFACTS):
+        print(f"[{run_dir.name}] skip (complete)", flush=True)
+        return
+    cfg.validate()
+    with claimed(run_dir, cfg, TWO_STAGE_ARTIFACTS) as start:
+        if start:
+            print(f"[{run_dir.name}] running, seed {cfg.seed}", flush=True)
+            run = RunDirectory(run_dir)
+            run.save_cfg(cfg)
+            neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
+            run_ion_propagation(cfg, neutral, run_dir=run, verbose=False)
+            print(f"[{run_dir.name}] done", flush=True)
 
 
 def verify_handover_alignment(cfg: SimConfig) -> tuple[int, int]:

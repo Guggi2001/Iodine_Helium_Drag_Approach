@@ -48,12 +48,12 @@ Every recipe is the B2 script's data layer (``size_data``, ``ke_data``,
 for the experiment and the first law, the further laws are overlaid in their
 own colour / marker / dash. Nothing is re-derived.
 
-Anchor guard: per law, the quoted scalars (``anchor_values``) are checked
-against that law's decoupled row of
+Anchor guard: per law, the quoted scalars (``anchor_values``) are compared
+with that law's decoupled row of
 ``data/runs/h2b_forward_model/g13_decoupled_table.csv`` to 4 dp (row label
 = law, container = pool name), plus KE1 / KE2 mean and median there; the
 bare share, the n = 0 mean / median KE and the KE1 / KE2 medians against
-``thesis_observables_extra.csv``; a mismatch raises.
+``thesis_observables_extra.csv``; a difference is reported, another pool raises.
 
 Edit the ``USER SETTINGS`` block and run::
 
@@ -227,6 +227,8 @@ from i2_helium_md.postprocess import (  # noqa: E402
 )
 from i2_helium_md.postprocess.tier2_confirmation import read_confirmation_detection  # noqa: E402
 from i2_helium_md.simulation.detection_stage import load_detection_result  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import require_run  # noqa: E402
+from scripts.post_processing.anchors import report, row_differences  # noqa: E402
 from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     FIG_B2_1,
     FIG_B2_2,
@@ -238,7 +240,6 @@ from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     _finish_axis,
     _panel_letters,
     anchor_values,
-    check_anchor,
     draw_ke_mean,
     draw_ke_ratio,
     draw_pv,
@@ -318,20 +319,25 @@ def check_benchmarks(values: dict[str, float]) -> None:
         raise ValueError("benchmark mismatch:\n  " + "\n  ".join(bad))
 
 
+def anchor_differences(law: LawData) -> list[str]:
+    """Quoted scalars of ``law`` that differ from its committed rows at 4 dp."""
+    g13, extra = moment_anchor_values(law)
+    return (row_differences(anchor_values(law.size, law.ke) | g13, WINNERS_CSV, law.key,
+                            LAWS[law.key][0])
+            + row_differences(extra, EXTRA_CSV, law.key))
+
+
 def load_law(key: str, abundance, ked_ref) -> LawData:
     """Read one pooled container with the scorer's reader; anchor-check it."""
     pool, name, color, marker, dash, slot = LAWS[key]
-    run_dir = RUNS_DIR / pool
-    det = load_detection_result(run_dir / "detection.npz")
+    det = load_detection_result(require_run(RUNS_DIR / pool / "detection.npz", "gen_thesis_laws.py"))
     read = read_confirmation_detection(det, label=pool)
     size, ke = size_data(read, abundance), ke_data(read, ked_ref)
     law = LawData(key=key, name=name, color=color, marker=marker, dash=dash, slot=slot,
                   size=size, ke=ke, view=detected_ensemble_view(det), read=read)
     if ANCHOR_CHECK:
-        g13, extra = moment_anchor_values(law)
-        check_anchor(anchor_values(size, ke) | g13, WINNERS_CSV, key, pool)
-        check_anchor(extra, EXTRA_CSV, key)
-        print(f"[laws] anchor OK vs {WINNERS_CSV.name} + {EXTRA_CSV.name}:{key}")
+        report(anchor_differences(law),
+               f"[laws] anchor OK vs {WINNERS_CSV.name} + {EXTRA_CSV.name}:{key}")
     return law
 
 

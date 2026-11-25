@@ -1,21 +1,19 @@
-"""Run one single-pulse iodine/helium simulation.
+"""Generate legacy hard-sphere runs: the thesis runs, or one run of your own.
 
-How to use this file
---------------------
-Open this file, edit the values in USER SETTINGS, then run the file from your
-editor or with:
+Open this file, edit the values in USER SETTINGS, then run it from your editor or
+with:
 
-    python scripts/run_single_pulse.py
+    python scripts/gen_legacy_runs.py
 
-The script writes one self-contained run directory containing:
+Every run directory holds ``cfg.json``, ``neutral.npz`` and ``ion.npz``.
 
-    cfg.json
-    neutral.npz
-    ion.npz
-
-Start with the small smoke settings below. Once that works, switch
-RUN_SIZE to "production", choose the input preset you want, or set your own
-NUM_MOLECULES and ION_TIME_PS.
+* ``INPUT_PRESET = "thesis_legacy"`` makes the three seeded runs behind the legacy
+  figures (``presets.LEGACY_THESIS_RUNS``) in ``data/runs/<name>``; the name of one of
+  them makes just that one. Size, seed and directory follow from the name. A finished
+  run is skipped; a partial one or one with another model is refused. The runs of the
+  submitted figures were unseeded, so these agree with them statistically only.
+* Any other preset makes one run in ``RUN_DIR`` with your settings. Start with
+  ``RUN_SIZE = "smoke"``.
 """
 
 from __future__ import annotations
@@ -36,17 +34,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # This is the section you should edit for normal use. You do not need command
 # line arguments.
 
-# Choose which migrated MATLAB input file to use as the base configuration.
+# "thesis_legacy"                       all three thesis runs below
+# "legacy_9A_N2000"                     thesis run, HeDFT comparison 9 A
+# "legacy_18A_N2000"                    thesis run, HeDFT comparison 18 A
+# "legacy_droplet_N20000"               thesis run, droplet size distribution
 #
-# "single_pulse_N2000" ---> HEDFT comparison 9A case
-# "single_pulse_N2000_18Angst" ---> HEDFT comparison 18A case
-
-# "single_pulse_droplet_distribution"   ---> Realistic droplet size distribution to compare to experiment
-
-
-#INPUT_PRESET = "single_pulse_N2000"
-#INPUT_PRESET = "single_pulse_N2000_18Angst"
-INPUT_PRESET = "single_pulse_droplet_distribution"
+# Migrated MATLAB input files, for your own runs:
+# "single_pulse_N2000"                  HeDFT comparison 9 A
+# "single_pulse_N2000_18Angst"          HeDFT comparison 18 A
+# "single_pulse_droplet_distribution"   droplet size distribution, as the experiment
+INPUT_PRESET = "thesis_legacy"
 
 # Choose "smoke", "custom", or "production".
 #
@@ -54,12 +51,15 @@ INPUT_PRESET = "single_pulse_droplet_distribution"
 # "custom"     uses NUM_MOLECULES, SEED, and ION_TIME_PS below
 # "production" uses the selected INPUT_PRESET exactly, unless you override
 #              values in the PRODUCTION OVERRIDES section
+#
+# Thesis runs: "production", or "smoke" for NUM_MOLECULES and ION_TIME_PS in
+# data/runs/smoke.
 RUN_SIZE = "production"
 
-# Where the output files are written. Change the final folder name for each run
+# Where your own run is written (thesis runs have fixed names). Change the final folder name for each run
 # you want to keep. This intentionally points to the project-level data/runs
 # folder, not to scripts/data/runs and not to a top-level results folder.
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "legacy_custom"
 
 # If False, the script stops when RUN_DIR already contains outputs. This
 # prevents accidental overwrites. Set True only when you intentionally want to
@@ -79,11 +79,11 @@ VERBOSE = True
 # =============================================================================
 # PRODUCTION OVERRIDES
 # =============================================================================
-# Leave these as None to use the selected INPUT_PRESET exactly.
+# Leave these as None to use the selected INPUT_PRESET exactly (required for thesis runs).
 
 # Set one of these values only if you want a production-like run with a specific
 # override.
-PRODUCTION_NUM_MOLECULES = 20000
+PRODUCTION_NUM_MOLECULES = None
 PRODUCTION_SEED = None
 PRODUCTION_ION_TIME_PS = None
 
@@ -114,9 +114,20 @@ from i2_helium_md import (  # noqa: E402
     single_pulse_N2000_18Angst,
     single_pulse_droplet_distribution,
 )
+from i2_helium_md.config import SimConfig  # noqa: E402
+from i2_helium_md.presets import LEGACY_THESIS_RUNS  # noqa: E402
+from i2_helium_md.simulation.battery import run_neutral_and_ion  # noqa: E402
 from i2_helium_md.simulation.ion import run_ion_propagation  # noqa: E402
 from i2_helium_md.simulation.neutral import run_neutral_propagation  # noqa: E402
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import RUNS_ROOT  # noqa: E402
+
+OUTPUT_ROOT = RUNS_ROOT
+PRODUCTION_OVERRIDES = (
+    "PRODUCTION_NUM_MOLECULES", "PRODUCTION_SEED", "PRODUCTION_ION_TIME_PS",
+    "PRODUCTION_CROSSSECTION", "PRODUCTION_BINDING_ENERGY",
+    "PRODUCTION_MASS_ATTACH_PROBABILITY",
+)
 
 
 PRESET_BUILDERS = {
@@ -127,7 +138,11 @@ PRESET_BUILDERS = {
 
 
 def main() -> int:
-    """Run the simulation using the settings at the top of this file."""
+    """Make the run or runs selected at the top of this file."""
+    if INPUT_PRESET == "thesis_legacy" or INPUT_PRESET in LEGACY_THESIS_RUNS:
+        for run_dir, thesis_cfg in thesis_runs().items():
+            run_neutral_and_ion(thesis_cfg, run_dir)
+        return 0
     cfg = build_config()
     run = RunDirectory(RUN_DIR)
 
@@ -162,6 +177,27 @@ def main() -> int:
 
     print_run_footer(run, neutral_steps=neutral.time_ps.size, ion_steps=ion.time_ps.size)
     return 0
+
+
+def thesis_runs() -> dict[Path, SimConfig]:
+    """The selected thesis runs: directory -> config.
+
+    Raises ``SystemExit`` naming a setting that contradicts the fixed size, seed and
+    directory of a thesis run.
+    """
+    set_overrides = [name for name in PRODUCTION_OVERRIDES if globals()[name] is not None]
+    if set_overrides:
+        raise SystemExit(f"{', '.join(set_overrides)} must be None for a thesis run")
+    if OVERWRITE_EXISTING_RUN:
+        raise SystemExit("OVERWRITE_EXISTING_RUN must be False for a thesis run")
+    if RUN_SIZE not in ("production", "smoke"):
+        raise SystemExit(
+            f"RUN_SIZE must be 'production' or 'smoke' for a thesis run, got {RUN_SIZE!r}")
+    names = list(LEGACY_THESIS_RUNS) if INPUT_PRESET == "thesis_legacy" else [INPUT_PRESET]
+    if RUN_SIZE == "smoke":
+        size = {"num_molecules": NUM_MOLECULES, "ion_simulation_time": ION_TIME_PS}
+        return {OUTPUT_ROOT / "smoke" / n: LEGACY_THESIS_RUNS[n](**size) for n in names}
+    return {OUTPUT_ROOT / n: LEGACY_THESIS_RUNS[n]() for n in names}
 
 
 def build_config():
@@ -208,7 +244,7 @@ def get_preset_builder(name: str):
     try:
         return PRESET_BUILDERS[name]
     except KeyError as exc:
-        choices = ", ".join(sorted(PRESET_BUILDERS))
+        choices = ", ".join(["thesis_legacy", *LEGACY_THESIS_RUNS, *sorted(PRESET_BUILDERS)])
         raise ValueError(
             f"unknown INPUT_PRESET {name!r}; use one of: {choices}"
         ) from exc

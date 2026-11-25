@@ -1,6 +1,6 @@
 """Thesis figure: mean KE and size distribution of the legacy hard-sphere model, n = 0-20.
 
-Legacy collision run ``data/runs/single_pulse_droplet_long`` (hard-sphere
+Legacy collision run ``data/runs/legacy_droplet_N20000`` (hard-sphere
 Mode 3, sigma ~ v^-2, ``E_coulomb_scale`` 0.8) vs experiment, two panels on a
 shared n axis:
 
@@ -52,7 +52,7 @@ from scripts.post_processing.thesis_style import FIG_RC, LEGACY_COLOR, TEXTWIDTH
 # =============================================================================
 # USER SETTINGS
 # =============================================================================
-RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet_long"
+RUN_DIR: Path = PROJECT_ROOT / "data" / "runs" / "legacy_droplet_N20000"
 IHE_KED_REFERENCE_DIR: Path = PROJECT_ROOT / "data" / "reference" / "ihe_ked"
 ABUNDANCE_REF_PATH: Path = PROJECT_ROOT / "data" / "reference" / "integrated_i_he_abundance.csv"
 OUT_DIR: Path = PROJECT_ROOT / "data" / "figures" / "thesis_legacy"
@@ -100,6 +100,7 @@ from i2_helium_md.postprocess import (  # noqa: E402
     load_ihe_ked_reference,
 )
 from i2_helium_md.simulation.run_directory import RunDirectory  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import require_run  # noqa: E402
 from scripts.post_processing.tier2_b2_thesis_figure import (  # noqa: E402
     FIG_B2_1,
     FIG_B2_2,
@@ -243,6 +244,7 @@ def build_legacy_ke_split_size(ke: KEData, size: LegacySizeData,
 
 
 def main() -> int:
+    require_run(RUN_DIR / "ion.npz", "gen_legacy_runs.py")
     with warnings.catch_warnings():
         # schema v5 predates the E_int reservoir; the loader zero-fills it (unread here)
         warnings.filterwarnings("ignore", message="ion checkpoint predates")

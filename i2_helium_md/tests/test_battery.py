@@ -354,3 +354,43 @@ def test_partial_pool_is_refused(two_members, tmp_path):
     (out / "detection.npz").unlink()
     with pytest.raises(RunDirectoryMismatch, match="detection.npz"):
         pool_battery(two_members, out)
+
+
+# --- neutral + ion runs (legacy and Tier-0) ------------------------------------
+
+def _two_stage_cfg(seed):
+    from i2_helium_md.presets import single_pulse_N2000
+
+    return single_pulse_N2000(num_molecules=4, seed=seed, ion_simulation_time=0.5)
+
+
+def test_two_stage_seed_repeats_and_another_does_not(tmp_path):
+    for name, seed in (("a", 1), ("b", 1), ("c", 2)):
+        battery.run_neutral_and_ion(_two_stage_cfg(seed), tmp_path / name)
+    with np.load(tmp_path / "a/ion.npz") as a, np.load(tmp_path / "b/ion.npz") as b, \
+            np.load(tmp_path / "c/ion.npz") as c:
+        assert all(np.array_equal(a[k], b[k], equal_nan=a[k].dtype.kind == "f")
+                   for k in a.files)
+        assert not np.array_equal(a["velocities_x"], c["velocities_x"])
+
+
+def test_two_stage_run_holds_three_files_and_is_skipped(tmp_path):
+    cfg, run_dir = _two_stage_cfg(1), tmp_path / "a"
+    battery.run_neutral_and_ion(cfg, run_dir)
+    before = {p: p.stat().st_mtime_ns for p in run_dir.iterdir()}
+    assert {p.name for p in before} == set(battery.TWO_STAGE_ARTIFACTS)
+    battery.run_neutral_and_ion(cfg, run_dir)
+    assert {p: p.stat().st_mtime_ns for p in run_dir.iterdir()} == before
+
+
+@pytest.mark.parametrize("spoil, match", [
+    ("other", "seed"), ("partial", "ion.npz"), ("claimed", battery.LOCK_NAME)])
+def test_two_stage_directory_is_refused(tmp_path, spoil, match):
+    run_dir = tmp_path / "a"
+    battery.run_neutral_and_ion(_two_stage_cfg(2 if spoil == "other" else 1), run_dir)
+    if spoil == "partial":
+        (run_dir / "ion.npz").unlink()
+    if spoil == "claimed":
+        (run_dir / battery.LOCK_NAME).touch()
+    with pytest.raises(battery.RunDirectoryMismatch, match=match):
+        battery.run_neutral_and_ion(_two_stage_cfg(1), run_dir)

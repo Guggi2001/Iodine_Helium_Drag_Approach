@@ -49,6 +49,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from i2_helium_md.postprocess.abundance_loader import (  # noqa: E402
     load_he_abundance_reference,
 )
+from i2_helium_md.postprocess.emission_chord import (  # noqa: E402
+    CHORD_EDGES_ANGSTROM,
+    emission_chords,
+)
 from i2_helium_md.postprocess.ihe_ked import load_ihe_ked_reference  # noqa: E402
 from i2_helium_md.postprocess.tier2_confirmation import (  # noqa: E402
     pool_confirmation_reads,
@@ -86,8 +90,6 @@ from scripts.post_processing.tier2_confirmation_score import (  # noqa: E402
 
 OUT_CSV = RUNS_ROOT / "h2b_forward_model" / "detfix_postpickup_table.csv"
 CHORD_CSV = RUNS_ROOT / "h2b_forward_model" / "detfix_postpickup_chord.csv"
-#: Emission-axis chord bins [Å] for the chord -> (n, KE) map (D0 §15.8).
-CHORD_EDGES_ANGSTROM = (0, 25, 30, 33, 35, 37, 39, 41, 44, 48, 55, 65, 80, 200)
 ANCHOR_COLS = ("nbar_det", "n1_solv", "w1_solv", "midHot", "deepKE",
                "chi2_med", "S")
 #: Propagation-path N -> R convention (bulk density, D0 §15.3).
@@ -113,28 +115,6 @@ def size_columns(run_dirs: list[Path]) -> dict[str, float]:
     q05, q95 = np.quantile(R, [0.05, 0.95])
     return {"N_mean": float(N.mean()), "N_median": float(np.median(N)),
             "R_mean": float(R.mean()), "R_q05": float(q05), "R_q95": float(q95)}
-
-
-def emission_chords(run_dir: Path) -> np.ndarray:
-    """Straight-line path [Å] from each fragment's birth point to the droplet
-    surface along the Coulomb-explosion axis (partner -> fragment).
-
-    Uses the last stored neutral-stage column (= the first ion-stage column,
-    bit-identical); fragment ``i`` pairs with ``i ± num_molecules``.
-    Chord = -p·ê + sqrt((p·ê)² - |p|² + R²) for birth position p, unit axis
-    ê, droplet radius R. Ignores deflection and the soft erf edge of the
-    density gate. Shape (2 * num_molecules,).
-    """
-    with np.load(run_dir / "neutral.npz", allow_pickle=False) as z:
-        R = np.asarray(z["droplet_radii"], dtype=float)
-        P = np.stack([z[k][:, -1] for k in ("positions_x", "positions_y",
-                                            "positions_z")], axis=1)
-    n_mol = R.size // 2
-    partner = np.r_[np.arange(n_mol, 2 * n_mol), np.arange(n_mol)]
-    axis = P - P[partner]
-    axis /= np.linalg.norm(axis, axis=1, keepdims=True)
-    pe = np.sum(P * axis, axis=1)
-    return -pe + np.sqrt(pe ** 2 - np.sum(P * P, axis=1) + R ** 2)
 
 
 def chord_rows(arm: str, run_dirs: list[Path]) -> list[dict[str, Any]]:

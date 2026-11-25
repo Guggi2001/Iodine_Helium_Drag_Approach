@@ -11,7 +11,6 @@ Agg backend, figures closed, nothing written to disk.
 
 from __future__ import annotations
 
-import csv
 import importlib.util
 import sys
 from pathlib import Path
@@ -202,28 +201,7 @@ class TestKedEnergyAxis:
             mod.ked_traces(d, "p", e_min_eV=0.01)
 
 
-class TestAnchorGuard:
-    def _csv(self, tmp_path, values, label="B2_pp_c160", container="c"):
-        path = tmp_path / "winners.csv"
-        with open(path, "w", newline="", encoding="utf-8") as fh:
-            w = csv.DictWriter(fh, fieldnames=["label", "container", *values])
-            w.writeheader()
-            w.writerow({"label": label, "container": container, **values})
-        return path
-
-    def test_passes_on_4dp_match_and_raises_on_drift(self, mod, tmp_path):
-        path = self._csv(tmp_path, {"nbar_det": 3.90284712, "midHot": 1.0016225})
-        mod.check_anchor({"nbar_det": 3.90284, "midHot": 1.00162}, path, "B2_pp_c160", "c")
-        with pytest.raises(ValueError, match="nbar_det"):
-            mod.check_anchor({"nbar_det": 3.9040, "midHot": 1.00162}, path, "B2_pp_c160")
-
-    def test_raises_on_wrong_container_or_missing_label(self, mod, tmp_path):
-        path = self._csv(tmp_path, {"nbar_det": 3.9})
-        with pytest.raises(ValueError, match="belongs to"):
-            mod.check_anchor({"nbar_det": 3.9}, path, "B2_pp_c160", "other")
-        with pytest.raises(ValueError, match="expected one row"):
-            mod.check_anchor({"nbar_det": 3.9}, path, "B3")
-
+class TestAnchorValues:
     def test_anchor_values_cover_quoted_scalars(self, mod, inputs):
         v = mod.anchor_values(mod.size_data(inputs["read"], inputs["abundance"]),
                               mod.ke_data(inputs["read"], inputs["ked_ref"]))

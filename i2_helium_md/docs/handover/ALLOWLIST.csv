@@ -236,7 +236,7 @@ data/runs/h2b_forward_model/g414_fit.csv,data,,,delete,"study table, off the all
 data/runs/h2b_forward_model/g414_table.csv,data,,,delete,"study table, off the allowlist"
 data/runs/h2b_forward_model/g414_tradeoff.csv,data,,,delete,study table; confirm_cells() reads it in every B2 build today: values go into the presets first (P2)
 data/runs/h2b_forward_model/g415_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
-data/runs/h2b_forward_model/g5_postpickup_chord.csv,data,,,keep,THESIS_DISCUSSION read by tier2_g6_chord_map
+data/runs/h2b_forward_model/g5_postpickup_chord.csv,data,,,delete,[U] D12: B2 rows kept in THESIS_DISCUSSION 1
 data/runs/h2b_forward_model/g5_postpickup_table.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
 data/runs/h2b_forward_model/g5_winners_table.csv,data,,,delete,"study table, off the allowlist"
 data/runs/h2b_forward_model/g5_winners_table_ihekedv2.csv,data,,,delete,[U] not in the thesis text; numbers kept in docs only (P6)
@@ -272,7 +272,7 @@ data/runs/h2b_forward_model/h2b_s4_c4scan_ke.csv,data,,,delete,"study table, off
 data/runs/h2b_forward_model/h2b_s4_c4scan_predictions.csv,data,,,delete,"study table, off the allowlist"
 data/runs/h2b_forward_model/h2b_s6_final_ke.csv,data,,,delete,"study table, off the allowlist"
 data/runs/h2b_forward_model/h2b_s6_final_predictions.csv,data,,,delete,"study table, off the allowlist"
-data/runs/h2b_forward_model/h405_pp35_table.csv,data,,,keep,THESIS_DISCUSSION read by tier2_g6_chord_map
+data/runs/h2b_forward_model/h405_pp35_table.csv,data,,,delete,[U] D12: superseded by 15
 data/runs/h2b_forward_model/thesis_observables_extra.csv,data,,,keep,THESIS_DISCUSSION 15 source
 data/runs/h2b_forward_model/thesis_observables_per_n.csv,data,,,keep,THESIS_DISCUSSION 15.2 source
 docs/POST_THESIS_CLEANUP.md,doc,,,delete,content to the six handover documents first (P6)
@@ -527,9 +527,8 @@ scripts/post_processing/tier2atlas_ptail_table.py,script,,,delete,"study script,
 scripts/post_processing/tier2atlas_retained_bracket.py,script,,,delete,"study script, off the allowlist"
 scripts/post_processing/tier2atlas_sn_table.py,script,,,delete,"study script, off the allowlist"
 scripts/regen_tier2_stage1_events.py,script,,,delete,"[U] 2026-11-25 (D10): run_member always records the events"
-scripts/run_legacy_and_tier0.py,script,,,keep,regeneration driver 2 (P2)
-scripts/run_single_pulse.py,script,,,keep,
-scripts/run_thesis_laws.py,script,,,keep,regeneration driver 1 (P2)
+scripts/gen_legacy_runs.py,script,,,keep,legacy runs; was run_single_pulse.py (D15)
+scripts/gen_thesis_laws.py,script,,,keep,thesis-law runs; was run_thesis_laws.py (D15)
 scripts/tier0_common.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,rewire,reads options that change: drag_bundle drag_form drag_gate_steepness drag_spatial_gate mass_scenario
 scripts/tier2_common.py,script,18A_B2.png 18A_B2_Force_Energy.png 18A_Stuck_Force_Energy.png 18A_Stuck_Velocity_R.png 9A_B2.png b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g13_exit_vs_detection.png g13_shed_timing.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,move,"with_current_bundle_ids, cfg_diff -> package; rest deleted"
 scripts/tier2_h2b_forward_model.py,script,b2_1_size_distribution.png b2_2_mean_ke.png b2_2_mean_ke_split.png b2_3_ked_shapes.png b2_4_ked_shapes_2d.png g6_chord_map_b2_only.jpg g6_chord_map_with_h405.jpg laws_1_size_distribution_b3.png laws_1_size_distribution_h405.png laws_2_mean_ke_b3.png laws_2_mean_ke_h405.png laws_3_ked_shapes_b3.png laws_3_ked_shapes_h405.png laws_4_size_with_bare_lq.png laws_5_ked_n012_lq.png legacy_ke_and_size.png legacy_ke_and_size_points.csv legacy_ke_split_and_size.png legacy_ked_shapes.png legacy_ked_shapes_points.csv tier0_B2_B3_h405_scores.csv tier0_B2_B3_h405_series.csv tier0_ridge_m21_laws.png tier2_B2_B3.png tier2_B2_h405.png,,delete,[U] twin not needed; cheap MD runs replace it; method described in docs (P6)
@@ -638,9 +637,8 @@ tests/test_relaxation_dissipation_config.py,test,,,delete,tests deleted code
 tests/test_relaxation_landau_gamma.py,test,,,delete,tests deleted code
 tests/test_relaxation_stage.py,test,,,delete,tests deleted code
 tests/test_run_directory.py,test,,,rewire,reads options that change: dissociation_ladder drag_gate_steepness
-tests/test_run_legacy_and_tier0.py,test,,,keep,
-tests/test_run_single_pulse.py,test,,,keep,
-tests/test_run_thesis_laws.py,test,,,keep,
+tests/test_gen_legacy_runs.py,test,,,keep,
+tests/test_gen_thesis_laws.py,test,,,keep,
 tests/test_self_bound_gate_release.py,test,,,rewire,reads options that change: cooling_spatial_gate evaporation_shed_convention gate_onset_override_eV mass_scenario self_bound_gate_release
 tests/test_shell_schedule.py,test,,,rewire,"covers kept and removed code, or imports a moved script"
 tests/test_size_distribution.py,test,,,keep,
@@ -680,7 +678,7 @@ tests/test_velocity_distribution.py,test,,,keep,
 ../molecular_dynamics_lammps/,script,,,keep,"[U] outside i2_helium_md, left alone"
 old_data/,data,,,delete,"no thesis figure or number, no reader in the package"
 .crossnote/,doc,,,delete,"no thesis figure or number, no reader in the package"
-i2_helium_md.egg-info/,doc,,,delete,"no thesis figure or number, no reader in the package"
+i2_helium_md.egg-info/,doc,,,delete,[U] D13: untracked in P4; stays on disk
 scripts/cross_reference/,script,,,delete,MATLAB/Python port checks; no test file mentions the folder
 data/tier2_probe_figures/,data,,,delete,"no thesis figure or number, no reader in the package"
 SimConfig.seed,option,,B2=20260730; B3=20260730; h405=20260730; T0_18A=20260604; T0_18A_stuck=20260604; T0_9A=20260604; T0_9A_h405=20260604; HS_9A=None; HS_18A=None; HS_long_preset=None,keep,
@@ -810,7 +808,7 @@ THESIS_DISCUSSION 15.2,number,thesis text,thesis_observables_per_n.csv,keep,fina
 THESIS_DISCUSSION 16,number,thesis text,g13_*.csv; tier2_g13_shed_timing.py,keep,latest
 THESIS_DISCUSSION 1,number,thesis text,g6_chord_stats.csv g7_ke_width.csv; tier2_g6_chord_map.py,keep,"G6 refresh, decoupled"
 THESIS_DISCUSSION 13,number,thesis text,IHe_KED_beta.csv IHe_KED_beta_vs_v.csv; tier2_anisotropy_figure.py,keep,
-THESIS_DISCUSSION 11,number,thesis text,h405_pp35_table.csv,delete,numbers superseded by 15; h405_pp35_table.csv stays because tier2_g6_chord_map reads it
+THESIS_DISCUSSION 11,number,thesis text,h405_pp35_table.csv,delete,numbers superseded by 15
 THESIS_DISCUSSION 2,number,thesis text,droplet samplers (D0 15.8-15.9),keep,[U] not in the thesis text: kept in docs only (P6)
 THESIS_DISCUSSION 7,number,thesis text,g9_columns g415_table detfix_postpickup_table,keep,[U] not in the thesis text: kept in docs only (P6)
 THESIS_DISCUSSION 10,number,thesis text,b2_seff_table b2_seff_timing,keep,[U] not in the thesis text: kept in docs only (P6)
@@ -818,3 +816,15 @@ THESIS_DISCUSSION 14,number,thesis text,g5_postpickup_table g5_winners_table_ihe
 docs/handover/ALLOWLIST.csv,doc,,,keep,temporary; removed in P6
 docs/superpowers/plans/2026-11-25-handover-p2.md,doc,,,keep,temporary; removed in P6
 docs/superpowers/plans/2026-11-25-handover-p3.md,doc,,,keep,temporary; removed in P6
+i2_helium_md/postprocess/emission_chord.py,module,,,keep,emission chords (P3)
+i2_helium_md/simulation/thesis_runs.py,module,,,keep,thesis run directory names (P3)
+scripts/post_processing/anchors.py,script,,,keep,compare with committed numbers (P3)
+scripts/run_thesis_figures.py,script,,,keep,draws and compares all figures (P3)
+scripts/tier0_runs.py,script,,,keep,""Tier-0 runs: configs, reading (P3)""
+tests/test_emission_chord.py,test,,,keep,P3
+tests/test_figure_inputs.py,test,,,keep,P3
+tests/test_run_thesis_figures.py,test,,,keep,P3
+tests/test_thesis_anchors.py,test,,,keep,P3
+tests/test_thesis_runs.py,test,,,keep,P3
+tests/test_tier0_runs.py,test,,,keep,P3
+docs/superpowers/plans/2026-11-25-handover-p4.md,doc,,,keep,removed in P6

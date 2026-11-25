@@ -60,6 +60,8 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.post_processing.tier2_b2_thesis_figure import NBAR_LANDING  # noqa: E402
+
 # =============================================================================
 # Pre-registered (G4.14; FIXED)
 # =============================================================================
@@ -76,7 +78,6 @@ FULL_LINE_ORDER = 3           # cubic in tau (c = 2.0, 24 runs)
 SHORT_LINE_ORDER = 2          # quadratic (10-run c)
 SHORT_LINE_MAX_TAUS = 5
 N1_MIN = 0.200
-NBAR_LANDING = (3.83, 4.31)
 MIDHOT_BAND = (0.85, 1.15)
 NBAR_MATCH = 3.89
 SELECT_TAU_STEP_PS = 0.01

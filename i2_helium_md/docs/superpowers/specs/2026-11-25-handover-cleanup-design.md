@@ -17,11 +17,11 @@ scripts that reproduce thesis findings.
 
 **Goals**
 
-- [U] On a new PC, 2 or 3 simple scripts regenerate all data from a fresh clone.
+- [U] On a new PC, 2 or 3 simple scripts (four since D15) regenerate all data from a fresh clone.
   No data archive is required. Thesis laws run by name (B2 / B3 / h405; B2 is "LQ"
   in the thesis).
-- [P] The scripts: (1) drag batteries B2 / B3 / h405 with pool and score; (2)
-  legacy hard-sphere and Tier-0 runs; (3) all thesis figures. The legacy runs get
+- [U] The scripts (D15): drag batteries B2 / B3 / h405 with pool and score; legacy
+  hard-sphere runs; Tier-0 runs; all thesis figures. The legacy runs get
   fixed seeds in their presets or driver: `single_pulse_droplet_long`,
   `9A_hedft_comparison` and `18A_hedft_comparison` were unseeded, so their new runs
   agree statistically with the submitted figures, not bit for bit.
@@ -194,6 +194,12 @@ plans, slice docs, atlas documents and the register are deleted (tag
 | D8 | `never` members read by g6 / g13 | **[U] 2026-11-25:** dropped in P3 (class `supp_never`, column `frac_formerly_suppressed`, g6 oracles); the committed tables keep them. The class equals the bare ions to within 2 of 1262 (B2) and 5 of 2306 (h405) | closed |
 | D9 | Committed-number anchors inside figure scripts | **[U] 2026-11-25:** scripts report the difference and continue, the figure driver exits 1; the exact checks move into tests (P3). P0–P7 gates stay exact | closed |
 | D10 | `regen_tier2_stage1_events.py` | **[U] 2026-11-25:** delete in P4; every run records the events | closed |
+| D11 | Import gate of P3 | **[U] 2026-11-25:** `scripts/` strict; in the package exactly `state_coupling`, `exit_strip`, `ce_channels` may still be reached, until P5 | closed |
+| D12 | `h405_pp35_table.csv`, `g5_postpickup_chord.csv` | **[U] 2026-11-25:** both deleted in P4; the B2 chord rows are kept as a table in the docs | closed |
+| D13 | `i2_helium_md.egg-info/` | **[U] 2026-11-25:** untracked in P4, left on disk | closed |
+| D14 | Minors of the P3 review | **[U] 2026-11-25:** decided by the builder on request; list in the P4 plan, Decision D | closed |
+| D15 | Regeneration scripts | **[U] 2026-11-25:** four, one job each: `gen_thesis_laws` (was `run_thesis_laws`), `gen_legacy_runs` (was `run_single_pulse`), `gen_tier0_runs`, `run_thesis_figures`. Legacy and Tier-0 runs are never made by one script | closed |
+| D16 | Tier-0 thesis runs | **[U] 2026-11-25:** five runs with plain names `tier0_{18A,9A}_…` (two of the old six were one run); generated anew on permission, old directories untouched | closed |
 
 ## 9. Left to the builder
 

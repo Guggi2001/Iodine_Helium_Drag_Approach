@@ -13,7 +13,7 @@ from i2_helium_md.simulation import battery
 from i2_helium_md.simulation.battery import ARTIFACTS, run_member
 from i2_helium_md.simulation.detection_stage import load_detection_result
 from i2_helium_md.simulation.run_directory import RunDirectory
-from scripts import run_thesis_laws as driver
+from scripts import gen_thesis_laws as driver
 
 pytestmark = pytest.mark.filterwarnings("ignore::RuntimeWarning")
 

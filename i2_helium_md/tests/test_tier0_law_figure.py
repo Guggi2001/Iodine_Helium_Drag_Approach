@@ -2,7 +2,7 @@
 
 Runs no MD: it reads the committed Tier-0 series / scores CSVs
 (``data/figures/thesis_microscopic_calibration/``), the TDDFT references and the drag bundles.
-Locks the anchor guard (B2 RMSE / 9 Å margin bit-exact vs the committed G11
+Locks the anchor report (B2 RMSE / 9 Å margin bit-exact vs the committed G11
 JSONs), the variant table, the bulk-law coefficients and that the builder
 draws one trace per law in every panel. Agg backend, figures closed, nothing
 written to disk.
@@ -64,17 +64,21 @@ class TestData:
                 float(row["margin_9A_Aps"]), abs=1e-12)
 
     def test_anchor_passes_on_committed_csvs(self, mod, data):
-        mod.check_anchor(data["scores"], data["series"])
+        assert mod.anchor_differences(data["scores"], data["series"]) == []
 
-    def test_anchor_rejects_a_drifted_b2_rmse(self, mod, data):
+    def test_anchor_reports_a_drifted_b2_rmse(self, mod, data):
         scores = {k: dict(v) for k, v in data["scores"].items()}
         scores["B2"]["rmse_18A_Aps"] = str(float(scores["B2"]["rmse_18A_Aps"]) + 1e-12)
-        with pytest.raises(ValueError, match="RMSE"):
-            mod.check_anchor(scores, data["series"])
+        (text,) = mod.anchor_differences(scores, data["series"])
+        assert "B2 18 Å RMSE" in text
+
+    def test_missing_series_raises(self, mod, data):
+        with pytest.raises(ValueError, match="series CSV lacks"):
+            mod.anchor_differences(data["scores"], {})
 
     def test_coefficients_match_the_scored_laws(self, mod, data):
         # B2 / B3: lq at the LQ_LAWS (a, c); h405: capped cubic at the production cap
-        for label, (a, c, _, _) in mod.LQ_LAWS.items():
+        for label, (a, c, _) in mod.LQ_LAWS.items():
             assert data["coeffs"][label].coefficients == {"a": a, "c": c}
         h = data["coeffs"]["h405"].coefficients
         assert h["v_c"] == 5.40

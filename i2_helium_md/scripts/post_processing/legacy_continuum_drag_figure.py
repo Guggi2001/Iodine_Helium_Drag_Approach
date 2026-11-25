@@ -18,9 +18,8 @@ Thesis section ``sec:legacy_continuum`` (figure ``fig:hard_sphere_is_continuum``
 Both panels shade the path-weighted (in-droplet) speed density of each run, i.e.
 the speed range the legacy ion stage actually probes.
 
-Inputs: ``data/runs/{9A,18A}_hedft_comparison`` (legacy hard-sphere ion runs);
-their ``cfg.json`` must match the presets ``single_pulse_N2000`` /
-``single_pulse_N2000_18Angst`` (checked, fails loudly).
+Inputs: ``data/runs/{legacy_9A,legacy_18A}_N2000`` (legacy hard-sphere ion runs);
+their ``cfg.json`` must match ``presets.LEGACY_THESIS_RUNS`` (checked, fails loudly).
 
 Writes ``data/figures/thesis_legacy/fig_continuum_drag.{png,pdf}`` and the
 plotted points ``fig_continuum_drag_points.csv``.
@@ -65,17 +64,17 @@ from matplotlib.patches import Patch  # noqa: E402
 from matplotlib.transforms import blended_transform_factory  # noqa: E402
 
 from i2_helium_md.physics.constants import DENSITY_DROPLET, EV, U  # noqa: E402
-from i2_helium_md.presets import single_pulse_N2000, single_pulse_N2000_18Angst  # noqa: E402
+from i2_helium_md.presets import LEGACY_THESIS_RUNS  # noqa: E402
+from i2_helium_md.simulation.thesis_runs import RUNS_ROOT, require_run  # noqa: E402
 
-RUNS_ROOT = PROJECT_ROOT / "data" / "runs"
 STEM = "fig_continuum_drag"
 #: eV/A -> amu A/ps^2
 EV_PER_A_TO_AMU_A_PS2 = (EV / 1e-10) / (U * 1e-10 / 1e-24)
 _PLASMA = matplotlib.colormaps["plasma"]
 #: label -> (preset, run directory, colour, marker); colours sampled from plasma
 CASES = {
-    "9 Å": (single_pulse_N2000(), "9A_hedft_comparison", _PLASMA(0.15), "o"),
-    "18 Å": (single_pulse_N2000_18Angst(), "18A_hedft_comparison", _PLASMA(0.68), "s"),
+    "9 Å": (LEGACY_THESIS_RUNS["legacy_9A_N2000"](), "legacy_9A_N2000", _PLASMA(0.15), "o"),
+    "18 Å": (LEGACY_THESIS_RUNS["legacy_18A_N2000"](), "legacy_18A_N2000", _PLASMA(0.68), "s"),
 }
 BG, AXIS, TEXT = "white", "#b5b2aa", "#4a4a4a"
 
@@ -167,6 +166,7 @@ def main() -> int:
     data = {}
     for label, (preset, run_name, color, marker) in CASES.items():
         run_dir = RUNS_ROOT / run_name
+        require_run(run_dir / "ion.npz", "gen_legacy_runs.py")
         _check_run_matches_preset(run_dir, preset)
         m = measure_run(run_dir)
         F_cf = closed_form_force(preset, m["m_ion_amu"])

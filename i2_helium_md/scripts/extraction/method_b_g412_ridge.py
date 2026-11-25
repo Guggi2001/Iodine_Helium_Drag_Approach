@@ -81,6 +81,7 @@ from i2_helium_md.physics.drag import LINEAR_QUADRATIC  # noqa: E402
 from i2_helium_md.physics.helium_density import rho_he_ratio  # noqa: E402
 from i2_helium_md.postprocess import load_hedft_trajectory  # noqa: E402
 from i2_helium_md.presets import CALIBRATION_RIDGE_ROOT, tddft_reference_path  # noqa: E402
+from i2_helium_md.simulation.battery import run_neutral_and_ion  # noqa: E402
 
 CASE = "18A"
 N = 50                   # ensemble size per forward integration (Tier-0)
@@ -332,21 +333,6 @@ def point_cfg(c: float, a: float, e_bind: float, *, mass_amu: float) -> SimConfi
     return cfg
 
 
-def _run_point(c: float, a: float, e_bind: float, *, mass_amu: float, tag: str) -> Path:
-    from scripts.tier0_common import run_dir_name
-    from i2_helium_md.simulation.ion import run_ion_propagation
-    from i2_helium_md.simulation.neutral import run_neutral_propagation
-    from i2_helium_md.simulation.run_directory import RunDirectory
-
-    cfg = point_cfg(c, a, e_bind, mass_amu=mass_amu)
-    run_dir = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N, tag)
-    run = RunDirectory(run_dir)
-    run.save_cfg(cfg)
-    neutral = run_neutral_propagation(cfg, run_dir=run, verbose=False)
-    run_ion_propagation(cfg, neutral, run_dir=run, verbose=False)
-    return run_dir
-
-
 # =============================================================================
 # G11.4 step 2: the ridge and the 9 A bound at m = I+ + 21 He
 # =============================================================================
@@ -377,13 +363,16 @@ def _g11_point(label: str) -> dict:
 
 
 def run_bound_m21(labels) -> None:
+    from scripts.tier0_common import run_dir_name
+
     hedft, window = load_hedft_trajectory(HEDFT_9A_PATH), _window_9a()
     for label in labels:
         r = _g11_point(label)
         name = label if label in G11_CHECK_POINTS else point_label(float(label))
         t0 = time.perf_counter()
-        run_dir = _run_point(r["c_amu_per_A"], r["a_amu_per_ps"], r["e_bind_eV"],
-                             mass_amu=G11_M_EFF_AMU, tag=f"g11m21{name}")
+        run_dir = RUNS_ROOT / run_dir_name("9A", BOUND_VARIANT, BOUND_N, f"g11m21{name}")
+        run_neutral_and_ion(point_cfg(r["c_amu_per_A"], r["a_amu_per_ps"], r["e_bind_eV"],
+                                      mass_amu=G11_M_EFF_AMU), run_dir)
         row = {"label": name, "c_amu_per_A": r["c_amu_per_A"],
                **score_run(run_dir, hedft, window)}
         if row["m_eff_amu"] != G11_M_EFF_AMU:

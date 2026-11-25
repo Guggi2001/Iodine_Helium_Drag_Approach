@@ -20,7 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # =============================================================================
 # USER SETTINGS / DEFAULTS
 # =============================================================================
-RUN_DIR = PROJECT_ROOT / "data" / "runs" / "single_pulse_droplet"
+RUN_DIR = PROJECT_ROOT / "data" / "runs" / "legacy_droplet_N20000"
 V3_REFERENCE_DIR = PROJECT_ROOT / "data" / "reference" / "paper_v3"
 V3_IHE_RADIAL_PATH = V3_REFERENCE_DIR / "iplus_he_high_snr_radial.csv"
 V3_TIMESCAN_RADIAL_PATH = V3_REFERENCE_DIR / "timescan_296_297_radial.csv"
